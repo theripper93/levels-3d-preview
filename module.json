@@ -20,7 +20,9 @@
   ],
   "esmodules": [
     "./scripts/main.js",
-    "./scripts/OrbitControls.js"
+    "./scripts/OrbitControls.js",
+    "./scripts/ConvexGeometry.js",
+    "./scripts/ConvexHull.js"
 ],
 
   "scripts": [
