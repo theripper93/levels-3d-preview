@@ -2,17 +2,18 @@ import * as THREE from "./three.module.js";
 import { OrbitControls } from "./OrbitControls.js";
 import { ConvexGeometry } from "./ConvexGeometry.js";
 
+const factor = 1000
+
 Hooks.on("canvasReady", () => {
   game.Levels3DPreview = new Levels3DPreview();
 });
 
 Hooks.on("updateToken", (token, updates) => {
-  if (!game.user.isGM) return;
   if (
     $("#levels3d").length > 0 &&
     ("x" in updates || "y" in updates || "elevation" in updates)
   ) {
-    game.Levels3DPreview.updateToken(token.object);
+    game.Levels3DPreview.tokenIndex[token.id]?.setPosition();
   }
 });
 
@@ -26,7 +27,7 @@ class Levels3DPreview {
     this.camera;
     this.scene;
     this.renderer;
-    this.factor = 1000;
+    this.factor = factor;
     this.tokenIndex = {};
     this.init3d();
   }
@@ -55,13 +56,14 @@ class Levels3DPreview {
 
   build3Dscene() {
     this.clear3Dscene();
-    const level = parseFloat($(_levels.UI.element).find(".level-item.active").find(".level-top").val()) ?? -Infinity;
+    let level = parseFloat($(_levels.UI?.element)?.find(".level-item.active").find(".level-top").val()) ?? Infinity;
+    if(isNaN(level)) level = Infinity;
     for (let tile of canvas.foreground.placeables) {
       if (!tile.roomPoly) continue;
       const top = tile.document.getFlag("levels", "rangeTop") ?? undefined;
-      const bottom = tile.document.getFlag("levels", "rangeTop") ?? undefined;
+      const bottom = tile.document.getFlag("levels", "rangeBottom") ?? undefined;
       if(bottom > level) continue;
-      //if(top !== undefined) this.scene.add(this.createFloor(tile.roomPoly.points, top));
+      if(top !== undefined) this.scene.add(this.createFloor(tile.roomPoly.points, top));
       if (bottom !== undefined)
         this.scene.add(this.createFloor(tile.roomPoly.points, bottom));
     }
@@ -80,7 +82,8 @@ class Levels3DPreview {
         );
     }
     for (let token of canvas.tokens.placeables) {
-      this.scene.add(this.createToken(token));
+      this.tokenIndex[token.id] = new Token3D(token)
+      this.scene.add(this.tokenIndex[token.id].mesh);
     }
     this.scene.add(new THREE.AxesHelper(3));
     const size =
@@ -106,7 +109,6 @@ class Levels3DPreview {
     let shape = new THREE.Shape();
     const f = this.factor;
     z *= (-1 * canvas.scene.dimensions.size) / canvas.dimensions.distance / f;
-    console.log(z);
     shape.moveTo(points[0] / f, points[1] / f);
     for (let i = 2; i < points.length; i += 2) {
       shape.lineTo(points[i] / f, points[i + 1] / f);
@@ -125,6 +127,7 @@ class Levels3DPreview {
   }
 
   createWall(c, top, bottom, color) {
+    try{
     const f = this.factor;
     top *= canvas.scene.dimensions.size / canvas.dimensions.distance / f;
     bottom *= canvas.scene.dimensions.size / canvas.dimensions.distance / f;
@@ -146,9 +149,34 @@ class Levels3DPreview {
 
     // line
     return new THREE.Mesh(geometry, material);
+  }catch(e){
+    console.warn("Convex Geometry failed for wall: ", c, top, bottom, color);
+    return new THREE.Mesh();
+  }
+  }
+  clear3Dscene() {
+    while (this.scene.children.length > 0) {
+      this.scene.remove(this.scene.children[0]);
+    }
   }
 
-  createToken(token) {
+  animation(time) {
+    const _this = game.Levels3DPreview;
+    _this.controls.update();
+    _this.renderer.render(_this.scene, _this.camera);
+  }
+}
+
+class Token3D{
+  constructor(tokenDocument){
+    this.token = tokenDocument
+    this.color = this.getColor();
+    this.factor = factor
+    this.draw();
+  }
+
+  draw(){
+    const token = this.token
     const f = this.factor;
     const w = token.w / f;
     const h = token.h / f;
@@ -157,15 +185,8 @@ class Levels3DPreview {
         canvas.scene.dimensions.size) /
       canvas.dimensions.distance /
       f;
-    const x = token.center.x / f;
-    const z = token.center.y / f;
-    const y =
-      ((token.data.elevation + (token.losHeight - token.data.elevation) / 2) *
-        canvas.scene.dimensions.size) /
-      canvas.dimensions.distance /
-      f;
     //create a box
-    const color = token.actor?.hasPlayerOwner ? 0xff00f7 : 0xf2ff00;
+    const color = this.color
     const geometry = new THREE.BoxGeometry(w, d, h);
     const material = new THREE.MeshMatcapMaterial({
       color: color,
@@ -174,14 +195,14 @@ class Levels3DPreview {
       side: THREE.DoubleSide,
     });
     const mesh = new THREE.Mesh(geometry, material);
-    mesh.position.set(x, y, z);
     mesh.tokenId = token.id;
-    this.tokenIndex[token.id] = mesh;
-    return mesh;
+    this.mesh = mesh
+    this.setPosition();
   }
 
-  updateToken(token) {
-    const mesh = this.tokenIndex[token.id];
+  setPosition(){
+    const mesh = this.mesh;
+    const token = this.token;
     if (!mesh) return;
     const f = this.factor;
     const x = token.center.x / f;
@@ -194,15 +215,14 @@ class Levels3DPreview {
     mesh.position.set(x, y, z);
   }
 
-  clear3Dscene() {
-    while (this.scene.children.length > 0) {
-      this.scene.remove(this.scene.children[0]);
+  getColor(){
+    const hasPlayerOwner = this.token.actor?.hasPlayerOwner
+    if(!hasPlayerOwner) return 0xf2ff00;
+    for(let [userId,permLevel] of Object.entries(this.token.actor.data.permission)){
+      if(permLevel < 3) continue
+      const user = game.users.get(userId)
+      if(user.isGM) continue
+      return user.data.color
     }
-  }
-
-  animation(time) {
-    const _this = game.Levels3DPreview;
-    _this.controls.update();
-    _this.renderer.render(_this.scene, _this.camera);
   }
 }
