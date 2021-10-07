@@ -221,8 +221,9 @@ class Token3D{
     for(let [userId,permLevel] of Object.entries(this.token.actor.data.permission)){
       if(permLevel < 3) continue
       const user = game.users.get(userId)
-      if(user.isGM) continue
+      if(!user || user.isGM) continue
       return user.data.color
     }
+    return 0xf2ff00;
   }
 }
