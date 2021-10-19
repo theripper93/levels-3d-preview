@@ -2,7 +2,7 @@
   "name": "levels-3d-preview",
   "title": "levels-3d-preview",
   "description": "desc",
-  "version": "0.2",
+  "version": "0.2.1",
   "author": "theripper93",
   "authors": [
       {
@@ -22,12 +22,14 @@
     "./scripts/main.js",
     "./scripts/OrbitControls.js",
     "./scripts/ConvexGeometry.js",
-    "./scripts/ConvexHull.js"
+    "./scripts/ConvexHull.js",
+    "./scripts/GLTFLoader.js"
 ],
 
   "scripts": [
       "./scripts/config.js",
-      "./scripts/module.js"
+      "./scripts/module.js",
+        "./scripts/injectConfig.js"
   ],
   "styles": [
       "./styles/module.css"

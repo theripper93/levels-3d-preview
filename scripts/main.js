@@ -1,6 +1,7 @@
 import * as THREE from "./three.module.js";
 import { OrbitControls } from "./OrbitControls.js";
 import { ConvexGeometry } from "./ConvexGeometry.js";
+import { GLTFLoader } from "./GLTFLoader.js";
 
 const factor = 1000
 
@@ -11,7 +12,7 @@ Hooks.on("canvasReady", () => {
 Hooks.on("updateToken", (token, updates) => {
   if (
     $("#levels3d").length > 0 &&
-    ("x" in updates || "y" in updates || "elevation" in updates)
+    ("x" in updates || "y" in updates || "elevation" in updates || "rotation" in updates)
   ) {
     game.Levels3DPreview.tokenIndex[token.id]?.setPosition();
   }
@@ -29,6 +30,7 @@ class Levels3DPreview {
     this.renderer;
     this.factor = factor;
     this.tokenIndex = {};
+    this.loader = new GLTFLoader();
     this.init3d();
   }
 
@@ -82,8 +84,12 @@ class Levels3DPreview {
         );
     }
     for (let token of canvas.tokens.placeables) {
-      this.tokenIndex[token.id] = new Token3D(token)
-      this.scene.add(this.tokenIndex[token.id].mesh);
+      new Token3D(token).load().then((token3d) => {
+        this.scene.add(token3d.mesh);
+        this.tokenIndex[token.id] = token3d;
+      })
+      /*this.tokenIndex[token.id] = new Token3D(token)
+      this.scene.add(this.tokenIndex[token.id].mesh);*/
     }
     this.scene.add(new THREE.AxesHelper(3));
     const size =
@@ -103,6 +109,9 @@ class Levels3DPreview {
     );
     gridHelper.colorGrid = 0x424242;
     this.scene.add(gridHelper);
+    const light = new THREE.HemisphereLight(0xffffff, 0x000000, 1);
+    light.position.set(10, 0, 0);
+    this.scene.add(light);
   }
 
   createFloor(points, z) {
@@ -172,7 +181,29 @@ class Token3D{
     this.token = tokenDocument
     this.color = this.getColor();
     this.factor = factor
-    this.draw();
+    this.gtflPath = tokenDocument.getFlag("levels-3d-preview", "model3d");
+    this.rotationAxis = tokenDocument.getFlag("levels-3d-preview", "rotationAxis") ?? "z";
+    this.mirrorX = tokenDocument.getFlag("levels-3d-preview", "mirrorX") ? Math.PI : 0;
+    this.mirrorY = tokenDocument.getFlag("levels-3d-preview", "mirrorY") ? Math.PI : 0;
+    this.mirrorZ = tokenDocument.getFlag("levels-3d-preview", "mirrorZ") ? Math.PI : 0;
+    this.offsetX = tokenDocument.getFlag("levels-3d-preview", "offsetX") ?? 0;
+    this.offsetY = tokenDocument.getFlag("levels-3d-preview", "offsetY") ?? 0;
+    this.offsetZ = tokenDocument.getFlag("levels-3d-preview", "offsetZ") ?? 0;
+    this.scale = tokenDocument.getFlag("levels-3d-preview", "scale") ?? 1;
+  }
+
+  async load(){
+    return this.gtflPath ? await this.loadModel() : this.draw();
+  }
+
+  async loadModel(){
+    const gltf = await game.Levels3DPreview.loader.loadAsync(this.gtflPath)
+    const model = gltf.scene.children[0];
+    const scale = this.scale*0.1
+    model.scale.set(scale, scale, scale);
+    this.mesh = model;
+    this.setPosition();
+    return this;
   }
 
   draw(){
@@ -198,6 +229,7 @@ class Token3D{
     mesh.tokenId = token.id;
     this.mesh = mesh
     this.setPosition();
+    return this;
   }
 
   setPosition(){
@@ -212,7 +244,13 @@ class Token3D{
         canvas.scene.dimensions.size) /
       canvas.dimensions.distance /
       f;
-    mesh.position.set(x, y, z);
+    mesh.position.set(x+this.offsetX/f, y+this.offsetY/f, z+this.offsetZ/f);
+    const rotations = {
+      x: this.rotationAxis === "x" ? Math.toRadians(token.data.rotation) : mesh.rotation._x,
+      y: this.rotationAxis === "y" ? Math.toRadians(token.data.rotation) : mesh.rotation._y,
+      z: this.rotationAxis === "z" ? Math.toRadians(token.data.rotation) : mesh.rotation._z,
+    }
+    mesh.rotation.set(rotations.x+this.mirrorX, rotations.y+this.mirrorY, rotations.z+this.mirrorZ);
   }
 
   getColor(){

@@ -61,3 +61,55 @@ Hooks.on("renderSceneConfig", (app,html)=>{
     `
     $($(html).find("h3")[1]).before(formhtml)
 })
+
+Hooks.on("renderTokenConfig", (app,html)=>{
+    injectConfig.inject(app,html,{
+        "moduleId": "levels-3d-preview",
+        "tab" : {
+            "name": "levels-3d-preview",
+            "label": "3D",
+            "icon": "fas fa-cube",
+        },
+        "model3d" : {
+            type: "filepicker.folder",
+            label: "3D Model",
+        },
+        "rotationAxis" : {
+            type: "select",
+            label: "Rotation Axis",
+            options: {
+                "z": "Z",
+                "x": "X",
+                "y": "Y",
+            }
+        },
+        "mirrorX" : {
+            type: "checkbox",
+            label: "Mirror X",
+        },
+        "mirrorY" : {
+            type: "checkbox",
+            label: "Mirror Y",
+        },
+        "mirrorZ" : {
+            type: "checkbox",
+            label: "Mirror Z",
+        },
+        "offsetX": {
+            type: "number",
+            label: "Offset X",
+        },
+        "offsetY": {
+            type: "number",
+            label: "Offset Y",
+        },
+        "offsetZ": {
+            type: "number",
+            label: "Offset Z",
+        },
+        "scale": {
+            type: "number",
+            label: "Scale",
+        },
+    })
+})
