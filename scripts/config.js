@@ -49,17 +49,59 @@ Hooks.on("getSceneControlButtons", (buttons)=>{
 })
 
 Hooks.on("renderSceneConfig", (app,html)=>{
-    const enablePlayers = app.object.getFlag("levels-3d-preview","enablePlayers")
-    const formhtml = `
-    <h3 class="form-header"><i class="fas fa-cube"></i> Levels - 3D Preview</h3>
-    <p class="notes">Configure Levels - 3D preview settings for this scene.</p>
-    <div class="form-group">
-        <label>Enable for Players</label>
-        <input type="checkbox" name="flags.levels-3d-preview.enablePlayers" ${enablePlayers ? "checked" : ""}>
-        <p class="notes">Allow players to open the 3D view for this scene, all walls, floors and tokens will be revealed.</p>
-    </div>
-    `
-    $($(html).find("h3")[1]).before(formhtml)
+
+    injectConfig.inject(app,html,{
+        "moduleId": "levels-3d-preview",
+        "inject" : `input[name="backgroundColor"]`,
+        "header": {
+            type: "custom",
+            html: `<h3 class="form-header"><i class="fas fa-cube"></i> Levels - 3D Preview</h3><p class="notes">Configure Levels - 3D preview settings for this scene.</p>`
+        },
+        "enablePlayers":{
+            "type": "checkbox",
+            "label": "Enable for Players",
+            "default": false,
+            "notes": "Allow players to open the 3D view for this scene, all walls, floors and tokens will be revealed."
+        },
+        "skybox" : {
+            type: "filepicker",
+            label: "Skybox Image",
+            placeholder: "Skybox Image",
+            notes: `The file needs to be in the same folder of 6 total files, files must contain "_ft", "_bk", "_up", "_dn", "_rt", "_lf".`,
+        },
+        "enableGrid": {
+            type: "checkbox",
+            label: "Enable Grid",
+        },
+        "enableAxis": {
+            type: "checkbox",
+            label: "Enable Axis",
+        },
+        "sceneTint": {
+            type: "color",
+            label: "Scene Tint",
+            default: "#ffa95c",
+        },
+        "sunPosition": {
+            type: "range",
+            label: "Sun Position",
+            default: 35,
+            min: 0,
+            max: 360,
+        },
+        "sunDistance": {
+            type: "range",
+            label: "Sun Distance",
+            default: 10,
+            min: 0,
+            max: 100,
+        },
+        "showSun": {
+            type: "checkbox",
+            label: "Show Sun",
+            default: false,
+        }
+    })
 })
 
 Hooks.on("renderTokenConfig", (app,html)=>{
