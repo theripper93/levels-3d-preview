@@ -152,6 +152,7 @@ Hooks.on("renderTokenConfig", (app,html)=>{
         "scale": {
             type: "number",
             label: "Scale",
+            step: 0.01,
         },
     })
 })
