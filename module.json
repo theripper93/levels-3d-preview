@@ -29,7 +29,8 @@
   "scripts": [
       "./scripts/config.js",
       "./scripts/module.js",
-        "./scripts/injectConfig.js"
+        "./scripts/injectConfig.js",
+        "./scripts/minicanvas.js"
   ],
   "styles": [
       "./styles/module.css"

@@ -1,0 +1,9 @@
+#miniCanvas .window-content{
+    background: none;
+}
+
+#miniCanvas .window-header{
+    z-index: 10;
+    background: #000000bd;
+}
+

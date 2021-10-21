@@ -18,11 +18,11 @@ Hooks.on("getSceneControlButtons", (buttons)=>{
             const isEnabled = $("#levels3d").length > 0;
             if (isEnabled) {
                 $("#levels3d").remove();
-                $("#board").show();
+                Object.values(ui.windows).find(w => w.id === "miniCanvas").close();
             }else{
                 game.Levels3DPreview.build3Dscene();
                 document.body.appendChild(game.Levels3DPreview.renderer.domElement);
-                $("#board").hide();
+                new miniCanvas().render(true);
             }
         }
     })
@@ -37,11 +37,11 @@ Hooks.on("getSceneControlButtons", (buttons)=>{
                 const isEnabled = $("#levels3d").length > 0;
                 if (isEnabled) {
                     $("#levels3d").remove();
-                    $("#board").show();
+                    Object.values(ui.windows).find(w => w.id === "miniCanvas").close();
                 }else{
                     game.Levels3DPreview.build3Dscene();
                     document.body.appendChild(game.Levels3DPreview.renderer.domElement);
-                    $("#board").hide();
+                    new miniCanvas().render(true);
                 }
             }
         })
@@ -98,8 +98,23 @@ Hooks.on("renderSceneConfig", (app,html)=>{
         },
         "showSun": {
             type: "checkbox",
-            label: "Show Sun",
+            label: "Show Lighting Debug",
             default: false,
+        },
+        "showSceneWalls": {
+            type: "checkbox",
+            label: "Show Scene Walls",
+            default: true,
+        },
+        "showSceneFloors": {
+            type: "checkbox",
+            label: "Show Scene Floors/Polygons",
+            default: true,
+        },
+        "renderSceneLights": {
+            type: "checkbox",
+            label: "Render Scene Lights",
+            default: true,
         }
     })
 })

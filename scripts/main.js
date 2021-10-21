@@ -79,46 +79,20 @@ class Levels3DPreview {
 
   build3Dscene() {
     this.clear3Dscene();
-    let level =
-      parseFloat(
-        $(_levels.UI?.element)
-          ?.find(".level-item.active")
-          .find(".level-top")
-          .val()
-      ) ?? Infinity;
+    let level = parseFloat($(_levels.UI?.element)?.find(".level-item.active").find(".level-top").val()) ?? Infinity;
     if (isNaN(level)) level = Infinity;
-    for (let tile of canvas.foreground.placeables) {
-      if (!tile.roomPoly) continue;
-      const top = tile.document.getFlag("levels", "rangeTop") ?? undefined;
-      const bottom =
-        tile.document.getFlag("levels", "rangeBottom") ?? undefined;
-      if (bottom > level) continue;
-      if (top !== undefined)
-        this.scene.add(this.createFloor(tile.roomPoly.points, top));
-      if (bottom !== undefined)
-        this.scene.add(this.createFloor(tile.roomPoly.points, bottom));
-    }
-    for (let wall of canvas.walls.placeables) {
-      const top = wall.data.flags.wallHeight?.wallHeightTop ?? undefined;
-      const bottom = wall.data.flags.wallHeight?.wallHeightBottom ?? undefined;
-      if (bottom > level) continue;
-      if (top !== undefined && bottom !== undefined)
-        this.scene.add(
-          this.createWall(
-            wall.data.c,
-            top,
-            bottom,
-            wall.children[1]._fillStyle.color
-          )
-        );
-    }
+    this.showSun = canvas.scene.getFlag("levels-3d-preview", "showSun") ?? false;
+    const drawFloors = canvas.scene.getFlag("levels-3d-preview", "showSceneFloors") ?? true;
+    const drawWalls = canvas.scene.getFlag("levels-3d-preview", "showSceneWalls") ?? true;
+    const drawLights = canvas.scene.getFlag("levels-3d-preview", "renderSceneLights") ?? true;
+    drawFloors && this.createFloors(level);
+    drawWalls && this.createWalls(level);
+    drawLights && this.createSceneLights();
     for (let token of canvas.tokens.placeables) {
       new Token3D(token).load().then((token3d) => {
         this.scene.add(token3d.mesh);
         this.tokenIndex[token.id] = token3d;
       });
-      /*this.tokenIndex[token.id] = new Token3D(token)
-      this.scene.add(this.tokenIndex[token.id].mesh);*/
     }
     if (canvas.scene.getFlag("levels-3d-preview", "enableAxis")) this.scene.add(new THREE.AxesHelper(3));
 
@@ -144,6 +118,73 @@ class Levels3DPreview {
     this.makeSkybox();
   }
 
+  createSceneLights(){
+    for(let light of canvas.lighting.placeables){
+      const top = light.document.getFlag("levels", "rangeTop");
+      const bottom = light.document.getFlag("levels", "rangeBottom");
+      if(top === null || bottom === null) continue;
+      const z = (top+bottom)*canvas.scene.dimensions.size/canvas.scene.dimensions.distance/2;
+      const color = light.data.tintColor || "#ffffff";
+      const radius = Math.max(light.data.dim, light.data.bright)*canvas.scene.dimensions.size/canvas.scene.dimensions.distance/this.factor;
+      const alpha = light.data.tintAlpha*100;
+      const pointLight = new THREE.PointLight(color, alpha, radius, 2);
+      pointLight.castShadow = true;
+      pointLight.shadow.bias = -0.0001;
+      pointLight.shadow.mapSize.width = 1024*4;
+      pointLight.shadow.mapSize.height = 1024*4;
+      const position = {
+        x: light.data.x/this.factor,
+        y: z/this.factor,
+        z: light.data.y/this.factor,
+      }
+      pointLight.position.set(position.x, position.y, position.z);
+      this.scene.add(pointLight);
+      if(!this.showSun) continue;
+      //make sphere
+      const sphere = new THREE.Mesh(
+        new THREE.SphereGeometry(0.2, 32, 32),
+        new THREE.MeshBasicMaterial({
+          color: color,
+          transparent: true,
+          opacity: 0.5,
+        })
+      );
+      sphere.position.set(position.x, position.y, position.z);
+      this.scene.add(sphere);
+    }
+  }
+
+  createFloors(level){
+    for (let tile of canvas.foreground.placeables) {
+      if (!tile.roomPoly) continue;
+      const top = tile.document.getFlag("levels", "rangeTop") ?? undefined;
+      const bottom =
+        tile.document.getFlag("levels", "rangeBottom") ?? undefined;
+      if (bottom > level) continue;
+      if (top !== undefined)
+        this.scene.add(this.createFloor(tile.roomPoly.points, top));
+      if (bottom !== undefined)
+        this.scene.add(this.createFloor(tile.roomPoly.points, bottom));
+    }
+  }
+
+  createWalls(level) {
+    for (let wall of canvas.walls.placeables) {
+      const top = wall.data.flags.wallHeight?.wallHeightTop ?? undefined;
+      const bottom = wall.data.flags.wallHeight?.wallHeightBottom ?? undefined;
+      if (bottom > level) continue;
+      if (top !== undefined && bottom !== undefined)
+        this.scene.add(
+          this.createWall(
+            wall.data.c,
+            top,
+            bottom,
+            wall.children[1]._fillStyle.color
+          )
+        );
+    }
+  }
+
   createLights(size) {
     this.lights = {}
     const light = new THREE.HemisphereLight(0xffffff, 0x000000, 1);
@@ -166,7 +207,7 @@ class Levels3DPreview {
     const color = canvas.scene.getFlag("levels-3d-preview", "sceneTint") ?? 0xffa95c;
     const distance = canvas.scene.getFlag("levels-3d-preview", "sunDistance") ?? 10;
     const angle = Math.toRadians(canvas.scene.getFlag("levels-3d-preview", "sunPosition") ?? 30);
-    const showSun = canvas.scene.getFlag("levels-3d-preview", "showSun") ?? false;
+    const showSun = this.showSun
     this.sunlight = {color, distance, angle, showSun};
   }
 
