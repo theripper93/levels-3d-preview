@@ -2,8 +2,9 @@ import * as THREE from "./three.module.js";
 import {factor} from './main.js'; 
 
 export class Token3D {
-    constructor(tokenDocument) {
+    constructor(tokenDocument, parent) {
       this.token = tokenDocument;
+      this._parent = parent;
       this.color = this.getColor();
       this.factor = factor;
       this.getFlags();
@@ -217,6 +218,52 @@ export class Token3D {
         return user.data.color;
       }
       return 0xf2ff00;
+    }
+
+    _onClickLeft(e) {
+      const event = {
+        data: {
+          originalEvent: e,
+        }
+      }
+      this.token._onClickLeft(event);
+    }
+
+    _onClickRight(e) {
+      const event = {
+        data: {
+          originalEvent: e,
+        }
+      }
+      this.token._onClickRight(event);
+    }
+
+    _onClickLeft2(e) {
+      const event = {
+        data: {
+          originalEvent: e,
+        }
+      }
+      this.token._onClickLeft2(event);
+    }
+
+    _onClickRight2(e) {
+      const event = {
+        data: {
+          originalEvent: e,
+        }
+      }
+      this.token._onClickRight2(event);
+    }
+
+    destroy(){
+      this._parent.scene.remove(this.mesh);
+      delete this._parent.tokenIndex[this.id]
+    }
+
+    refresh(){
+      this.destroy();
+      this._parent.addToken(this.token);
     }
   }
   

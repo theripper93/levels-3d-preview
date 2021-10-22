@@ -9,11 +9,16 @@ window.addEventListener('resize', ()=>{
     levels3d.camera.aspect = window.innerWidth / window.innerHeight
     levels3d.camera.updateProjectionMatrix()
     levels3d.renderer.setSize(window.innerWidth, window.innerHeight)
+    const miniCanvas = Object.values(ui.windows)?.find(w => w.id === "miniCanvas")
+    setTimeout(()=>{
+    if(miniCanvas) miniCanvas.resize()
+    },100)
   }, false)
 
 Hooks.once('ready', async function() {
 
     libWrapper.register("levels-3d-preview", "KeyboardManager.prototype._handleMovement", _handleMovement, "MIXED")
+    libWrapper.register("levels-3d-preview", "TokenHUD.prototype.setPosition", setPosition, "WRAPPER")
 
 
     function _handleMovement(wrapped,...args){
@@ -31,6 +36,23 @@ Hooks.once('ready', async function() {
             return wrapped(...args);
         }
     }
+
+    function setPosition(wrapped,...args){
+        wrapped(...args);
+        if(game.Levels3DPreview?._active && game.Levels3DPreview.tokenIndex[this.object.id]){
+            const elementWidth = $(this.element).width();
+            const elementHeight = $(this.element).height();
+            const mousex = game.Levels3DPreview.mousePosition.x;
+            const mousey = game.Levels3DPreview.mousePosition.y;
+            const hud = $("#hud")
+            const hudLeft = hud.offset().left;
+            const hudTop = hud.offset().top;
+            $(this.element).css({
+                left: mousex - elementWidth / 2 - hudLeft,
+                top: mousey - elementHeight / 2 - hudTop,
+            })
+        }
+    }
 });
 
 
@@ -40,17 +62,9 @@ Hooks.on("getSceneControlButtons", (buttons)=>{
         "title": "Show/Hide 3D Preview",
         "icon": "fas fa-cube",
         toggle: true,
-        active: $("#levels3d").length > 0,
+        active: game.Levels3DPreview?._active,
         onClick: () => {
-            const isEnabled = $("#levels3d").length > 0;
-            if (isEnabled) {
-                $("#levels3d").remove();
-                Object.values(ui.windows).find(w => w.id === "miniCanvas").close();
-            }else{
-                game.Levels3DPreview.build3Dscene();
-                document.body.appendChild(game.Levels3DPreview.renderer.domElement);
-                new miniCanvas().render(true);
-            }
+            game.Levels3DPreview.toggle();
         }
     })
     if(canvas?.scene?.getFlag("levels-3d-preview","enablePlayers") && !game?.user?.isGM){
@@ -59,17 +73,9 @@ Hooks.on("getSceneControlButtons", (buttons)=>{
             "title": "Show/Hide 3D Preview",
             "icon": "fas fa-cube",
             toggle: true,
-            active: $("#levels3d").length > 0,
+            active: game.Levels3DPreview?._active,
             onClick: () => {
-                const isEnabled = $("#levels3d").length > 0;
-                if (isEnabled) {
-                    $("#levels3d").remove();
-                    Object.values(ui.windows).find(w => w.id === "miniCanvas").close();
-                }else{
-                    game.Levels3DPreview.build3Dscene();
-                    document.body.appendChild(game.Levels3DPreview.renderer.domElement);
-                    new miniCanvas().render(true);
-                }
+                game.Levels3DPreview.toggle();
             }
         })
     }

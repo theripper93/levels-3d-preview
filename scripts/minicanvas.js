@@ -28,9 +28,17 @@ class miniCanvas extends Application {
         "height": "100%",
       })
     }
+
+    resize(){
+      $("#board").css({
+        "width": "100%",
+        "height": "100%",
+      })
+    }
   
-    close() {
+    close(preventPropagation = false) {
       $(".vtt ").append($(this.element).find("#board"))
+      if(!preventPropagation) game.Levels3DPreview.close(true);
       super.close();
     }
   }

@@ -12,8 +12,7 @@ Hooks.on("canvasReady", () => {
 
 Hooks.on("updateToken", (token, updates) => {
   if(updates?.flags && updates?.flags["levels-3d-preview"]){
-    game.Levels3DPreview.tokenIndex[token.id]?.getFlags();
-    game.Levels3DPreview.tokenIndex[token.id]?.setPosition();
+    game.Levels3DPreview.tokenIndex[token.id]?.refresh();
   }
   if (
     $("#levels3d").length > 0 &&
@@ -25,6 +24,14 @@ Hooks.on("updateToken", (token, updates) => {
     game.Levels3DPreview.tokenIndex[token.id]?.setPosition();
   }
 });
+
+Hooks.on("createToken", (tokenDocument) => {
+  if(game.Levels3DPreview?._active && tokenDocument.object) game.Levels3DPreview.addToken(tokenDocument.object);
+})
+
+Hooks.on("deleteToken", (tokenDocument) => {
+  if(game.Levels3DPreview?._active) game.Levels3DPreview.tokenIndex[tokenDocument.id]?.destroy();
+})
 
 Hooks.on("levelsUiChangeLevel", () => {
   if (!game.user.isGM || $("#levels3d").length == 0) return;
@@ -41,6 +48,9 @@ class Levels3DPreview {
     this.animationMixers = [];
     this.clock = new THREE.Clock();
     this.loader = new GLTFLoader();
+    this.clicks = 0;
+    this.lcTime = 0;
+    this._active = false;
     this.init3d();
   }
 
@@ -93,36 +103,68 @@ class Levels3DPreview {
     this.draggable = undefined;
 
     this.renderer.domElement.addEventListener("mousedown", (event) => {
-      if(event.which !== 1) return;
-      this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-      this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-      this.raycaster.setFromCamera(this.mouse, this.camera);
-      const groupchilderen = [];
-      this.scene.children.forEach((child) => {if(child.children.length) child.children.forEach((c) => groupchilderen.push(c))});
-      const intersects = this.raycaster.intersectObjects(groupchilderen.concat(this.scene.children), true);
-      if (intersects.length > 0) {
-        for(let intersect of intersects){
-          if(intersect.object.userData.draggable){
-            this.draggable = intersect.object;
+
+      this.mousedown = true;
+      this.mousePosition = { x: event.clientX, y: event.clientY };
+      if(event.which !== 1 && event.which !== 3) return;
+      const intersect = this.findMouseIntersect(event);
+      if(!intersect) return;
+      this.controls.enableRotate = false;
+      this.clicks++;
+      const token3d = intersect.userData.token3D
+      if (this.clicks === 1) {
+        setTimeout(() => {
+          if(this.clicks !== 1) return this.clicks = 0;
+          if(event.which === 1){
+            token3d._onClickLeft(event);
+            if(event.altKey || !this.mousedown){
+              this.draggable = undefined;
+              this.controls.enableRotate = true; 
+              return this.clicks = 0;
+              }
+            this.draggable = intersect;
             this.controls.enableRotate = false;
-            break;
+          }else{
+            token3d._onClickRight(event);
           }
-        }
+          this.clicks = 0;
+        }, 150);
+      }else{
+        this.clicks = 0;
+        event.which === 1 ? token3d._onClickLeft2(event) : token3d._onClickRight2(event);
       }
+
     })
     this.renderer.domElement.addEventListener("mouseup", (event) => {
+      this.mousedown = false;
       if(event.which !== 1) return;
       if(this.draggable){
         this.draggable.userData.token3D.updatePositionFrom3D(event);
-        this.draggable = undefined;
-        this.controls.enableRotate = true;
-        return;
       }
+      this.draggable = undefined;
+      this.controls.enableRotate = true;
     })
     this.renderer.domElement.addEventListener("mousemove", (event) => {
       this.mousemove.x = (event.clientX / window.innerWidth) * 2 - 1;
       this.mousemove.y = -(event.clientY / window.innerHeight) * 2 + 1;
     })
+  }
+
+  findMouseIntersect(event) {
+    this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+    this.raycaster.setFromCamera(this.mouse, this.camera);
+    const groupchilderen = [];
+    this.scene.children.forEach((child) => {if(child.children.length) child.children.forEach((c) => groupchilderen.push(c))});
+    const intersects = this.raycaster.intersectObjects(groupchilderen.concat(this.scene.children), true);
+    if (intersects.length > 0) {
+      for(let intersect of intersects){
+        if(intersect.object.userData.draggable){
+          return intersect.object;
+        }
+      }
+    }
+    return false;
   }
 
   dragObject(){
@@ -138,6 +180,7 @@ class Levels3DPreview {
 
   build3Dscene() {
     this.clear3Dscene();
+    this._active = true;
     let level = parseFloat($(_levels.UI?.element)?.find(".level-item.active").find(".level-top").val()) ?? Infinity;
     if (isNaN(level)) level = Infinity;
     this.showSun = canvas.scene.getFlag("levels-3d-preview", "showSun") ?? false;
@@ -150,10 +193,7 @@ class Levels3DPreview {
     drawLights && this.createSceneLights();
     renderBackground && this.createBoard();
     for (let token of canvas.tokens.placeables) {
-      new Token3D(token).load().then((token3d) => {
-        this.scene.add(token3d.mesh);
-        this.tokenIndex[token.id] = token3d;
-      });
+      this.addToken(token);
     }
     if (canvas.scene.getFlag("levels-3d-preview", "enableAxis")) this.scene.add(new THREE.AxesHelper(3));
 
@@ -189,6 +229,13 @@ class Levels3DPreview {
     this.scene.add(this.dragplane);
     this.createLights(size);
     this.makeSkybox();
+  }
+
+  addToken(token) {
+    new Token3D(token,this).load().then((token3d) => {
+      this.scene.add(token3d.mesh);
+      this.tokenIndex[token.id] = token3d;
+    });
   }
 
   createBoard(){
@@ -432,5 +479,32 @@ class Levels3DPreview {
     _this.resizeCanvasToDisplaySize(_this);
     _this.controls.update();
     _this.renderer.render(_this.scene, _this.camera);
+  }
+
+  toggle(force){
+    if(force !== undefined){
+      force ? this.open() : this.close();
+      return;
+    }
+    if(this._active){
+      this.close();
+    }else{
+      this.open();
+    }
+  }
+
+  open() {
+    if(this._active) return;
+    this.build3Dscene();
+    document.body.appendChild(this.renderer.domElement);
+    new miniCanvas().render(true);
+  }
+
+  close(preventPropagation = false){
+    this._active = false;
+    $("#levels3d").remove();
+    if(!preventPropagation) Object.values(ui.windows)?.find(w => w.id === "miniCanvas")?.close(true);
+    $("#board").show();
+    this.clear3Dscene();
   }
 }
