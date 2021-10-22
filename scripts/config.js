@@ -2,8 +2,35 @@ Hooks.once('init', async function() {
 
 });
 
+
+window.addEventListener('resize', ()=>{
+    const levels3d = game.Levels3DPreview
+    if(!levels3d) return
+    levels3d.camera.aspect = window.innerWidth / window.innerHeight
+    levels3d.camera.updateProjectionMatrix()
+    levels3d.renderer.setSize(window.innerWidth, window.innerHeight)
+  }, false)
+
 Hooks.once('ready', async function() {
 
+    libWrapper.register("levels-3d-preview", "KeyboardManager.prototype._handleMovement", _handleMovement, "MIXED")
+
+
+    function _handleMovement(wrapped,...args){
+        const e = args[0];
+        const layer = args[1];
+        if(e.altKey && layer.name == "TokenLayer"){
+            const directions = this._moveKeys
+            const elevDiff = directions.has("up") ? 1 : directions.has("down") ? -1 : 0;
+            let updates = [];
+            canvas.tokens.controlled.forEach(t => {
+                updates.push({_id: t.id, elevation: t.data.elevation + elevDiff});
+            })
+            canvas.scene.updateEmbeddedDocuments("Token", updates);
+        }else{
+            return wrapped(...args);
+        }
+    }
 });
 
 
@@ -69,6 +96,12 @@ Hooks.on("renderSceneConfig", (app,html)=>{
             placeholder: "Skybox Image",
             notes: `The file needs to be in the same folder of 6 total files, files must contain "_ft", "_bk", "_up", "_dn", "_rt", "_lf".`,
         },
+        "renderBackground": {
+            "type": "checkbox",
+            "label": "Display Background",
+            "default": true,
+            "notes": "Display the background image of the scene as a board."
+        },
         "enableGrid": {
             type: "checkbox",
             label: "Enable Grid",
@@ -131,6 +164,28 @@ Hooks.on("renderTokenConfig", (app,html)=>{
             type: "filepicker.folder",
             label: "3D Model",
         },
+        "draggable": {
+            type: "checkbox",
+            label: "Draggable",
+            default: true,
+        },
+        "enableAnim": {
+            type: "checkbox",
+            label: "Enable Animation (if present)",
+            default: true,
+        },
+        "animIndex":{
+            type: "number",
+            label: "Animation Index",
+            default: 0,
+        },
+        "animSpeed":{
+            type: "range",
+            label: "Animation Speed",
+            default: 1,
+            min: 0,
+            max: 10,
+        },
         "rotationAxis" : {
             type: "select",
             label: "Rotation Axis",
@@ -140,17 +195,29 @@ Hooks.on("renderTokenConfig", (app,html)=>{
                 "y": "Y",
             }
         },
-        "mirrorX" : {
-            type: "checkbox",
-            label: "Mirror X",
+        "rotationX" : {
+            type: "range",
+            label: "Rotation X",
+            default: 0,
+            min: 0,
+            max: 360,
+            step: 1,
         },
-        "mirrorY" : {
-            type: "checkbox",
-            label: "Mirror Y",
+        "rotationY" : {
+            type: "range",
+            label: "Rotation Y",
+            default: 0,
+            min: 0,
+            max: 360,
+            step: 1,
         },
-        "mirrorZ" : {
-            type: "checkbox",
-            label: "Mirror Z",
+        "rotationZ" : {
+            type: "range",
+            label: "Rotation Z",
+            default: 0,
+            min: 0,
+            max: 360,
+            step: 1,
         },
         "offsetX": {
             type: "number",

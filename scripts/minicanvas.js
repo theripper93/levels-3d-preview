@@ -5,14 +5,15 @@ class miniCanvas extends Application {
     }
   
     static get defaultOptions() {
+      const aspectRatio = window.innerWidth / window.innerHeight;
       return {
         ...super.defaultOptions,
         title: "Canvas",
         id: "miniCanvas",
         template: `modules/levels-3d-preview/templates/minicanvas.hbs`,
         resizable: true,
-        width: 300,
-        height: window.innerHeight > 400 ? 400 : window.innerHeight - 100,
+        width: 300*aspectRatio,
+        height: 300,
       };
     }
   

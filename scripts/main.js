@@ -2,14 +2,19 @@ import * as THREE from "./three.module.js";
 import { OrbitControls } from "./OrbitControls.js";
 import { ConvexGeometry } from "./ConvexGeometry.js";
 import { GLTFLoader } from "./GLTFLoader.js";
+import {Token3D} from "./Token3d.js";
 
-const factor = 1000;
+export const factor = 1000;
 
 Hooks.on("canvasReady", () => {
   game.Levels3DPreview = new Levels3DPreview();
 });
 
 Hooks.on("updateToken", (token, updates) => {
+  if(updates?.flags && updates?.flags["levels-3d-preview"]){
+    game.Levels3DPreview.tokenIndex[token.id]?.getFlags();
+    game.Levels3DPreview.tokenIndex[token.id]?.setPosition();
+  }
   if (
     $("#levels3d").length > 0 &&
     ("x" in updates ||
@@ -33,6 +38,8 @@ class Levels3DPreview {
     this.renderer;
     this.factor = factor;
     this.tokenIndex = {};
+    this.animationMixers = [];
+    this.clock = new THREE.Clock();
     this.loader = new GLTFLoader();
     this.init3d();
   }
@@ -42,7 +49,7 @@ class Levels3DPreview {
     this.camera = new THREE.PerspectiveCamera(
       60,
       window.innerWidth / window.innerHeight,
-      1,
+      0.1,
       1000
     );
     this.camera.position.set(8, 2, 8).setLength(8);
@@ -65,8 +72,10 @@ class Levels3DPreview {
     this.controls.enableDamping = true;
     this.controls.dampingFactor = 0.25;
     this.controls.maxDistance = 20;
-    this.controls.minDistance = 1;
+    this.controls.minDistance = 0.1;
     this.controls.target.set(center.x, center.y, center.z);
+
+    this.activateListeners();
   }
 
   get canvasCenter() {
@@ -77,6 +86,56 @@ class Levels3DPreview {
     };
   }
 
+  activateListeners() {
+    this.raycaster = new THREE.Raycaster();
+    this.mouse = new THREE.Vector2();
+    this.mousemove = new THREE.Vector2();
+    this.draggable = undefined;
+
+    this.renderer.domElement.addEventListener("mousedown", (event) => {
+      if(event.which !== 1) return;
+      this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+      this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+      this.raycaster.setFromCamera(this.mouse, this.camera);
+      const groupchilderen = [];
+      this.scene.children.forEach((child) => {if(child.children.length) child.children.forEach((c) => groupchilderen.push(c))});
+      const intersects = this.raycaster.intersectObjects(groupchilderen.concat(this.scene.children), true);
+      if (intersects.length > 0) {
+        for(let intersect of intersects){
+          if(intersect.object.userData.draggable){
+            this.draggable = intersect.object;
+            this.controls.enableRotate = false;
+            break;
+          }
+        }
+      }
+    })
+    this.renderer.domElement.addEventListener("mouseup", (event) => {
+      if(event.which !== 1) return;
+      if(this.draggable){
+        this.draggable.userData.token3D.updatePositionFrom3D(event);
+        this.draggable = undefined;
+        this.controls.enableRotate = true;
+        return;
+      }
+    })
+    this.renderer.domElement.addEventListener("mousemove", (event) => {
+      this.mousemove.x = (event.clientX / window.innerWidth) * 2 - 1;
+      this.mousemove.y = -(event.clientY / window.innerHeight) * 2 + 1;
+    })
+  }
+
+  dragObject(){
+    if(!this.draggable) return;
+    this.raycaster.setFromCamera(this.mousemove, this.camera);
+    const intersects = this.raycaster.intersectObjects([this.dragplane], true);
+    if (intersects.length > 0) {
+      const target = this.draggable.userData.isHitbox ? this.draggable.parent : this.draggable;
+      target.position.x = intersects[0].point.x;
+      target.position.z = intersects[0].point.z;
+    }
+  }
+
   build3Dscene() {
     this.clear3Dscene();
     let level = parseFloat($(_levels.UI?.element)?.find(".level-item.active").find(".level-top").val()) ?? Infinity;
@@ -85,9 +144,11 @@ class Levels3DPreview {
     const drawFloors = canvas.scene.getFlag("levels-3d-preview", "showSceneFloors") ?? true;
     const drawWalls = canvas.scene.getFlag("levels-3d-preview", "showSceneWalls") ?? true;
     const drawLights = canvas.scene.getFlag("levels-3d-preview", "renderSceneLights") ?? true;
+    const renderBackground = canvas.scene.getFlag("levels-3d-preview", "renderBackground") ?? true;
     drawFloors && this.createFloors(level);
     drawWalls && this.createWalls(level);
     drawLights && this.createSceneLights();
+    renderBackground && this.createBoard();
     for (let token of canvas.tokens.placeables) {
       new Token3D(token).load().then((token3d) => {
         this.scene.add(token3d.mesh);
@@ -98,12 +159,12 @@ class Levels3DPreview {
 
     const size =
       (Math.max(canvas.scene.dimensions.width, canvas.dimensions.height) /
-        this.factor) *
-      2;
+        this.factor)
+      ;
     const divisions =
       (Math.max(canvas.scene.dimensions.width, canvas.dimensions.height) /
-        canvas.scene.dimensions.size) *
-      2;
+        canvas.scene.dimensions.size)
+      ;
     if (canvas.scene.getFlag("levels-3d-preview", "enableGrid")) {
       const gridHelper = new THREE.GridHelper(
         size,
@@ -112,10 +173,41 @@ class Levels3DPreview {
         0x424242
       );
       gridHelper.colorGrid = 0x424242;
+      gridHelper.position.set(size/2, 0, size/2);
+      gridHelper.opacity = 0.1;
       this.scene.add(gridHelper);
     }
+    //add raycasting plane
+
+    this.dragplane = new THREE.Mesh(
+      new THREE.PlaneGeometry(size, size),
+      new THREE.MeshBasicMaterial({ color: 0xffffff, visible: false })
+    );
+    this.dragplane.position.set(size/2, 0, size/2);
+    this.dragplane.userData.isFloor = true;
+    this.dragplane.rotation.x = -Math.PI / 2;
+    this.scene.add(this.dragplane);
     this.createLights(size);
     this.makeSkybox();
+  }
+
+  createBoard(){
+    //make a plane and apply a texture
+    const width = canvas.scene.dimensions.sceneWidth / this.factor;
+    const height = canvas.scene.dimensions.sceneHeight / this.factor;
+    const center = this.canvasCenter;
+    const geometry = new THREE.BoxGeometry(width, height, 0.01);
+    const material = new THREE.MeshLambertMaterial({
+      map: new THREE.TextureLoader().load(canvas.scene.data.img),
+      metalness: 0.5,
+      roughness: 0.5,
+    });
+    const plane = new THREE.Mesh(geometry, material);
+    plane.receiveShadow = true;
+    plane.position.set(center.x, center.y-0.01, center.z);
+    plane.rotation.x = -Math.PI / 2;
+    this.scene.add(plane);
+
   }
 
   createSceneLights(){
@@ -330,147 +422,15 @@ class Levels3DPreview {
 
   animation(time) {
     const _this = game.Levels3DPreview;
+    _this.dragObject();
+    const delta = _this.clock.getDelta();
+    Object.values(_this.tokenIndex).forEach((token) => {
+      if(token.mixer){
+        token.mixer.update(delta);
+      }
+    });
     _this.resizeCanvasToDisplaySize(_this);
     _this.controls.update();
     _this.renderer.render(_this.scene, _this.camera);
-  }
-}
-
-class Token3D {
-  constructor(tokenDocument) {
-    this.token = tokenDocument;
-    this.color = this.getColor();
-    this.factor = factor;
-    this.gtflPath = tokenDocument.document.getFlag(
-      "levels-3d-preview",
-      "model3d"
-    );
-    this.rotationAxis =
-      tokenDocument.document.getFlag("levels-3d-preview", "rotationAxis") ??
-      "z";
-    this.mirrorX = tokenDocument.document.getFlag(
-      "levels-3d-preview",
-      "mirrorX"
-    )
-      ? Math.PI
-      : 0;
-    this.mirrorY = tokenDocument.document.getFlag(
-      "levels-3d-preview",
-      "mirrorY"
-    )
-      ? Math.PI
-      : 0;
-    this.mirrorZ = tokenDocument.document.getFlag(
-      "levels-3d-preview",
-      "mirrorZ"
-    )
-      ? Math.PI
-      : 0;
-    this.offsetX =
-      tokenDocument.document.getFlag("levels-3d-preview", "offsetX") ?? 0;
-    this.offsetY =
-      tokenDocument.document.getFlag("levels-3d-preview", "offsetY") ?? 0;
-    this.offsetZ =
-      tokenDocument.document.getFlag("levels-3d-preview", "offsetZ") ?? 0;
-    this.scale =
-      tokenDocument.document.getFlag("levels-3d-preview", "scale") ?? 1;
-  }
-
-  async load() {
-    return this.gtflPath ? await this.loadModel() : this.draw();
-  }
-
-  async loadModel() {
-    const gltf = await game.Levels3DPreview.loader.loadAsync(this.gtflPath);
-    const model = gltf.scene.children[0];
-    const scale = this.scale * 0.1;
-    model.scale.set(scale, scale, scale);
-    model.traverse((child) => {
-      if (child.isMesh) {
-        child.castShadow = true;
-        child.receiveShadow = true;
-      }
-    });
-    this.mesh = model;
-    this.setPosition();
-    return this;
-  }
-
-  draw() {
-    const token = this.token;
-    const f = this.factor;
-    const w = token.w / f;
-    const h = token.h / f;
-    const d =
-      ((token.losHeight - token.data.elevation) *
-        canvas.scene.dimensions.size) /
-      canvas.dimensions.distance /
-      f;
-    //create a box
-    const color = this.color;
-    const geometry = new THREE.BoxGeometry(w, d, h);
-    const material = new THREE.MeshMatcapMaterial({
-      color: color,
-      opacity: 0.5,
-      transparent: true,
-      side: THREE.DoubleSide,
-    });
-    const mesh = new THREE.Mesh(geometry, material);
-    mesh.tokenId = token.id;
-    this.mesh = mesh;
-    this.setPosition();
-    return this;
-  }
-
-  setPosition() {
-    const mesh = this.mesh;
-    const token = this.token;
-    if (!mesh) return;
-    const f = this.factor;
-    const x = token.center.x / f;
-    const z = token.center.y / f;
-    const y =
-      ((token.data.elevation + (token.losHeight - token.data.elevation) / 2) *
-        canvas.scene.dimensions.size) /
-      canvas.dimensions.distance /
-      f;
-    mesh.position.set(
-      x + this.offsetX / f,
-      y + this.offsetY / f,
-      z + this.offsetZ / f
-    );
-    const rotations = {
-      x:
-        this.rotationAxis === "x"
-          ? Math.toRadians(token.data.rotation)
-          : mesh.rotation._x,
-      y:
-        this.rotationAxis === "y"
-          ? Math.toRadians(token.data.rotation)
-          : mesh.rotation._y,
-      z:
-        this.rotationAxis === "z"
-          ? Math.toRadians(token.data.rotation)
-          : mesh.rotation._z,
-    };
-    mesh.rotation.set(
-      rotations.x + this.mirrorX,
-      rotations.y + this.mirrorY,
-      rotations.z + this.mirrorZ
-    );
-  }
-
-  getColor() {
-    const hasPlayerOwner = this.token.actor?.hasPlayerOwner;
-    if (!hasPlayerOwner) return 0xf2ff00;
-    for (let [userId, permLevel] of Object.entries(
-      this.token.actor.data.permission
-    )) {
-      if (permLevel < 3) continue;
-      const user = game.users.get(userId);
-      if (!user || user.isGM) continue;
-      return user.data.color;
-    }
-    return 0xf2ff00;
   }
 }

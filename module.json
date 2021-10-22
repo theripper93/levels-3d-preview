@@ -23,7 +23,8 @@
     "./scripts/OrbitControls.js",
     "./scripts/ConvexGeometry.js",
     "./scripts/ConvexHull.js",
-    "./scripts/GLTFLoader.js"
+    "./scripts/GLTFLoader.js",
+    "./scripts/token3d.js"
 ],
 
   "scripts": [
