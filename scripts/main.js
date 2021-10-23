@@ -173,8 +173,7 @@ class Levels3DPreview {
     const intersects = this.raycaster.intersectObjects([this.dragplane], true);
     if (intersects.length > 0) {
       const target = this.draggable.userData.isHitbox ? this.draggable.parent : this.draggable;
-      target.position.x = intersects[0].point.x;
-      target.position.z = intersects[0].point.z;
+      target.position.lerp(new THREE.Vector3(intersects[0].point.x, target.position.y, intersects[0].point.z), 0.10);
     }
   }
 

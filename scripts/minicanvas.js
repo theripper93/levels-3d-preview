@@ -36,9 +36,9 @@ class miniCanvas extends Application {
       })
     }
   
-    close(preventPropagation = false) {
+    close() {
       $(".vtt ").append($(this.element).find("#board"))
-      if(!preventPropagation) game.Levels3DPreview.close(true);
+      if(game.Levels3DPreview._active) $("#board").hide()
       super.close();
     }
   }

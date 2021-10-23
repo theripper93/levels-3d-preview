@@ -7,6 +7,7 @@ export class Token3D {
       this._parent = parent;
       this.color = this.getColor();
       this.factor = factor;
+      this.targetSize = 0.1;
       this.getFlags();
     }
   
@@ -53,7 +54,6 @@ export class Token3D {
         this.mixer.timeScale = this.animSpeed;
         this.mixer.clipAction( gltf.animations[this.animIndex] ).play();
       }
-      if(!model.geometry){
         this.rotationX += Math.PI / 2;
         box = new THREE.Box3().setFromObject( gltf.scene );
         center = box.getCenter( new THREE.Vector3() );
@@ -63,20 +63,12 @@ export class Token3D {
             z: this.offsetZ/factor + (this.rotationAxis == "z" ? 0 : -center.z),
           }
         model.position.set(centerOffset.x, centerOffset.y, centerOffset.z);
-      }
       model.traverse((child) => {
         if (child.isMesh) {
           child.castShadow = true;
           child.receiveShadow = true;
         }
       });
-      model.geometry?.center();
-      if(model.geometry){
-      model.userData.draggable = this.draggable;
-      model.userData.isHitbox = false;
-      model.userData.token3D = this;
-      this.mesh = model;
-      }else{
         model.userData.draggable = true;
         model.userData.name = this.gtflPath;
         const pivot = new THREE.Group();
@@ -92,23 +84,22 @@ export class Token3D {
             wireframe: true,
             transparent: true,
             opacity: 1,
-            visible: false,
+            visible: true,
           })
         );
         hitbox.position.set(center.x+centerOffset.x, center.y+centerOffset.y, center.z+centerOffset.z);
         hitbox.userData.draggable = this.draggable;
         hitbox.userData.isHitbox = true;
         hitbox.userData.token3D = this;
+        this.hitbox = hitbox;
         pivot.add(hitbox);
         this.mesh = pivot;
-      }
+      //}
       this.adjust = {
         x: this.offsetX/factor,
         y: this.offsetY/factor,
         z: this.offsetZ/factor,
       };
-      this.adjust[this.rotationAxis] += -model.geometry?.boundingBox?.min[this.rotationAxis] || 0;
-      model.geometry?.translate(this.adjust.x, this.adjust.y, this.adjust.z);
       this.initialRotation = {
         x: model.rotation._x,
         y: model.rotation._y,
@@ -117,6 +108,10 @@ export class Token3D {
       this.mesh.userData.draggable = true;
       this.mesh.userData.name = this.gtflPath;
       this.setPosition();
+      this.targetContainer = new THREE.Group();
+      this.mesh.add(this.targetContainer);
+      this.drawTargets();
+      console.log(this.hitbox)
       return this;
     }
   
@@ -151,14 +146,12 @@ export class Token3D {
       const x3d = this.mesh.position.x;
       const y3d = this.mesh.position.y;
       const z3d = this.mesh.position.z;
-      const x = x3d * this.factor;
-      const y = z3d * this.factor;
-      const z = y3d * this.factor;
-        const snapped = canvas.grid.getTopLeft(x, y);
+      const x = x3d * this.factor-this.token.w/2;
+      const y = z3d * this.factor - this.token.h/2;
+        const snapped = canvas.grid.getSnappedPosition(x, y);
       this.token.document.update({
-        x: useSnapped ? snapped[0] : x,
-        y: useSnapped ? snapped[1] : y,
-        elevation: z,
+        x: useSnapped ? snapped.x : x,
+        y: useSnapped ? snapped.y : y,
       });
     }
   
@@ -204,6 +197,38 @@ export class Token3D {
         rotations.y + this.initialRotation?.y ?? 0,
         rotations.z + this.initialRotation?.z ?? 0,
       );
+    }
+
+    drawTargets(){
+      //remove old targets
+      if(!this.targetContainer) return;
+      this.targetContainer.children.forEach(child => {
+        this.targetContainer.remove(child);
+      });
+      this.hitbox.geometry.computeBoundingBox();
+      const hitboxSize = this.hitbox.geometry.boundingBox.getSize(new THREE.Vector3());
+      this.targetSize = Math.min(hitboxSize.x, hitboxSize.y, hitboxSize.z)*0.3;
+      let positionOffset = this.targetSize*2.5;
+      for(let target of Array.from(this.token.targeted)){
+        const color = target.color;
+        const position = {
+          x: this.rotationAxis === "x" ? hitboxSize.x+this.targetSize+positionOffset : 0,
+          y: this.rotationAxis === "y" ? hitboxSize.y+this.targetSize+positionOffset : 0,
+          z: this.rotationAxis === "z" ? hitboxSize.z+this.targetSize+positionOffset : 0,
+        }
+        const geometry = new THREE.SphereGeometry(this.targetSize, 16, 16);
+        const material = new THREE.MeshBasicMaterial({
+          color: color,
+          //wireframe: true,
+          transparent: true,
+          opacity: 0.8,
+        });
+        const mesh = new THREE.Mesh(geometry, material);
+        mesh.position.set(position.x, position.y, position.z);
+        this.targetContainer.add(mesh);
+        positionOffset += this.targetSize*2.5;
+      }
+
     }
   
     getColor() {

@@ -19,7 +19,13 @@ Hooks.once('ready', async function() {
 
     libWrapper.register("levels-3d-preview", "KeyboardManager.prototype._handleMovement", _handleMovement, "MIXED")
     libWrapper.register("levels-3d-preview", "TokenHUD.prototype.setPosition", setPosition, "WRAPPER")
+    libWrapper.register("levels-3d-preview", "CONFIG.Token.objectClass.prototype.refresh", drawTargets, "WRAPPER")
 
+
+    function drawTargets(wrapped,...args){
+        game.Levels3DPreview?._active && game.Levels3DPreview.tokenIndex[this.id]?.drawTargets()
+        wrapped(...args)
+    }
 
     function _handleMovement(wrapped,...args){
         const e = args[0];
