@@ -19,12 +19,12 @@ Hooks.once('ready', async function() {
 
     libWrapper.register("levels-3d-preview", "KeyboardManager.prototype._handleMovement", _handleMovement, "MIXED")
     libWrapper.register("levels-3d-preview", "TokenHUD.prototype.setPosition", setPosition, "WRAPPER")
-    libWrapper.register("levels-3d-preview", "CONFIG.Token.objectClass.prototype.refresh", drawTargets, "WRAPPER")
+    libWrapper.register("levels-3d-preview", "CONFIG.Token.objectClass.prototype.refresh", reDraw, "WRAPPER")
 
 
-    function drawTargets(wrapped,...args){
-        game.Levels3DPreview?._active && game.Levels3DPreview.tokenIndex[this.id]?.drawTargets()
+    function reDraw(wrapped,...args){
         wrapped(...args)
+        game.Levels3DPreview?._active && game.Levels3DPreview.tokenIndex[this.id]?.reDraw()
     }
 
     function _handleMovement(wrapped,...args){
@@ -61,6 +61,9 @@ Hooks.once('ready', async function() {
     }
 });
 
+Hooks.on("canvasReady", () => {
+    game.Levels3DPreview?.close();
+})
 
 Hooks.on("getSceneControlButtons", (buttons)=>{
     buttons.find(b => b.name === "levels")?.tools?.push({
@@ -230,6 +233,12 @@ Hooks.on("renderTokenConfig", (app,html)=>{
             min: 0,
             max: 360,
             step: 1,
+        },
+        "rotateBase": {
+            type: "checkbox",
+            label: "Fix Base Rotation",
+            notes: "Some models require the selection indicator to be rotated, enable as necessary.",
+            default: false,
         },
         "offsetX": {
             type: "number",

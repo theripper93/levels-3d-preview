@@ -8,6 +8,7 @@ export class Token3D {
       this.color = this.getColor();
       this.factor = factor;
       this.targetSize = 0.1;
+      this.elevation3d = 0;
       this.getFlags();
     }
   
@@ -22,6 +23,7 @@ export class Token3D {
       this.rotationX = Math.toRadians(this.token.document.getFlag("levels-3d-preview","rotationX") ?? 0);
       this.rotationY = Math.toRadians(this.token.document.getFlag("levels-3d-preview","rotationY") ?? 0);
       this.rotationZ = Math.toRadians(this.token.document.getFlag("levels-3d-preview","rotationZ") ?? 0);
+      this.rotateBase = (this.token.document.getFlag("levels-3d-preview","rotateBase") ?? false) ? Math.PI/2 : 0;
       this.offsetX =
       this.token.document.getFlag("levels-3d-preview", "offsetX") ?? 0;
       this.offsetY =
@@ -54,47 +56,47 @@ export class Token3D {
         this.mixer.timeScale = this.animSpeed;
         this.mixer.clipAction( gltf.animations[this.animIndex] ).play();
       }
-        this.rotationX += Math.PI / 2;
-        box = new THREE.Box3().setFromObject( gltf.scene );
-        center = box.getCenter( new THREE.Vector3() );
-        centerOffset = {
-            x: this.offsetX/factor + (this.rotationAxis == "x" ? 0 : -center.x),
-            y: this.offsetY/factor + (this.rotationAxis == "y" ? 0 : -center.y),
-            z: this.offsetZ/factor + (this.rotationAxis == "z" ? 0 : -center.z),
-          }
-        model.position.set(centerOffset.x, centerOffset.y, centerOffset.z);
+      this.hasGeometry = model.geometry ? true : false;
+      this.rotationX += Math.PI / 2;
+      box = new THREE.Box3().setFromObject( gltf.scene );
+      center = box.getCenter( new THREE.Vector3() );
+      centerOffset = {
+          x: this.offsetX/factor + (this.rotationAxis == "x" ? 0 : -center.x),
+          y: this.offsetY/factor + (this.rotationAxis == "y" ? 0 : -center.y),
+          z: this.offsetZ/factor + (this.rotationAxis == "z" ? 0 : -center.z),
+        }
+      model.position.set(centerOffset.x, centerOffset.y, centerOffset.z);
       model.traverse((child) => {
         if (child.isMesh) {
           child.castShadow = true;
           child.receiveShadow = true;
         }
       });
-        model.userData.draggable = true;
-        model.userData.name = this.gtflPath;
-        const pivot = new THREE.Group();
-        pivot.add(model);
-        //create hitbox
-        const height = box.max.y - box.min.y;
-        const width = box.max.x - box.min.x;
-        const depth = box.max.z - box.min.z;
-        const hitbox = new THREE.Mesh(
-          new THREE.BoxGeometry(width, height, depth),
-          new THREE.MeshBasicMaterial({
-            color: 0xffffff,
-            wireframe: true,
-            transparent: true,
-            opacity: 1,
-            visible: true,
-          })
-        );
-        hitbox.position.set(center.x+centerOffset.x, center.y+centerOffset.y, center.z+centerOffset.z);
-        hitbox.userData.draggable = this.draggable;
-        hitbox.userData.isHitbox = true;
-        hitbox.userData.token3D = this;
-        this.hitbox = hitbox;
-        pivot.add(hitbox);
-        this.mesh = pivot;
-      //}
+      model.userData.draggable = true;
+      model.userData.name = this.gtflPath;
+      const pivot = new THREE.Group();
+      pivot.add(model);
+      //create hitbox
+      const height = box.max.y - box.min.y;
+      const width = box.max.x - box.min.x;
+      const depth = box.max.z - box.min.z;
+      const hitbox = new THREE.Mesh(
+        new THREE.BoxGeometry(width, height, depth),
+        new THREE.MeshBasicMaterial({
+          color: 0xffffff,
+          wireframe: true,
+          transparent: true,
+          opacity: 1,
+          visible: true,
+        })
+      );
+      hitbox.position.set(center.x+centerOffset.x, center.y+centerOffset.y, center.z+centerOffset.z);
+      hitbox.userData.draggable = this.draggable;
+      hitbox.userData.isHitbox = true;
+      hitbox.userData.token3D = this;
+      this.hitbox = hitbox;
+      pivot.add(hitbox);
+      this.mesh = pivot;
       this.adjust = {
         x: this.offsetX/factor,
         y: this.offsetY/factor,
@@ -107,11 +109,13 @@ export class Token3D {
       }
       this.mesh.userData.draggable = true;
       this.mesh.userData.name = this.gtflPath;
-      this.setPosition();
       this.targetContainer = new THREE.Group();
       this.mesh.add(this.targetContainer);
+      this.border = new THREE.Group();
+      this.mesh.add(this.border);
+      this.drawBorder();
       this.drawTargets();
-      console.log(this.hitbox)
+      this.setPosition();
       return this;
     }
   
@@ -148,10 +152,12 @@ export class Token3D {
       const z3d = this.mesh.position.z;
       const x = x3d * this.factor-this.token.w/2;
       const y = z3d * this.factor - this.token.h/2;
+      const z = Math.round((y3d * this.factor * canvas.dimensions.distance)/(canvas.dimensions.size));
         const snapped = canvas.grid.getSnappedPosition(x, y);
       this.token.document.update({
         x: useSnapped ? snapped.x : x,
         y: useSnapped ? snapped.y : y,
+        elevation: z,
       });
     }
   
@@ -197,6 +203,20 @@ export class Token3D {
         rotations.y + this.initialRotation?.y ?? 0,
         rotations.z + this.initialRotation?.z ?? 0,
       );
+      this.elevation3d = y;
+      if(this.border){
+        this.border.rotation.set(
+          - rotations.x -this.rotateBase + this.rotationX,
+          - rotations.y + this.rotationY,
+          0 + this.rotationZ, //?????????????????
+        );
+      }
+      
+    }
+
+    reDraw(){
+      this.drawTargets();
+      this.refreshBorder();
     }
 
     drawTargets(){
@@ -229,6 +249,35 @@ export class Token3D {
         positionOffset += this.targetSize*2.5;
       }
 
+    }
+
+    drawBorder(){
+      this.border.children.forEach(child => {
+        this.border.remove(child);
+      });
+      const width = this.token.w/this.factor;
+      const height = this.token.h/this.factor;
+      const depth = 0.001;
+      const geometry = new THREE.BoxGeometry(width, depth , height);
+      const material = new THREE.MeshLambertMaterial({
+        color: 0xffffff,
+        visible: false,
+      });
+      const mesh = new THREE.Mesh(geometry, material);
+      mesh.position.set(0,0,0);
+      this.border.add(mesh);
+
+
+    }
+
+    refreshBorder(){
+      if(!this.border) return;
+      const color = this.token.border._lineStyle.color;
+      const visible = this.token.border.height ? true : false;
+      this.border.children.forEach(child => {
+        child.material.color = new THREE.Color(color);
+        child.material.visible = visible;
+      });
     }
   
     getColor() {

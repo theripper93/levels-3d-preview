@@ -101,6 +101,7 @@ class Levels3DPreview {
     this.mouse = new THREE.Vector2();
     this.mousemove = new THREE.Vector2();
     this.draggable = undefined;
+    const elevationTick = (canvas.dimensions.size/canvas.dimensions.distance)/this.factor;
 
     this.renderer.domElement.addEventListener("mousedown", (event) => {
 
@@ -110,6 +111,7 @@ class Levels3DPreview {
       const intersect = this.findMouseIntersect(event);
       if(!intersect) return;
       this.controls.enableRotate = false;
+      this.controls.enableZoom = false;
       this.clicks++;
       const token3d = intersect.userData.token3D
       if (this.clicks === 1) {
@@ -120,10 +122,12 @@ class Levels3DPreview {
             if(event.altKey || !this.mousedown){
               this.draggable = undefined;
               this.controls.enableRotate = true; 
+              this.controls.enableZoom = true;
               return this.clicks = 0;
               }
             this.draggable = intersect;
             this.controls.enableRotate = false;
+            this.controls.enableZoom = false;
           }else{
             token3d._onClickRight(event);
           }
@@ -143,10 +147,23 @@ class Levels3DPreview {
       }
       this.draggable = undefined;
       this.controls.enableRotate = true;
+      this.controls.enableZoom = true;
     })
     this.renderer.domElement.addEventListener("mousemove", (event) => {
       this.mousemove.x = (event.clientX / window.innerWidth) * 2 - 1;
       this.mousemove.y = -(event.clientY / window.innerHeight) * 2 + 1;
+    })
+    //add wheel event
+    this.renderer.domElement.addEventListener("wheel", (event) => {
+      const delta = event.deltaY;
+      if(!this.draggable) return;
+      const token3d = this.draggable.userData.token3D;
+      //change y position
+      if(delta > 0){
+        token3d.elevation3d -= elevationTick*5;
+      }else{
+        token3d.elevation3d += elevationTick*5;
+      }
     })
   }
 
@@ -172,8 +189,9 @@ class Levels3DPreview {
     this.raycaster.setFromCamera(this.mousemove, this.camera);
     const intersects = this.raycaster.intersectObjects([this.dragplane], true);
     if (intersects.length > 0) {
+      const token3d = this.draggable.userData.token3D;
       const target = this.draggable.userData.isHitbox ? this.draggable.parent : this.draggable;
-      target.position.lerp(new THREE.Vector3(intersects[0].point.x, target.position.y, intersects[0].point.z), 0.10);
+      target.position.lerp(new THREE.Vector3(intersects[0].point.x, token3d.elevation3d, intersects[0].point.z), 0.10);
     }
   }
 
@@ -499,10 +517,10 @@ class Levels3DPreview {
     new miniCanvas().render(true);
   }
 
-  close(preventPropagation = false){
+  close(){
     this._active = false;
     $("#levels3d").remove();
-    if(!preventPropagation) Object.values(ui.windows)?.find(w => w.id === "miniCanvas")?.close(true);
+    Object.values(ui.windows)?.find(w => w.id === "miniCanvas")?.close(true);
     $("#board").show();
     this.clear3Dscene();
   }
