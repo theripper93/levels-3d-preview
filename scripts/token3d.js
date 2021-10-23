@@ -259,7 +259,7 @@ export class Token3D {
       const height = this.token.h/this.factor;
       const depth = 0.001;
       const geometry = new THREE.BoxGeometry(width, depth , height);
-      const material = new THREE.MeshLambertMaterial({
+      const material = new THREE.MeshToonMaterial({
         color: 0xffffff,
         visible: false,
       });
