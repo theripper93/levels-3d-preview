@@ -1,8 +1,8 @@
-import * as THREE from "./three.module.js";
-import { OrbitControls } from "./OrbitControls.js";
-import { ConvexGeometry } from "./ConvexGeometry.js";
-import { GLTFLoader } from "./GLTFLoader.js";
-import {Token3D} from "./Token3d.js";
+import * as THREE from "./lib/three.module.js";
+import { OrbitControls } from "./lib/OrbitControls.js";
+import { ConvexGeometry } from "./lib/ConvexGeometry.js";
+import { GLTFLoader } from "./lib/GLTFLoader.js";
+import {Token3D} from "./enitities/token3d.js";
 
 export const factor = 1000;
 

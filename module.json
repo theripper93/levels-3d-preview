@@ -20,18 +20,17 @@
   ],
   "esmodules": [
     "./scripts/main.js",
-    "./scripts/OrbitControls.js",
-    "./scripts/ConvexGeometry.js",
-    "./scripts/ConvexHull.js",
-    "./scripts/GLTFLoader.js",
-    "./scripts/token3d.js"
+    "./scripts/lib/OrbitControls.js",
+    "./scripts/lib/ConvexGeometry.js",
+    "./scripts/lib/ConvexHull.js",
+    "./scripts/lib/GLTFLoader.js",
+    "./scripts/entities/token3d.js"
 ],
-
   "scripts": [
-      "./scripts/config.js",
-      "./scripts/module.js",
-        "./scripts/injectConfig.js",
-        "./scripts/minicanvas.js"
+    "./scripts/config.js",
+    "./scripts/module.js",
+    "./scripts/lib/injectConfig.js",
+    "./scripts/minicanvas.js"
   ],
   "styles": [
       "./styles/module.css"

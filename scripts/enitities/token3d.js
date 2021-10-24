@@ -1,5 +1,5 @@
-import * as THREE from "./three.module.js";
-import {factor} from './main.js'; 
+import * as THREE from "../lib/three.module.js";
+import {factor} from '../main.js'; 
 
 export class Token3D {
     constructor(tokenDocument, parent) {
