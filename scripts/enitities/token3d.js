@@ -39,13 +39,26 @@ export class Token3D {
       this.selectedImage = game.settings.get("levels-3d-preview", "selectedImage") ?? "";
       this.color = this.token.document.getFlag("levels-3d-preview", "color") ?? "#ffffff";
       this.material = this.token.document.getFlag("levels-3d-preview", "material") ?? "";
+      this.imageTexture = this.token.document.getFlag("levels-3d-preview", "imageTexture") ?? "";
     }
   
     async load() {
-      return this.gtflPath ? await this.loadModel() : this.draw();
+      return this.gtflPath || this.imageTexture ? await this.loadModel() : this.draw();
     }
 
     async getModel(){
+      if(!this.gtflPath){
+        //make plane
+        const texture = await new THREE.TextureLoader().loadAsync(this.imageTexture);
+        const geometry = new THREE.PlaneGeometry(texture.image.width/1000, texture.image.height/1000);
+        const material = new THREE.MeshBasicMaterial();
+        const object = new THREE.Mesh(geometry, material);
+        return {
+          object: object,
+          scene: object,
+          model: object,
+        }
+      }
       const filePath = this.gtflPath;
       const extension = filePath.split(".").pop();
       if(extension == "gltf"){
@@ -112,14 +125,15 @@ export class Token3D {
       const height = box.max.y - box.min.y;
       const width = box.max.x - box.min.x;
       const depth = box.max.z - box.min.z;
+      const maxDim = Math.max(height, width, depth);
       const hitbox = new THREE.Mesh(
-        new THREE.BoxGeometry(width, height, depth),
+        new THREE.BoxGeometry(width || maxDim, height || maxDim, depth || maxDim),
         new THREE.MeshBasicMaterial({
           color: 0xffffff,
           wireframe: true,
           transparent: true,
           opacity: 1,
-          visible: false,
+          visible: true,
         })
       );
       hitbox.position.set(center.x+centerOffset.x, center.y+centerOffset.y, center.z+centerOffset.z);
@@ -153,7 +167,8 @@ export class Token3D {
 
     setMaterial(model){
       let materialType = this.material;
-      if(!materialType || materialType == "default") return;
+      model.geometry.uvsNeedUpdate = true;
+      model.geometry.buffersNeedUpdate = true;
       let roughness = 0;
       let opacity = 1;
       let color = new THREE.Color(this.color);
@@ -169,11 +184,13 @@ export class Token3D {
           roughness = 1;
           break;
       }
-      model.material = new THREE.MeshPhongMaterial({
+      model.material = new THREE.MeshPhysicalMaterial({
         color: color,
         roughness: roughness,
-        transparent: opacity != 1,
+        transparent: opacity != 1 || !this.gtflPath,
         opacity: opacity,
+        side: !this.gtflPath ? THREE.DoubleSide : THREE.FrontSide,
+        map: this.imageTexture ? new THREE.TextureLoader().load(this.imageTexture) : null,
       });
     }
   
@@ -424,4 +441,3 @@ export class Token3D {
       this._parent.addToken(this.token);
     }
   }
-  

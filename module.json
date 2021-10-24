@@ -28,10 +28,10 @@
     "./scripts/lib/fflate.module.js",
     "./scripts/lib/NURBSCurve.js",
     "./scripts/lib/FBXLoader.js",
-    "./scripts/lib/NUBSUtils.js"
+    "./scripts/lib/NUBSUtils.js",
+    "./scripts/config.js"
 ],
   "scripts": [
-    "./scripts/config.js",
     "./scripts/module.js",
     "./scripts/lib/injectConfig.js",
     "./scripts/minicanvas.js"

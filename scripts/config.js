@@ -1,3 +1,5 @@
+import * as THREE from "./lib/three.module.js";
+
 Hooks.once('init', function() {
 
     game.settings.register("levels-3d-preview", "selectedImage", {
@@ -56,17 +58,31 @@ Hooks.once('ready', async function() {
     function setPosition(wrapped,...args){
         wrapped(...args);
         if(game.Levels3DPreview?._active && game.Levels3DPreview.tokenIndex[this.object.id]){
-            const elementWidth = $(this.element).width();
-            const elementHeight = $(this.element).height();
-            const mousex = game.Levels3DPreview.mousePosition.x;
-            const mousey = game.Levels3DPreview.mousePosition.y;
-            const hud = $("#hud")
-            const hudLeft = hud.offset().left;
-            const hudTop = hud.offset().top;
-            $(this.element).css({
-                left: mousex - elementWidth / 2 - hudLeft,
-                top: mousey - elementHeight / 2 - hudTop,
-            })
+            const token3d = game.Levels3DPreview.tokenIndex[this.object.id]
+            const vector = new THREE.Vector3();
+                const elementWidth = $(this.element).width();
+                const elementHeight = $(this.element).height();
+                const widthHalf = 0.5*game.Levels3DPreview.renderer.context.canvas.width;
+                const heightHalf = 0.5*game.Levels3DPreview.renderer.context.canvas.height;
+
+                token3d.mesh.updateMatrixWorld();
+                vector.setFromMatrixPosition(token3d.mesh.matrixWorld);
+                vector.project(game.Levels3DPreview.camera);
+
+                vector.x = ( vector.x * widthHalf ) + widthHalf;
+                vector.y = - ( vector.y * heightHalf ) + heightHalf;
+
+                const screenPos = { 
+                    x: vector.x,
+                    y: vector.y
+                };
+                $("body").append(this.element);
+                $(this.element).css({
+                    left: screenPos.x -elementWidth/2 + "px",
+                    top: screenPos.y -elementHeight/2 + "px"
+                });
+        }else{
+            $("#hud").append(this.element);
         }
     }
 
@@ -209,6 +225,11 @@ Hooks.on("renderTokenConfig", (app,html)=>{
         "model3d" : {
             type: "filepicker.folder",
             label: "3D Model",
+        },
+        "imageTexture":{
+            type: "filepicker",
+            label: "Texture",
+
         },
         "material": {
             type: "select",

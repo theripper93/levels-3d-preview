@@ -304,6 +304,7 @@ class Levels3DPreview {
     });
     const plane = new THREE.Mesh(geometry, material);
     plane.receiveShadow = true;
+    plane.castShadow = true;
     plane.position.set(center.x, center.y-0.01, center.z);
     plane.rotation.x = -Math.PI / 2;
     this.scene.add(plane);
