@@ -1,4 +1,14 @@
-Hooks.once('init', async function() {
+Hooks.once('init', function() {
+
+    game.settings.register("levels-3d-preview", "selectedImage", {
+        name: "Selection Highlight Image",
+        hint: "The image to display when selecting a token.",
+        scope: "world",
+        config: true,
+        type: String,
+        default: "",
+        filePicker: "imagevideo",
+      });
 
 });
 

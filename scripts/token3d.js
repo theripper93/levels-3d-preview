@@ -36,6 +36,7 @@ export class Token3D {
       this.animIndex = this.token.document.getFlag("levels-3d-preview", "animIndex") ?? 0;
       this.animSpeed = this.token.document.getFlag("levels-3d-preview", "animSpeed") ?? 1;
       this.draggable = (this.token.document.getFlag("levels-3d-preview", "draggable") ?? true) && this.token.isOwner;
+      this.selectedImage = game.settings.get("levels-3d-preview", "selectedImage") ?? "";
     }
   
     async load() {
@@ -87,7 +88,7 @@ export class Token3D {
           wireframe: true,
           transparent: true,
           opacity: 1,
-          visible: true,
+          visible: false,
         })
       );
       hitbox.position.set(center.x+centerOffset.x, center.y+centerOffset.y, center.z+centerOffset.z);
@@ -146,6 +147,7 @@ export class Token3D {
     }
   
     updatePositionFrom3D(e){
+      this.skipMoveAnimation = true;
         const useSnapped = canvas.scene.data.gridType && !e.shiftKey;
       const x3d = this.mesh.position.x;
       const y3d = this.mesh.position.y;
@@ -161,13 +163,28 @@ export class Token3D {
       });
     }
   
-    setPosition() {
+    setPosition(lerp = false, forcePosition) {
+      debugger;
+      const currentPosition = {
+        x: Math.round(this.mesh.position.x*1000)/1000,
+        y: Math.round(this.mesh.position.y*1000)/1000,
+        z: Math.round(this.mesh.position.z*1000)/1000,
+      };
+      const currentRotation = {
+        x: Math.round(this.mesh.rotation._x*1000)/1000,
+        y: Math.round(this.mesh.rotation._y*1000)/1000,
+        z: Math.round(this.mesh.rotation._z*1000)/1000,
+      };
       const mesh = this.mesh;
       const token = this.token;
+      const tokenCenter = {
+        x: (forcePosition?.x ?? token.data.x) + token.w / 2,
+        y: (forcePosition?.y ?? token.data.y) + token.h / 2,
+      }
       if (!mesh) return;
       const f = this.factor;
-      const x = token.center.x / f;
-      const z = token.center.y / f;
+      const x = tokenCenter.x / f;
+      const z = tokenCenter.y / f;
       let y
       if(this.isModel){
         y =
@@ -176,11 +193,8 @@ export class Token3D {
         y = ((token.data.elevation + (token.losHeight - token.data.elevation) / 2) * canvas.scene.dimensions.size) / canvas.dimensions.distance / f;
       }
       
-        mesh.position.set(
-        x,
-        y,
-        z
-      );
+      if(!lerp)mesh.position.set(x,y,z)
+      else mesh.position.lerp(new THREE.Vector3(x, y, z), lerp);
       const rotations = {
         x:
           this.rotationAxis === "x"
@@ -198,11 +212,16 @@ export class Token3D {
       rotations.x += this.rotationX;
       rotations.y += this.rotationY;
       rotations.z += this.rotationZ;
-      mesh.rotation.set(
-        rotations.x + this.initialRotation?.x ?? 0,
-        rotations.y + this.initialRotation?.y ?? 0,
-        rotations.z + this.initialRotation?.z ?? 0,
-      );
+      const rx = rotations.x + this.initialRotation?.x ?? 0
+      const ry = rotations.y + this.initialRotation?.y ?? 0
+      const rz = rotations.z + this.initialRotation?.z ?? 0
+      let toLerp
+      if(!lerp)mesh.rotation.set(rx, ry, rz);
+      else {
+        toLerp = new THREE.Vector3(mesh.rotation._x, mesh.rotation._y, mesh.rotation._z);
+        toLerp.lerp(new THREE.Vector3(rx, ry, rz), 0.10);
+        mesh.rotation.set(toLerp.x, toLerp.y, toLerp.z);
+      }
       this.elevation3d = y;
       if(this.border){
         this.border.rotation.set(
@@ -210,6 +229,12 @@ export class Token3D {
           - rotations.y + this.rotationY,
           0 + this.rotationZ, //?????????????????
         );
+      }
+      console.log(currentPosition, x,y,z)
+      if(currentPosition.x === x && currentPosition.y === y && currentPosition.z === z && currentRotation.x === Math.round(rx*1000)/1000 && currentRotation.y === Math.round(ry*1000)/1000 && currentRotation.z === Math.round(rz*1000)/1000){
+        return false;
+      }else{
+        return true;
       }
       
     }
@@ -255,13 +280,16 @@ export class Token3D {
       this.border.children.forEach(child => {
         this.border.remove(child);
       });
-      const width = this.token.w/this.factor;
-      const height = this.token.h/this.factor;
-      const depth = 0.001;
+      const width = (this.token.w*1.02)/this.factor;
+      const height = (this.token.h*1.02)/this.factor;
+      const depth = 0.000001;
       const geometry = new THREE.BoxGeometry(width, depth , height);
-      const material = new THREE.MeshToonMaterial({
+      const material = new THREE.MeshStandardMaterial({
         color: 0xffffff,
         visible: false,
+        opacity: 1,
+        transparent: true,
+        map: this.selectedImage ? new THREE.TextureLoader().load(this.selectedImage) : null,
       });
       const mesh = new THREE.Mesh(geometry, material);
       mesh.position.set(0,0,0);
@@ -275,7 +303,7 @@ export class Token3D {
       const color = this.token.border._lineStyle.color;
       const visible = this.token.border.height ? true : false;
       this.border.children.forEach(child => {
-        child.material.color = new THREE.Color(color);
+        child.material.color = this.selectedImage ? new THREE.Color(0xffffff) : new THREE.Color(color);
         child.material.visible = visible;
       });
     }

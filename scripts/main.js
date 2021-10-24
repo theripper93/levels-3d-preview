@@ -11,17 +11,40 @@ Hooks.on("canvasReady", () => {
 });
 
 Hooks.on("updateToken", (token, updates) => {
+  if(!game.Levels3DPreview._active) return;
   if(updates?.flags && updates?.flags["levels-3d-preview"]){
     game.Levels3DPreview.tokenIndex[token.id]?.refresh();
   }
-  if (
-    $("#levels3d").length > 0 &&
-    ("x" in updates ||
-      "y" in updates ||
-      "elevation" in updates ||
-      "rotation" in updates)
-  ) {
-    game.Levels3DPreview.tokenIndex[token.id]?.setPosition();
+  if ("x" in updates || "y" in updates || "elevation" in updates || "rotation" in updates) {
+    const token3d = game.Levels3DPreview.tokenIndex[token.id];
+    if(!token3d) return;
+    const prevPos = {
+      x: token3d.token.x,
+      y: token3d.token.y
+    }
+    const x = updates.x ?? token.data.x;
+    const y = updates.y ?? token.data.y;
+    const dist = Math.sqrt(Math.pow(x - prevPos.x, 2) + Math.pow(y - prevPos.y, 2));
+    if(dist == 0 || dist < canvas.dimensions.size*2) return token3d.fallbackAnimation = true;
+    token3d.fallbackAnimation = false;
+    const larpFactor = canvas.dimensions.size/(dist*2);
+    let exitLerp = false;
+    setTimeout(() => {
+      exitLerp = true;
+    }, 4000);
+    token3d.isAnimating = false;
+    setTimeout(async () => {
+      token3d.isAnimating = true;
+
+      const elevation = updates.elevation ?? token.data.elevation;
+      while(token3d.isAnimating && !exitLerp && token3d.setPosition(larpFactor, {x,y,elevation})){
+        console.log("setting positon")
+        await sleep(1000/60);
+      };
+      if(exitLerp)token3d.setPosition(false, {x,y,elevation})
+      token3d.isAnimating = false;
+    },200);
+
   }
 });
 
@@ -38,6 +61,10 @@ Hooks.on("levelsUiChangeLevel", () => {
   game.Levels3DPreview.build3Dscene();
 });
 
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 class Levels3DPreview {
   constructor() {
     this.camera;
@@ -51,6 +78,7 @@ class Levels3DPreview {
     this.clicks = 0;
     this.lcTime = 0;
     this._active = false;
+    this.tokenAnimationQueue = [];
     this.init3d();
   }
 
@@ -125,6 +153,8 @@ class Levels3DPreview {
               this.controls.enableZoom = true;
               return this.clicks = 0;
               }
+            token3d.isAnimating = false;
+            token3d.setPosition()
             this.draggable = intersect;
             this.controls.enableRotate = false;
             this.controls.enableZoom = false;
