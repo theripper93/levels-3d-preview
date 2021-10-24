@@ -131,6 +131,17 @@ Hooks.on("renderSceneConfig", (app,html)=>{
             placeholder: "Skybox Image",
             notes: `The file needs to be in the same folder of 6 total files, files must contain "_ft", "_bk", "_up", "_dn", "_rt", "_lf".`,
         },
+        "renderTable": {
+            "type": "checkbox",
+            "label": "Display Table",
+            "default": false,
+            "notes": "Render the table in the 3D view."
+        },
+        "tableTex" : {
+            type: "filepicker",
+            label: "Table Texture",
+            placeholder: "Table Texture",
+        },
         "renderBackground": {
             "type": "checkbox",
             "label": "Display Background",
@@ -199,6 +210,23 @@ Hooks.on("renderTokenConfig", (app,html)=>{
             type: "filepicker.folder",
             label: "3D Model",
         },
+        "material": {
+            type: "select",
+            label: "Material",
+            default: "none",
+            options: {
+                "none": "Default",
+                "plastic": "Plastic",
+                "wood": "Wood",
+                "glass": "Glass",
+            }
+        },
+        "color": {
+            type: "color",
+            label: "Color",
+            default: "#ffa95c",
+            notes: "Material and Color will work only on some models, usually the grey/untextured ones."
+        },
         "draggable": {
             type: "checkbox",
             label: "Draggable",
@@ -225,10 +253,12 @@ Hooks.on("renderTokenConfig", (app,html)=>{
             type: "select",
             label: "Rotation Axis",
             options: {
-                "z": "Z",
                 "x": "X",
+                "z": "Z",
                 "y": "Y",
-            }
+            },
+            default: "y",
+            notes: "The axis to use when the original token rotation changes. If the original file was in STL format this will usually be Z, otherwise Y",
         },
         "rotationX" : {
             type: "range",
@@ -257,25 +287,29 @@ Hooks.on("renderTokenConfig", (app,html)=>{
         "rotateBase": {
             type: "checkbox",
             label: "Fix Base Rotation",
-            notes: "Some models require the selection indicator to be rotated, enable as necessary.",
+            notes: "Some models require the selection indicator to be rotated, enable as necessary. (usually files converted from STL)",
             default: false,
         },
         "offsetX": {
             type: "number",
             label: "Offset X",
+            default: 0,
         },
         "offsetY": {
             type: "number",
             label: "Offset Y",
+            default: 0,
         },
         "offsetZ": {
             type: "number",
             label: "Offset Z",
+            default: 0,
         },
         "scale": {
             type: "number",
             label: "Scale",
-            step: 0.01,
+            step: 0.00001,
+            default: 1,
         },
     })
 })

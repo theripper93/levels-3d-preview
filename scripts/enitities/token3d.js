@@ -19,7 +19,7 @@ export class Token3D {
       );
       this.rotationAxis =
       this.token.document.getFlag("levels-3d-preview", "rotationAxis") ??
-        "z";
+        "y";
       this.rotationX = Math.toRadians(this.token.document.getFlag("levels-3d-preview","rotationX") ?? 0);
       this.rotationY = Math.toRadians(this.token.document.getFlag("levels-3d-preview","rotationY") ?? 0);
       this.rotationZ = Math.toRadians(this.token.document.getFlag("levels-3d-preview","rotationZ") ?? 0);
@@ -37,35 +37,66 @@ export class Token3D {
       this.animSpeed = this.token.document.getFlag("levels-3d-preview", "animSpeed") ?? 1;
       this.draggable = (this.token.document.getFlag("levels-3d-preview", "draggable") ?? true) && this.token.isOwner;
       this.selectedImage = game.settings.get("levels-3d-preview", "selectedImage") ?? "";
+      this.color = this.token.document.getFlag("levels-3d-preview", "color") ?? "#ffffff";
+      this.material = this.token.document.getFlag("levels-3d-preview", "material") ?? "";
     }
   
     async load() {
       return this.gtflPath ? await this.loadModel() : this.draw();
     }
+
+    async getModel(){
+      const filePath = this.gtflPath;
+      const extension = filePath.split(".").pop();
+      if(extension == "gltf"){
+        const object = await game.Levels3DPreview.loader.loadAsync(this.gtflPath)
+        return {
+          object: object,
+          scene: object.scene,
+          model: object.scene.children[0],
+        }
+        };
+      if(extension == "fbx") {
+        const object = await game.Levels3DPreview.FBXLoader.loadAsync(this.gtflPath)
+        return {
+          object: object,
+          scene: object,
+          model: object,
+        }
+         };
+    }
   
     async loadModel() {
-      this.isModel = true;
-      const gltf = await game.Levels3DPreview.loader.loadAsync(this.gtflPath);
-      const model = gltf.scene.children[0];
-      const scale = this.scale * 0.1;
-      let centerOffset
-      model.scale.set(scale, scale, scale);
-      let center
-      let box
-      if(gltf.animations.length > 0 && this.enableAnim) {
-        this.mixer = new THREE.AnimationMixer( gltf.scene );
-        this.mixer.timeScale = this.animSpeed;
-        this.mixer.clipAction( gltf.animations[this.animIndex] ).play();
-      }
+
+      //Load Model
+      const loaded = await this.getModel();
+      const object = loaded.object;
+      const scene = loaded.scene;
+      const model = loaded.model;
+      if(model.geometry) this.setMaterial(model);
+      //Calculate scale
+      const originalSize = new THREE.Box3().setFromObject( scene ).getSize( new THREE.Vector3() );
+      const maxSize = Math.max(originalSize.x, originalSize.y, originalSize.z);
+      const targetScale = Math.min(this.token.w, this.token.h) / this.factor;
+      const scaleFactor = targetScale / maxSize;
+      const scale = this.scale * scaleFactor;
       this.hasGeometry = model.geometry ? true : false;
-      this.rotationX += Math.PI / 2;
-      box = new THREE.Box3().setFromObject( gltf.scene );
-      center = box.getCenter( new THREE.Vector3() );
-      centerOffset = {
-          x: this.offsetX/factor + (this.rotationAxis == "x" ? 0 : -center.x),
-          y: this.offsetY/factor + (this.rotationAxis == "y" ? 0 : -center.y),
-          z: this.offsetZ/factor + (this.rotationAxis == "z" ? 0 : -center.z),
-        }
+      model.scale.set(scale, scale, scale);
+      //Define hitbox and set offset parameters
+      let box = new THREE.Box3().setFromObject( scene );
+      let center = box.getCenter( new THREE.Vector3() );
+      this.isModel = true;
+      let centerOffset = {
+        x: this.offsetX/factor + (this.rotationAxis == "x" ? 0 : -center.x),
+        y: this.offsetY/factor + (this.rotationAxis == "y" ? 0 : -center.y),
+        z: this.offsetZ/factor + (this.rotationAxis == "z" ? 0 : -center.z),
+      }
+
+      if(object.animations.length > 0 && this.enableAnim) {
+        this.mixer = new THREE.AnimationMixer( scene );
+        this.mixer.timeScale = this.animSpeed;
+        this.mixer.clipAction( object.animations[this.animIndex] ).play();
+      }
       model.position.set(centerOffset.x, centerOffset.y, centerOffset.z);
       model.traverse((child) => {
         if (child.isMesh) {
@@ -104,9 +135,9 @@ export class Token3D {
         z: this.offsetZ/factor,
       };
       this.initialRotation = {
-        x: model.rotation._x,
-        y: model.rotation._y,
-        z: model.rotation._z,
+        x: 0,//model.rotation._x,
+        y: 0,//model.rotation._y,
+        z: 0,//model.rotation._z,
       }
       this.mesh.userData.draggable = true;
       this.mesh.userData.name = this.gtflPath;
@@ -118,6 +149,32 @@ export class Token3D {
       this.drawTargets();
       this.setPosition();
       return this;
+    }
+
+    setMaterial(model){
+      let materialType = this.material;
+      if(!materialType || materialType == "default") return;
+      let roughness = 0;
+      let opacity = 1;
+      let color = new THREE.Color(this.color);
+      switch(materialType){
+        case "glass":
+          roughness = 0.3;
+          opacity = 0.8;
+          break;
+        case "plastic":
+          roughness = 0.6;
+          break;
+        case "wood":
+          roughness = 1;
+          break;
+      }
+      model.material = new THREE.MeshPhongMaterial({
+        color: color,
+        roughness: roughness,
+        transparent: opacity != 1,
+        opacity: opacity,
+      });
     }
   
     draw() {
@@ -164,7 +221,6 @@ export class Token3D {
     }
   
     setPosition(lerp = false, forcePosition) {
-      debugger;
       const currentPosition = {
         x: Math.round(this.mesh.position.x*1000)/1000,
         y: Math.round(this.mesh.position.y*1000)/1000,
@@ -300,7 +356,8 @@ export class Token3D {
 
     refreshBorder(){
       if(!this.border) return;
-      const color = this.token.border._lineStyle.color;
+      const color = this.token.border._lineStyle?.color;
+      if(!color) return;
       const visible = this.token.border.height ? true : false;
       this.border.children.forEach(child => {
         child.material.color = this.selectedImage ? new THREE.Color(0xffffff) : new THREE.Color(color);

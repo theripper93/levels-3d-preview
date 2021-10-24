@@ -63,8 +63,9 @@ var injectConfig = {
                         <label for="${k}">${v.label || ""}</label>
                         <div class="form-fields">
                             <input class="color" type="text" name="${flag}" value="${flagValue}">
-                            <input type="color" data-edit="${flag}" value="${flagValue}">${notes}
+                            <input type="color" data-edit="${flag}" value="${flagValue}">
                         </div>
+                        ${notes}
                     </div>`;
                     break;
                 case "custom":

@@ -3,6 +3,7 @@ import { OrbitControls } from "./lib/OrbitControls.js";
 import { ConvexGeometry } from "./lib/ConvexGeometry.js";
 import { GLTFLoader } from "./lib/GLTFLoader.js";
 import {Token3D} from "./enitities/token3d.js";
+import { FBXLoader } from './lib/FBXLoader.js'
 
 export const factor = 1000;
 
@@ -18,13 +19,15 @@ Hooks.on("updateToken", (token, updates) => {
   if ("x" in updates || "y" in updates || "elevation" in updates || "rotation" in updates) {
     const token3d = game.Levels3DPreview.tokenIndex[token.id];
     if(!token3d) return;
+    if(!updates.x && !updates.y && !updates.elevation && updates.rotation) return token3d.setPosition();
     const prevPos = {
       x: token3d.token.x,
       y: token3d.token.y
     }
     const x = updates.x ?? token.data.x;
     const y = updates.y ?? token.data.y;
-    const dist = Math.sqrt(Math.pow(x - prevPos.x, 2) + Math.pow(y - prevPos.y, 2));
+    let dist = Math.sqrt(Math.pow(x - prevPos.x, 2) + Math.pow(y - prevPos.y, 2));
+    dist = updates.elevation && dist === 0 ? 0.1 : dist;
     if(dist == 0 || dist < canvas.dimensions.size*2) return token3d.fallbackAnimation = true;
     token3d.fallbackAnimation = false;
     const larpFactor = canvas.dimensions.size/(dist*2);
@@ -75,6 +78,7 @@ class Levels3DPreview {
     this.animationMixers = [];
     this.clock = new THREE.Clock();
     this.loader = new GLTFLoader();
+    this.FBXLoader = new FBXLoader();
     this.clicks = 0;
     this.lcTime = 0;
     this._active = false;
@@ -88,7 +92,7 @@ class Levels3DPreview {
       60,
       window.innerWidth / window.innerHeight,
       0.1,
-      1000
+      10000000
     );
     this.camera.position.set(8, 2, 8).setLength(8);
     this.camera.zoom = 1;
@@ -235,10 +239,12 @@ class Levels3DPreview {
     const drawWalls = canvas.scene.getFlag("levels-3d-preview", "showSceneWalls") ?? true;
     const drawLights = canvas.scene.getFlag("levels-3d-preview", "renderSceneLights") ?? true;
     const renderBackground = canvas.scene.getFlag("levels-3d-preview", "renderBackground") ?? true;
+    const renderTable = canvas.scene.getFlag("levels-3d-preview", "renderTable") ?? false;
     drawFloors && this.createFloors(level);
     drawWalls && this.createWalls(level);
     drawLights && this.createSceneLights();
     renderBackground && this.createBoard();
+    renderTable && this.createTable();
     for (let token of canvas.tokens.placeables) {
       this.addToken(token);
     }
@@ -253,15 +259,17 @@ class Levels3DPreview {
         canvas.scene.dimensions.size)
       ;
     if (canvas.scene.getFlag("levels-3d-preview", "enableGrid")) {
+      const gridColor = canvas.scene.data.gridColor ?? 0x424242;
       const gridHelper = new THREE.GridHelper(
         size,
         divisions,
-        0x424242,
-        0x424242
+        gridColor,
+        gridColor
       );
-      gridHelper.colorGrid = 0x424242;
+      gridHelper.colorGrid = gridColor;
       gridHelper.position.set(size/2, 0, size/2);
-      gridHelper.opacity = 0.1;
+      gridHelper.material.transparent = true;
+      gridHelper.material.opacity = canvas.scene.data.gridAlpha;
       this.scene.add(gridHelper);
     }
     //add raycasting plane
@@ -293,12 +301,27 @@ class Levels3DPreview {
     const geometry = new THREE.BoxGeometry(width, height, 0.01);
     const material = new THREE.MeshLambertMaterial({
       map: new THREE.TextureLoader().load(canvas.scene.data.img),
-      metalness: 0.5,
-      roughness: 0.5,
     });
     const plane = new THREE.Mesh(geometry, material);
     plane.receiveShadow = true;
     plane.position.set(center.x, center.y-0.01, center.z);
+    plane.rotation.x = -Math.PI / 2;
+    this.scene.add(plane);
+
+  }
+
+  createTable(){
+    //make a plane and apply a texture
+    const width = canvas.scene.dimensions.width / this.factor;
+    const height = canvas.scene.dimensions.height / this.factor;
+    const center = this.canvasCenter;
+    const geometry = new THREE.BoxGeometry(width, height, 1);
+    const material = new THREE.MeshLambertMaterial({
+      map: new THREE.TextureLoader().load(canvas.scene.getFlag("levels-3d-preview", "tableTex")),
+    });
+    const plane = new THREE.Mesh(geometry, material);
+    plane.receiveShadow = true;
+    plane.position.set(center.x, center.y-0.511, center.z);
     plane.rotation.x = -Math.PI / 2;
     this.scene.add(plane);
 
