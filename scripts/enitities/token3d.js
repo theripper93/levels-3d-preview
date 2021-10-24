@@ -356,8 +356,7 @@ export class Token3D {
 
     refreshBorder(){
       if(!this.border) return;
-      const color = this.token.border._lineStyle?.color;
-      if(!color) return;
+      const color = this.token.border._lineStyle?.color ?? 0xffffff;
       const visible = this.token.border.height ? true : false;
       this.border.children.forEach(child => {
         child.material.color = this.selectedImage ? new THREE.Color(0xffffff) : new THREE.Color(color);
