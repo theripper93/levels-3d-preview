@@ -36,7 +36,9 @@ Hooks.once('ready', async function() {
 
     function reDraw(wrapped,...args){
         wrapped(...args)
+        try{
         game.Levels3DPreview?._active && game.Levels3DPreview.tokenIndex[this.id]?.reDraw()
+        }catch(e){}
     }
 
     function _handleMovement(wrapped,...args){
@@ -187,9 +189,18 @@ Hooks.on("renderSceneConfig", (app,html)=>{
         "sunDistance": {
             type: "range",
             label: "Sun Distance",
-            default: 10,
-            min: 0,
-            max: 100,
+            default: 2,
+            min: 1,
+            max: 10,
+            step: 0.1,
+        },
+        "sunIntensity": {
+            type: "range",
+            label: "Sun Intensity",
+            default: 3,
+            min: 0.1,
+            max: 10,
+            step: 0.1,
         },
         "showSun": {
             type: "checkbox",
@@ -205,6 +216,14 @@ Hooks.on("renderSceneConfig", (app,html)=>{
             type: "checkbox",
             label: "Show Scene Floors/Polygons",
             default: true,
+        },
+        "wallFloorAlpha": {
+            type: "range",
+            label: "Wall/Floor Alpha",
+            default: 0.5,
+            min: 0,
+            max: 1,
+            step: 0.1,
         },
         "renderSceneLights": {
             type: "checkbox",

@@ -5,6 +5,7 @@ You can find plenty of free terrains here: https://sketchfab.com/search?q=tag%3A
 3D Models:
 
 This guy has alot of good stuff, needs conversion to gltf: https://quaternius.com/index.html
+Free miniatures (requires account, stuff is paid but it's only for the 3d print, the model is free): https://www.shapeways.com/shops/dmworkshop
 
 Skyboxes:
 

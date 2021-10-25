@@ -43,6 +43,7 @@ export class Token3D {
     }
   
     async load() {
+      if(!this.gtflPath && !this.imageTexture) this.imageTexture = this.token.data.img;
       return this.gtflPath || this.imageTexture ? await this.loadModel() : this.draw();
     }
 
@@ -53,6 +54,7 @@ export class Token3D {
         const geometry = new THREE.PlaneGeometry(texture.image.width/1000, texture.image.height/1000);
         const material = new THREE.MeshBasicMaterial();
         const object = new THREE.Mesh(geometry, material);
+        this.standUp=true;
         return {
           object: object,
           scene: object,
@@ -61,7 +63,7 @@ export class Token3D {
       }
       const filePath = this.gtflPath;
       const extension = filePath.split(".").pop();
-      if(extension == "gltf"){
+      if(extension == "gltf" || extension == "glb"){
         const object = await game.Levels3DPreview.loader.loadAsync(this.gtflPath)
         return {
           object: object,
@@ -98,11 +100,16 @@ export class Token3D {
       //Define hitbox and set offset parameters
       let box = new THREE.Box3().setFromObject( scene );
       let center = box.getCenter( new THREE.Vector3() );
+      const updatedSize = box.getSize( new THREE.Vector3() );
       this.isModel = true;
       let centerOffset = {
         x: this.offsetX/factor + (this.rotationAxis == "x" ? 0 : -center.x),
         y: this.offsetY/factor + (this.rotationAxis == "y" ? 0 : -center.y),
         z: this.offsetZ/factor + (this.rotationAxis == "z" ? 0 : -center.z),
+      }
+
+      if(this.standUp) {
+        centerOffset[this.rotationAxis] += updatedSize[this.rotationAxis]/2;
       }
 
       if(object.animations.length > 0 && this.enableAnim) {
@@ -133,7 +140,7 @@ export class Token3D {
           wireframe: true,
           transparent: true,
           opacity: 1,
-          visible: true,
+          visible: false,
         })
       );
       hitbox.position.set(center.x+centerOffset.x, center.y+centerOffset.y, center.z+centerOffset.z);
@@ -184,14 +191,16 @@ export class Token3D {
           roughness = 1;
           break;
       }
-      model.material = new THREE.MeshPhysicalMaterial({
-        color: color,
-        roughness: roughness,
-        transparent: opacity != 1 || !this.gtflPath,
-        opacity: opacity,
-        side: !this.gtflPath ? THREE.DoubleSide : THREE.FrontSide,
-        map: this.imageTexture ? new THREE.TextureLoader().load(this.imageTexture) : null,
-      });
+
+        model.material = new THREE.MeshPhongMaterial({
+          color: color,
+          shininess: roughness*100,
+          transparent: opacity != 1 || !this.gtflPath,
+          opacity: opacity,
+          side: !this.gtflPath ? THREE.DoubleSide : THREE.FrontSide,
+          map: this.imageTexture ? new THREE.TextureLoader().load(this.imageTexture) : null,
+        });
+
     }
   
     draw() {

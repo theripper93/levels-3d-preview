@@ -164,12 +164,16 @@ class Levels3DPreview {
             this.controls.enableZoom = false;
           }else{
             token3d._onClickRight(event);
+            this.controls.enableRotate = true;
+            this.controls.enableZoom = true;
           }
           this.clicks = 0;
         }, 150);
       }else{
         this.clicks = 0;
         event.which === 1 ? token3d._onClickLeft2(event) : token3d._onClickRight2(event);
+        this.controls.enableRotate = true;
+        this.controls.enableZoom = true;
       }
 
     })
@@ -300,7 +304,10 @@ class Levels3DPreview {
     const center = this.canvasCenter;
     const geometry = new THREE.BoxGeometry(width, height, 0.01);
     const material = new THREE.MeshLambertMaterial({
-      map: new THREE.TextureLoader().load(canvas.scene.data.img),
+      map: new THREE.TextureLoader().load(canvas.scene.data.img,(t) => {
+        t.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
+        t.minFilter = THREE.NearestMipMapLinearFilter;
+      }),
     });
     const plane = new THREE.Mesh(geometry, material);
     plane.receiveShadow = true;
@@ -403,7 +410,9 @@ class Levels3DPreview {
     this.lights.hemiLight = light;
     const spotLight = new THREE.SpotLight(0xffa95c, 4);
     spotLight.castShadow = true;
-    spotLight.shadow.bias = -0.0001;
+    spotLight.shadow.bias = -0.005;
+    spotLight.shadow.camera.fov = 180;
+    spotLight.shadow.camera.far = 4000;
     spotLight.shadow.mapSize.width = 1024*4;
     spotLight.shadow.mapSize.height = 1024*4;
     //spotLight.position.set(10, size / 4, size / 4);
@@ -417,8 +426,15 @@ class Levels3DPreview {
     const color = canvas.scene.getFlag("levels-3d-preview", "sceneTint") ?? 0xffa95c;
     const distance = canvas.scene.getFlag("levels-3d-preview", "sunDistance") ?? 10;
     const angle = Math.toRadians(canvas.scene.getFlag("levels-3d-preview", "sunPosition") ?? 30);
+    const intensity = canvas.scene.getFlag("levels-3d-preview", "sunIntensity") ?? 4;
     const showSun = this.showSun
-    this.sunlight = {color, distance, angle, showSun};
+    const lightTarget = new THREE.Object3D();
+    const center = this.canvasCenter;
+    lightTarget.position.set(center.x, center.y, center.z);
+    this.lights.target = lightTarget;
+    this.scene.add(lightTarget);
+    spotLight.target = lightTarget;
+    this.sunlight = {color, distance, angle, showSun, intensity};
   }
 
   set sunlight(data){
@@ -427,18 +443,21 @@ class Levels3DPreview {
     const distance = data.distance;
     const angle = data.angle;
     const showSun = data.showSun;
+    const intensity = data.intensity;
 
     //generate position form angle
     const x = Math.cos(angle) * distance;
     const y = Math.sin(angle) * distance;
     const z = 0;
     this.lights.sunlight.position.set(x+center.x, y, z+center.z);
-    this.lights.hemiLight.position.set(x+center.x, y, z+center.z);
+    this.lights.hemiLight.position.set(center.x, y, center.z);
     this.lights.spotLight.position.set(x+center.x, y, z+center.z);
     //set colors
     this.lights.spotLight.color.set(color);
     this.lights.sunlight.material.color.set(color);
     this.lights.sunlight.visible = showSun;
+    this.lights.spotLight.intensity = intensity;
+    this.lights.hemiLight.intensity = intensity/4;
 
   }
 
@@ -473,6 +492,7 @@ class Levels3DPreview {
   }
 
   createFloor(points, z) {
+    const alpha = canvas.scene.getFlag("levels-3d-preview", "wallFloorAlpha") ?? 0.5;
     let shape = new THREE.Shape();
     const f = this.factor;
     z *= (-1 * canvas.scene.dimensions.size) / canvas.dimensions.distance / f;
@@ -486,7 +506,7 @@ class Levels3DPreview {
     geometry.rotateX(Math.PI / 2);
     const material = new THREE.MeshMatcapMaterial({
       color: 0x00ff00,
-      opacity: 0.5,
+      opacity: alpha,
       transparent: true,
       side: THREE.DoubleSide,
     });
@@ -494,6 +514,7 @@ class Levels3DPreview {
   }
 
   createWall(c, top, bottom, color) {
+    const alpha = canvas.scene.getFlag("levels-3d-preview", "wallFloorAlpha") ?? 0.5;
     try {
       const f = this.factor;
       top *= canvas.scene.dimensions.size / canvas.dimensions.distance / f;
@@ -510,7 +531,7 @@ class Levels3DPreview {
       geometry.rotateX(Math.PI / 2);
       const material = new THREE.MeshMatcapMaterial({
         color: color,
-        opacity: 0.5,
+        opacity: alpha,
         transparent: true,
       });
 
