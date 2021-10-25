@@ -25,6 +25,7 @@
     "./scripts/lib/ConvexHull.js",
     "./scripts/lib/GLTFLoader.js",
     "./scripts/entities/token3d.js",
+    "./scripts/entities/ruler3d.js",
     "./scripts/lib/fflate.module.js",
     "./scripts/lib/NURBSCurve.js",
     "./scripts/lib/FBXLoader.js",

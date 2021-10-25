@@ -93,6 +93,7 @@ Hooks.once('ready', async function() {
         if(game.Levels3DPreview?._active){
           const token3D = game.Levels3DPreview.tokenIndex[this.id];
           if(token3D && token3D.fallbackAnimation){
+              token3D.isAnimating = false;
               token3D.setPosition();
           }
         }
@@ -169,6 +170,11 @@ Hooks.on("renderSceneConfig", (app,html)=>{
         "enableGrid": {
             type: "checkbox",
             label: "Enable Grid",
+        },
+        "enableRuler": {
+            type: "checkbox",
+            label: "Enable Ruler",
+            default: true,
         },
         "enableAxis": {
             type: "checkbox",

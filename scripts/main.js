@@ -2,7 +2,8 @@ import * as THREE from "./lib/three.module.js";
 import { OrbitControls } from "./lib/OrbitControls.js";
 import { ConvexGeometry } from "./lib/ConvexGeometry.js";
 import { GLTFLoader } from "./lib/GLTFLoader.js";
-import {Token3D} from "./enitities/token3d.js";
+import {Token3D} from "./entities/token3d.js";
+import { Ruler3D } from "./entities/ruler3d.js";
 import { FBXLoader } from './lib/FBXLoader.js'
 
 export const factor = 1000;
@@ -26,10 +27,11 @@ Hooks.on("updateToken", (token, updates) => {
     }
     const x = updates.x ?? token.data.x;
     const y = updates.y ?? token.data.y;
-    let dist = Math.sqrt(Math.pow(x - prevPos.x, 2) + Math.pow(y - prevPos.y, 2));
+    let dist = token3d.dragCanceled ? canvas.dimensions.size*2+1 : Math.sqrt(Math.pow(x - prevPos.x, 2) + Math.pow(y - prevPos.y, 2));
     dist = updates.elevation && dist === 0 ? 0.1 : dist;
     if(dist == 0 || dist < canvas.dimensions.size*2) return token3d.fallbackAnimation = true;
     token3d.fallbackAnimation = false;
+    token3d.dragCanceled = false;
     const larpFactor = canvas.dimensions.size/(dist*2);
     let exitLerp = false;
     setTimeout(() => {
@@ -84,6 +86,7 @@ class Levels3DPreview {
     this._active = false;
     this.tokenAnimationQueue = [];
     this.init3d();
+    this.ruler = new Ruler3D(this);
   }
 
   init3d() {
@@ -136,7 +139,6 @@ class Levels3DPreview {
     const elevationTick = (canvas.dimensions.size/canvas.dimensions.distance)/this.factor;
 
     this.renderer.domElement.addEventListener("mousedown", (event) => {
-
       this.mousedown = true;
       this.mousePosition = { x: event.clientX, y: event.clientY };
       if(event.which !== 1 && event.which !== 3) return;
@@ -163,7 +165,8 @@ class Levels3DPreview {
             this.controls.enableRotate = false;
             this.controls.enableZoom = false;
           }else{
-            token3d._onClickRight(event);
+            if(this.draggable) this.cancelDrag();
+            else token3d._onClickRight(event);
             this.controls.enableRotate = true;
             this.controls.enableZoom = true;
           }
@@ -171,7 +174,8 @@ class Levels3DPreview {
         }, 150);
       }else{
         this.clicks = 0;
-        event.which === 1 ? token3d._onClickLeft2(event) : token3d._onClickRight2(event);
+        if(this.draggable) this.cancelDrag();
+        else event.which === 1 ? token3d._onClickLeft2(event) : token3d._onClickRight2(event);
         this.controls.enableRotate = true;
         this.controls.enableZoom = true;
       }
@@ -222,6 +226,15 @@ class Levels3DPreview {
     return false;
   }
 
+  set draggable(object){
+    this._draggable = object;
+    if(this.ruler && (canvas.scene.getFlag("levels-3d-preview", "enableRuler") ?? true)) this.ruler.object = object;
+  }
+
+  get draggable(){
+    return this._draggable;
+  }
+
   dragObject(){
     if(!this.draggable) return;
     this.raycaster.setFromCamera(this.mousemove, this.camera);
@@ -230,7 +243,18 @@ class Levels3DPreview {
       const token3d = this.draggable.userData.token3D;
       const target = this.draggable.userData.isHitbox ? this.draggable.parent : this.draggable;
       target.position.lerp(new THREE.Vector3(intersects[0].point.x, token3d.elevation3d, intersects[0].point.z), 0.10);
+      this.ruler.update();
     }
+  }
+
+  cancelDrag(){
+    if(!this.draggable) return;
+    const token3d = this.draggable.userData.token3D;
+    token3d.dragCanceled = true;
+    this.draggable = undefined;
+    token3d.token.document.update({x: token3d.token.data.x+0.0001})
+    this.controls.enableRotate = true;
+    this.controls.enableZoom = true;
   }
 
   build3Dscene() {

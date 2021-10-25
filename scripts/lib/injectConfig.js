@@ -91,12 +91,10 @@ var injectConfig = {
         if(data.tab){
             const injectTab = createTab(data.tab.name, data.tab.label, data.tab.icon).append(injectHtml);
             injectPoint.after(injectTab);
-            html.find(".item").css({"min-width": "fit-content"})
-            app?.setPosition({"height" : "auto", "width" : "auto"});
             return injectHtml;
         }
         injectPoint.after(injectHtml);
-        app?.setPosition({"height" : "auto"});
+        app?.setPosition({"height" : "auto", "width" : data.tab ? app.options.width + 100 : "auto"});
         return injectHtml;
 
         function createTab(name,label,icon){
