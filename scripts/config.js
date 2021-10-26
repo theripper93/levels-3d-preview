@@ -191,10 +191,6 @@ Hooks.on("renderSceneConfig", (app,html)=>{
             label: "Enable Ruler",
             default: true,
         },
-        "enableAxis": {
-            type: "checkbox",
-            label: "Enable Axis",
-        },
         "sceneTint": {
             type: "color",
             label: "Scene Tint",
@@ -222,11 +218,6 @@ Hooks.on("renderSceneConfig", (app,html)=>{
             min: 0.1,
             max: 10,
             step: 0.1,
-        },
-        "showSun": {
-            type: "checkbox",
-            label: "Show Lighting Debug",
-            default: false,
         },
         "showSceneWalls": {
             type: "checkbox",

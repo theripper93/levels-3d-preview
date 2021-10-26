@@ -283,7 +283,7 @@ class Levels3DPreview {
     for (let token of canvas.tokens.placeables) {
       this.addToken(token);
     }
-    if (canvas.scene.getFlag("levels-3d-preview", "enableAxis")) this.scene.add(new THREE.AxesHelper(3));
+    if (this.debugMode) this.scene.add(new THREE.AxesHelper(3));
 
     const size =
       (Math.max(canvas.scene.dimensions.width, canvas.dimensions.height) /
@@ -356,14 +356,15 @@ class Levels3DPreview {
     const width = canvas.scene.dimensions.width / this.factor;
     const height = canvas.scene.dimensions.height / this.factor;
     const center = this.canvasCenter;
-    const geometry = new THREE.BoxGeometry(width, height, 1);
+    const depth = Math.max(width, height) / 10;
+    const geometry = new THREE.BoxGeometry(width, height, depth);
     const material = new THREE.MeshLambertMaterial({
       map: new THREE.TextureLoader().load(canvas.scene.getFlag("levels-3d-preview", "tableTex"),),
     });
     material.toneMapped = false;
     const plane = new THREE.Mesh(geometry, material);
     plane.receiveShadow = true;
-    plane.position.set(center.x, center.y-0.511, center.z);
+    plane.position.set(center.x, center.y-(depth/2+0.011), center.z);
     plane.rotation.x = -Math.PI / 2;
     this.scene.add(plane);
 

@@ -85,6 +85,7 @@ export class Token3D {
       const geometry = new THREE.BoxGeometry(1,1,1);
       const material = new THREE.MeshBasicMaterial();
       const object = new THREE.Mesh(geometry, material);
+      this.standUp=true;
       return {
         object: object,
         scene: object,
