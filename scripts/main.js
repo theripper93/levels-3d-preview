@@ -52,6 +52,12 @@ Hooks.on("updateToken", (token, updates) => {
   }
 });
 
+Hooks.on("updateScene", (scene, updates) => {
+  if(updates.flags && updates.flags["levels-3d-preview"] && game.Levels3DPreview._active){
+    game.Levels3DPreview.setSunlightFromFlags();
+  }
+})
+
 Hooks.on("createToken", (tokenDocument) => {
   if(game.Levels3DPreview?._active && tokenDocument.object) game.Levels3DPreview.addToken(tokenDocument.object);
 })
@@ -141,6 +147,7 @@ class Levels3DPreview {
       this.mousedown = true;
       this.mousePosition = { x: event.clientX, y: event.clientY };
       if(event.which !== 1 && event.which !== 3) return;
+      if(event.ctrlKey || event.shiftKey) return;
       const intersect = this.findMouseIntersect(event);
       if(!intersect) return;
       this.controls.enableRotate = false;
@@ -435,6 +442,7 @@ class Levels3DPreview {
     this.scene.add(light);
     this.lights.hemiLight = light;
     const spotLight = new THREE.SpotLight(0xffa95c, 4);
+    const adjustmentSpotlight = new THREE.SpotLight(0xffa95c, 4);
     spotLight.castShadow = true;
     spotLight.shadow.bias = -0.005;
     spotLight.shadow.camera.fov = 180;
@@ -443,7 +451,9 @@ class Levels3DPreview {
     spotLight.shadow.mapSize.height = 1024*4;
     //spotLight.position.set(10, size / 4, size / 4);
     this.scene.add(spotLight);
+    this.scene.add(adjustmentSpotlight);
     this.lights.spotLight = spotLight;
+    this.lights.adjustmentSpotlight = adjustmentSpotlight;
     const sunlightSphere = new THREE.SphereGeometry(size / 10, 16, 16);
     const sunlight = new THREE.Mesh(sunlightSphere, new THREE.MeshBasicMaterial({ color: 0xffa95c }));
     //sunlight.position.set(10, size / 4, size / 4);
@@ -460,6 +470,7 @@ class Levels3DPreview {
     this.lights.target = lightTarget;
     this.scene.add(lightTarget);
     spotLight.target = lightTarget;
+    adjustmentSpotlight.target = lightTarget;
     this.sunlight = {color, distance, angle, showSun, intensity};
   }
 
@@ -468,13 +479,36 @@ class Levels3DPreview {
     const color = data.color;
     const distance = data.distance;
     const angle = data.angle;
-    const showSun = data.showSun;
+    const showSun = data.showSun ?? false;
     const intensity = data.intensity;
 
     //generate position form angle
     const x = Math.cos(angle) * distance;
     const y = Math.sin(angle) * distance;
     const z = 0;
+    //detrmine the mirrored angle
+    const angle2 = Math.PI - angle;
+    const x2 = Math.cos(angle2) * distance;
+    const y2 = Math.sin(angle2) * distance;
+    const z2 = 0;
+
+    //set adjustment light
+    this.lights.adjustmentSpotlight.position.set(x2+center.x, y2, z2+center.z);
+    //make a sphere in the same position
+    const debugSphere = new THREE.Mesh(
+      new THREE.SphereGeometry(0.2, 32, 32),
+      new THREE.MeshBasicMaterial({
+        color: 0xffffff,
+        transparent: true,
+        opacity: 0.5,
+      })
+    );
+    debugSphere.position.set(x2+center.x, y2, z2+center.z);
+    this.scene.add(debugSphere);
+
+    this.lights.adjustmentSpotlight.intensity = intensity/3;
+    this.lights.adjustmentSpotlight.color.set(color);
+
     this.lights.sunlight.position.set(x+center.x, y, z+center.z);
     this.lights.hemiLight.position.set(center.x, y, center.z);
     this.lights.spotLight.position.set(x+center.x, y, z+center.z);
@@ -485,6 +519,31 @@ class Levels3DPreview {
     this.lights.spotLight.intensity = intensity;
     this.lights.hemiLight.intensity = intensity/4;
 
+  }
+
+  setSunlightFromFlags(){
+    const color = new THREE.Color(canvas.scene.getFlag("levels-3d-preview", "sceneTint") ?? 0xffa95c);
+    const distance = canvas.scene.getFlag("levels-3d-preview", "sunDistance") ?? 10;
+    const angle = Math.toRadians(canvas.scene.getFlag("levels-3d-preview", "sunPosition") ?? 30);
+    const intensity = canvas.scene.getFlag("levels-3d-preview", "sunIntensity") ?? 4;
+    this.sunlight = {color, distance, angle, intensity};
+  }
+
+  updateSunlight(data){
+    const color = new THREE.Color(data.color ?? canvas.scene.getFlag("levels-3d-preview", "sceneTint") ?? 0xffa95c);
+    const distance = data.distance ?? canvas.scene.getFlag("levels-3d-preview", "sunDistance") ?? 10;
+    const angle = Math.toRadians(data.angle ?? canvas.scene.getFlag("levels-3d-preview", "sunPosition") ?? 30);
+    const intensity = data.intensity ?? canvas.scene.getFlag("levels-3d-preview", "sunIntensity") ?? 4;
+    canvas.scene.update({
+      flags: {
+        "levels-3d-preview": {
+          sceneTint: color.getHexString(),
+          sunDistance: distance,
+          sunPosition: angle,
+          sunIntensity: intensity,
+      }
+    }
+  });
   }
 
   makeSkybox() {

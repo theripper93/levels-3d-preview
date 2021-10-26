@@ -26,6 +26,8 @@ export class Ruler3D {
             })
         );
         this.sphere2 = this.sphere1.clone();
+        this.baseSphere1 = this.sphere1.clone();
+        this.baseSphere2 = this.sphere2.clone();
         this.textElement = $(`<div id="levels3d-ruler-text"></div>`);
         $("body").append(this.textElement);
     }
@@ -33,6 +35,8 @@ export class Ruler3D {
     addMarkers(){
         this._parent.scene.add(this.sphere1);
         this._parent.scene.add(this.sphere2);
+        this._parent.scene.add(this.baseSphere1);
+        this._parent.scene.add(this.baseSphere2);
     }
 
     set object(value){
@@ -41,6 +45,8 @@ export class Ruler3D {
             this._parent.scene.remove(this.line);
             this.sphere1.material.visible = false;
             this.sphere2.material.visible = false;
+            this.baseSphere1.material.visible = false;
+            this.baseSphere2.material.visible = false;
             this.textElement.hide();
         }else{
             const target = value.userData.isHitbox ? value.parent : value;
@@ -48,6 +54,8 @@ export class Ruler3D {
             this.origin = new THREE.Vector3(target.position.x, target.position.y, target.position.z);
             this.sphere1.material.visible = true;
             this.sphere2.material.visible = true;
+            this.baseSphere1.material.visible = true;
+            this.baseSphere2.material.visible = true;
             this.textElement.show();
         }
 
@@ -65,10 +73,12 @@ export class Ruler3D {
 
     update(){
         if(!this._object || !this._origin) return;
+        const targetPos = Ruler3D.useSnapped() ? Ruler3D.snapped3DPosition(this._object.position) : this._object.position;
+        console.log(targetPos);
         this._parent.scene.remove(this.line);
         //draw ruler
         const geometry = new THREE.TubeGeometry(
-            new THREE.LineCurve3(this._origin, this._object.position),
+            new THREE.LineCurve3(this._origin, targetPos),
             1,
             this.lineRadius,
             8,
@@ -82,12 +92,17 @@ export class Ruler3D {
             })
         );
         this.sphere1.position.copy(this._origin);
-        this.sphere2.position.copy(this._object.position);
+        this.sphere2.position.copy(targetPos);
+        this.baseSphere1.position.copy(this._origin);
+        this.baseSphere2.position.copy(targetPos);
+        this.baseSphere1.position.y = 0;
+        this.baseSphere2.position.y = 0;
         //draw floating text
-        const text = `${((this._object.position.distanceTo(this._origin)*factor)/canvas.scene.dimensions.size*canvas.scene.dimensions.distance).toFixed(1)} ${canvas.scene.data.gridUnits}.`;
+        const distance = Ruler3D.measureDistance(this._origin,targetPos);
+        const text = `${distance} ${canvas.scene.data.gridUnits}.`;
         this.textElement.text(text);
         //get mid point of ruler
-        const midPoint = new THREE.Vector3(this._origin.x + (this._object.position.x - this._origin.x)/2, this._origin.y + (this._object.position.y - this._origin.y)/2, this._origin.z + (this._object.position.z - this._origin.z)/2);
+        const midPoint = new THREE.Vector3(this._origin.x + (targetPos.x - this._origin.x)/2, this._origin.y + (targetPos.y - this._origin.y)/2, this._origin.z + (targetPos.z - this._origin.z)/2);
         Ruler3D.centerElement(this.textElement,midPoint);
         this._parent.scene.add(this.line);
     }
@@ -110,5 +125,55 @@ export class Ruler3D {
             left: centerPosition.x -elementWidth/2 + "px",
             top: centerPosition.y -elementHeight/2 + "px"
         });
+    }
+
+    static posCanvasTo3d(position){
+        return new THREE.Vector3(
+            position.x/factor,
+            (position.z*canvas.scene.dimensions.size)/(canvas.scene.dimensions.distance*factor),
+            position.y/factor    
+        );
+    }
+
+    static pos3DToCanvas(position){
+        return new THREE.Vector3(
+            position.x*factor,
+            position.z*factor,
+            (position.y*factor/canvas.scene.dimensions.size)*(canvas.scene.dimensions.distance),
+        );
+    }
+
+    static useSnapped(){
+        const isGrid = canvas.scene.data.gridType ? true : false;
+        const isShift = keyboard._downKeys.has("Shift")
+        if(!isGrid) return false;
+        if(isGrid && !isShift) return true;
+        return false;
+    }
+
+    static snapped3DPosition(position){
+        const canvasPosition = Ruler3D.pos3DToCanvas(position);
+        const snappedCenterPos = canvas.grid.getCenter(canvasPosition.x,canvasPosition.y);
+        const snappedPos = {
+            x: snappedCenterPos[0],
+            y: snappedCenterPos[1],
+            z: canvasPosition.z
+        }
+        return Ruler3D.posCanvasTo3d(snappedPos);
+    }
+
+    static measureDistance(position1,position2){
+        if(position1.y !== position2.y || !Ruler3D.useSnapped()) return ((position1.distanceTo(position2)*factor)/canvas.scene.dimensions.size*canvas.scene.dimensions.distance).toFixed(1);
+        const pos1Canvas = Ruler3D.pos3DToCanvas(position1);
+        const pos2Canvas = Ruler3D.pos3DToCanvas(position2);
+        const ray = new Ray({
+            x: pos1Canvas.x,
+            y: pos1Canvas.y,
+        },
+        {
+            x: pos2Canvas.x,
+            y: pos2Canvas.y,
+        })
+        return canvas.grid.measureDistances([{ ray }], {gridSpaces: true,})[0].toFixed(1);
     }
 }

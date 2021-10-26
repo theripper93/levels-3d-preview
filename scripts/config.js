@@ -36,6 +36,13 @@ window.addEventListener('resize', ()=>{
     },100)
   }, false)
 
+//add listener on shift+r to reload the scene
+document.addEventListener('keypress', (e) => {
+    if (e.key.toLowerCase() === 'r' && e.shiftKey) {
+        if(game.Levels3DPreview._active) game.Levels3DPreview.controls.reset()
+    }
+});
+
 Hooks.once('ready', async function() {
 
     libWrapper.register("levels-3d-preview", "KeyboardManager.prototype._handleMovement", _handleMovement, "MIXED")

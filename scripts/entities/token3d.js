@@ -79,6 +79,17 @@ export class Token3D {
           model: object,
         }
          };
+      //make 1x1 cube
+      console.error("Unsupported file extension("+ extension +"): " + filePath + " for Token: " + this.token.data.name);
+      ui.notifications.error("Unsupported file extension("+ extension +"): " + filePath + " for Token: " + this.token.data.name);
+      const geometry = new THREE.BoxGeometry(1,1,1);
+      const material = new THREE.MeshBasicMaterial();
+      const object = new THREE.Mesh(geometry, material);
+      return {
+        object: object,
+        scene: object,
+        model: object,
+      };
     }
   
     async loadModel() {
