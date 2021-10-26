@@ -81,6 +81,7 @@ class Levels3DPreview {
     this.scene;
     this.renderer;
     this.factor = factor;
+    this.debugMode = game.settings.get("levels-3d-preview", "debugMode")
     this.tokenIndex = {};
     this.animationMixers = [];
     this.clock = new THREE.Clock();
@@ -268,7 +269,7 @@ class Levels3DPreview {
     this._active = true;
     let level = parseFloat($(_levels.UI?.element)?.find(".level-item.active").find(".level-top").val()) ?? Infinity;
     if (isNaN(level)) level = Infinity;
-    this.showSun = canvas.scene.getFlag("levels-3d-preview", "showSun") ?? false;
+    this.showSun = this.debugMode;
     const drawFloors = canvas.scene.getFlag("levels-3d-preview", "showSceneFloors") ?? true;
     const drawWalls = canvas.scene.getFlag("levels-3d-preview", "showSceneWalls") ?? true;
     const drawLights = canvas.scene.getFlag("levels-3d-preview", "renderSceneLights") ?? true;
@@ -369,6 +370,7 @@ class Levels3DPreview {
   }
 
   createSceneLights(){
+    if(game.settings.get("levels-3d-preview", "disableLighting")) return;
     for(let light of canvas.lighting.placeables){
       const top = light.document.getFlag("levels", "rangeTop");
       const bottom = light.document.getFlag("levels", "rangeBottom");
@@ -439,7 +441,6 @@ class Levels3DPreview {
     this.lights = {}
     const light = new THREE.HemisphereLight(0xffffff, 0x000000, 1);
     //light.position.set(10, 0, 0);
-    this.scene.add(light);
     this.lights.hemiLight = light;
     const spotLight = new THREE.SpotLight(0xffa95c, 4);
     const adjustmentSpotlight = new THREE.SpotLight(0xffa95c, 4);
@@ -450,14 +451,13 @@ class Levels3DPreview {
     spotLight.shadow.mapSize.width = 1024*4;
     spotLight.shadow.mapSize.height = 1024*4;
     //spotLight.position.set(10, size / 4, size / 4);
-    this.scene.add(spotLight);
-    this.scene.add(adjustmentSpotlight);
+
     this.lights.spotLight = spotLight;
     this.lights.adjustmentSpotlight = adjustmentSpotlight;
     const sunlightSphere = new THREE.SphereGeometry(size / 10, 16, 16);
     const sunlight = new THREE.Mesh(sunlightSphere, new THREE.MeshBasicMaterial({ color: 0xffa95c }));
     //sunlight.position.set(10, size / 4, size / 4);
-    this.scene.add(sunlight);
+
     this.lights.sunlight = sunlight;
     const color = canvas.scene.getFlag("levels-3d-preview", "sceneTint") ?? 0xffa95c;
     const distance = canvas.scene.getFlag("levels-3d-preview", "sunDistance") ?? 10;
@@ -468,7 +468,13 @@ class Levels3DPreview {
     const center = this.canvasCenter;
     lightTarget.position.set(center.x, center.y, center.z);
     this.lights.target = lightTarget;
-    this.scene.add(lightTarget);
+    this.scene.add(light);
+    if(!game.settings.get("levels-3d-preview", "disableLighting")){
+      this.scene.add(sunlight);
+      this.scene.add(spotLight);
+      this.scene.add(adjustmentSpotlight);
+      this.scene.add(lightTarget);
+    }
     spotLight.target = lightTarget;
     adjustmentSpotlight.target = lightTarget;
     this.sunlight = {color, distance, angle, showSun, intensity};
@@ -494,17 +500,6 @@ class Levels3DPreview {
 
     //set adjustment light
     this.lights.adjustmentSpotlight.position.set(x2+center.x, y2, z2+center.z);
-    //make a sphere in the same position
-    const debugSphere = new THREE.Mesh(
-      new THREE.SphereGeometry(0.2, 32, 32),
-      new THREE.MeshBasicMaterial({
-        color: 0xffffff,
-        transparent: true,
-        opacity: 0.5,
-      })
-    );
-    debugSphere.position.set(x2+center.x, y2, z2+center.z);
-    this.scene.add(debugSphere);
 
     this.lights.adjustmentSpotlight.intensity = intensity/3;
     this.lights.adjustmentSpotlight.color.set(color);
@@ -517,7 +512,7 @@ class Levels3DPreview {
     this.lights.sunlight.material.color.set(color);
     this.lights.sunlight.visible = showSun;
     this.lights.spotLight.intensity = intensity;
-    this.lights.hemiLight.intensity = intensity/4;
+    this.lights.hemiLight.intensity = !game.settings.get("levels-3d-preview", "disableLighting") ? intensity/4 : intensity;
 
   }
 

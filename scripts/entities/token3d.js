@@ -151,7 +151,7 @@ export class Token3D {
           wireframe: true,
           transparent: true,
           opacity: 1,
-          visible: false,
+          visible: this._parent.debugMode,
         })
       );
       hitbox.position.set(center.x+centerOffset.x, center.y+centerOffset.y, center.z+centerOffset.z);

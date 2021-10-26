@@ -21,6 +21,27 @@ Hooks.once('init', function() {
         default: true,
       });
 
+      game.settings.register("levels-3d-preview", "disableLighting", {
+        name: "Disable Lighting/Shadows",
+        hint: "Keep only a basic light and remove all the spot and point lights for performance.",
+        scope: "client",
+        config: true,
+        type: Boolean,
+        default: false,
+      });
+
+      game.settings.register("levels-3d-preview", "debugMode", {
+        name: "Debug Mode",
+        hint: "Show helpful debug info for troubleshooting (mainly hitboxes and lights).",
+        scope: "world",
+        config: true,
+        type: Boolean,
+        default: false,
+        onChange: (sett) => {
+            game.Levels3DPreview.debugMode = sett;
+        }
+      });
+
 });
 
 
@@ -228,7 +249,7 @@ Hooks.on("renderSceneConfig", (app,html)=>{
         "renderSceneLights": {
             type: "checkbox",
             label: "Render Scene Lights",
-            default: true,
+            default: false,
         }
     })
 })
