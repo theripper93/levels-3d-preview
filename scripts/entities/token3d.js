@@ -200,6 +200,7 @@ export class Token3D {
           side: !this.gtflPath ? THREE.DoubleSide : THREE.FrontSide,
           map: this.imageTexture ? new THREE.TextureLoader().load(this.imageTexture) : null,
         });
+        model.material.toneMapped = false;
 
     }
   
@@ -312,7 +313,6 @@ export class Token3D {
           0 + this.rotationZ, //?????????????????
         );
       }
-      console.log(currentPosition, x,y,z)
       if(currentPosition.x === x && currentPosition.y === y && currentPosition.z === z && currentRotation.x === Math.round(rx*1000)/1000 && currentRotation.y === Math.round(ry*1000)/1000 && currentRotation.z === Math.round(rz*1000)/1000){
         return false;
       }else{

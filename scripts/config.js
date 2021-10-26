@@ -12,6 +12,15 @@ Hooks.once('init', function() {
         filePicker: "imagevideo",
       });
 
+      game.settings.register("levels-3d-preview", "miniCanvas", {
+        name: "Enable Canvas Popout",
+        hint: "Pop out the 2d canvas into a separate window when the 3D mode is activated",
+        scope: "world",
+        config: true,
+        type: Boolean,
+        default: true,
+      });
+
 });
 
 
@@ -60,29 +69,7 @@ Hooks.once('ready', async function() {
     function setPosition(wrapped,...args){
         wrapped(...args);
         if(game.Levels3DPreview?._active && game.Levels3DPreview.tokenIndex[this.object.id]){
-            const token3d = game.Levels3DPreview.tokenIndex[this.object.id]
-            const vector = new THREE.Vector3();
-                const elementWidth = $(this.element).width();
-                const elementHeight = $(this.element).height();
-                const widthHalf = 0.5*game.Levels3DPreview.renderer.context.canvas.width;
-                const heightHalf = 0.5*game.Levels3DPreview.renderer.context.canvas.height;
-
-                token3d.mesh.updateMatrixWorld();
-                vector.setFromMatrixPosition(token3d.mesh.matrixWorld);
-                vector.project(game.Levels3DPreview.camera);
-
-                vector.x = ( vector.x * widthHalf ) + widthHalf;
-                vector.y = - ( vector.y * heightHalf ) + heightHalf;
-
-                const screenPos = { 
-                    x: vector.x,
-                    y: vector.y
-                };
-                $("body").append(this.element);
-                $(this.element).css({
-                    left: screenPos.x -elementWidth/2 + "px",
-                    top: screenPos.y -elementHeight/2 + "px"
-                });
+            $("body").append(this.element);
         }else{
             $("#hud").append(this.element);
         }
@@ -183,7 +170,7 @@ Hooks.on("renderSceneConfig", (app,html)=>{
         "sceneTint": {
             type: "color",
             label: "Scene Tint",
-            default: "#ffa95c",
+            default: "#ffc494",
         },
         "sunPosition": {
             type: "range",
@@ -195,7 +182,7 @@ Hooks.on("renderSceneConfig", (app,html)=>{
         "sunDistance": {
             type: "range",
             label: "Sun Distance",
-            default: 2,
+            default: 3.4,
             min: 1,
             max: 10,
             step: 0.1,

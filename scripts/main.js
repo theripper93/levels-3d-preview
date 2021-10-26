@@ -43,7 +43,6 @@ Hooks.on("updateToken", (token, updates) => {
 
       const elevation = updates.elevation ?? token.data.elevation;
       while(token3d.isAnimating && !exitLerp && token3d.setPosition(larpFactor, {x,y,elevation})){
-        console.log("setting positon")
         await sleep(1000/60);
       };
       if(exitLerp)token3d.setPosition(false, {x,y,elevation})
@@ -107,10 +106,10 @@ class Levels3DPreview {
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.renderer.setAnimationLoop(this.animation);
-    this.renderer.toneMapping = THREE.ReinhardToneMapping;
-    this.renderer.toneMappingExposure = 2.3;
     this.renderer.shadowMap.enabled = true;
-
+    this.renderer.antialias = true;
+    this.renderer.setPixelRatio(window.devicePixelRatio);
+    this.renderer.alpha = true;
     //set dom element id
     this.renderer.domElement.id = "levels3d";
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
@@ -312,6 +311,7 @@ class Levels3DPreview {
     this.scene.add(this.dragplane);
     this.createLights(size);
     this.makeSkybox();
+    this.ruler.addMarkers();
   }
 
   addToken(token) {
@@ -333,6 +333,7 @@ class Levels3DPreview {
         t.minFilter = THREE.NearestMipMapLinearFilter;
       }),
     });
+    material.toneMapped = false;
     const plane = new THREE.Mesh(geometry, material);
     plane.receiveShadow = true;
     plane.castShadow = true;
@@ -349,8 +350,9 @@ class Levels3DPreview {
     const center = this.canvasCenter;
     const geometry = new THREE.BoxGeometry(width, height, 1);
     const material = new THREE.MeshLambertMaterial({
-      map: new THREE.TextureLoader().load(canvas.scene.getFlag("levels-3d-preview", "tableTex")),
+      map: new THREE.TextureLoader().load(canvas.scene.getFlag("levels-3d-preview", "tableTex"),),
     });
+    material.toneMapped = false;
     const plane = new THREE.Mesh(geometry, material);
     plane.receiveShadow = true;
     plane.position.set(center.x, center.y-0.511, center.z);
@@ -583,8 +585,17 @@ class Levels3DPreview {
     }
   }
 
+  centerTokenHUD(){
+    const hud = canvas.hud.token;
+    if(!hud.object || !this._active) return;
+    const token3D = this.tokenIndex[hud.object.id];
+    if(!token3D) return;
+    Ruler3D.centerElement(hud.element, token3D.mesh.position);
+  }
+
   animation(time) {
     const _this = game.Levels3DPreview;
+    if(!_this._active) return;
     _this.dragObject();
     const delta = _this.clock.getDelta();
     Object.values(_this.tokenIndex).forEach((token) => {
@@ -592,6 +603,7 @@ class Levels3DPreview {
         token.mixer.update(delta);
       }
     });
+    _this.centerTokenHUD();
     _this.resizeCanvasToDisplaySize(_this);
     _this.controls.update();
     _this.renderer.render(_this.scene, _this.camera);
@@ -613,7 +625,8 @@ class Levels3DPreview {
     if(this._active) return;
     this.build3Dscene();
     document.body.appendChild(this.renderer.domElement);
-    new miniCanvas().render(true);
+    if(game.settings.get("levels-3d-preview", "miniCanvas")) new miniCanvas().render(true);
+    else $("#board").hide();
   }
 
   close(){
