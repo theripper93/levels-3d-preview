@@ -74,7 +74,6 @@ export class Ruler3D {
     update(){
         if(!this._object || !this._origin) return;
         const targetPos = Ruler3D.useSnapped() ? Ruler3D.snapped3DPosition(this._object.position) : this._object.position;
-        console.log(targetPos);
         this._parent.scene.remove(this.line);
         //draw ruler
         const geometry = new THREE.TubeGeometry(

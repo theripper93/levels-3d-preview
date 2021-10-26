@@ -31,3 +31,29 @@ Troll by Bindestrek: https://sketchfab.com/3d-models/troll-96ed4cd98544433cb4cda
 Miniatures (untextured) by Miguel Zavala : https://www.shapeways.com/shops/dmworkshop
 River in the forest map by The MAD Cartographer: https://www.patreon.com/themadcartographer
 Some 2d textures\tokens by Forgotten Adventures: https://www.forgotten-adventures.net/
+
+Airship
+Map: Cze & Peku https://www.czepeku.com/
+Models: 
+https://sketchfab.com/3d-models/trash-airship-4190bb9953e3492ba196110836081229
+https://sketchfab.com/3d-models/dragon-flying-78f809b98bbe426e94d4024dc894b206
+https://sketchfab.com/3d-models/armor-suit-retopo-for-ray-ii-pose-ver-d2aafedec9e747c4be4d82fbd7729102
+https://sketchfab.com/3d-models/nierautomata-2b-cec89dce88cf4b3082c73c07ab5613e7
+https://sketchfab.com/3d-models/ruby-rose-2270ee59d38e409491a76451f6c6ef80
+https://sketchfab.com/3d-models/warrior-toy-a01f57189100463cbd9c75a127609e79
+
+Cave
+Map: Moonlight maps https://www.moonlight-maps.com/
+Models (art in this case):
+https://fayforest.sakura.ne.jp/resource.html
+https://wataokiba.net/2019/10/08/josei15/
+https://booth.pm/ja/items/1241957
+https://sketchfab.com/3d-models/model-63a-jumping-spider-resting-pose-debe664635724078aaacd05e2dbf15f6
+
+Forest
+Map: Cze & Peku https://www.czepeku.com/
+Models:
+https://sketchfab.com/3d-models/armor-suit-retopo-for-ray-ii-pose-ver-d2aafedec9e747c4be4d82fbd7729102
+https://sketchfab.com/3d-models/nierautomata-2b-cec89dce88cf4b3082c73c07ab5613e7
+https://sketchfab.com/3d-models/ruby-rose-2270ee59d38e409491a76451f6c6ef80
+https://sketchfab.com/3d-models/diablo-ii-wendigo-9420e771b188410ab2767f9f3bf97243

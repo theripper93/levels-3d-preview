@@ -44,14 +44,44 @@ export class Token3D {
   
     async load() {
       if(!this.gtflPath && !this.imageTexture) this.imageTexture = this.token.data.img;
+      this.texture = await this.loadTexture();
       return this.gtflPath || this.imageTexture ? await this.loadModel() : this.draw();
+    }
+
+    async loadTexture(){
+      if(!this.imageTexture) return null;
+      const extension = this.imageTexture.split('.').pop();
+      const isVideo = extension == "mp4" || extension == "webm" || extension == "ogg" || extension == "mov";
+      if(isVideo){
+      let video;
+      let videoTexture
+        video = $(`<video id="video" loop crossOrigin="anonymous" autoplay="true" muted="muted" playsinline style="display:none;height:auto;width:auto;">
+        <source src="${this.imageTexture}"
+          type='video/${extension};'>
+      </video>`)
+      $("body").append(video);
+      await resolveMetadata(video[0]);
+      videoTexture = new THREE.VideoTexture(video[0]);
+      videoTexture.format = THREE.RGBAFormat;
+      this.isVideo = true;
+      return videoTexture;
+      }else{
+        return await new THREE.TextureLoader().loadAsync(this.imageTexture);
+      }
+
+      function resolveMetadata(video) {
+        return new Promise(resolve => {
+          video.onloadedmetadata = () => {
+            resolve(video);
+          };
+        });
+      }
     }
 
     async getModel(){
       if(!this.gtflPath){
-        //make plane
-        const texture = await new THREE.TextureLoader().loadAsync(this.imageTexture);
-        const geometry = new THREE.PlaneGeometry(texture.image.width/1000, texture.image.height/1000);
+        const texture = this.texture;
+        const geometry = new THREE.PlaneGeometry((texture.image.width || texture.image.videoWidth)/1000, (texture.image.height || texture.image.videoHeight)/1000);
         const material = new THREE.MeshBasicMaterial();
         const object = new THREE.Mesh(geometry, material);
         this.standUp=true;
@@ -203,14 +233,13 @@ export class Token3D {
           roughness = 1;
           break;
       }
-
         model.material = new THREE.MeshPhongMaterial({
           color: color,
           shininess: roughness*100,
-          transparent: opacity != 1 || !this.gtflPath,
+          transparent: true,//opacity != 1 || !this.gtflPath,
           opacity: opacity,
           side: !this.gtflPath ? THREE.DoubleSide : THREE.FrontSide,
-          map: this.imageTexture ? new THREE.TextureLoader().load(this.imageTexture) : null,
+          map: this.texture//new THREE.TextureLoader().load(this.imageTexture) : null,
         });
         model.material.toneMapped = false;
 
