@@ -2,13 +2,13 @@
     "levels3dpreview" : {
         "sceneConfigTitle": {
             "title": "3D Canvas",
-            "notes": "Configure Levels - 3D preview settings for this scene."
+            "notes": "Configure 3D Canvas settings for this scene."
         },
         "controls": {
             "preview3d": "Toggle 3D Mode"
         },
         "errors": {
-            "filenotsupported": ""
+            "filenotsupported": "File format not supported"
         },
         "flags": {
             "enablePlayers":{

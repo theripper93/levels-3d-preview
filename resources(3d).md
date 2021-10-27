@@ -31,6 +31,9 @@ Troll by Bindestrek: https://sketchfab.com/3d-models/troll-96ed4cd98544433cb4cda
 Miniatures (untextured) by Miguel Zavala : https://www.shapeways.com/shops/dmworkshop
 River in the forest map by The MAD Cartographer: https://www.patreon.com/themadcartographer
 Some 2d textures\tokens by Forgotten Adventures: https://www.forgotten-adventures.net/
+The Hacienda by afternoonmaps: https://www.patreon.com/afternoonmaps
+"Zombie" (https://skfb.ly/6BKSF) by pxltiger
+"Day of the Dead Environment" (https://skfb.ly/BxIF) by Jeff de Guzman
 
 Airship
 Map: Cze & Peku https://www.czepeku.com/
