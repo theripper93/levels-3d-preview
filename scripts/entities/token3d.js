@@ -40,6 +40,7 @@ export class Token3D {
       this.color = this.token.document.getFlag("levels-3d-preview", "color") ?? "#ffffff";
       this.material = this.token.document.getFlag("levels-3d-preview", "material") ?? "";
       this.imageTexture = this.token.document.getFlag("levels-3d-preview", "imageTexture") ?? "";
+      this.alwaysVisible = this.token.document.getFlag("levels-3d-preview", "alwaysVisible") ?? false;
     }
   
     async load() {
@@ -282,11 +283,26 @@ export class Token3D {
       const y = z3d * this.factor - this.token.h/2;
       const z = Math.round((y3d * this.factor * canvas.dimensions.distance)/(canvas.dimensions.size));
         const snapped = canvas.grid.getSnappedPosition(x, y);
-      this.token.document.update({
+      const dest = {
         x: useSnapped ? snapped.x : x,
         y: useSnapped ? snapped.y : y,
         elevation: z,
+      }
+      if ( !game.user.isGM ) {
+        const center = canvas.grid.getCenter(x,y);
+        let collides = this.token.checkCollision({x:center[0], y:center[1]});
+        if ( collides ) {
+          ui.notifications.error("ERROR.TokenCollide", {localize: true});
+          return false
+        }
+      }
+
+      this.token.document.update({
+        x: dest.x,
+        y: dest.y,
+        elevation: dest.elevation,
       });
+      return true;
     }
   
     setPosition(lerp = false, forcePosition) {
@@ -440,6 +456,10 @@ export class Token3D {
       const rotation = Math.round(angle * 180 / Math.PI);
       //this.rotationAxis = "z";
       this.mesh.rotation.set(this.mesh.rotation._x, angle, this.mesh.rotation._z);
+    }
+
+    updateVisibility(){
+      this.mesh.visible = this.alwaysVisible || this.token.visible;
     }
   
     getColor() {

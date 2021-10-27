@@ -14,3 +14,9 @@
     position: absolute;
     pointer-events: none;
 }
+
+#levels3d{
+    position: absolute;
+    top: 0;
+    left: 0;
+}

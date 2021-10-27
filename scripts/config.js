@@ -211,7 +211,7 @@ Hooks.on("renderSceneConfig", (app,html)=>{
             label: game.i18n.localize("levels3dpreview.flags.sunPosition.label"),
             default: 35,
             min: 0,
-            max: 360,
+            max: 180,
         },
         "sunDistance": {
             type: "range",
@@ -251,6 +251,21 @@ Hooks.on("renderSceneConfig", (app,html)=>{
             type: "checkbox",
             label: game.i18n.localize("levels3dpreview.flags.renderSceneLights.label"),
             default: false,
+        }
+    })
+    html.on("change", "input", (e)=>{
+        if(!game.Levels3DPreview._active) return;
+        const sunPosition = html.find("input[name='flags.levels-3d-preview.sunPosition']")[0].value;
+        const sunDistance = html.find("input[name='flags.levels-3d-preview.sunDistance']")[0].value;
+        const sunIntensity = html.find("input[name='flags.levels-3d-preview.sunIntensity']")[0].value;
+        const sceneTint = html.find("input[name='flags.levels-3d-preview.sceneTint']")[0].value;
+        console.log(sunPosition,sunDistance,sunIntensity,sceneTint);
+        game.Levels3DPreview.sunlight = {
+            color: sceneTint,
+            angle: Math.toRadians(sunPosition),
+            distance: sunDistance,
+            intensity: sunIntensity,
+            animate: true,
         }
     })
 })
@@ -293,6 +308,11 @@ Hooks.on("renderTokenConfig", (app,html)=>{
             type: "checkbox",
             label: game.i18n.localize("levels3dpreview.flags.draggable.label"),
             default: true,
+        },
+        "alwaysVisible": {
+            type: "checkbox",
+            label: game.i18n.localize("levels3dpreview.flags.alwaysVisible.label"),
+            default: false,
         },
         "enableAnim": {
             type: "checkbox",

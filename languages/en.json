@@ -84,6 +84,9 @@
             "draggable": {
                 "label": "Draggable"
             },
+            "alwaysVisible": {
+                "label": "Always Visible"
+            },
             "enableAnim": {
                 "label": "Enable Animation (if present)"
             },
