@@ -144,6 +144,7 @@ function sleep(ms) {
 
 class Levels3DPreview {
   constructor() {
+    this.isLevels = game.modules.get("levels")?.active;
     this.camera;
     this.scene;
     this.renderer;
@@ -346,9 +347,9 @@ class Levels3DPreview {
     const renderBackground = canvas.scene.getFlag("levels-3d-preview", "renderBackground") ?? true;
     const renderTable = canvas.scene.getFlag("levels-3d-preview", "renderTable") ?? false;
     this.standUpFaceCamera = game.settings.get("levels-3d-preview", "standupFace") ?? true;
-    drawFloors && this.createFloors(level);
-    drawWalls && this.createWalls(level);
-    drawLights && this.createSceneLights();
+    drawFloors && this.isLevels && this.createFloors(level);
+    drawWalls && this.isLevels && this.createWalls(level);
+    drawLights && this.isLevels && this.createSceneLights();
     renderBackground && this.createBoard();
     renderTable && this.createTable();
     for (let token of canvas.tokens.placeables) {

@@ -5,7 +5,8 @@
             "notes": "Configure 3D Canvas settings for this scene."
         },
         "controls": {
-            "preview3d": "Toggle 3D Mode"
+            "preview3d": "Toggle 3D Mode",
+            "miniCanvas": "Popout/Restore Canvas"
         },
         "errors": {
             "filenotsupported": "File format not supported"

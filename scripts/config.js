@@ -51,6 +51,18 @@ Hooks.once('init', function() {
         }
       });
 
+      game.settings.register("levels-3d-preview", "minicanvasposition", {
+        name: "",
+        hint: "",
+        scope: "client",
+        config: false,
+        type: Object,
+        default: {
+            top: 0,
+            left: 0,
+        },
+      });
+
 });
 
 
@@ -125,28 +137,29 @@ Hooks.once('ready', async function() {
 });
 
 Hooks.on("getSceneControlButtons", (buttons)=>{
-    buttons.find(b => b.name === "levels")?.tools?.push({
+    buttons.find(b => b.name === "token")?.tools?.push(
+    {
         "name": "preview3d",
         "title": game.i18n.localize("levels3dpreview.controls.preview3d"),
         "icon": "fas fa-cube",
         toggle: true,
+        visible: canvas?.scene?.getFlag("levels-3d-preview","enablePlayers") || game.user.isGM,
         active: game.Levels3DPreview?._active,
         onClick: () => {
             game.Levels3DPreview.toggle();
+        },
+    },
+    {
+        "name": "miniCanvas",
+        "title": game.i18n.localize("levels3dpreview.controls.miniCanvas"),
+        "icon": "fas fa-sign-out-alt",
+        toggle: true,
+        visible: canvas?.scene?.getFlag("levels-3d-preview","enablePlayers") || game.user.isGM,
+        active: Object.values(ui.windows)?.find(w => w.id === "miniCanvas") ? true : false,
+        onClick: () => {
+            miniCanvas.toggle();
         }
-    })
-    if(canvas?.scene?.getFlag("levels-3d-preview","enablePlayers") && !game?.user?.isGM){
-        buttons.find(b => b.name === "token")?.tools?.push({
-            "name": "preview3d",
-            "title": game.i18n.localize("levels3dpreview.controls.preview3d"),
-            "icon": "fas fa-cube",
-            toggle: true,
-            active: game.Levels3DPreview?._active,
-            onClick: () => {
-                game.Levels3DPreview.toggle();
-            }
-        })
-    }
+    });
 })
 
 Hooks.on("renderSceneConfig", (app,html)=>{

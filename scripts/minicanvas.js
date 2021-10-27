@@ -6,15 +6,29 @@ class miniCanvas extends Application {
   
     static get defaultOptions() {
       const aspectRatio = window.innerWidth / window.innerHeight;
+      const position = game.settings.get("levels-3d-preview", "minicanvasposition");
       return {
         ...super.defaultOptions,
         title: "Canvas",
         id: "miniCanvas",
         template: `modules/levels-3d-preview/templates/minicanvas.hbs`,
-        resizable: true,
+        resizable: false,
         width: 300*aspectRatio,
         height: 300,
+        left: position.left,
+        top: position.top,
       };
+    }
+
+    setPosition({left, top, width, height, scale}={}) {
+      super.setPosition({left, top, width, height, scale});
+      game.settings.set("levels-3d-preview", "minicanvasposition", {
+        left: left,
+        top: top,
+        width: width,
+        height: height,
+        scale: scale,
+      });
     }
   
     getData() {
@@ -22,11 +36,13 @@ class miniCanvas extends Application {
     }
   
     async activateListeners(html) {
+      this.updateControls(true);
       html.find(".canvas-container").append($("#board"))
       $("#board").css({
         "width": "100%",
         "height": "100%",
       })
+      $("#board").show()
     }
 
     resize(){
@@ -35,10 +51,25 @@ class miniCanvas extends Application {
         "height": "100%",
       })
     }
+
+    updateControls(toggle){
+      $(`li[data-tool="miniCanvas"]`).toggleClass("active", toggle);
+      ui.controls.controls.find(c=>c.name=="token").tools.find(t=>t.name == "miniCanvas").active = toggle;
+    }
   
     close() {
       $(".vtt ").append($(this.element).find("#board"))
       if(game.Levels3DPreview._active) $("#board").hide()
       super.close();
+      this.updateControls(false);
+    }
+
+    static toggle(){
+      const currentInstance = Object.values(ui.windows)?.find(w => w.id === "miniCanvas")
+      if(currentInstance){
+        currentInstance.close()
+      }else{
+        new miniCanvas().render(true)
+      }
     }
   }
