@@ -51,7 +51,7 @@ export class Token3D {
     async loadTexture(){
       if(!this.imageTexture) return null;
       const extension = this.imageTexture.split('.').pop();
-      const isVideo = extension == "mp4" || extension == "webm" || extension == "ogg" || extension == "mov";
+      const isVideo = extension == "mp4" || extension == "webm" || extension == "ogg" || extension == "mov" || extension == "apng";
       if(isVideo){
       let video;
       let videoTexture
@@ -110,8 +110,9 @@ export class Token3D {
         }
          };
       //make 1x1 cube
-      console.error("Unsupported file extension("+ extension +"): " + filePath + " for Token: " + this.token.data.name);
-      ui.notifications.error("Unsupported file extension("+ extension +"): " + filePath + " for Token: " + this.token.data.name);
+      const errText = game.i18n.localize("levels3dpreview.errors.filenotsupported") + "(" + extension +"): " + filePath + " Token: " + this.token.data.name
+      console.error(errText);
+      ui.notifications.error(errText);
       const geometry = new THREE.BoxGeometry(1,1,1);
       const material = new THREE.MeshBasicMaterial();
       const object = new THREE.Mesh(geometry, material);
@@ -161,7 +162,7 @@ export class Token3D {
       }
       model.position.set(centerOffset.x, centerOffset.y, centerOffset.z);
       model.traverse((child) => {
-        if (child.isMesh) {
+        if (child.isMesh && !this.standUp) {
           child.castShadow = true;
           child.receiveShadow = true;
         }
@@ -429,6 +430,16 @@ export class Token3D {
         child.material.color = this.selectedImage ? new THREE.Color(0xffffff) : new THREE.Color(color);
         child.material.visible = visible;
       });
+    }
+
+    faceCamera(){
+      const camera = this._parent.camera;
+      const vector = new THREE.Vector3(0, -1, 0);
+      vector.applyQuaternion(camera.quaternion);
+      const angle = Math.atan2(vector.x, vector.z);
+      const rotation = Math.round(angle * 180 / Math.PI);
+      //this.rotationAxis = "z";
+      this.mesh.rotation.set(this.mesh.rotation._x, angle, this.mesh.rotation._z);
     }
   
     getColor() {

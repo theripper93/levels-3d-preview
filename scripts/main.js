@@ -275,6 +275,7 @@ class Levels3DPreview {
     const drawLights = canvas.scene.getFlag("levels-3d-preview", "renderSceneLights") ?? true;
     const renderBackground = canvas.scene.getFlag("levels-3d-preview", "renderBackground") ?? true;
     const renderTable = canvas.scene.getFlag("levels-3d-preview", "renderTable") ?? false;
+    this.standUpFaceCamera = game.settings.get("levels-3d-preview", "standupFace") ?? true;
     drawFloors && this.createFloors(level);
     drawWalls && this.createWalls(level);
     drawLights && this.createSceneLights();
@@ -656,6 +657,9 @@ class Levels3DPreview {
     Object.values(_this.tokenIndex).forEach((token) => {
       if(token.mixer){
         token.mixer.update(delta);
+      }
+      if(token.standUp && _this.standUpFaceCamera){
+        token.faceCamera();
       }
     });
     _this.centerTokenHUD();

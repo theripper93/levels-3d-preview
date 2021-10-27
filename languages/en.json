@@ -1,3 +1,154 @@
 {
-    "MODULE.hello": "hello"
+    "levels3dpreview" : {
+        "sceneConfigTitle": {
+            "title": "3D Canvas",
+            "notes": "Configure Levels - 3D preview settings for this scene."
+        },
+        "controls": {
+            "preview3d": "Toggle 3D Mode"
+        },
+        "errors": {
+            "filenotsupported": ""
+        },
+        "flags": {
+            "enablePlayers":{
+                "label": "Enable for Players",
+                "notes": "Allow players to open the 3D view for this scene, all walls, floors and tokens will be revealed."
+            },
+            "skybox" : {
+                "label": "Skybox Image",
+                "placeholder": "Skybox Image",
+                "notes": "The file needs to be in the same folder of 6 total files, files must contain _ft, _bk, _up, _dn, _rt, _lf."
+            },
+            "renderTable": {
+                "label": "Display Table",
+                "notes": "Render the table in the 3D view."
+            },
+            "tableTex" : {
+                "label": "Table Texture",
+                "placeholder": "Table Texture"
+            },
+            "renderBackground": {
+                "label": "Display Background",
+                "notes": "Display the background image of the scene as a board."
+            },
+            "enableGrid": {
+                "label": "Enable Grid"
+            },
+            "enableRuler": {
+                "label": "Enable Ruler"
+            },
+            "sceneTint": {
+                "label": "Scene Tint"
+            },
+            "sunPosition": {
+                "label": "Sun Position"
+            },
+            "sunDistance": {
+                "label": "Sun Distance"
+            },
+            "sunIntensity": {
+                "label": "Sun Intensity"
+            },
+            "showSceneWalls": {
+                "label": "Show Scene Walls"
+            },
+            "showSceneFloors": {
+                "label": "Show Scene Floors/Polygons"
+            },
+            "wallFloorAlpha": {
+                "label": "Wall/Floor Alpha"
+            },
+            "renderSceneLights": {
+                "label": "Render Scene Lights"
+            },
+            "model3d" : {
+                "label": "3D Model"
+            },
+            "imageTexture":{
+                "label": "Texture"
+            },
+            "material": {
+                "label": "Material",
+                "options": {
+                    "none": "Default",
+                    "plastic": "Plastic",
+                    "wood": "Wood",
+                    "glass": "Glass"
+                }
+            },
+            "color": {
+                "label": "Color",
+                "notes": "Material and Color will work only on some models, usually the grey/untextured ones."
+            },
+            "draggable": {
+                "label": "Draggable"
+            },
+            "enableAnim": {
+                "label": "Enable Animation (if present)"
+            },
+            "animIndex":{
+                "label": "Animation Index"
+            },
+            "animSpeed":{
+                "label": "Animation Speed"
+            },
+            "rotationAxis" : {
+                "label": "Rotation Axis",
+                "options": {
+                    "x": "X",
+                    "z": "Z",
+                    "y": "Y"
+                },
+                "notes": "The axis to use when the original token rotation changes. If the original file was in STL format this will usually be Z, otherwise Y"
+            },
+            "rotationX" : {
+                "label": "Rotation X"
+            },
+            "rotationY" : {
+                "label": "Rotation Y"
+            },
+            "rotationZ" : {
+                "label": "Rotation Z"
+            },
+            "rotateBase": {
+                "label": "Fix Base Rotation",
+                "notes": "Some models require the selection indicator to be rotated, enable as necessary. (usually files converted from STL)"
+            },
+            "offsetX": {
+                "label": "Offset X"
+            },
+            "offsetY": {
+                "label": "Offset Y"
+            },
+            "offsetZ": {
+                "label": "Offset Z"
+            },
+            "scale": {
+                "label": "Scale"
+            }
+        },
+        "settings" : {
+            "selectedImage": {
+                "name": "Selection Highlight Image",
+                "hint": "The image to display when selecting a token."
+            },
+            "standupFace": {
+                "name": "Stand-ups Face Camera",
+                "hint": "2D Tokens displayed in a stand-up style will always face the camera."
+            },
+            "miniCanvas": {
+                "name": "Enable Canvas Popout",
+                "hint": "Pop out the 2d canvas into a separate window when the 3D mode is activated"
+            },
+            "disableLighting":{
+                "name": "Disable Lighting/Shadows",
+                "hint": "Keep only a basic light and remove all the spot and point lights for performance."
+            },
+            "debugMode": {
+                "name": "Debug Mode",
+                "hint": "Show helpful debug info for troubleshooting (mainly hitboxes and lights)."
+            }
+        }
+    }
 }

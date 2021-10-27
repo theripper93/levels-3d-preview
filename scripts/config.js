@@ -3,8 +3,8 @@ import * as THREE from "./lib/three.module.js";
 Hooks.once('init', function() {
 
     game.settings.register("levels-3d-preview", "selectedImage", {
-        name: "Selection Highlight Image",
-        hint: "The image to display when selecting a token.",
+        name: game.i18n.localize("levels3dpreview.settings.selectedImage.name"),
+        hint: game.i18n.localize("levels3dpreview.settings.selectedImage.hint"),
         scope: "world",
         config: true,
         type: String,
@@ -12,9 +12,18 @@ Hooks.once('init', function() {
         filePicker: "imagevideo",
       });
 
+      game.settings.register("levels-3d-preview", "standupFace", {
+        name: game.i18n.localize("levels3dpreview.settings.standupFace.name"),
+        hint: game.i18n.localize("levels3dpreview.settings.standupFace.hint"),
+        scope: "world",
+        config: true,
+        type: Boolean,
+        default: true,
+      });
+
       game.settings.register("levels-3d-preview", "miniCanvas", {
-        name: "Enable Canvas Popout",
-        hint: "Pop out the 2d canvas into a separate window when the 3D mode is activated",
+        name: game.i18n.localize("levels3dpreview.settings.miniCanvas.name"),
+        hint: game.i18n.localize("levels3dpreview.settings.miniCanvas.hint"),
         scope: "world",
         config: true,
         type: Boolean,
@@ -22,8 +31,8 @@ Hooks.once('init', function() {
       });
 
       game.settings.register("levels-3d-preview", "disableLighting", {
-        name: "Disable Lighting/Shadows",
-        hint: "Keep only a basic light and remove all the spot and point lights for performance.",
+        name: game.i18n.localize("levels3dpreview.settings.disableLighting.name"),
+        hint: game.i18n.localize("levels3dpreview.settings.disableLighting.hint"),
         scope: "client",
         config: true,
         type: Boolean,
@@ -31,8 +40,8 @@ Hooks.once('init', function() {
       });
 
       game.settings.register("levels-3d-preview", "debugMode", {
-        name: "Debug Mode",
-        hint: "Show helpful debug info for troubleshooting (mainly hitboxes and lights).",
+        name: game.i18n.localize("levels3dpreview.settings.debugMode.name"),
+        hint: game.i18n.localize("levels3dpreview.settings.debugMode.hint"),
         scope: "world",
         config: true,
         type: Boolean,
@@ -122,7 +131,7 @@ Hooks.on("canvasReady", () => {
 Hooks.on("getSceneControlButtons", (buttons)=>{
     buttons.find(b => b.name === "levels")?.tools?.push({
         "name": "preview3d",
-        "title": "Show/Hide 3D Preview",
+        "title": game.i18n.localize("levels3dpreview.controls.preview3d"),
         "icon": "fas fa-cube",
         toggle: true,
         active: game.Levels3DPreview?._active,
@@ -133,7 +142,7 @@ Hooks.on("getSceneControlButtons", (buttons)=>{
     if(canvas?.scene?.getFlag("levels-3d-preview","enablePlayers") && !game?.user?.isGM){
         buttons.find(b => b.name === "token")?.tools?.push({
             "name": "preview3d",
-            "title": "Show/Hide 3D Preview",
+            "title": game.i18n.localize("levels3dpreview.controls.preview3d"),
             "icon": "fas fa-cube",
             toggle: true,
             active: game.Levels3DPreview?._active,
@@ -151,61 +160,62 @@ Hooks.on("renderSceneConfig", (app,html)=>{
         "inject" : `input[name="backgroundColor"]`,
         "header": {
             type: "custom",
-            html: `<h3 class="form-header"><i class="fas fa-cube"></i> Levels - 3D Preview</h3><p class="notes">Configure Levels - 3D preview settings for this scene.</p>`
+            html: `<h3 class="form-header"><i class="fas fa-cube"></i> ${game.i18n.localize("levels3dpreview.sceneConfigTitle.title")}</h3><p class="notes">${game.i18n.localize("levels3dpreview.sceneConfigTitle.notes")}</p>`
         },
         "enablePlayers":{
             "type": "checkbox",
-            "label": "Enable for Players",
+            "label": game.i18n.localize("levels3dpreview.flags.enablePlayers.label"),
             "default": false,
-            "notes": "Allow players to open the 3D view for this scene, all walls, floors and tokens will be revealed."
+            "notes": game.i18n.localize("levels3dpreview.flags.enablePlayers.notes")
         },
         "skybox" : {
             type: "filepicker",
-            label: "Skybox Image",
-            placeholder: "Skybox Image",
-            notes: `The file needs to be in the same folder of 6 total files, files must contain "_ft", "_bk", "_up", "_dn", "_rt", "_lf".`,
+            label: game.i18n.localize("levels3dpreview.flags.skybox.label"),
+            placeholder: game.i18n.localize("levels3dpreview.flags.skybox.placeholder"),
+            notes: game.i18n.localize("levels3dpreview.flags.skybox.notes"),
         },
         "renderTable": {
             "type": "checkbox",
-            "label": "Display Table",
+            "label": game.i18n.localize("levels3dpreview.flags.renderTable.label"),
             "default": false,
-            "notes": "Render the table in the 3D view."
+            "notes": game.i18n.localize("levels3dpreview.flags.renderTable.notes")
         },
         "tableTex" : {
             type: "filepicker",
-            label: "Table Texture",
+            label: game.i18n.localize("levels3dpreview.flags.tableTex.label"),
             placeholder: "Table Texture",
         },
         "renderBackground": {
             "type": "checkbox",
-            "label": "Display Background",
+            "label": game.i18n.localize("levels3dpreview.flags.renderBackground.label"),
             "default": true,
-            "notes": "Display the background image of the scene as a board."
+            "notes": game.i18n.localize("levels3dpreview.flags.renderBackground.notes")
         },
         "enableGrid": {
             type: "checkbox",
-            label: "Enable Grid",
+            label: game.i18n.localize("levels3dpreview.flags.enableGrid.label"),
+            default: true,
         },
         "enableRuler": {
             type: "checkbox",
-            label: "Enable Ruler",
+            label: game.i18n.localize("levels3dpreview.flags.enableRuler.label"),
             default: true,
         },
         "sceneTint": {
             type: "color",
-            label: "Scene Tint",
+            label: game.i18n.localize("levels3dpreview.flags.sceneTint.label"),
             default: "#ffc494",
         },
         "sunPosition": {
             type: "range",
-            label: "Sun Position",
+            label: game.i18n.localize("levels3dpreview.flags.sunPosition.label"),
             default: 35,
             min: 0,
             max: 360,
         },
         "sunDistance": {
             type: "range",
-            label: "Sun Distance",
+            label: game.i18n.localize("levels3dpreview.flags.sunDistance.label"),
             default: 3.4,
             min: 1,
             max: 10,
@@ -213,7 +223,7 @@ Hooks.on("renderSceneConfig", (app,html)=>{
         },
         "sunIntensity": {
             type: "range",
-            label: "Sun Intensity",
+            label: game.i18n.localize("levels3dpreview.flags.sunIntensity.label"),
             default: 3,
             min: 0.1,
             max: 10,
@@ -221,17 +231,17 @@ Hooks.on("renderSceneConfig", (app,html)=>{
         },
         "showSceneWalls": {
             type: "checkbox",
-            label: "Show Scene Walls",
+            label: game.i18n.localize("levels3dpreview.flags.showSceneWalls.label"),
             default: true,
         },
         "showSceneFloors": {
             type: "checkbox",
-            label: "Show Scene Floors/Polygons",
+            label: game.i18n.localize("levels3dpreview.flags.showSceneFloors.label"),
             default: true,
         },
         "wallFloorAlpha": {
             type: "range",
-            label: "Wall/Floor Alpha",
+            label: game.i18n.localize("levels3dpreview.flags.wallFloorAlpha.label"),
             default: 0.5,
             min: 0,
             max: 1,
@@ -239,7 +249,7 @@ Hooks.on("renderSceneConfig", (app,html)=>{
         },
         "renderSceneLights": {
             type: "checkbox",
-            label: "Render Scene Lights",
+            label: game.i18n.localize("levels3dpreview.flags.renderSceneLights.label"),
             default: false,
         }
     })
@@ -255,66 +265,66 @@ Hooks.on("renderTokenConfig", (app,html)=>{
         },
         "model3d" : {
             type: "filepicker.folder",
-            label: "3D Model",
+            label: game.i18n.localize("levels3dpreview.flags.model3d.label"),
         },
         "imageTexture":{
             type: "filepicker",
-            label: "Texture",
+            label: game.i18n.localize("levels3dpreview.flags.imageTexture.label"),
 
         },
         "material": {
             type: "select",
-            label: "Material",
+            label: game.i18n.localize("levels3dpreview.flags.material.label"),
             default: "none",
             options: {
-                "none": "Default",
-                "plastic": "Plastic",
-                "wood": "Wood",
-                "glass": "Glass",
+                "none": game.i18n.localize("levels3dpreview.flags.material.options.none"),
+                "plastic": game.i18n.localize("levels3dpreview.flags.material.options.plastic"),
+                "wood": game.i18n.localize("levels3dpreview.flags.material.options.wood"),
+                "glass": game.i18n.localize("levels3dpreview.flags.material.options.glass"),
             }
         },
         "color": {
             type: "color",
-            label: "Color",
+            label: game.i18n.localize("levels3dpreview.flags.color.label"),
             default: "#ffa95c",
-            notes: "Material and Color will work only on some models, usually the grey/untextured ones."
+            notes: game.i18n.localize("levels3dpreview.flags.color.notes")
         },
         "draggable": {
             type: "checkbox",
-            label: "Draggable",
+            label: game.i18n.localize("levels3dpreview.flags.draggable.label"),
             default: true,
         },
         "enableAnim": {
             type: "checkbox",
-            label: "Enable Animation (if present)",
+            label: game.i18n.localize("levels3dpreview.flags.enableAnim.label"),
             default: true,
         },
         "animIndex":{
             type: "number",
-            label: "Animation Index",
+            label: game.i18n.localize("levels3dpreview.flags.animIndex.label"),
             default: 0,
         },
         "animSpeed":{
             type: "range",
-            label: "Animation Speed",
+            label: game.i18n.localize("levels3dpreview.flags.animSpeed.label"),
             default: 1,
             min: 0,
             max: 10,
         },
         "rotationAxis" : {
             type: "select",
-            label: "Rotation Axis",
+            label: game.i18n.localize("levels3dpreview.flags.rotationAxis.label"),
             options: {
-                "x": "X",
-                "z": "Z",
-                "y": "Y",
+                "x": game.i18n.localize("levels3dpreview.flags.rotationAxis.options.x"),
+                "y": game.i18n.localize("levels3dpreview.flags.rotationAxis.options.y"),
+                "z": game.i18n.localize("levels3dpreview.flags.rotationAxis.options.z"),
             },
             default: "y",
-            notes: "The axis to use when the original token rotation changes. If the original file was in STL format this will usually be Z, otherwise Y",
+            notes: game.i18n.localize("levels3dpreview.flags.rotationAxis.notes"),
         },
         "rotationX" : {
             type: "range",
-            label: "Rotation X",
+            label: game.i18n.localize("levels3dpreview.flags.rotationX.label"),
             default: 0,
             min: 0,
             max: 360,
@@ -322,7 +332,7 @@ Hooks.on("renderTokenConfig", (app,html)=>{
         },
         "rotationY" : {
             type: "range",
-            label: "Rotation Y",
+            label: game.i18n.localize("levels3dpreview.flags.rotationY.label"),
             default: 0,
             min: 0,
             max: 360,
@@ -330,7 +340,7 @@ Hooks.on("renderTokenConfig", (app,html)=>{
         },
         "rotationZ" : {
             type: "range",
-            label: "Rotation Z",
+            label: game.i18n.localize("levels3dpreview.flags.rotationZ.label"),
             default: 0,
             min: 0,
             max: 360,
@@ -338,28 +348,28 @@ Hooks.on("renderTokenConfig", (app,html)=>{
         },
         "rotateBase": {
             type: "checkbox",
-            label: "Fix Base Rotation",
-            notes: "Some models require the selection indicator to be rotated, enable as necessary. (usually files converted from STL)",
+            label: game.i18n.localize("levels3dpreview.flags.rotateBase.label"),
+            notes: game.i18n.localize("levels3dpreview.flags.rotateBase.notes"),
             default: false,
         },
         "offsetX": {
             type: "number",
-            label: "Offset X",
+            label: game.i18n.localize("levels3dpreview.flags.offsetX.label"),
             default: 0,
         },
         "offsetY": {
             type: "number",
-            label: "Offset Y",
+            label: game.i18n.localize("levels3dpreview.flags.offsetY.label"),
             default: 0,
         },
         "offsetZ": {
             type: "number",
-            label: "Offset Z",
+            label: game.i18n.localize("levels3dpreview.flags.offsetZ.label"),
             default: 0,
         },
         "scale": {
             type: "number",
-            label: "Scale",
+            label: game.i18n.localize("levels3dpreview.flags.scale.label"),
             step: 0.00001,
             default: 1,
         },
