@@ -124,10 +124,6 @@ Hooks.once('ready', async function() {
     }
 });
 
-Hooks.on("canvasReady", () => {
-    game.Levels3DPreview?.close();
-})
-
 Hooks.on("getSceneControlButtons", (buttons)=>{
     buttons.find(b => b.name === "levels")?.tools?.push({
         "name": "preview3d",
@@ -168,6 +164,11 @@ Hooks.on("renderSceneConfig", (app,html)=>{
             "default": false,
             "notes": game.i18n.localize("levels3dpreview.flags.enablePlayers.notes")
         },
+        "auto3d": {
+            "type": "checkbox",
+            "label": game.i18n.localize("levels3dpreview.flags.auto3d.label"),
+            "default": false,
+        },
         "skybox" : {
             type: "filepicker",
             label: game.i18n.localize("levels3dpreview.flags.skybox.label"),
@@ -205,6 +206,16 @@ Hooks.on("renderSceneConfig", (app,html)=>{
             type: "color",
             label: game.i18n.localize("levels3dpreview.flags.sceneTint.label"),
             default: "#ffc494",
+        },
+        "timeSync": {
+            type: "select",
+            label: game.i18n.localize("levels3dpreview.flags.timeSync.label"),
+            default: "off",
+            options: {
+                "off": game.i18n.localize("levels3dpreview.flags.timeSync.options.off"),
+                "time": game.i18n.localize("levels3dpreview.flags.timeSync.options.time"),
+                "darkness": game.i18n.localize("levels3dpreview.flags.timeSync.options.darkness")
+            }
         },
         "sunPosition": {
             type: "range",

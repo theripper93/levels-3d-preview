@@ -15,6 +15,9 @@
                 "label": "Enable for Players",
                 "notes": "Allow players to open the 3D view for this scene, all walls, floors and tokens will be revealed."
             },
+            "auto3d":{
+                "label": "Enable 3D on Load"
+            },
             "skybox" : {
                 "label": "Skybox Image",
                 "placeholder": "Skybox Image",
@@ -40,6 +43,14 @@
             },
             "sceneTint": {
                 "label": "Scene Tint"
+            },
+            "timeSync": {
+                "label": "Automatic Sun Position",
+                "options": {
+                    "off": "Off",
+                    "time": "World Time",
+                    "darkness": "Scene Darkness"
+                }
             },
             "sunPosition": {
                 "label": "Sun Position"

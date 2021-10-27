@@ -8,8 +8,24 @@ import { FBXLoader } from './lib/FBXLoader.js'
 
 export const factor = 1000;
 
-Hooks.on("canvasReady", () => {
+Hooks.once("ready", () => {
   game.Levels3DPreview = new Levels3DPreview();
+})
+
+Hooks.on("canvasReady", async () => {
+  do{
+    await sleep(100);
+    if(!game.Levels3DPreview) continue;
+    game.Levels3DPreview.close();
+    game.Levels3DPreview.controls.reset();
+    const enablePlayers = canvas.scene.getFlag("levels-3d-preview", "enablePlayers");
+    const isGM = game.user.isGM;
+    if(canvas.scene.getFlag("levels-3d-preview", "auto3d") && (enablePlayers || isGM)){
+      game.Levels3DPreview.open();
+    }
+  }while(!game.Levels3DPreview)
+
+
 });
 
 Hooks.on("updateToken", (token, updates) => {
@@ -54,9 +70,60 @@ Hooks.on("updateToken", (token, updates) => {
 
 Hooks.on("updateScene", (scene, updates) => {
   if(updates.flags && updates.flags["levels-3d-preview"] && game.Levels3DPreview._active){
-    game.Levels3DPreview.setSunlightFromFlags();
+    game.Levels3DPreview.setSunlightFromFlags(true);
   }
+  const darknessSync = canvas.scene.getFlag("levels-3d-preview", "timeSync");
+  if(darknessSync === "darkness"){
+    if("darkness" in updates && game.Levels3DPreview._active){
+      const darkness = 90*(1-updates.darkness);
+      canvas.scene.setFlag("levels-3d-preview", "sunPosition", darkness);
+    }
+  }
+
 })
+
+Hooks.on("updateWorldTime", () => {
+
+  debounceTime3D();
+
+});
+
+function updateTime3D(){ 
+  if(!game.Levels3DPreview._active || !game.user.isGM) return;
+  const darknessSync = canvas.scene.getFlag("levels-3d-preview", "timeSync");
+  if(darknessSync !== "time") return;
+  const darkness = timeToSunPosition()//90*(1-updates.darkness);
+  const prevDarkness = canvas.scene.getFlag("levels-3d-preview", "sunPosition")
+  if(darkness.sunPosition === prevDarkness) return;
+  canvas.scene.update({
+    flags:{
+      "levels-3d-preview": {
+        sunPosition: darkness.sunPosition,
+        animate3d: darkness.animate ? darkness.sunPosition+1 : false,
+      }
+    }
+  })
+}
+
+const debounceTime3D = debounce(updateTime3D, 1000);
+let previousTime
+Hooks.on("ready", ()=>{previousTime = new Date(game.time.worldTime*1000);})
+function timeToSunPosition(){
+  let prevTime = previousTime;
+  previousTime = new Date(game.time.worldTime*1000);
+  const minutes = new Date(game.time.worldTime*1000).getUTCMinutes();
+  const hours = (new Date(game.time.worldTime*1000).getUTCHours()*60 + minutes)/60;
+  if(hours < 6 || hours > 20) return {
+    sunPosition: prevTime > previousTime ? -90 : 270,
+    animate: false,
+  };
+  const dayPercent = (hours-6)/14
+  const sunPosition = dayPercent*180;
+  return {
+    sunPosition: sunPosition,
+    animate: true,
+  };
+}
 
 Hooks.on("createToken", (tokenDocument) => {
   if(game.Levels3DPreview?._active && tokenDocument.object) game.Levels3DPreview.addToken(tokenDocument.object);
@@ -504,6 +571,8 @@ class Levels3DPreview {
       intensity : this.lights.spotLight.intensity,
     }
 
+    if(this.lights.sunlight.position.y < targetLighting.center.y) currentLighting.angle = -currentLighting.angle;
+
     const ticks = {
       distance : (currentLighting.distance - targetLighting.distance)/targetLighting.animationTime,
       angle : (currentLighting.angle - targetLighting.angle)/targetLighting.animationTime,
@@ -511,7 +580,6 @@ class Levels3DPreview {
       color: 1/targetLighting.animationTime,
       colorTick: 0,
     }
-
     if(data.animate) return this.animateLighting(currentLighting, targetLighting, ticks);
 
     const center = this.canvasCenter;
@@ -553,7 +621,6 @@ class Levels3DPreview {
     const center = this.canvasCenter;
     let time = target.animationTime;
     while(time > 0){
-      debugger
       await this.sleep(1000/60);
       time -= 1;
       const color = current.color.lerp(target.color, ticks.colorTick);
@@ -598,12 +665,12 @@ class Levels3DPreview {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 
-  setSunlightFromFlags(){
+  setSunlightFromFlags(animate){
     const color = new THREE.Color(canvas.scene.getFlag("levels-3d-preview", "sceneTint") ?? 0xffa95c);
     const distance = canvas.scene.getFlag("levels-3d-preview", "sunDistance") ?? 10;
     const angle = Math.toRadians(canvas.scene.getFlag("levels-3d-preview", "sunPosition") ?? 30);
     const intensity = canvas.scene.getFlag("levels-3d-preview", "sunIntensity") ?? 4;
-    this.sunlight = {color, distance, angle, intensity, animate: true};
+    this.sunlight = {color, distance, angle, intensity, animate: animate};
   }
 
   updateSunlight(data){
