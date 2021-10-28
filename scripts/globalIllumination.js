@@ -24,8 +24,8 @@ export class GlobalIllumination {
 
     this.lights.spotLight = spotLight;
     this.lights.adjustmentSpotlight = adjustmentSpotlight;
-    const sunlightSphere = new THREE.SphereGeometry(1 / 10, 16, 16);
-    const sunlight = new THREE.Mesh(sunlightSphere, new THREE.MeshBasicMaterial({ color: 0xffa95c }));
+    const sunlightSphere = new THREE.SphereGeometry(6 / 10, 16, 16);
+    const sunlight = new THREE.Mesh(sunlightSphere, new THREE.MeshBasicMaterial({ color: 0xffa95c, transparent: true, opacity: 0.5, wireframe: true }));
     this.lights.sunlight = sunlight;
     const color = canvas.scene.getFlag("levels-3d-preview", "sceneTint") ?? 0xffa95c;
     const distance = canvas.scene.getFlag("levels-3d-preview", "sunDistance") ?? 10;
@@ -37,7 +37,7 @@ export class GlobalIllumination {
     this.lights.target = lightTarget;
     this._parent.scene.add(light);
     if(!game.settings.get("levels-3d-preview", "disableLighting")){
-      this._parent.scene.add(sunlight);
+      if(this._parent.debugMode) this._parent.scene.add(sunlight);
       this._parent.scene.add(spotLight);
       this._parent.scene.add(adjustmentSpotlight);
       this._parent.scene.add(lightTarget);
@@ -53,7 +53,7 @@ export class GlobalIllumination {
           color : new THREE.Color(data.color),
           distance : data.distance,
           angle : data.angle,
-          showSun : data.showSun ?? this._parent.debug,
+          showSun : data.showSun ?? this._parent.debugMode,
           intensity : data.intensity,
           animationTime : (data.animationTime ?? 3000)/(1000/60),
         }

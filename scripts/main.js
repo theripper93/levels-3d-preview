@@ -18,6 +18,7 @@ Hooks.on("canvasReady", async () => {
   do{
     await sleep(100);
     if(!game.Levels3DPreview) continue;
+    game.Levels3DPreview._cameraSet = false;
     game.Levels3DPreview.close();
     game.Levels3DPreview.controls.reset();
     const enablePlayers = canvas.scene.getFlag("levels-3d-preview", "enablePlayers");
@@ -49,7 +50,7 @@ class Levels3DPreview {
     this.debugMode = game.settings.get("levels-3d-preview", "debugMode")
     this.tokenIndex = {};
     this.lights = {
-      sceneLighs : {}
+      sceneLights : {}
     };
     this.animationMixers = [];
     this.clock = new THREE.Clock();
@@ -59,12 +60,12 @@ class Levels3DPreview {
     this.lcTime = 0;
     this._active = false;
     this.tokenAnimationQueue = [];
+    this._cameraSet = false;
     this.init3d();
     this.ruler = new Ruler3D(this);
   }
 
   init3d() {
-    const center = this.canvasCenter;
     this.camera = new THREE.PerspectiveCamera(
       60,
       window.innerWidth / window.innerHeight,
@@ -88,12 +89,6 @@ class Levels3DPreview {
     //set dom element id
     this.renderer.domElement.id = "levels3d";
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
-    this.controls.enableDamping = true;
-    this.controls.dampingFactor = 0.25;
-    this.controls.maxDistance = 20;
-    this.controls.minDistance = 0.1;
-    this.controls.target.set(center.x, center.y, center.z);
-
     this.activateListeners();
   }
 
@@ -241,7 +236,8 @@ class Levels3DPreview {
   build3Dscene() {
     this.clear3Dscene();
     this._active = true;
-    let level = parseFloat($(_levels.UI?.element)?.find(".level-item.active").find(".level-top").val()) ?? Infinity;
+    this.debugMode = game.settings.get("levels-3d-preview", "debugMode")
+    let level = this.isLevels ? parseFloat($(_levels.UI?.element)?.find(".level-item.active").find(".level-top").val()) ?? Infinity : Infinity;
     if (isNaN(level)) level = Infinity;
     this.showSun = this.debugMode;
     const drawFloors = canvas.scene.getFlag("levels-3d-preview", "showSceneFloors") ?? true;
@@ -296,6 +292,10 @@ class Levels3DPreview {
     //this.createLights(size);
     this.makeSkybox();
     this.ruler.addMarkers();
+    if(!this._cameraSet){
+      this.resetCamera()
+      this._cameraSet = true;
+    }
   }
 
   addToken(token) {
@@ -355,9 +355,9 @@ class Levels3DPreview {
   }
 
   addLight(light){
-    this.lights.sceneLighs[light.id]?.destroy();
+    this.lights.sceneLights[light.id]?.destroy();
     const light3d = new Light3D(light, this);
-    this.lights.sceneLighs[light.id] = light3d;
+    this.lights.sceneLights[light.id] = light3d;
   }
 
   createFloors(level){
@@ -390,186 +390,6 @@ class Levels3DPreview {
         );
     }
   }
-/*
-  createLights(size) {
-    const light = new THREE.HemisphereLight(0xffffff, 0x000000, 1);
-    //light.position.set(10, 0, 0);
-    this.lights.hemiLight = light;
-    const spotLight = new THREE.SpotLight(0xffa95c, 4);
-    const adjustmentSpotlight = new THREE.SpotLight(0xffa95c, 4);
-    spotLight.castShadow = true;
-    spotLight.shadow.bias = -0.0001;
-    spotLight.shadow.camera.fov = 180;
-    spotLight.shadow.camera.far = 4000;
-    spotLight.shadow.camera.near = 0.1;
-    spotLight.shadow.mapSize.width = 1024*4;
-    spotLight.shadow.mapSize.height = 1024*4;
-    //spotLight.position.set(10, size / 4, size / 4);
-
-    this.lights.spotLight = spotLight;
-    this.lights.adjustmentSpotlight = adjustmentSpotlight;
-    const sunlightSphere = new THREE.SphereGeometry(size / 10, 16, 16);
-    const sunlight = new THREE.Mesh(sunlightSphere, new THREE.MeshBasicMaterial({ color: 0xffa95c }));
-    //sunlight.position.set(10, size / 4, size / 4);
-
-    this.lights.sunlight = sunlight;
-    const color = canvas.scene.getFlag("levels-3d-preview", "sceneTint") ?? 0xffa95c;
-    const distance = canvas.scene.getFlag("levels-3d-preview", "sunDistance") ?? 10;
-    const angle = Math.toRadians(canvas.scene.getFlag("levels-3d-preview", "sunPosition") ?? 30);
-    const intensity = canvas.scene.getFlag("levels-3d-preview", "sunIntensity") ?? 4;
-    const showSun = this.showSun
-    const lightTarget = new THREE.Object3D();
-    const center = this.canvasCenter;
-    lightTarget.position.set(center.x, center.y, center.z);
-    this.lights.target = lightTarget;
-    this.scene.add(light);
-    if(!game.settings.get("levels-3d-preview", "disableLighting")){
-      this.scene.add(sunlight);
-      this.scene.add(spotLight);
-      this.scene.add(adjustmentSpotlight);
-      this.scene.add(lightTarget);
-    }
-    spotLight.target = lightTarget;
-    adjustmentSpotlight.target = lightTarget;
-    this.sunlight = {color, distance, angle, showSun, intensity};
-  }
-
-  set sunlight(data){
-    const targetLighting = {
-      center : this.canvasCenter,
-      color : new THREE.Color(data.color),
-      distance : data.distance,
-      angle : data.angle,
-      showSun : data.showSun ?? this.showSun,
-      intensity : data.intensity,
-      animationTime : (data.animationTime ?? 3000)/(1000/60),
-    }
-    const currentLighting = {
-      center : this.lights.sunlight.position,
-      color : new THREE.Color(this.lights.sunlight.material.color),
-      distance : this.lights.sunlight.position.distanceTo(targetLighting.center),
-      angle : Math.acos((this.lights.sunlight.position.x - targetLighting.center.x)/this.lights.sunlight.position.distanceTo(targetLighting.center)),
-      intensity : this.lights.spotLight.intensity,
-    }
-
-    if(this.lights.sunlight.position.y < targetLighting.center.y) currentLighting.angle = -currentLighting.angle;
-
-    const ticks = {
-      distance : (currentLighting.distance - targetLighting.distance)/targetLighting.animationTime,
-      angle : (currentLighting.angle - targetLighting.angle)/targetLighting.animationTime,
-      intensity : (currentLighting.intensity - targetLighting.intensity)/targetLighting.animationTime,
-      color: 1/targetLighting.animationTime,
-      colorTick: 0,
-    }
-    if(data.animate) return this.animateLighting(currentLighting, targetLighting, ticks);
-
-    const center = this.canvasCenter;
-    const color = data.color;
-    const distance = data.distance;
-    const angle = data.angle;
-    const showSun = data.showSun ?? this.showSun;
-    const intensity = data.intensity;
-
-    //generate position form angle
-    const x = Math.cos(angle) * distance;
-    const y = Math.sin(angle) * distance;
-    const z = 0;
-    //detrmine the mirrored angle
-    const angle2 = Math.PI - angle;
-    const x2 = Math.cos(angle2) * distance;
-    const y2 = Math.sin(angle2) * distance;
-    const z2 = 0;
-
-    //set adjustment light
-    this.lights.adjustmentSpotlight.position.set(x2+center.x, y2, z2+center.z);
-
-    this.lights.adjustmentSpotlight.intensity = intensity/3;
-    this.lights.adjustmentSpotlight.color.set(color);
-
-    this.lights.sunlight.position.set(x+center.x, y, z+center.z);
-    this.lights.hemiLight.position.set(center.x, y, center.z);
-    this.lights.spotLight.position.set(x+center.x, y, z+center.z);
-    //set colors
-    this.lights.spotLight.color.set(color);
-    this.lights.sunlight.material.color.set(color);
-    this.lights.sunlight.visible = showSun;
-    this.lights.spotLight.intensity = intensity;
-    this.lights.hemiLight.intensity = !game.settings.get("levels-3d-preview", "disableLighting") ? intensity/4 : intensity;
-
-  }
-
-  async animateLighting(current,target,ticks){
-    const center = this.canvasCenter;
-    let time = target.animationTime;
-    while(time > 0){
-      await this.sleep(1000/60);
-      time -= 1;
-      const color = current.color.lerp(target.color, ticks.colorTick);
-      ticks.colorTick += ticks.color;
-      current.distance -= ticks.distance;
-      current.angle -= ticks.angle;
-      current.intensity -= ticks.intensity;
-      const distance = current.distance;
-      const angle = current.angle;
-      const intensity = current.intensity;
-      const showSun = this.showSun;
-  
-      //generate position form angle
-      const x = Math.cos(angle) * distance;
-      const y = Math.sin(angle) * distance;
-      const z = 0;
-      //detrmine the mirrored angle
-      const angle2 = Math.PI - angle;
-      const x2 = Math.cos(angle2) * distance;
-      const y2 = Math.sin(angle2) * distance;
-      const z2 = 0;
-  
-      //set adjustment light
-      this.lights.adjustmentSpotlight.position.set(x2+center.x, y2, z2+center.z);
-  
-      this.lights.adjustmentSpotlight.intensity = intensity/3;
-      this.lights.adjustmentSpotlight.color.set(color);
-  
-      this.lights.sunlight.position.set(x+center.x, y, z+center.z);
-      this.lights.hemiLight.position.set(center.x, y, center.z);
-      this.lights.spotLight.position.set(x+center.x, y, z+center.z);
-      //set colors
-      this.lights.spotLight.color.set(color);
-      this.lights.sunlight.material.color.set(color);
-      this.lights.sunlight.visible = showSun;
-      this.lights.spotLight.intensity = intensity;
-      this.lights.hemiLight.intensity = !game.settings.get("levels-3d-preview", "disableLighting") ? intensity/4 : intensity;
-    }
-  }
-
-  sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-  }
-
-  setSunlightFromFlags(animate){
-    const color = new THREE.Color(canvas.scene.getFlag("levels-3d-preview", "sceneTint") ?? 0xffa95c);
-    const distance = canvas.scene.getFlag("levels-3d-preview", "sunDistance") ?? 10;
-    const angle = Math.toRadians(canvas.scene.getFlag("levels-3d-preview", "sunPosition") ?? 30);
-    const intensity = canvas.scene.getFlag("levels-3d-preview", "sunIntensity") ?? 4;
-    this.sunlight = {color, distance, angle, intensity, animate: animate};
-  }
-
-  updateSunlight(data){
-    const color = new THREE.Color(data.color ?? canvas.scene.getFlag("levels-3d-preview", "sceneTint") ?? 0xffa95c);
-    const distance = data.distance ?? canvas.scene.getFlag("levels-3d-preview", "sunDistance") ?? 10;
-    const angle = Math.toRadians(data.angle ?? canvas.scene.getFlag("levels-3d-preview", "sunPosition") ?? 30);
-    const intensity = data.intensity ?? canvas.scene.getFlag("levels-3d-preview", "sunIntensity") ?? 4;
-    canvas.scene.update({
-      flags: {
-        "levels-3d-preview": {
-          sceneTint: color.getHexString(),
-          sunDistance: distance,
-          sunPosition: angle,
-          sunIntensity: intensity,
-      }
-    }
-  });
-  }*/
 
   makeSkybox() {
     const size = 80;
@@ -652,6 +472,7 @@ class Levels3DPreview {
       return new THREE.Mesh();
     }
   }
+
   clear3Dscene() {
     while (this.scene.children.length > 0) {
       this.scene.remove(this.scene.children[0]);
@@ -674,7 +495,9 @@ class Levels3DPreview {
     if(!hud.object || !this._active) return;
     const token3D = this.tokenIndex[hud.object.id];
     if(!token3D) return;
-    Ruler3D.centerElement(hud.element, token3D.mesh.position);
+    const center = token3D.mesh.position.clone();
+    center.y += token3D.hitbox.geometry.boundingBox.max.y;
+    Ruler3D.centerElement(hud.element, center);
   }
 
   animation(time) {
@@ -695,6 +518,19 @@ class Levels3DPreview {
     _this.resizeCanvasToDisplaySize(_this);
     _this.controls.update();
     _this.renderer.render(_this.scene, _this.camera);
+  }
+
+  resetCamera(topdown = false) {
+    const center = this.canvasCenter;
+    this.controls.reset();
+    this.controls.enableDamping = true;
+    this.controls.dampingFactor = 0.25;
+    this.controls.maxDistance = 20;
+    this.controls.minDistance = 0.1;
+    this.controls.target.set(center.x, center.y, center.z);
+    topdown ? this.camera.position.set(center.x, center.y + 4, center.z) : this.camera.position.set(center.x*1.5, center.y + 1, center.z*2);
+    this.camera.lookAt(center);
+    this.controls.update();
   }
 
   toggle(force){

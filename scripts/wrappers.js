@@ -33,8 +33,14 @@ Hooks.once('ready', async function() {
         wrapped(...args);
         if(game.Levels3DPreview?._active && game.Levels3DPreview.tokenIndex[this.object.id]){
             $("body").append(this.element);
+            $(this.element).css({
+                "transform-origin": "center",
+            });
         }else{
             $("#hud").append(this.element);
+            $(this.element).css({
+                "transform-origin": "top left",
+            });
         }
     }
 

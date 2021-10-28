@@ -88,7 +88,9 @@ window.addEventListener('resize', ()=>{
 //add listener on shift+r to reload the scene
 document.addEventListener('keypress', (e) => {
     if (e.key.toLowerCase() === 'r' && e.shiftKey) {
-        if(game.Levels3DPreview._active) game.Levels3DPreview.controls.reset()
+        if(game.Levels3DPreview._active) game.Levels3DPreview.resetCamera()
+    }else if(e.key.toLowerCase() === 't' && e.shiftKey){
+        if(game.Levels3DPreview._active) game.Levels3DPreview.resetCamera(true)
     }
 });
 
@@ -381,3 +383,27 @@ Hooks.on("renderTokenConfig", (app,html)=>{
         },
     })
 })
+
+/*Hooks.on("renderAmbientLightConfig", (app,html)=>{
+    injectConfig.inject(app,html,{
+        "moduleId": "levels-3d-preview",
+        "tab" : {
+            "name": "levels-3d-preview",
+            "label": "3D",
+            "icon": "fas fa-cube",
+        },
+        "castShadow": {
+            type: "checkbox",
+            label: game.i18n.localize("levels3dpreview.flags.castShadow.label"),
+            default: false,
+            notes: game.i18n.localize("levels3dpreview.flags.castShadow.notes"),
+        },
+        "elevation": {
+            type: "number",
+            label: game.i18n.localize("levels3dpreview.flags.elevation.label"),
+            default: 0,
+            step: 0.001,
+        }
+
+    })
+})*/
