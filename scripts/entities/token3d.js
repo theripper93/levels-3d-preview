@@ -1,5 +1,6 @@
 import * as THREE from "../lib/three.module.js";
 import {factor} from '../main.js'; 
+import {sleep} from '../main.js';
 
 export class Token3D {
     constructor(tokenDocument, parent) {
@@ -522,3 +523,54 @@ export class Token3D {
       this._parent.addToken(this.token);
     }
   }
+
+
+  //HOOKS
+
+  Hooks.on("updateToken", (token, updates) => {
+    if(!game.Levels3DPreview._active) return;
+    if(updates?.flags && updates?.flags["levels-3d-preview"]){
+      game.Levels3DPreview.tokenIndex[token.id]?.refresh();
+    }
+    if ("x" in updates || "y" in updates || "elevation" in updates || "rotation" in updates) {
+      const token3d = game.Levels3DPreview.tokenIndex[token.id];
+      if(!token3d) return;
+      if(!updates.x && !updates.y && !updates.elevation && updates.rotation) return token3d.setPosition();
+      const prevPos = {
+        x: token3d.token.x,
+        y: token3d.token.y
+      }
+      const x = updates.x ?? token.data.x;
+      const y = updates.y ?? token.data.y;
+      let dist = token3d.dragCanceled ? canvas.dimensions.size*2+1 : Math.sqrt(Math.pow(x - prevPos.x, 2) + Math.pow(y - prevPos.y, 2));
+      dist = (updates.elevation !== undefined) && (dist === 0) ? canvas.dimensions.size*2+1 : dist;
+      if(dist == 0 || dist < canvas.dimensions.size*2) return token3d.fallbackAnimation = true;
+      token3d.fallbackAnimation = false;
+      token3d.dragCanceled = false;
+      const larpFactor = canvas.dimensions.size/(dist*2);
+      let exitLerp = false;
+      setTimeout(() => {
+        exitLerp = true;
+      }, 4000);
+      token3d.isAnimating = false;
+      setTimeout(async () => {
+        token3d.isAnimating = true;
+  
+        const elevation = updates.elevation ?? token.data.elevation;
+        while(token3d.isAnimating && !exitLerp && token3d.setPosition(larpFactor, {x,y,elevation})){
+          await sleep(1000/60);
+        };
+        if(exitLerp)token3d.setPosition(false, {x,y,elevation})
+        token3d.isAnimating = false;
+      },200);
+  
+    }
+  });
+
+  Hooks.on("createToken", (tokenDocument) => {
+    if(game.Levels3DPreview?._active && tokenDocument.object) game.Levels3DPreview.addToken(tokenDocument.object);
+  })
+  
+  Hooks.on("deleteToken", (tokenDocument) => {
+    if(game.Levels3DPreview?._active) game.Levels3DPreview.tokenIndex[tokenDocument.id]?.destroy();
+  })

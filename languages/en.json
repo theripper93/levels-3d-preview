@@ -9,7 +9,8 @@
             "miniCanvas": "Popout/Restore Canvas"
         },
         "errors": {
-            "filenotsupported": "File format not supported"
+            "filenotsupported": "File format not supported",
+            "3dnotactive": "Cannot open canvas popout, the 3D mode is not active."
         },
         "flags": {
             "enablePlayers":{

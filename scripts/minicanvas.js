@@ -2,6 +2,10 @@ class miniCanvas extends Application {
     constructor(actor) {
       super();
       this.actor = actor;
+      this.positionCalls = 0;
+      this.savePosition = foundry.utils.debounce(() => {
+        game.settings.set("levels-3d-preview", "minicanvasposition", this.position);
+      }, 100);
     }
   
     static get defaultOptions() {
@@ -22,13 +26,7 @@ class miniCanvas extends Application {
 
     setPosition({left, top, width, height, scale}={}) {
       super.setPosition({left, top, width, height, scale});
-      game.settings.set("levels-3d-preview", "minicanvasposition", {
-        left: left,
-        top: top,
-        width: width,
-        height: height,
-        scale: scale,
-      });
+      this.savePosition();
     }
   
     getData() {

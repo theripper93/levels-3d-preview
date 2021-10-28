@@ -20,20 +20,23 @@
   ],
   "esmodules": [
     "./scripts/main.js",
+    "./scripts/globalIllumination.js",
     "./scripts/lib/OrbitControls.js",
     "./scripts/lib/ConvexGeometry.js",
     "./scripts/lib/ConvexHull.js",
     "./scripts/lib/GLTFLoader.js",
     "./scripts/entities/token3d.js",
     "./scripts/entities/ruler3d.js",
+    "./scripts/entities/light3d.js",
     "./scripts/lib/fflate.module.js",
     "./scripts/lib/NURBSCurve.js",
     "./scripts/lib/FBXLoader.js",
     "./scripts/lib/NUBSUtils.js",
-    "./scripts/config.js"
+    "./scripts/config.js",
+    "./scripts/globalIllumination.js"
 ],
   "scripts": [
-    "./scripts/module.js",
+    "./scripts/wrappers.js",
     "./scripts/lib/injectConfig.js",
     "./scripts/minicanvas.js"
   ],

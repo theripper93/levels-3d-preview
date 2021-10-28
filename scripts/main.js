@@ -4,7 +4,9 @@ import { ConvexGeometry } from "./lib/ConvexGeometry.js";
 import { GLTFLoader } from "./lib/GLTFLoader.js";
 import {Token3D} from "./entities/token3d.js";
 import { Ruler3D } from "./entities/ruler3d.js";
-import { FBXLoader } from './lib/FBXLoader.js'
+import { Light3D } from "./entities/light3d.js";
+import { FBXLoader } from './lib/FBXLoader.js';
+import { GlobalIllumination } from "./globalillumination.js";
 
 export const factor = 1000;
 
@@ -28,117 +30,12 @@ Hooks.on("canvasReady", async () => {
 
 });
 
-Hooks.on("updateToken", (token, updates) => {
-  if(!game.Levels3DPreview._active) return;
-  if(updates?.flags && updates?.flags["levels-3d-preview"]){
-    game.Levels3DPreview.tokenIndex[token.id]?.refresh();
-  }
-  if ("x" in updates || "y" in updates || "elevation" in updates || "rotation" in updates) {
-    const token3d = game.Levels3DPreview.tokenIndex[token.id];
-    if(!token3d) return;
-    if(!updates.x && !updates.y && !updates.elevation && updates.rotation) return token3d.setPosition();
-    const prevPos = {
-      x: token3d.token.x,
-      y: token3d.token.y
-    }
-    const x = updates.x ?? token.data.x;
-    const y = updates.y ?? token.data.y;
-    let dist = token3d.dragCanceled ? canvas.dimensions.size*2+1 : Math.sqrt(Math.pow(x - prevPos.x, 2) + Math.pow(y - prevPos.y, 2));
-    dist = updates.elevation && dist === 0 ? 0.1 : dist;
-    if(dist == 0 || dist < canvas.dimensions.size*2) return token3d.fallbackAnimation = true;
-    token3d.fallbackAnimation = false;
-    token3d.dragCanceled = false;
-    const larpFactor = canvas.dimensions.size/(dist*2);
-    let exitLerp = false;
-    setTimeout(() => {
-      exitLerp = true;
-    }, 4000);
-    token3d.isAnimating = false;
-    setTimeout(async () => {
-      token3d.isAnimating = true;
-
-      const elevation = updates.elevation ?? token.data.elevation;
-      while(token3d.isAnimating && !exitLerp && token3d.setPosition(larpFactor, {x,y,elevation})){
-        await sleep(1000/60);
-      };
-      if(exitLerp)token3d.setPosition(false, {x,y,elevation})
-      token3d.isAnimating = false;
-    },200);
-
-  }
-});
-
-Hooks.on("updateScene", (scene, updates) => {
-  if(updates.flags && updates.flags["levels-3d-preview"] && game.Levels3DPreview._active){
-    game.Levels3DPreview.setSunlightFromFlags(true);
-  }
-  const darknessSync = canvas.scene.getFlag("levels-3d-preview", "timeSync");
-  if(darknessSync === "darkness"){
-    if("darkness" in updates && game.Levels3DPreview._active){
-      const darkness = 90*(1-updates.darkness);
-      canvas.scene.setFlag("levels-3d-preview", "sunPosition", darkness);
-    }
-  }
-
-})
-
-Hooks.on("updateWorldTime", () => {
-
-  debounceTime3D();
-
-});
-
-function updateTime3D(){ 
-  if(!game.Levels3DPreview._active || !game.user.isGM) return;
-  const darknessSync = canvas.scene.getFlag("levels-3d-preview", "timeSync");
-  if(darknessSync !== "time") return;
-  const darkness = timeToSunPosition()//90*(1-updates.darkness);
-  const prevDarkness = canvas.scene.getFlag("levels-3d-preview", "sunPosition")
-  if(darkness.sunPosition === prevDarkness) return;
-  canvas.scene.update({
-    flags:{
-      "levels-3d-preview": {
-        sunPosition: darkness.sunPosition,
-        animate3d: darkness.animate ? darkness.sunPosition+1 : false,
-      }
-    }
-  })
-}
-
-const debounceTime3D = debounce(updateTime3D, 1000);
-let previousTime
-Hooks.on("ready", ()=>{previousTime = new Date(game.time.worldTime*1000);})
-function timeToSunPosition(){
-  let prevTime = previousTime;
-  previousTime = new Date(game.time.worldTime*1000);
-  const minutes = new Date(game.time.worldTime*1000).getUTCMinutes();
-  const hours = (new Date(game.time.worldTime*1000).getUTCHours()*60 + minutes)/60;
-  if(hours < 6 || hours > 20) return {
-    sunPosition: prevTime > previousTime ? -90 : 270,
-    animate: false,
-  };
-  const dayPercent = (hours-6)/14
-  const sunPosition = dayPercent*180;
-  return {
-    sunPosition: sunPosition,
-    animate: true,
-  };
-}
-
-Hooks.on("createToken", (tokenDocument) => {
-  if(game.Levels3DPreview?._active && tokenDocument.object) game.Levels3DPreview.addToken(tokenDocument.object);
-})
-
-Hooks.on("deleteToken", (tokenDocument) => {
-  if(game.Levels3DPreview?._active) game.Levels3DPreview.tokenIndex[tokenDocument.id]?.destroy();
-})
-
 Hooks.on("levelsUiChangeLevel", () => {
   if (!game.user.isGM || $("#levels3d").length == 0) return;
   game.Levels3DPreview.build3Dscene();
 });
 
-function sleep(ms) {
+export function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
@@ -151,6 +48,9 @@ class Levels3DPreview {
     this.factor = factor;
     this.debugMode = game.settings.get("levels-3d-preview", "debugMode")
     this.tokenIndex = {};
+    this.lights = {
+      sceneLighs : {}
+    };
     this.animationMixers = [];
     this.clock = new THREE.Clock();
     this.loader = new GLTFLoader();
@@ -284,6 +184,9 @@ class Levels3DPreview {
       }else{
         token3d.elevation3d += elevationTick*elevationDiff;
       }
+      if(game.settings.get("levels-3d-preview", "preventNegative") && token3d.elevation3d < 0){
+        token3d.elevation3d = 0;
+      }
     })
   }
 
@@ -389,7 +292,8 @@ class Levels3DPreview {
     this.dragplane.userData.isFloor = true;
     this.dragplane.rotation.x = -Math.PI / 2;
     this.scene.add(this.dragplane);
-    this.createLights(size);
+    this.lights.globalIllumination = new GlobalIllumination(this);
+    //this.createLights(size);
     this.makeSkybox();
     this.ruler.addMarkers();
   }
@@ -406,7 +310,8 @@ class Levels3DPreview {
     const width = canvas.scene.dimensions.sceneWidth / this.factor;
     const height = canvas.scene.dimensions.sceneHeight / this.factor;
     const center = this.canvasCenter;
-    const geometry = new THREE.BoxGeometry(width, height, 0.01);
+    const depth = 0.02
+    const geometry = new THREE.BoxGeometry(width, height, depth);
     const material = new THREE.MeshLambertMaterial({
       map: new THREE.TextureLoader().load(canvas.scene.data.img,(t) => {
         t.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
@@ -417,7 +322,7 @@ class Levels3DPreview {
     const plane = new THREE.Mesh(geometry, material);
     plane.receiveShadow = true;
     plane.castShadow = true;
-    plane.position.set(center.x, center.y-0.01, center.z);
+    plane.position.set(center.x, center.y-depth/2-0.00001, center.z);
     plane.rotation.x = -Math.PI / 2;
     this.scene.add(plane);
 
@@ -445,38 +350,14 @@ class Levels3DPreview {
   createSceneLights(){
     if(game.settings.get("levels-3d-preview", "disableLighting")) return;
     for(let light of canvas.lighting.placeables){
-      const top = light.document.getFlag("levels", "rangeTop");
-      const bottom = light.document.getFlag("levels", "rangeBottom");
-      if(top === null || bottom === null) continue;
-      const z = (top+bottom)*canvas.scene.dimensions.size/canvas.scene.dimensions.distance/2;
-      const color = light.data.tintColor || "#ffffff";
-      const radius = Math.max(light.data.dim, light.data.bright)*canvas.scene.dimensions.size/canvas.scene.dimensions.distance/this.factor;
-      const alpha = light.data.tintAlpha*100;
-      const pointLight = new THREE.PointLight(color, alpha, radius, 2);
-      pointLight.castShadow = true;
-      pointLight.shadow.bias = -0.0001;
-      pointLight.shadow.mapSize.width = 1024*4;
-      pointLight.shadow.mapSize.height = 1024*4;
-      const position = {
-        x: light.data.x/this.factor,
-        y: z/this.factor,
-        z: light.data.y/this.factor,
-      }
-      pointLight.position.set(position.x, position.y, position.z);
-      this.scene.add(pointLight);
-      if(!this.showSun) continue;
-      //make sphere
-      const sphere = new THREE.Mesh(
-        new THREE.SphereGeometry(0.2, 32, 32),
-        new THREE.MeshBasicMaterial({
-          color: color,
-          transparent: true,
-          opacity: 0.5,
-        })
-      );
-      sphere.position.set(position.x, position.y, position.z);
-      this.scene.add(sphere);
+      this.addLight(light);
     }
+  }
+
+  addLight(light){
+    this.lights.sceneLighs[light.id]?.destroy();
+    const light3d = new Light3D(light, this);
+    this.lights.sceneLighs[light.id] = light3d;
   }
 
   createFloors(level){
@@ -509,9 +390,8 @@ class Levels3DPreview {
         );
     }
   }
-
+/*
   createLights(size) {
-    this.lights = {}
     const light = new THREE.HemisphereLight(0xffffff, 0x000000, 1);
     //light.position.set(10, 0, 0);
     this.lights.hemiLight = light;
@@ -689,7 +569,7 @@ class Levels3DPreview {
       }
     }
   });
-  }
+  }*/
 
   makeSkybox() {
     const size = 80;

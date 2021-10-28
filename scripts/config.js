@@ -1,5 +1,3 @@
-import * as THREE from "./lib/three.module.js";
-
 Hooks.once('init', function() {
 
     game.settings.register("levels-3d-preview", "selectedImage", {
@@ -15,6 +13,15 @@ Hooks.once('init', function() {
       game.settings.register("levels-3d-preview", "standupFace", {
         name: game.i18n.localize("levels3dpreview.settings.standupFace.name"),
         hint: game.i18n.localize("levels3dpreview.settings.standupFace.hint"),
+        scope: "world",
+        config: true,
+        type: Boolean,
+        default: true,
+      });
+
+      game.settings.register("levels-3d-preview", "preventNegative", {
+        name: game.i18n.localize("levels3dpreview.settings.preventNegative.name"),
+        hint: game.i18n.localize("levels3dpreview.settings.preventNegative.hint"),
         scope: "world",
         config: true,
         type: Boolean,
@@ -85,56 +92,6 @@ document.addEventListener('keypress', (e) => {
     }
 });
 
-Hooks.once('ready', async function() {
-
-    libWrapper.register("levels-3d-preview", "KeyboardManager.prototype._handleMovement", _handleMovement, "MIXED")
-    libWrapper.register("levels-3d-preview", "TokenHUD.prototype.setPosition", setPosition, "WRAPPER")
-    libWrapper.register("levels-3d-preview", "CONFIG.Token.objectClass.prototype.refresh", reDraw, "WRAPPER")
-    libWrapper.register("levels-3d-preview", "Token.prototype._onMovementFrame", Token3DSetPosition, "WRAPPER");
-
-    function reDraw(wrapped,...args){
-        wrapped(...args)
-        try{
-        game.Levels3DPreview?._active && game.Levels3DPreview.tokenIndex[this.id]?.reDraw()
-        }catch(e){}
-    }
-
-    function _handleMovement(wrapped,...args){
-        const e = args[0];
-        const layer = args[1];
-        if(e.altKey && layer.name == "TokenLayer"){
-            const directions = this._moveKeys
-            const elevDiff = directions.has("up") ? 1 : directions.has("down") ? -1 : 0;
-            let updates = [];
-            canvas.tokens.controlled.forEach(t => {
-                updates.push({_id: t.id, elevation: t.data.elevation + elevDiff});
-            })
-            canvas.scene.updateEmbeddedDocuments("Token", updates);
-        }else{
-            return wrapped(...args);
-        }
-    }
-
-    function setPosition(wrapped,...args){
-        wrapped(...args);
-        if(game.Levels3DPreview?._active && game.Levels3DPreview.tokenIndex[this.object.id]){
-            $("body").append(this.element);
-        }else{
-            $("#hud").append(this.element);
-        }
-    }
-
-    function Token3DSetPosition(wrapped,...args){
-        wrapped(...args);
-        if(game.Levels3DPreview?._active){
-          const token3D = game.Levels3DPreview.tokenIndex[this.id];
-          if(token3D && token3D.fallbackAnimation){
-              token3D.isAnimating = false;
-              token3D.setPosition();
-          }
-        }
-    }
-});
 
 Hooks.on("getSceneControlButtons", (buttons)=>{
     buttons.find(b => b.name === "token")?.tools?.push(
@@ -157,6 +114,11 @@ Hooks.on("getSceneControlButtons", (buttons)=>{
         visible: canvas?.scene?.getFlag("levels-3d-preview","enablePlayers") || game.user.isGM,
         active: Object.values(ui.windows)?.find(w => w.id === "miniCanvas") ? true : false,
         onClick: () => {
+            if(!game.Levels3DPreview?._active) {
+                $(`li[data-tool="miniCanvas"]`).toggleClass("active", false);
+                ui.controls.controls.find(c=>c.name=="token").tools.find(t=>t.name == "miniCanvas").active = false;
+                return ui.notifications.warn(game.i18n.localize("levels3dpreview.errors.3dnotactive"))
+            }
             miniCanvas.toggle();
         }
     });
