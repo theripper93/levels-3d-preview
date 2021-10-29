@@ -109,7 +109,7 @@ export class Ruler3D {
     static position3dtoScreen(position){
         const camera = game.Levels3DPreview.camera;
         const vector = new THREE.Vector3(position.x, position.y, position.z);
-        const widthHalf = game.Levels3DPreview.renderer.getContext().canvas.width*0.5/devicePixelRatio , heightHalf = game.Levels3DPreview.renderer.getContext().canvas.height*0.5/devicePixelRatio;
+        const widthHalf = game.Levels3DPreview.renderer.getContext().canvas.width*0.5/game.Levels3DPreview.resolutionMulti , heightHalf = game.Levels3DPreview.renderer.getContext().canvas.height*0.5/game.Levels3DPreview.resolutionMulti;
         vector.project(camera);
         vector.x = ( vector.x * widthHalf ) + widthHalf;
         vector.y = - ( vector.y * heightHalf ) + heightHalf;

@@ -157,9 +157,22 @@
                 "name": "Enable Canvas Popout",
                 "hint": "Pop out the 2d canvas into a separate window when the 3D mode is activated"
             },
+            "preventNegative": {
+                "name": "Prevent Negative Elevation",
+                "hint": "Prevents token movement to go below the game board"
+            },
             "disableLighting":{
                 "name": "Disable Lighting/Shadows",
                 "hint": "Keep only a basic light and remove all the spot and point lights for performance."
+            },
+            "resolution": {
+                "name": "Resolution",
+                "hint": "The resolution of the 3D canvas, this will affect performance. (requires refresh)",
+                "options": {
+                    "full": "High",
+                    "half": "Medium",
+                    "quarter": "Low"
+                }
             },
             "debugMode": {
                 "name": "Debug Mode",

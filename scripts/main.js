@@ -84,7 +84,8 @@ class Levels3DPreview {
     this.renderer.setAnimationLoop(this.animation);
     this.renderer.shadowMap.enabled = true;
     this.renderer.antialias = true;
-    this.renderer.setPixelRatio(window.devicePixelRatio);
+    this.resolutionMulti = game.settings.get("levels-3d-preview", "resolution")*window.devicePixelRatio;
+    this.renderer.setPixelRatio(this.resolutionMulti);
     this.renderer.alpha = true;
     //set dom element id
     this.renderer.domElement.id = "levels3d";
@@ -524,7 +525,7 @@ class Levels3DPreview {
     const center = this.canvasCenter;
     this.controls.reset();
     this.controls.enableDamping = true;
-    this.controls.dampingFactor = 0.25;
+    this.controls.dampingFactor = 0.07;
     this.controls.maxDistance = 20;
     this.controls.minDistance = 0.1;
     this.controls.target.set(center.x, center.y, center.z);

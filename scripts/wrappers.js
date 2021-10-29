@@ -1,4 +1,3 @@
-
 Hooks.once('ready', async function() {
 
     libWrapper.register("levels-3d-preview", "KeyboardManager.prototype._handleMovement", _handleMovement, "MIXED")
@@ -16,6 +15,7 @@ Hooks.once('ready', async function() {
     function _handleMovement(wrapped,...args){
         const e = args[0];
         const layer = args[1];
+        handleArrowKeys(this._moveKeys)
         if(e.altKey && layer.name == "TokenLayer"){
             const directions = this._moveKeys
             const elevDiff = directions.has("up") ? 1 : directions.has("down") ? -1 : 0;
@@ -24,9 +24,53 @@ Hooks.once('ready', async function() {
                 updates.push({_id: t.id, elevation: t.data.elevation + elevDiff});
             })
             canvas.scene.updateEmbeddedDocuments("Token", updates);
-        }else{
-            return wrapped(...args);
         }
+
+        if(!game.Levels3DPreview?._active) return wrapped(...args);
+
+        const positions = handleArrowKeys(this._moveKeys)
+        let dx = positions.x
+        let dy = positions.y
+        layer.moveMany({dx, dy, rotate: false});
+
+    }
+
+    function handleArrowKeys(directions){
+        const camera = game.Levels3DPreview.camera.position.clone();
+        const target = game.Levels3DPreview.tokenIndex[_token.id];
+        const p2 = {
+            x: camera.x,
+            y: camera.z
+        }
+        const p1 = {
+            x: target.mesh.position.x,
+            y: target.mesh.position.z
+        }
+        const angle = Math.atan2(p2.y - p1.y, p2.x - p1.x)+Math.PI;
+        let dx = 0;
+        let dy = 0;
+    
+        // Assign movement offsets
+        if ( directions.has("left") ) dx -= 1;
+        if ( directions.has("up") ) dy -= 1;
+        if ( directions.has("right") ) dx += 1;
+        if ( directions.has("down") ) dy += 1;
+
+        // Calculate movement vector
+        const d1 = {
+            x: 0,
+            y: 0
+        }
+        const d2 = {
+            x: dx,
+            y: dy,
+        }
+        const dAngle = Math.atan2(d2.y - d1.y, d2.x - d1.x)+Math.PI;
+        const fAngle = (dAngle + angle)%(Math.PI*2);
+        const nX = Math.round(Math.sin(fAngle));
+        const nY = Math.round(-Math.cos(fAngle));
+        return {x: nX, y: nY}
+        
     }
 
     function setPosition(wrapped,...args){

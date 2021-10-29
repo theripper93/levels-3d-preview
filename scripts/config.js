@@ -46,6 +46,20 @@ Hooks.once('init', function() {
         default: false,
       });
 
+      game.settings.register("levels-3d-preview", "resolution", {
+        name: game.i18n.localize("levels3dpreview.settings.resolution.name"),
+        hint: game.i18n.localize("levels3dpreview.settings.resolution.hint"),
+        scope: "client",
+        config: true,
+        type: Number,
+        choices: {
+            1: game.i18n.localize("levels3dpreview.settings.resolution.options.full"),
+            0.5: game.i18n.localize("levels3dpreview.settings.resolution.options.half"),
+            0.25: game.i18n.localize("levels3dpreview.settings.resolution.options.quarter"),
+          },
+        default: 1,
+      });
+
       game.settings.register("levels-3d-preview", "debugMode", {
         name: game.i18n.localize("levels3dpreview.settings.debugMode.name"),
         hint: game.i18n.localize("levels3dpreview.settings.debugMode.hint"),
