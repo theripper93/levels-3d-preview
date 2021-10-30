@@ -8,7 +8,8 @@
 
 ### Token Interaction:
 
- - **Left mouse + drag** -> Drag Move Token (there is no box multiple selection but if you have multiple tokens selected and move one the others will follow with the same delta of movement/elevation)
+ - **Left mouse + drag** -> Drag Move Token 
+     - There is no box multiple selection but if you have multiple tokens selected and move one the others will follow with the same delta of movement/elevation
      - While dragging, scroll wheel will change altitude (you can add shift\ctrl modifiers for granular changes)
      - Default +\-5 elevation, shift +\-1, control +\-0.1
  - **Shift + Click** -> Select multiple
