@@ -142,7 +142,7 @@ export class InteractionManager {
     }
 
     _onKeyUp(event){
-      this.controls.enableZoom = true
+      if(!this.draggable) this.controls.enableZoom = true
     }
   
     findMouseIntersect(event) {
