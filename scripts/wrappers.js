@@ -8,7 +8,7 @@ Hooks.once('ready', async function() {
     function reDraw(wrapped,...args){
         wrapped(...args)
         try{
-        game.Levels3DPreview?._active && game.Levels3DPreview.tokenIndex[this.id]?.reDraw()
+        game.Levels3DPreview?._active && game.Levels3DPreview.tokens[this.id]?.reDraw()
         }catch(e){}
     }
 
@@ -37,7 +37,7 @@ Hooks.once('ready', async function() {
 
     function handleArrowKeys(directions){
         const camera = game.Levels3DPreview.camera.position.clone();
-        const target = game.Levels3DPreview.tokenIndex[_token.id];
+        const target = game.Levels3DPreview.tokens[_token.id];
         const p2 = {
             x: camera.x,
             y: camera.z
@@ -75,7 +75,7 @@ Hooks.once('ready', async function() {
 
     function setPosition(wrapped,...args){
         wrapped(...args);
-        if(game.Levels3DPreview?._active && game.Levels3DPreview.tokenIndex[this.object.id]){
+        if(game.Levels3DPreview?._active && game.Levels3DPreview.tokens[this.object.id]){
             $("body").append(this.element);
             $(this.element).css({
                 "transform-origin": "center",
@@ -91,7 +91,7 @@ Hooks.once('ready', async function() {
     function Token3DSetPosition(wrapped,...args){
         wrapped(...args);
         if(game.Levels3DPreview?._active){
-          const token3D = game.Levels3DPreview.tokenIndex[this.id];
+          const token3D = game.Levels3DPreview.tokens[this.id];
           if(token3D && token3D.fallbackAnimation){
               token3D.isAnimating = false;
               token3D.setPosition();

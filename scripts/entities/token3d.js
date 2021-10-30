@@ -515,7 +515,7 @@ export class Token3D {
 
     destroy(){
       this._parent.scene.remove(this.mesh);
-      delete this._parent.tokenIndex[this.id]
+      delete this._parent.tokens[this.id]
     }
 
     refresh(){
@@ -530,10 +530,10 @@ export class Token3D {
   Hooks.on("updateToken", (token, updates) => {
     if(!game.Levels3DPreview._active) return;
     if(updates?.flags && updates?.flags["levels-3d-preview"]){
-      game.Levels3DPreview.tokenIndex[token.id]?.refresh();
+      game.Levels3DPreview.tokens[token.id]?.refresh();
     }
     if ("x" in updates || "y" in updates || "elevation" in updates || "rotation" in updates) {
-      const token3d = game.Levels3DPreview.tokenIndex[token.id];
+      const token3d = game.Levels3DPreview.tokens[token.id];
       if(!token3d) return;
       if(!updates.x && !updates.y && !updates.elevation && updates.rotation) return token3d.setPosition();
       const prevPos = {
@@ -572,12 +572,12 @@ export class Token3D {
   })
   
   Hooks.on("deleteToken", (tokenDocument) => {
-    if(game.Levels3DPreview?._active) game.Levels3DPreview.tokenIndex[tokenDocument.id]?.destroy();
+    if(game.Levels3DPreview?._active) game.Levels3DPreview.tokens[tokenDocument.id]?.destroy();
   })
 
   /*Hooks.on("controlToken", async (token) => {
     if(game.Levels3DPreview?._active){
-      const token3d = game.Levels3DPreview.tokenIndex[token.id];
+      const token3d = game.Levels3DPreview.tokens[token.id];
       if(token3d) {
         const targetPosition = token3d.mesh.position.clone();
         const currentPosition = game.Levels3DPreview.controls.target.clone();

@@ -49,7 +49,7 @@ class Levels3DPreview {
     this.renderer;
     this.factor = factor;
     this.debugMode = game.settings.get("levels-3d-preview", "debugMode")
-    this.tokenIndex = {};
+    this.tokens = {};
     this.lights = {
       sceneLights : {}
     };
@@ -171,7 +171,7 @@ class Levels3DPreview {
   addToken(token) {
     new Token3D(token,this).load().then((token3d) => {
       this.scene.add(token3d.mesh);
-      this.tokenIndex[token.id] = token3d;
+      this.tokens[token.id] = token3d;
     });
   }
 
@@ -363,7 +363,7 @@ class Levels3DPreview {
   centerTokenHUD(){
     const hud = canvas.hud.token;
     if(!hud.object || !this._active) return;
-    const token3D = this.tokenIndex[hud.object.id];
+    const token3D = this.tokens[hud.object.id];
     if(!token3D) return;
     const center = token3D.mesh.position.clone();
     center.y += token3D.hitbox.geometry.boundingBox.max.y;
@@ -375,7 +375,7 @@ class Levels3DPreview {
     if(!_this._active) return;
     _this.interactionManager.dragObject();
     const delta = _this.clock.getDelta();
-    Object.values(_this.tokenIndex).forEach((token) => {
+    Object.values(_this.tokens).forEach((token) => {
       token.updateVisibility();
       if(token.mixer){
         token.mixer.update(delta);

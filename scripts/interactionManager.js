@@ -107,7 +107,7 @@ export class InteractionManager {
     _onClickRight(event){
       const entity = event.entity;
       const intersect = event.intersect;
-      if(this.draggable) this.cancelDrag();
+      if(this.draggable) return this.cancelDrag();
       else entity._onClickRight(event);
       this.toggleControls(true);
     }
