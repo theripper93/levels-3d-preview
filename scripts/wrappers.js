@@ -26,9 +26,10 @@ Hooks.once('ready', async function() {
             canvas.scene.updateEmbeddedDocuments("Token", updates);
         }
 
-        if(!game.Levels3DPreview?._active) return wrapped(...args);
+        if(!game.Levels3DPreview?._active || !_token) return wrapped(...args);
 
         const positions = handleArrowKeys(this._moveKeys)
+        if(!positions) return
         let dx = positions.x
         let dy = positions.y
         layer.moveMany({dx, dy, rotate: false});
@@ -37,7 +38,8 @@ Hooks.once('ready', async function() {
 
     function handleArrowKeys(directions){
         const camera = game.Levels3DPreview.camera.position.clone();
-        const target = game.Levels3DPreview.tokens[_token.id];
+        const target = game.Levels3DPreview.tokens[_token?.id];
+        if(!target) return undefined
         const p2 = {
             x: camera.x,
             y: camera.z

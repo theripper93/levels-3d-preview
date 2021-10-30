@@ -23,13 +23,17 @@ export class InteractionManager {
         this.domElement.addEventListener("mouseup", this._onMouseUp.bind(this), false);
         this.domElement.addEventListener("mousemove", this._onMouseMove.bind(this), false);
         this.domElement.addEventListener("wheel", this._onWheel.bind(this), false);
+        document.addEventListener("keydown", this._onKeyDown.bind(this));
+        document.addEventListener("keyup", this._onKeyUp.bind(this));
+        //add keydown event
+
       }
 
     _onMouseDown(event){
       this.mousedown = true;
       this.mousePosition = { x: event.clientX, y: event.clientY };
       if(event.which !== 1 && event.which !== 3) return;
-      if(event.shiftKey) return;
+      //if(event.shiftKey) return;
       const intersect = this.findMouseIntersect(event);
       if(!intersect){
         if(event.which === 1 && event.ctrlKey) canvas.tokens.releaseAll();
@@ -49,7 +53,7 @@ export class InteractionManager {
             this._onClickRight(event);
           }
           this.clicks = 0;
-        }, 150);
+        }, 250);
       }else{
         this.clicks = 0;
         if(this.draggable) return this.cancelDrag();
@@ -73,33 +77,40 @@ export class InteractionManager {
     }
 
     _onWheel(event){
-      if(!this.draggable) return;
-      const delta = event.deltaY;
-      const token3d = this.draggable.userData.token3D;
-      let elevationDiff = 5;
-      if(event.shiftKey) elevationDiff = 1;
-      if(event.ctrlKey) elevationDiff = 0.1;
-      //change y position
-      if(delta > 0){
-        token3d.elevation3d -= this.elevationTick*elevationDiff;
-      }else{
-        token3d.elevation3d += this.elevationTick*elevationDiff;
+      if(this.draggable){
+        const delta = event.deltaY;
+        const token3d = this.draggable.userData.token3D;
+        let elevationDiff = 5;
+        if(event.shiftKey) elevationDiff = 1;
+        if(event.ctrlKey) elevationDiff = 0.1;
+        //change y position
+        if(delta > 0){
+          token3d.elevation3d -= this.elevationTick*elevationDiff;
+        }else{
+          token3d.elevation3d += this.elevationTick*elevationDiff;
+        }
+        if(game.settings.get("levels-3d-preview", "preventNegative") && token3d.elevation3d < 0){
+          token3d.elevation3d = 0;
+        }
       }
-      if(game.settings.get("levels-3d-preview", "preventNegative") && token3d.elevation3d < 0){
-        token3d.elevation3d = 0;
+      if(!this.draggable && event.ctrlKey && canvas.tokens.controlled.length){
+        const delta = event.deltaY/20;
+        console.log(delta)
+        canvas.tokens.rotateMany({delta})
       }
+
     }
 
     _onClickLeft(event){
       const entity = event.entity;
       const intersect = event.intersect;
       entity._onClickLeft(event);
-      if(event.altKey || !this.mousedown){
+      if(event.altKey || !this.mousedown || !entity.isOwner){
         this.toggleControls(true, true);
         return this.clicks = 0;
-        }
-        entity.isAnimating = false;
-        entity.setPosition()
+      }
+      entity.isAnimating = false;
+      entity.setPosition();
       this.draggable = intersect;
       this.toggleControls(false);
     }
@@ -108,7 +119,7 @@ export class InteractionManager {
       const entity = event.entity;
       const intersect = event.intersect;
       if(this.draggable) return this.cancelDrag();
-      else entity._onClickRight(event);
+      else entity.isOwner && entity._onClickRight(event);
       this.toggleControls(true);
     }
 
@@ -122,6 +133,16 @@ export class InteractionManager {
       const entity = event.entity;
       const intersect = event.intersect;
       entity._onClickRight2(event)
+    }
+
+    _onKeyDown(event){
+      if(event.ctrlKey){
+        this.controls.enableZoom = false
+      }
+    }
+
+    _onKeyUp(event){
+      this.controls.enableZoom = true
     }
   
     findMouseIntersect(event) {

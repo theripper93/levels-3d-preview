@@ -5,6 +5,7 @@ import {sleep} from '../main.js';
 export class Token3D {
     constructor(tokenDocument, parent) {
       this.token = tokenDocument;
+      this.isOwner = this.token.isOwner;
       this._parent = parent;
       this.color = this.getColor();
       this.factor = factor;
@@ -32,7 +33,7 @@ export class Token3D {
       this.enableAnim = this.token.document.getFlag("levels-3d-preview", "enableAnim") ?? true;
       this.animIndex = this.token.document.getFlag("levels-3d-preview", "animIndex") ?? 0;
       this.animSpeed = this.token.document.getFlag("levels-3d-preview", "animSpeed") ?? 1;
-      this.draggable = (this.token.document.getFlag("levels-3d-preview", "draggable") ?? true) && this.token.isOwner;
+      this.draggable = (this.token.document.getFlag("levels-3d-preview", "draggable") ?? true);
       this.selectedImage = game.settings.get("levels-3d-preview", "selectedImage") ?? "";
       this.color = this.token.document.getFlag("levels-3d-preview", "color") ?? "#ffffff";
       this.material = this.token.document.getFlag("levels-3d-preview", "material") ?? "";
@@ -298,12 +299,21 @@ export class Token3D {
           return false
         }
       }
-
-      this.token.document.update({
-        x: dest.x,
-        y: dest.y,
-        elevation: dest.elevation,
-      });
+      const deltas = {
+        x: dest.x - this.token.data.x,
+        y: dest.y - this.token.data.y,
+        elevation: dest.elevation - this.token.data.elevation
+      }
+      let updates = [];
+      for(let token of canvas.tokens.controlled){
+        updates.push({
+          _id: token.id,
+          x: token.data.x + deltas.x,
+          y: token.data.y + deltas.y,
+          elevation: token.data.elevation + deltas.elevation
+        })
+      }
+      canvas.scene.updateEmbeddedDocuments("Token", updates)
       return true;
     }
   
