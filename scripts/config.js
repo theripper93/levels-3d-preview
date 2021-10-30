@@ -303,7 +303,7 @@ Hooks.on("renderTokenConfig", (app,html)=>{
         "color": {
             type: "color",
             label: game.i18n.localize("levels3dpreview.flags.color.label"),
-            default: "#ffa95c",
+            default: "#ffffff",
             notes: game.i18n.localize("levels3dpreview.flags.color.notes")
         },
         "draggable": {
@@ -378,7 +378,7 @@ Hooks.on("renderTokenConfig", (app,html)=>{
             step: 0.00001,
             default: 1,
         },
-    })
+    }, app.token)
 })
 
 /*Hooks.on("renderAmbientLightConfig", (app,html)=>{
