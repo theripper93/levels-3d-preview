@@ -205,8 +205,8 @@ export class Token3D {
         y: 0,//model.rotation._y,
         z: 0,//model.rotation._z,
       }
-      this.mesh.userData.draggable = true;
-      this.mesh.userData.name = this.gtflPath;
+      this.mesh.userData.hitbox = hitbox
+      this.mesh.userData.draggable = this.draggable
       this.targetContainer = new THREE.Group();
       this.mesh.add(this.targetContainer);
       this.border = new THREE.Group();

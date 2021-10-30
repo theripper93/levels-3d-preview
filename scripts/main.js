@@ -7,6 +7,7 @@ import { Ruler3D } from "./entities/ruler3d.js";
 import { Light3D } from "./entities/light3d.js";
 import { FBXLoader } from './lib/FBXLoader.js';
 import { GlobalIllumination } from "./globalillumination.js";
+import { InteractionManager } from "./interactionManager.js";
 
 export const factor = 1000;
 
@@ -56,13 +57,11 @@ class Levels3DPreview {
     this.clock = new THREE.Clock();
     this.loader = new GLTFLoader();
     this.FBXLoader = new FBXLoader();
-    this.clicks = 0;
-    this.lcTime = 0;
     this._active = false;
     this.tokenAnimationQueue = [];
     this._cameraSet = false;
     this.init3d();
-    this.ruler = new Ruler3D(this);
+
   }
 
   init3d() {
@@ -90,7 +89,9 @@ class Levels3DPreview {
     //set dom element id
     this.renderer.domElement.id = "levels3d";
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
-    this.activateListeners();
+    this.ruler = new Ruler3D(this);
+    this.interactionManager = new InteractionManager(this);
+    this.interactionManager.activateListeners();
   }
 
   get canvasCenter() {
@@ -99,139 +100,6 @@ class Levels3DPreview {
       y: 0,
       z: canvas.dimensions.height / 2 / this.factor,
     };
-  }
-
-  activateListeners() {
-    this.raycaster = new THREE.Raycaster();
-    this.mouse = new THREE.Vector2();
-    this.mousemove = new THREE.Vector2();
-    this.draggable = undefined;
-    const elevationTick = (canvas.dimensions.size/canvas.dimensions.distance)/this.factor;
-
-    this.renderer.domElement.addEventListener("mousedown", (event) => {
-      this.mousedown = true;
-      this.mousePosition = { x: event.clientX, y: event.clientY };
-      if(event.which !== 1 && event.which !== 3) return;
-      if(event.ctrlKey || event.shiftKey) return;
-      const intersect = this.findMouseIntersect(event);
-      if(!intersect) return;
-      this.controls.enableRotate = false;
-      this.controls.enableZoom = false;
-      this.clicks++;
-      const token3d = intersect.userData.token3D
-      if (this.clicks === 1) {
-        setTimeout(() => {
-          if(this.clicks !== 1) return this.clicks = 0;
-          if(event.which === 1){
-            token3d._onClickLeft(event);
-            if(event.altKey || !this.mousedown){
-              this.draggable = undefined;
-              this.controls.enableRotate = true; 
-              this.controls.enableZoom = true;
-              return this.clicks = 0;
-              }
-            token3d.isAnimating = false;
-            token3d.setPosition()
-            this.draggable = intersect;
-            this.controls.enableRotate = false;
-            this.controls.enableZoom = false;
-          }else{
-            if(this.draggable) this.cancelDrag();
-            else token3d._onClickRight(event);
-            this.controls.enableRotate = true;
-            this.controls.enableZoom = true;
-          }
-          this.clicks = 0;
-        }, 150);
-      }else{
-        this.clicks = 0;
-        if(this.draggable) this.cancelDrag();
-        else event.which === 1 ? token3d._onClickLeft2(event) : token3d._onClickRight2(event);
-        this.controls.enableRotate = true;
-        this.controls.enableZoom = true;
-      }
-
-    })
-    this.renderer.domElement.addEventListener("mouseup", (event) => {
-      this.mousedown = false;
-      if(event.which !== 1) return;
-      if(this.draggable){
-        if(!this.draggable.userData.token3D.updatePositionFrom3D(event)) this.cancelDrag();
-      }
-      this.draggable = undefined;
-      this.controls.enableRotate = true;
-      this.controls.enableZoom = true;
-    })
-    this.renderer.domElement.addEventListener("mousemove", (event) => {
-      this.mousemove.x = (event.clientX / window.innerWidth) * 2 - 1;
-      this.mousemove.y = -(event.clientY / window.innerHeight) * 2 + 1;
-    })
-    //add wheel event
-    this.renderer.domElement.addEventListener("wheel", (event) => {
-      const delta = event.deltaY;
-      if(!this.draggable) return;
-      const token3d = this.draggable.userData.token3D;
-      let elevationDiff = 5;
-      if(event.shiftKey) elevationDiff = 1;
-      if(event.ctrlKey) elevationDiff = 0.1;
-      //change y position
-      if(delta > 0){
-        token3d.elevation3d -= elevationTick*elevationDiff;
-      }else{
-        token3d.elevation3d += elevationTick*elevationDiff;
-      }
-      if(game.settings.get("levels-3d-preview", "preventNegative") && token3d.elevation3d < 0){
-        token3d.elevation3d = 0;
-      }
-    })
-  }
-
-  findMouseIntersect(event) {
-    this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-    this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-    this.raycaster.setFromCamera(this.mouse, this.camera);
-    const groupchilderen = [];
-    this.scene.children.forEach((child) => {if(child.children.length) child.children.forEach((c) => groupchilderen.push(c))});
-    const intersects = this.raycaster.intersectObjects(groupchilderen.concat(this.scene.children), true);
-    if (intersects.length > 0) {
-      for(let intersect of intersects){
-        if(intersect.object.userData.draggable){
-          return intersect.object;
-        }
-      }
-    }
-    return false;
-  }
-
-  set draggable(object){
-    this._draggable = object;
-    if(this.ruler && (canvas.scene.getFlag("levels-3d-preview", "enableRuler") ?? true)) this.ruler.object = object;
-  }
-
-  get draggable(){
-    return this._draggable;
-  }
-
-  dragObject(){
-    if(!this.draggable) return;
-    this.raycaster.setFromCamera(this.mousemove, this.camera);
-    const intersects = this.raycaster.intersectObjects([this.dragplane], true);
-    if (intersects.length > 0) {
-      const token3d = this.draggable.userData.token3D;
-      const target = this.draggable.userData.isHitbox ? this.draggable.parent : this.draggable;
-      target.position.lerp(new THREE.Vector3(intersects[0].point.x, token3d.elevation3d, intersects[0].point.z), 0.10);
-      this.ruler.update();
-    }
-  }
-
-  cancelDrag(){
-    if(!this.draggable) return;
-    const token3d = this.draggable.userData.token3D;
-    token3d.dragCanceled = true;
-    this.draggable = undefined;
-    token3d.token.document.update({x: token3d.token.data.x+0.0001})
-    this.controls.enableRotate = true;
-    this.controls.enableZoom = true;
   }
 
   build3Dscene() {
@@ -281,14 +149,15 @@ class Levels3DPreview {
     }
     //add raycasting plane
 
-    this.dragplane = new THREE.Mesh(
+    const dragplane = new THREE.Mesh(
       new THREE.PlaneGeometry(size, size),
       new THREE.MeshBasicMaterial({ color: 0xffffff, visible: false })
     );
-    this.dragplane.position.set(size/2, 0, size/2);
-    this.dragplane.userData.isFloor = true;
-    this.dragplane.rotation.x = -Math.PI / 2;
-    this.scene.add(this.dragplane);
+    dragplane.position.set(size/2, 0, size/2);
+    dragplane.userData.isFloor = true;
+    dragplane.rotation.x = -Math.PI / 2;
+    this.scene.add(dragplane);
+    this.interactionManager.dragplane = dragplane;
     this.lights.globalIllumination = new GlobalIllumination(this);
     //this.createLights(size);
     this.makeSkybox();
@@ -504,7 +373,7 @@ class Levels3DPreview {
   animation(time) {
     const _this = game.Levels3DPreview;
     if(!_this._active) return;
-    _this.dragObject();
+    _this.interactionManager.dragObject();
     const delta = _this.clock.getDelta();
     Object.values(_this.tokenIndex).forEach((token) => {
       token.updateVisibility();

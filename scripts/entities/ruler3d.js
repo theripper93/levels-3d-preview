@@ -23,6 +23,7 @@ export class Ruler3D {
                 color: this.color,
                 transparent: true,
                 opacity: 0.5,
+                visible: false,
             })
         );
         this.sphere2 = this.sphere1.clone();

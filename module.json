@@ -33,7 +33,8 @@
     "./scripts/lib/FBXLoader.js",
     "./scripts/lib/NUBSUtils.js",
     "./scripts/config.js",
-    "./scripts/globalIllumination.js"
+    "./scripts/globalIllumination.js",
+    "./scripts/interactionManager.js"
 ],
   "scripts": [
     "./scripts/wrappers.js",
