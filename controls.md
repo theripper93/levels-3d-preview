@@ -2,9 +2,9 @@
 
 ### Camera Controls:
 
-Left mouse + drag -> Rotate Camera
-Right mouse + drag -> Pan Camera
-Scroll Wheel -> Zoom Camera
+ - Left mouse + drag -> Rotate Camera
+ - Right mouse + drag -> Pan Camera
+ - Scroll Wheel -> Zoom Camera
 
 ### Token Interaction:
 
