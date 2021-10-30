@@ -18,13 +18,9 @@ export class Token3D {
         "levels-3d-preview",
         "model3d"
       );
-      this.rotationAxis =
-      this.token.document.getFlag("levels-3d-preview", "rotationAxis") ??
-        "y";
       this.rotationX = Math.toRadians(this.token.document.getFlag("levels-3d-preview","rotationX") ?? 0);
       this.rotationY = Math.toRadians(this.token.document.getFlag("levels-3d-preview","rotationY") ?? 0);
       this.rotationZ = Math.toRadians(this.token.document.getFlag("levels-3d-preview","rotationZ") ?? 0);
-      this.rotateBase = (this.token.document.getFlag("levels-3d-preview","rotateBase") ?? false) ? Math.PI/2 : 0;
       this.offsetX =
       this.token.document.getFlag("levels-3d-preview", "offsetX") ?? 0;
       this.offsetY =
@@ -134,6 +130,12 @@ export class Token3D {
       const scene = loaded.scene;
       const model = loaded.model;
       if(model.geometry) this.setMaterial(model);
+      //Apply rotation
+      model.rotation.set(
+        this.rotationX + model.rotation._x,
+        this.rotationY + model.rotation._y,
+        this.rotationZ + model.rotation._z
+      );
       //Calculate scale
       const originalSize = new THREE.Box3().setFromObject( scene ).getSize( new THREE.Vector3() );
       const maxSize = Math.max(originalSize.x, originalSize.y, originalSize.z);
@@ -148,13 +150,13 @@ export class Token3D {
       const updatedSize = box.getSize( new THREE.Vector3() );
       this.isModel = true;
       let centerOffset = {
-        x: this.offsetX/factor + (this.rotationAxis == "x" ? 0 : -center.x),
-        y: this.offsetY/factor + (this.rotationAxis == "y" ? 0 : -center.y),
-        z: this.offsetZ/factor + (this.rotationAxis == "z" ? 0 : -center.z),
+        x: this.offsetX/factor + -center.x,
+        y: this.offsetY/factor + 0,
+        z: this.offsetZ/factor + -center.z,
       }
 
       if(this.standUp) {
-        centerOffset[this.rotationAxis] += updatedSize[this.rotationAxis]/2;
+        centerOffset.y += updatedSize.y/2;
       }
 
       if(object.animations.length > 0 && this.enableAnim) {
@@ -193,6 +195,8 @@ export class Token3D {
       hitbox.userData.isHitbox = true;
       hitbox.userData.token3D = this;
       this.hitbox = hitbox;
+      this.hitbox.geometry.computeBoundingBox();
+      this._size = this.hitbox.geometry.boundingBox.getSize(new THREE.Vector3());
       pivot.add(hitbox);
       this.mesh = pivot;
       this.adjust = {
@@ -200,19 +204,16 @@ export class Token3D {
         y: this.offsetY/factor,
         z: this.offsetZ/factor,
       };
-      this.initialRotation = {
-        x: 0,//model.rotation._x,
-        y: 0,//model.rotation._y,
-        z: 0,//model.rotation._z,
-      }
       this.mesh.userData.hitbox = hitbox
       this.mesh.userData.draggable = this.draggable
       this.targetContainer = new THREE.Group();
       this.mesh.add(this.targetContainer);
+      this.effectsContainer = new THREE.Group();
+      this.mesh.add(this.effectsContainer);
       this.border = new THREE.Group();
       this.mesh.add(this.border);
       this.drawBorder();
-      this.drawTargets();
+      this.reDraw();
       this.setPosition();
       return this;
     }
@@ -338,41 +339,26 @@ export class Token3D {
       if(!lerp)mesh.position.set(x,y,z)
       else mesh.position.lerp(new THREE.Vector3(x, y, z), lerp);
       const rotations = {
-        x:
-          this.rotationAxis === "x"
-            ? -Math.toRadians(token.data.rotation)
-            : 0,
-        y:
-          this.rotationAxis === "y"
-            ? -Math.toRadians(token.data.rotation)
-            : 0,
-        z:
-          this.rotationAxis === "z"
-            ? -Math.toRadians(token.data.rotation)
-            : 0,
+        x: 0,
+        y: -Math.toRadians(token.data.rotation),
+        z: 0,
       };
-      rotations.x += this.rotationX;
-      rotations.y += this.rotationY;
-      rotations.z += this.rotationZ;
-      const rx = rotations.x + this.initialRotation?.x ?? 0
-      const ry = rotations.y + this.initialRotation?.y ?? 0
-      const rz = rotations.z + this.initialRotation?.z ?? 0
       let toLerp
-      if(!lerp)mesh.rotation.set(rx, ry, rz);
+      if(!lerp)mesh.rotation.set(rotations.x,rotations.y,rotations.z);
       else {
         toLerp = new THREE.Vector3(mesh.rotation._x, mesh.rotation._y, mesh.rotation._z);
-        toLerp.lerp(new THREE.Vector3(rx, ry, rz), 0.10);
+        toLerp.lerp(new THREE.Vector3(rotations.x, rotations.y, rotations.z), 0.10);
         mesh.rotation.set(toLerp.x, toLerp.y, toLerp.z);
       }
       this.elevation3d = y;
       if(this.border){
         this.border.rotation.set(
-          - rotations.x -this.rotateBase + this.rotationX,
-          - rotations.y + this.rotationY,
-          0 + this.rotationZ, //?????????????????
+          - rotations.x,
+          - rotations.y,
+          - rotations.z,
         );
       }
-      if(currentPosition.x === x && currentPosition.y === y && currentPosition.z === z && currentRotation.x === Math.round(rx*1000)/1000 && currentRotation.y === Math.round(ry*1000)/1000 && currentRotation.z === Math.round(rz*1000)/1000){
+      if(currentPosition.x === x && currentPosition.y === y && currentPosition.z === z && currentRotation.x === Math.round(rotations.x*1000)/1000 && currentRotation.y === Math.round(rotations.y*1000)/1000 && currentRotation.z === Math.round(rotations.z*1000)/1000){
         return false;
       }else{
         return true;
@@ -382,6 +368,7 @@ export class Token3D {
 
     reDraw(){
       this.drawTargets();
+      this.drawEffects();
       this.refreshBorder();
     }
 
@@ -391,16 +378,14 @@ export class Token3D {
       this.targetContainer.children.forEach(child => {
         this.targetContainer.remove(child);
       });
-      this.hitbox.geometry.computeBoundingBox();
-      const hitboxSize = this.hitbox.geometry.boundingBox.getSize(new THREE.Vector3());
-      this.targetSize = Math.min(hitboxSize.x, hitboxSize.y, hitboxSize.z)*0.3;
+      this.targetSize = Math.min(this.h, this.w, this.d)*0.3;
       let positionOffset = this.targetSize*2.5;
       for(let target of Array.from(this.token.targeted)){
         const color = target.color;
         const position = {
-          x: this.rotationAxis === "x" ? hitboxSize.x+this.targetSize+positionOffset : 0,
-          y: this.rotationAxis === "y" ? hitboxSize.y+this.targetSize+positionOffset : 0,
-          z: this.rotationAxis === "z" ? hitboxSize.z+this.targetSize+positionOffset : 0,
+          x: 0,
+          y: this.d+this.targetSize+positionOffset,
+          z: 0,
         }
         const geometry = new THREE.SphereGeometry(this.targetSize, 16, 16);
         const material = new THREE.MeshBasicMaterial({
@@ -414,6 +399,43 @@ export class Token3D {
         this.targetContainer.add(mesh);
         positionOffset += this.targetSize*2.5;
       }
+
+    }
+
+    drawEffects(){
+      //remove old effects
+      if(!this.effectsContainer) return;
+      this.effectsContainer.children.forEach(child => {
+        this.effectsContainer.remove(child);
+      });
+      if(!this.token.actor) return;
+      const effects = Array.from(this.token.actor.effects).map(e => e.data.icon);
+      const effectsize = this.h/5;
+      let xOffset = effectsize*0.5-this.w/2;
+      let zOffset = effectsize*0.5-this.h/2;
+
+      for(let effect of effects){
+
+        const position = {
+          x: xOffset,
+          y: this.d,
+          z: zOffset,
+        }
+
+        const geometry = new THREE.BoxGeometry(effectsize, effectsize, effectsize);
+        const material = new THREE.MeshBasicMaterial({
+          map: new THREE.TextureLoader().load(effect),
+        });
+        const mesh = new THREE.Mesh(geometry, material);
+        mesh.position.set(position.x, position.y, position.z);
+        this.effectsContainer.add(mesh);
+        zOffset += effectsize*1;
+        if(zOffset > this.h/2){
+          zOffset = effectsize*0.5-this.h/2;
+          xOffset += effectsize*1;
+        }
+      }
+
 
     }
 
@@ -455,7 +477,6 @@ export class Token3D {
       vector.applyQuaternion(camera.quaternion);
       const angle = Math.atan2(vector.x, vector.z);
       const rotation = Math.round(angle * 180 / Math.PI);
-      //this.rotationAxis = "z";
       this.mesh.rotation.set(this.mesh.rotation._x, angle, this.mesh.rotation._z);
     }
 
@@ -521,6 +542,18 @@ export class Token3D {
     refresh(){
       this.destroy();
       this._parent.addToken(this.token);
+    }
+
+    get h(){
+      return this._size.z
+    }
+
+    get w(){
+      return this._size.x;
+    }
+
+    get d(){
+      return this._size.y;
     }
   }
 

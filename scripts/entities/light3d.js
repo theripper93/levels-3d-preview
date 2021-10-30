@@ -20,7 +20,6 @@ export class Light3D {
                     })
             );
         }
-        console.log(this.debugSphere)
         this.light3d.shadow.bias = -0.035;
         this.light3d.shadow.camera.near = 0.0001;
         this.light3d.shadow.camera.far = 100;

@@ -333,17 +333,6 @@ Hooks.on("renderTokenConfig", (app,html)=>{
             min: 0,
             max: 10,
         },
-        "rotationAxis" : {
-            type: "select",
-            label: game.i18n.localize("levels3dpreview.flags.rotationAxis.label"),
-            options: {
-                "x": game.i18n.localize("levels3dpreview.flags.rotationAxis.options.x"),
-                "y": game.i18n.localize("levels3dpreview.flags.rotationAxis.options.y"),
-                "z": game.i18n.localize("levels3dpreview.flags.rotationAxis.options.z"),
-            },
-            default: "y",
-            notes: game.i18n.localize("levels3dpreview.flags.rotationAxis.notes"),
-        },
         "rotationX" : {
             type: "range",
             label: game.i18n.localize("levels3dpreview.flags.rotationX.label"),
@@ -367,12 +356,6 @@ Hooks.on("renderTokenConfig", (app,html)=>{
             min: 0,
             max: 360,
             step: 1,
-        },
-        "rotateBase": {
-            type: "checkbox",
-            label: game.i18n.localize("levels3dpreview.flags.rotateBase.label"),
-            notes: game.i18n.localize("levels3dpreview.flags.rotateBase.notes"),
-            default: false,
         },
         "offsetX": {
             type: "number",
