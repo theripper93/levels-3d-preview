@@ -33,7 +33,8 @@ export class Token3D {
       this.enableAnim = this.token.document.getFlag("levels-3d-preview", "enableAnim") ?? true;
       this.animIndex = this.token.document.getFlag("levels-3d-preview", "animIndex") ?? 0;
       this.animSpeed = this.token.document.getFlag("levels-3d-preview", "animSpeed") ?? 1;
-      this.draggable = (this.token.document.getFlag("levels-3d-preview", "draggable") ?? true);
+      this.interactive = (this.token.document.getFlag("levels-3d-preview", "draggable") ?? true);
+      this.draggable = true;
       this.selectedImage = game.settings.get("levels-3d-preview", "selectedImage") ?? "";
       this.color = this.token.document.getFlag("levels-3d-preview", "color") ?? "#ffffff";
       this.material = this.token.document.getFlag("levels-3d-preview", "material") ?? "";
@@ -193,8 +194,10 @@ export class Token3D {
       );
       hitbox.position.set(center.x+centerOffset.x, center.y+centerOffset.y, center.z+centerOffset.z);
       hitbox.userData.draggable = this.draggable;
+      hitbox.userData.interactive = this.interactive;
       hitbox.userData.isHitbox = true;
-      hitbox.userData.token3D = this;
+      hitbox.userData.entity3D = this;
+      hitbox.userData.documentName = this.token.document.documentName
       this.hitbox = hitbox;
       this.hitbox.geometry.computeBoundingBox();
       this._size = this.hitbox.geometry.boundingBox.getSize(new THREE.Vector3());
@@ -206,7 +209,11 @@ export class Token3D {
         z: this.offsetZ/factor,
       };
       this.mesh.userData.hitbox = hitbox
-      this.mesh.userData.draggable = this.draggable
+      this.mesh.userData.draggable = this.draggable;
+      this.mesh.userData.interactive = this.interactive;
+      this.mesh.userData.isHitbox = true;
+      this.mesh.userData.entity3D = this;
+      this.mesh.userData.documentName = this.token.document.documentName
       this.targetContainer = new THREE.Group();
       this.mesh.add(this.targetContainer);
       this.effectsContainer = new THREE.Group();

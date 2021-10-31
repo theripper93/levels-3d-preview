@@ -42,7 +42,7 @@ export class InteractionManager {
       if(event.ctrlKey) return;
       this.toggleControls(false);
       this.clicks++;
-      event.entity = intersect.userData.token3D
+      event.entity = intersect.userData.entity3D
       event.intersect = intersect;
       if (this.clicks === 1) {
         setTimeout(() => {
@@ -66,7 +66,7 @@ export class InteractionManager {
       this.mousedown = false;
       if(event.which !== 1) return;
       if(this.draggable){
-        if(!this.draggable.userData.token3D.updatePositionFrom3D(event)) this.cancelDrag();
+        if(!this.draggable.userData.entity3D.updatePositionFrom3D(event)) this.cancelDrag();
       }
       this.toggleControls(true, true);
     }
@@ -79,23 +79,22 @@ export class InteractionManager {
     _onWheel(event){
       if(this.draggable){
         const delta = event.deltaY;
-        const token3d = this.draggable.userData.token3D;
+        const entity3D = this.draggable.userData.entity3D;
         let elevationDiff = 5;
         if(event.shiftKey) elevationDiff = 1;
         if(event.ctrlKey) elevationDiff = 0.1;
         //change y position
         if(delta > 0){
-          token3d.elevation3d -= this.elevationTick*elevationDiff;
+          entity3D.elevation3d -= this.elevationTick*elevationDiff;
         }else{
-          token3d.elevation3d += this.elevationTick*elevationDiff;
+          entity3D.elevation3d += this.elevationTick*elevationDiff;
         }
-        if(game.settings.get("levels-3d-preview", "preventNegative") && token3d.elevation3d < 0){
-          token3d.elevation3d = 0;
+        if(game.settings.get("levels-3d-preview", "preventNegative") && entity3D.elevation3d < 0){
+          entity3D.elevation3d = 0;
         }
       }
       if(!this.draggable && event.ctrlKey && canvas.tokens.controlled.length){
         const delta = event.deltaY/20;
-        console.log(delta)
         canvas.tokens.rotateMany({delta})
       }
 
@@ -111,6 +110,7 @@ export class InteractionManager {
       }
       entity.isAnimating = false;
       entity.setPosition();
+      if(!entity.draggable) return this.toggleControls(true, true);
       this.draggable = intersect;
       this.toggleControls(false);
     }
@@ -151,7 +151,7 @@ export class InteractionManager {
       this.raycaster.setFromCamera(this.mouse, this.camera);
       let intersectTargets = []
       for(let child of this.scene.children){
-        if(child.userData?.hitbox && child.userData.draggable) intersectTargets.push(child.userData.hitbox);
+        if(child.userData?.hitbox && child.userData.interactive) intersectTargets.push(child.userData.hitbox);
       }
       const intersects = this.raycaster.intersectObjects(intersectTargets, true);
       return intersects[0]?.object;
@@ -186,19 +186,19 @@ export class InteractionManager {
       this.raycaster.setFromCamera(this.mousemove, this.camera);
       const intersects = this.raycaster.intersectObjects([this.dragplane], true);
       if (intersects.length > 0) {
-        const token3d = this.draggable.userData.token3D;
+        const entity3D = this.draggable.userData.entity3D;
         const target = this.draggable.userData.isHitbox ? this.draggable.parent : this.draggable;
-        target.position.lerp(new THREE.Vector3(intersects[0].point.x, token3d.elevation3d, intersects[0].point.z), 0.10);
+        target.position.lerp(new THREE.Vector3(intersects[0].point.x, entity3D.elevation3d, intersects[0].point.z), 0.10);
         this.ruler.update();
       }
     }
   
     cancelDrag(){
       if(!this.draggable) return;
-      const token3d = this.draggable.userData.token3D;
-      token3d.dragCanceled = true;
+      const entity3D = this.draggable.userData.entity3D;
+      entity3D.dragCanceled = true;
       this.draggable = undefined;
-      token3d.token.document.update({x: token3d.token.data.x+0.0001})
+      entity3D.token.document.update({x: entity3D.token.data.x+0.0001})
       this.controls.enableRotate = true;
       this.controls.enableZoom = true;
       setTimeout(() => {
