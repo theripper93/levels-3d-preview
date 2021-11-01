@@ -198,7 +198,7 @@ export class InteractionManager {
       const entity3D = this.draggable.userData.entity3D;
       entity3D.dragCanceled = true;
       this.draggable = undefined;
-      entity3D.token.document.update({x: entity3D.token.data.x+0.0001})
+      Hooks.call("updateToken", entity3D.token.document, {x: entity3D.token.data.x});
       this.controls.enableRotate = true;
       this.controls.enableZoom = true;
       setTimeout(() => {

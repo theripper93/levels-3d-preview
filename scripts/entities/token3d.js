@@ -40,6 +40,9 @@ export class Token3D {
       this.material = this.token.document.getFlag("levels-3d-preview", "material") ?? "";
       this.imageTexture = this.token.document.getFlag("levels-3d-preview", "imageTexture") ?? "";
       this.alwaysVisible = this.token.document.getFlag("levels-3d-preview", "alwaysVisible") ?? false;
+      this.colorizeIndicator = game.settings.get("levels-3d-preview", "colorizeInidcator");
+      this.rotateIndicator = game.settings.get("levels-3d-preview", "rotateIndicator");
+      this.standupFace = game.settings.get("levels-3d-preview", "standupFace");
     }
   
     async load() {
@@ -360,7 +363,7 @@ export class Token3D {
         y: -Math.toRadians(token.data.rotation),
         z: 0,
       };
-      let toLerp
+      let toLerp = rotations;
       if(!lerp)mesh.rotation.set(rotations.x,rotations.y,rotations.z);
       else {
         toLerp = new THREE.Vector3(mesh.rotation._x, mesh.rotation._y, mesh.rotation._z);
@@ -368,11 +371,11 @@ export class Token3D {
         mesh.rotation.set(toLerp.x, toLerp.y, toLerp.z);
       }
       this.elevation3d = y;
-      if(this.border){
+      if(this.border && !this.rotateIndicator){
         this.border.rotation.set(
-          - rotations.x,
-          - rotations.y,
-          - rotations.z,
+          - toLerp.x,
+          - toLerp.y,
+          - toLerp.z,
         );
       }
       if(currentPosition.x === x && currentPosition.y === y && currentPosition.z === z && currentRotation.x === Math.round(rotations.x*1000)/1000 && currentRotation.y === Math.round(rotations.y*1000)/1000 && currentRotation.z === Math.round(rotations.z*1000)/1000){
@@ -483,7 +486,7 @@ export class Token3D {
       const color = this.token.border._lineStyle?.color ?? 0xffffff;
       const visible = this.token.border.height ? true : false;
       this.border.children.forEach(child => {
-        child.material.color = this.selectedImage ? new THREE.Color(0xffffff) : new THREE.Color(color);
+        child.material.color = this.colorizeIndicator ? new THREE.Color(color) : new THREE.Color(color);
         child.material.visible = visible;
       });
     }
@@ -493,8 +496,14 @@ export class Token3D {
       const vector = new THREE.Vector3(0, -1, 0);
       vector.applyQuaternion(camera.quaternion);
       const angle = Math.atan2(vector.x, vector.z);
-      const rotation = Math.round(angle * 180 / Math.PI);
       this.mesh.rotation.set(this.mesh.rotation._x, angle, this.mesh.rotation._z);
+      if(this.standUp && this.standupFace) {
+        this.border.rotation.set(
+        0,
+        -angle - (this.rotateIndicator ? Math.toRadians(this.token.data.rotation) : 0),
+        0,
+      )
+    }
     }
 
     updateVisibility(){

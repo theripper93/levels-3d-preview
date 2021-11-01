@@ -6,8 +6,26 @@ Hooks.once('init', function() {
         scope: "world",
         config: true,
         type: String,
-        default: "",
+        default: "modules/levels-3d-preview/assets/indicator.webp",
         filePicker: "imagevideo",
+      });
+
+      game.settings.register("levels-3d-preview", "colorizeInidcator", {
+        name: game.i18n.localize("levels3dpreview.settings.colorizeInidcator.name"),
+        hint: game.i18n.localize("levels3dpreview.settings.colorizeInidcator.hint"),
+        scope: "world",
+        config: true,
+        type: Boolean,
+        default: true,
+      });
+
+      game.settings.register("levels-3d-preview", "rotateIndicator", {
+        name: game.i18n.localize("levels3dpreview.settings.rotateIndicator.name"),
+        hint: game.i18n.localize("levels3dpreview.settings.rotateIndicator.hint"),
+        scope: "world",
+        config: true,
+        type: Boolean,
+        default: true,
       });
 
       game.settings.register("levels-3d-preview", "standupFace", {

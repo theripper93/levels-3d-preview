@@ -149,6 +149,14 @@
                 "name": "Selection Highlight Image",
                 "hint": "The image to display when selecting a token."
             },
+            "colorizeInidcator": {
+                "name": "Colorize Highlight Image",
+                "hint": "Colorize the Highlight Image to match default foundry border colors."
+            },
+            "rotateIndicator": {
+                "name": "Rotate Highlight Image",
+                "hint": "Rotate the Highlight Image to match the token rotation."
+            },
             "standupFace": {
                 "name": "Stand-ups Face Camera",
                 "hint": "2D Tokens displayed in a stand-up style will always face the camera."
