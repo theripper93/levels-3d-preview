@@ -254,7 +254,8 @@ export class Token3D {
           transparent: true,//opacity != 1 || !this.gtflPath,
           opacity: opacity,
           side: !this.gtflPath ? THREE.DoubleSide : THREE.FrontSide,
-          map: this.texture//new THREE.TextureLoader().load(this.imageTexture) : null,
+          map: this.texture,//new THREE.TextureLoader().load(this.imageTexture) : null,
+          depthWrite: this.texture && !this.gtflPath ? false : true,
         });
         model.material.toneMapped = false;
 
@@ -425,11 +426,12 @@ export class Token3D {
     drawEffects(){
       //remove old effects
       if(!this.effectsContainer) return;
-      this.effectsContainer.children.forEach(child => {
-        this.effectsContainer.remove(child);
-      });
       if(!this.token.actor) return;
       const effects = Array.from(this.token.actor.effects).map(e => e.data.icon);
+      if(effects.length === this.effectsContainer.children.length) return;
+      this.effectsContainer.children.forEach(child => { 
+        this.effectsContainer.remove(child);
+      });
       const effectsize = this.h/5;
       let xOffset = effectsize*0.5-this.w/2;
       let zOffset = effectsize*0.5-this.h/2;
