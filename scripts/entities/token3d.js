@@ -48,7 +48,7 @@ export class Token3D {
   
     async load() {
       if(!this.gtflPath && !this.imageTexture) this.imageTexture = this.token.data.img;
-      this.texture = await this.loadTexture();
+      this.texture = await this._parent.helpers.loadTexture(this.imageTexture)//this.loadTexture();
       return this.gtflPath || this.imageTexture ? await this.loadModel() : this.draw();
     }
 

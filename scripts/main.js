@@ -151,7 +151,7 @@ class Levels3DPreview {
         gridColor
       );
       gridHelper.colorGrid = gridColor;
-      gridHelper.position.set(size/2, 0, size/2);
+      gridHelper.position.set(size/2, 0.01, size/2);
       gridHelper.material.transparent = true;
       gridHelper.material.opacity = canvas.scene.data.gridAlpha;
       this.scene.add(gridHelper);
@@ -183,18 +183,20 @@ class Levels3DPreview {
     });
   }
 
-  createBoard(){
+  async createBoard(){
     //make a plane and apply a texture
     const width = canvas.scene.dimensions.sceneWidth / this.factor;
     const height = canvas.scene.dimensions.sceneHeight / this.factor;
     const center = this.canvasCenter;
-    const depth = 0.02
+    const depth = 0.02;
+    const texture = await this.helpers.loadTexture(canvas.scene.data.img);
+    if(texture){
+      texture.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
+      texture.minFilter = THREE.NearestMipMapLinearFilter;
+    }
     const geometry = new THREE.BoxGeometry(width, height, depth);
     const material = new THREE.MeshPhysicalMaterial({
-      map: new THREE.TextureLoader().load(canvas.scene.data.img,(t) => {
-        t.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
-        t.minFilter = THREE.NearestMipMapLinearFilter;
-      }),
+      map: texture,
     });
     material.toneMapped = false;
     const plane = new THREE.Mesh(geometry, material);
@@ -206,15 +208,16 @@ class Levels3DPreview {
 
   }
 
-  createTable(){
+  async createTable(){
     //make a plane and apply a texture
     const width = canvas.scene.dimensions.width / this.factor;
     const height = canvas.scene.dimensions.height / this.factor;
     const center = this.canvasCenter;
     const depth = Math.max(width, height) / 10;
+    const texture = await this.helpers.loadTexture(canvas.scene.getFlag("levels-3d-preview", "tableTex"));
     const geometry = new THREE.BoxGeometry(width, height, depth);
     const material = new THREE.MeshLambertMaterial({
-      map: new THREE.TextureLoader().load(canvas.scene.getFlag("levels-3d-preview", "tableTex"),),
+      map: texture,
     });
     material.toneMapped = false;
     const plane = new THREE.Mesh(geometry, material);

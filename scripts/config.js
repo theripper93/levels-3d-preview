@@ -279,7 +279,6 @@ Hooks.on("renderSceneConfig", (app,html)=>{
         const sunDistance = html.find("input[name='flags.levels-3d-preview.sunDistance']")[0].value;
         const sunIntensity = html.find("input[name='flags.levels-3d-preview.sunIntensity']")[0].value;
         const sceneTint = html.find("input[name='flags.levels-3d-preview.sceneTint']")[0].value;
-        console.log(sunPosition,sunDistance,sunIntensity,sceneTint);
         game.Levels3DPreview.sunlight = {
             color: sceneTint,
             angle: Math.toRadians(sunPosition),
