@@ -116,8 +116,8 @@ class Levels3DPreview {
     const renderTable = canvas.scene.getFlag("levels-3d-preview", "renderTable") ?? false;
     this.standUpFaceCamera = game.settings.get("levels-3d-preview", "standupFace") ?? true;
     drawFloors && this.isLevels && this.createFloors(level);
-    drawWalls && this.isLevels && this.createWalls(level);
-    drawLights && this.isLevels && this.createSceneLights();
+    drawWalls && this.createWalls(level);
+    drawLights && this.createSceneLights();
     renderBackground && this.createBoard();
     renderTable && this.createTable();
     for (let token of canvas.tokens.placeables) {
@@ -182,7 +182,7 @@ class Levels3DPreview {
     const center = this.canvasCenter;
     const depth = 0.02
     const geometry = new THREE.BoxGeometry(width, height, depth);
-    const material = new THREE.MeshLambertMaterial({
+    const material = new THREE.MeshPhysicalMaterial({
       map: new THREE.TextureLoader().load(canvas.scene.data.img,(t) => {
         t.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
         t.minFilter = THREE.NearestMipMapLinearFilter;
@@ -225,6 +225,7 @@ class Levels3DPreview {
   }
 
   addLight(light){
+    debugger
     this.lights.sceneLights[light.id]?.destroy();
     const light3d = new Light3D(light, this);
     this.lights.sceneLights[light.id] = light3d;
