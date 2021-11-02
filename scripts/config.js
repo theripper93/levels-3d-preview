@@ -428,6 +428,11 @@ Hooks.on("renderWallConfig", (app,html)=>{
             type: "checkbox",
             label: game.i18n.localize("levels3dpreview.flags.alwaysVisible.label"),
             default: false,
+        },
+        "joinWall": {
+            type: "checkbox",
+            label: game.i18n.localize("levels3dpreview.flags.joinWall.label"),
+            default: false,
         }
     })
 })

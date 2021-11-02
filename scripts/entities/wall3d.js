@@ -28,6 +28,7 @@ export class Wall3D {
         this.tint = wall.document.getFlag("levels-3d-preview","wallTint");
         this.color = this.texture ? this.tint ?? "#ffffff" : this.tint ?? wall.children[1]._fillStyle.color;
         this.depth = wall.document.getFlag("levels-3d-preview","wallDepth")/factor || 0.03;
+        this.distance += wall.document.getFlag("levels-3d-preview","joinWall") ? this.depth : 0;
         this.init();
 
     }
@@ -52,7 +53,7 @@ export class Wall3D {
         material.castShadow = true;
         material.receiveShadow = true;
         this.mesh = new THREE.Mesh(geometry, material);
-        if(this.wall.data.door){
+        if(this.wall.data.door && this.wall.doorControl.visible){
         this.mesh.userData.hitbox = this.mesh;
         this.mesh.userData.interactive = true;
         this.mesh.userData.entity3D = this;
@@ -83,25 +84,9 @@ export class Wall3D {
         this.wall.doorControl._onRightDown(e);
       }
   
-      _onClickLeft2(e) {
-          return;
-        const event = {
-          data: {
-            originalEvent: e,
-          }
-        }
-        this.wall.doorControl._onClickLeft2(event);
-      }
+      _onClickLeft2(e) {}
   
-      _onClickRight2(e) {
-          return;
-        const event = {
-          data: {
-            originalEvent: e,
-          }
-        }
-        this.wall.doorControl._onClickRight2(event);
-      }
+      _onClickRight2(e) {}
 
     destroy(){
         this._parent.scene.remove(this.mesh);
