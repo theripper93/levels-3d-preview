@@ -36,8 +36,8 @@ export class Light3D {
     refresh(){
         const light = this.light;
         this.light3d.castShadow = light.document.getFlag("levels-3d-preview", "castShadows") ?? false;
-        let top = light.document.getFlag("levels", "rangeTop") ?? 1;
-        let bottom = light.document.getFlag("levels", "rangeBottom") ?? 1;
+        let top = light.data.flags.levels?.rangeTop ?? 1;
+        let bottom = light.data.flags.levels?.rangeBottom ?? 1;
         const z = (top+bottom)*canvas.scene.dimensions.size/canvas.scene.dimensions.distance/2;
         const color = light.data.tintColor || "#ffffff";
         const radius = Math.max(light.data.dim, light.data.bright)*(canvas.scene.dimensions.size/canvas.scene.dimensions.distance)/factor;

@@ -6,6 +6,7 @@ import {Token3D} from "./entities/token3d.js";
 import { Ruler3D } from "./entities/ruler3d.js";
 import { Light3D } from "./entities/light3d.js";
 import { Wall3D } from "./entities/wall3d.js";
+import { Tile3D } from "./entities/tile3d.js";
 import { FBXLoader } from './lib/FBXLoader.js';
 import { GlobalIllumination } from "./helpers/globalIllumination.js";
 import { InteractionManager } from "./helpers/interactionManager.js";
@@ -57,6 +58,7 @@ class Levels3DPreview {
     };
     this.walls = {};
     this.doors = {};
+    this.tiles = {};
     this.animationMixers = [];
     this.clock = new THREE.Clock();
     this.loader = new GLTFLoader();
@@ -166,7 +168,6 @@ class Levels3DPreview {
     this.scene.add(dragplane);
     this.interactionManager.dragplane = dragplane;
     this.lights.globalIllumination = new GlobalIllumination(this);
-    //this.createLights(size);
     this.makeSkybox();
     this.ruler.addMarkers();
     if(!this._cameraSet){
@@ -238,7 +239,10 @@ class Levels3DPreview {
   }
 
   createFloors(level){
-    for (let tile of canvas.foreground.placeables) {
+    for (let tile of canvas.foreground.placeables.concat(canvas.background.placeables)) {
+      this.createTile(tile);
+
+      if(!this.debugMode) continue;
       if (!tile.roomPoly) continue;
       const top = tile.document.getFlag("levels", "rangeTop") ?? undefined;
       const bottom =
@@ -249,6 +253,11 @@ class Levels3DPreview {
       if (bottom !== undefined)
         this.scene.add(this.createFloor(tile.roomPoly.points, bottom));
     }
+  }
+
+  createTile(tile){
+    if(this.debugMode) return;
+    this.tiles[tile.id] = new Tile3D(tile, this);
   }
 
   createWalls() {
@@ -322,6 +331,7 @@ class Levels3DPreview {
     this.walls = {};
     this.doors = {};
     this.lights.sceneLights = {};
+    this.tiles = {};
   }
 
   resizeCanvasToDisplaySize(_this) {

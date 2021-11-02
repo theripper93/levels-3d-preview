@@ -151,6 +151,9 @@
             },
             "joinWall": {
                 "label": "Join Wall"
+            },
+            "stretchTex": {
+                "label": "Stretch Texture"
             }
         },
         "settings" : {

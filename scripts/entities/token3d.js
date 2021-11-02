@@ -427,8 +427,9 @@ export class Token3D {
     drawEffects(){
       //remove old effects
       if(!this.effectsContainer) return;
-      if(!this.token.actor) return;
-      const effects = Array.from(this.token.actor.effects).map(e => e.data.icon);
+      const tokenEffects = this.token.data.effects;
+      const actorEffects = this.token.actor?.temporaryEffects || [];
+      const effects = tokenEffects.concat(actorEffects).map(e => e.data.icon);
       if(effects.length === this.effectsContainer.children.length) return;
       this.effectsContainer.children.forEach(child => { 
         this.effectsContainer.remove(child);

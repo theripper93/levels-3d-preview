@@ -34,6 +34,7 @@
     "./scripts/entities/ruler3d.js",
     "./scripts/entities/light3d.js",
     "./scripts/entities/wall3d.js",
+    "./scripts/entities/tile3d.js",
     "./scripts/lib/fflate.module.js",
     "./scripts/lib/NURBSCurve.js",
     "./scripts/lib/FBXLoader.js",
