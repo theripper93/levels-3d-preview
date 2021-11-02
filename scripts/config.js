@@ -399,6 +399,39 @@ Hooks.on("renderTokenConfig", (app,html)=>{
     }, app.token)
 })
 
+Hooks.on("renderWallConfig", (app,html)=>{
+    injectConfig.inject(app,html,{
+        "moduleId": "levels-3d-preview",
+        "wallTexture": {
+            type: "filepicker",
+            label: game.i18n.localize("levels3dpreview.flags.imageTexture.label"),
+        },
+        "wallTint": {
+            type: "color",
+            label: game.i18n.localize("levels3dpreview.flags.color.label"),
+            default: "#ffffff",
+        },
+        "wallOpacity": {
+            type: "range",
+            label: game.i18n.localize("levels3dpreview.flags.wallOpacity.label"),
+            default: 1,
+            min: 0,
+            max: 1,
+            step: 0.01,
+        },
+        "wallDepth": {
+            type: "number",
+            label: game.i18n.localize("levels3dpreview.flags.wallDepth.label"),
+            default: 30,
+        },
+        "alwaysVisible": {
+            type: "checkbox",
+            label: game.i18n.localize("levels3dpreview.flags.alwaysVisible.label"),
+            default: false,
+        }
+    })
+})
+
 /*Hooks.on("renderAmbientLightConfig", (app,html)=>{
     injectConfig.inject(app,html,{
         "moduleId": "levels-3d-preview",

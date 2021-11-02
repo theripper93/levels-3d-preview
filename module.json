@@ -2,7 +2,7 @@
   "name": "levels-3d-preview",
   "title": "3D Canvas",
   "description": "Bring your games to the 3rd dimension!",
-  "version": "0.5",
+  "version": "0.5.1",
   "author": "theripper93",
   "authors": [
       {
@@ -33,6 +33,7 @@
     "./scripts/entities/token3d.js",
     "./scripts/entities/ruler3d.js",
     "./scripts/entities/light3d.js",
+    "./scripts/entities/wall3d.js",
     "./scripts/lib/fflate.module.js",
     "./scripts/lib/NURBSCurve.js",
     "./scripts/lib/FBXLoader.js",

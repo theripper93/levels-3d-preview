@@ -5,6 +5,7 @@ import {sleep} from '../main.js';
 export class Token3D {
     constructor(tokenDocument, parent) {
       this.token = tokenDocument;
+      this.type = "Token";
       this.isOwner = this.token.isOwner;
       this._parent = parent;
       this.color = this.getColor();

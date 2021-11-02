@@ -142,6 +142,9 @@
             },
             "scale": {
                 "label": "Scale"
+            },
+            "wallOpacity": {
+                "label": "Opacity"
             }
         },
         "settings" : {

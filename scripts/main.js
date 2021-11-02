@@ -5,6 +5,7 @@ import { GLTFLoader } from "./lib/GLTFLoader.js";
 import {Token3D} from "./entities/token3d.js";
 import { Ruler3D } from "./entities/ruler3d.js";
 import { Light3D } from "./entities/light3d.js";
+import { Wall3D } from "./entities/wall3d.js";
 import { FBXLoader } from './lib/FBXLoader.js';
 import { GlobalIllumination } from "./helpers/globalIllumination.js";
 import { InteractionManager } from "./helpers/interactionManager.js";
@@ -53,6 +54,8 @@ class Levels3DPreview {
     this.lights = {
       sceneLights : {}
     };
+    this.walls = {};
+    this.doors = {};
     this.animationMixers = [];
     this.clock = new THREE.Clock();
     this.loader = new GLTFLoader();
@@ -106,8 +109,8 @@ class Levels3DPreview {
     this.clear3Dscene();
     this._active = true;
     this.debugMode = game.settings.get("levels-3d-preview", "debugMode")
-    let level = this.isLevels ? parseFloat($(_levels.UI?.element)?.find(".level-item.active").find(".level-top").val()) ?? Infinity : Infinity;
-    if (isNaN(level)) level = Infinity;
+    this.level = this.isLevels ? parseFloat($(_levels.UI?.element)?.find(".level-item.active").find(".level-top").val()) ?? Infinity : Infinity;
+    if (isNaN(this.level)) this.level = Infinity;
     this.showSun = this.debugMode;
     const drawFloors = canvas.scene.getFlag("levels-3d-preview", "showSceneFloors") ?? true;
     const drawWalls = canvas.scene.getFlag("levels-3d-preview", "showSceneWalls") ?? true;
@@ -115,8 +118,8 @@ class Levels3DPreview {
     const renderBackground = canvas.scene.getFlag("levels-3d-preview", "renderBackground") ?? true;
     const renderTable = canvas.scene.getFlag("levels-3d-preview", "renderTable") ?? false;
     this.standUpFaceCamera = game.settings.get("levels-3d-preview", "standupFace") ?? true;
-    drawFloors && this.isLevels && this.createFloors(level);
-    drawWalls && this.createWalls(level);
+    drawFloors && this.isLevels && this.createFloors(this.level);
+    drawWalls && this.createWalls(this.level);
     drawLights && this.createSceneLights();
     renderBackground && this.createBoard();
     renderTable && this.createTable();
@@ -225,7 +228,6 @@ class Levels3DPreview {
   }
 
   addLight(light){
-    debugger
     this.lights.sceneLights[light.id]?.destroy();
     const light3d = new Light3D(light, this);
     this.lights.sceneLights[light.id] = light3d;
@@ -245,21 +247,15 @@ class Levels3DPreview {
     }
   }
 
-  createWalls(level) {
+  createWalls() {
     for (let wall of canvas.walls.placeables) {
-      const top = wall.data.flags.wallHeight?.wallHeightTop ?? undefined;
-      const bottom = wall.data.flags.wallHeight?.wallHeightBottom ?? undefined;
-      if (bottom > level) continue;
-      if (top !== undefined && bottom !== undefined)
-        this.scene.add(
-          this.createWall(
-            wall.data.c,
-            top,
-            bottom,
-            wall.children[1]._fillStyle.color
-          )
-        );
+      this.createWall(wall);
     }
+  }
+
+  createWall(wall){
+    this.walls[wall.id] = new Wall3D(wall, this)
+    if(wall.data.door) this.doors[wall.id] = this.walls[wall.id];
   }
 
   makeSkybox() {
@@ -314,40 +310,14 @@ class Levels3DPreview {
     return new THREE.Mesh(geometry, material);
   }
 
-  createWall(c, top, bottom, color) {
-    const alpha = canvas.scene.getFlag("levels-3d-preview", "wallFloorAlpha") ?? 0.5;
-    try {
-      const f = this.factor;
-      top *= canvas.scene.dimensions.size / canvas.dimensions.distance / f;
-      bottom *= canvas.scene.dimensions.size / canvas.dimensions.distance / f;
-      // geometry
-      let points = [];
-      points.push(new THREE.Vector3(c[0] / f, c[1] / f, -bottom));
-      points.push(new THREE.Vector3(c[2] / f, c[3] / f, -bottom));
-      points.push(new THREE.Vector3(c[2] / f, c[3] / f, -top));
-      points.push(new THREE.Vector3(c[0] / f, c[1] / f, -top));
-      points.push(new THREE.Vector3(c[0] / f, c[1] / f, -bottom)); // close the loop
-      var geometry = new ConvexGeometry(points);
-      // material
-      geometry.rotateX(Math.PI / 2);
-      const material = new THREE.MeshMatcapMaterial({
-        color: color,
-        opacity: alpha,
-        transparent: true,
-      });
-
-      // line
-      return new THREE.Mesh(geometry, material);
-    } catch (e) {
-      console.warn("Convex Geometry failed for wall: ", c, top, bottom, color);
-      return new THREE.Mesh();
-    }
-  }
-
   clear3Dscene() {
     while (this.scene.children.length > 0) {
       this.scene.remove(this.scene.children[0]);
     }
+    this.tokens = {};
+    this.walls = {};
+    this.doors = {};
+    this.lights.sceneLights = {};
   }
 
   resizeCanvasToDisplaySize(_this) {

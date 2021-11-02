@@ -118,6 +118,10 @@ export class InteractionManager {
     _onClickRight(event){
       const entity = event.entity;
       const intersect = event.intersect;
+      if(entity.type === "Wall") {
+        entity._onClickRight(event);
+        return this.toggleControls(true);
+      }
       if(this.draggable) return this.cancelDrag();
       else entity.isOwner && entity._onClickRight(event);
       this.toggleControls(true);
