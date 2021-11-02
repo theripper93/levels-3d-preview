@@ -6,8 +6,8 @@ import {Token3D} from "./entities/token3d.js";
 import { Ruler3D } from "./entities/ruler3d.js";
 import { Light3D } from "./entities/light3d.js";
 import { FBXLoader } from './lib/FBXLoader.js';
-import { GlobalIllumination } from "./globalillumination.js";
-import { InteractionManager } from "./interactionManager.js";
+import { GlobalIllumination } from "./helpers/globalIllumination.js";
+import { InteractionManager } from "./helpers/interactionManager.js";
 
 export const factor = 1000;
 
