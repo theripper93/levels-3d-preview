@@ -2,7 +2,7 @@
   "name": "levels-3d-preview",
   "title": "3D Canvas",
   "description": "Bring your games to the 3rd dimension!",
-  "version": "0.5.1",
+  "version": "0.6",
   "author": "theripper93",
   "authors": [
       {
@@ -40,7 +40,8 @@
     "./scripts/lib/NUBSUtils.js",
     "./scripts/config.js",
     "./scripts/helpers/globalIllumination.js",
-    "./scripts/helpers/interactionManager.js"
+    "./scripts/helpers/interactionManager.js",
+    "./scripts/helpers/helpers.js"
 ],
   "scripts": [
     "./scripts/wrappers.js",

@@ -9,6 +9,7 @@ import { Wall3D } from "./entities/wall3d.js";
 import { FBXLoader } from './lib/FBXLoader.js';
 import { GlobalIllumination } from "./helpers/globalIllumination.js";
 import { InteractionManager } from "./helpers/interactionManager.js";
+import { Helpers } from "./helpers/helpers.js";
 
 export const factor = 1000;
 
@@ -63,6 +64,9 @@ class Levels3DPreview {
     this._active = false;
     this.tokenAnimationQueue = [];
     this._cameraSet = false;
+    this.helpers = Helpers;
+    $("body").append(`<div id="video-texture-container" style="position: absolute; top: 0; left: 0;display: none;"></div>`);
+    this.videoTextureContinaer = $("#video-texture-container");
     this.init3d();
 
   }

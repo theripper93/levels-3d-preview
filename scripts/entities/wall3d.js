@@ -33,22 +33,25 @@ export class Wall3D {
 
     }
 
-    init(){
+    async init(){
         const geometry = new THREE.BoxGeometry(
             this.depth,
             this.vec1.y - this.vec2.y,
             this.distance
         )
+        const texture = this.texture ? await this._parent.helpers.loadTexture(this.texture) : null;
+        if(texture){
+            texture.wrapS = THREE.RepeatWrapping;
+            texture.wrapT = THREE.RepeatWrapping;
+            texture.repeat.set(this.repeats,1);
+        }
+
         const material = new THREE.MeshPhongMaterial({
             color: this.color,
             transparent: this.opacity < 1,
             opacity: this.opacity,
             visible: this.isVisible,
-            map: this.texture ? new THREE.TextureLoader().load(this.texture,(texture)=>{
-                texture.wrapS = THREE.RepeatWrapping;
-                texture.wrapT = THREE.RepeatWrapping;
-                texture.repeat.set(this.repeats,1);
-            }) : null
+            map: texture,
         });
         material.castShadow = true;
         material.receiveShadow = true;
