@@ -16,7 +16,7 @@ export class Tile3D {
         }
         this.center = Ruler3D.posCanvasTo3d({x: this.center2d.x,y: this.center2d.y,z: this.bottom});
         this.texture = this.tile.data.img
-        this.alpha = this.tile.data.alpha
+        this.opacity = this.tile.data.alpha
         this.width = this.tile.data.width/factor;
         this.height = this.tile.data.height/factor;
         this.color = this.tile.data.tint ?? 0xffffff;
