@@ -66,7 +66,7 @@ class Levels3DPreview {
     this._active = false;
     this.tokenAnimationQueue = [];
     this._cameraSet = false;
-    this.helpers = Helpers;
+    this.helpers = new Helpers();
     $("body").append(`<div id="video-texture-container" style="position: absolute; top: 0; left: 0;display: none;"></div>`);
     this.videoTextureContinaer = $("#video-texture-container");
     this.init3d();

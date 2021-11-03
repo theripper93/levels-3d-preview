@@ -9,7 +9,7 @@ export class Tile3D {
         this.isOverhead = this.tile.data.overhead;
         this.bottom = this.isOverhead ? tile.data.flags.levels?.rangeBottom ?? 0 : 0;
         this.zIndex = this.tile.data.z
-        this.bottom+=this.zIndex/10000;
+        this.bottom+=this.zIndex/100;
         this.center2d = {
             x: this.tile.data.x + this.tile.data.width/2,
             y: this.tile.data.y + this.tile.data.height/2

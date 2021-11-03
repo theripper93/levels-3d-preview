@@ -97,7 +97,7 @@ export class Token3D {
       }
       const filePath = this.gtflPath;
       const extension = filePath.split(".").pop().toLowerCase();
-      if(extension == "gltf" || extension == "glb"){
+      /*if(extension == "gltf" || extension == "glb"){
         const object = await game.Levels3DPreview.loader.loadAsync(this.gtflPath)
         return {
           object: object,
@@ -112,7 +112,9 @@ export class Token3D {
           scene: object,
           model: object,
         }
-         };
+         };*/
+      const model = await game.Levels3DPreview.helpers.loadModel(this.gtflPath);
+      if(model) return model;
       //make 1x1 cube
       const errText = game.i18n.localize("levels3dpreview.errors.filenotsupported") + "(" + extension +"): " + filePath + " Token: " + this.token.data.name
       console.error(errText);
