@@ -241,7 +241,7 @@ export class Token3D {
         model.material = new THREE.MeshPhongMaterial({
           color: color,
           shininess: roughness*100,
-          transparent: true,//opacity != 1 || !this.gtflPath,
+          transparent: this.standUp,//opacity != 1 || !this.gtflPath,
           opacity: opacity,
           side: !this.gtflPath ? THREE.DoubleSide : THREE.FrontSide,
           map: this.texture,//new THREE.TextureLoader().load(this.imageTexture) : null,

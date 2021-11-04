@@ -171,6 +171,12 @@ export class InteractionManager {
   
     set draggable(object){
       this._draggable = object;
+      const center = this._parent.canvasCenter;
+      if(object){
+        this.dragplane.position.set(center.x, object.userData.entity3D.mesh.position.y, center.z);
+      }else{
+        this.dragplane.position.set(center.x, 0, center.z);
+      }
       if(this.ruler && (canvas.scene.getFlag("levels-3d-preview", "enableRuler") ?? true)) this.ruler.object = object;
     }
   

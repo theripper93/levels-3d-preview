@@ -21,14 +21,22 @@ export class Helpers{
       const isVideo = extension == "mp4" || extension == "webm" || extension == "ogg" || extension == "mov" || extension == "apng";
       if(isVideo){
       let video;
-      let videoTexture
-        video = $(`<video id="video" loop crossOrigin="anonymous" autoplay="true" muted="muted" playsinline style="display:none;height:auto;width:auto;">
-        <source src="${texturePath}"
-          type='video/${extension};'>
-      </video>`)
-      game.Levels3DPreview.videoTextureContinaer.append(video);
-      await resolveMetadata(video[0]);
-      videoTexture = new THREE.VideoTexture(video[0]);
+      video = document.createElement( 'video' );
+      video.src = texturePath;
+      video.loop = true;
+      video.muted = true;
+      video.load(); // must call after setting/changing source
+      video.play();	
+      let videoImage = document.createElement( 'canvas' );
+      videoImage.width = 480;
+      videoImage.height = 204;
+
+      let videoImageContext = videoImage.getContext( '2d' );
+      // background color if no video present
+      videoImageContext.fillStyle = '#000000';
+      videoImageContext.fillRect( 0, 0, videoImage.width, videoImage.height );
+      await resolveMetadata(video);
+      let videoTexture = new THREE.VideoTexture(video);
       videoTexture.format = THREE.RGBAFormat;
       this.isVideo = true;
       return videoTexture;

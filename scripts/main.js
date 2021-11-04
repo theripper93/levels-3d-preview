@@ -92,7 +92,7 @@ class Levels3DPreview {
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.renderer.setAnimationLoop(this.animation);
     this.renderer.shadowMap.enabled = true;
-    this.renderer.antialias = true;
+    this.renderer.antialias = false;
     this.resolutionMulti = game.settings.get("levels-3d-preview", "resolution")*window.devicePixelRatio;
     this.renderer.setPixelRatio(this.resolutionMulti);
     this.renderer.alpha = true;
