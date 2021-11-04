@@ -376,7 +376,7 @@ export class Token3D {
           - toLerp.z,
         );
       }
-      if(this.light){
+      if(this.light && this.token.data.lightAngle != 360){
         const rotationy = rotations.y;
         const distance = 1
         const lx = Math.sin(rotationy) * distance + x;
