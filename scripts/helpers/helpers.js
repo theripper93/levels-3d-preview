@@ -5,6 +5,7 @@ export class Helpers{
 
     constructor(){
       this.textureCache = {};
+      this.materialCache = {};
     }
 
     async loadTexture(texturePath){

@@ -1,6 +1,7 @@
 import * as THREE from "../lib/three.module.js";
 import {factor} from '../main.js'; 
 import {sleep} from '../main.js';
+import { Light3D } from "./light3d.js";
 
 export class Token3D {
     constructor(tokenDocument, parent) {
@@ -49,7 +50,9 @@ export class Token3D {
     async load() {
       if(!this.gtflPath && !this.imageTexture) this.imageTexture = this.token.data.img;
       this.texture = await this._parent.helpers.loadTexture(this.imageTexture)//this.loadTexture();
-      return this.gtflPath || this.imageTexture ? await this.loadModel() : this.draw();
+      const token3d = this.gtflPath || this.imageTexture ? await this.loadModel() : this.draw();
+      if(this.token.data.brightLight !== 0 || this.token.data.dimLight) this.loadLight();
+      return token3d;
     }
 
     async loadTexture(){
@@ -97,22 +100,6 @@ export class Token3D {
       }
       const filePath = this.gtflPath;
       const extension = filePath.split(".").pop().toLowerCase();
-      /*if(extension == "gltf" || extension == "glb"){
-        const object = await game.Levels3DPreview.loader.loadAsync(this.gtflPath)
-        return {
-          object: object,
-          scene: object.scene,
-          model: object.scene.children[0],
-        }
-        };
-      if(extension == "fbx") {
-        const object = await game.Levels3DPreview.FBXLoader.loadAsync(this.gtflPath)
-        return {
-          object: object,
-          scene: object,
-          model: object,
-        }
-         };*/
       const model = await game.Levels3DPreview.helpers.loadModel(this.gtflPath);
       if(model) return model;
       //make 1x1 cube
@@ -263,6 +250,13 @@ export class Token3D {
         model.material.toneMapped = false;
 
     }
+
+    loadLight(){
+      this.light = new Light3D(this.token, this._parent, true);
+      this.light.light3d.position.set(0,this.d/2,0);
+      this.mesh.add(this.light.light3d);
+      this.setPosition();
+    }
   
     draw() {
       const token = this.token;
@@ -381,6 +375,15 @@ export class Token3D {
           - toLerp.y,
           - toLerp.z,
         );
+      }
+      if(this.light){
+        const rotationy = rotations.y;
+        const distance = 1
+        const lx = Math.sin(rotationy) * distance + x;
+        const ly = y + this.d/2;
+        const lz = Math.cos(rotationy) * distance + z;
+        this.light.light3d.target.position.set(lx,ly,lz);
+        this.light.light3d.target.updateMatrixWorld();
       }
       if(currentPosition.x === x && currentPosition.y === y && currentPosition.z === z && currentRotation.x === Math.round(rotations.x*1000)/1000 && currentRotation.y === Math.round(rotations.y*1000)/1000 && currentRotation.z === Math.round(rotations.z*1000)/1000){
         return false;
@@ -594,7 +597,10 @@ export class Token3D {
 
   Hooks.on("updateToken", (token, updates) => {
     if(!game.Levels3DPreview._active) return;
-    if(updates?.flags && updates?.flags["levels-3d-preview"]){
+    if(
+      (updates?.flags && updates?.flags["levels-3d-preview"]) ||
+      "dimLight" in updates || "brightLight" in updates || "lightAlpha" in updates || "lightColor" in updates || "lightAngle" in updates
+      ){
       game.Levels3DPreview.tokens[token.id]?.refresh();
     }
     if ("x" in updates || "y" in updates || "elevation" in updates || "rotation" in updates) {

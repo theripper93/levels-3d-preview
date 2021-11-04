@@ -2,14 +2,15 @@ import * as THREE from "../lib/three.module.js";
 import {factor} from '../main.js'; 
 
 export class Light3D {
-    constructor(light,parent){
+    constructor(light,parent, isToken){
         this.light = light;
         this._parent = parent
+        this.isToken = isToken;
         this.init();
     }
 
     init(){
-        this.light3d = new THREE.PointLight();
+        this.light3d = this.angle != 360 ? new THREE.SpotLight : new THREE.PointLight();
         if(this._parent.debugMode){
             this.debugSphere = new THREE.Mesh(
                 new THREE.SphereGeometry(5, 32, 32),
@@ -27,7 +28,7 @@ export class Light3D {
         this.light3d.shadow.mapSize.width = 512;
         this.light3d.shadow.mapSize.height = 512;
         this.refresh();
-        this._parent.scene.add(this.light3d);
+        if(!this.isToken) this._parent.scene.add(this.light3d);
         if(this._parent.debugMode){
             this._parent.scene.add(this.debugSphere);
         }
@@ -39,20 +40,30 @@ export class Light3D {
         let top = light.data.flags.levels?.rangeTop ?? 1;
         let bottom = light.data.flags.levels?.rangeBottom ?? 1;
         const z = (top+bottom)*canvas.scene.dimensions.size/canvas.scene.dimensions.distance/2;
-        const color = light.data.tintColor || "#ffffff";
-        const radius = Math.max(light.data.dim, light.data.bright)*(canvas.scene.dimensions.size/canvas.scene.dimensions.distance)/factor;
-        const alpha = light.data.tintAlpha*6;
-        const decay = light.data.dim/(light.data.bright+10)*2;
+        const color = this.color || "#ffffff";
+        const radius = Math.max(this.dim, this.bright)*(canvas.scene.dimensions.size/canvas.scene.dimensions.distance)/factor;
+        const alpha = this.alpha*6;
+        const decay = this.dim/(this.bright+10)*2;
         const position = {
             x: light.data.x/factor,
             y: z/factor,
             z: light.data.y/factor,
         }
-        this.light3d.position.set(position.x, position.y, position.z);
+        if(!this.isToken) this.light3d.position.set(position.x, position.y, position.z);
         this.light3d.color.set(color);
         this.light3d.distance = radius;
         this.light3d.decay = decay;
         this.light3d.intensity = alpha;
+        if(this.angle != 360) {
+            this.light3d.angle = Math.toRadians(this.angle)/2;
+            const rotationy = -Math.toRadians(this.rotation);
+            const distance = 1
+            const lx = Math.sin(rotationy) * distance + position.x;
+            const ly = position.y;
+            const lz = Math.cos(rotationy) * distance + position.z;
+            this.light3d.target.position.set(lx,ly,lz);
+            this.light3d.target.updateMatrixWorld();
+        }
         if(!this.debugSphere) return;
         this.debugSphere.geometry = new THREE.SphereGeometry(radius, 32, 32);
         this.debugSphere.position.set(position.x, position.y, position.z);
@@ -63,6 +74,31 @@ export class Light3D {
         this._parent.scene.remove(this.light3d);
         this._parent.scene.remove(this.debugSphere);
     }
+
+    get dim(){
+        return this.light.data.dim ?? this.light.data.dimLight;
+    }
+
+    get bright(){
+        return this.light.data.bright ?? this.light.data.brightLight;
+    }
+
+    get alpha(){
+        return this.light.data.tintAlpha ?? this.light.data.lightAlpha;
+    }
+
+    get color(){
+        return this.light.data.tintColor ?? this.light.data.lightColor;
+    }
+
+    get angle(){
+        return this.light.data.angle ?? this.light.data.lightAngle;
+    }
+
+    get rotation(){
+        return this.light.data.rotation;
+    }
+
 }
 
 //Hooks

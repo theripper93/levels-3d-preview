@@ -49,14 +49,20 @@ export class Wall3D {
             texture.wrapT = THREE.RepeatWrapping;
             texture.repeat.set(this.repeats,1);
         }
-
-        const material = new THREE.MeshPhongMaterial({
-            color: this.color,
-            transparent: this.opacity < 1,
-            opacity: this.opacity,
-            visible: this.isVisible,
-            map: texture,
-        });
+        let material;
+        const materialId = `${this.color}${this.opacity}${this.texture}`
+        if(this._parent.helpers.materialCache[materialId]){
+            material = this._parent.helpers.materialCache[materialId];  
+        }else{
+            material = new THREE.MeshPhongMaterial({
+                color: this.color,
+                transparent: this.opacity < 1,
+                opacity: this.opacity,
+                visible: this.isVisible,
+                map: texture,
+            });
+            this._parent.helpers.materialCache[materialId] = material;
+        }
         material.castShadow = true;
         material.receiveShadow = true;
         this.mesh = new THREE.Mesh(geometry, material);

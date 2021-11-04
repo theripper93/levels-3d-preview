@@ -77,7 +77,6 @@ export class InteractionManager {
       if(!this.positionBroadcasted && game.user.hasPermission("SHOW_CURSOR")){
         this.positionBroadcasted = true;
         this.broadcastCursorPosition();
-        console.log("broadcasted")
         setTimeout(() => {
           this.positionBroadcasted = false;
         }, 60);
