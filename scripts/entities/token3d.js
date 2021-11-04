@@ -198,7 +198,7 @@ export class Token3D {
           visible: this._parent.debugMode,
         })
       );
-      hitbox.position.set(center.x+centerOffset.x, center.y+centerOffset.y, center.z+centerOffset.z);
+      hitbox.position.set(0, center.y+centerOffset.y, 0);
       hitbox.userData.draggable = this.draggable;
       hitbox.userData.interactive = this.interactive;
       hitbox.userData.isHitbox = true;

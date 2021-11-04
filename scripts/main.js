@@ -7,6 +7,7 @@ import { Ruler3D } from "./entities/ruler3d.js";
 import { Light3D } from "./entities/light3d.js";
 import { Wall3D } from "./entities/wall3d.js";
 import { Tile3D } from "./entities/tile3d.js";
+import { Cursors3D } from "./entities/cursors.js";
 import { FBXLoader } from './lib/FBXLoader.js';
 import { GlobalIllumination } from "./helpers/globalIllumination.js";
 import { InteractionManager } from "./helpers/interactionManager.js";
@@ -101,6 +102,7 @@ class Levels3DPreview {
     this.ruler = new Ruler3D(this);
     this.interactionManager = new InteractionManager(this);
     this.interactionManager.activateListeners();
+    this.cursors = new Cursors3D(this);
   }
 
   get canvasCenter() {
@@ -335,6 +337,7 @@ class Levels3DPreview {
     this.doors = {};
     this.lights.sceneLights = {};
     this.tiles = {};
+    this.cursors.clear();
   }
 
   resizeCanvasToDisplaySize(_this) {
@@ -362,6 +365,7 @@ class Levels3DPreview {
     const _this = game.Levels3DPreview;
     if(!_this._active) return;
     _this.interactionManager.dragObject();
+    _this.cursors.update();
     const delta = _this.clock.getDelta();
     Object.values(_this.tokens).forEach((token) => {
       token.updateVisibility();

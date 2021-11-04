@@ -189,6 +189,7 @@ export class GlobalIllumination {
 //HOOKS
 
 Hooks.on("updateScene", (scene, updates) => {
+  if(!game.user.isGM) return;
   if(updates.flags && updates.flags["levels-3d-preview"] && game.Levels3DPreview._active){
     game.Levels3DPreview.lights.globalIllumination.setSunlightFromFlags(true);
   }
@@ -203,7 +204,7 @@ Hooks.on("updateScene", (scene, updates) => {
 })
 
 Hooks.on("updateWorldTime", () => {
-
+  if(!game.user.isGM) return;
   debounceTime3D();
 
 });

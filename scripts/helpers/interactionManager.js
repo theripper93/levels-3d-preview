@@ -74,6 +74,15 @@ export class InteractionManager {
     _onMouseMove(event){
       this.mousemove.x = (event.clientX / window.innerWidth) * 2 - 1;
       this.mousemove.y = -(event.clientY / window.innerHeight) * 2 + 1;
+      if(!this.positionBroadcasted && game.user.hasPermission("SHOW_CURSOR")){
+        this.positionBroadcasted = true;
+        this.broadcastCursorPosition();
+        console.log("broadcasted")
+        setTimeout(() => {
+          this.positionBroadcasted = false;
+        }, 60);
+      }
+
     }
 
     _onWheel(event){
@@ -184,6 +193,17 @@ export class InteractionManager {
       const intersects = this.raycaster.intersectObjects([this.dragplane], true);
       return intersects.length > 0 ? this.ruler.pos3DToCanvas(intersects[0].point) : undefined;
     }
+
+    mousePostionToWorld(){
+      this.raycaster.setFromCamera(this.mousemove, this.camera);
+      const intersects = this.raycaster.intersectObjects([this.dragplane], true);
+      if (intersects.length > 0) {
+        return intersects[0].point;
+      }else{
+
+        return new THREE.Vector3(0, 0, 0);
+      }
+    }
   
     dragObject(){
       if(!this.draggable) return;
@@ -208,5 +228,15 @@ export class InteractionManager {
       setTimeout(() => {
         this.toggleControls(true);
       }, 150);
+    }
+
+    broadcastCursorPosition(){
+      const sc = game.user.hasPermission("SHOW_CURSOR");
+      if ( !sc ) return;
+          const pos3d = game.Levels3DPreview.interactionManager.mousePostionToWorld();
+          const position = {x: pos3d?.x, y: pos3d?.z}
+      game.user.broadcastActivity({
+        cursor: position,
+      });
     }
 }
