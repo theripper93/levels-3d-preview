@@ -227,6 +227,8 @@ export class Token3D {
       let opacity = 1;
       let color = new THREE.Color(this.color);
       switch(materialType){
+        case "basic":
+          break;
         case "glass":
           roughness = 0.3;
           opacity = 0.8;
@@ -238,15 +240,20 @@ export class Token3D {
           roughness = 1;
           break;
       }
-        model.material = new THREE.MeshPhongMaterial({
-          color: color,
-          shininess: roughness*100,
-          transparent: this.standUp,//opacity != 1 || !this.gtflPath,
-          opacity: opacity,
-          side: !this.gtflPath ? THREE.DoubleSide : THREE.FrontSide,
-          map: this.texture,//new THREE.TextureLoader().load(this.imageTexture) : null,
-          depthWrite: this.texture && !this.gtflPath ? false : true,
-        });
+      const matData = {
+        color: color,
+        shininess: roughness*100,
+        transparent: this.standUp,//opacity != 1 || !this.gtflPath,
+        opacity: opacity,
+        side: !this.gtflPath ? THREE.DoubleSide : THREE.FrontSide,
+        map: this.texture,//new THREE.TextureLoader().load(this.imageTexture) : null,
+        depthWrite: this.texture && !this.gtflPath ? false : true,
+      }
+      if(materialType === "basic"){
+        model.material = new THREE.MeshBasicMaterial(matData);
+      }else{
+        model.material = new THREE.MeshPhongMaterial(matData);
+      }
         model.material.toneMapped = false;
 
     }
@@ -435,6 +442,7 @@ export class Token3D {
       const tokenEffects = this.token.data.effects;
       const actorEffects = this.token.actor?.temporaryEffects || [];
       const effects = tokenEffects.concat(actorEffects).map(e => e.data.icon);
+      if(this.token.data.hidden) effects.push("icons/svg/mystery-man.svg");
       if(effects.length === this.effectsContainer.children.length) return;
       this.effectsContainer.children.forEach(child => { 
         this.effectsContainer.remove(child);

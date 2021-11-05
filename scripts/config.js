@@ -312,6 +312,7 @@ Hooks.on("renderTokenConfig", (app,html)=>{
             default: "none",
             options: {
                 "none": game.i18n.localize("levels3dpreview.flags.material.options.none"),
+                "basic": game.i18n.localize("levels3dpreview.flags.material.options.basic"),
                 "plastic": game.i18n.localize("levels3dpreview.flags.material.options.plastic"),
                 "wood": game.i18n.localize("levels3dpreview.flags.material.options.wood"),
                 "glass": game.i18n.localize("levels3dpreview.flags.material.options.glass"),

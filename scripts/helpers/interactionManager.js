@@ -34,6 +34,7 @@ export class InteractionManager {
       this.mousePosition = { x: event.clientX, y: event.clientY };
       if(event.which !== 1 && event.which !== 3) return;
       //if(event.shiftKey) return;
+      debugger
       const intersect = this.findMouseIntersect(event);
       if(!intersect){
         if(event.which === 1 && event.ctrlKey) canvas.tokens.releaseAll();

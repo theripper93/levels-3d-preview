@@ -66,7 +66,7 @@ export class Wall3D {
         material.castShadow = true;
         material.receiveShadow = true;
         this.mesh = new THREE.Mesh(geometry, material);
-        if(this.wall.data.door && this.wall.doorControl.visible){
+        if(this.wall.data.door){
         this.mesh.userData.hitbox = this.mesh;
         this.mesh.userData.interactive = true;
         this.mesh.userData.entity3D = this;
@@ -86,6 +86,7 @@ export class Wall3D {
     }
 
     _onClickLeft(e) {
+        if(!this.wall.doorControl.visible) return;
         e.data = {
             originalEvent: e,
           }
@@ -93,6 +94,7 @@ export class Wall3D {
       }
   
       _onClickRight(e) {
+        if(!this.wall.doorControl.visible) return;
           e.data = {
             originalEvent: e,
           }

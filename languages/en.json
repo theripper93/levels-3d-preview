@@ -85,6 +85,7 @@
                 "label": "Material",
                 "options": {
                     "none": "Default",
+                    "basic": "Basic (no Lighting/Shadows)",
                     "plastic": "Plastic",
                     "wood": "Wood",
                     "glass": "Glass"
