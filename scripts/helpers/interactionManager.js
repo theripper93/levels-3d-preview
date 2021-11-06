@@ -9,13 +9,16 @@ export class InteractionManager {
         this.mousemove = new THREE.Vector2();
         this.controls = levels3dPreview.controls;
         this.camera = levels3dPreview.camera;
-        this.scene = levels3dPreview.scene;
         this.domElement = levels3dPreview.renderer.domElement;
         this.ruler = levels3dPreview.ruler;
         this.factor = levels3dPreview.factor;
         this.clicks = 0;
         this.lcTime = 0;
         this.elevationTick = (canvas.dimensions.size/canvas.dimensions.distance)/this.factor;
+    }
+
+    get scene(){
+      return this._parent.scene;
     }
 
     activateListeners() {
@@ -34,7 +37,6 @@ export class InteractionManager {
       this.mousePosition = { x: event.clientX, y: event.clientY };
       if(event.which !== 1 && event.which !== 3) return;
       //if(event.shiftKey) return;
-      debugger
       const intersect = this.findMouseIntersect(event);
       if(!intersect){
         if(event.which === 1 && event.ctrlKey) canvas.tokens.releaseAll();
