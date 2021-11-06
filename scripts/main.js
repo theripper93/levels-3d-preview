@@ -115,6 +115,7 @@ class Levels3DPreview {
 
   build3Dscene() {
     this.clear3Dscene();
+    this.scene = new THREE.Scene();
     this._active = true;
     this.debugMode = game.settings.get("levels-3d-preview", "debugMode")
     this.level = this.isLevels ? parseFloat($(_levels.UI?.element)?.find(".level-item.active").find(".level-top").val()) ?? Infinity : Infinity;
@@ -126,6 +127,9 @@ class Levels3DPreview {
     const renderBackground = canvas.scene.getFlag("levels-3d-preview", "renderBackground") ?? true;
     const renderTable = canvas.scene.getFlag("levels-3d-preview", "renderTable") ?? false;
     this.standUpFaceCamera = game.settings.get("levels-3d-preview", "standupFace") ?? true;
+    const enableFog = canvas.scene.getFlag("levels-3d-preview", "enableFog") ?? false;
+    const fogColor = canvas.scene.getFlag("levels-3d-preview", "fogColor") ?? "#000000";
+    const fogDistance = (canvas.scene.getFlag("levels-3d-preview", "fogDistance") ?? 3000) / this.factor;
     drawFloors && this.isLevels && this.createFloors(this.level);
     drawWalls && this.createWalls(this.level);
     drawLights && this.createSceneLights();
@@ -157,6 +161,7 @@ class Levels3DPreview {
       gridHelper.material.transparent = true;
       gridHelper.material.opacity = canvas.scene.data.gridAlpha;
       this.scene.add(gridHelper);
+      if(enableFog) this.scene.fog = new THREE.Fog(fogColor, 1, fogDistance);
     }
     //add raycasting plane
 

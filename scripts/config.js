@@ -165,7 +165,7 @@ Hooks.on("renderSceneConfig", (app,html)=>{
         "inject" : `input[name="backgroundColor"]`,
         "header": {
             type: "custom",
-            html: `<h3 class="form-header"><i class="fas fa-cube"></i> ${game.i18n.localize("levels3dpreview.sceneConfigTitle.title")}</h3><p class="notes">${game.i18n.localize("levels3dpreview.sceneConfigTitle.notes")}</p>`
+            html: `<h3 class="form-header" id="canvas-3d-toggle"><i class="fas fa-cube"></i> ${game.i18n.localize("levels3dpreview.sceneConfigTitle.title")}</h3><p class="notes">${game.i18n.localize("levels3dpreview.sceneConfigTitle.notes")}</p><div id="3d-canvas">`
         },
         "enablePlayers":{
             "type": "checkbox",
@@ -210,6 +210,21 @@ Hooks.on("renderSceneConfig", (app,html)=>{
             type: "checkbox",
             label: game.i18n.localize("levels3dpreview.flags.enableRuler.label"),
             default: true,
+        },
+        "enableFog": {
+            type: "checkbox",
+            label: game.i18n.localize("levels3dpreview.flags.enableFog.label"),
+            default: false,
+        },
+        "fogColor": {
+            type: "color",
+            label: game.i18n.localize("levels3dpreview.flags.fogColor.label"),
+            default: "#000000",
+        },
+        "fogDistance": {
+            type: "number",
+            label: game.i18n.localize("levels3dpreview.flags.fogDistance.label"),
+            default: 3000,
         },
         "sceneTint": {
             type: "color",
@@ -271,8 +286,16 @@ Hooks.on("renderSceneConfig", (app,html)=>{
             type: "checkbox",
             label: game.i18n.localize("levels3dpreview.flags.renderSceneLights.label"),
             default: false,
-        }
+        },
+        "footer": {
+            type: "custom",
+            html: `</div>`
+        },
     })
+    html.find("#3d-canvas").toggle();
+    html.on("click", "#canvas-3d-toggle", (e)=>{
+        html.find("#3d-canvas").slideToggle(200);
+    });
     html.on("change", "input", (e)=>{
         if(!game.Levels3DPreview._active) return;
         const sunPosition = html.find("input[name='flags.levels-3d-preview.sunPosition']")[0].value;
