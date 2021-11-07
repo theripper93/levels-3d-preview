@@ -12,6 +12,7 @@ import { FBXLoader } from './lib/FBXLoader.js';
 import { GlobalIllumination } from "./helpers/globalIllumination.js";
 import { InteractionManager } from "./helpers/interactionManager.js";
 import { Helpers } from "./helpers/helpers.js";
+import { EXRLoader } from "https://threejs.org/examples/jsm/loaders/EXRLoader.js";
 
 export const factor = 1000;
 
@@ -103,6 +104,24 @@ class Levels3DPreview {
     this.interactionManager = new InteractionManager(this);
     this.interactionManager.activateListeners();
     this.cursors = new Cursors3D(this);
+    //this.initEnvMap();
+  }
+
+  initEnvMap(){
+    const pmremGenerator = new THREE.PMREMGenerator(this.renderer);
+    pmremGenerator.compileEquirectangularShader();
+
+    new EXRLoader()
+        .setDataType(THREE.UnsignedByteType)
+        .load(
+            "modules/levels-3d-preview/assets/shudu_lake_4k.exr",
+            function (texture) {
+                let exrCubeRenderTarget = pmremGenerator.fromEquirectangular(texture);
+                let exrBackground = exrCubeRenderTarget.texture;
+                let newEnvMap = exrCubeRenderTarget ? exrCubeRenderTarget.texture : null;
+                game.Levels3DPreview.envMap = newEnvMap;
+            }
+        );
   }
 
   get canvasCenter() {
@@ -116,6 +135,7 @@ class Levels3DPreview {
   build3Dscene() {
     this.clear3Dscene();
     this.scene = new THREE.Scene();
+    //this.scene.environment = this.envMap;
     this._active = true;
     this.debugMode = game.settings.get("levels-3d-preview", "debugMode")
     this.level = this.isLevels ? parseFloat($(_levels.UI?.element)?.find(".level-item.active").find(".level-top").val()) ?? Infinity : Infinity;
@@ -202,7 +222,7 @@ class Levels3DPreview {
       texture.minFilter = THREE.NearestMipMapLinearFilter;
     }
     const geometry = new THREE.BoxGeometry(width, height, depth);
-    const material = new THREE.MeshPhysicalMaterial({
+    const material = new THREE.MeshLambertMaterial({
       map: texture,
     });
     material.toneMapped = false;
