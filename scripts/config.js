@@ -28,6 +28,15 @@ Hooks.once('init', function() {
         default: true,
       });
 
+      game.settings.register("levels-3d-preview", "screenspacepanning", {
+        name: game.i18n.localize("levels3dpreview.settings.screenspacepanning.name"),
+        hint: game.i18n.localize("levels3dpreview.settings.screenspacepanning.hint"),
+        scope: "client",
+        config: true,
+        type: Boolean,
+        default: true,
+      });
+
       game.settings.register("levels-3d-preview", "standupFace", {
         name: game.i18n.localize("levels3dpreview.settings.standupFace.name"),
         hint: game.i18n.localize("levels3dpreview.settings.standupFace.hint"),

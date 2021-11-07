@@ -282,7 +282,7 @@ class Levels3DPreview {
       const top = tile.document.getFlag("levels", "rangeTop") ?? undefined;
       const bottom =
         tile.document.getFlag("levels", "rangeBottom") ?? undefined;
-      if (bottom > level) continue;
+      if (bottom > this.level) continue;
       if (top !== undefined)
         this.scene.add(this.createFloor(tile.roomPoly.points, top));
       if (bottom !== undefined)
@@ -301,7 +301,6 @@ class Levels3DPreview {
         const bottom = wall.data.flags.wallHeight?.wallHeightBottom ?? -Infinity;
         if(bottom > this.level) continue;
       }
-      debugger
       this.createWall(wall);
     }
   }
@@ -424,6 +423,7 @@ class Levels3DPreview {
     this.controls.dampingFactor = 0.07;
     this.controls.maxDistance = 20;
     this.controls.minDistance = 0.1;
+    this.controls.screenSpacePanning = game.settings.get("levels-3d-preview", "screenspacepanning");
     this.controls.target.set(center.x, center.y, center.z);
     topdown ? this.camera.position.set(center.x, center.y + 4, center.z) : this.camera.position.set(center.x*1.5, center.y + 1, center.z*2);
     this.camera.lookAt(center);
