@@ -23,7 +23,6 @@ export class Wall3D {
         if(this.repeats < 1){
             this.repeats = 1;
         }
-        if(!this.bottom > this._parent.level) return;
         this.texture = wall.document.getFlag("levels-3d-preview","wallTexture");
         this.opacity = wall.document.getFlag("levels-3d-preview","wallOpacity") ?? 1;
         if(this.wall.data.door && this.wall.data.ds === 1) this.opacity = this.opacity/2;

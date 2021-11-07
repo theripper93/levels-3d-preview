@@ -138,8 +138,9 @@ class Levels3DPreview {
     //this.scene.environment = this.envMap;
     this._active = true;
     this.debugMode = game.settings.get("levels-3d-preview", "debugMode")
-    this.level = this.isLevels ? parseFloat($(_levels.UI?.element)?.find(".level-item.active").find(".level-top").val()) ?? Infinity : Infinity;
+    this.level = this.isLevels ? parseFloat($(_levels.UI?.element)?.find(".level-item.active").find(".level-bottom").val()) ?? Infinity : Infinity;
     if (isNaN(this.level)) this.level = Infinity;
+    console.log(this.level);
     this.showSun = this.debugMode;
     const drawFloors = canvas.scene.getFlag("levels-3d-preview", "showSceneFloors") ?? true;
     const drawWalls = canvas.scene.getFlag("levels-3d-preview", "showSceneWalls") ?? true;
@@ -268,8 +269,12 @@ class Levels3DPreview {
     this.lights.sceneLights[light.id] = light3d;
   }
 
-  createFloors(level){
+  createFloors(){
     for (let tile of canvas.foreground.placeables.concat(canvas.background.placeables)) {
+      if(this.isLevels){
+        const bottom = tile.data.flags.levels?.rangeBottom ?? -Infinity;
+        if(bottom > this.level) continue;
+      }
       this.createTile(tile);
 
       if(!this.debugMode) continue;
@@ -292,6 +297,11 @@ class Levels3DPreview {
 
   createWalls() {
     for (let wall of canvas.walls.placeables) {
+      if(this.isLevels){
+        const bottom = wall.data.flags.wallHeight?.wallHeightBottom ?? -Infinity;
+        if(bottom > this.level) continue;
+      }
+      debugger
       this.createWall(wall);
     }
   }
