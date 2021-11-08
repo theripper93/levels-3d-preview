@@ -141,7 +141,6 @@ class Levels3DPreview {
     this.debugMode = game.settings.get("levels-3d-preview", "debugMode")
     this.level = this.isLevels ? parseFloat($(_levels.UI?.element)?.find(".level-item.active").find(".level-bottom").val()) ?? Infinity : Infinity;
     if (isNaN(this.level)) this.level = Infinity;
-    console.log(this.level);
     this.showSun = this.debugMode;
     const drawFloors = canvas.scene.getFlag("levels-3d-preview", "showSceneFloors") ?? true;
     const drawWalls = canvas.scene.getFlag("levels-3d-preview", "showSceneWalls") ?? true;

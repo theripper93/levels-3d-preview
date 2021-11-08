@@ -303,7 +303,7 @@ export class Token3D {
       const z3d = this.mesh.position.z;
       const x = x3d * this.factor-this.token.w/2;
       const y = z3d * this.factor - this.token.h/2;
-      const z = Math.round((y3d * this.factor * canvas.dimensions.distance)/(canvas.dimensions.size));
+      const z = ((y3d * this.factor * canvas.dimensions.distance)/(canvas.dimensions.size)).toFixed(2);
         const snapped = canvas.grid.getSnappedPosition(x, y);
       const dest = {
         x: useSnapped ? snapped.x : x,
@@ -496,7 +496,7 @@ export class Token3D {
         map: this.selectedImage ? new THREE.TextureLoader().load(this.selectedImage) : null,
       });
       const mesh = new THREE.Mesh(geometry, material);
-      mesh.position.set(0,0,0);
+      mesh.position.set(0,0.001,0);
       this.border.add(mesh);
 
 
