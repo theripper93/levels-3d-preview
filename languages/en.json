@@ -119,6 +119,14 @@
             "animSpeed":{
                 "label": "Animation Speed"
             },
+            "faceCamera":{
+                "label": "Face Camera Mode",
+                "options": {
+                    "default": "Global Setting (Default)",
+                    "face": "Face Camera",
+                    "noface": "Don't Face Camera"
+                }
+            },
             "rotationAxis" : {
                 "label": "Rotation Axis",
                 "options": {

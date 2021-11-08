@@ -408,7 +408,7 @@ class Levels3DPreview {
       if(token.mixer){
         token.mixer.update(delta);
       }
-      if(token.standUp && _this.standUpFaceCamera){
+      if(token.standUp && token.standupFace){
         token.faceCamera();
       }
     });

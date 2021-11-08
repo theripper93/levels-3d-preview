@@ -45,7 +45,9 @@ export class Token3D {
       this.collisionPlane = this.token.document.getFlag("levels-3d-preview", "collisionPlane") ?? false;
       this.colorizeIndicator = game.settings.get("levels-3d-preview", "colorizeInidcator");
       this.rotateIndicator = game.settings.get("levels-3d-preview", "rotateIndicator");
+      this.faceCameraOption = this.token.document.getFlag("levels-3d-preview", "faceCamera") ?? 0;
       this.standupFace = game.settings.get("levels-3d-preview", "standupFace");
+      if(this.faceCameraOption) this.standupFace = this.faceCameraOption == 1 ? true : false;
     }
   
     async load() {

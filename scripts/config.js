@@ -398,6 +398,16 @@ Hooks.on("renderTokenConfig", (app,html)=>{
             min: 0,
             max: 10,
         },
+        "faceCamera": {
+            type: "select",
+            label: game.i18n.localize("levels3dpreview.flags.faceCamera.label"),
+            default: 0,
+            options: {
+                0: game.i18n.localize("levels3dpreview.flags.faceCamera.options.default"),
+                1: game.i18n.localize("levels3dpreview.flags.faceCamera.options.face"),
+                2: game.i18n.localize("levels3dpreview.flags.faceCamera.options.noface"),
+            }
+        },
         "rotationX" : {
             type: "range",
             label: game.i18n.localize("levels3dpreview.flags.rotationX.label"),
