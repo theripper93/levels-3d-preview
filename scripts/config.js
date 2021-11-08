@@ -220,6 +220,16 @@ Hooks.on("renderSceneConfig", (app,html)=>{
             label: game.i18n.localize("levels3dpreview.flags.enableRuler.label"),
             default: true,
         },
+        "enableCollision": {
+            type: "select",
+            label: game.i18n.localize("levels3dpreview.flags.enableCollision.label"),
+            default: 0,
+            options: {
+                0: game.i18n.localize("levels3dpreview.flags.enableCollision.options.0"),
+                1: game.i18n.localize("levels3dpreview.flags.enableCollision.options.1"),
+                2: game.i18n.localize("levels3dpreview.flags.enableCollision.options.2"),
+            }
+        },
         "enableFog": {
             type: "checkbox",
             label: game.i18n.localize("levels3dpreview.flags.enableFog.label"),
@@ -360,6 +370,11 @@ Hooks.on("renderTokenConfig", (app,html)=>{
             type: "checkbox",
             label: game.i18n.localize("levels3dpreview.flags.draggable.label"),
             default: true,
+        },
+        "collisionPlane": {
+            type: "checkbox",
+            label: game.i18n.localize("levels3dpreview.flags.collisionPlane.label"),
+            default: false,
         },
         "alwaysVisible": {
             type: "checkbox",

@@ -42,6 +42,7 @@ export class Token3D {
       this.material = this.token.document.getFlag("levels-3d-preview", "material") ?? "";
       this.imageTexture = this.token.document.getFlag("levels-3d-preview", "imageTexture") ?? "";
       this.alwaysVisible = this.token.document.getFlag("levels-3d-preview", "alwaysVisible") ?? false;
+      this.collisionPlane = this.token.document.getFlag("levels-3d-preview", "collisionPlane") ?? false;
       this.colorizeIndicator = game.settings.get("levels-3d-preview", "colorizeInidcator");
       this.rotateIndicator = game.settings.get("levels-3d-preview", "rotateIndicator");
       this.standupFace = game.settings.get("levels-3d-preview", "standupFace");
@@ -168,6 +169,7 @@ export class Token3D {
       });
       model.userData.draggable = true;
       model.userData.name = this.gtflPath;
+      this.model = model;
       const pivot = new THREE.Group();
       pivot.add(model);
       //create hitbox
@@ -243,11 +245,12 @@ export class Token3D {
       const matData = {
         color: color,
         shininess: roughness*100,
-        transparent: this.standUp,//opacity != 1 || !this.gtflPath,
+        //transparent: this.standUp,//opacity != 1 || !this.gtflPath,
         opacity: opacity,
         side: !this.gtflPath ? THREE.DoubleSide : THREE.FrontSide,
         map: this.texture,//new THREE.TextureLoader().load(this.imageTexture) : null,
-        depthWrite: this.texture && !this.gtflPath ? false : true,
+        //depthWrite: this.texture && !this.gtflPath ? false : true,
+        alphaTest: 0.99,
       }
       if(materialType === "basic"){
         model.material = new THREE.MeshBasicMaterial(matData);
@@ -255,6 +258,7 @@ export class Token3D {
         model.material = new THREE.MeshPhongMaterial(matData);
       }
         model.material.toneMapped = false;
+
 
     }
 

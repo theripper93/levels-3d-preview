@@ -1,4 +1,5 @@
 import * as THREE from "../lib/three.module.js";
+import {factor} from '../main.js';
 
 export class InteractionManager {
     constructor(levels3dPreview){
@@ -19,6 +20,13 @@ export class InteractionManager {
 
     get scene(){
       return this._parent.scene;
+    }
+
+    get cursorPositionTo2D(){
+      return {
+        x: (this._currentMousePosition.x ?? 0) * factor,
+        y: (this._currentMousePosition.y ?? 0) * factor
+      }
     }
 
     activateListeners() {
@@ -215,12 +223,31 @@ export class InteractionManager {
   
     dragObject(){
       if(!this.draggable) return;
+      const target = this.draggable.userData.isHitbox ? this.draggable.parent : this.draggable;
       this.raycaster.setFromCamera(this.mousemove, this.camera);
       const intersects = this.raycaster.intersectObjects([this.dragplane], true);
+      let intersects2 = [];
+      if(canvas.scene.getFlag("levels-3d-preview", "enableCollision") && !keyboard._downKeys.has("f") && !keyboard._downKeys.has("F")){
+      const collisionObjects = Object.values(this._parent.tokens).filter(t => t.collisionPlane).map(t => t.model);
+      let collisionGeometries = [];
+      for(let collObj of collisionObjects){
+        collObj.traverse(child => {
+          if(child.geometry) collisionGeometries.push(child);
+                })
+      }
+      for(let tile of Object.values(this._parent.tiles)){
+        collisionGeometries.push(tile.mesh);
+      }
+      const board = this._parent.board;
+      if(board) collisionGeometries.push(board);
+      const offset = canvas.scene.getFlag("levels-3d-preview", "enableCollision") == 1 ? target?.userData?.entity3D?.d ?? 1 : 100;
+      let targetPos = new THREE.Vector3(target.position.x, target.position.y+offset, target.position.z);
+      this.raycaster.set(targetPos, new THREE.Vector3(0, -1, 0));
+      intersects2 = this.raycaster.intersectObjects(collisionGeometries, true);
+      }
       if (intersects.length > 0) {
         const entity3D = this.draggable.userData.entity3D;
-        const target = this.draggable.userData.isHitbox ? this.draggable.parent : this.draggable;
-        target.position.lerp(new THREE.Vector3(intersects[0].point.x, entity3D.elevation3d, intersects[0].point.z), 0.10);
+        target.position.lerp(new THREE.Vector3(intersects[0].point.x, intersects2[0] ? intersects2[0].point.y : entity3D.elevation3d, intersects[0].point.z), 0.10);
         this.ruler.update();
       }
     }
@@ -243,6 +270,7 @@ export class InteractionManager {
       if ( !sc ) return;
           const pos3d = game.Levels3DPreview.interactionManager.mousePostionToWorld();
           const position = {x: pos3d?.x, y: pos3d?.z}
+          this._currentMousePosition = position
       game.user.broadcastActivity({
         cursor: position,
       });

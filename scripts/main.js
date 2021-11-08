@@ -18,6 +18,7 @@ export const factor = 1000;
 
 Hooks.once("ready", () => {
   game.Levels3DPreview = new Levels3DPreview();
+  Hooks.callAll("3DCanvasReady", game.Levels3DPreview);
 })
 
 Hooks.on("canvasReady", async () => {
@@ -225,6 +226,7 @@ class Levels3DPreview {
     const geometry = new THREE.BoxGeometry(width, height, depth);
     const material = new THREE.MeshLambertMaterial({
       map: texture,
+      roughness: 1,
     });
     material.toneMapped = false;
     const plane = new THREE.Mesh(geometry, material);
@@ -232,6 +234,7 @@ class Levels3DPreview {
     plane.castShadow = true;
     plane.position.set(center.x, center.y-depth/2-0.00001, center.z);
     plane.rotation.x = -Math.PI / 2;
+    this.board = plane;
     this.scene.add(plane);
 
   }
@@ -270,7 +273,7 @@ class Levels3DPreview {
   }
 
   createFloors(){
-    for (let tile of canvas.foreground.placeables.concat(canvas.background.placeables)) {
+    for (let tile of canvas.background.placeables.concat(canvas.foreground.placeables)) {
       if(this.isLevels){
         const bottom = tile.data.flags.levels?.rangeBottom ?? -Infinity;
         if(bottom > this.level) continue;

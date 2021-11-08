@@ -25,16 +25,9 @@ export class Helpers{
       video.src = texturePath;
       video.loop = true;
       video.muted = true;
-      video.load(); // must call after setting/changing source
+      video.load();
       video.play();	
-      let videoImage = document.createElement( 'canvas' );
-      videoImage.width = 480;
-      videoImage.height = 204;
 
-      let videoImageContext = videoImage.getContext( '2d' );
-      // background color if no video present
-      videoImageContext.fillStyle = '#000000';
-      videoImageContext.fillRect( 0, 0, videoImage.width, videoImage.height );
       await resolveMetadata(video);
       let videoTexture = new THREE.VideoTexture(video);
       videoTexture.format = THREE.RGBAFormat;

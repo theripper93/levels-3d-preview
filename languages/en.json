@@ -164,6 +164,17 @@
             },
             "stretchTex": {
                 "label": "Stretch Texture"
+            },
+            "enableCollision": {
+                "label": "Enable Collision",
+                "options": {
+                    "0": "Off",
+                    "1": "On (From Token)",
+                    "2": "On (From Sky)"
+                }
+            },
+            "collisionPlane": {
+                "label": "Collision Plane"
             }
         },
         "settings" : {
