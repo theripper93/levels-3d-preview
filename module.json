@@ -43,6 +43,7 @@
     "./scripts/config.js",
     "./scripts/helpers/globalIllumination.js",
     "./scripts/helpers/interactionManager.js",
+    "./scripts/helpers/pixilayer.js",
     "./scripts/helpers/helpers.js"
 ],
   "scripts": [

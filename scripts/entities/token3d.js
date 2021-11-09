@@ -47,7 +47,7 @@ export class Token3D {
       this.rotateIndicator = game.settings.get("levels-3d-preview", "rotateIndicator");
       this.faceCameraOption = this.token.document.getFlag("levels-3d-preview", "faceCamera") ?? 0;
       this.standupFace = game.settings.get("levels-3d-preview", "standupFace");
-      if(this.faceCameraOption) this.standupFace = this.faceCameraOption == 1 ? true : false;
+      if(this.faceCameraOption !== "0") this.standupFace = this.faceCameraOption == "1" ? true : false;
     }
   
     async load() {
@@ -323,7 +323,7 @@ export class Token3D {
       const deltas = {
         x: dest.x - this.token.data.x,
         y: dest.y - this.token.data.y,
-        elevation: dest.elevation - this.token.data.elevation
+        elevation: dest.elevation - this.token.data.elevation,
       }
       let updates = [];
       for(let token of canvas.tokens.controlled){
@@ -331,7 +331,7 @@ export class Token3D {
           _id: token.id,
           x: token.data.x + deltas.x,
           y: token.data.y + deltas.y,
-          elevation: token.data.elevation + deltas.elevation
+          elevation: (token.data.elevation + deltas.elevation).toFixed(2),
         })
       }
       canvas.scene.updateEmbeddedDocuments("Token", updates)

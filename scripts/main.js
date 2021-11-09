@@ -11,6 +11,7 @@ import { Cursors3D } from "./entities/cursors.js";
 import { FBXLoader } from './lib/FBXLoader.js';
 import { GlobalIllumination } from "./helpers/globalIllumination.js";
 import { InteractionManager } from "./helpers/interactionManager.js";
+import * as PIXI from "./helpers/pixilayer.js";
 import { Helpers } from "./helpers/helpers.js";
 import { EXRLoader } from "https://threejs.org/examples/jsm/loaders/EXRLoader.js";
 
@@ -59,6 +60,9 @@ class Levels3DPreview {
     this.lights = {
       sceneLights : {}
     };
+    this.utils = {
+      PIXI : PIXI,
+    }
     this.walls = {};
     this.doors = {};
     this.tiles = {};

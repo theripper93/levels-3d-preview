@@ -244,6 +244,8 @@ export class InteractionManager {
       let targetPos = new THREE.Vector3(target.position.x, target.position.y+offset, target.position.z);
       this.raycaster.set(targetPos, new THREE.Vector3(0, -1, 0));
       intersects2 = this.raycaster.intersectObjects(collisionGeometries, true);
+      const center = this._parent.canvasCenter;
+      this.dragplane.position.set(center.x, this.draggable.userData.entity3D.mesh.position.y, center.z);
       }
       if (intersects.length > 0) {
         const entity3D = this.draggable.userData.entity3D;
