@@ -45,7 +45,7 @@ export class Token3D {
       this.collisionPlane = this.token.document.getFlag("levels-3d-preview", "collisionPlane") ?? false;
       this.colorizeIndicator = game.settings.get("levels-3d-preview", "colorizeInidcator");
       this.rotateIndicator = game.settings.get("levels-3d-preview", "rotateIndicator");
-      this.faceCameraOption = this.token.document.getFlag("levels-3d-preview", "faceCamera") ?? 0;
+      this.faceCameraOption = this.token.document.getFlag("levels-3d-preview", "faceCamera") ?? "0";
       this.standupFace = game.settings.get("levels-3d-preview", "standupFace");
       if(this.faceCameraOption !== "0") this.standupFace = this.faceCameraOption == "1" ? true : false;
     }
@@ -448,7 +448,7 @@ export class Token3D {
       const tokenEffects = this.token.data.effects;
       const actorEffects = this.token.actor?.temporaryEffects || [];
       const effects = tokenEffects.concat(actorEffects).map(e => e.data.icon);
-      if(this.token.data.hidden) effects.push("icons/svg/mystery-man.svg");
+      if(this.token.data.hidden && !this.alwaysVisible) effects.push("icons/svg/mystery-man.svg");
       if(effects.length === this.effectsContainer.children.length) return;
       this.effectsContainer.children.forEach(child => { 
         this.effectsContainer.remove(child);
