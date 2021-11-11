@@ -227,7 +227,8 @@ export class InteractionManager {
       this.raycaster.setFromCamera(this.mousemove, this.camera);
       const intersects = this.raycaster.intersectObjects([this.dragplane], true);
       let intersects2 = [];
-      if(canvas.scene.getFlag("levels-3d-preview", "enableCollision") && !keyboard._downKeys.has("f") && !keyboard._downKeys.has("F")){
+      const isCollision = canvas.scene.getFlag("levels-3d-preview", "enableCollision")
+      if((isCollision && isCollision !== "0") && !keyboard._downKeys.has("f") && !keyboard._downKeys.has("F")){
       const collisionObjects = Object.values(this._parent.tokens).filter(t => t.collisionPlane).map(t => t.model);
       let collisionGeometries = [];
       for(let collObj of collisionObjects){

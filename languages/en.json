@@ -73,10 +73,10 @@
                 "label": "Sun Intensity"
             },
             "showSceneWalls": {
-                "label": "Show Scene Walls"
+                "label": "Render Walls"
             },
             "showSceneFloors": {
-                "label": "Show Scene Floors/Polygons"
+                "label": "Render Tiles"
             },
             "wallFloorAlpha": {
                 "label": "Wall/Floor Alpha"
@@ -215,8 +215,8 @@
                 "hint": "Prevents token movement to go below the game board"
             },
             "disableLighting":{
-                "name": "Disable Lighting/Shadows",
-                "hint": "Keep only a basic light and remove all the spot and point lights for performance."
+                "name": "Disable Shadows",
+                "hint": "Disable Shadows for better performance."
             },
             "resolution": {
                 "name": "Resolution",

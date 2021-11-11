@@ -102,6 +102,9 @@ class Levels3DPreview {
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.renderer.setAnimationLoop(this.animation);
     this.renderer.shadowMap.enabled = true;
+    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    this.renderer.toneMappingExposure = 0.75;
+    //this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.renderer.antialias = false;
     this.resolutionMulti = game.settings.get("levels-3d-preview", "resolution")*window.devicePixelRatio;
     this.renderer.setPixelRatio(this.resolutionMulti);

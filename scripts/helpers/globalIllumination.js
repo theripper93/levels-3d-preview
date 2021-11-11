@@ -14,10 +14,10 @@ export class GlobalIllumination {
     this.lights.hemiLight = light;
     const spotLight = new THREE.SpotLight(0xffa95c, 4);
     const adjustmentSpotlight = new THREE.SpotLight(0xffa95c, 4);
-    spotLight.castShadow = true;
+    spotLight.castShadow = !game.settings.get("levels-3d-preview", "disableLighting");
     spotLight.shadow.bias = 0;
     spotLight.shadow.camera.fov = 180;
-    spotLight.shadow.camera.far = 4000;
+    spotLight.shadow.camera.far = 100;
     spotLight.shadow.camera.near = 0.1;
     spotLight.shadow.mapSize.width = 1024*4;
     spotLight.shadow.mapSize.height = 1024*4;
@@ -30,21 +30,20 @@ export class GlobalIllumination {
     const color = canvas.scene.getFlag("levels-3d-preview", "sceneTint") ?? 0xffa95c;
     const distance = canvas.scene.getFlag("levels-3d-preview", "sunDistance") ?? 10;
     const angle = Math.toRadians(canvas.scene.getFlag("levels-3d-preview", "sunPosition") ?? 30);
-    const intensity = canvas.scene.getFlag("levels-3d-preview", "sunIntensity") ?? 4;
+    const intensity = canvas.scene.getFlag("levels-3d-preview", "sunIntensity") ?? 0.5;
     const lightTarget = new THREE.Object3D();
     const center = this._parent.canvasCenter;
     lightTarget.position.set(center.x, center.y, center.z);
     this.lights.target = lightTarget;
     this._parent.scene.add(light);
-    if(!game.settings.get("levels-3d-preview", "disableLighting")){
-      if(this._parent.debugMode) this._parent.scene.add(sunlight);
-      this._parent.scene.add(spotLight);
-      this._parent.scene.add(adjustmentSpotlight);
-      this._parent.scene.add(lightTarget);
-    }
+    if(this._parent.debugMode) this._parent.scene.add(sunlight);
+    this._parent.scene.add(spotLight);
+    this._parent.scene.add(adjustmentSpotlight);
+    this._parent.scene.add(lightTarget);
     spotLight.target = lightTarget;
     adjustmentSpotlight.target = lightTarget;
     this.sunlight = {color, distance, angle, intensity};
+    updateTime3D();
     }
 
     set sunlight(data){
@@ -151,7 +150,7 @@ export class GlobalIllumination {
           this.lights.sunlight.material.color.set(color);
           this.lights.sunlight.visible = showSun;
           this.lights.spotLight.intensity = intensity;
-          this.lights.hemiLight.intensity = !game.settings.get("levels-3d-preview", "disableLighting") ? intensity/4 : intensity;
+          this.lights.hemiLight.intensity = intensity/4;
         }
       }
     
@@ -163,7 +162,7 @@ export class GlobalIllumination {
         const color = new THREE.Color(canvas.scene.getFlag("levels-3d-preview", "sceneTint") ?? 0xffa95c);
         const distance = canvas.scene.getFlag("levels-3d-preview", "sunDistance") ?? 10;
         const angle = Math.toRadians(canvas.scene.getFlag("levels-3d-preview", "sunPosition") ?? 30);
-        const intensity = canvas.scene.getFlag("levels-3d-preview", "sunIntensity") ?? 4;
+        const intensity = canvas.scene.getFlag("levels-3d-preview", "sunIntensity") ?? 0.5;
         this.sunlight = {color, distance, angle, intensity, animate: animate};
       }
     
@@ -171,7 +170,7 @@ export class GlobalIllumination {
         const color = new THREE.Color(data.color ?? canvas.scene.getFlag("levels-3d-preview", "sceneTint") ?? 0xffa95c);
         const distance = data.distance ?? canvas.scene.getFlag("levels-3d-preview", "sunDistance") ?? 10;
         const angle = Math.toRadians(data.angle ?? canvas.scene.getFlag("levels-3d-preview", "sunPosition") ?? 30);
-        const intensity = data.intensity ?? canvas.scene.getFlag("levels-3d-preview", "sunIntensity") ?? 4;
+        const intensity = data.intensity ?? canvas.scene.getFlag("levels-3d-preview", "sunIntensity") ?? 0.5;
         canvas.scene.update({
           flags: {
             "levels-3d-preview": {

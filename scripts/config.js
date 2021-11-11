@@ -278,10 +278,10 @@ Hooks.on("renderSceneConfig", (app,html)=>{
         "sunIntensity": {
             type: "range",
             label: game.i18n.localize("levels3dpreview.flags.sunIntensity.label"),
-            default: 3,
-            min: 0.1,
-            max: 10,
-            step: 0.1,
+            default: 1,
+            min: 0,
+            max: 2,
+            step: 0.01,
         },
         "showSceneWalls": {
             type: "checkbox",
@@ -292,14 +292,6 @@ Hooks.on("renderSceneConfig", (app,html)=>{
             type: "checkbox",
             label: game.i18n.localize("levels3dpreview.flags.showSceneFloors.label"),
             default: true,
-        },
-        "wallFloorAlpha": {
-            type: "range",
-            label: game.i18n.localize("levels3dpreview.flags.wallFloorAlpha.label"),
-            default: 0.5,
-            min: 0,
-            max: 1,
-            step: 0.1,
         },
         "renderSceneLights": {
             type: "checkbox",
