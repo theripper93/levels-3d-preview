@@ -19,6 +19,7 @@ export const factor = 1000;
 
 Hooks.once("ready", () => {
   game.Levels3DPreview = new Levels3DPreview();
+  game.Levels3DPreview.cacheModels();
   Hooks.callAll("3DCanvasReady", game.Levels3DPreview);
 })
 
@@ -66,6 +67,9 @@ class Levels3DPreview {
     this.walls = {};
     this.doors = {};
     this.tiles = {};
+    this.models = {
+      target : new THREE.Mesh(new THREE.SphereGeometry(0.1,32,32))
+    };
     this.animationMixers = [];
     this.clock = new THREE.Clock();
     this.loader = new GLTFLoader();
@@ -110,6 +114,11 @@ class Levels3DPreview {
     this.interactionManager.activateListeners();
     this.cursors = new Cursors3D(this);
     //this.initEnvMap();
+  }
+
+  async cacheModels(){
+    this.models.target = await (await this.helpers.loadModel("modules/levels-3d-preview/assets/targetIndicator.fbx")).model;
+    this.models.target.children[0].material = new THREE.MeshBasicMaterial();
   }
 
   initEnvMap(){

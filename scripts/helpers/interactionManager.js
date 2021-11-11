@@ -241,7 +241,7 @@ export class InteractionManager {
       const board = this._parent.board;
       if(board) collisionGeometries.push(board);
       const offset = canvas.scene.getFlag("levels-3d-preview", "enableCollision") == 1 ? target?.userData?.entity3D?.d ?? 1 : 100;
-      let targetPos = new THREE.Vector3(target.position.x, target.position.y+offset, target.position.z);
+      let targetPos = new THREE.Vector3(target.position.x, target.position.y+offset*3, target.position.z);
       this.raycaster.set(targetPos, new THREE.Vector3(0, -1, 0));
       intersects2 = this.raycaster.intersectObjects(collisionGeometries, true);
       const center = this._parent.canvasCenter;

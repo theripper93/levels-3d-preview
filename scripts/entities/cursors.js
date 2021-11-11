@@ -4,9 +4,12 @@ import {factor} from '../main.js';
 export class Cursors3D{
     constructor(parent){
         this._parent = parent;
-        this.scene = parent.scene;
         this._cursors = {};
         this.radius = 0.007;
+    }
+
+    get scene(){
+        return this._parent.scene;
     }
 
     update(){
@@ -19,6 +22,7 @@ export class Cursors3D{
     }
 
     updateCursor(uId, cursor){
+        
         if(!this._cursors[uId]){
             this.createCursor(uId, cursor);
         }

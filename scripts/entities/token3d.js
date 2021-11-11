@@ -419,7 +419,9 @@ export class Token3D {
         this.targetContainer.remove(child);
       });
       this.targetSize = Math.min(this.h, this.w, this.d)*0.3;
-      let positionOffset = this.targetSize*2.5;
+      this.targetSize = Math.min(Math.max(this.targetSize, 0.02), 0.05)
+      let positionOffset = this.targetSize;
+      const targetModel = this._parent.models.target;
       for(let target of Array.from(this.token.targeted)){
         const color = target.color;
         const position = {
@@ -427,14 +429,9 @@ export class Token3D {
           y: this.d+this.targetSize+positionOffset,
           z: 0,
         }
-        const geometry = new THREE.SphereGeometry(this.targetSize, 16, 16);
-        const material = new THREE.MeshBasicMaterial({
-          color: color,
-          //wireframe: true,
-          transparent: true,
-          opacity: 0.8,
-        });
-        const mesh = new THREE.Mesh(geometry, material);
+        const mesh = targetModel.clone();
+        mesh.children[0].material = new THREE.MeshPhongMaterial({ color: color, emissive: color, emissiveIntensity: 0.8 });
+        mesh.scale.set(this.targetSize/100,this.targetSize/100,this.targetSize/100);
         mesh.position.set(position.x, position.y, position.z);
         this.targetContainer.add(mesh);
         positionOffset += this.targetSize*2.5;
@@ -453,7 +450,8 @@ export class Token3D {
       this.effectsContainer.children.forEach(child => { 
         this.effectsContainer.remove(child);
       });
-      const effectsize = this.h/5;
+      let effectsize = this.h/5;
+      effectsize = Math.min(Math.max(effectsize, 0.02), 0.05)
       let xOffset = effectsize*0.5-this.w/2;
       let zOffset = effectsize*0.5-this.h/2;
 
@@ -652,6 +650,14 @@ export class Token3D {
     }
   });
 
+  Hooks.on("targetToken", (user,token) => {
+    if(game.Levels3DPreview?._active) game.Levels3DPreview.tokens[token.id]?.reDraw();
+  })
+
+  Hooks.on("updateToken", (token) => {
+    if(game.Levels3DPreview?._active) game.Levels3DPreview.tokens[token.id]?.drawEffects();
+  })
+  
   Hooks.on("createToken", (tokenDocument) => {
     if(game.Levels3DPreview?._active && tokenDocument.object) game.Levels3DPreview.addToken(tokenDocument.object);
   })
