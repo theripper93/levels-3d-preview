@@ -61,7 +61,7 @@ export class Helpers{
         return {
           object: object,
           scene: object.scene,
-          model: object.scene.children[0],
+          model: object.scene,
         }
         };
       if(extension == "fbx") {

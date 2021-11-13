@@ -127,7 +127,7 @@ export class Token3D {
       const object = loaded.object;
       const scene = loaded.scene;
       const model = loaded.model;
-      if(model.geometry) this.setMaterial(model);
+      this.setMaterial(model);
       //Apply rotation
       model.rotation.set(
         this.rotationX + model.rotation._x,
@@ -225,8 +225,9 @@ export class Token3D {
 
     setMaterial(model){
       let materialType = this.material;
-      model.geometry.uvsNeedUpdate = true;
-      model.geometry.buffersNeedUpdate = true;
+      if((!this.material || this.material === "none") && !this.standUp) return;
+      //model.geometry.uvsNeedUpdate = true;
+      //model.geometry.buffersNeedUpdate = true;
       let roughness = 0;
       let opacity = 1;
       let color = new THREE.Color(this.color);
@@ -254,12 +255,18 @@ export class Token3D {
         //depthWrite: this.texture && !this.gtflPath ? false : true,
         alphaTest: 0.99,
       }
-      if(materialType === "basic"){
-        model.material = new THREE.MeshBasicMaterial(matData);
-      }else{
-        model.material = new THREE.MeshPhongMaterial(matData);
+      const material = materialType === "basic" ? new THREE.MeshBasicMaterial(matData) : new THREE.MeshStandardMaterial(matData);
+      if(model.material){
+        model.material = material;
       }
-        model.material.toneMapped = false;
+      if(model.children?.length){
+        model.children.forEach((child) => {
+          if(child.isMesh){
+            child.material = material;
+          }
+        });
+      }
+
 
 
     }
