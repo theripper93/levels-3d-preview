@@ -260,9 +260,9 @@ export class Token3D {
         model.material = material;
       }
       if(model.children?.length){
-        model.children.forEach((child) => {
+        model.traverse((child) => {
           if(child.isMesh){
-            child.material = material;
+              child.material = material;
           }
         });
       }

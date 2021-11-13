@@ -17,6 +17,7 @@ import { EXRLoader } from "https://threejs.org/examples/jsm/loaders/EXRLoader.js
 
 export const factor = 1000;
 
+
 Hooks.once("ready", () => {
   game.Levels3DPreview = new Levels3DPreview();
   game.Levels3DPreview.cacheModels();

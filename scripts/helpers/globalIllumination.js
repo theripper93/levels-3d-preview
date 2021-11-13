@@ -15,8 +15,9 @@ export class GlobalIllumination {
     const spotLight = new THREE.SpotLight(0xffa95c, 4);
     const adjustmentSpotlight = new THREE.SpotLight(0xffa95c, 4);
     spotLight.castShadow = !game.settings.get("levels-3d-preview", "disableLighting");
-    spotLight.shadow.bias = 0;
-    spotLight.shadow.camera.fov = 180;
+    spotLight.shadow.bias = -0.00005;
+    spotLight.shadow.radius = 3;
+    spotLight.shadow.camera.fov = 90;
     spotLight.shadow.camera.far = 100;
     spotLight.shadow.camera.near = 0.1;
     spotLight.shadow.mapSize.width = 1024*4;
@@ -106,7 +107,7 @@ export class GlobalIllumination {
         this.lights.sunlight.material.color.set(color);
         this.lights.sunlight.visible = showSun;
         this.lights.spotLight.intensity = intensity;
-        this.lights.hemiLight.intensity = !game.settings.get("levels-3d-preview", "disableLighting") ? intensity/3 : intensity;
+        this.lights.hemiLight.intensity = !game.settings.get("levels-3d-preview", "disableLighting") ? intensity : intensity;
     
       }
 
@@ -150,7 +151,7 @@ export class GlobalIllumination {
           this.lights.sunlight.material.color.set(color);
           this.lights.sunlight.visible = showSun;
           this.lights.spotLight.intensity = intensity;
-          this.lights.hemiLight.intensity = intensity/4;
+          this.lights.hemiLight.intensity = intensity;
         }
       }
     
