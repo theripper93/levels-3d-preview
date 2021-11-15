@@ -1,5 +1,6 @@
 import * as THREE from "../lib/three.module.js";
 import {factor} from '../main.js';
+import { Ruler3D } from "../entities/ruler3d.js";
 
 export class InteractionManager {
     constructor(levels3dPreview){
@@ -31,13 +32,61 @@ export class InteractionManager {
 
     activateListeners() {
         this.domElement.addEventListener("mousedown", this._onMouseDown.bind(this), false);
+        this.domElement.addEventListener("mousedown", this._onEnableRuler.bind(this), false);
         this.domElement.addEventListener("mouseup", this._onMouseUp.bind(this), false);
         this.domElement.addEventListener("mousemove", this._onMouseMove.bind(this), false);
         this.domElement.addEventListener("wheel", this._onWheel.bind(this), false);
+        document.addEventListener("drop", this._onDrop.bind(this), false)
         document.addEventListener("keydown", this._onKeyDown.bind(this));
         document.addEventListener("keyup", this._onKeyUp.bind(this));
         //add keydown event
 
+      }
+
+      _onEnableRuler(event){
+        if(!ui.controls.isRuler) return
+        const rulerObj = new THREE.Object3D()
+        rulerObj.userData = {
+            entity3D: {
+              updatePositionFrom3D : () => {return true},
+              mesh: rulerObj
+            }
+          }
+        rulerObj.parent = rulerObj.userData.entity3D.mesh
+        const position = this.mouseIntersection3DCollision({x:event.clientX, y: event.clientY})
+        if(!position.length) return
+        this.toggleControls(false);
+        debugger
+        const intersectPos = position[0].point
+        rulerObj.position.set(intersectPos.x, intersectPos.y, intersectPos.z)
+        this.draggable = rulerObj
+      }
+
+      _onDrop(event) {
+        event.preventDefault();
+    
+        // Try to extract the data
+        let data;
+        try {
+          data = JSON.parse(event.dataTransfer.getData('text/plain'));
+        }
+        catch (err) {
+          return false;
+        }
+        const coord3d = this.screen3DtoCanvas2DWithCollision({x:event.clientX, y: event.clientY})
+        data.x = coord3d.x
+        data.y = coord3d.y
+        data.elevation = coord3d.z
+        data.flags = {
+          levels: {
+            rangeBottom: coord3d.z
+          }
+        }
+        if(data.type !== "Actor") return false
+        Hooks.once("preCreateToken", (token)=>{
+          token.data.update({elevation: data.elevation, flags: data.flags})
+        })
+        return canvas.tokens._onDropActorData(event, data);
       }
 
     _onMouseDown(event){
@@ -207,7 +256,37 @@ export class InteractionManager {
       screenPosition = new THREE.Vector2(screenPosition.x, screenPosition.y);
       this.raycaster.setFromCamera(screenPosition, this.camera);
       const intersects = this.raycaster.intersectObjects([this.dragplane], true);
-      return intersects.length > 0 ? this.ruler.pos3DToCanvas(intersects[0].point) : undefined;
+      return intersects.length > 0 ? Ruler3D.pos3DToCanvas(intersects[0].point) : undefined;
+    }
+
+    screen3DtoCanvas2DWithCollision(screenPosition){
+      const intersects = this.mouseIntersection3DCollision(screenPosition)
+      const pos = intersects.length > 0 ? Ruler3D.pos3DToCanvas(intersects[0].point) : undefined;
+      return pos;
+    }
+
+    mouseIntersection3DCollision(screenPosition){
+      if(!screenPosition) screenPosition = this.mousePosition;
+      const isCollision = canvas.scene.getFlag("levels-3d-preview", "enableCollision")
+      if(!isCollision) return this.screen3DtoCanvas2D(this.mousemove);
+      const collisionObjects = Object.values(this._parent.tokens).filter(t => t.collisionPlane).map(t => t.model);
+      let collisionGeometries = [];
+      for(let collObj of collisionObjects){
+        collObj.traverse(child => {
+          if(child.geometry) collisionGeometries.push(child);
+                })
+      }
+      for(let tile of Object.values(this._parent.tiles)){
+        collisionGeometries.push(tile.mesh);
+      }
+      const board = this._parent.board;
+      if(board) collisionGeometries.push(board);
+      screenPosition.x = (screenPosition.x / window.innerWidth) * 2 - 1;
+      screenPosition.y = -(screenPosition.y / window.innerHeight) * 2 + 1;
+      screenPosition = new THREE.Vector2(screenPosition.x, screenPosition.y);
+      this.raycaster.setFromCamera(screenPosition, this.camera);
+      const intersects = this.raycaster.intersectObjects(collisionGeometries, true)
+      return intersects
     }
 
     mousePostionToWorld(){

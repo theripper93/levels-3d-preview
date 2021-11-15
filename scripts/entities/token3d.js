@@ -320,6 +320,7 @@ export class Token3D {
         elevation: z,
       }
       if ( !game.user.isGM ) {
+        if(game.paused) return false;
         const center = canvas.grid.getCenter(x,y);
         let collides = this.token.checkCollision({x:center[0], y:center[1]});
         if ( collides ) {
@@ -511,7 +512,7 @@ export class Token3D {
 
     refreshBorder(){
       if(!this.border) return;
-      const color = this.token.border._lineStyle?.color ?? 0xffffff;
+      const color = this.token.border?._lineStyle?.color ?? 0xffffff;
       const visible = this.token.border.height ? true : false;
       this.border.children.forEach(child => {
         child.material.color = this.colorizeIndicator ? new THREE.Color(color) : new THREE.Color(color);

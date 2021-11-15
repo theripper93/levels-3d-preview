@@ -132,6 +132,8 @@ document.addEventListener('keypress', (e) => {
         if(game.Levels3DPreview._active) game.Levels3DPreview.resetCamera()
     }else if(e.key.toLowerCase() === 't' && e.shiftKey){
         if(game.Levels3DPreview._active) game.Levels3DPreview.resetCamera(true)
+    }else if(e.key.toLowerCase() === 'x' && e.shiftKey){
+        if(game.Levels3DPreview._active) game.Levels3DPreview.setCameraToControlled()
     }
 });
 
@@ -307,6 +309,7 @@ Hooks.on("renderSceneConfig", (app,html)=>{
     html.on("click", "#canvas-3d-toggle", (e)=>{
         html.find("#3d-canvas").slideToggle(200);
     });
+    if(canvas.scene.id !== app.object.id) return;
     html.on("change", "input", (e)=>{
         if(!game.Levels3DPreview._active) return;
         const sunPosition = html.find("input[name='flags.levels-3d-preview.sunPosition']")[0].value;

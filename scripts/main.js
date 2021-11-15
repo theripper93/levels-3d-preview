@@ -103,8 +103,6 @@ class Levels3DPreview {
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.renderer.setAnimationLoop(this.animation);
     this.renderer.shadowMap.enabled = true;
-    //this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    //this.renderer.toneMappingExposure = 0.75;
     //this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.renderer.antialias = false;
     this.resolutionMulti = game.settings.get("levels-3d-preview", "resolution")*window.devicePixelRatio;
@@ -446,6 +444,16 @@ class Levels3DPreview {
     this.controls.target.set(center.x, center.y, center.z);
     topdown ? this.camera.position.set(center.x, center.y + 4, center.z) : this.camera.position.set(center.x*1.5, center.y + 1, center.z*2);
     this.camera.lookAt(center);
+    this.controls.update();
+  }
+
+  setCameraToControlled(){
+    const cToken = _token;
+    if(!cToken) return;
+    const token3D = this.tokens[cToken.id];
+    if(!token3D) return;
+    this.controls.target.set(token3D.mesh.position.x, token3D.mesh.position.y, token3D.mesh.position.z);
+    this.camera.lookAt(token3D.mesh);
     this.controls.update();
   }
 
