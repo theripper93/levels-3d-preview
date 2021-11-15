@@ -36,7 +36,6 @@ export class PIXIContainer{
 
     position = {
         set: (x,y,z = 0) => {
-            debugger;
             this.position.x = x;
             this.position.y = y;
             this.position.z = z;

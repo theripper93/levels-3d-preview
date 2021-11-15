@@ -37,6 +37,15 @@ Hooks.once('init', function() {
         default: true,
       });
 
+      game.settings.register("levels-3d-preview", "camerafocuszoom", {
+        name: game.i18n.localize("levels3dpreview.settings.camerafocuszoom.name"),
+        hint: game.i18n.localize("levels3dpreview.settings.camerafocuszoom.hint"),
+        scope: "world",
+        config: true,
+        type: Boolean,
+        default: true,
+      });
+
       game.settings.register("levels-3d-preview", "standupFace", {
         name: game.i18n.localize("levels3dpreview.settings.standupFace.name"),
         hint: game.i18n.localize("levels3dpreview.settings.standupFace.hint"),

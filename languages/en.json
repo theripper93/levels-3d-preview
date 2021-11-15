@@ -202,6 +202,10 @@
                 "name": "Enable Screen Space Panning",
                 "hint": "Enable screen space panning for the 3D view."
             },
+            "camerafocuszoom": {
+                "name": "Enable Camera Focus Zoom",
+                "hint": "When focusin the camera on a token with Shift+X Zoom in on the token"
+            },
             "standupFace": {
                 "name": "Stand-ups Face Camera",
                 "hint": "2D Tokens displayed in a stand-up style will always face the camera."

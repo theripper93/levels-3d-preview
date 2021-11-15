@@ -14,6 +14,7 @@ import { InteractionManager } from "./helpers/interactionManager.js";
 import * as PIXI from "./helpers/pixilayer.js";
 import { Helpers } from "./helpers/helpers.js";
 import { EXRLoader } from "https://threejs.org/examples/jsm/loaders/EXRLoader.js";
+import { compressSync } from "./lib/fflate.module.js";
 
 export const factor = 1000;
 
@@ -269,6 +270,7 @@ class Levels3DPreview {
     plane.receiveShadow = true;
     plane.position.set(center.x, center.y-(depth/2+0.011), center.z);
     plane.rotation.x = -Math.PI / 2;
+    this.table = plane;
     this.scene.add(plane);
 
   }
@@ -448,12 +450,22 @@ class Levels3DPreview {
   }
 
   setCameraToControlled(){
+    const zoom = game.settings.get("levels-3d-preview", "camerafocuszoom")
     const cToken = _token;
     if(!cToken) return;
     const token3D = this.tokens[cToken.id];
     if(!token3D) return;
     this.controls.target.set(token3D.mesh.position.x, token3D.mesh.position.y, token3D.mesh.position.z);
-    this.camera.lookAt(token3D.mesh);
+    if(zoom){
+      const size = Math.max(token3D.w, token3D.h, token3D.d)*8;
+      const rotation = token3D.mesh.rotation.y-Math.PI/2;
+      const offset = new THREE.Vector3(-size*Math.cos(rotation), size, size*Math.sin(rotation));
+      offset.add(token3D.mesh.position);
+      this.camera.position.copy(offset);
+
+    }
+    const targetLookat = new THREE.Vector3(token3D.mesh.position.x, token3D.mesh.position.y, token3D.mesh.position.z);
+    this.camera.lookAt(targetLookat);
     this.controls.update();
   }
 

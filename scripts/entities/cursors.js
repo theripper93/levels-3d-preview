@@ -40,12 +40,13 @@ export class Cursors3D{
     }
 
     updateCursorPosition(uId, cursor){
-        if(cursor.target.x === 0 && cursor.target.y === 0){
+        const target = JSON.parse(cursor.target.x);
+        if(target.x === 0 && target.z === 0){
             this._cursors[uId].visible = false;
             return;
         }
         this._cursors[uId].visible = true;
-        this._cursors[uId].position.lerp(new THREE.Vector3(cursor.target.x, this.radius, cursor.target.y), 0.1);
+        this._cursors[uId].position.lerp(new THREE.Vector3(target.x, target.y, target.z), 0.1);
     }
 
     clear(){
