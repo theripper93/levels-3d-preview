@@ -55,6 +55,7 @@ class Levels3DPreview {
   constructor() {
     this.isLevels = game.modules.get("levels")?.active;
     this.camera;
+    this._animateCameraTarget = {}
     this.scene;
     this.renderer;
     this.factor = factor;
@@ -429,10 +430,31 @@ class Levels3DPreview {
         token.faceCamera();
       }
     });
+    _this.animateCamera(delta);
     _this.centerTokenHUD();
     _this.resizeCanvasToDisplaySize(_this);
     _this.controls.update();
     _this.renderer.render(_this.scene, _this.camera);
+  }
+
+  animateCamera(delta){
+    if(this._animateCameraTarget.cameraPosition !== undefined && this._animateCameraTarget.cameraLookat !== undefined){
+      const targetPos = this._animateCameraTarget.cameraPosition.clone();
+      const targetLookat = this._animateCameraTarget.cameraLookat.clone();
+      const currentLookat = this._animateCameraTarget.currentLookat ?? this.controls.target.clone();
+      const lerpLookat = currentLookat.lerp(targetLookat, 0.1);
+      this._animateCameraTarget.currentLookat = lerpLookat.clone();
+      this.camera.position.lerp(targetPos, this._animateCameraTarget.speed ?? 0.04);
+      this.controls.target.set(lerpLookat.x, lerpLookat.y, lerpLookat.z);
+      if(this.camera.position.distanceTo(targetPos) < 0.01 && lerpLookat.distanceTo(targetLookat) < 0.01){
+        this.controls.target.set(targetLookat.x, targetLookat.y, targetLookat.z);
+        this._animateCameraTarget = {
+          cameraPosition: undefined,
+          cameraLookat: undefined,
+          currentLookat: undefined,
+        };
+      }
+    }
   }
 
   resetCamera(topdown = false) {
@@ -449,24 +471,26 @@ class Levels3DPreview {
     this.controls.update();
   }
 
-  setCameraToControlled(){
+  setCameraToControlled(token){
     const zoom = game.settings.get("levels-3d-preview", "camerafocuszoom")
-    const cToken = _token;
+    const cToken = token ?? _token;
     if(!cToken) return;
     const token3D = this.tokens[cToken.id];
     if(!token3D) return;
-    this.controls.target.set(token3D.mesh.position.x, token3D.mesh.position.y, token3D.mesh.position.z);
+    //this.controls.target.set(token3D.mesh.position.x, token3D.mesh.position.y, token3D.mesh.position.z);
     if(zoom){
       const size = Math.max(token3D.w, token3D.h, token3D.d)*8;
       const rotation = token3D.mesh.rotation.y-Math.PI/2;
       const offset = new THREE.Vector3(-size*Math.cos(rotation), size, size*Math.sin(rotation));
       offset.add(token3D.mesh.position);
-      this.camera.position.copy(offset);
+      this._animateCameraTarget.cameraPosition = offset;
+      //this.camera.position.copy(offset);
 
     }
     const targetLookat = new THREE.Vector3(token3D.mesh.position.x, token3D.mesh.position.y, token3D.mesh.position.z);
-    this.camera.lookAt(targetLookat);
-    this.controls.update();
+    this._animateCameraTarget.cameraLookat = targetLookat;
+    //this.camera.lookAt(targetLookat);
+    //this.controls.update();
   }
 
   toggle(force){

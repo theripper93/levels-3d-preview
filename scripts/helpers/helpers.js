@@ -1,5 +1,6 @@
 import * as THREE from "../lib/three.module.js";
 import {factor} from '../main.js';
+import { Ruler3D } from "../entities/ruler3d.js";
 
 export class Helpers{
 
@@ -73,6 +74,47 @@ export class Helpers{
         }
          };
       return null;
+    }
+
+    animateCamera(target,options = {}){
+      const speed = options.speed || 0.04;
+      const rotation = options.rotation || 0;
+      const distance = (options.distance || 3000)/factor;
+      const topdown = options.topdown || false;
+      const cameraParams = {}
+      let token3D
+      if(game.Levels3DPreview.tokens[target.id]) token3D = game.Levels3DPreview.tokens[target.id];
+
+      if(token3D){
+        const size = Math.max(token3D.w, token3D.h, token3D.d)*8;
+        const rotation = token3D.mesh.rotation.y-Math.PI/2;
+        const offset = new THREE.Vector3(-size*Math.cos(rotation), size, size*Math.sin(rotation));
+        offset.add(token3D.mesh.position);
+        cameraParams.cameraPosition = offset;
+        const targetLookat = new THREE.Vector3(token3D.mesh.position.x, token3D.mesh.position.y, token3D.mesh.position.z);
+        cameraParams.cameraLookat = targetLookat;
+      }else{
+        const targetPosition = Ruler3D.posCanvasTo3d(target)
+        if(topdown){
+          cameraParams.cameraPosition = new THREE.Vector3(targetPosition.x, targetPosition.y+distance, targetPosition.z);
+          cameraParams.cameraLookat = new THREE.Vector3(targetPosition.x, targetPosition.y, targetPosition.z);
+          cameraParams.speed = speed;
+        }else{
+          const offset = new THREE.Vector3(-distance*Math.cos(rotation), distance, distance*Math.sin(rotation));
+          offset.add(targetPosition);
+          cameraParams.cameraPosition = offset;
+          const targetLookat = new THREE.Vector3(targetPosition.x, targetPosition.y, targetPosition.z);
+          cameraParams.cameraLookat = targetLookat;
+          cameraParams.speed = speed;
+        }
+
+      }
+
+      game.Levels3DPreview._animateCameraTarget.cameraPosition = cameraParams.cameraPosition;
+      game.Levels3DPreview._animateCameraTarget.cameraLookat = cameraParams.cameraLookat;
+      game.Levels3DPreview._animateCameraTarget.speed = cameraParams.speed;
+
+
     }
 
 }

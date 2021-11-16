@@ -231,16 +231,6 @@ Hooks.on("renderSceneConfig", (app,html)=>{
             label: game.i18n.localize("levels3dpreview.flags.enableRuler.label"),
             default: true,
         },
-        "enableCollision": {
-            type: "select",
-            label: game.i18n.localize("levels3dpreview.flags.enableCollision.label"),
-            default: 0,
-            options: {
-                0: game.i18n.localize("levels3dpreview.flags.enableCollision.options.0"),
-                1: game.i18n.localize("levels3dpreview.flags.enableCollision.options.1"),
-                2: game.i18n.localize("levels3dpreview.flags.enableCollision.options.2"),
-            }
-        },
         "enableFog": {
             type: "checkbox",
             label: game.i18n.localize("levels3dpreview.flags.enableFog.label"),
