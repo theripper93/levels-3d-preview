@@ -65,6 +65,7 @@ export class Ruler3D {
 
     set origin(position){
         this._origin = position;
+        this.token = game.Levels3DPreview?.interactionManager?.draggable?.userData?.entity3D?.token
         this.updateVisibility();
         if(!this.line) return;
         this.update();
@@ -76,6 +77,7 @@ export class Ruler3D {
         if(!this._object || !this._origin) return;
         const targetPos = Ruler3D.useSnapped() ? Ruler3D.snapped3DPosition(this._object.position) : this._object.position;
         this._parent.scene.remove(this.line);
+        const distance = Ruler3D.measureDistance(this._origin,targetPos);
         //draw ruler
         const geometry = new THREE.TubeGeometry(
             new THREE.LineCurve3(this._origin, targetPos),
@@ -86,7 +88,7 @@ export class Ruler3D {
         this.line = new THREE.Mesh(
             geometry,
             new THREE.MeshToonMaterial({
-                color: this.lineColor,
+                color: this.getColor(distance),
                 transparent: true,
                 opacity: 0.8,
             })
@@ -98,13 +100,20 @@ export class Ruler3D {
         this.baseSphere1.position.y = 0;
         this.baseSphere2.position.y = 0;
         //draw floating text
-        const distance = Ruler3D.measureDistance(this._origin,targetPos);
         const text = `${distance} ${canvas.scene.data.gridUnits}.`;
         this.textElement.text(text);
         //get mid point of ruler
         const midPoint = new THREE.Vector3(this._origin.x + (targetPos.x - this._origin.x)/2, this._origin.y + (targetPos.y - this._origin.y)/2, this._origin.z + (targetPos.z - this._origin.z)/2);
         Ruler3D.centerElement(this.textElement,midPoint);
         this._parent.scene.add(this.line);
+    }
+
+    getColor(distance){
+       let color
+        if(this.token && dragRuler?.getColorForDistanceAndToken){
+            color = dragRuler?.getColorForDistanceAndToken(distance, this.token)
+        }
+        return color ?? this.color;
     }
 
     static position3dtoScreen(position){

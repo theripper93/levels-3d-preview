@@ -176,6 +176,7 @@ export class InteractionManager {
     _onClickLeft(event){
       const entity = event.entity;
       const intersect = event.intersect;
+      this.handleTriggerHappy(entity);
       entity._onClickLeft(event);
       if(event.altKey || !this.mousedown || !entity.isOwner){
         this.toggleControls(true, true);
@@ -370,5 +371,11 @@ export class InteractionManager {
       game.user.broadcastActivity({
         cursor: {x: positionToString,y:0},
       });
+    }
+
+    handleTriggerHappy(entity){
+      if(!entity.token || !game.triggers) return;
+      const downTriggers = game.triggers._getTriggersFromTokens(game.triggers.triggers, [entity.token], "click");
+      game.triggers._executeTriggers(downTriggers);
     }
 }
