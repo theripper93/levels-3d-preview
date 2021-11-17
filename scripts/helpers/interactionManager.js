@@ -89,7 +89,7 @@ export class InteractionManager {
         }
         if(data.type !== "Actor") return false
         Hooks.once("preCreateToken", (token)=>{
-          token.data.update({elevation: data.elevation, flags: data.flags})
+          token.data.update({elevation: data.elevation.toFixed(2), flags: data.flags})
         })
         return canvas.tokens._onDropActorData(event, data);
       }
@@ -252,7 +252,7 @@ export class InteractionManager {
     }
 
     buildCollisionGeos(){
-      const draggableId = this.draggable.userData?.entity3D?.token?.id;
+      const draggableId = this.draggable?.userData?.entity3D?.token?.id;
       const collisionObjects = Object.values(this._parent.tokens).filter(t => t.collisionPlane && t.token.id != draggableId).map(t => t.model);
       let collisionGeometries = [];
       for(let collObj of collisionObjects){
@@ -291,19 +291,11 @@ export class InteractionManager {
       return pos;
     }
 
-    mouseIntersection3DCollision(){
-      const collisionObjects = Object.values(this._parent.tokens).filter(t => t.collisionPlane).map(t => t.model);
-      let collisionGeometries = [];
-      for(let collObj of collisionObjects){
-        collObj.traverse(child => {
-          if(child.geometry) collisionGeometries.push(child);
-                })
-      }
-      for(let tile of Object.values(this._parent.tiles)){
-        collisionGeometries.push(tile.mesh);
-      }
-      const board = this._parent.board;
-      if(board) collisionGeometries.push(board);
+    mouseIntersection3DCollision(screenPosition){
+      this.buildCollisionGeos();
+      let collisionGeometries = this._collisionGeometries;
+      this.mousemove.x = (screenPosition.x / window.innerWidth) * 2 - 1;
+      this.mousemove.y = -(screenPosition.y / window.innerHeight) * 2 + 1;
       this.raycaster.setFromCamera(this.mousemove, this.camera);
       const intersects = this.raycaster.intersectObjects(collisionGeometries, true)
       return intersects
