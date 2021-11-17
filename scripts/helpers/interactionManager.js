@@ -1,12 +1,17 @@
 import * as THREE from "../lib/three.module.js";
 import {factor} from '../main.js';
 import { Ruler3D } from "../entities/ruler3d.js";
+import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from '../lib/three-mesh-bvh.js';
+THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
+THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
+THREE.Mesh.prototype.raycast = acceleratedRaycast;
 
 export class InteractionManager {
     constructor(levels3dPreview){
         this._draggable = null;
         this._parent = levels3dPreview;
         this.raycaster = new THREE.Raycaster();
+        this.raycaster.firstHitOnly = true;
         this.mouse = new THREE.Vector2();
         this.mousemove = new THREE.Vector2();
         this.controls = levels3dPreview.controls;
@@ -246,7 +251,8 @@ export class InteractionManager {
     }
 
     buildCollisionGeos(){
-      const collisionObjects = Object.values(this._parent.tokens).filter(t => t.collisionPlane).map(t => t.model);
+      const draggableId = this.draggable.userData?.entity3D?.token?.id;
+      const collisionObjects = Object.values(this._parent.tokens).filter(t => t.collisionPlane && t.token.id != draggableId).map(t => t.model);
       let collisionGeometries = [];
       for(let collObj of collisionObjects){
         collObj.traverse(child => {

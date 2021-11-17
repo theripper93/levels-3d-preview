@@ -15,7 +15,6 @@ import * as PIXI from "./helpers/pixilayer.js";
 import { Helpers } from "./helpers/helpers.js";
 import { EXRLoader } from "https://threejs.org/examples/jsm/loaders/EXRLoader.js";
 import { compressSync } from "./lib/fflate.module.js";
-
 export const factor = 1000;
 
 
