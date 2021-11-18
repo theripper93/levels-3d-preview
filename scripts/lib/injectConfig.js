@@ -99,7 +99,7 @@ var injectConfig = {
         return injectHtml;
 
         function createTab(name,label,icon){
-            const tabs = html.find(".sheet-tabs").last();
+            const tabs = game.version > 9 ? html.find(`nav[data-group="main"]`) : html.find(".sheet-tabs").last();
             const tab = `<a class="item" data-tab="${name}"><i class="${icon}"></i> ${label}</a>`
             tabs.append(tab);
             const tabContainer = `<div class="tab" data-tab="${name}"></div>`

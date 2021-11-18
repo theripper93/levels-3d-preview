@@ -218,6 +218,10 @@
                 "name": "Prevent Negative Elevation",
                 "hint": "Prevents token movement to go below the game board"
             },
+            "globalCollision": {
+                "name": "Enable Global Collision",
+                "hint": "Enable collision for all tokens on the board."
+            },
             "disableLighting":{
                 "name": "Disable Shadows",
                 "hint": "Disable Shadows for better performance."

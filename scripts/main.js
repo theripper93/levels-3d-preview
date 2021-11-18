@@ -330,7 +330,8 @@ class Levels3DPreview {
   }
 
   makeSkybox() {
-    const size = 80;
+    const sceneSize = Math.max(canvas.scene.dimensions.width, canvas.scene.dimensions.height)/100;
+    const size = sceneSize < 80 ? 80 : sceneSize;
     const rootImage = canvas.scene.getFlag("levels-3d-preview", "skybox") ?? "";
     if (!rootImage) return;
     const imagesSuffix = ["_ft", "_bk", "_up", "_dn", "_rt", "_lf"];
@@ -454,6 +455,14 @@ class Levels3DPreview {
         };
       }
     }
+  }
+
+  stopCameraAnimation(){
+    this._animateCameraTarget = {
+      cameraPosition: undefined,
+      cameraLookat: undefined,
+      currentLookat: undefined,
+    };
   }
 
   resetCamera(topdown = false) {

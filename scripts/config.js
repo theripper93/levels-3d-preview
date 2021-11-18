@@ -64,6 +64,15 @@ Hooks.once('init', function() {
         default: true,
       });
 
+      game.settings.register("levels-3d-preview", "globalCollision", {
+        name: game.i18n.localize("levels3dpreview.settings.globalCollision.name"),
+        hint: game.i18n.localize("levels3dpreview.settings.globalCollision.hint"),
+        scope: "world",
+        config: true,
+        type: Boolean,
+        default: false,
+      });
+
       game.settings.register("levels-3d-preview", "miniCanvas", {
         name: game.i18n.localize("levels3dpreview.settings.miniCanvas.name"),
         hint: game.i18n.localize("levels3dpreview.settings.miniCanvas.hint"),

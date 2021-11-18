@@ -46,7 +46,7 @@ export class Token3D {
       this.material = this.token.document.getFlag("levels-3d-preview", "material") ?? "";
       this.imageTexture = this.token.document.getFlag("levels-3d-preview", "imageTexture") ?? "";
       this.alwaysVisible = this.token.document.getFlag("levels-3d-preview", "alwaysVisible") ?? false;
-      this.collisionPlane = this.token.document.getFlag("levels-3d-preview", "collisionPlane") ?? false;
+      this.collisionPlane = (game.settings.get("levels-3d-preview", "globalCollision") || this.token.document.getFlag("levels-3d-preview", "collisionPlane")) ?? false;
       this.colorizeIndicator = game.settings.get("levels-3d-preview", "colorizeInidcator");
       this.rotateIndicator = game.settings.get("levels-3d-preview", "rotateIndicator");
       this.faceCameraOption = this.token.document.getFlag("levels-3d-preview", "faceCamera") ?? "0";
@@ -560,6 +560,7 @@ export class Token3D {
 
     _onClickLeft(e) {
       const event = {
+        stopPropagation: () => {},
         data: {
           originalEvent: e,
         }

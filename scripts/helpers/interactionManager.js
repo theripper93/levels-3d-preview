@@ -41,7 +41,7 @@ export class InteractionManager {
         this.domElement.addEventListener("mouseup", this._onMouseUp.bind(this), false);
         this.domElement.addEventListener("mousemove", this._onMouseMove.bind(this), false);
         this.domElement.addEventListener("wheel", this._onWheel.bind(this), false);
-        document.addEventListener("drop", this._onDrop.bind(this), false)
+        this.domElement.addEventListener("drop", this._onDrop.bind(this))
         document.addEventListener("keydown", this._onKeyDown.bind(this));
         document.addEventListener("keyup", this._onKeyUp.bind(this));
         //add keydown event
@@ -95,6 +95,7 @@ export class InteractionManager {
       }
 
     _onMouseDown(event){
+      this._parent.stopCameraAnimation();
       this.mousedown = true;
       this.mousePosition = { x: event.clientX, y: event.clientY };
       if(event.which !== 1 && event.which !== 3) return;
@@ -150,6 +151,7 @@ export class InteractionManager {
     }
 
     _onWheel(event){
+      this._parent.stopCameraAnimation();
       if(this.draggable){
         const delta = event.deltaY;
         const entity3D = this.draggable.userData.entity3D;
@@ -174,6 +176,7 @@ export class InteractionManager {
     }
 
     _onClickLeft(event){
+      if(ui.controls.isRuler) return
       const entity = event.entity;
       const intersect = event.intersect;
       this.handleTriggerHappy(entity);
@@ -254,12 +257,12 @@ export class InteractionManager {
     buildCollisionGeos(){
       const draggableId = this.draggable?.userData?.entity3D?.token?.id;
       const collisionObjects = Object.values(this._parent.tokens).filter(t => t.collisionPlane && t.token.id != draggableId).map(t => t.model);
-      let collisionGeometries = [];
-      for(let collObj of collisionObjects){
+      let collisionGeometries = collisionObjects;
+      /*for(let collObj of collisionObjects){
         collObj.traverse(child => {
           if(child.geometry) collisionGeometries.push(child);
                 })
-      }
+      }*/
       for(let tile of Object.values(this._parent.tiles)){
         collisionGeometries.push(tile.mesh);
       }
@@ -294,8 +297,10 @@ export class InteractionManager {
     mouseIntersection3DCollision(screenPosition){
       this.buildCollisionGeos();
       let collisionGeometries = this._collisionGeometries;
-      this.mousemove.x = (screenPosition.x / window.innerWidth) * 2 - 1;
-      this.mousemove.y = -(screenPosition.y / window.innerHeight) * 2 + 1;
+      if(screenPosition){
+        this.mousemove.x = (screenPosition.x / window.innerWidth) * 2 - 1;
+        this.mousemove.y = -(screenPosition.y / window.innerHeight) * 2 + 1;
+      }
       this.raycaster.setFromCamera(this.mousemove, this.camera);
       const intersects = this.raycaster.intersectObjects(collisionGeometries, true)
       return intersects
