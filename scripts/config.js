@@ -189,12 +189,11 @@ Hooks.on("getSceneControlButtons", (buttons)=>{
 
 Hooks.on("renderSceneConfig", (app,html)=>{
 
-    injectConfig.inject(app,html,{
+    const data = {
         "moduleId": "levels-3d-preview",
-        "inject" : `input[name="backgroundColor"]`,
         "header": {
             type: "custom",
-            html: `<h3 class="form-header" id="canvas-3d-toggle"><i class="fas fa-cube"></i> ${game.i18n.localize("levels3dpreview.sceneConfigTitle.title")}</h3><p class="notes">${game.i18n.localize("levels3dpreview.sceneConfigTitle.notes")}</p><div id="3d-canvas">`
+            html: game.version < 9 ? `<h3 class="form-header" id="canvas-3d-toggle"><i class="fas fa-cube"></i> ${game.i18n.localize("levels3dpreview.sceneConfigTitle.title")}</h3><p class="notes">${game.i18n.localize("levels3dpreview.sceneConfigTitle.notes")}</p><div id="3d-canvas">` : ""
         },
         "enablePlayers":{
             "type": "checkbox",
@@ -312,11 +311,24 @@ Hooks.on("renderSceneConfig", (app,html)=>{
             type: "custom",
             html: `</div>`
         },
-    })
-    html.find("#3d-canvas").toggle();
-    html.on("click", "#canvas-3d-toggle", (e)=>{
-        html.find("#3d-canvas").slideToggle(200);
-    });
+    }
+    if(game.version > 9){
+        data.tab = {
+            "name": "levels-3d-preview",
+            "label": "3D Canvas",
+            "icon": "fas fa-cube",
+        }
+    }else{
+        data.inject = `input[name="backgroundColor"]`
+    }
+
+    injectConfig.inject(app,html,data)
+    if(game.version < 9){
+        html.find("#3d-canvas").toggle();
+        html.on("click", "#canvas-3d-toggle", (e)=>{
+            html.find("#3d-canvas").slideToggle(200);
+        });
+    }
     if(canvas.scene.id !== app.object.id) return;
     html.on("change", "input", (e)=>{
         if(!game.Levels3DPreview._active) return;

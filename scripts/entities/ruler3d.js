@@ -110,7 +110,7 @@ export class Ruler3D {
 
     getColor(distance){
        let color
-        if(this.token && dragRuler?.getColorForDistanceAndToken){
+        if(this.token && game.modules.get("drag-ruler")?.active && dragRuler?.getColorForDistanceAndToken){
             color = dragRuler?.getColorForDistanceAndToken(distance, this.token)
         }
         return color ?? this.color;
