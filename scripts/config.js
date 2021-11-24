@@ -28,6 +28,19 @@ Hooks.once('init', function() {
         default: true,
       });
 
+      game.settings.register("levels-3d-preview", "templateSyle", {
+        name: game.i18n.localize("levels3dpreview.settings.templateSyle.name"),
+        hint: game.i18n.localize("levels3dpreview.settings.templateSyle.hint"),
+        scope: "world",
+        config: true,
+        type: String,
+        choices: {
+            "wireframe": game.i18n.localize("levels3dpreview.settings.templateSyle.options.wireframe"),
+            "solid": game.i18n.localize("levels3dpreview.settings.templateSyle.options.solid"),
+          },
+        default: "wireframe",
+      });
+
       game.settings.register("levels-3d-preview", "screenspacepanning", {
         name: game.i18n.localize("levels3dpreview.settings.screenspacepanning.name"),
         hint: game.i18n.localize("levels3dpreview.settings.screenspacepanning.hint"),
@@ -510,6 +523,18 @@ Hooks.on("renderWallConfig", (app,html)=>{
             label: game.i18n.localize("levels3dpreview.flags.joinWall.label"),
             default: false,
         }
+    })
+})
+
+Hooks.on("renderMeasuredTemplateConfig", (app,html)=>{
+    injectConfig.inject(app,html,{
+        "moduleId": "levels-3d-preview",
+        "isFog": {
+            type: "checkbox",
+            label: game.i18n.localize("levels3dpreview.flags.isFog.label"),
+            notes: game.i18n.localize("levels3dpreview.flags.isFog.notes"),
+            default: false,
+        },
     })
 })
 

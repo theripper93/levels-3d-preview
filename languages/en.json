@@ -13,6 +13,10 @@
             "3dnotactive": "Cannot open canvas popout, the 3D mode is not active."
         },
         "flags": {
+            "isFog":{
+                "label": "Is Fog of War Box?",
+                "notes": "Obscure view when camera enters this template. Works only for rectangle templates."
+            },
             "enablePlayers":{
                 "label": "Enable for Players",
                 "notes": "Allow players to open the 3D view for this scene, all walls, floors and tokens will be revealed."
@@ -197,6 +201,14 @@
             "rotateIndicator": {
                 "name": "Rotate Highlight Image",
                 "hint": "Rotate the Highlight Image to match the token rotation."
+            },
+            "templateSyle" : {
+                "name": "Template Style",
+                "hint": "The style to use for the measured templates.",
+                "options": {
+                    "wireframe": "Wireframe",
+                    "solid": "Solid"
+                }
             },
             "screenspacepanning": {
                 "name": "Enable Screen Space Panning",

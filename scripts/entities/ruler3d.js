@@ -1,4 +1,5 @@
 import * as THREE from "../lib/three.module.js";
+import { Template3D } from "./template3d.js";
 import {factor} from '../main.js'; 
 
 export class Ruler3D {
@@ -14,6 +15,19 @@ export class Ruler3D {
         this.sphereRadius = 0.008;
         this.lineRadius = 0.003;
         this.init();
+    }
+
+    drawTemplate(){
+        if(ui.controls.activeTool === "select" || !canvas.templates._active) return;
+        this.template?.destroy();
+        const template = new Template3D({data:{t:ui.controls.activeTool}},this._origin,this._object.position);
+        this.template = template;
+    }
+
+    placeTemplate(){
+        if(!this.template) return;
+        this.template.fromPreview();
+        this.template = null;
     }
 
     init(){
@@ -48,6 +62,7 @@ export class Ruler3D {
             this.sphere2.material.visible = false;
             this.baseSphere1.material.visible = false;
             this.baseSphere2.material.visible = false;
+            this.template?.destroy();
             this.textElement.hide();
         }else{
             const target = value.userData.isHitbox ? value.parent : value;
@@ -106,6 +121,7 @@ export class Ruler3D {
         const midPoint = new THREE.Vector3(this._origin.x + (targetPos.x - this._origin.x)/2, this._origin.y + (targetPos.y - this._origin.y)/2, this._origin.z + (targetPos.z - this._origin.z)/2);
         Ruler3D.centerElement(this.textElement,midPoint);
         this._parent.scene.add(this.line);
+        this.drawTemplate();
     }
 
     getColor(distance){
@@ -148,6 +164,14 @@ export class Ruler3D {
         );
     }
 
+    static unitsToPixels(units){
+        return (units*canvas.scene.dimensions.size)/(canvas.scene.dimensions.distance*factor)
+    }
+
+    static pixelsToUnits(pixels){
+        return (pixels*canvas.scene.dimensions.distance*factor)/canvas.scene.dimensions.size
+    }
+
     static pos3DToCanvas(position){
         return new THREE.Vector3(
             position.x*factor,
@@ -158,7 +182,7 @@ export class Ruler3D {
 
     static useSnapped(){
         const isGrid = canvas.scene.data.gridType ? true : false;
-        const isShift = keyboard._downKeys.has("Shift")
+        const isShift = keyboard._downKeys.has("Shift") || keyboard._downKeys.has("SHIFT");
         if(!isGrid) return false;
         if(isGrid && !isShift) return true;
         return false;

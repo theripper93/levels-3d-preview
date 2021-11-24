@@ -49,21 +49,30 @@ export class InteractionManager {
       }
 
       _onEnableRuler(event){
-        if(!ui.controls.isRuler) return
-        const rulerObj = new THREE.Object3D()
-        rulerObj.userData = {
-            entity3D: {
-              updatePositionFrom3D : () => {return true},
-              mesh: rulerObj
+        if(!ui.controls.isRuler && !canvas.templates._active) return
+        if(ui.controls.activeTool === "select") return
+
+        if(event.which === 1){
+          const rulerObj = new THREE.Object3D()
+          rulerObj.userData = {
+              entity3D: {
+                updatePositionFrom3D : () => {return true},
+                mesh: rulerObj,
+                elevation3d: 0
+              }
             }
-          }
-        rulerObj.parent = rulerObj.userData.entity3D.mesh
-        const position = this.mouseIntersection3DCollision({x:event.clientX, y: event.clientY})
-        if(!position.length) return
-        this.toggleControls(false);
-        const intersectPos = position[0].point
-        rulerObj.position.set(intersectPos.x, intersectPos.y, intersectPos.z)
-        this.draggable = rulerObj
+          rulerObj.parent = rulerObj.userData.entity3D.mesh
+          const position = this.mouseIntersection3DCollision({x:event.clientX, y: event.clientY})
+          if(!position.length) return
+          this.toggleControls(false);
+          const intersectPos = position[0].point
+          rulerObj.position.set(intersectPos.x, intersectPos.y, intersectPos.z)
+          this.draggable = rulerObj
+        }else if(event.which === 3 && this.draggable){
+          this.ruler.template.destroy();
+          this.ruler.template = null;
+          this.draggable = null;
+        }
       }
 
       _onDrop(event) {
@@ -132,7 +141,9 @@ export class InteractionManager {
       this.mousedown = false;
       if(event.which !== 1) return;
       if(this.draggable){
+        this.ruler.placeTemplate();
         if(!this.draggable.userData.entity3D.updatePositionFrom3D(event)) this.cancelDrag();
+        this.draggable = null;
       }
       this.toggleControls(true, true);
     }
@@ -176,7 +187,7 @@ export class InteractionManager {
     }
 
     _onClickLeft(event){
-      if(ui.controls.isRuler) return
+      if(ui.controls.isRuler || (canvas.templates._active && ui.controls.activeTool !== "select")) return
       const entity = event.entity;
       const intersect = event.intersect;
       this.handleTriggerHappy(entity);
@@ -348,7 +359,8 @@ export class InteractionManager {
       const entity3D = this.draggable.userData.entity3D;
       entity3D.dragCanceled = true;
       this.draggable = undefined;
-      Hooks.call("updateToken", entity3D.token.document, {x: entity3D.token.data.x});
+      if(entity3D.token)Hooks.call("updateToken", entity3D.token.document, {x: entity3D.token.data.x});
+      if(entity3D.template)Hooks.call("updateMeasuredTemplate", entity3D.template.document, {x: entity3D.template.data.x});
       this.controls.enableRotate = true;
       this.controls.enableZoom = true;
       setTimeout(() => {
@@ -371,6 +383,7 @@ export class InteractionManager {
     }
 
     handleTriggerHappy(entity){
+      if(!entity) return;
       if(!entity.token || !game.triggers) return;
       const downTriggers = game.triggers._getTriggersFromTokens(game.triggers.triggers, [entity.token], "click");
       game.triggers._executeTriggers(downTriggers);
