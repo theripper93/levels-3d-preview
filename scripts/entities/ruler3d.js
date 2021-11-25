@@ -95,9 +95,21 @@ export class Ruler3D {
         this._parent.scene.remove(this.line);
         const distance = Ruler3D.measureDistance(this._origin,targetPos);
         //draw ruler
+        let curve
+        let midcurve
+        if(this.template?.isPreview){
+            midcurve = this._origin.clone().lerp(targetPos,0.8)//new THREE.Vector3(this._origin.x + (targetPos.x - this._origin.x)/2, this._origin.y + (targetPos.y - this._origin.y)/2, this._origin.z + (targetPos.z - this._origin.z)/2);
+            debugger
+            midcurve.y+= 2;
+            const bezCtrlg = midcurve.clone();
+            curve = new THREE.QuadraticBezierCurve3(this._origin,bezCtrlg , targetPos);
+            midcurve = curve.getPoint(0.5);
+        }else{
+            curve = new THREE.LineCurve3(this._origin, targetPos)
+        }
         const geometry = new THREE.TubeGeometry(
-            new THREE.LineCurve3(this._origin, targetPos),
-            1,
+            curve,
+            this.template?.isPreview ? 64 : 1,
             this.lineRadius,
             8,
         );
@@ -119,7 +131,7 @@ export class Ruler3D {
         const text = `${distance} ${canvas.scene.data.gridUnits}.`;
         this.textElement.text(text);
         //get mid point of ruler
-        const midPoint = new THREE.Vector3(this._origin.x + (targetPos.x - this._origin.x)/2, this._origin.y + (targetPos.y - this._origin.y)/2, this._origin.z + (targetPos.z - this._origin.z)/2);
+        const midPoint = this.template?.isPreview ? midcurve : new THREE.Vector3(this._origin.x + (targetPos.x - this._origin.x)/2, this._origin.y + (targetPos.y - this._origin.y)/2, this._origin.z + (targetPos.z - this._origin.z)/2);
         Ruler3D.centerElement(this.textElement,midPoint);
         this._parent.scene.add(this.line);
         this.drawTemplate();

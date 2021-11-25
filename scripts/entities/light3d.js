@@ -75,28 +75,33 @@ export class Light3D {
         this._parent.scene.remove(this.debugSphere);
     }
 
+    get lightData(){
+        return this.light.data.light ?? this.light.data.config
+    }
+
     get dim(){
-        return this.light.data.dim ?? this.light.data.dimLight;
+        return this.lightData.dim ?? this.light.data.dimLight;
     }
 
     get bright(){
-        return this.light.data.bright ?? this.light.data.brightLight;
+        debugger
+        return this.lightData.bright ?? this.light.data.brightLight;
     }
 
     get alpha(){
-        return this.light.data.tintAlpha ?? this.light.data.lightAlpha;
+        return this.lightData.alpha ?? this.light.data.lightAlpha;
     }
 
     get color(){
-        return this.light.data.tintColor ?? this.light.data.lightColor;
+        return this.lightData.color ?? this.light.data.lightColor;
     }
 
     get angle(){
-        return this.light.data.angle ?? this.light.data.lightAngle;
+        return this.lightData.angle ?? this.light.data.lightAngle;
     }
 
     get rotation(){
-        return this.light.data.rotation;
+        return this.lightData.rotation;
     }
 
 }

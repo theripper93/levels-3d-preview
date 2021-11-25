@@ -58,7 +58,7 @@ export class Token3D {
       if(!this.gtflPath && !this.imageTexture) this.imageTexture = this.token.data.img;
       this.texture = await this._parent.helpers.loadTexture(this.imageTexture)//this.loadTexture();
       const token3d = this.gtflPath || this.imageTexture ? await this.loadModel() : this.draw();
-      if(this.token.data.brightLight !== 0 || this.token.data.dimLight) this.loadLight();
+      if(this.token.data.light.bright !== 0 || this.token.data.light.dim) this.loadLight();
       return token3d;
     }
 
@@ -200,6 +200,12 @@ export class Token3D {
       hitbox.userData.isHitbox = true;
       hitbox.userData.entity3D = this;
       hitbox.userData.documentName = this.token.document.documentName
+      if(game.settings.get("levels-3d-preview", "conservativeHitbox")){
+      //scale Hitbox
+      const baseHitboxScale = hitbox.scale.x;
+      const multiHitboxScale = baseHitboxScale/this.scale;
+      hitbox.scale.set(multiHitboxScale, baseHitboxScale, multiHitboxScale);
+      }
       this.hitbox = hitbox;
       this.hitbox.geometry.computeBoundingBox();
       this._size = this.hitbox.geometry.boundingBox.getSize(new THREE.Vector3());
@@ -402,7 +408,7 @@ export class Token3D {
           - toLerp.z,
         );
       }
-      if(this.light && this.token.data.lightAngle != 360){
+      if(this.light && this.token.data.light.angle != 360){
         const rotationy = rotations.y;
         const distance = 1
         const lx = Math.sin(rotationy) * distance + x;

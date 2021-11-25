@@ -210,6 +210,10 @@
                     "solid": "Solid"
                 }
             },
+            "conservativeHitbox": {
+                "name": "Conservative Hitbox",
+                "hint": "Restrict hitbox size for tokens so that it does not overflow outside the token's base."
+            },
             "screenspacepanning": {
                 "name": "Enable Screen Space Panning",
                 "hint": "Enable screen space panning for the 3D view."

@@ -51,7 +51,6 @@ export class Template3D {
         this.distance = this.useVec2 ? Ruler3D.pixelsToUnits(vec2A.distanceTo(vec2B)) : Ruler3D.pixelsToUnits(this.A.distanceTo(this.B))
         this.angle = 0
         this.width = 1
-                console.log(this.baseShape)
         const mesh = this._getMesh()
         this.templateMesh = mesh
         this.mesh.add(mesh)
@@ -390,10 +389,14 @@ export class Template3D {
             template3d.angle = template.data.angle
             template3d.distance = template.data.distance
             template3d.direction = template.data.direction
+            template3d.arcDelta = Ruler3D.unitsToPixels(template3d.distance)
             game.Levels3DPreview.interactionManager.ruler.template = template3d
             game.Levels3DPreview.interactionManager.draggable = template3d.dragHandle;
             game.Levels3DPreview.controls.enableZoom = false;
-            if(_token && game.Levels3DPreview.tokens[_token.id]) game.Levels3DPreview.interactionManager.ruler.origin = game.Levels3DPreview.tokens[_token.id].mesh.position
+            if(_token && game.Levels3DPreview.tokens[_token.id]) {
+                template3d.mesh.position.copy(game.Levels3DPreview.tokens[_token.id].mesh.position)
+                game.Levels3DPreview.interactionManager.ruler.origin = game.Levels3DPreview.tokens[_token.id].mesh.position
+            }
         
             // Hide the sheet that originated the preview
             if ( template.actorSheet ) {
