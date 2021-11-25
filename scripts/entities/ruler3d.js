@@ -19,6 +19,7 @@ export class Ruler3D {
 
     drawTemplate(){
         if(ui.controls.activeTool === "select" || !canvas.templates._active) return;
+        if(this.template?.isPreview) return;
         this.template?.destroy();
         const template = new Template3D({data:{t:ui.controls.activeTool}},this._origin,this._object.position);
         this.template = template;

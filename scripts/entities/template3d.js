@@ -5,8 +5,10 @@ import {factor} from '../main.js';
 export class Template3D {
     constructor(template, A,B){
         this.template = template;
+        this.initialDirection = this.template.data.direction
         this.isFog = this.template?.document?.getFlag("levels-3d-preview", "isFog") ?? false
         this.draggable = true
+        this.directionOffset = 0
         this._parent = game.Levels3DPreview
         this.mesh = new THREE.Group();
         this.elevation3d = 0
@@ -29,11 +31,12 @@ export class Template3D {
     }
 
     get fromData(){
-        return this.template.data.x ? true : false
+        //if(this.isPreview) return false;
+        return this.template.data?.x !== undefined ? true : false
     }
 
     setPosition(){
-        this.mesh.position.set(this._origin.x, this._origin.y, this._origin.z)
+        this.mesh.position.set(this._origin.x, this._origin.y+0.0001, this._origin.z)
     }
 
     draw(){
@@ -43,17 +46,24 @@ export class Template3D {
         this.B = this._destination
         this.pointsFromData()
         this.direction = Math.atan2(this.B.z - this.A.z, this.B.x - this.A.x)*180/Math.PI
-        this.distance = Ruler3D.pixelsToUnits(this.A.distanceTo(this.B))
+        const vec2A = new THREE.Vector2(this.A.x, this.A.z)
+        const vec2B = new THREE.Vector2(this.B.x, this.B.z)
+        this.distance = this.useVec2 ? Ruler3D.pixelsToUnits(vec2A.distanceTo(vec2B)) : Ruler3D.pixelsToUnits(this.A.distanceTo(this.B))
         this.angle = 0
         this.width = 1
+                console.log(this.baseShape)
         const mesh = this._getMesh()
         this.templateMesh = mesh
         this.mesh.add(mesh)
         this.createHandle()
     }
 
-    async createHandle(){
-        const texture = await this._parent.helpers.loadTexture("icons/svg/explosion.svg")
+    get useVec2(){
+        return !(this.shape === "sphere" || this.shape === "cone")
+    }
+
+    createHandle(){
+        const texture = this._parent.textures.template
         const size = canvas.scene.dimensions.size*0.7/factor
         const geometry = new THREE.BoxGeometry(size, size, size)
         const material = new THREE.MeshBasicMaterial({map: texture,})
@@ -62,22 +72,23 @@ export class Template3D {
         this.mesh.userData.interactive = true
         mesh.userData.entity3D = this
         mesh.userData.isHitbox = true
+        this.dragHandle = mesh
         this.mesh.add(mesh)
     }
 
     pointsFromData(){
-        if(!this.template.data?.x)return
+        if(!this.fromData)return
         this.A = Ruler3D.posCanvasTo3d({x: this.template.ray.A.x, y: this.template.ray.A.y, z: this.template.data.flags?.levels?.elevation ?? 0})
         this.B = Ruler3D.posCanvasTo3d({x: this.template.ray.B.x, y: this.template.ray.B.y, z: this.template.data.flags?.levels?.elevation ?? 0})
         if(this.shape !== "cylinder")this.B.y += Ruler3D.unitsToPixels(this.template.data.flags?.levels?.special ?? 0)
     }
     
     fromPreview(){
-        const origin2d = Ruler3D.pos3DToCanvas(this.A)
+        const origin2d = this.isPreview ? Ruler3D.pos3DToCanvas(this.mesh.position) : Ruler3D.pos3DToCanvas(this.A)
         const templateData = {
             angle: this.angle,
             distance: this.distance,
-            direction: this.direction,
+            direction: this.isPreview ? this.template.data.direction : this.direction,
             width: this.width,
             fillColor: game.user.color,
             t: this._getBaseShape(),
@@ -95,6 +106,10 @@ export class Template3D {
     }
 
     destroy(){
+        if(this.isPreview){
+            this.initialLayer?.activate();
+            this.actorSheet?.maximize();
+        }
         this.scene.remove(this.mesh)
         delete this._parent.templates[this.template.id]
     }
@@ -294,7 +309,7 @@ export class Template3D {
 
     updatePositionFrom3D(e){
         this.skipMoveAnimation = true;
-        const useSnapped = canvas.scene.data.gridType && !e.shiftKey;
+        const useSnapped = canvas.scene.data.gridType && !e?.shiftKey;
       const x3d = this.mesh.position.x;
       const y3d = this.mesh.position.y;
       const z3d = this.mesh.position.z;
@@ -307,24 +322,28 @@ export class Template3D {
         y: useSnapped ? snapped.y : y,
         elevation: z,
       }
-        this.template.document.update({
-            x: dest.x,
-            y: dest.y,
-            flags: {
-                levels: {
-                    elevation: dest.elevation
-                }
+      const data = {
+        x: dest.x,
+        y: dest.y,
+        direction: ((this.isPreview ? this.initialDirection : this.template.data.direction) - this.directionOffset)%360,
+        flags: {
+            levels: {
+                elevation: dest.elevation
             }
-        })
+        }
+    }
+        this.isPreview ? this.template.data.update(data) : this.template.document.update(data)
+        if(this.isPreview) Hooks.callAll(`template3dUpdatePreview`, this.template, data)
     }
 
     _onClickLeft(e){
+        if(this.isPreview) return
         const event = {
             data: {
               originalEvent: e,
             }
           }
-          this.template?._onClickLeft(event);
+          this.template._onClickLeft(event);
           this.template.control()
     }
 
@@ -354,11 +373,48 @@ export class Template3D {
           }
           this.template?._onClickRight2(event);
     }
+
+    onMove(){
+        if(this.isPreview) this.updatePositionFrom3D()
+    }
+
+    static drawPreview(template){
+            const initialLayer = canvas.activeLayer;
+            template.ray = Ray.fromAngle(template.data.x,template.data.y,Math.toRadians(template.data.direction),template.data.distance*canvas.scene.dimensions.size/canvas.scene.dimensions.distance)
+            // Draw the template and switch to the template layer
+            canvas.templates.activate();
+            const template3d = new Template3D(template);
+            template3d.initialLayer = initialLayer;
+            template3d.draggable=true
+            template3d.isPreview = true
+            template3d.angle = template.data.angle
+            template3d.distance = template.data.distance
+            template3d.direction = template.data.direction
+            game.Levels3DPreview.interactionManager.ruler.template = template3d
+            game.Levels3DPreview.interactionManager.draggable = template3d.dragHandle;
+            game.Levels3DPreview.controls.enableZoom = false;
+            if(_token && game.Levels3DPreview.tokens[_token.id]) game.Levels3DPreview.interactionManager.ruler.origin = game.Levels3DPreview.tokens[_token.id].mesh.position
+        
+            // Hide the sheet that originated the preview
+            if ( template.actorSheet ) {
+                template3d.actorSheet = template.actorSheet;
+                template.actorSheet.minimize();
+            }
+        
+    }
+
+    onRotate(deltaY){
+        if(keyboard._downKeys.has("f") || keyboard._downKeys.has("F")) return
+        let delta = canvas.grid.type > CONST.GRID_TYPES.SQUARE ? 30 : 15;
+        let snap = delta;
+        this.directionOffset += (snap * Math.sign(-deltaY))
+        this.mesh.rotation.y = Math.toRadians(this.directionOffset)
+    }
 }
 
 Hooks.on("updateMeasuredTemplate", (template) => {
-    if(game.Levels3DPreview?._active) {
-        game.Levels3DPreview.templates[template.id]?.destroy();
+    if(game.Levels3DPreview?._active && template?.id) {
+        game.Levels3DPreview.templates[template?.id]?.destroy();
         game.Levels3DPreview.createTemplate(template.object);
     }
   })

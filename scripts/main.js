@@ -76,6 +76,12 @@ class Levels3DPreview {
     this.models = {
       target : new THREE.Mesh(new THREE.SphereGeometry(0.1,32,32))
     };
+    this.textures = {
+      template: THREE.ImageUtils.loadTexture("icons/svg/explosion.svg"),
+    };
+    this.Classes = {
+      "Template3D" : Template3D,
+    }
     this.animationMixers = [];
     this.clock = new THREE.Clock();
     this.loader = new GLTFLoader();

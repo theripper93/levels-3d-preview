@@ -142,7 +142,7 @@ export class InteractionManager {
       if(event.which !== 1) return;
       if(this.draggable){
         this.ruler.placeTemplate();
-        if(!this.draggable.userData.entity3D.updatePositionFrom3D(event)) this.cancelDrag();
+        if(!this.draggable?.userData.entity3D.updatePositionFrom3D(event)) this.cancelDrag();
         this.draggable = null;
       }
       this.toggleControls(true, true);
@@ -166,6 +166,9 @@ export class InteractionManager {
       if(this.draggable){
         const delta = event.deltaY;
         const entity3D = this.draggable.userData.entity3D;
+        if(entity3D.template){
+          entity3D.onRotate(delta);
+        }
         let elevationDiff = 5;
         if(event.shiftKey) elevationDiff = 1;
         if(event.ctrlKey) elevationDiff = 0.1;
@@ -350,6 +353,7 @@ export class InteractionManager {
         let lerpFactor = 1/(1+distance*20);
         if(lerpFactor < 0.1) lerpFactor = 0.1;
         target.position.lerp(new THREE.Vector3(intersects[0].point.x, !isFree ? intersects[0].point.y : entity3D.elevation3d, intersects[0].point.z), lerpFactor);
+        if(entity3D.template) entity3D.onMove();
         this.ruler.update();
       }
     }

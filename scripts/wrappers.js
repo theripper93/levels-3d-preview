@@ -5,6 +5,13 @@ Hooks.once('ready', async function() {
     libWrapper.register("levels-3d-preview", "CONFIG.Token.objectClass.prototype.refresh", reDraw, "WRAPPER")
     libWrapper.register("levels-3d-preview", "CONFIG.Token.objectClass.prototype._onMovementFrame", Token3DSetPosition, "WRAPPER");
     libWrapper.register("levels-3d-preview", "TokenLayer.prototype.cycleTokens", cycleTokens, "WRAPPER");
+    if(game.system.id === "dnd5e") libWrapper.register("levels-3d-preview", "game.dnd5e.canvas.AbilityTemplate.prototype.drawPreview", drawPreview, "MIXED")
+
+    function drawPreview(wrapped, ...args){
+        if(game.Levels3DPreview?._active){
+        game.Levels3DPreview.Classes.Template3D.drawPreview(this)
+        }else return wrapped(...args)
+    }
 
     function reDraw(wrapped,...args){
         wrapped(...args)
