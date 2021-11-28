@@ -5,6 +5,8 @@ Hooks.once('ready', async function() {
     libWrapper.register("levels-3d-preview", "CONFIG.Token.objectClass.prototype.refresh", reDraw, "WRAPPER")
     libWrapper.register("levels-3d-preview", "CONFIG.Token.objectClass.prototype._onMovementFrame", Token3DSetPosition, "WRAPPER");
     libWrapper.register("levels-3d-preview", "TokenLayer.prototype.cycleTokens", cycleTokens, "WRAPPER");
+    libWrapper.register("levels-3d-preview", "Canvas.prototype.animatePan", animatePan, "WRAPPER");
+    
     if(game.system.id === "dnd5e") libWrapper.register("levels-3d-preview", "game.dnd5e.canvas.AbilityTemplate.prototype.drawPreview", drawPreview, "MIXED")
 
     function drawPreview(wrapped, ...args){
@@ -110,8 +112,20 @@ Hooks.once('ready', async function() {
     }
 
     function cycleTokens(wrapped,...args){
-        if(!game.Levels3DPreview?._active) return wrapped(...args);
+        if(!game.Levels3DPreview?._active || game.Levels3DPreview.CONFIG.autoPan) return wrapped(...args);
         const next = wrapped(...args);
         game.Levels3DPreview.setCameraToControlled(next);
+    }
+
+    async function animatePan(wrapped,...args){
+        if(game.Levels3DPreview?._active && game.Levels3DPreview.CONFIG.autoPan){
+            const x = args[0].x;
+            const y = args[0].y;
+            const token = canvas.tokens.placeables.find(t => t.center?.x == x && t.center?.y == y);
+            if(token){
+                game.Levels3DPreview.setCameraToControlled(token);
+            }
+        }
+        return wrapped(...args);
     }
 });

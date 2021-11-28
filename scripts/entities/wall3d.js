@@ -6,6 +6,7 @@ export class Wall3D {
     constructor(wall,parent){
         this.wall = wall;
         this.type = "Wall";
+        this.embeddedName = "Wall";
         this._parent = parent;
         this.top = wall.data.flags.wallHeight?.wallHeightTop ?? 10;
         this.externalWall = wall.data.flags.betterroofs?.externalWall ?? false;

@@ -41,6 +41,21 @@ Hooks.once('init', function() {
         default: "wireframe",
       });
 
+      game.settings.register("levels-3d-preview", "autoPan", {
+        name: game.i18n.localize("levels3dpreview.settings.autoPan.name"),
+        hint: game.i18n.localize("levels3dpreview.settings.autoPan.hint"),
+        scope: "world",
+        config: true,
+        type: String,
+        choices: {
+            "none": game.i18n.localize("levels3dpreview.settings.autoPan.options.none"),
+            "player": game.i18n.localize("levels3dpreview.settings.autoPan.options.player"),
+            "all": game.i18n.localize("levels3dpreview.settings.autoPan.options.all"),
+          },
+        default: "none",
+        onChange: value => { game.Levels3DPreview.setAutopan(value) }
+      });
+
       game.settings.register("levels-3d-preview", "conservativeHitbox", {
         name: game.i18n.localize("levels3dpreview.settings.conservativeHitbox.name"),
         hint: game.i18n.localize("levels3dpreview.settings.conservativeHitbox.hint"),

@@ -84,7 +84,6 @@ export class Light3D {
     }
 
     get bright(){
-        debugger
         return this.lightData.bright ?? this.light.data.brightLight;
     }
 

@@ -69,7 +69,7 @@ export class InteractionManager {
           rulerObj.position.set(intersectPos.x, intersectPos.y, intersectPos.z)
           this.draggable = rulerObj
         }else if(event.which === 3 && this.draggable){
-          this.ruler.template.destroy();
+          this.ruler.template?.destroy();
           this.ruler.template = null;
           this.draggable = null;
         }
@@ -164,7 +164,7 @@ export class InteractionManager {
     _onWheel(event){
       this._parent.stopCameraAnimation();
       if(this.draggable){
-        const delta = event.deltaY;
+        const delta = Math.sign(event.deltaY);
         const entity3D = this.draggable.userData.entity3D;
         if(entity3D.template){
           entity3D.onRotate(delta);
@@ -183,8 +183,10 @@ export class InteractionManager {
         }
       }
       if(!this.draggable && event.ctrlKey && canvas.tokens.controlled.length){
-        const delta = event.deltaY/20;
-        canvas.tokens.rotateMany({delta})
+        const dBig = canvas.grid.type > CONST.GRID_TYPES.SQUARE ? 60 : 45;
+        let snap = event.shiftKey ? dBig : 15;
+        const delta = Math.sign(event.deltaY)*snap;
+        canvas.tokens.rotateMany({delta,snap});
       }
 
     }
@@ -246,6 +248,7 @@ export class InteractionManager {
       this.raycaster.setFromCamera(this.mouse, this.camera);
       let intersectTargets = []
       for(let child of this.scene.children){
+        if(canvas.activeLayer.options.objectClass.embeddedName !== child.userData?.entity3D?.embeddedName && child.userData?.entity3D?.embeddedName !== "Wall") continue;
         if(child.userData?.hitbox && child.userData.interactive) intersectTargets.push(child.userData.hitbox);
       }
       const intersects = this.raycaster.intersectObjects(intersectTargets, true);
@@ -272,11 +275,6 @@ export class InteractionManager {
       const draggableId = this.draggable?.userData?.entity3D?.token?.id;
       const collisionObjects = Object.values(this._parent.tokens).filter(t => t.collisionPlane && t.token.id != draggableId).map(t => t.model);
       let collisionGeometries = collisionObjects;
-      /*for(let collObj of collisionObjects){
-        collObj.traverse(child => {
-          if(child.geometry) collisionGeometries.push(child);
-                })
-      }*/
       for(let tile of Object.values(this._parent.tiles)){
         collisionGeometries.push(tile.mesh);
       }
@@ -284,6 +282,7 @@ export class InteractionManager {
       if(board) collisionGeometries.push(board);
       const table = this._parent.table;
       if(table) collisionGeometries.push(table);
+      collisionGeometries = collisionGeometries.filter(g => g);
       this._collisionGeometries = collisionGeometries;
     }
 

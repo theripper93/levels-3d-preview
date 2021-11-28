@@ -210,6 +210,15 @@
                     "solid": "Solid"
                 }
             },
+            "autoPan": {
+                "name": "Auto Pan",
+                "hint": "Hooks the 3D Camera panning to the 2D one. Mainly, moving a token will have the camera follow it. When disabled you can always pan to the selected token with Ctrl+X",
+                "options": {
+                    "none": "Disabled",
+                    "player": "Only Players",
+                    "all": "Everyone"
+                }
+            },
             "conservativeHitbox": {
                 "name": "Conservative Hitbox",
                 "hint": "Restrict hitbox size for tokens so that it does not overflow outside the token's base."

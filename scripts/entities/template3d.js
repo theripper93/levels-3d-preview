@@ -5,6 +5,7 @@ import {factor} from '../main.js';
 export class Template3D {
     constructor(template, A,B){
         this.template = template;
+        this.embeddedName = "MeasuredTemplate"
         this.initialDirection = this.template.data.direction
         this.isFog = this.template?.document?.getFlag("levels-3d-preview", "isFog") ?? false
         this.draggable = true
@@ -69,6 +70,7 @@ export class Template3D {
         const mesh = new THREE.Mesh(geometry, material)
         this.mesh.userData.hitbox = mesh
         this.mesh.userData.interactive = true
+        this.mesh.userData.entity3D = this
         mesh.userData.entity3D = this
         mesh.userData.isHitbox = true
         this.dragHandle = mesh
