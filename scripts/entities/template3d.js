@@ -43,6 +43,7 @@ export class Template3D {
     draw(){
         this.mesh.remove(this.templateMesh)
         this.material = this._getMaterial()
+        this._getTexture()
         this.A = this._origin ?? Ruler3D.posCanvasTo3d({x: this.template.data.x, y: this.template.data.y, z: this.template.data.flags?.levels?.elevation ?? 0})
         this.B = this._destination
         this.pointsFromData()
@@ -172,7 +173,7 @@ export class Template3D {
         this.angle = CONFIG.MeasuredTemplate.defaults.angle
         const radius = (height/Math.cos(angle))*Math.sin(angle)//height*Math.acos(angle)*2
         const group = new THREE.Group()
-        const geometry = new THREE.ConeGeometry(radius, height, 32)
+        const geometry = new THREE.ConeGeometry(radius, height, this.template?.data?.texture ? 256 : 64)
         const mesh = new THREE.Mesh(geometry, this.material)
         //mesh.position.set(0, -height/2, 0)
         mesh.rotateZ(Math.PI/2)
@@ -263,7 +264,7 @@ export class Template3D {
     }
 
     _getMaterial(){
-        const templateStyle = game.settings.get(
+        const templateStyle = this.template?.data?.texture ? "solid" : game.settings.get(
           "levels-3d-preview",
           "templateSyle"
         );
@@ -298,6 +299,15 @@ export class Template3D {
               shininess: 1,
             });
         }
+    }
+
+    _getTexture(){
+        if(!this.template.data?.texture) return
+        this._parent.helpers.loadTexture(this.template.data?.texture).then(texture => {
+            this.material.map = texture
+            this.material.opacity = 1
+            this.material.needsUpdate = true
+        })
     }
 
     pointInFogmesh(point){

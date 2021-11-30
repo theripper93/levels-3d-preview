@@ -21,11 +21,14 @@ export class InteractionManager {
         this.factor = levels3dPreview.factor;
         this.clicks = 0;
         this.lcTime = 0;
-        this.elevationTick = (canvas.dimensions.size/canvas.dimensions.distance)/this.factor;
     }
 
     get scene(){
       return this._parent.scene;
+    }
+
+    get elevationTick(){
+      return (canvas.dimensions.size/canvas.dimensions.distance)/this.factor
     }
 
     get cursorPositionTo2D(){
@@ -172,12 +175,7 @@ export class InteractionManager {
         let elevationDiff = 5;
         if(event.shiftKey) elevationDiff = 1;
         if(event.ctrlKey) elevationDiff = 0.1;
-        //change y position
-        if(delta > 0){
-          entity3D.elevation3d -= this.elevationTick*elevationDiff;
-        }else{
-          entity3D.elevation3d += this.elevationTick*elevationDiff;
-        }
+        entity3D.elevation3d += -delta*this.elevationTick*elevationDiff;
         if(game.settings.get("levels-3d-preview", "preventNegative") && entity3D.elevation3d < 0){
           entity3D.elevation3d = 0;
         }
@@ -352,6 +350,10 @@ export class InteractionManager {
         let lerpFactor = 1/(1+distance*20);
         if(lerpFactor < 0.1) lerpFactor = 0.1;
         target.position.lerp(new THREE.Vector3(intersects[0].point.x, !isFree ? intersects[0].point.y : entity3D.elevation3d, intersects[0].point.z), lerpFactor);
+        if(!isFree){
+          entity3D.elevation3d = intersects[0].point.y;
+          this.dragplane.position.set(center.x, intersects[0].point.y, center.z);
+        }
         if(entity3D.template) entity3D.onMove();
         this.ruler.update();
       }
