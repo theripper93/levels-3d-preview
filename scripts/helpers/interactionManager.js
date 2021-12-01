@@ -333,7 +333,7 @@ export class InteractionManager {
 
       const collisionGeometries = this._collisionGeometries;
       const target = this.draggable.userData.isHitbox ? this.draggable.parent : this.draggable;
-      const isFree = keyboard._downKeys.has("f") || keyboard._downKeys.has("F")
+      const isFree = keyboard.downKeys.has("f") || keyboard.downKeys.has("F")
 
       const center = this._parent.canvasCenter;
       if(this.draggable.userData.entity3D.mesh.position.y < 0){

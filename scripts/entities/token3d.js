@@ -632,7 +632,10 @@ export class Token3D {
     if(!game.Levels3DPreview._active) return;
     if(
       (updates?.flags && updates?.flags["levels-3d-preview"]) ||
-      "dimLight" in updates || "brightLight" in updates || "lightAlpha" in updates || "lightColor" in updates || "lightAngle" in updates
+      "light" in updates ||
+      "width" in updates ||
+      "height" in updates ||
+      "img" in updates
       ){
       game.Levels3DPreview.tokens[token.id]?.refresh();
     }
@@ -686,21 +689,3 @@ export class Token3D {
   Hooks.on("deleteToken", (tokenDocument) => {
     if(game.Levels3DPreview?._active) game.Levels3DPreview.tokens[tokenDocument.id]?.destroy();
   })
-
-  /*Hooks.on("controlToken", async (token) => {
-    if(game.Levels3DPreview?._active){
-      const token3d = game.Levels3DPreview.tokens[token.id];
-      if(token3d) {
-        const targetPosition = token3d.mesh.position.clone();
-        const currentPosition = game.Levels3DPreview.controls.target.clone();
-        let currentLarp = 0;
-        while(currentLarp < 1){
-          currentLarp += 0.04;
-          const animTargetPos = currentPosition.lerp(targetPosition, currentLarp);
-          game.Levels3DPreview.controls.target.set(animTargetPos.x, animTargetPos.y, animTargetPos.z);
-          game.Levels3DPreview.controls.update();
-          await sleep(1000/60);
-        }
-      }
-    }
-  })*/

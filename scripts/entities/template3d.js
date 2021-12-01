@@ -419,7 +419,7 @@ export class Template3D {
     }
 
     onRotate(deltaY){
-        if(keyboard._downKeys.has("f") || keyboard._downKeys.has("F")) return
+        if(keyboard.downKeys.has("f") || keyboard.downKeys.has("F")) return
         let delta = canvas.grid.type > CONST.GRID_TYPES.SQUARE ? 30 : 15;
         let snap = delta;
         this.directionOffset += (snap * Math.sign(-deltaY))

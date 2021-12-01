@@ -194,7 +194,7 @@ export class Ruler3D {
 
     static useSnapped(){
         const isGrid = canvas.scene.data.gridType ? true : false;
-        const isShift = keyboard._downKeys.has("Shift") || keyboard._downKeys.has("SHIFT");
+        const isShift = keyboard.downKeys.has("Shift") || keyboard.downKeys.has("SHIFT");
         if(!isGrid) return false;
         if(isGrid && !isShift) return true;
         return false;

@@ -77,7 +77,7 @@ var injectConfig = {
                 injectHtml += `<div class="form-group">
                 <label for="${k}">${v.label || ""}</label>
                 <div class="form-fields">     
-                    <button type="button" class="file-picker" data-type="${fpType}" data-target="${flag}" title="Browse Files" tabindex="-1">
+                    <button type="button" class="file-picker" data-extras="${elemData.fpTypes ? elemData.fpTypes.join(",") : ""}" data-type="${fpType}" data-target="${flag}" title="Browse Files" tabindex="-1">
                         <i class="fas fa-file-import fa-fw"></i>
                     </button>
                     <input class="image" type="text" name="${flag}" placeholder="${v.placeholder || ""}" value="${flagValue}">
@@ -86,7 +86,7 @@ var injectConfig = {
             }
         }
         injectHtml = $(injectHtml);
-        injectHtml.on("click", ".file-picker", _bindFilePicker);
+        injectHtml.on("click", ".file-picker", this.fpTypes,_bindFilePicker);
         injectHtml.on("change", `input[type="color"]`, _colorChange);
         if(data.tab){
             const injectTab = createTab(data.tab.name, data.tab.label, data.tab.icon).append(injectHtml);
@@ -131,6 +131,7 @@ var injectConfig = {
         event.preventDefault();
         const button = event.currentTarget;
         const input = $(button).closest(".form-fields").find("input") || null;
+        const extraExt = button.dataset.extras ? button.dataset.extras.split(",") : [];
         const options = {
             field: input[0],
             type: button.dataset.type,
@@ -138,6 +139,7 @@ var injectConfig = {
             button: button,
         }
         const fp = new FilePicker(options);
+        fp.extensions ? fp.extensions.push(...extraExt) : fp.extensions = extraExt;
         return fp.browse();
         }
     

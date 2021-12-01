@@ -393,6 +393,7 @@ Hooks.on("renderTokenConfig", (app,html)=>{
         },
         "model3d" : {
             type: "filepicker.folder",
+            fpTypes: [".gltf", ".GLTF", ".glb", ".GLB", ".fbx", ".FBX"],
             label: game.i18n.localize("levels3dpreview.flags.model3d.label"),
         },
         "imageTexture":{

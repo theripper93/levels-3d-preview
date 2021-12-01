@@ -170,6 +170,7 @@ class Levels3DPreview {
     this.level = this.isLevels ? parseFloat($(_levels.UI?.element)?.find(".level-item.active").find(".level-bottom").val()) ?? Infinity : Infinity;
     if (isNaN(this.level)) this.level = Infinity;
     this.showSun = this.debugMode;
+    this.createTemplates();
     const drawFloors = canvas.scene.getFlag("levels-3d-preview", "showSceneFloors") ?? true;
     const drawWalls = canvas.scene.getFlag("levels-3d-preview", "showSceneWalls") ?? true;
     const drawLights = canvas.scene.getFlag("levels-3d-preview", "renderSceneLights") ?? true;
@@ -182,7 +183,6 @@ class Levels3DPreview {
     drawFloors && this.isLevels && this.createFloors(this.level);
     drawWalls && this.createWalls(this.level);
     drawLights && this.createSceneLights();
-    this.createTemplates();
     renderBackground && this.createBoard();
     renderTable && this.createTable();
     for (let token of canvas.tokens.placeables) {
@@ -260,7 +260,9 @@ class Levels3DPreview {
     const plane = new THREE.Mesh(geometry, material);
     plane.receiveShadow = true;
     plane.castShadow = true;
-    plane.position.set(center.x, center.y-depth/2-0.00001, center.z);
+    const offsetX = canvas.dimensions.shiftX / this.factor;
+    const offsetY = canvas.dimensions.shiftY / this.factor;
+    plane.position.set(center.x+offsetX, center.y-depth/2-0.00001, center.z+offsetY);
     plane.rotation.x = -Math.PI / 2;
     this.board = plane;
     this.scene.add(plane);
