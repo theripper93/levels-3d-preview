@@ -31,7 +31,7 @@ export class Tile3D {
     async init(){
         const texture = this.texture ? await this._parent.helpers.loadTexture(this.texture) : null;
         const geometry = new THREE.PlaneGeometry(this.width, this.height);
-        const material = new THREE.MeshLambertMaterial({
+        const material = new THREE.MeshStandardMaterial({
             color: this.color,
             //transparent: true,
             opacity: this.opacity,

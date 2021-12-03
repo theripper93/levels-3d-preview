@@ -252,7 +252,7 @@ class Levels3DPreview {
       texture.minFilter = THREE.NearestMipMapLinearFilter;
     }
     const geometry = new THREE.BoxGeometry(width, height, depth);
-    const material = new THREE.MeshLambertMaterial({
+    const material = new THREE.MeshStandardMaterial({
       map: texture,
       roughness: 1,
     });
