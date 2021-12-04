@@ -3,6 +3,7 @@ import {factor} from '../main.js';
 import {sleep} from '../main.js';
 import { Light3D } from "./light3d.js";
 import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from '../lib/three-mesh-bvh.js';
+import { PIXIContainer } from "../helpers/pixilayer.js";
 THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
 THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
 THREE.Mesh.prototype.raycast = acceleratedRaycast;
@@ -231,6 +232,8 @@ export class Token3D {
       this.border = new THREE.Group();
       this.mesh.add(this.border);
       this.drawBorder();
+      this.drawName();
+      this.drawBars();
       this.reDraw();
       this.setPosition();
       return this;
@@ -533,6 +536,48 @@ export class Token3D {
       });
     }
 
+    drawName(){
+      if(this.nameplate) this.mesh.remove(this.nameplate);
+      const name = this.token._drawNameplate();
+      const container = new PIXI.Container();
+      container.addChild(name);
+      const base64 = canvas.app.renderer.extract.base64(container);
+      const spriteMaterial = new THREE.SpriteMaterial({
+        map: new THREE.TextureLoader().load(base64),
+      });
+      const sprite = new THREE.Sprite(spriteMaterial);
+      sprite.center.set(0.5,0.5);
+      this.nameplate = sprite;
+      const width = name.width/this.factor;
+      const height = name.height/this.factor;
+      this.nameplate.scale.set(width,height,1);
+      this.nameplate.position.set(0, this.d + height/2 + 0.042, 0);
+      this.mesh.add(this.nameplate);
+    }
+
+    drawBars(){
+      this.mesh.remove(this.bars);
+      const bar1 = this.token.hud.bars["bar1"].clone();
+      const bar2 = this.token.hud.bars["bar2"].clone();
+      const container = new PIXI.Container();
+      container.addChild(bar1);
+      container.addChild(bar2);
+      bar2.position.set(0, bar1.height+3);
+      const base64 = canvas.app.renderer.extract.base64(container);
+      
+      const spriteMaterial = new THREE.SpriteMaterial({
+        map: new THREE.TextureLoader().load(base64),
+      });
+      const sprite = new THREE.Sprite(spriteMaterial);
+      sprite.center.set(0.5,0.5);
+      this.bars = sprite;
+      const width = container.width/this.factor;
+      const height = container.height/this.factor;
+      this.bars.scale.set(width,height,1);
+      this.bars.position.set(0, this.d -height + 0.037, 0);
+      this.mesh.add(this.bars);
+    }
+
     faceCamera(){
       const camera = this._parent.camera;
       const vector = new THREE.Vector3(0, -1, 0);
@@ -550,6 +595,8 @@ export class Token3D {
 
     updateVisibility(){
       this.mesh.visible = this.alwaysVisible || this.token.visible;
+      this.nameplate.visible = this.token.hud.nameplate.visible;
+      this.bars.visible = this.token.hud.bars.visible;
     }
   
     getColor() {
