@@ -10,7 +10,6 @@ export class Light3D {
     }
 
     init(){
-        debugger
         this.light3d = this.angle != 360 ? new THREE.SpotLight : new THREE.PointLight();
         if(this._parent.debugMode){
             this.debugSphere = new THREE.Mesh(

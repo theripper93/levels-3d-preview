@@ -12,6 +12,7 @@ export class Token3D {
       this.token = tokenDocument;
       this.type = "Token";
       this.embeddedName = "Token";
+      this.placeable = tokenDocument;
       this.isOwner = this.token.isOwner;
       this._parent = parent;
       this.color = this.getColor();
@@ -600,6 +601,14 @@ export class Token3D {
         }
       }
       this.token._onClickRight2(event);
+    }
+
+    _onHoverIn(e) {
+      this.placeable._onHoverIn(e);
+    }
+
+    _onHoverOut(e) {
+      this.placeable._onHoverOut(e);
     }
 
     destroy(){

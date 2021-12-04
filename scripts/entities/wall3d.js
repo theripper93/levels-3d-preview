@@ -7,6 +7,7 @@ export class Wall3D {
         this.wall = wall;
         this.type = "Wall";
         this.embeddedName = "Wall";
+        this.placeable = wall;
         this._parent = parent;
         this.top = wall.data.flags.wallHeight?.wallHeightTop ?? 10;
         this.externalWall = wall.data.flags.betterroofs?.externalWall ?? false;
@@ -104,6 +105,14 @@ export class Wall3D {
       _onClickLeft2(e) {}
   
       _onClickRight2(e) {}
+
+      _onHoverIn(e) {
+        this.placeable._onHoverIn(e);
+      }
+  
+      _onHoverOut(e) {
+        this.placeable._onHoverOut(e);
+      }
 
     destroy(){
         this._parent.scene.remove(this.mesh);

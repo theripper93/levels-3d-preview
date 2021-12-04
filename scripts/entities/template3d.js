@@ -6,6 +6,7 @@ export class Template3D {
     constructor(template, A,B){
         this.template = template;
         this.embeddedName = "MeasuredTemplate"
+        this.placeable = template;
         this.initialDirection = this.template.data.direction
         this.isFog = this.template?.document?.getFlag("levels-3d-preview", "isFog") ?? false
         this.draggable = true
@@ -384,6 +385,14 @@ export class Template3D {
           }
           this.template?._onClickRight2(event);
     }
+
+    _onHoverIn(e) {
+        this.placeable._onHoverIn(e);
+      }
+  
+      _onHoverOut(e) {
+        this.placeable._onHoverOut(e);
+      }
 
     onMove(){
         if(this.isPreview) this.updatePositionFrom3D()

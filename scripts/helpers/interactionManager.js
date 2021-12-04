@@ -154,14 +154,36 @@ export class InteractionManager {
     _onMouseMove(event){
       this.mousemove.x = (event.clientX / window.innerWidth) * 2 - 1;
       this.mousemove.y = -(event.clientY / window.innerHeight) * 2 + 1;
+      const intersect = this.getHoverObject();
+      const object = intersect?.object
+      //Handle placeable hover event
+      if(object && object?.userData?.entity3D?.placeable){
+        if(this.currentHover?.placeable?.id !== object?.userData?.entity3D?.placeable?.id) this.currentHover?._onHoverOut(event);
+        if(this.currentHover !== object.userData.entity3D){
+          this.currentHover = object.userData.entity3D
+          this.currentHover._onHoverIn(event);
+        }
+      }else{
+        this.currentHover?._onHoverOut(event);
+        this.currentHover = null;
+      }
+
       if(!this.positionBroadcasted && game.user.hasPermission("SHOW_CURSOR")){
         this.positionBroadcasted = true;
-        this.broadcastCursorPosition();
+        this.broadcastCursorPosition(intersect?.point);
         setTimeout(() => {
           this.positionBroadcasted = false;
         }, 60);
       }
 
+    }
+
+    getHoverObject(){
+      if(!this._hoverobj || this._parent.scene.children.length !== this._prevChildSize) this._hoverobj = this._parent.scene.children.filter(child => child.userData.hitbox && child.userData?.entity3D?.embeddedName === canvas.activeLayer.options.objectClass.embeddedName).map(child => child.userData.hitbox)
+      this.raycaster.setFromCamera(this.mousemove, this.camera);
+      const intersects = this.raycaster.intersectObjects(this._hoverobj, true)
+      this._prevChildSize = this._parent.scene.children.length;
+      return intersects[0]
     }
 
     _onWheel(event){
@@ -305,8 +327,8 @@ export class InteractionManager {
       return pos;
     }
 
-    mouseIntersection3DCollision(screenPosition){
-      this.buildCollisionGeos();
+    mouseIntersection3DCollision(screenPosition, build = true){
+      if(build || !this._collisionGeometries || !this._collisionGeometries.length) this.buildCollisionGeos();
       let collisionGeometries = this._collisionGeometries;
       if(screenPosition){
         this.mousemove.x = (screenPosition.x / window.innerWidth) * 2 - 1;
@@ -373,11 +395,10 @@ export class InteractionManager {
       }, 150);
     }
 
-    broadcastCursorPosition(){
+    broadcastCursorPosition(pos3d){
       const sc = game.user.hasPermission("SHOW_CURSOR");
       if ( !sc ) return;
           //const pos3d = game.Levels3DPreview.interactionManager.mousePostionToWorld();
-          const pos3d = game.Levels3DPreview.interactionManager.mouseIntersection3DCollision()[0]?.point;
           //const position = {x: pos3d?.x, y: pos3d?.z}
           const position = {x: pos3d?.x, y: pos3d?.y, z: pos3d?.z}
           const positionToString = JSON.stringify(position);
