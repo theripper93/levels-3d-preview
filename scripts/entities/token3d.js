@@ -464,6 +464,7 @@ export class Token3D {
     }
 
     drawEffects(){
+      debugger
       //remove old effects
       if(!this.effectsContainer) return;
       const tokenEffects = this.token.data.effects;
@@ -471,9 +472,7 @@ export class Token3D {
       const effects = tokenEffects.concat(actorEffects).map(e => e.data.icon);
       if(this.token.data.hidden && !this.alwaysVisible) effects.push("icons/svg/mystery-man.svg");
       if(effects.length === this.effectsContainer.children.length) return;
-      this.effectsContainer.children.forEach(child => { 
-        this.effectsContainer.remove(child);
-      });
+      this.effectsContainer.remove(...this.effectsContainer.children)
       let effectsize = this.h/5;
       effectsize = Math.min(Math.max(effectsize, 0.02), 0.05)
       let xOffset = effectsize*0.5-this.w/2;

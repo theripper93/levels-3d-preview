@@ -51,7 +51,7 @@ export class Wall3D {
             texture.repeat.set(this.repeats,1);
         }
         let material;
-        const materialId = `${this.color}${this.opacity}${this.texture}${this.isVisible}`
+        const materialId = `${this.color}${this.opacity}${this.texture}${this.isVisible}${this.repeats}`;
         if(this._parent.helpers.materialCache[materialId]){
             material = this._parent.helpers.materialCache[materialId];  
         }else{
