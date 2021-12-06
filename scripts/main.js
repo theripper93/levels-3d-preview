@@ -16,6 +16,10 @@ import * as PIXI from "./helpers/pixilayer.js";
 import { Helpers } from "./helpers/helpers.js";
 import { EXRLoader } from "https://threejs.org/examples/jsm/loaders/EXRLoader.js";
 import { compressSync } from "./lib/fflate.module.js";
+import { EffectComposer } from './lib/EffectComposer.js';
+import { RenderPass } from './lib/RenderPass.js';
+import { ShaderPass } from './lib/ShaderPass.js';
+import { Fog } from "./helpers/Fog.js";
 export const factor = 1000;
 
 
@@ -121,6 +125,10 @@ class Levels3DPreview {
     this.resolutionMulti = game.settings.get("levels-3d-preview", "resolution")*window.devicePixelRatio;
     this.renderer.setPixelRatio(this.resolutionMulti);
     this.renderer.alpha = true;
+
+    //composer
+    this.composer = new EffectComposer( this.renderer );
+
     //set dom element id
     this.renderer.domElement.id = "levels3d";
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
@@ -164,6 +172,14 @@ class Levels3DPreview {
   build3Dscene() {
     this.clear3Dscene();
     this.scene = new THREE.Scene();
+    this.composer.removePass(this.renderPass);
+    this.composer.removePass(this.fogPass);
+    this.renderPass = new RenderPass( this.scene, this.camera );
+    this.composer.addPass( this.renderPass );
+    this.fogPass = new ShaderPass( Fog.getShader() );
+    this.composer.addPass( this.fogPass );
+    //this.fogPass = new ShaderPass( Fog.getShader() );
+    //this.composer.addPass( this.fogPass );
     //this.scene.environment = this.envMap;
     this._active = true;
     this.debugMode = game.settings.get("levels-3d-preview", "debugMode")
@@ -461,7 +477,8 @@ class Levels3DPreview {
     _this.centerTokenHUD();
     _this.resizeCanvasToDisplaySize(_this);
     _this.controls.update();
-    _this.renderer.render(_this.scene, _this.camera);
+    //_this.renderer.render(_this.scene, _this.camera);
+    _this.composer.render(time);
   }
 
   checkInFog(){

@@ -464,7 +464,6 @@ export class Token3D {
     }
 
     drawEffects(){
-      debugger
       //remove old effects
       if(!this.effectsContainer) return;
       const tokenEffects = this.token.data.effects;

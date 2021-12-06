@@ -44,7 +44,8 @@
     "./scripts/helpers/globalIllumination.js",
     "./scripts/helpers/interactionManager.js",
     "./scripts/helpers/pixilayer.js",
-    "./scripts/helpers/helpers.js"
+    "./scripts/helpers/helpers.js",
+    "./scripts/helpers/Fog.js"
 ],
   "scripts": [
     "./scripts/wrappers.js",
