@@ -51,12 +51,21 @@ export class Fog{
         if(!this.needsUpdate && !force) return;
         this.needsUpdate = false;
         if(this.fogTexture) this.fogTexture.dispose();
-        const base64 = this.generateTexture();
+        const base64 = game.user.isGM && !canvas.tokens.controlled.length ? this.getBlankTexture() : this.generateTexture();
         this.fogTexture = await new THREE.TextureLoader().loadAsync( base64)
         this.fogTexture.minFilter = THREE.NearestFilter;
         const size = [this.fogTexture.image.width, this.fogTexture.image.height];
         this.shader.uniforms.texDimensions.value = size;
         this.shader.uniforms.fogTexture.value = this.fogTexture;
+    }
+
+    getBlankTexture(){
+        const g = new PIXI.Graphics().beginFill(0xffffff).drawRect(0, 0, 1, 1);
+        const texture = PIXI.RenderTexture.create({width: 1, height: 1, resolution: 1});
+        canvas.app.renderer.render(g, {renderTexture: texture, clear: false});
+        const base64 = canvas.app.renderer.extract.base64(texture,"image/jpeg");
+        texture.destroy(true);
+        return base64;
     }
 
     generateTexture(){

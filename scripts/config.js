@@ -41,6 +41,19 @@ Hooks.once('init', function() {
         default: "wireframe",
       });
 
+      game.settings.register("levels-3d-preview", "gridMode", {
+        name: game.i18n.localize("levels3dpreview.settings.gridMode.name"),
+        hint: game.i18n.localize("levels3dpreview.settings.gridMode.hint"),
+        scope: "world",
+        config: true,
+        type: String,
+        choices: {
+            "fast": game.i18n.localize("levels3dpreview.settings.gridMode.options.fast"),
+            "mirror": game.i18n.localize("levels3dpreview.settings.gridMode.options.mirror"),
+          },
+        default: "fast",
+      });
+
       game.settings.register("levels-3d-preview", "autoPan", {
         name: game.i18n.localize("levels3dpreview.settings.autoPan.name"),
         hint: game.i18n.localize("levels3dpreview.settings.autoPan.hint"),

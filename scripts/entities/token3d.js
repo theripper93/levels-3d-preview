@@ -542,6 +542,7 @@ export class Token3D {
       const base64 = canvas.app.renderer.extract.base64(container);
       const spriteMaterial = new THREE.SpriteMaterial({
         map: new THREE.TextureLoader().load(base64),
+        alphaTest: 0.5,
       });
       const sprite = new THREE.Sprite(spriteMaterial);
       sprite.center.set(0.5,0.5);
@@ -555,6 +556,7 @@ export class Token3D {
 
     drawBars(){
       this.mesh.remove(this.bars);
+      if(!this.token?.hud?.bars) return;
       const bar1 = this.token.hud.bars["bar1"].clone();
       const bar2 = this.token.hud.bars["bar2"].clone();
       const container = new PIXI.Container();
@@ -565,6 +567,7 @@ export class Token3D {
       
       const spriteMaterial = new THREE.SpriteMaterial({
         map: new THREE.TextureLoader().load(base64),
+        alphaTest: 0.5,
       });
       const sprite = new THREE.Sprite(spriteMaterial);
       sprite.center.set(0.5,0.5);

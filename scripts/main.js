@@ -216,20 +216,25 @@ class Levels3DPreview {
         canvas.scene.dimensions.size)
       ;
     if (canvas.scene.getFlag("levels-3d-preview", "enableGrid")) {
-      const gridColor = canvas.scene.data.gridColor ?? 0x424242;
-      const gridHelper = new THREE.GridHelper(
-        size,
-        divisions,
-        gridColor,
-        gridColor
-      );
-      gridHelper.colorGrid = gridColor;
-      gridHelper.position.set(size/2, 0.01, size/2);
-      gridHelper.material.transparent = true;
-      gridHelper.material.opacity = canvas.scene.data.gridAlpha;
-      this.scene.add(gridHelper);
-      if(enableFog) this.scene.fog = new THREE.Fog(fogColor, 1, fogDistance);
+      const gridMode = game.settings.get("levels-3d-preview", "gridMode");
+      if(gridMode === "fast"){
+        const gridColor = canvas.scene.data.gridColor ?? 0x424242;
+        const gridHelper = new THREE.GridHelper(
+          size,
+          divisions,
+          gridColor,
+          gridColor
+        );
+        gridHelper.colorGrid = gridColor;
+        gridHelper.position.set(size/2, 0.01, size/2);
+        gridHelper.material.transparent = true;
+        gridHelper.material.opacity = canvas.scene.data.gridAlpha;
+        this.scene.add(gridHelper);
+      }else{
+        this.createGrid();
+      }
     }
+    if(enableFog) this.scene.fog = new THREE.Fog(fogColor, 1, fogDistance);
     //add raycasting plane
 
     const dragplane = new THREE.Mesh(
@@ -255,6 +260,18 @@ class Levels3DPreview {
       this.scene.add(token3d.mesh);
       this.tokens[token.id] = token3d;
     });
+  }
+
+  async createGrid(){
+      const base64 = canvas.app.renderer.extract.base64(canvas.grid.grid)
+      const texture = await new THREE.TextureLoader().load(base64);
+      const plane = new THREE.Mesh(
+        new THREE.PlaneGeometry(canvas.grid.width/factor, canvas.grid.height/factor),
+        new THREE.MeshBasicMaterial({ map: texture, transparent:true })
+      );
+      plane.rotateX(-Math.PI / 2);
+      plane.position.set((canvas.grid.width/factor)/2 + canvas.grid.grid._localBounds.minX/factor, 0.01, (canvas.grid.height/factor)/2 + canvas.grid.grid._localBounds.minY/factor);
+      this.scene.add(plane);
   }
 
   async createBoard(){

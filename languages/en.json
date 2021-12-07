@@ -213,6 +213,14 @@
                     "solid": "Solid"
                 }
             },
+            "gridMode" : {
+                "name": "Grid Draw Mode",
+                "hint": "How the grid is drawn. Fast is better in general but only supports square grids. Mirror, will mirror 1:1 the foundry grid but is more expensive to render.",
+                "options": {
+                    "fast": "Fast",
+                    "mirror": "Mirror"
+                }
+            },
             "autoPan": {
                 "name": "Auto Pan",
                 "hint": "Hooks the 3D Camera panning to the 2D one. Mainly, moving a token will have the camera follow it. When disabled you can always pan to the selected token with Ctrl+X",
