@@ -276,6 +276,11 @@ Hooks.on("renderSceneConfig", (app,html)=>{
             label: game.i18n.localize("levels3dpreview.flags.enableRuler.label"),
             default: true,
         },
+        "enableFogOfWar": {
+            type: "checkbox",
+            label: game.i18n.localize("levels3dpreview.flags.enableFogOfWar.label"),
+            default: false,
+        },
         "enableFog": {
             type: "checkbox",
             label: game.i18n.localize("levels3dpreview.flags.enableFog.label"),

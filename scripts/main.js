@@ -121,7 +121,7 @@ class Levels3DPreview {
     this.renderer.setAnimationLoop(this.animation);
     this.renderer.shadowMap.enabled = true;
     //this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    this.renderer.antialias = false;
+    this.renderer.antialias = true;
     this.resolutionMulti = game.settings.get("levels-3d-preview", "resolution")*window.devicePixelRatio;
     this.renderer.setPixelRatio(this.resolutionMulti);
     this.renderer.alpha = true;
@@ -173,13 +173,14 @@ class Levels3DPreview {
     this.clear3Dscene();
     this.scene = new THREE.Scene();
     this.composer.removePass(this.renderPass);
-    this.composer.removePass(this.fogPass);
     this.renderPass = new RenderPass( this.scene, this.camera );
     this.composer.addPass( this.renderPass );
-    this.fogPass = new ShaderPass( Fog.getShader() );
-    this.composer.addPass( this.fogPass );
-    //this.fogPass = new ShaderPass( Fog.getShader() );
-    //this.composer.addPass( this.fogPass );
+    if(this.fogExploration) {
+      this.fogExploration.dispose();
+      this.fogExploration = null;
+    }
+    if(canvas.scene.getFlag("levels-3d-preview", "enableFogOfWar")) this.fogExploration = new Fog(this);
+
     //this.scene.environment = this.envMap;
     this._active = true;
     this.debugMode = game.settings.get("levels-3d-preview", "debugMode")
@@ -478,6 +479,7 @@ class Levels3DPreview {
     _this.resizeCanvasToDisplaySize(_this);
     _this.controls.update();
     //_this.renderer.render(_this.scene, _this.camera);
+    _this.fogExploration?.update();
     _this.composer.render(time);
   }
 
@@ -596,3 +598,9 @@ class Levels3DPreview {
     this.clear3Dscene();
   }
 }
+
+Hooks.on("sightRefresh", () => {
+  if(game.Levels3DPreview?._active && game.Levels3DPreview.fogExploration){
+    game.Levels3DPreview.fogExploration.debouncedUpdate(true);
+  }
+})

@@ -47,6 +47,9 @@
             "enableRuler": {
                 "label": "Enable Ruler"
             },
+            "enableFogOfWar": {
+                "label": "Enable Fog of War (WARNING EXPERIMENTAL)"
+            },
             "enableFog": {
                 "label": "Enable Fog"
             },
