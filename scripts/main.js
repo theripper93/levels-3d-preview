@@ -83,7 +83,7 @@ class Levels3DPreview {
       target : new THREE.Mesh(new THREE.SphereGeometry(0.1,32,32))
     };
     this.textures = {
-      template: THREE.ImageUtils.loadTexture("icons/svg/explosion.svg"),
+      template: new THREE.TextureLoader().load("icons/svg/explosion.svg"),
     };
     this.Classes = {
       "Template3D" : Template3D,

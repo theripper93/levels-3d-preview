@@ -1,5 +1,41 @@
 Hooks.once('init', function() {
 
+
+    game.settings.register("levels-3d-preview", "baseStyle", {
+        name: game.i18n.localize("levels3dpreview.settings.baseStyle.name"),
+        hint: game.i18n.localize("levels3dpreview.settings.baseStyle.hint"),
+        scope: "world",
+        config: true,
+        type: String,
+        choices: {
+            "image": game.i18n.localize("levels3dpreview.settings.baseStyle.options.image"),
+            "solid": game.i18n.localize("levels3dpreview.settings.baseStyle.options.solid"),
+          },
+        default: "solid",
+    });
+
+    game.settings.register("levels-3d-preview", "solidBaseMode", {
+        name: game.i18n.localize("levels3dpreview.settings.solidBaseMode.name"),
+        hint: game.i18n.localize("levels3dpreview.settings.solidBaseMode.hint"),
+        scope: "world",
+        config: true,
+        type: String,
+        choices: {
+            "merge": game.i18n.localize("levels3dpreview.settings.solidBaseMode.options.merge"),
+            "ontop": game.i18n.localize("levels3dpreview.settings.solidBaseMode.options.ontop"),
+          },
+        default: "solid",
+    });
+
+    game.settings.register("levels-3d-preview", "solidBaseColor", {
+        name: game.i18n.localize("levels3dpreview.settings.solidBaseColor.name"),
+        hint: game.i18n.localize("levels3dpreview.settings.solidBaseColor.hint"),
+        scope: "world",
+        config: true,
+        type: String,
+        default: "#1c1c1c",
+      });
+
     game.settings.register("levels-3d-preview", "selectedImage", {
         name: game.i18n.localize("levels3dpreview.settings.selectedImage.name"),
         hint: game.i18n.localize("levels3dpreview.settings.selectedImage.hint"),
@@ -436,6 +472,21 @@ Hooks.on("renderTokenConfig", (app,html)=>{
             label: game.i18n.localize("levels3dpreview.flags.color.label"),
             default: "#ffffff",
             notes: game.i18n.localize("levels3dpreview.flags.color.notes")
+        },
+        "baseColor": {
+            type: "color",
+            label: game.i18n.localize("levels3dpreview.flags.baseColor.label"),
+            default: "#1c1c1c",
+        },
+        "solidBaseMode": {
+            type: "select",
+            label: game.i18n.localize("levels3dpreview.flags.solidBaseMode.label"),
+            default: "default",
+            options: {
+                "default": game.i18n.localize("levels3dpreview.flags.solidBaseMode.options.default"),
+                "merge": game.i18n.localize("levels3dpreview.flags.solidBaseMode.options.merge"),
+                "ontop": game.i18n.localize("levels3dpreview.flags.solidBaseMode.options.ontop"),
+            }
         },
         "draggable": {
             type: "checkbox",

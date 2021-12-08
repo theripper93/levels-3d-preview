@@ -111,6 +111,17 @@
                 "label": "Color",
                 "notes": "Material and Color will work only on some models, usually the grey/untextured ones."
             },
+            "baseColor": {
+                "label": "Base Color"
+            },
+            "solidBaseMode": {
+                "label": "Base Mode",
+                "options": {
+                    "default": "Default",
+                    "merge": "Merge",
+                    "ontop": "On Top"
+                }
+            },
             "draggable": {
                 "label": "Draggable"
             },
@@ -193,6 +204,26 @@
             }
         },
         "settings" : {
+            "baseStyle": {
+                "name": "Base Style",
+                "hint": "The base style to use: Image will display the chosen image, solid will draw a miniature style base.",
+                "options": {
+                    "image": "Image",
+                    "solid": "Solid"
+                }
+            },
+            "solidBaseMode": {
+                "name": "Solid Base Mode",
+                "hint": "The default solid base mode to use: Merge will not move the original model, on top will offset the model to the top of the base.",
+                "options": {
+                    "merge": "Merge",
+                    "ontop": "On Top"
+                }
+            },
+            "solidBaseColor": {
+                "name": "Solid Base Color",
+                "hint": "The color of the solid base. Can be a hex value or a color name (or any CSS color). default is #1c1c1c"
+            },
             "selectedImage": {
                 "name": "Selection Highlight Image",
                 "hint": "The image to display when selecting a token."

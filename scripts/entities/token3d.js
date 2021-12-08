@@ -16,6 +16,7 @@ export class Token3D {
       this.placeable = tokenDocument;
       this.isOwner = this.token.isOwner;
       this._parent = parent;
+      this.isBase = game.settings.get("levels-3d-preview", "baseStyle") === "solid";
       this.color = this.getColor();
       this.factor = factor;
       this.targetSize = 0.1;
@@ -28,6 +29,9 @@ export class Token3D {
         "levels-3d-preview",
         "model3d"
       );
+      this.solidBaseMode = this.token.document.getFlag("levels-3d-preview","solidBaseMode")
+      this.baseColor =  this.token.document.getFlag("levels-3d-preview","baseColor") || game.settings.get("levels-3d-preview", "solidBaseColor")
+      if(!this.solidBaseMode || this.solidBaseMode === "default") this.solidBaseMode = game.settings.get("levels-3d-preview", "solidBaseMode");
       this.rotationX = Math.toRadians(this.token.document.getFlag("levels-3d-preview","rotationX") ?? 0);
       this.rotationY = Math.toRadians(this.token.document.getFlag("levels-3d-preview","rotationY") ?? 0);
       this.rotationZ = Math.toRadians(this.token.document.getFlag("levels-3d-preview","rotationZ") ?? 0);
@@ -35,6 +39,7 @@ export class Token3D {
       this.token.document.getFlag("levels-3d-preview", "offsetX") ?? 0;
       this.offsetY =
       this.token.document.getFlag("levels-3d-preview", "offsetY") ?? 0;
+      this.offsetY += this.solidBaseMode === "ontop" ? 0.007*factor : 0;
       this.offsetZ =
       this.token.document.getFlag("levels-3d-preview", "offsetZ") ?? 0;
       this.scale =
@@ -508,7 +513,9 @@ export class Token3D {
       });
       const width = (this.token.w*1.02)/this.factor;
       const height = (this.token.h*1.02)/this.factor;
-      const depth = 0.000001;
+      const depth = this.isBase ? 0.007 : 0.000001;
+      let mesh
+      if(!this.isBase){
       const geometry = new THREE.BoxGeometry(width, depth , height);
       const material = new THREE.MeshStandardMaterial({
         color: 0xffffff,
@@ -517,8 +524,21 @@ export class Token3D {
         transparent: true,
         map: this.selectedImage ? new THREE.TextureLoader().load(this.selectedImage) : null,
       });
-      const mesh = new THREE.Mesh(geometry, material);
+      mesh = new THREE.Mesh(geometry, material);
       mesh.position.set(0,0.001,0);
+      }else{
+        const geometry = new THREE.CylinderGeometry(width/2, height/2, depth, 64);
+        const mat1 = new THREE.MeshStandardMaterial({
+          color: 0xffffff,
+          emissive: 0xffffff,
+          emissiveIntensity: 0.8,
+        });
+        const mat2 = new THREE.MeshStandardMaterial({
+          color: new THREE.Color(this.baseColor)//0x1c1c1c,
+        });
+        mesh = new THREE.Mesh(geometry, [mat1, mat2, mat2]);
+        mesh.position.set(0,depth/2,0);
+      }
       this.border.add(mesh);
 
 
@@ -526,12 +546,21 @@ export class Token3D {
 
     refreshBorder(){
       if(!this.border) return;
-      const color = this.token.border?._lineStyle?.color ?? 0xffffff;
-      const visible = this.token.border?.height ? true : false;
-      this.border.children.forEach(child => {
-        child.material.color = this.colorizeIndicator ? new THREE.Color(color) : new THREE.Color(color);
-        child.material.visible = visible;
-      });
+      if(!this.isBase){
+        const color = this.token.border?._lineStyle?.color ?? 0xffffff;
+        const visible = this.token.border?.height ? true : false;
+        this.border.children.forEach(child => {
+          child.material.color = this.colorizeIndicator ? new THREE.Color(color) : new THREE.Color(color);
+          child.material.visible = visible;
+        });
+      }else{
+        const color = this.token.border?._lineStyle?.color ?? 0xffffff;
+        const threeColor = new THREE.Color(color);
+        const material = this.border.children[0].material[0];
+        material.color = threeColor;
+        material.emissive = threeColor;
+      }
+
     }
 
     drawName(){
