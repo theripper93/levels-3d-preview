@@ -209,7 +209,8 @@
                 "hint": "The base style to use: Image will display the chosen image, solid will draw a miniature style base.",
                 "options": {
                     "image": "Image",
-                    "solid": "Solid"
+                    "solid": "Solid",
+                    "solidindicator": "Solid + Direction Indicator"
                 }
             },
             "solidBaseMode": {

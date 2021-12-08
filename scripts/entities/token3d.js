@@ -16,7 +16,8 @@ export class Token3D {
       this.placeable = tokenDocument;
       this.isOwner = this.token.isOwner;
       this._parent = parent;
-      this.isBase = game.settings.get("levels-3d-preview", "baseStyle") === "solid";
+      this.isBase = game.settings.get("levels-3d-preview", "baseStyle") !== "image";
+      this.baseMode = game.settings.get("levels-3d-preview", "baseStyle");
       this.color = this.getColor();
       this.factor = factor;
       this.targetSize = 0.1;
@@ -511,10 +512,13 @@ export class Token3D {
       this.border.children.forEach(child => {
         this.border.remove(child);
       });
-      const width = (this.token.w*1.02)/this.factor;
-      const height = (this.token.h*1.02)/this.factor;
-      const depth = this.isBase ? 0.007 : 0.000001;
-      let mesh
+      let width = (this.token.w*1.02)/this.factor;
+      width -= ((width*Math.SQRT2)/5)/2;
+      let height = (this.token.h*1.02)/this.factor;
+      height -= ((height*Math.SQRT2)/5)/2;
+      const depth = this.isBase ? 0.008 : 0.000001;
+      const cubesize = Math.max(width, height)/6;
+      let mesh,indicatorMesh;
       if(!this.isBase){
       const geometry = new THREE.BoxGeometry(width, depth , height);
       const material = new THREE.MeshStandardMaterial({
@@ -537,10 +541,18 @@ export class Token3D {
           color: new THREE.Color(this.baseColor)//0x1c1c1c,
         });
         mesh = new THREE.Mesh(geometry, [mat1, mat2, mat2]);
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+        if(this.baseMode === "solidindicator"){
+          const indicatorGeometry = new THREE.BoxGeometry(cubesize, depth , cubesize);
+          indicatorMesh = new THREE.Mesh(indicatorGeometry, [mat2, mat1, mat2, mat2, mat1, mat2]);
+          indicatorMesh.position.set(0,depth/2,height/2.2);
+          indicatorMesh.rotation.set(0,Math.PI/4,0);
+        }
         mesh.position.set(0,depth/2,0);
       }
       this.border.add(mesh);
-
+      this.border.add(indicatorMesh);
 
     }
 

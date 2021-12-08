@@ -10,6 +10,7 @@ Hooks.once('init', function() {
         choices: {
             "image": game.i18n.localize("levels3dpreview.settings.baseStyle.options.image"),
             "solid": game.i18n.localize("levels3dpreview.settings.baseStyle.options.solid"),
+            "solidindicator": game.i18n.localize("levels3dpreview.settings.baseStyle.options.solidindicator"),
           },
         default: "solid",
     });
