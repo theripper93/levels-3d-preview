@@ -592,7 +592,7 @@ export class Token3D {
       }else{
         const color = this.token.border?._lineStyle?.color ?? 0xffffff;
         const baseColor = new THREE.Color(this.baseColor);
-        const combatBaseColor = new THREE.Color("#ff6400");
+        const combatBaseColor = new THREE.Color("#00ff44");
         const threeColor = new THREE.Color(color);
         const material = this.border.children[0].material[0];
         material.color = threeColor;
@@ -601,7 +601,7 @@ export class Token3D {
         const isActiveCombatant = game.combat?.current?.tokenId === this.token.id && game.settings.get("levels-3d-preview", "highlightCombat");
         //baseMat.color = isActiveCombatant ? combatBaseColor : baseColor;
         baseMat.emissive = isActiveCombatant ? combatBaseColor : baseColor;
-        baseMat.emissiveIntensity = isActiveCombatant ? 0.4 : 0;
+        baseMat.emissiveIntensity = isActiveCombatant ? 0.7 : 0;
       }
 
     }
