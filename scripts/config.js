@@ -34,7 +34,7 @@ Hooks.once('init', function() {
         scope: "world",
         config: true,
         type: String,
-        default: "#1c1c1c",
+        default: "#2b2b2b",
       });
 
     game.settings.register("levels-3d-preview", "selectedImage", {
@@ -477,7 +477,7 @@ Hooks.on("renderTokenConfig", (app,html)=>{
         "baseColor": {
             type: "color",
             label: game.i18n.localize("levels3dpreview.flags.baseColor.label"),
-            default: "#1c1c1c",
+            default: "",
         },
         "solidBaseMode": {
             type: "select",

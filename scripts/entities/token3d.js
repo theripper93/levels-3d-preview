@@ -40,7 +40,7 @@ export class Token3D {
       this.token.document.getFlag("levels-3d-preview", "offsetX") ?? 0;
       this.offsetY =
       this.token.document.getFlag("levels-3d-preview", "offsetY") ?? 0;
-      this.offsetY += this.solidBaseMode === "ontop" ? 0.007*factor : 0;
+      this.offsetY += this.solidBaseMode === "ontop" ? 0.008*factor : 0;
       this.offsetZ =
       this.token.document.getFlag("levels-3d-preview", "offsetZ") ?? 0;
       this.scale =
@@ -218,17 +218,17 @@ export class Token3D {
       this.hitbox = hitbox;
       this.hitbox.geometry.computeBoundingBox();
       this._size = this.hitbox.geometry.boundingBox.getSize(new THREE.Vector3());
-      pivot.add(hitbox);
+      //pivot.add(hitbox);
       this.mesh = pivot;
       this.adjust = {
         x: this.offsetX/factor,
         y: this.offsetY/factor,
         z: this.offsetZ/factor,
       };
-      this.mesh.userData.hitbox = hitbox
+      this.mesh.userData.hitbox = this.mesh;
       this.mesh.userData.draggable = this.draggable;
       this.mesh.userData.interactive = this.interactive;
-      this.mesh.userData.isHitbox = true;
+      this.mesh.userData.isHitbox = false;
       this.mesh.userData.entity3D = this;
       this.mesh.userData.documentName = this.token.document.documentName
       this.targetContainer = new THREE.Group();
@@ -512,9 +512,11 @@ export class Token3D {
       this.border.children.forEach(child => {
         this.border.remove(child);
       });
-      let width = (this.token.w*1.02)/this.factor;
+      const baseRadius = Math.max(this.token.w, this.token.h);
+      const slant = 0.005;
+      let width = (baseRadius*1.02)/this.factor;
       width -= ((width*Math.SQRT2)/5)/2;
-      let height = (this.token.h*1.02)/this.factor;
+      let height = (baseRadius*1.02)/this.factor;
       height -= ((height*Math.SQRT2)/5)/2;
       const depth = this.isBase ? 0.008 : 0.000001;
       const cubesize = Math.max(width, height)/6;
@@ -531,28 +533,37 @@ export class Token3D {
       mesh = new THREE.Mesh(geometry, material);
       mesh.position.set(0,0.001,0);
       }else{
-        const geometry = new THREE.CylinderGeometry(width/2, height/2, depth, 64);
+        const geometry = new THREE.CylinderGeometry(width/2-slant, height/2, depth, 64);
         const mat1 = new THREE.MeshStandardMaterial({
           color: 0xffffff,
           emissive: 0xffffff,
           emissiveIntensity: 0.8,
+          roughness: 0.4,
         });
         const mat2 = new THREE.MeshStandardMaterial({
-          color: new THREE.Color(this.baseColor)//0x1c1c1c,
+          color: new THREE.Color(this.baseColor),//0x1c1c1c,
+          //roughnessMap: this._parent.textures.indicator.aoRM,
+          roughness: 0.4,
+          aoMap: this._parent.textures.indicator.aoRM,
+          metalnessMap: this._parent.textures.indicator.aoRM,
+          normalMap: this._parent.textures.indicator.normal,
+          normalScale: new THREE.Vector2(0.2,0.2),
         });
         mesh = new THREE.Mesh(geometry, [mat1, mat2, mat2]);
         mesh.castShadow = true;
         mesh.receiveShadow = true;
         if(this.baseMode === "solidindicator"){
-          const indicatorGeometry = new THREE.BoxGeometry(cubesize, depth , cubesize);
+          const indicatorGeometry = new THREE.BoxGeometry(cubesize, depth-0.0001 , cubesize);
           indicatorMesh = new THREE.Mesh(indicatorGeometry, [mat2, mat1, mat2, mat2, mat1, mat2]);
-          indicatorMesh.position.set(0,depth/2,height/2.2);
+          indicatorMesh.position.set(0,depth/2,(width-slant*2)/2.2);
           indicatorMesh.rotation.set(0,Math.PI/4,0);
+          indicatorMesh.castShadow = true;
+          indicatorMesh.receiveShadow = true;
         }
         mesh.position.set(0,depth/2,0);
       }
       this.border.add(mesh);
-      this.border.add(indicatorMesh);
+      if(indicatorMesh) this.border.add(indicatorMesh);
 
     }
 

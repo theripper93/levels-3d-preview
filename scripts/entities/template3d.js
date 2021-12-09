@@ -87,6 +87,7 @@ export class Template3D {
     }
     
     fromPreview(){
+        debugger
         const origin2d = this.isPreview ? Ruler3D.pos3DToCanvas(this.mesh.position) : Ruler3D.pos3DToCanvas(this.A)
         const templateData = {
             angle: this.angle,
@@ -387,11 +388,11 @@ export class Template3D {
     }
 
     _onHoverIn(e) {
-        this.placeable._onHoverIn(e);
+        //if(this.template?._onHoverIn)this.template?._onHoverIn(e);
       }
   
       _onHoverOut(e) {
-        this.placeable._onHoverOut(e);
+        //if(this.template?._onHoverOut)this.template?._onHoverOut(e);
       }
 
     onMove(){

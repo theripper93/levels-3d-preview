@@ -84,6 +84,10 @@ class Levels3DPreview {
     };
     this.textures = {
       template: new THREE.TextureLoader().load("icons/svg/explosion.svg"),
+      indicator: {
+        //aoRM: new THREE.TextureLoader().load("modules/levels-3d-preview/assets/DefaultMaterial_occlusionRoughnessMetallic.png"),
+        normal: new THREE.TextureLoader().load("modules/levels-3d-preview/assets/DefaultMaterial_normal.png"),
+      }
     };
     this.Classes = {
       "Template3D" : Template3D,

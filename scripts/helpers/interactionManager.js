@@ -155,7 +155,7 @@ export class InteractionManager {
       this.mousemove.x = (event.clientX / window.innerWidth) * 2 - 1;
       this.mousemove.y = -(event.clientY / window.innerHeight) * 2 + 1;
       const intersect = this.getHoverObject();
-      const object = intersect?.object
+      const object = intersect
       //Handle placeable hover event
       if(object && object?.userData?.entity3D?.placeable){
         if(this.currentHover?.placeable?.id !== object?.userData?.entity3D?.placeable?.id) this.currentHover?._onHoverOut(event);
@@ -183,7 +183,13 @@ export class InteractionManager {
       this.raycaster.setFromCamera(this.mousemove, this.camera);
       const intersects = this.raycaster.intersectObjects(this._hoverobj, true)
       this._prevChildSize = this._parent.scene.children.length;
-      return intersects[0]
+      if(!intersects.length) return null;
+      let parentInt
+      if(!intersects[0].object.userData.entity3D) intersects[0].object.traverseAncestors(parent => {
+        if(parent.userData.entity3D && !parentInt) parentInt = parent;
+      });
+      if(parentInt) return parentInt;
+      return intersects[0].object;
     }
 
     _onWheel(event){
@@ -271,7 +277,13 @@ export class InteractionManager {
         if(canvas.activeLayer.options.objectClass.embeddedName !== child.userData?.entity3D?.embeddedName && child.userData?.entity3D?.embeddedName !== "Wall") continue;
         if(child.userData?.hitbox && child.userData.interactive) intersectTargets.push(child.userData.hitbox);
       }
-      const intersects = this.raycaster.intersectObjects(intersectTargets, true);
+      const intersects = this.raycaster.intersectObjects(intersectTargets,true);
+      if(!intersects.length) return null;
+      let parentInt
+      if(!intersects[0].object.userData.entity3D) intersects[0].object.traverseAncestors(parent => {
+        if(parent.userData.entity3D && !parentInt) parentInt = parent;
+      });
+      if(parentInt) return parentInt;
       return intersects[0]?.object;
     }
   
