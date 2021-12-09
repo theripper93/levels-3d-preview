@@ -86,7 +86,11 @@ class Levels3DPreview {
       template: new THREE.TextureLoader().load("icons/svg/explosion.svg"),
       indicator: {
         //aoRM: new THREE.TextureLoader().load("modules/levels-3d-preview/assets/DefaultMaterial_occlusionRoughnessMetallic.png"),
-        normal: new THREE.TextureLoader().load("modules/levels-3d-preview/assets/DefaultMaterial_normal.png"),
+        normal: new THREE.TextureLoader().load("modules/levels-3d-preview/assets/DefaultMaterial_normal.webp", (texture) => {
+          texture.repeat = new THREE.Vector2(4,4);
+          texture.wrapS = THREE.RepeatWrapping;
+          texture.wrapT = THREE.RepeatWrapping;
+        }),
       }
     };
     this.Classes = {

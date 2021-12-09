@@ -106,14 +106,14 @@ Hooks.once('init', function() {
         onChange: value => { game.Levels3DPreview.setAutopan(value) }
       });
 
-      game.settings.register("levels-3d-preview", "conservativeHitbox", {
+      /*game.settings.register("levels-3d-preview", "conservativeHitbox", {
         name: game.i18n.localize("levels3dpreview.settings.conservativeHitbox.name"),
         hint: game.i18n.localize("levels3dpreview.settings.conservativeHitbox.hint"),
         scope: "world",
         config: true,
         type: Boolean,
         default: true,
-      });
+      });*/
 
       game.settings.register("levels-3d-preview", "screenspacepanning", {
         name: game.i18n.localize("levels3dpreview.settings.screenspacepanning.name"),
