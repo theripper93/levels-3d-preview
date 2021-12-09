@@ -409,8 +409,10 @@ class Levels3DPreview {
         break;
       }
     }
+    let textureArray = [];
     let materialArray = [];
     for (let suffix of imagesSuffix) {
+      textureArray.push(rootImage.replace(currSuffix, suffix))
       materialArray.push(
         new THREE.MeshBasicMaterial({
           map: new THREE.TextureLoader().load(
@@ -425,6 +427,9 @@ class Levels3DPreview {
     const center = this.canvasCenter;
     skybox.position.set(center.x, center.y, center.z);
     this.scene.add(skybox);
+    const loader = new THREE.CubeTextureLoader();    
+    const textureCube = loader.load( textureArray );
+    this.scene.environment = textureCube;
   }
 
   createFloor(points, z) {

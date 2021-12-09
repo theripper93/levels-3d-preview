@@ -37,6 +37,15 @@ Hooks.once('init', function() {
         default: "#2b2b2b",
       });
 
+      game.settings.register("levels-3d-preview", "highlightCombat", {
+        name: game.i18n.localize("levels3dpreview.settings.highlightCombat.name"),
+        hint: game.i18n.localize("levels3dpreview.settings.highlightCombat.hint"),
+        scope: "world",
+        config: true,
+        type: Boolean,
+        default: true,
+      });
+
     game.settings.register("levels-3d-preview", "selectedImage", {
         name: game.i18n.localize("levels3dpreview.settings.selectedImage.name"),
         hint: game.i18n.localize("levels3dpreview.settings.selectedImage.hint"),
@@ -463,9 +472,10 @@ Hooks.on("renderTokenConfig", (app,html)=>{
             options: {
                 "none": game.i18n.localize("levels3dpreview.flags.material.options.none"),
                 "basic": game.i18n.localize("levels3dpreview.flags.material.options.basic"),
+                "texcol": game.i18n.localize("levels3dpreview.flags.material.options.texcol"),
                 "plastic": game.i18n.localize("levels3dpreview.flags.material.options.plastic"),
                 "wood": game.i18n.localize("levels3dpreview.flags.material.options.wood"),
-                "glass": game.i18n.localize("levels3dpreview.flags.material.options.glass"),
+                "metal": game.i18n.localize("levels3dpreview.flags.material.options.metal"),
             }
         },
         "color": {
@@ -478,6 +488,11 @@ Hooks.on("renderTokenConfig", (app,html)=>{
             type: "color",
             label: game.i18n.localize("levels3dpreview.flags.baseColor.label"),
             default: "",
+        },
+        "disableBase": {
+            type: "checkbox",
+            label: game.i18n.localize("levels3dpreview.flags.disableBase.label"),
+            default: false,
         },
         "solidBaseMode": {
             type: "select",

@@ -49,6 +49,7 @@ export class Token3D {
       this.animIndex = this.token.document.getFlag("levels-3d-preview", "animIndex") ?? 0;
       this.animSpeed = this.token.document.getFlag("levels-3d-preview", "animSpeed") ?? 1;
       this.interactive = (this.token.document.getFlag("levels-3d-preview", "draggable") ?? true);
+      if(!this.interactive || this.token.document.getFlag("levels-3d-preview", "disableBase")) this.isBase = false;
       this.draggable = true;
       this.selectedImage = game.settings.get("levels-3d-preview", "selectedImage") ?? "";
       this.color = this.token.document.getFlag("levels-3d-preview", "color") ?? "#ffffff";
@@ -247,13 +248,15 @@ export class Token3D {
       //model.geometry.buffersNeedUpdate = true;
       let roughness = 0;
       let opacity = 1;
+      let metalness = 0;
       let color = new THREE.Color(this.color);
       switch(materialType){
         case "basic":
           break;
-        case "glass":
-          roughness = 0.3;
+        case "metal":
+          roughness = 0.5;
           opacity = 0.8;
+          metalness = 0.8;
           break;
         case "plastic":
           roughness = 0.6;
@@ -262,12 +265,28 @@ export class Token3D {
           roughness = 1;
           break;
       }
+
+      if(materialType === "texcol"){
+        if(model.material){
+          if(this.color) model.material.color = new THREE.Color(this.color);
+          model.material.map = this.texture;
+        }
+        if(model.children?.length){
+          model.traverse((child) => {
+            if(child.isMesh){
+                if(this.color) child.material.color = new THREE.Color(this.color);
+                child.material.map = this.texture;
+            }
+          });
+        }
+        return;
+      }
+
       const matData = {
         color: color,
-        shininess: roughness*100,
-        //transparent: this.standUp,//opacity != 1 || !this.gtflPath,
-        opacity: opacity,
+        roughness: roughness,
         side: !this.gtflPath ? THREE.DoubleSide : THREE.FrontSide,
+        metalness: metalness,
         map: this.texture,//new THREE.TextureLoader().load(this.imageTexture) : null,
         //depthWrite: this.texture && !this.gtflPath ? false : true,
         alphaTest: 0.99,
@@ -537,7 +556,6 @@ export class Token3D {
         });
         const mat2 = new THREE.MeshStandardMaterial({
           color: new THREE.Color(this.baseColor),//0x1c1c1c,
-          //roughnessMap: this._parent.textures.indicator.aoRM,
           roughness: 0.4,
           aoMap: this._parent.textures.indicator.aoRM,
           metalnessMap: this._parent.textures.indicator.aoRM,
@@ -548,7 +566,7 @@ export class Token3D {
         mesh.castShadow = true;
         mesh.receiveShadow = true;
         if(this.baseMode === "solidindicator"){
-          const indicatorGeometry = new THREE.BoxGeometry(cubesize, depth-0.0001 , cubesize);
+          const indicatorGeometry = new THREE.BoxGeometry(cubesize, depth-0.00001 , cubesize);
           indicatorMesh = new THREE.Mesh(indicatorGeometry, [mat2, mat1, mat2, mat2, mat1, mat2]);
           indicatorMesh.position.set(0,depth/2,(width-slant*2)/2.2);
           indicatorMesh.rotation.set(0,Math.PI/4,0);
@@ -573,10 +591,17 @@ export class Token3D {
         });
       }else{
         const color = this.token.border?._lineStyle?.color ?? 0xffffff;
+        const baseColor = new THREE.Color(this.baseColor);
+        const combatBaseColor = new THREE.Color("#ff6400");
         const threeColor = new THREE.Color(color);
         const material = this.border.children[0].material[0];
         material.color = threeColor;
         material.emissive = threeColor;
+        const baseMat = this.border.children[0].material[1];
+        const isActiveCombatant = game.combat?.current?.tokenId === this.token.id && game.settings.get("levels-3d-preview", "highlightCombat");
+        //baseMat.color = isActiveCombatant ? combatBaseColor : baseColor;
+        baseMat.emissive = isActiveCombatant ? combatBaseColor : baseColor;
+        baseMat.emissiveIntensity = isActiveCombatant ? 0.4 : 0;
       }
 
     }
@@ -792,4 +817,12 @@ export class Token3D {
   
   Hooks.on("deleteToken", (tokenDocument) => {
     if(game.Levels3DPreview?._active) game.Levels3DPreview.tokens[tokenDocument.id]?.destroy();
+  })
+
+  Hooks.on("updateCombat", () => {
+    if(game.Levels3DPreview?._active) {
+      for(let token of Object.values(game.Levels3DPreview.tokens)){
+        token.refreshBorder();
+      }
+    }
   })

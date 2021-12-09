@@ -102,9 +102,10 @@
                 "options": {
                     "none": "Default",
                     "basic": "Basic (no Lighting/Shadows)",
+                    "texcol": "Texture/Color",
                     "plastic": "Plastic",
                     "wood": "Wood",
-                    "glass": "Glass"
+                    "metal": "Metal"
                 }
             },
             "color": {
@@ -113,6 +114,9 @@
             },
             "baseColor": {
                 "label": "Base Color"
+            },
+            "disableBase": {
+                "label": "Disable Base"
             },
             "solidBaseMode": {
                 "label": "Base Mode",
@@ -224,6 +228,10 @@
             "solidBaseColor": {
                 "name": "Solid Base Color",
                 "hint": "The color of the solid base. Can be a hex value or a color name (or any CSS color). default is #1c1c1c"
+            },
+            "highlightCombat": {
+                "name": "Combat Highlight",
+                "hint": "Highlight the current combatant."
             },
             "selectedImage": {
                 "name": "Selection Highlight Image",
