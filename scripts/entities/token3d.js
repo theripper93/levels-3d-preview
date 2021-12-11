@@ -15,6 +15,7 @@ export class Token3D {
       this.embeddedName = "Token";
       this.placeable = tokenDocument;
       this.isOwner = this.token.isOwner;
+      this.targetTextures = {};
       this._parent = parent;
       this.isBase = game.settings.get("levels-3d-preview", "baseStyle") !== "image";
       this.baseMode = game.settings.get("levels-3d-preview", "baseStyle");
@@ -22,6 +23,8 @@ export class Token3D {
       this.factor = factor;
       this.targetSize = 0.1;
       this.elevation3d = 0;
+      this.materialsCache = {};
+      this.combatColor = new THREE.Color("#005eff");
       this.getFlags();
     }
   
@@ -247,7 +250,6 @@ export class Token3D {
       //model.geometry.uvsNeedUpdate = true;
       //model.geometry.buffersNeedUpdate = true;
       let roughness = 0;
-      let opacity = 1;
       let metalness = 0;
       let color = new THREE.Color(this.color);
       switch(materialType){
@@ -255,7 +257,6 @@ export class Token3D {
           break;
         case "metal":
           roughness = 0.5;
-          opacity = 0.8;
           metalness = 0.8;
           break;
         case "plastic":
@@ -459,6 +460,7 @@ export class Token3D {
     drawTargets(){
       //remove old targets
       if(!this.targetContainer) return;
+      this.updateTargetTexture();
       this.targetContainer.children.forEach(child => {
         this.targetContainer.remove(child);
       });
@@ -488,7 +490,7 @@ export class Token3D {
       if(!this.effectsContainer) return;
       const tokenEffects = this.token.data.effects;
       const actorEffects = this.token.actor?.temporaryEffects || [];
-      const effects = tokenEffects.concat(actorEffects).map(e => e.data.icon);
+      const effects = tokenEffects.concat(actorEffects).map(e => e.data?.icon);
       if(this.token.data.hidden && !this.alwaysVisible) effects.push("icons/svg/mystery-man.svg");
       if(effects.length === this.effectsContainer.children.length) return;
       this.effectsContainer.remove(...this.effectsContainer.children)
@@ -534,7 +536,7 @@ export class Token3D {
       height -= ((height*Math.SQRT2)/5)/2;
       const depth = this.isBase ? 0.008 : 0.000001;
       const cubesize = Math.max(width, height)/6;
-      let mesh,indicatorMesh;
+      let mesh,indicatorMesh,highlightMesh;
       if(!this.isBase){
       const geometry = new THREE.BoxGeometry(width, depth , height);
       const material = new THREE.MeshStandardMaterial({
@@ -557,11 +559,37 @@ export class Token3D {
         const mat2 = new THREE.MeshStandardMaterial({
           color: new THREE.Color(this.baseColor),//0x1c1c1c,
           roughness: 0.4,
-          aoMap: this._parent.textures.indicator.aoRM,
-          metalnessMap: this._parent.textures.indicator.aoRM,
           normalMap: this._parent.textures.indicator.normal,
           normalScale: new THREE.Vector2(0.2,0.2),
         });
+        const mat3 = mat1.clone();
+        //const mat4 = mat1.clone();
+        const mat4 = new THREE.MeshStandardMaterial({
+          emissiveIntensity: 0.8,
+        });
+        mat3.emissive = this.combatColor;
+        mat3.color = this.combatColor;
+        const userColor = new THREE.Color(game.user.color); 
+        //mat4.color = userColor;
+
+        const extrudeSettings = {depth : depth/2, steps : 1, bevelEnabled: false,curveSegments: 64};
+        const arcShape = new THREE.Shape();
+        arcShape.absarc(0, 0, (width/2-slant)*0.9, 0, Math.PI * 2, 0, false);
+        const holePath = new THREE.Path();
+        holePath.absarc(0, 0, (width/2-slant)*0.85, 0, Math.PI * 2, true);
+        arcShape.holes.push(holePath);
+        const highlightGeometry = new THREE.RingGeometry((width/2-slant)*0.85,(width/2-slant)*0.9, 64)//new THREE.ExtrudeGeometry(arcShape, extrudeSettings);
+        highlightMesh = new THREE.Mesh(highlightGeometry, mat1);
+        highlightMesh.rotation.x = -Math.PI/2;
+        highlightMesh.position.set(0,depth+0.0001,0);
+
+        var pos = highlightGeometry.attributes.position;
+        var v3 = new THREE.Vector3();
+        for (let i = 0; i < pos.count; i++){
+          v3.fromBufferAttribute(pos, i);
+          highlightGeometry.attributes.uv.setXY(i, v3.length() < (width/2-slant)*0.875 ? 0 : 1, 1);
+        }
+
         mesh = new THREE.Mesh(geometry, [mat1, mat2, mat2]);
         mesh.castShadow = true;
         mesh.receiveShadow = true;
@@ -574,9 +602,38 @@ export class Token3D {
           indicatorMesh.receiveShadow = true;
         }
         mesh.position.set(0,depth/2,0);
+        this.materialsCache = {
+          base: mat2,
+          highlight: mat1,
+          combat: mat3,
+          targeted: mat4,
+        }
       }
       this.border.add(mesh);
       if(indicatorMesh) this.border.add(indicatorMesh);
+      if(highlightMesh)this.border.add(highlightMesh);
+
+    }
+
+    updateTargetTexture(){
+      const colors = Array.from(this.token.targeted).map(t => t.color);
+      const colorstring = colors.join("");
+      if(!colors.length) return;
+      let text
+      if(!this.targetTextures[colorstring]){
+        let g = new PIXI.Graphics();
+      for(let i = 0; i < colors.length; i++){
+        g.beginFill(colors[i].replace("#", "0x"));
+        g.drawRect(i,0,1,1);
+      }
+      const base64 = canvas.app.renderer.extract.base64(g);
+      text = new THREE.TextureLoader().load(base64,(t) => {t.magFilter = THREE.NearestFilter; t.minFilter = THREE.NearestFilter; t.needsUpdate = true;});
+      this.targetTextures[colorstring] = text;  
+      }else{
+        text = this.targetTextures[colorstring];
+      }
+      this.materialsCache.targeted.map = text;
+      this.materialsCache.targeted.emissiveMap = text;
 
     }
 
@@ -591,17 +648,16 @@ export class Token3D {
         });
       }else{
         const color = this.token.border?._lineStyle?.color ?? 0xffffff;
-        const baseColor = new THREE.Color(this.baseColor);
-        const combatBaseColor = new THREE.Color("#00ff44");
-        const threeColor = new THREE.Color(color);
+        const isInactive = !color
+        const isActiveCombatant = game.combat?.current?.tokenId === this.token.id && game.settings.get("levels-3d-preview", "highlightCombat");
+        const threeColor = isInactive && isActiveCombatant ? new THREE.Color(this.combatColor) : new THREE.Color(color);
         const material = this.border.children[0].material[0];
         material.color = threeColor;
         material.emissive = threeColor;
-        const baseMat = this.border.children[0].material[1];
-        const isActiveCombatant = game.combat?.current?.tokenId === this.token.id && game.settings.get("levels-3d-preview", "highlightCombat");
-        //baseMat.color = isActiveCombatant ? combatBaseColor : baseColor;
-        baseMat.emissive = isActiveCombatant ? combatBaseColor : baseColor;
-        baseMat.emissiveIntensity = isActiveCombatant ? 0.7 : 0;
+        this.border.children[2].material = isActiveCombatant ? this.materialsCache.combat : this.materialsCache.highlight;
+        if(this.token.targeted.size){
+          this.border.children[2].material = this.materialsCache.targeted;
+        }
       }
 
     }
@@ -614,7 +670,7 @@ export class Token3D {
       const base64 = canvas.app.renderer.extract.base64(container);
       const spriteMaterial = new THREE.SpriteMaterial({
         map: new THREE.TextureLoader().load(base64),
-        alphaTest: 0.5,
+        alphaTest: this._parent.fogExploration ? 0.8 : 0.001,
       });
       const sprite = new THREE.Sprite(spriteMaterial);
       sprite.center.set(0.5,0.5);
@@ -639,7 +695,7 @@ export class Token3D {
       
       const spriteMaterial = new THREE.SpriteMaterial({
         map: new THREE.TextureLoader().load(base64),
-        alphaTest: 0.5,
+        alphaTest: this._parent.fogExploration ? 0.8 : 0.001,
       });
       const sprite = new THREE.Sprite(spriteMaterial);
       sprite.center.set(0.5,0.5);

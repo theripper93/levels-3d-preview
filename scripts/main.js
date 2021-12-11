@@ -130,6 +130,7 @@ class Levels3DPreview {
     this.renderer.shadowMap.enabled = true;
     //this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.renderer.antialias = true;
+
     this.resolutionMulti = game.settings.get("levels-3d-preview", "resolution")*window.devicePixelRatio;
     this.renderer.setPixelRatio(this.resolutionMulti);
     this.renderer.alpha = true;
@@ -150,23 +151,6 @@ class Levels3DPreview {
   async cacheModels(){
     this.models.target = await (await this.helpers.loadModel("modules/levels-3d-preview/assets/targetIndicator.fbx")).model;
     this.models.target.children[0].material = new THREE.MeshBasicMaterial();
-  }
-
-  initEnvMap(){
-    const pmremGenerator = new THREE.PMREMGenerator(this.renderer);
-    pmremGenerator.compileEquirectangularShader();
-
-    new EXRLoader()
-        .setDataType(THREE.UnsignedByteType)
-        .load(
-            "modules/levels-3d-preview/assets/shudu_lake_4k.exr",
-            function (texture) {
-                let exrCubeRenderTarget = pmremGenerator.fromEquirectangular(texture);
-                let exrBackground = exrCubeRenderTarget.texture;
-                let newEnvMap = exrCubeRenderTarget ? exrCubeRenderTarget.texture : null;
-                game.Levels3DPreview.envMap = newEnvMap;
-            }
-        );
   }
 
   get canvasCenter() {
@@ -399,7 +383,10 @@ class Levels3DPreview {
   makeSkybox() {
     const sceneSize = Math.max(canvas.scene.dimensions.width, canvas.scene.dimensions.height)/100;
     const size = sceneSize < 80 ? 80 : sceneSize;
+    this.renderer.outputEncoding = THREE.LinearEncoding
+    this.renderer.toneMapping = THREE.NoToneMapping;
     const rootImage = canvas.scene.getFlag("levels-3d-preview", "skybox") ?? "";
+    if(rootImage.toLowerCase().endsWith(".exr")) return this.loadEXR(rootImage);
     if (!rootImage) return;
     const imagesSuffix = ["_ft", "_bk", "_up", "_dn", "_rt", "_lf"];
     let currSuffix;
@@ -430,6 +417,26 @@ class Levels3DPreview {
     const loader = new THREE.CubeTextureLoader();    
     const textureCube = loader.load( textureArray );
     this.scene.environment = textureCube;
+  }
+
+  loadEXR(rootImage){
+    const pmremGenerator = new THREE.PMREMGenerator(this.renderer);
+    pmremGenerator.compileEquirectangularShader();
+    const _this = this;
+    new EXRLoader()
+        .setDataType(THREE.UnsignedByteType)
+        .load(
+          rootImage,
+            function (texture) {
+                let exrCubeRenderTarget = pmremGenerator.fromEquirectangular(texture);
+                let newEnvMap = exrCubeRenderTarget ? exrCubeRenderTarget.texture : null;
+                _this.scene.environment = newEnvMap;
+                _this.scene.background = newEnvMap;
+
+            }
+        );
+        this.renderer.outputEncoding = THREE.sRGBEncoding
+        this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
   }
 
   createFloor(points, z) {

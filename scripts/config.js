@@ -12,7 +12,7 @@ Hooks.once('init', function() {
             "solid": game.i18n.localize("levels3dpreview.settings.baseStyle.options.solid"),
             "solidindicator": game.i18n.localize("levels3dpreview.settings.baseStyle.options.solidindicator"),
           },
-        default: "solid",
+        default: "solidindicator",
     });
 
     game.settings.register("levels-3d-preview", "solidBaseMode", {
@@ -25,7 +25,7 @@ Hooks.once('init', function() {
             "merge": game.i18n.localize("levels3dpreview.settings.solidBaseMode.options.merge"),
             "ontop": game.i18n.localize("levels3dpreview.settings.solidBaseMode.options.ontop"),
           },
-        default: "solid",
+        default: "merge",
     });
 
     game.settings.register("levels-3d-preview", "solidBaseColor", {
