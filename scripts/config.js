@@ -74,6 +74,15 @@ Hooks.once('init', function() {
         default: true,
       });
 
+      game.settings.register("levels-3d-preview", "hideTarget", {
+        name: game.i18n.localize("levels3dpreview.settings.hideTarget.name"),
+        hint: game.i18n.localize("levels3dpreview.settings.hideTarget.hint"),
+        scope: "world",
+        config: true,
+        type: Boolean,
+        default: true,
+      });
+
       game.settings.register("levels-3d-preview", "templateSyle", {
         name: game.i18n.localize("levels3dpreview.settings.templateSyle.name"),
         hint: game.i18n.localize("levels3dpreview.settings.templateSyle.hint"),

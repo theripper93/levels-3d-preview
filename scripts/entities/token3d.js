@@ -15,7 +15,6 @@ export class Token3D {
       this.embeddedName = "Token";
       this.placeable = tokenDocument;
       this.isOwner = this.token.isOwner;
-      this.targetTextures = {};
       this._parent = parent;
       this.isBase = game.settings.get("levels-3d-preview", "baseStyle") !== "image";
       this.baseMode = game.settings.get("levels-3d-preview", "baseStyle");
@@ -461,6 +460,7 @@ export class Token3D {
       //remove old targets
       if(!this.targetContainer) return;
       this.updateTargetTexture();
+      if(this.isBase && game.settings.get("levels-3d-preview", "hideTarget")) return;
       this.targetContainer.children.forEach(child => {
         this.targetContainer.remove(child);
       });
@@ -571,24 +571,12 @@ export class Token3D {
         mat3.color = this.combatColor;
         const userColor = new THREE.Color(game.user.color); 
         //mat4.color = userColor;
-
-        const extrudeSettings = {depth : depth/2, steps : 1, bevelEnabled: false,curveSegments: 64};
-        const arcShape = new THREE.Shape();
-        arcShape.absarc(0, 0, (width/2-slant)*0.9, 0, Math.PI * 2, 0, false);
-        const holePath = new THREE.Path();
-        holePath.absarc(0, 0, (width/2-slant)*0.85, 0, Math.PI * 2, true);
-        arcShape.holes.push(holePath);
-        const highlightGeometry = new THREE.RingGeometry((width/2-slant)*0.85,(width/2-slant)*0.9, 64)//new THREE.ExtrudeGeometry(arcShape, extrudeSettings);
+        const highlightGeometry = new THREE.TorusGeometry((width/2-slant)*0.85,(width/2-slant)*0.05, 8, 64)//new THREE.ExtrudeGeometry(arcShape, extrudeSettings);
         highlightMesh = new THREE.Mesh(highlightGeometry, mat1);
         highlightMesh.rotation.x = -Math.PI/2;
+        highlightMesh.rotation.z = Math.PI/2;
         highlightMesh.position.set(0,depth+0.0001,0);
-
-        var pos = highlightGeometry.attributes.position;
-        var v3 = new THREE.Vector3();
-        for (let i = 0; i < pos.count; i++){
-          v3.fromBufferAttribute(pos, i);
-          highlightGeometry.attributes.uv.setXY(i, v3.length() < (width/2-slant)*0.875 ? 0 : 1, 1);
-        }
+        highlightMesh.scale.set(1,1,0.1);
 
         mesh = new THREE.Mesh(geometry, [mat1, mat2, mat2]);
         mesh.castShadow = true;
@@ -620,7 +608,7 @@ export class Token3D {
       const colorstring = colors.join("");
       if(!colors.length) return;
       let text
-      if(!this.targetTextures[colorstring]){
+      if(!this._parent.targetTextures[colorstring]){
         let g = new PIXI.Graphics();
       for(let i = 0; i < colors.length; i++){
         g.beginFill(colors[i].replace("#", "0x"));
@@ -628,9 +616,9 @@ export class Token3D {
       }
       const base64 = canvas.app.renderer.extract.base64(g);
       text = new THREE.TextureLoader().load(base64,(t) => {t.magFilter = THREE.NearestFilter; t.minFilter = THREE.NearestFilter; t.needsUpdate = true;});
-      this.targetTextures[colorstring] = text;  
+      this._parent.targetTextures[colorstring] = text;  
       }else{
-        text = this.targetTextures[colorstring];
+        text = this._parent.targetTextures[colorstring];
       }
       this.materialsCache.targeted.map = text;
       this.materialsCache.targeted.emissiveMap = text;
