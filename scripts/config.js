@@ -249,16 +249,6 @@ window.addEventListener('resize', ()=>{
     },100)
   }, false)
 
-//add listener on shift+r to reload the scene
-document.addEventListener('keypress', (e) => {
-    if (e.key.toLowerCase() === 'r' && e.shiftKey) {
-        if(game.Levels3DPreview._active) game.Levels3DPreview.resetCamera()
-    }else if(e.key.toLowerCase() === 't' && e.shiftKey){
-        if(game.Levels3DPreview._active) game.Levels3DPreview.resetCamera(true)
-    }else if(e.key.toLowerCase() === 'x' && e.shiftKey){
-        if(game.Levels3DPreview._active) game.Levels3DPreview.setCameraToControlled()
-    }
-});
 
 
 Hooks.on("getSceneControlButtons", (buttons)=>{
@@ -680,3 +670,32 @@ Hooks.on("renderMeasuredTemplateConfig", (app,html)=>{
 
     })
 })*/
+
+//KEYBINDINGS
+Hooks.on("init", () => {
+
+    game.keybindings.register("levels-3d-preview", "resetView", {
+        name: game.i18n.localize("levels3dpreview.keybindings.resetView"),
+        editable: [
+          {key: "R", modifiers: [ "SHIFT" ]}
+        ],
+        onDown: () => {if(game.Levels3DPreview._active) game.Levels3DPreview.resetCamera()},
+    });
+
+    game.keybindings.register("levels-3d-preview", "topdownView", {
+        name: game.i18n.localize("levels3dpreview.keybindings.topdownView"),
+        editable: [
+          {key: "T", modifiers: [ "SHIFT" ]}
+        ],
+        onDown: () => {if(game.Levels3DPreview._active) game.Levels3DPreview.resetCamera(true)},
+    });
+
+    game.keybindings.register("levels-3d-preview", "cameraToToken", {
+        name: game.i18n.localize("levels3dpreview.keybindings.cameraToToken"),
+        editable: [
+          {key: "X", modifiers: [ "SHIFT" ]}
+        ],
+        onDown: () => {if(game.Levels3DPreview._active) game.Levels3DPreview.setCameraToControlled()},
+    });
+
+})

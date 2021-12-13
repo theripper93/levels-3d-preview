@@ -37,27 +37,14 @@ Hooks.once('ready', async function() {
     }
 
     function _handleMovement(wrapped,...args){
-        const e = args[0];
         const layer = args[1];
-        handleArrowKeys(this._moveKeys)
-        if(e.altKey && layer.name == "TokenLayer"){
-            const directions = this._moveKeys
-            const elevDiff = directions.has("up") ? 1 : directions.has("down") ? -1 : 0;
-            let updates = [];
-            canvas.tokens.controlled.forEach(t => {
-                updates.push({_id: t.id, elevation: t.data.elevation + elevDiff});
-            })
-            canvas.scene.updateEmbeddedDocuments("Token", updates);
-        }
-
-        if(!game.Levels3DPreview?._active || !_token) return wrapped(...args);
+        if(!game.Levels3DPreview?._active || !canvas.tokens.controlled[0]) return wrapped(...args);
 
         const positions = handleArrowKeys(this._moveKeys)
         if(!positions) return
         let dx = positions.x
         let dy = positions.y
         layer.moveMany({dx, dy, rotate: false});
-
     }
 
     function handleArrowKeys(directions){

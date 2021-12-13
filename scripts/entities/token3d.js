@@ -571,7 +571,7 @@ export class Token3D {
         mat3.color = this.combatColor;
         const userColor = new THREE.Color(game.user.color); 
         //mat4.color = userColor;
-        const highlightGeometry = new THREE.TorusGeometry((width/2-slant)*0.85,(width/2-slant)*0.05, 8, 64)//new THREE.ExtrudeGeometry(arcShape, extrudeSettings);
+        const highlightGeometry = new THREE.TorusGeometry((width/2-slant)*0.85,(width/2-slant)*0.02, 8, 64)//new THREE.ExtrudeGeometry(arcShape, extrudeSettings);
         highlightMesh = new THREE.Mesh(highlightGeometry, mat1);
         highlightMesh.rotation.x = -Math.PI/2;
         highlightMesh.rotation.z = Math.PI/2;

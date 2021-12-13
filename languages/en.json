@@ -12,6 +12,11 @@
             "filenotsupported": "File format not supported",
             "3dnotactive": "Cannot open canvas popout, the 3D mode is not active."
         },
+        "keybindings":{
+            "resetView": "Reset Camera View",
+            "topdownView": "Top-Down Camera View",
+            "cameraToToken": "Focus Camera on Selected Token"
+        },
         "flags": {
             "isFog":{
                 "label": "Is Fog of War Box?",
