@@ -609,6 +609,11 @@ Hooks.on("renderWallConfig", (app,html)=>{
             label: game.i18n.localize("levels3dpreview.flags.color.label"),
             default: "#ffffff",
         },
+        "wallSidesTint": {
+            type: "color",
+            label: game.i18n.localize("levels3dpreview.flags.wallSidesTint.label"),
+            default: "#ffffff",
+        },
         "stretchTex": {
             type: "checkbox",
             label: game.i18n.localize("levels3dpreview.flags.stretchTex.label"),

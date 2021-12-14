@@ -105,6 +105,9 @@
             "wallSidesTexture": {
                 "label": "Sides Texture"
             },
+            "wallSidesTint": {
+                "label": "Sides Tint"
+            },
             "material": {
                 "label": "Material",
                 "options": {

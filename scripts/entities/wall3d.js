@@ -31,7 +31,9 @@ export class Wall3D {
         if(this.wall.data.door && this.wall.data.ds === 1) this.opacity = this.opacity/2;
         this.alwaysVisible = wall.document.getFlag("levels-3d-preview","alwaysVisible");
         this.tint = wall.document.getFlag("levels-3d-preview","wallTint");
+        this.sideTint = wall.document.getFlag("levels-3d-preview","wallSidesTint");
         this.color = this.texture ? this.tint ?? "#ffffff" : this.tint ?? wall.children[1]._fillStyle.color;
+        this.sidesColor = this.sidesTexture ? this.sideTint ?? "#ffffff" : this.sideTint ?? wall.children[1]._fillStyle.color;
         this.depth = wall.document.getFlag("levels-3d-preview","wallDepth")/factor || 0.03;
         this.distance += wall.document.getFlag("levels-3d-preview","joinWall") ? this.depth : 0;
 
@@ -88,7 +90,7 @@ export class Wall3D {
             material = this._parent.helpers.materialCache[materialId];  
         }else{
             material = new THREE.MeshPhongMaterial({
-                color: this.color,
+                color: this.sidesTexture == texturePath ? this.sidesColor : this.color,
                 transparent: this.opacity < 1,
                 opacity: this.opacity,
                 visible: this.isVisible,
