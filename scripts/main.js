@@ -405,7 +405,7 @@ class Levels3DPreview {
         new THREE.MeshBasicMaterial({
           map: new THREE.TextureLoader().load(
             rootImage.replace(currSuffix, suffix)
-          ),
+          , ),
           side: THREE.BackSide,
         })
       );
@@ -436,8 +436,8 @@ class Levels3DPreview {
 
             }
         );
-        this.renderer.outputEncoding = THREE.sRGBEncoding
-        this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        this.renderer.outputEncoding = THREE.sRGBEncoding;
+        //this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
   }
 
   createFloor(points, z) {

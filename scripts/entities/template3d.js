@@ -307,6 +307,7 @@ export class Template3D {
         if(!this.template.data?.texture) return
         this._parent.helpers.loadTexture(this.template.data?.texture).then(texture => {
             this.material.map = texture
+            this.material.emissiveMap = texture
             this.material.opacity = 1
             this.material.needsUpdate = true
         })

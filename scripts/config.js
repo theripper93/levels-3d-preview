@@ -381,7 +381,7 @@ Hooks.on("renderSceneConfig", (app,html)=>{
             label: game.i18n.localize("levels3dpreview.flags.sunDistance.label"),
             default: 3.4,
             min: 1,
-            max: 10,
+            max: 20,
             step: 0.1,
         },
         "sunIntensity": {
@@ -599,6 +599,10 @@ Hooks.on("renderWallConfig", (app,html)=>{
         "wallTexture": {
             type: "filepicker",
             label: game.i18n.localize("levels3dpreview.flags.imageTexture.label"),
+        },
+        "wallSidesTexture": {
+            type: "filepicker",
+            label: game.i18n.localize("levels3dpreview.flags.wallSidesTexture.label"),
         },
         "wallTint": {
             type: "color",

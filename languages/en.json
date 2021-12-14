@@ -102,6 +102,9 @@
             "imageTexture":{
                 "label": "Texture"
             },
+            "wallSidesTexture": {
+                "label": "Sides Texture"
+            },
             "material": {
                 "label": "Material",
                 "options": {

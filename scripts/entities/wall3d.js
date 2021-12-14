@@ -26,6 +26,7 @@ export class Wall3D {
             this.repeats = 1;
         }
         this.texture = wall.document.getFlag("levels-3d-preview","wallTexture");
+        this.sidesTexture = wall.document.getFlag("levels-3d-preview","wallSidesTexture");
         this.opacity = wall.document.getFlag("levels-3d-preview","wallOpacity") ?? 1;
         if(this.wall.data.door && this.wall.data.ds === 1) this.opacity = this.opacity/2;
         this.alwaysVisible = wall.document.getFlag("levels-3d-preview","alwaysVisible");
@@ -50,8 +51,39 @@ export class Wall3D {
             texture.wrapT = THREE.RepeatWrapping;
             texture.repeat.set(this.repeats,1);
         }
+        const sidesTexture = this.sidesTexture ? await this._parent.helpers.loadTexture(this.sidesTexture) : null;
+        if(sidesTexture){
+            sidesTexture.wrapS = THREE.RepeatWrapping;
+            sidesTexture.wrapT = THREE.RepeatWrapping;
+            sidesTexture.repeat.set(this.repeats,1);
+        }
+        const materials = this._getMaterials(texture,sidesTexture);
+        this.mesh = new THREE.Mesh(geometry, materials);
+        if(this.wall.data.door){
+        this.mesh.userData.hitbox = this.mesh;
+        this.mesh.userData.interactive = true;
+        this.mesh.userData.entity3D = this;
+        }
+        this.mesh.castShadow = true;
+        this.mesh.receiveShadow = true;
+        this.mesh.position.set(this.center.x,this.center.y,this.center.z);
+        this.mesh.rotation.set(0,this.angle,0);
+        this._parent.scene.add(this.mesh);
+    }
+
+    _getMaterials(texture,sidesTexture){
+        if(!this.texture || !this.sidesTexture){
+            const material = this.texture ? this._generateMaterial(this.texture,texture) : this._generateMaterial(this.sidesTexture,sidesTexture);
+            return material;
+        }
+        const material = this._generateMaterial(this.texture,texture);
+        const sidesMaterial = this._generateMaterial(this.sidesTexture,sidesTexture);
+        return [material,material, sidesMaterial,sidesMaterial,sidesMaterial,sidesMaterial];
+    }
+
+    _generateMaterial(texturePath, texture){
         let material;
-        const materialId = `${this.color}${this.opacity}${this.texture}${this.isVisible}${this.repeats}`;
+        const materialId = `${this.color}${this.opacity}${texturePath}${this.isVisible}${this.repeats}`;
         if(this._parent.helpers.materialCache[materialId]){
             material = this._parent.helpers.materialCache[materialId];  
         }else{
@@ -66,17 +98,7 @@ export class Wall3D {
         }
         material.castShadow = true;
         material.receiveShadow = true;
-        this.mesh = new THREE.Mesh(geometry, material);
-        if(this.wall.data.door){
-        this.mesh.userData.hitbox = this.mesh;
-        this.mesh.userData.interactive = true;
-        this.mesh.userData.entity3D = this;
-        }
-        this.mesh.castShadow = true;
-        this.mesh.receiveShadow = true;
-        this.mesh.position.set(this.center.x,this.center.y,this.center.z);
-        this.mesh.rotation.set(0,this.angle,0);
-        this._parent.scene.add(this.mesh);
+        return material;
     }
 
     get isVisible(){
