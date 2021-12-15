@@ -12,16 +12,17 @@ export class GlobalIllumination {
     init(){
     const light = new THREE.HemisphereLight(0xffffff, 0x000000, 1);
     this.lights.hemiLight = light;
-    const spotLight = new THREE.SpotLight(0xffa95c, 4);
-    const adjustmentSpotlight = new THREE.SpotLight(0xffa95c, 4);
+    const spotLight = new THREE.DirectionalLight(0xffa95c, 4);
+    const adjustmentSpotlight = new THREE.DirectionalLight(0xffa95c, 4);
     spotLight.castShadow = !game.settings.get("levels-3d-preview", "disableLighting");
-    spotLight.shadow.bias = -0.00005;
-    spotLight.shadow.radius = 3;
+    //spotLight.shadow.bias = -0.00005;
+    spotLight.shadow.radius = 1;
     spotLight.shadow.camera.fov = 90;
     spotLight.shadow.camera.far = 100;
     spotLight.shadow.camera.near = 0.1;
-    spotLight.shadow.mapSize.width = 1024*4;
-    spotLight.shadow.mapSize.height = 1024*4;
+    const shadowRes = game.settings.get("levels-3d-preview", "shadowQuality")
+    spotLight.shadow.mapSize.width = 1024*shadowRes;
+    spotLight.shadow.mapSize.height = 1024*shadowRes;
 
     this.lights.spotLight = spotLight;
     this.lights.adjustmentSpotlight = adjustmentSpotlight;

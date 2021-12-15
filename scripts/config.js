@@ -196,6 +196,22 @@ Hooks.once('init', function() {
         default: false,
       });
 
+      game.settings.register("levels-3d-preview", "shadowQuality", {
+        name: game.i18n.localize("levels3dpreview.settings.shadowQuality.name"),
+        hint: game.i18n.localize("levels3dpreview.settings.shadowQuality.hint"),
+        scope: "client",
+        config: true,
+        type: Number,
+        choices: {
+            32: game.i18n.localize("levels3dpreview.settings.shadowQuality.options.gamer"),
+            16: game.i18n.localize("levels3dpreview.settings.shadowQuality.options.ultra"),
+            8: game.i18n.localize("levels3dpreview.settings.shadowQuality.options.high"),
+            4: game.i18n.localize("levels3dpreview.settings.shadowQuality.options.medium"),
+            2: game.i18n.localize("levels3dpreview.settings.shadowQuality.options.low"),
+          },
+        default: 4,
+      });
+
       game.settings.register("levels-3d-preview", "resolution", {
         name: game.i18n.localize("levels3dpreview.settings.resolution.name"),
         hint: game.i18n.localize("levels3dpreview.settings.resolution.hint"),
@@ -376,18 +392,18 @@ Hooks.on("renderSceneConfig", (app,html)=>{
             min: 0,
             max: 180,
         },
-        "sunDistance": {
+        /*"sunDistance": {
             type: "range",
             label: game.i18n.localize("levels3dpreview.flags.sunDistance.label"),
             default: 3.4,
             min: 1,
             max: 20,
             step: 0.1,
-        },
+        },*/
         "sunIntensity": {
             type: "range",
             label: game.i18n.localize("levels3dpreview.flags.sunIntensity.label"),
-            default: 1,
+            default: 0.7,
             min: 0,
             max: 2,
             step: 0.01,

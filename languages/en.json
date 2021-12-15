@@ -317,6 +317,17 @@
                 "name": "Disable Shadows",
                 "hint": "Disable Shadows for better performance."
             },
+            "shadowQuality":{
+                "name": "Shadow Quality",
+                "hint": "The resolution of the shadows.",
+                "options": {
+                    "low": "Low",
+                    "medium": "Medium",
+                    "high": "High",
+                    "ultra": "Ultra",
+                    "gamer": "Gamer"
+                }
+            },
             "resolution": {
                 "name": "Resolution",
                 "hint": "The resolution of the 3D canvas, this will affect performance. (requires refresh)",
