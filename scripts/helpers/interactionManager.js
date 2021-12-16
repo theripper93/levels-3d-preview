@@ -175,7 +175,9 @@ export class InteractionManager {
     }
 
     getHoverObject(){
-      this._hoverobj = this._parent.scene.children
+      if(!this._hoverobj || !this._hoverobj.length || this._prevSceneChildrenCount !== this.scene.children.length) this._hoverobj = this._parent.scene.children.filter(this._collisionFilter);
+      this._prevSceneChildrenCount = this._parent.scene.children.length;
+      console.log(this._hoverobj.length, this._parent.scene.children.length)
       this.raycaster.setFromCamera(this.mousemove, this.camera);
       const intersects = this.raycaster.intersectObjects(this._hoverobj, true)
       if(!intersects.length) return null;
@@ -187,6 +189,11 @@ export class InteractionManager {
         object: parentInt ?? intersects[0].object,
         point: intersects[0].point
       }
+    }
+
+    _collisionFilter(object){
+      if(object.userData.ignoreHover) return false;
+      return true;
     }
 
     _onWheel(event){

@@ -220,6 +220,7 @@ class Levels3DPreview {
         gridHelper.position.set(size/2, 0.01, size/2);
         gridHelper.material.transparent = true;
         gridHelper.material.opacity = canvas.scene.data.gridAlpha;
+        gridHelper.userData.ignoreHover = true;
         this.scene.add(gridHelper);
       }else{
         this.createGrid();
