@@ -184,8 +184,6 @@ class Levels3DPreview {
     const drawFloors = canvas.scene.getFlag("levels-3d-preview", "showSceneFloors") ?? true;
     const drawWalls = canvas.scene.getFlag("levels-3d-preview", "showSceneWalls") ?? true;
     const drawLights = canvas.scene.getFlag("levels-3d-preview", "renderSceneLights") ?? true;
-    const renderBackground = canvas.scene.getFlag("levels-3d-preview", "renderBackground") ?? true;
-    const renderTable = canvas.scene.getFlag("levels-3d-preview", "renderTable") ?? false;
     this.standUpFaceCamera = game.settings.get("levels-3d-preview", "standupFace") ?? true;
     const enableFog = canvas.scene.getFlag("levels-3d-preview", "enableFog") ?? false;
     const fogColor = canvas.scene.getFlag("levels-3d-preview", "fogColor") ?? "#000000";
@@ -193,8 +191,8 @@ class Levels3DPreview {
     drawFloors && this.isLevels && this.createFloors(this.level);
     drawWalls && this.createWalls(this.level);
     drawLights && this.createSceneLights();
-    renderBackground && this.createBoard();
-    renderTable && this.createTable();
+    this.createBoard();
+    this.createTable();
     for (let token of canvas.tokens.placeables) {
       this.addToken(token);
     }
@@ -239,8 +237,8 @@ class Levels3DPreview {
     dragplane.rotation.x = -Math.PI / 2;
     this.scene.add(dragplane);
     this.interactionManager.dragplane = dragplane;
-    this.lights.globalIllumination = new GlobalIllumination(this);
     this.makeSkybox();
+    this.lights.globalIllumination = new GlobalIllumination(this);
     this.ruler.addMarkers();
     if(!this._cameraSet){
       this.resetCamera()
@@ -268,6 +266,8 @@ class Levels3DPreview {
   }
 
   async createBoard(){
+    this.scene.remove(this.board);
+    if(!(canvas.scene.getFlag("levels-3d-preview", "renderBackground") ?? true)) return;
     //make a plane and apply a texture
     const width = canvas.scene.dimensions.sceneWidth / this.factor;
     const height = canvas.scene.dimensions.sceneHeight / this.factor;
@@ -282,6 +282,7 @@ class Levels3DPreview {
     const material = new THREE.MeshStandardMaterial({
       map: texture,
       roughness: 1,
+      metalness: 1,
     });
     material.toneMapped = false;
     const plane = new THREE.Mesh(geometry, material);
@@ -297,6 +298,8 @@ class Levels3DPreview {
   }
 
   async createTable(){
+    this.scene.remove(this.table);
+    if(!(canvas.scene.getFlag("levels-3d-preview", "renderTable") ?? false)) return;
     //make a plane and apply a texture
     const width = canvas.scene.dimensions.width / this.factor;
     const height = canvas.scene.dimensions.height / this.factor;
@@ -304,8 +307,10 @@ class Levels3DPreview {
     const depth = Math.max(width, height) / 10;
     const texture = await this.helpers.loadTexture(canvas.scene.getFlag("levels-3d-preview", "tableTex"));
     const geometry = new THREE.BoxGeometry(width, height, depth);
-    const material = new THREE.MeshLambertMaterial({
+    const material = new THREE.MeshStandardMaterial({
       map: texture,
+      roughness: 1,
+      metalness: 1,
     });
     material.toneMapped = false;
     const plane = new THREE.Mesh(geometry, material);
@@ -382,6 +387,10 @@ class Levels3DPreview {
   }
 
   makeSkybox() {
+    this.scene.background = null;
+    this.scene.environment = null;
+    this.isEXR = false;
+    this.scene.remove(this.skybox);
     const sceneSize = Math.max(canvas.scene.dimensions.width, canvas.scene.dimensions.height)/100;
     const size = sceneSize < 80 ? 80 : sceneSize;
     this.renderer.outputEncoding = THREE.LinearEncoding
@@ -415,12 +424,14 @@ class Levels3DPreview {
     const center = this.canvasCenter;
     skybox.position.set(center.x, center.y, center.z);
     this.scene.add(skybox);
+    this.skybox = skybox;
     const loader = new THREE.CubeTextureLoader();    
     const textureCube = loader.load( textureArray );
     this.scene.environment = textureCube;
   }
 
   loadEXR(rootImage){
+    this.isEXR = true;
     const pmremGenerator = new THREE.PMREMGenerator(this.renderer);
     pmremGenerator.compileEquirectangularShader();
     const _this = this;
@@ -641,4 +652,31 @@ Hooks.on("sightRefresh", () => {
   if(game.Levels3DPreview?._active && game.Levels3DPreview.fogExploration){
     game.Levels3DPreview.fogExploration.debouncedUpdate(true);
   }
+})
+
+Hooks.on("updateScene", (scene,updates) => {
+  if(!game.Levels3DPreview?._active || scene.id !== canvas.scene.id) return;
+  if("img" in updates) game.Levels3DPreview.createBoard();
+  const flags = updates.flags ? updates.flags["levels-3d-preview"] : undefined;
+  if(!flags) return;
+  if(//do reload
+    "enableGrid"  in flags ||
+    "enableFogOfWar" in flags ||
+    "enableFog" in flags ||
+    "fogColor" in flags ||
+    "fogDistance" in flags ||
+    "showSceneWalls" in flags ||
+    "showSceneFloors" in flags ||
+    "renderSceneLights" in flags ||
+    "skybox" in flags
+  ){
+    game.Levels3DPreview._cameraSet = false;
+    game.Levels3DPreview.close();
+    game.Levels3DPreview.controls.reset();
+    game.Levels3DPreview.open();
+    return
+  }
+  if("renderBackground" in flags && !("img" in updates)) game.Levels3DPreview.createBoard();
+  if("renderTable" in flags || "tableTex" in flags) game.Levels3DPreview.createTable();
+
 })

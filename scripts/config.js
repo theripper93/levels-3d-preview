@@ -293,9 +293,10 @@ Hooks.on("renderSceneConfig", (app,html)=>{
 
     const data = {
         "moduleId": "levels-3d-preview",
-        "header": {
-            type: "custom",
-            html: game.version < 9 ? `<h3 class="form-header" id="canvas-3d-toggle"><i class="fas fa-cube"></i> ${game.i18n.localize("levels3dpreview.sceneConfigTitle.title")}</h3><p class="notes">${game.i18n.localize("levels3dpreview.sceneConfigTitle.notes")}</p><div id="3d-canvas">` : ""
+        "tab": {
+            "name": "levels-3d-preview",
+            "label": "3D Canvas",
+            "icon": "fas fa-cube",
         },
         "enablePlayers":{
             "type": "checkbox",
@@ -383,14 +384,6 @@ Hooks.on("renderSceneConfig", (app,html)=>{
             min: 0,
             max: 180,
         },
-        /*"sunDistance": {
-            type: "range",
-            label: game.i18n.localize("levels3dpreview.flags.sunDistance.label"),
-            default: 3.4,
-            min: 1,
-            max: 20,
-            step: 0.1,
-        },*/
         "sunIntensity": {
             type: "range",
             label: game.i18n.localize("levels3dpreview.flags.sunIntensity.label"),
@@ -414,33 +407,14 @@ Hooks.on("renderSceneConfig", (app,html)=>{
             label: game.i18n.localize("levels3dpreview.flags.renderSceneLights.label"),
             default: false,
         },
-        "footer": {
-            type: "custom",
-            html: `</div>`
-        },
-    }
-    if(game.version > 9){
-        data.tab = {
-            "name": "levels-3d-preview",
-            "label": "3D Canvas",
-            "icon": "fas fa-cube",
-        }
-    }else{
-        data.inject = `input[name="backgroundColor"]`
     }
 
-    injectConfig.inject(app,html,data)
-    if(game.version < 9){
-        html.find("#3d-canvas").toggle();
-        html.on("click", "#canvas-3d-toggle", (e)=>{
-            html.find("#3d-canvas").slideToggle(200);
-        });
-    }
+    injectConfig.inject(app,html,data);
     if(canvas.scene.id !== app.object.id) return;
     html.on("change", "input", (e)=>{
         if(!game.Levels3DPreview._active) return;
         const sunPosition = html.find("input[name='flags.levels-3d-preview.sunPosition']")[0].value;
-        const sunDistance = html.find("input[name='flags.levels-3d-preview.sunDistance']")[0].value;
+        const sunDistance = 10;
         const sunIntensity = html.find("input[name='flags.levels-3d-preview.sunIntensity']")[0].value;
         const sceneTint = html.find("input[name='flags.levels-3d-preview.sceneTint']")[0].value;
         game.Levels3DPreview.lights.globalIllumination.sunlight = {

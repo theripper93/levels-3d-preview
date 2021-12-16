@@ -89,10 +89,12 @@ export class Wall3D {
         if(this._parent.helpers.materialCache[materialId]){
             material = this._parent.helpers.materialCache[materialId];  
         }else{
-            material = new THREE.MeshPhongMaterial({
+            material = new THREE.MeshStandardMaterial({
                 color: this.sidesTexture == texturePath ? this.sidesColor : this.color,
                 transparent: this.opacity < 1,
                 opacity: this.opacity,
+                roughness: 1,
+                metalness: 1,
                 visible: this.isVisible,
                 map: texture,
             });

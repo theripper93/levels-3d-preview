@@ -38,6 +38,8 @@ export class Tile3D {
             visible: !this.tile.data.hidden,
             map: texture,
             side: THREE.DoubleSide,
+            roughness : 1,
+            metalness : 1,
             //depthWrite: false,
             alphaTest: 0.99,
         });

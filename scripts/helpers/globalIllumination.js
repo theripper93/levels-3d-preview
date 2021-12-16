@@ -10,7 +10,7 @@ export class GlobalIllumination {
     }
 
     init(){
-    const light = new THREE.HemisphereLight(0xffffff, 0x000000, 1);
+    const light = new THREE.HemisphereLight(0x858585, 0x000000, 1);
     this.lights.hemiLight = light;
     const spotLight = new THREE.DirectionalLight(0xffa95c, 4);
     const adjustmentSpotlight = new THREE.DirectionalLight(0xffa95c, 4);
@@ -37,10 +37,10 @@ export class GlobalIllumination {
     const center = this._parent.canvasCenter;
     lightTarget.position.set(center.x, center.y, center.z);
     this.lights.target = lightTarget;
-    this._parent.scene.add(light);
+    if(!this._parent.isEXR)this._parent.scene.add(light);
     if(this._parent.debugMode) this._parent.scene.add(sunlight);
     this._parent.scene.add(spotLight);
-    this._parent.scene.add(adjustmentSpotlight);
+    if(!this._parent.isEXR)this._parent.scene.add(adjustmentSpotlight);
     this._parent.scene.add(lightTarget);
     spotLight.target = lightTarget;
     adjustmentSpotlight.target = lightTarget;

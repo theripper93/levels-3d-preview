@@ -155,7 +155,7 @@ export class InteractionManager {
       this.mousemove.x = (event.clientX / window.innerWidth) * 2 - 1;
       this.mousemove.y = -(event.clientY / window.innerHeight) * 2 + 1;
       const intersect = this.getHoverObject();
-      const object = intersect.object;
+      const object = intersect?.object;
       //Handle placeable hover event
       if(object && object?.userData?.entity3D?.placeable){
         if(this.currentHover?.placeable?.id !== object?.userData?.entity3D?.placeable?.id) this.currentHover?._onHoverOut(event);
