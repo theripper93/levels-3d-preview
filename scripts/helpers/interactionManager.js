@@ -155,7 +155,7 @@ export class InteractionManager {
       this.mousemove.x = (event.clientX / window.innerWidth) * 2 - 1;
       this.mousemove.y = -(event.clientY / window.innerHeight) * 2 + 1;
       const intersect = this.getHoverObject();
-      const object = intersect
+      const object = intersect.object;
       //Handle placeable hover event
       if(object && object?.userData?.entity3D?.placeable){
         if(this.currentHover?.placeable?.id !== object?.userData?.entity3D?.placeable?.id) this.currentHover?._onHoverOut(event);
@@ -168,28 +168,25 @@ export class InteractionManager {
         this.currentHover = null;
       }
 
-      if(!this.positionBroadcasted && game.user.hasPermission("SHOW_CURSOR")){
-        this.positionBroadcasted = true;
+      if(game.user.hasPermission("SHOW_CURSOR")){
         this.broadcastCursorPosition(intersect?.point);
-        setTimeout(() => {
-          this.positionBroadcasted = false;
-        }, 60);
       }
 
     }
 
     getHoverObject(){
-      if(!this._hoverobj || this._parent.scene.children.length !== this._prevChildSize) this._hoverobj = this._parent.scene.children.filter(child => child.userData.hitbox && child.userData?.entity3D?.embeddedName === canvas.activeLayer.options.objectClass.embeddedName).map(child => child.userData.hitbox)
+      this._hoverobj = this._parent.scene.children
       this.raycaster.setFromCamera(this.mousemove, this.camera);
       const intersects = this.raycaster.intersectObjects(this._hoverobj, true)
-      this._prevChildSize = this._parent.scene.children.length;
       if(!intersects.length) return null;
       let parentInt
-      if(!intersects[0].object.userData.entity3D) intersects[0].object.traverseAncestors(parent => {
+      if(!intersects[0].object.userData.entity3D && !intersects[0].object.userData.ignoreHover) intersects[0].object.traverseAncestors(parent => {
         if(parent.userData.entity3D && !parentInt) parentInt = parent;
       });
-      if(parentInt) return parentInt;
-      return intersects[0].object;
+      return {
+        object: parentInt ?? intersects[0].object,
+        point: intersects[0].point
+      }
     }
 
     _onWheel(event){

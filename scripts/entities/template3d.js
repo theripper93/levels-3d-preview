@@ -56,6 +56,7 @@ export class Template3D {
         this.width = 1
         const mesh = this._getMesh()
         this.templateMesh = mesh
+        //this.templateMesh.userData.ignoreHover = true;
         this.mesh.add(mesh)
         this.createHandle()
     }
@@ -87,7 +88,6 @@ export class Template3D {
     }
     
     fromPreview(){
-        debugger
         const origin2d = this.isPreview ? Ruler3D.pos3DToCanvas(this.mesh.position) : Ruler3D.pos3DToCanvas(this.A)
         const templateData = {
             angle: this.angle,
@@ -389,11 +389,14 @@ export class Template3D {
     }
 
     _onHoverIn(e) {
-        //if(this.template?._onHoverIn)this.template?._onHoverIn(e);
+        if(this.template?._onHoverIn && !this.template._destroyed && !this.isPreview){
+            this.template?._onHoverIn(e);
+        
+        }
       }
   
       _onHoverOut(e) {
-        //if(this.template?._onHoverOut)this.template?._onHoverOut(e);
+        if(this.template?._onHoverOut && !this.template._destroyed && !this.isPreview)this.template?._onHoverOut(e);
       }
 
     onMove(){
