@@ -677,11 +677,11 @@ Hooks.on("renderAmbientLightConfig", (app,html)=>{
 
 //KEYBINDINGS
 Hooks.on("init", () => {
-
+    const {SHIFT, CONTROL, ALT} = KeyboardManager.MODIFIER_KEYS;
     game.keybindings.register("levels-3d-preview", "resetView", {
         name: game.i18n.localize("levels3dpreview.keybindings.resetView"),
         editable: [
-          {key: "R", modifiers: [ "SHIFT" ]}
+          {key: "KeyR", modifiers: [ SHIFT ]}
         ],
         onDown: () => {if(game.Levels3DPreview._active) game.Levels3DPreview.resetCamera()},
     });
@@ -689,7 +689,7 @@ Hooks.on("init", () => {
     game.keybindings.register("levels-3d-preview", "topdownView", {
         name: game.i18n.localize("levels3dpreview.keybindings.topdownView"),
         editable: [
-          {key: "T", modifiers: [ "SHIFT" ]}
+          {key: "KeyT", modifiers: [ SHIFT ]}
         ],
         onDown: () => {if(game.Levels3DPreview._active) game.Levels3DPreview.resetCamera(true)},
     });
@@ -697,9 +697,18 @@ Hooks.on("init", () => {
     game.keybindings.register("levels-3d-preview", "cameraToToken", {
         name: game.i18n.localize("levels3dpreview.keybindings.cameraToToken"),
         editable: [
-          {key: "X", modifiers: [ "SHIFT" ]}
+          {key: "KeyX", modifiers: [ SHIFT ]}
         ],
         onDown: () => {if(game.Levels3DPreview._active) game.Levels3DPreview.setCameraToControlled()},
+    });
+
+    game.keybindings.register("levels-3d-preview", "freeMode", {
+        name: game.i18n.localize("levels3dpreview.keybindings.freeMode"),
+        editable: [
+          {key: "KeyF"}
+        ],
+        onDown: () => {game.Levels3DPreview.interactionManager.isFreeMode = true},
+        onUp: () => {game.Levels3DPreview.interactionManager.isFreeMode = false},
     });
 
 })

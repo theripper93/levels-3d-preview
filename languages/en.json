@@ -15,7 +15,8 @@
         "keybindings":{
             "resetView": "Reset Camera View",
             "topdownView": "Top-Down Camera View",
-            "cameraToToken": "Focus Camera on Selected Token"
+            "cameraToToken": "Focus Camera on Selected Token",
+            "freeMode": "Free Placement mode"
         },
         "flags": {
             "isFog":{

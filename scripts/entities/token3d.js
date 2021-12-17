@@ -642,8 +642,8 @@ export class Token3D {
         const material = this.border.children[0].material[0];
         material.color = threeColor;
         material.emissive = threeColor;
-        this.border.children[2].material = isActiveCombatant ? this.materialsCache.combat : this.materialsCache.highlight;
-        if(this.token.targeted.size){
+        if(this.border.children[2])this.border.children[2].material = isActiveCombatant ? this.materialsCache.combat : this.materialsCache.highlight;
+        if(this.token.targeted.size && this.border.children[2]){
           this.border.children[2].material = this.materialsCache.targeted;
         }
       }
