@@ -4,6 +4,7 @@
 
 var injectConfig = {
     inject: function injectConfig(app,html,data,object){
+        this._generateTabStruct(app,html,data,object);
         object = object || app.object;
         const moduleId = data.moduleId;
         let injectPoint
@@ -155,5 +156,34 @@ var injectConfig = {
             Hooks.on(`render${doc.documentName}Config`, (app,html)=>{ injectConfig.inject(app,html,newData) });
         }
 
+    },
+    _generateTabStruct : function _generateTabStruct(app,html,data,object){
+        const isTabs = html.find(".sheet-tabs").length;
+        const useTabs = data.tab
+        if(isTabs || !useTabs) return;
+        const layer = app?.object?.layer?.options?.name
+        const icon = $(".main-controls").find(`li[data-canvas-layer="${layer}"]`).find("i").attr("class")
+
+        const $tabs = $(`<nav class="sheet-tabs tabs">
+        <a class="item active" data-tab="basic"><i class="${icon}"></i> ${game.i18n.localize("LIGHT.HeaderBasic")}</a>
+        </nav>
+        <div class="tab active" data-tab="basic"></div>`);
+        //move all content of form into tab
+        const form = html.find("form").first();
+        form.children().each((i,e)=>{
+            $($tabs[2]).append(e);
+        });
+        
+        form.append($tabs);
+        const submitButton = html.find("button[type='submit']").first();
+        form.append(submitButton);
+
+        html.on("click", ".item", (e)=>{
+            html.find(".item").removeClass("active");
+            $(e.currentTarget).addClass("active");
+            html.find(".tab").removeClass("active");
+            html.find(`[data-tab="${e.currentTarget.dataset.tab}"]`).addClass("active");
+            app.setPosition({"height" : "auto", "width" : data.tab ? app.options.width + 100 : "auto"});
+        });
     }
 }

@@ -577,6 +577,11 @@ Hooks.on("renderTokenConfig", (app,html)=>{
 Hooks.on("renderWallConfig", (app,html)=>{
     injectConfig.inject(app,html,{
         "moduleId": "levels-3d-preview",
+        "tab" : {
+            "name": "levels-3d-preview",
+            "label": "3D",
+            "icon": "fas fa-cube",
+        },
         "wallTexture": {
             type: "filepicker",
             label: game.i18n.localize("levels3dpreview.flags.imageTexture.label"),
@@ -612,6 +617,22 @@ Hooks.on("renderWallConfig", (app,html)=>{
             label: game.i18n.localize("levels3dpreview.flags.wallDepth.label"),
             default: 30,
         },
+        "roughness": {
+            type: "range",
+            label: game.i18n.localize("levels3dpreview.flags.roughness.label"),
+            default: 1,
+            min: 0,
+            max: 1,
+            step: 0.01,
+        },
+        "metalness": {
+            type: "range",
+            label: game.i18n.localize("levels3dpreview.flags.metalness.label"),
+            default: 1,
+            min: 0,
+            max: 1,
+            step: 0.01,
+        },
         "alwaysVisible": {
             type: "checkbox",
             label: game.i18n.localize("levels3dpreview.flags.alwaysVisible.label"),
@@ -637,7 +658,7 @@ Hooks.on("renderMeasuredTemplateConfig", (app,html)=>{
     })
 })
 
-/*Hooks.on("renderAmbientLightConfig", (app,html)=>{
+Hooks.on("renderAmbientLightConfig", (app,html)=>{
     injectConfig.inject(app,html,{
         "moduleId": "levels-3d-preview",
         "tab" : {
@@ -651,15 +672,8 @@ Hooks.on("renderMeasuredTemplateConfig", (app,html)=>{
             default: false,
             notes: game.i18n.localize("levels3dpreview.flags.castShadow.notes"),
         },
-        "elevation": {
-            type: "number",
-            label: game.i18n.localize("levels3dpreview.flags.elevation.label"),
-            default: 0,
-            step: 0.001,
-        }
-
     })
-})*/
+})
 
 //KEYBINDINGS
 Hooks.on("init", () => {

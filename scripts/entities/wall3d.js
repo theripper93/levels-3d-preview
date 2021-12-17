@@ -36,6 +36,8 @@ export class Wall3D {
         this.sidesColor = this.sidesTexture ? this.sideTint ?? "#ffffff" : this.sideTint ?? wall.children[1]._fillStyle.color;
         this.depth = wall.document.getFlag("levels-3d-preview","wallDepth")/factor || 0.03;
         this.distance += wall.document.getFlag("levels-3d-preview","joinWall") ? this.depth : 0;
+        this.roughness = wall.document.getFlag("levels-3d-preview","roughness") ?? 1;
+        this.metalness = wall.document.getFlag("levels-3d-preview","metalness") ?? 1;
 
         this.init();
 
@@ -85,7 +87,7 @@ export class Wall3D {
 
     _generateMaterial(texturePath, texture){
         let material;
-        const materialId = `${this.color}${this.opacity}${texturePath}${this.isVisible}${this.repeats}`;
+        const materialId = `${this.color}${this.opacity}${texturePath}${this.isVisible}${this.repeats}${this.metalness}${this.roughness}`;
         if(this._parent.helpers.materialCache[materialId]){
             material = this._parent.helpers.materialCache[materialId];  
         }else{
@@ -93,8 +95,8 @@ export class Wall3D {
                 color: this.sidesTexture == texturePath ? this.sidesColor : this.color,
                 transparent: this.opacity < 1,
                 opacity: this.opacity,
-                roughness: 1,
-                metalness: 1,
+                roughness: this.roughness,
+                metalness: this.metalness,
                 visible: this.isVisible,
                 map: texture,
             });

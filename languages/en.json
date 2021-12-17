@@ -197,6 +197,12 @@
             "wallOpacity": {
                 "label": "Opacity"
             },
+            "roughness": {
+                "label": "Roughness"
+            },
+            "metalness": {
+                "label": "Reflectivity"
+            },
             "wallDepth": {
                 "label": "Wall Depth"
             },
@@ -216,6 +222,10 @@
             },
             "collisionPlane": {
                 "label": "Collision Plane"
+            },
+            "castShadow": {
+                "label": "Cast Shadow",
+                "notes": "Enable the shadow casting on the light - WARNING High performance impact!."
             }
         },
         "settings" : {
