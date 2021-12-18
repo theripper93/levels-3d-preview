@@ -26,7 +26,7 @@ export class Tile3D {
         this.mirrorX = this.tile.data.width < 0
         this.mirrorY = this.tile.data.height < 0
         this.rotSign = this.tile.data.width/Math.abs(this.tile.data.width)*this.tile.data.height/Math.abs(this.tile.data.height)
-        this.exportTarget = true;
+
         this.init();
     }
 

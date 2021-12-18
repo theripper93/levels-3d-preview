@@ -24,7 +24,6 @@ export class Token3D {
       this.elevation3d = 0;
       this.materialsCache = {};
       this.combatColor = new THREE.Color("#005eff");
-      this.exportTarget = true;
       this.getFlags();
     }
   

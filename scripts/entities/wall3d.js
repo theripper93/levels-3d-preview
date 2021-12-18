@@ -38,7 +38,6 @@ export class Wall3D {
         this.distance += wall.document.getFlag("levels-3d-preview","joinWall") ? this.depth : 0;
         this.roughness = wall.document.getFlag("levels-3d-preview","roughness") ?? 1;
         this.metalness = wall.document.getFlag("levels-3d-preview","metalness") ?? 1;
-        this.exportTarget = true;
 
         this.init();
 
