@@ -7,6 +7,7 @@ export class Tile3D {
         this.tile = tile;
         this._parent = parent;
         this.isOverhead = this.tile.data.overhead;
+        this.embeddedName = "Tile"
         this.bottom = tile.data.flags.levels?.rangeBottom ?? 0;
         this.index = canvas.background.placeables.indexOf(this.tile) ?? canvas.foreground.placeables.indexOf(this.tile) ?? 0;
         this.zIndex = 0 + this.index;
@@ -25,6 +26,7 @@ export class Tile3D {
         this.mirrorX = this.tile.data.width < 0
         this.mirrorY = this.tile.data.height < 0
         this.rotSign = this.tile.data.width/Math.abs(this.tile.data.width)*this.tile.data.height/Math.abs(this.tile.data.height)
+        this.exportTarget = true;
         this.init();
     }
 

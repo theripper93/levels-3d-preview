@@ -38,6 +38,7 @@ export class Wall3D {
         this.distance += wall.document.getFlag("levels-3d-preview","joinWall") ? this.depth : 0;
         this.roughness = wall.document.getFlag("levels-3d-preview","roughness") ?? 1;
         this.metalness = wall.document.getFlag("levels-3d-preview","metalness") ?? 1;
+        this.exportTarget = true;
 
         this.init();
 
@@ -66,8 +67,8 @@ export class Wall3D {
         if(this.wall.data.door){
         this.mesh.userData.hitbox = this.mesh;
         this.mesh.userData.interactive = true;
-        this.mesh.userData.entity3D = this;
         }
+        this.mesh.userData.entity3D = this;
         this.mesh.castShadow = true;
         this.mesh.receiveShadow = true;
         this.mesh.position.set(this.center.x,this.center.y,this.center.z);

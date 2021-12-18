@@ -20,6 +20,7 @@ import { EffectComposer } from './lib/EffectComposer.js';
 import { RenderPass } from './lib/RenderPass.js';
 import { ShaderPass } from './lib/ShaderPass.js';
 import { Fog } from "./helpers/Fog.js";
+import { Exporter } from "./helpers/exporter.js";
 export const factor = 1000;
 
 
@@ -105,6 +106,7 @@ class Levels3DPreview {
     this.tokenAnimationQueue = [];
     this._cameraSet = false;
     this.helpers = new Helpers();
+    this.exporter = new Exporter(this);
     $("body").append(`<div id="video-texture-container" style="position: absolute; top: 0; left: 0;display: none;"></div>`);
     this.videoTextureContinaer = $("#video-texture-container");
     this.init3d();
@@ -294,6 +296,7 @@ class Levels3DPreview {
     plane.position.set(center.x+offsetX, center.y-depth/2-0.00001, center.z+offsetY);
     plane.rotation.x = -Math.PI / 2;
     this.board = plane;
+    plane.userData.isBackground = true;
     this.scene.add(plane);
 
   }
@@ -647,6 +650,13 @@ class Levels3DPreview {
     $("#board").show();
     this.clear3Dscene();
   }
+
+  reload(){
+    if(!this._active) return;
+   this._cameraSet = false;
+   this.close();
+   this.open();
+  }
 }
 
 Hooks.on("sightRefresh", () => {
@@ -671,10 +681,7 @@ Hooks.on("updateScene", (scene,updates) => {
     "renderSceneLights" in flags ||
     "skybox" in flags
   ){
-    game.Levels3DPreview._cameraSet = false;
-    game.Levels3DPreview.close();
-    game.Levels3DPreview.controls.reset();
-    game.Levels3DPreview.open();
+    game.Levels3DPreview.reload();
     return
   }
   if("renderBackground" in flags && !("img" in updates)) game.Levels3DPreview.createBoard();

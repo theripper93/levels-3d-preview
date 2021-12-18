@@ -177,7 +177,6 @@ export class InteractionManager {
     getHoverObject(){
       if(!this._hoverobj || !this._hoverobj.length || this._prevSceneChildrenCount !== this.scene.children.length) this._hoverobj = this._parent.scene.children.filter(this._collisionFilter);
       this._prevSceneChildrenCount = this._parent.scene.children.length;
-      console.log(this._hoverobj.length, this._parent.scene.children.length)
       this.raycaster.setFromCamera(this.mousemove, this.camera);
       const intersects = this.raycaster.intersectObjects(this._hoverobj, true)
       if(!intersects.length) return null;

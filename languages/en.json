@@ -352,6 +352,18 @@
                 "name": "Debug Mode",
                 "hint": "Show helpful debug info for troubleshooting (mainly hitboxes and lights)."
             }
+        },
+        "exporter" : {
+            "title": "Export objects as GLTF",
+            "tokens": "Tokens",
+            "interactive": "Include draggable Tokens",
+            "tiles": "Tiles",
+            "all": "Full Scene",
+            "doors": "Doors",
+            "walls": "Walls",
+            "background": "Background",
+            "export": "Export",
+            "cancel": "Cancel"
         }
     }
 }
