@@ -35,6 +35,7 @@ export class Token3D {
       this.solidBaseMode = this.token.document.getFlag("levels-3d-preview","solidBaseMode")
       this.baseColor =  this.token.document.getFlag("levels-3d-preview","baseColor") || game.settings.get("levels-3d-preview", "solidBaseColor")
       if(!this.solidBaseMode || this.solidBaseMode === "default") this.solidBaseMode = game.settings.get("levels-3d-preview", "solidBaseMode");
+      this.autoCenter = this.token.document.getFlag("levels-3d-preview","autoCenter") ?? true;
       this.rotationX = Math.toRadians(this.token.document.getFlag("levels-3d-preview","rotationX") ?? 0);
       this.rotationY = Math.toRadians(this.token.document.getFlag("levels-3d-preview","rotationY") ?? 0);
       this.rotationZ = Math.toRadians(this.token.document.getFlag("levels-3d-preview","rotationZ") ?? 0);
@@ -164,9 +165,9 @@ export class Token3D {
       const updatedSize = box.getSize( new THREE.Vector3() );
       this.isModel = true;
       let centerOffset = {
-        x: this.offsetX/factor + -center.x,
+        x: this.offsetX/factor + (this.autoCenter ? -center.x : 0),
         y: this.offsetY/factor + 0,
-        z: this.offsetZ/factor + -center.z,
+        z: this.offsetZ/factor + (this.autoCenter ? -center.z : 0),
       }
 
       if(this.standUp) {

@@ -170,6 +170,9 @@
                 },
                 "notes": "The axis to use when the original token rotation changes. If the original file was in STL format this will usually be Z, otherwise Y"
             },
+            "autoCenter": {
+                "label": "Auto Center"
+            },
             "rotationX" : {
                 "label": "Rotation X"
             },

@@ -526,6 +526,11 @@ Hooks.on("renderTokenConfig", (app,html)=>{
                 2: game.i18n.localize("levels3dpreview.flags.faceCamera.options.noface"),
             }
         },
+        "autoCenter": {
+            type: "checkbox",
+            label: game.i18n.localize("levels3dpreview.flags.autoCenter.label"),
+            default: true,
+        },
         "rotationX" : {
             type: "range",
             label: game.i18n.localize("levels3dpreview.flags.rotationX.label"),

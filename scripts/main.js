@@ -23,7 +23,6 @@ import { Fog } from "./helpers/Fog.js";
 import { Exporter } from "./helpers/exporter.js";
 export const factor = 1000;
 
-
 Hooks.once("ready", () => {
   game.Levels3DPreview = new Levels3DPreview();
   game.Levels3DPreview.cacheModels();
@@ -58,6 +57,7 @@ export function sleep(ms) {
 
 class Levels3DPreview {
   constructor() {
+    this.THREE = THREE;
     this.isLevels = game.modules.get("levels")?.active;
     this.camera;
     this._animateCameraTarget = {}
