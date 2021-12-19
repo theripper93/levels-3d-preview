@@ -40,7 +40,7 @@ Hooks.once('ready', async function() {
         const layer = args[1];
         if(!game.Levels3DPreview?._active || !canvas.tokens.controlled[0]) return wrapped(...args);
 
-        const positions = handleArrowKeys(this._moveKeys)
+        const positions = handleArrowKeys(this.moveKeys)
         if(!positions) return
         let dx = positions.x
         let dy = positions.y
