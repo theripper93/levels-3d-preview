@@ -94,6 +94,7 @@ class Levels3DPreview {
         }),
       }
     };
+    this.effectsCache = {};
     this.targetTextures = {};
     this.Classes = {
       "Template3D" : Template3D,

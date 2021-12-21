@@ -21,7 +21,7 @@ Hooks.once('ready', async function() {
 
     async function drawEffects(wrapped, ...args){
         await wrapped(...args);
-        if(game.Levels3DPreview._active && ame.Levels3DPreview.tokens[this.id]) game.Levels3DPreview.tokens[this.id].drawEffects()
+        if(game.Levels3DPreview._active && game.Levels3DPreview.tokens[this.id]) game.Levels3DPreview.tokens[this.id].drawEffects()
     }
 
     function drawBars(wrapped, ...args){

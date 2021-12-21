@@ -1,263 +1,3 @@
-Hooks.once('init', function() {
-
-
-    game.settings.register("levels-3d-preview", "baseStyle", {
-        name: game.i18n.localize("levels3dpreview.settings.baseStyle.name"),
-        hint: game.i18n.localize("levels3dpreview.settings.baseStyle.hint"),
-        scope: "world",
-        config: true,
-        type: String,
-        choices: {
-            "image": game.i18n.localize("levels3dpreview.settings.baseStyle.options.image"),
-            "solid": game.i18n.localize("levels3dpreview.settings.baseStyle.options.solid"),
-            "solidindicator": game.i18n.localize("levels3dpreview.settings.baseStyle.options.solidindicator"),
-          },
-        default: "solidindicator",
-    });
-
-    game.settings.register("levels-3d-preview", "solidBaseMode", {
-        name: game.i18n.localize("levels3dpreview.settings.solidBaseMode.name"),
-        hint: game.i18n.localize("levels3dpreview.settings.solidBaseMode.hint"),
-        scope: "world",
-        config: true,
-        type: String,
-        choices: {
-            "merge": game.i18n.localize("levels3dpreview.settings.solidBaseMode.options.merge"),
-            "ontop": game.i18n.localize("levels3dpreview.settings.solidBaseMode.options.ontop"),
-          },
-        default: "merge",
-    });
-
-    game.settings.register("levels-3d-preview", "solidBaseColor", {
-        name: game.i18n.localize("levels3dpreview.settings.solidBaseColor.name"),
-        hint: game.i18n.localize("levels3dpreview.settings.solidBaseColor.hint"),
-        scope: "world",
-        config: true,
-        type: String,
-        default: "#2b2b2b",
-      });
-
-      game.settings.register("levels-3d-preview", "highlightCombat", {
-        name: game.i18n.localize("levels3dpreview.settings.highlightCombat.name"),
-        hint: game.i18n.localize("levels3dpreview.settings.highlightCombat.hint"),
-        scope: "world",
-        config: true,
-        type: Boolean,
-        default: true,
-      });
-
-    game.settings.register("levels-3d-preview", "selectedImage", {
-        name: game.i18n.localize("levels3dpreview.settings.selectedImage.name"),
-        hint: game.i18n.localize("levels3dpreview.settings.selectedImage.hint"),
-        scope: "world",
-        config: true,
-        type: String,
-        default: "modules/levels-3d-preview/assets/indicator.webp",
-        filePicker: "imagevideo",
-      });
-
-      game.settings.register("levels-3d-preview", "colorizeInidcator", {
-        name: game.i18n.localize("levels3dpreview.settings.colorizeInidcator.name"),
-        hint: game.i18n.localize("levels3dpreview.settings.colorizeInidcator.hint"),
-        scope: "world",
-        config: true,
-        type: Boolean,
-        default: true,
-      });
-
-      game.settings.register("levels-3d-preview", "rotateIndicator", {
-        name: game.i18n.localize("levels3dpreview.settings.rotateIndicator.name"),
-        hint: game.i18n.localize("levels3dpreview.settings.rotateIndicator.hint"),
-        scope: "world",
-        config: true,
-        type: Boolean,
-        default: true,
-      });
-
-      game.settings.register("levels-3d-preview", "hideTarget", {
-        name: game.i18n.localize("levels3dpreview.settings.hideTarget.name"),
-        hint: game.i18n.localize("levels3dpreview.settings.hideTarget.hint"),
-        scope: "world",
-        config: true,
-        type: Boolean,
-        default: true,
-      });
-
-      game.settings.register("levels-3d-preview", "templateSyle", {
-        name: game.i18n.localize("levels3dpreview.settings.templateSyle.name"),
-        hint: game.i18n.localize("levels3dpreview.settings.templateSyle.hint"),
-        scope: "world",
-        config: true,
-        type: String,
-        choices: {
-            "wireframe": game.i18n.localize("levels3dpreview.settings.templateSyle.options.wireframe"),
-            "solid": game.i18n.localize("levels3dpreview.settings.templateSyle.options.solid"),
-          },
-        default: "wireframe",
-      });
-
-      game.settings.register("levels-3d-preview", "gridMode", {
-        name: game.i18n.localize("levels3dpreview.settings.gridMode.name"),
-        hint: game.i18n.localize("levels3dpreview.settings.gridMode.hint"),
-        scope: "world",
-        config: true,
-        type: String,
-        choices: {
-            "fast": game.i18n.localize("levels3dpreview.settings.gridMode.options.fast"),
-            "mirror": game.i18n.localize("levels3dpreview.settings.gridMode.options.mirror"),
-          },
-        default: "fast",
-      });
-
-      game.settings.register("levels-3d-preview", "autoPan", {
-        name: game.i18n.localize("levels3dpreview.settings.autoPan.name"),
-        hint: game.i18n.localize("levels3dpreview.settings.autoPan.hint"),
-        scope: "world",
-        config: true,
-        type: String,
-        choices: {
-            "none": game.i18n.localize("levels3dpreview.settings.autoPan.options.none"),
-            "player": game.i18n.localize("levels3dpreview.settings.autoPan.options.player"),
-            "all": game.i18n.localize("levels3dpreview.settings.autoPan.options.all"),
-          },
-        default: "none",
-        onChange: value => { game.Levels3DPreview.setAutopan(value) }
-      });
-
-      game.settings.register("levels-3d-preview", "screenspacepanning", {
-        name: game.i18n.localize("levels3dpreview.settings.screenspacepanning.name"),
-        hint: game.i18n.localize("levels3dpreview.settings.screenspacepanning.hint"),
-        scope: "client",
-        config: true,
-        type: Boolean,
-        default: true,
-      });
-
-      game.settings.register("levels-3d-preview", "camerafocuszoom", {
-        name: game.i18n.localize("levels3dpreview.settings.camerafocuszoom.name"),
-        hint: game.i18n.localize("levels3dpreview.settings.camerafocuszoom.hint"),
-        scope: "world",
-        config: true,
-        type: Boolean,
-        default: true,
-      });
-
-      game.settings.register("levels-3d-preview", "standupFace", {
-        name: game.i18n.localize("levels3dpreview.settings.standupFace.name"),
-        hint: game.i18n.localize("levels3dpreview.settings.standupFace.hint"),
-        scope: "world",
-        config: true,
-        type: Boolean,
-        default: true,
-      });
-
-      game.settings.register("levels-3d-preview", "preventNegative", {
-        name: game.i18n.localize("levels3dpreview.settings.preventNegative.name"),
-        hint: game.i18n.localize("levels3dpreview.settings.preventNegative.hint"),
-        scope: "world",
-        config: true,
-        type: Boolean,
-        default: true,
-      });
-
-      game.settings.register("levels-3d-preview", "globalCollision", {
-        name: game.i18n.localize("levels3dpreview.settings.globalCollision.name"),
-        hint: game.i18n.localize("levels3dpreview.settings.globalCollision.hint"),
-        scope: "world",
-        config: true,
-        type: Boolean,
-        default: true,
-      });
-
-      game.settings.register("levels-3d-preview", "miniCanvas", {
-        name: game.i18n.localize("levels3dpreview.settings.miniCanvas.name"),
-        hint: game.i18n.localize("levels3dpreview.settings.miniCanvas.hint"),
-        scope: "world",
-        config: true,
-        type: Boolean,
-        default: true,
-      });
-
-      game.settings.register("levels-3d-preview", "disableLighting", {
-        name: game.i18n.localize("levels3dpreview.settings.disableLighting.name"),
-        hint: game.i18n.localize("levels3dpreview.settings.disableLighting.hint"),
-        scope: "client",
-        config: true,
-        type: Boolean,
-        default: false,
-      });
-
-      game.settings.register("levels-3d-preview", "shadowQuality", {
-        name: game.i18n.localize("levels3dpreview.settings.shadowQuality.name"),
-        hint: game.i18n.localize("levels3dpreview.settings.shadowQuality.hint"),
-        scope: "client",
-        config: true,
-        type: Number,
-        choices: {
-            32: game.i18n.localize("levels3dpreview.settings.shadowQuality.options.gamer"),
-            16: game.i18n.localize("levels3dpreview.settings.shadowQuality.options.ultra"),
-            8: game.i18n.localize("levels3dpreview.settings.shadowQuality.options.high"),
-            4: game.i18n.localize("levels3dpreview.settings.shadowQuality.options.medium"),
-            2: game.i18n.localize("levels3dpreview.settings.shadowQuality.options.low"),
-          },
-        default: 4,
-      });
-
-      game.settings.register("levels-3d-preview", "resolution", {
-        name: game.i18n.localize("levels3dpreview.settings.resolution.name"),
-        hint: game.i18n.localize("levels3dpreview.settings.resolution.hint"),
-        scope: "client",
-        config: true,
-        type: Number,
-        choices: {
-            1: game.i18n.localize("levels3dpreview.settings.resolution.options.full"),
-            0.5: game.i18n.localize("levels3dpreview.settings.resolution.options.half"),
-            0.25: game.i18n.localize("levels3dpreview.settings.resolution.options.quarter"),
-          },
-        default: 1,
-      });
-
-      game.settings.register("levels-3d-preview", "debugMode", {
-        name: game.i18n.localize("levels3dpreview.settings.debugMode.name"),
-        hint: game.i18n.localize("levels3dpreview.settings.debugMode.hint"),
-        scope: "world",
-        config: true,
-        type: Boolean,
-        default: false,
-        onChange: (sett) => {
-            game.Levels3DPreview.debugMode = sett;
-        }
-      });
-
-      game.settings.register("levels-3d-preview", "minicanvasposition", {
-        name: "",
-        hint: "",
-        scope: "client",
-        config: false,
-        type: Object,
-        default: {
-            top: 0,
-            left: 0,
-        },
-      });
-
-});
-
-
-window.addEventListener('resize', ()=>{
-    const levels3d = game.Levels3DPreview
-    if(!levels3d) return
-    levels3d.camera.aspect = window.innerWidth / window.innerHeight
-    levels3d.camera.updateProjectionMatrix()
-    levels3d.renderer.setSize(window.innerWidth, window.innerHeight)
-    const miniCanvas = Object.values(ui.windows)?.find(w => w.id === "miniCanvas")
-    setTimeout(()=>{
-    if(miniCanvas) miniCanvas.resize()
-    },100)
-  }, false)
-
-
-
 Hooks.on("getSceneControlButtons", (buttons)=>{
     buttons.find(b => b.name === "token")?.tools?.push(
     {
@@ -298,6 +38,10 @@ Hooks.on("renderSceneConfig", (app,html)=>{
             "label": "3D Canvas",
             "icon": "fas fa-cube",
         },
+        "header1": {
+            type: "custom",
+            html: `<h3 class="form-header"><i class="fas fa-cube"></i> ${game.i18n.localize("levels3dpreview.settings.headers.basics.title")}</h3><p class="notes">${game.i18n.localize("levels3dpreview.settings.headers.basics.notes")}</p><div>`
+        },
         "enablePlayers":{
             "type": "checkbox",
             "label": game.i18n.localize("levels3dpreview.flags.enablePlayers.label"),
@@ -308,6 +52,20 @@ Hooks.on("renderSceneConfig", (app,html)=>{
             "type": "checkbox",
             "label": game.i18n.localize("levels3dpreview.flags.auto3d.label"),
             "default": false,
+        },
+        "enableGrid": {
+            type: "checkbox",
+            label: game.i18n.localize("levels3dpreview.flags.enableGrid.label"),
+            default: true,
+        },
+        "enableRuler": {
+            type: "checkbox",
+            label: game.i18n.localize("levels3dpreview.flags.enableRuler.label"),
+            default: true,
+        },
+        "header2": {
+            type: "custom",
+            html: `<h3 class="form-header"><i class="fas fa-cloud-sun"></i> ${game.i18n.localize("levels3dpreview.settings.headers.environment.title")}</h3><p class="notes">${game.i18n.localize("levels3dpreview.settings.headers.environment.notes")}</p><div>`
         },
         "skybox" : {
             type: "filepicker",
@@ -332,21 +90,6 @@ Hooks.on("renderSceneConfig", (app,html)=>{
             "default": true,
             "notes": game.i18n.localize("levels3dpreview.flags.renderBackground.notes")
         },
-        "enableGrid": {
-            type: "checkbox",
-            label: game.i18n.localize("levels3dpreview.flags.enableGrid.label"),
-            default: true,
-        },
-        "enableRuler": {
-            type: "checkbox",
-            label: game.i18n.localize("levels3dpreview.flags.enableRuler.label"),
-            default: true,
-        },
-        "enableFogOfWar": {
-            type: "checkbox",
-            label: game.i18n.localize("levels3dpreview.flags.enableFogOfWar.label"),
-            default: false,
-        },
         "enableFog": {
             type: "checkbox",
             label: game.i18n.localize("levels3dpreview.flags.enableFog.label"),
@@ -361,6 +104,15 @@ Hooks.on("renderSceneConfig", (app,html)=>{
             type: "number",
             label: game.i18n.localize("levels3dpreview.flags.fogDistance.label"),
             default: 3000,
+        },
+        "header3": {
+            type: "custom",
+            html: `<h3 class="form-header"><i class="fas fas fa-lightbulb"></i> ${game.i18n.localize("levels3dpreview.settings.headers.lighting.title")}</h3><p class="notes">${game.i18n.localize("levels3dpreview.settings.headers.lighting.notes")}</p><div>`
+        },
+        "enableFogOfWar": {
+            type: "checkbox",
+            label: game.i18n.localize("levels3dpreview.flags.enableFogOfWar.label"),
+            default: false,
         },
         "sceneTint": {
             type: "color",
@@ -392,6 +144,10 @@ Hooks.on("renderSceneConfig", (app,html)=>{
             max: 2,
             step: 0.01,
         },
+        "header4": {
+            type: "custom",
+            html: `<h3 class="form-header"><i class="fas fa-eye"></i> ${game.i18n.localize("levels3dpreview.settings.headers.visibility.title")}</h3><p class="notes">${game.i18n.localize("levels3dpreview.settings.headers.visibility.notes")}</p><div>`
+        },
         "showSceneWalls": {
             type: "checkbox",
             label: game.i18n.localize("levels3dpreview.flags.showSceneWalls.label"),
@@ -405,7 +161,7 @@ Hooks.on("renderSceneConfig", (app,html)=>{
         "renderSceneLights": {
             type: "checkbox",
             label: game.i18n.localize("levels3dpreview.flags.renderSceneLights.label"),
-            default: false,
+            default: true,
         },
     }
 
@@ -719,3 +475,19 @@ Hooks.on("init", () => {
     });
 
 })
+
+
+
+//Auto Resize
+
+window.addEventListener('resize', ()=>{
+    const levels3d = game.Levels3DPreview
+    if(!levels3d) return
+    levels3d.camera.aspect = window.innerWidth / window.innerHeight
+    levels3d.camera.updateProjectionMatrix()
+    levels3d.renderer.setSize(window.innerWidth, window.innerHeight)
+    const miniCanvas = Object.values(ui.windows)?.find(w => w.id === "miniCanvas")
+    setTimeout(()=>{
+    if(miniCanvas) miniCanvas.resize()
+    },100)
+  }, false)

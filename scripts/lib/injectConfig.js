@@ -5,7 +5,6 @@
 var injectConfig = {
     inject: function injectConfig(app,html,data,object){
         this._generateTabStruct(app,html,data,object);
-        debugger
         const tabSize = data.tab?.width ?? 100;
         object = object || app.object;
         const moduleId = data.moduleId;

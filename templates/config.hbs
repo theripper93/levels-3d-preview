@@ -1,0 +1,176 @@
+<form class="flexcol" autocomplete="off">
+  <!-- Config Settings Configuration Tabs -->
+  <nav class="sheet-tabs tabs" data-group="sections">
+    <a class="item" data-tab="canvas"><i class="fas fa-map"></i> {{localize "levels3dpreview.settings.configApp.tabs.canvas"}}</a>
+    <a class="item" data-tab="token"><i class="fas fa-user-alt"></i> {{localize "levels3dpreview.settings.configApp.tabs.token"}}</a>
+    <a class="item" data-tab="base"><i class="fas fa-dot-circle"></i> {{localize "levels3dpreview.settings.configApp.tabs.base"}}</a>
+    <a class="item" data-tab="misc"><i class="fas fa-cogs"></i> {{localize "levels3dpreview.settings.configApp.tabs.misc"}}</a>
+
+  </nav>
+  <section id="config-tabs" class="content">
+    <hr>
+    <!-- Canvas Tab -->
+    <div class="tab" data-tab="canvas" data-group="sections">
+
+      <div class="form-group">
+        <label>{{localize "levels3dpreview.settings.camerafocuszoom.name"}}</label>
+        <input type="checkbox" name="camerafocuszoom" data-dtype="Boolean" {{checked camerafocuszoom}} />
+        <p class="notes">{{localize "levels3dpreview.settings.camerafocuszoom.hint"}}</p>
+      </div>
+
+      <div class="form-group">
+        <label>{{localize "levels3dpreview.settings.preventNegative.name"}}</label>
+        <input type="checkbox" name="preventNegative" data-dtype="Boolean" {{checked preventNegative}} />
+        <p class="notes">{{localize "levels3dpreview.settings.preventNegative.hint"}}</p>
+      </div>
+
+      <div class="form-group">
+        <label>{{localize "levels3dpreview.settings.globalCollision.name"}}</label>
+        <input type="checkbox" name="globalCollision" data-dtype="Boolean" {{checked globalCollision}} />
+        <p class="notes">{{localize "levels3dpreview.settings.globalCollision.hint"}}</p>
+      </div>
+
+      <div class="form-group">
+        <label>{{localize "levels3dpreview.settings.templateSyle.name"}}</label>
+        <select name="templateSyle" data-dtype="String">
+          {{#select templateSyle}}
+          <option value="wireframe">{{localize "levels3dpreview.settings.templateSyle.options.wireframe"}}</option>
+          <option value="solid">{{localize "levels3dpreview.settings.templateSyle.options.solid"}}</option>
+          {{/select}}
+        </select>
+        <p class="notes">{{localize "levels3dpreview.settings.templateSyle.hint"}}</p>
+      </div>
+
+      <div class="form-group">
+        <label>{{localize "levels3dpreview.settings.gridMode.name"}}</label>
+        <select name="gridMode" data-dtype="String">
+          {{#select gridMode}}
+          <option value="fast">{{localize "levels3dpreview.settings.gridMode.options.fast"}}</option>
+          <option value="mirror">{{localize "levels3dpreview.settings.gridMode.options.mirror"}}</option>
+          {{/select}}
+        </select>
+        <p class="notes">{{localize "levels3dpreview.settings.gridMode.hint"}}</p>
+      </div>
+
+      <div class="form-group">
+        <label>{{localize "levels3dpreview.settings.autoPan.name"}}</label>
+        <select name="autoPan" data-dtype="String">
+          {{#select autoPan}}
+          <option value="none">{{localize "levels3dpreview.settings.autoPan.options.none"}}</option>
+          <option value="player">{{localize "levels3dpreview.settings.autoPan.options.player"}}</option>
+          <option value="all">{{localize "levels3dpreview.settings.autoPan.options.all"}}</option>
+          {{/select}}
+        </select>
+        <p class="notes">{{localize "levels3dpreview.settings.autoPan.hint"}}</p>
+      </div>
+
+    </div>
+    <!-- Token Tab -->
+    <div class="tab" data-tab="token" data-group="sections">
+
+      <div class="form-group">
+        <label>{{localize "levels3dpreview.settings.standupFace.name"}}</label>
+        <input type="checkbox" name="standupFace" data-dtype="Boolean" {{checked standupFace}} />
+        <p class="notes">{{localize "levels3dpreview.settings.standupFace.hint"}}</p>
+      </div>
+
+      <div class="form-group">
+        <label>{{localize "levels3dpreview.settings.highlightCombat.name"}}</label>
+        <input type="checkbox" name="highlightCombat" data-dtype="Boolean" {{checked highlightCombat}} />
+        <p class="notes">{{localize "levels3dpreview.settings.highlightCombat.hint"}}</p>
+      </div>
+
+      <div class="form-group">
+        <label>{{localize "levels3dpreview.settings.hideTarget.name"}}</label>
+        <input type="checkbox" name="hideTarget" data-dtype="Boolean" {{checked highlightCombat}} />
+        <p class="notes">{{localize "levels3dpreview.settings.hideTarget.hint"}}</p>
+      </div>
+
+    </div>
+    <!-- Base Tab -->
+    <div class="tab" data-tab="base" data-group="sections">
+
+
+      <div class="form-group">
+        <label>{{localize "levels3dpreview.settings.baseStyle.name"}}</label>
+        <select name="baseStyle" data-dtype="String">
+          {{#select baseStyle}}
+          <option value="image">{{localize "levels3dpreview.settings.baseStyle.options.image"}}</option>
+          <option value="solid">{{localize "levels3dpreview.settings.baseStyle.options.solid"}}</option>
+          <option value="solidindicator">{{localize "levels3dpreview.settings.baseStyle.options.solidindicator"}}
+          </option>
+          {{/select}}
+        </select>
+        <p class="notes">{{localize "levels3dpreview.settings.baseStyle.hint"}}</p>
+      </div>
+
+      <div class="form-group">
+        <label>{{localize "levels3dpreview.settings.solidBaseMode.name"}}</label>
+        <select name="solidBaseMode" data-dtype="String">
+          {{#select solidBaseMode}}
+          <option value="merge">{{localize "levels3dpreview.settings.solidBaseMode.options.merge"}}</option>
+          <option value="ontop">{{localize "levels3dpreview.settings.solidBaseMode.options.ontop"}}</option>
+          {{/select}}
+        </select>
+        <p class="notes">{{localize "levels3dpreview.settings.solidBaseMode.hint"}}</p>
+      </div>
+
+      <div class="form-group">
+        <label>{{localize "levels3dpreview.settings.solidBaseColor.name"}}</label>
+        <div class="form-fields">
+          <input class="color" type="text" name="solidBaseColor" value="{{solidBaseColor}}">
+          <input type="color" data-edit="solidBaseColor" value="{{solidBaseColor}}">
+        </div>
+        <p class="notes">{{localize "levels3dpreview.settings.solidBaseColor.hint"}}</p>
+      </div>
+
+      <div class="form-group">
+        <label>{{localize "levels3dpreview.settings.selectedImage.name"}}</label>
+        <div class="form-fields">
+          <button type="button" class="file-picker" data-type="imagevideo" data-target="selectedImage"
+            title="Browse Files" tabindex="-1">
+            <i class="fas fa-file-import fa-fw"></i>
+          </button>
+          <input type="text" name="selectedImage" value="{{selectedImage}}" data-dtype="String">
+
+        </div>
+        <p class="notes">{{localize "levels3dpreview.settings.selectedImage.hint"}}</p>
+      </div>
+
+      <div class="form-group">
+        <label>{{localize "levels3dpreview.settings.colorizeInidcator.name"}}</label>
+        <input type="checkbox" name="colorizeInidcator" data-dtype="Boolean" {{checked colorizeInidcator}} />
+        <p class="notes">{{localize "levels3dpreview.settings.colorizeInidcator.hint"}}</p>
+      </div>
+
+      <div class="form-group">
+        <label>{{localize "levels3dpreview.settings.rotateIndicator.name"}}</label>
+        <input type="checkbox" name="rotateIndicator" data-dtype="Boolean" {{checked colorizeInidcator}} />
+        <p class="notes">{{localize "levels3dpreview.settings.rotateIndicator.hint"}}</p>
+      </div>
+
+
+    </div>
+    <!-- Misc Tab -->
+    <div class="tab" data-tab="misc" data-group="sections">
+
+      <div class="form-group">
+        <label>{{localize "levels3dpreview.settings.miniCanvas.name"}}</label>
+        <input type="checkbox" name="miniCanvas" data-dtype="Boolean" {{checked miniCanvas}} />
+        <p class="notes">{{localize "levels3dpreview.settings.miniCanvas.hint"}}</p>
+      </div>
+
+      <div class="form-group">
+        <label>{{localize "levels3dpreview.settings.debugMode.name"}}</label>
+        <input type="checkbox" name="debugMode" data-dtype="Boolean" {{checked debugMode}} />
+        <p class="notes">{{localize "levels3dpreview.settings.debugMode.hint"}}</p>
+      </div>
+
+    </div>
+  </section>
+  <footer class="sheet-footer flexrow">
+    <button type="submit" name="submit">
+      <i class="fas fa-save"></i> {{localize "levels3dpreview.settings.configApp.save"}}
+    </button>
+  </footer>
+</form>

@@ -1,9 +1,5 @@
 {
     "levels3dpreview" : {
-        "sceneConfigTitle": {
-            "title": "3D Canvas",
-            "notes": "Configure 3D Canvas settings for this scene. Click to expand the settings."
-        },
         "controls": {
             "preview3d": "Toggle 3D Mode",
             "miniCanvas": "Popout/Restore Canvas"
@@ -233,6 +229,35 @@
             }
         },
         "settings" : {
+            "headers":{
+                "basics": {
+                    "title": "Basics",
+                    "notes": "Configure basic settings for this 3D Scene."
+                },
+                "environment": {
+                    "title": "Environment",
+                    "notes": "Settings for the 3D environment and effects."
+                },
+                "lighting": {
+                    "title": "Lighting",
+                    "notes": "Configure Lighting and Fog of war."
+                },
+                "visibility": {
+                    "title": "Visibility",
+                    "notes": "Configure the visibility of 3D Objects."
+                }
+            },
+            "configApp": {
+                "title": "3D Canvas Configuration",
+                "hint": "Configure Global 3D Canvas Settings.",
+                "save": "Save Settings",
+                "tabs": {
+                    "canvas": "Canvas",
+                    "token": "Token",
+                    "base": "Base",
+                    "misc": "Misc"
+                }
+            },
             "baseStyle": {
                 "name": "Base Style",
                 "hint": "The base style to use: Image will display the chosen image, solid will draw a miniature style base.",

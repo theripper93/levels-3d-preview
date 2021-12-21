@@ -509,9 +509,7 @@ export class Token3D {
         }
 
         const geometry = new THREE.BoxGeometry(effectsize, effectsize, effectsize);
-        const material = new THREE.MeshBasicMaterial({
-          map: new THREE.TextureLoader().load(effect),
-        });
+        const material = this._getEffectMaterial(effect);
         const mesh = new THREE.Mesh(geometry, material);
         mesh.position.set(position.x, position.y, position.z);
         this.effectsContainer.add(mesh);
@@ -523,6 +521,16 @@ export class Token3D {
       }
 
 
+    }
+
+    _getEffectMaterial(effect){
+      const cachedEffect = this._parent.effectsCache[effect];
+      if(cachedEffect) return cachedEffect;
+      const material = new THREE.MeshBasicMaterial({
+        map: new THREE.TextureLoader().load(effect),
+      });
+      this._parent.effectsCache[effect] = material;
+      return material;
     }
 
     drawBorder(){

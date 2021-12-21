@@ -321,6 +321,9 @@ export class InteractionManager {
       for(let tile of Object.values(this._parent.tiles)){
         collisionGeometries.push(tile.mesh);
       }
+      for(let wall of Object.values(this._parent.walls)){
+        collisionGeometries.push(wall.mesh);
+      }
       const board = this._parent.board;
       if(board) collisionGeometries.push(board);
       const table = this._parent.table;

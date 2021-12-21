@@ -2,7 +2,7 @@
   "name": "levels-3d-preview",
   "title": "3D Canvas",
   "description": "Bring your games to the 3rd dimension!",
-  "version": "1.4.8",
+  "version": "1.4.9",
   "author": "theripper93",
   "authors": [
       {
@@ -45,7 +45,8 @@
     "./scripts/helpers/interactionManager.js",
     "./scripts/helpers/pixilayer.js",
     "./scripts/helpers/helpers.js",
-    "./scripts/helpers/Fog.js"
+    "./scripts/helpers/Fog.js",
+    "./scripts/settingsConfig.js"
 ],
   "scripts": [
     "./scripts/wrappers.js",
