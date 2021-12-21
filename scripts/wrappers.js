@@ -4,11 +4,12 @@ Hooks.once('ready', async function() {
     libWrapper.register("levels-3d-preview", "TokenHUD.prototype.setPosition", setPosition, "WRAPPER")
     libWrapper.register("levels-3d-preview", "CONFIG.Token.objectClass.prototype.refresh", reDraw, "WRAPPER")
     libWrapper.register("levels-3d-preview", "CONFIG.Token.objectClass.prototype.drawBars", drawBars, "WRAPPER")
+    libWrapper.register("levels-3d-preview", "CONFIG.Token.objectClass.prototype.drawEffects", drawEffects, "WRAPPER");
     libWrapper.register("levels-3d-preview", "CONFIG.Token.objectClass.prototype._onMovementFrame", Token3DSetPosition, "WRAPPER");
     libWrapper.register("levels-3d-preview", "TokenLayer.prototype.cycleTokens", cycleTokens, "WRAPPER");
     libWrapper.register("levels-3d-preview", "Canvas.prototype.animatePan", animatePan, "WRAPPER");
     libWrapper.register("levels-3d-preview", "SightLayer.prototype.commitFog", updateFog, "WRAPPER");
-    
+
     if(game.system.id === "dnd5e") libWrapper.register("levels-3d-preview", "game.dnd5e.canvas.AbilityTemplate.prototype.drawPreview", drawPreview, "MIXED")
     
     function updateFog(wrapped, ...args){
@@ -16,6 +17,11 @@ Hooks.once('ready', async function() {
         if(game.Levels3DPreview._active && game.Levels3DPreview.fogExploration){
             game.Levels3DPreview.fogExploration.needsUpdate = true;
         }
+    }
+
+    async function drawEffects(wrapped, ...args){
+        await wrapped(...args);
+        if(game.Levels3DPreview._active && ame.Levels3DPreview.tokens[this.id]) game.Levels3DPreview.tokens[this.id].drawEffects()
     }
 
     function drawBars(wrapped, ...args){

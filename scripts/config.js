@@ -587,6 +587,7 @@ Hooks.on("renderWallConfig", (app,html)=>{
             "name": "levels-3d-preview",
             "label": "3D",
             "icon": "fas fa-cube",
+            "width": 1,
         },
         "wallTexture": {
             type: "filepicker",
