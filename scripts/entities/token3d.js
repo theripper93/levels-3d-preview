@@ -713,8 +713,8 @@ export class Token3D {
 
     updateVisibility(){
       this.mesh.visible = this.alwaysVisible || this.token.visible;
-      this.nameplate.visible = this.token.hud.nameplate.visible;
-      this.bars.visible = this.token.hud.bars.visible;
+      this.nameplate.visible = this.token.hud?.nameplate?.visible;
+      this.bars.visible = this.token?.hud?.bars?.visible;
     }
   
     getColor() {

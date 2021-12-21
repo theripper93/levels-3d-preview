@@ -51,12 +51,34 @@ export class Tile3D {
         this.mesh.rotation.set(-Math.PI/2 + (this.mirrorY ? Math.PI : 0),this.mirrorX ? Math.PI : 0,-this.angle*this.rotSign);
         //this.mesh.castShadow = true;
         this.mesh.receiveShadow = true;
+        this.mesh.userData.hitbox = this.mesh
+        this.mesh.userData.interactive = true;
+        this.mesh.userData.entity3D = this;
         this._parent.scene.add(this.mesh);
     }
 
     destroy(){
         this._parent.scene.remove(this.mesh);
         delete this._parent.tiles[this.tile.id];
+    }
+
+    _onClickLeft(e){
+        const point = Ruler3D.pos3DToCanvas(e.position3D);
+        this.tile.document.checkClick(point, "click");
+    }
+
+
+    _onClickLeft2(e){
+        const point = Ruler3D.pos3DToCanvas(e.position3D);
+        this.tile.document.checkClick(point, "dblclick");
+    }
+
+    _onClickRight(e){
+
+    }
+
+    _onClickRight2(e){
+
     }
 }
 

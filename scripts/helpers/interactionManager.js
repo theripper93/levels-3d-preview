@@ -112,7 +112,8 @@ export class InteractionManager {
       this.mousePosition = { x: event.clientX, y: event.clientY };
       if(event.which !== 1 && event.which !== 3) return;
       //if(event.shiftKey) return;
-      const intersect = this.findMouseIntersect(event);
+      const intersectData = this.findMouseIntersect(event);
+      const intersect = intersectData?.object;
       if(!intersect){
         if(event.which === 1 && event.ctrlKey) canvas.tokens.releaseAll();
          return;
@@ -122,6 +123,7 @@ export class InteractionManager {
       this.clicks++;
       event.entity = intersect.userData.entity3D
       event.intersect = intersect;
+      event.position3D = intersectData.point;
       if (this.clicks === 1) {
         setTimeout(() => {
           if(this.clicks !== 1) return this.clicks = 0;
@@ -277,7 +279,7 @@ export class InteractionManager {
       this.raycaster.setFromCamera(this.mouse, this.camera);
       let intersectTargets = []
       for(let child of this.scene.children){
-        if(canvas.activeLayer.options.objectClass.embeddedName !== child.userData?.entity3D?.embeddedName && child.userData?.entity3D?.embeddedName !== "Wall") continue;
+        if(canvas.activeLayer.options.objectClass.embeddedName !== child.userData?.entity3D?.embeddedName && child.userData?.entity3D?.embeddedName !== "Wall" && child.userData?.entity3D?.embeddedName !== "Tile") continue;
         if(child.userData?.hitbox && child.userData.interactive) intersectTargets.push(child.userData.hitbox);
       }
       const intersects = this.raycaster.intersectObjects(intersectTargets,true);
@@ -286,8 +288,14 @@ export class InteractionManager {
       if(!intersects[0].object.userData.entity3D) intersects[0].object.traverseAncestors(parent => {
         if(parent.userData.entity3D && !parentInt) parentInt = parent;
       });
-      if(parentInt) return parentInt;
-      return intersects[0]?.object;
+      if(parentInt) return {
+        object: parentInt,
+        point: intersects[0].point
+      };
+      return {
+        object: intersects[0]?.object,
+        point: intersects[0]?.point
+      };
     }
   
     set draggable(object){

@@ -49,17 +49,25 @@ export class Wall3D {
             this.vec1.y - this.vec2.y,
             this.distance
         )
+        let uvAttribute = geometry.attributes.uv;
+		
+        for ( let i = 0; i < uvAttribute.count; i ++ ) {  
+            let u = uvAttribute.getX( i );
+            let v = uvAttribute.getY( i );
+            u*=this.repeats;
+            uvAttribute.setXY( i, u, v );
+                
+        }
+        
         const texture = this.texture ? await this._parent.helpers.loadTexture(this.texture) : null;
         if(texture){
             texture.wrapS = THREE.RepeatWrapping;
             texture.wrapT = THREE.RepeatWrapping;
-            texture.repeat.set(this.repeats,1);
         }
         const sidesTexture = this.sidesTexture ? await this._parent.helpers.loadTexture(this.sidesTexture) : null;
         if(sidesTexture){
             sidesTexture.wrapS = THREE.RepeatWrapping;
             sidesTexture.wrapT = THREE.RepeatWrapping;
-            sidesTexture.repeat.set(this.repeats,1);
         }
         const materials = this._getMaterials(texture,sidesTexture);
         this.mesh = new THREE.Mesh(geometry, materials);
@@ -87,7 +95,7 @@ export class Wall3D {
 
     _generateMaterial(texturePath, texture){
         let material;
-        const materialId = `${this.color}${this.opacity}${texturePath}${this.isVisible}${this.repeats}${this.metalness}${this.roughness}`;
+        const materialId = `${this.color}${this.opacity}${texturePath}${this.isVisible}${this.metalness}${this.roughness}`;
         if(this._parent.helpers.materialCache[materialId]){
             material = this._parent.helpers.materialCache[materialId];  
         }else{

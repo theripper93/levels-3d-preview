@@ -304,8 +304,9 @@ export class Template3D {
     }
 
     _getTexture(){
-        if(!this.template.data?.texture) return
-        this._parent.helpers.loadTexture(this.template.data?.texture).then(texture => {
+        if(!this.template.data?.texture && !this.template.data.flags?.siftoolkit?.displayData?.texture) return
+        const texturePath = this.template.data.texture || this.template.data.flags?.siftoolkit?.displayData?.texture
+        this._parent.helpers.loadTexture(texturePath).then(texture => {
             this.material.map = texture
             this.material.emissiveMap = texture
             this.material.opacity = 1

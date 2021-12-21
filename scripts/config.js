@@ -515,6 +515,7 @@ Hooks.on("renderTokenConfig", (app,html)=>{
             default: 1,
             min: 0,
             max: 10,
+            step: 0.1,
         },
         "faceCamera": {
             type: "select",
