@@ -154,8 +154,15 @@ Hooks.on("renderSceneConfig", (app,html)=>{
             default: "none",
             options: {
                 "none": game.i18n.localize("levels3dpreview.flags.particlePreset.options.none"),
+                "rain": game.i18n.localize("levels3dpreview.flags.particlePreset.options.rain"),
+                "snow": game.i18n.localize("levels3dpreview.flags.particlePreset.options.snow"),
+                "leaves": game.i18n.localize("levels3dpreview.flags.particlePreset.options.leaves"),
                 "custom": game.i18n.localize("levels3dpreview.flags.particlePreset.options.custom"),
             }
+        },
+        "partGroupStart": {
+            type: "custom",
+            html: `<div id="part-group">`
         },
         "particleTexture": {
             type: "filepicker",
@@ -215,6 +222,20 @@ Hooks.on("renderSceneConfig", (app,html)=>{
             max: 10,
             step: 0.1,
         },
+        "particleRandomRotation": {
+            type: "checkbox",
+            label: game.i18n.localize("levels3dpreview.flags.particleRandomRotation.label"),
+            default: false,
+        },
+        "particleRandomScale": {
+            type: "checkbox",
+            label: game.i18n.localize("levels3dpreview.flags.particleRandomScale.label"),
+            default: true,
+        },
+        "partGroupEnd": {
+            type: "custom",
+            html: `</div>`
+        },
         "header5": {
             type: "custom",
             html: `<h3 class="form-header"><i class="fas fa-eye"></i> ${game.i18n.localize("levels3dpreview.settings.headers.visibility.title")}</h3><p class="notes">${game.i18n.localize("levels3dpreview.settings.headers.visibility.notes")}</p><div>`
@@ -237,6 +258,15 @@ Hooks.on("renderSceneConfig", (app,html)=>{
     }
 
     injectConfig.inject(app,html,data);
+    html.on("change", `select[name="flags.levels-3d-preview.particlePreset"]`, (e) => {
+        const value = e.target.value;
+        if (value === "custom") {
+            html.find(`#part-group`).slideDown(100);
+        } else {
+            html.find(`#part-group`).slideUp(100);
+        }
+    })
+    html.find(`select[name="flags.levels-3d-preview.particlePreset"]`).trigger("change");
     if(canvas.scene.id !== app.object.id) return;
     html.on("change", "input", (e)=>{
         if(!game.Levels3DPreview._active) return;

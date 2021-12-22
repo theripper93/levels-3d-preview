@@ -232,6 +232,9 @@
                 "notes": "The preset to use for the particle effects.",
                 "options": {
                     "none": "None",
+                    "rain": "Rain",
+                    "snow": "Snow",
+                    "leaves": "Leaves",
                     "custom": "Custom"
                 }
             },
