@@ -226,6 +226,38 @@
             "castShadow": {
                 "label": "Cast Shadow",
                 "notes": "Enable the shadow casting on the light - WARNING High performance impact!."
+            },
+            "particlePreset": {
+                "label": "Particle Preset",
+                "notes": "The preset to use for the particle effects.",
+                "options": {
+                    "none": "None",
+                    "custom": "Custom"
+                }
+            },
+            "particleTexture": {
+                "label": "Texture"
+            },
+            "particleColor": {
+                "label": "Color"
+            },
+            "particleSize": {
+                "label": "Size"
+            },
+            "particleSpeed": {
+                "label": "Speed"
+            },
+            "particleDensity": {
+                "label": "Density"
+            },
+            "particleDirection": {
+                "label": "Direction"
+            },
+            "particleOpacity": {
+                "label": "Opacity"
+            },
+            "particleVelocity": {
+                "label": "Velocity"
             }
         },
         "settings" : {
@@ -241,6 +273,10 @@
                 "lighting": {
                     "title": "Lighting",
                     "notes": "Configure Lighting and Fog of war."
+                },
+                "particles": {
+                    "title": "Particles",
+                    "notes": "Configure Particle Effects."
                 },
                 "visibility": {
                     "title": "Visibility",
@@ -369,7 +405,7 @@
             },
             "resolution": {
                 "name": "Resolution",
-                "hint": "The resolution of the 3D canvas, this will affect performance. (requires refresh)",
+                "hint": "The resolution of the 3D canvas, this will affect performance.",
                 "options": {
                     "full": "High",
                     "half": "Medium",

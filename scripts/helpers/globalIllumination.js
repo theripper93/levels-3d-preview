@@ -14,17 +14,8 @@ export class GlobalIllumination {
     this.lights.hemiLight = light;
     const spotLight = new THREE.DirectionalLight(0xffa95c, 4);
     const adjustmentSpotlight = new THREE.DirectionalLight(0xffa95c, 4);
-    spotLight.castShadow = !game.settings.get("levels-3d-preview", "disableLighting");
-    //spotLight.shadow.bias = -0.00005;
-    spotLight.shadow.radius = 1;
-    spotLight.shadow.camera.fov = 90;
-    spotLight.shadow.camera.far = 100;
-    spotLight.shadow.camera.near = 0.1;
-    const shadowRes = game.settings.get("levels-3d-preview", "shadowQuality")
-    spotLight.shadow.mapSize.width = 1024*shadowRes;
-    spotLight.shadow.mapSize.height = 1024*shadowRes;
-
     this.lights.spotLight = spotLight;
+    this._setShadowQuality();
     this.lights.adjustmentSpotlight = adjustmentSpotlight;
     const sunlightSphere = new THREE.SphereGeometry(6 / 10, 16, 16);
     const sunlight = new THREE.Mesh(sunlightSphere, new THREE.MeshBasicMaterial({ color: 0xffa95c, transparent: true, opacity: 0.5, wireframe: true }));
@@ -46,6 +37,18 @@ export class GlobalIllumination {
     adjustmentSpotlight.target = lightTarget;
     this.sunlight = {color, distance, angle, intensity};
     updateTime3D();
+    }
+
+    _setShadowQuality(){
+      const spotLight = this.lights.spotLight;
+      spotLight.castShadow = !game.settings.get("levels-3d-preview", "disableLighting");
+      spotLight.shadow.radius = 1;
+      spotLight.shadow.camera.fov = 90;
+      spotLight.shadow.camera.far = 100;
+      spotLight.shadow.camera.near = 0.1;
+      const shadowRes = game.settings.get("levels-3d-preview", "shadowQuality")
+      spotLight.shadow.mapSize.width = 1024*shadowRes;
+      spotLight.shadow.mapSize.height = 1024*shadowRes;
     }
 
     set sunlight(data){

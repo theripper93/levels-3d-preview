@@ -14,6 +14,7 @@ import { GlobalIllumination } from "./helpers/globalIllumination.js";
 import { InteractionManager } from "./helpers/interactionManager.js";
 import * as PIXI from "./helpers/pixilayer.js";
 import { Helpers } from "./helpers/helpers.js";
+import { WeatherSystem } from "./helpers/weatherSystem.js";
 import { EXRLoader } from "https://threejs.org/examples/jsm/loaders/EXRLoader.js";
 import { compressSync } from "./lib/fflate.module.js";
 import { EffectComposer } from './lib/EffectComposer.js';
@@ -242,6 +243,8 @@ class Levels3DPreview {
     this.scene.add(dragplane);
     this.interactionManager.dragplane = dragplane;
     this.makeSkybox();
+    const useParticles = canvas.scene.getFlag("levels-3d-preview", "particlePreset") ?? "none";
+    this.weather = new WeatherSystem(this);
     this.lights.globalIllumination = new GlobalIllumination(this);
     this.ruler.addMarkers();
     if(!this._cameraSet){
@@ -531,6 +534,7 @@ class Levels3DPreview {
     _this.animateCamera(delta);
     _this.centerTokenHUD();
     _this.resizeCanvasToDisplaySize(_this);
+    _this.weather?.update();
     _this.controls.update();
     //_this.renderer.render(_this.scene, _this.camera);
     _this.fogExploration?.update();
@@ -684,6 +688,12 @@ Hooks.on("updateScene", (scene,updates) => {
   ){
     game.Levels3DPreview.reload();
     return
+  }
+  for(let key of Object.keys(flags)){
+    if(key.includes("particle")){
+      game.Levels3DPreview.weather.reload();
+      break;
+    }
   }
   if("renderBackground" in flags && !("img" in updates)) game.Levels3DPreview.createBoard();
   if("renderTable" in flags || "tableTex" in flags) game.Levels3DPreview.createTable();

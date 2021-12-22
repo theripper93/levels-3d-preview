@@ -24,10 +24,14 @@ export class Exporter{
             if(exportData.doors && documentType === "Wall" && o.userData?.entity3D.placeable.isDoor) return true;
             return false;
         });
-        objects.forEach (o => {
-            o.traverse(child => { child.userData = {} });
-            o.userData = {};
-        })
+        if(exportData.all){
+            objects.traverse(child => { child.userData = {} });
+        }else{
+            objects.forEach (o => {
+                o.traverse(child => { child.userData = {} });
+                o.userData = {};
+            })
+        }
         this.exportToGltf({
             objects
         });

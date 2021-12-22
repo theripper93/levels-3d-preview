@@ -146,6 +146,77 @@ Hooks.on("renderSceneConfig", (app,html)=>{
         },
         "header4": {
             type: "custom",
+            html: `<h3 class="form-header"><i class="fas fa-cloud-showers-heavy"></i> ${game.i18n.localize("levels3dpreview.settings.headers.particles.title")}</h3><p class="notes">${game.i18n.localize("levels3dpreview.settings.headers.particles.notes")}</p><div>`
+        },
+        "particlePreset": {
+            type: "select",
+            label: game.i18n.localize("levels3dpreview.flags.particlePreset.label"),
+            default: "none",
+            options: {
+                "none": game.i18n.localize("levels3dpreview.flags.particlePreset.options.none"),
+                "custom": game.i18n.localize("levels3dpreview.flags.particlePreset.options.custom"),
+            }
+        },
+        "particleTexture": {
+            type: "filepicker",
+            label: game.i18n.localize("levels3dpreview.flags.particleTexture.label"),
+            default: "",
+        },
+        "particleDensity": {
+            type: "range",
+            label: game.i18n.localize("levels3dpreview.flags.particleDensity.label"),
+            default: 100,
+            min: 1,
+            max: 1000,
+            step: 1,
+        },
+        "particleDirection": {
+            type: "range",
+            label: game.i18n.localize("levels3dpreview.flags.particleDirection.label"),
+            default: 90,
+            min: 0,
+            max: 360,
+            step: 1,
+        },
+        "particleSize": {
+            type: "range",
+            label: game.i18n.localize("levels3dpreview.flags.particleSize.label"),
+            default: 20,
+            min: 1,
+            max: 100,
+            step: 1,
+        },
+        "particleColor": {
+            type: "color",
+            label: game.i18n.localize("levels3dpreview.flags.particleColor.label"),
+            default: "#ffc494",
+        },
+        "particleOpacity": {
+            type: "range",
+            label: game.i18n.localize("levels3dpreview.flags.particleOpacity.label"),
+            default: 0.5,
+            min: 0,
+            max: 1,
+            step: 0.01,
+        },
+        "particleSpeed": {
+            type: "range",
+            label: game.i18n.localize("levels3dpreview.flags.particleSpeed.label"),
+            default: 5,
+            min: 0,
+            max: 10,
+            step: 0.1,
+        },
+        "particleVelocity": {
+            type: "range",
+            label: game.i18n.localize("levels3dpreview.flags.particleVelocity.label"),
+            default: 1,
+            min: 0,
+            max: 10,
+            step: 0.1,
+        },
+        "header5": {
+            type: "custom",
             html: `<h3 class="form-header"><i class="fas fa-eye"></i> ${game.i18n.localize("levels3dpreview.settings.headers.visibility.title")}</h3><p class="notes">${game.i18n.localize("levels3dpreview.settings.headers.visibility.notes")}</p><div>`
         },
         "showSceneWalls": {

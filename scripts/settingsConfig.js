@@ -267,6 +267,10 @@ Hooks.once('init', function() {
           0.25: game.i18n.localize("levels3dpreview.settings.resolution.options.quarter"),
         },
       default: 1,
+      onChange: (value) => {
+        const resolutionMulti = value*window.devicePixelRatio;
+        game.Levels3DPreview.renderer.setPixelRatio(resolutionMulti);
+      }
     });
 
     game.settings.register("levels-3d-preview", "debugMode", {
