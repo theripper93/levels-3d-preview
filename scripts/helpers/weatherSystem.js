@@ -5,14 +5,23 @@ import {factor} from '../main.js';
 export class WeatherSystem {
     constructor(parent){
         this._parent = parent;
-        this.init();
+        this.effects = [];
+        this.init(canvas.scene.getFlag("levels-3d-preview", "particlePreset"));
     }
 
     init(){
-        const weather = canvas.scene.getFlag("levels-3d-preview", "particlePreset") //read flag
-        if(!weather || weather == "none") return this._active = false;
-        this._active = true;
-        const options = this._getOptions();
+        this.initWeather(canvas.scene.getFlag("levels-3d-preview", "particlePreset"));
+        this.initWeather(canvas.scene.getFlag("levels-3d-preview", "particlePreset2"));
+        const customPresets = canvas.scene.getFlag("levels-3d-preview", "particlePresetCustom");
+        if(customPresets){
+            customPresets.forEach(preset => this.initWeather("custom", preset));
+        }
+    }
+
+    initWeather(weather, cOptions){
+        if(!weather || weather == "none") return //this._active = false;
+        //this._active = true;
+        const options = cOptions ?? this._getOptions();
         switch(weather){
             case "custom":
                 this.particleSystem = new BasicDirectionalEffect(options);
@@ -52,6 +61,7 @@ export class WeatherSystem {
                 break;
         }
         this._parent.scene.add(this.particleSystem.object);
+        this.effects.push(this.particleSystem);
     }
 
     _getOptions(){
@@ -71,13 +81,13 @@ export class WeatherSystem {
     }
 
     update(){
-        if(!this._active) return;
-        this.particleSystem.animate();
+        //if(!this._active) return;
+        this.effects.forEach(e => e.animate());
     }
 
     destroy(){
-        if(!this.particleSystem) return;
-        this._parent.scene.remove(this.particleSystem.object);
+        //if(!this.particleSystem) return;
+        this.effects.forEach(e => this._parent.scene.remove(e.object));
     }
 
     reload(){
@@ -97,7 +107,7 @@ class BasicDirectionalEffect {
         this.options.density = Math.min(this.options.density, 1000);
         //this.options.density = 4000;
         console.info("3D Canvas - Initializing Weather System: Particle Count (", Math.round(this.options.density*500), ")",this.options);
-        this.BPG = new BasicParticleGeometry(500*this.options.density, this.options.randomRotation, this.options.randomScale, this.options.direction);
+        this.BPG = new BasicParticleGeometry(500*this.options.density, this.options.randomRotation, this.options.randomScale, this.options.direction, this.options.texture);
         this.init();
     }
 
@@ -105,10 +115,20 @@ class BasicDirectionalEffect {
         this.object = new THREE.Group();
         this.object.position.set(canvas.scene.dimensions.paddingX/factor,0,canvas.scene.dimensions.paddingY/factor);
         this.object.userData.ignoreHover = true;
+        this.textures = this._loadTextures();
         this.material = this._getMaterial();
         const effect = new THREE.Points(this.BPG.geometry,this.material);
         this.randomizer = new Randomizer(this.options.density*5000);
         this.object.add(effect);
+    }
+
+    _loadTextures(){
+        const textures = [];
+        const texturePaths = this.options.texture.split(",").map(t => t.trim());
+        for(let tex of texturePaths){
+            textures.push(new THREE.TextureLoader().load(tex));
+        }
+        return textures;
     }
 
     _getMaterial(){
@@ -140,7 +160,7 @@ class BasicDirectionalEffect {
     _getShaderMaterial(){
         const uniforms = {
             diffuseTexture: {
-                value: new THREE.TextureLoader().load(this.options.texture)
+                value: this.textures
             },
             baseSize: {
                 value: this.options.size*1000
@@ -151,11 +171,15 @@ class BasicDirectionalEffect {
             pOpacity: {
                 value: this.options.opacity
             },
+            texCount: {
+                value: this.textures.length
+            }
           }
+          debugger;
         const rainMaterial = new THREE.ShaderMaterial({
             uniforms: uniforms,
             vertexShader: rain_VS,
-            fragmentShader: rain_FS,
+            fragmentShader: this._generateShader(),
             blending: this.options.blending ?? THREE.NormalBlending,
             depthTest: true,
             depthWrite: false,
@@ -163,6 +187,21 @@ class BasicDirectionalEffect {
             vertexColors: true,
         });
         return rainMaterial;
+    }
+
+    _generateShader(){
+        let baseShader = rain_FS
+        baseShader = baseShader.replace("uniform sampler2D diffuseTexture[16];", `uniform sampler2D diffuseTexture[${this.textures.length}];`);
+        let ifBlock = `if(texIndex <= 0.5){
+            diffuse = texture2D(diffuseTexture[0], coords);
+            }`;
+        for(let i = 1; i < this.textures.length; i++){
+            ifBlock += `else if(texIndex <= ${i+0.5}){
+                diffuse = texture2D(diffuseTexture[${i}], coords);
+            }`;
+        }
+        baseShader = baseShader.replace("#ifBlockHere", ifBlock);
+        return baseShader;
     }
 
     animate(){
@@ -242,11 +281,12 @@ class BasicDirectionalEffect {
 }
 
 class BasicParticleGeometry{
-    constructor(count = 1000, randomRotation = false, randomScale = false, direction = 0){
+    constructor(count = 1000, randomRotation = false, randomScale = false, direction = 0, texture){
         this.count = count;
         this.randomRotation = randomRotation;
         this.randomScale = randomScale;
         this.direction = direction;
+        this.textureCount = texture.split(",").length;
         this.boundingBox = new THREE.Vector3(
             canvas.scene.dimensions.sceneWidth/factor,
             Math.min(canvas.scene.dimensions.sceneWidth/factor, canvas.scene.dimensions.sceneHeight/factor)/2,
@@ -262,6 +302,7 @@ class BasicParticleGeometry{
         const velocity = new Float32Array(this.count);
         const randomVelocityMulti = new Float32Array(this.count);
         const randomSize = new Float32Array(this.count);
+        const textureIndex = new Float32Array(this.count);
         const randomRot = new Float32Array(this.count * 2);
         for(let i=0;i<this.count;i++) {
             positions[i * 3] = Math.random() * this.boundingBox.x;
@@ -273,6 +314,7 @@ class BasicParticleGeometry{
             randomRot[i*2] = Math.cos(rotation);
             randomRot[i*2+1] = Math.sin(rotation);
             randomVelocityMulti[i] = Math.random();
+            textureIndex[i] = Math.floor(Math.random()*this.textureCount);
 
         }
         geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
@@ -280,6 +322,7 @@ class BasicParticleGeometry{
         geometry.setAttribute('randomSize', new THREE.BufferAttribute(randomSize, 1));
         geometry.setAttribute('randomRot', new THREE.BufferAttribute(randomRot, 2));
         geometry.setAttribute('randomVelocityMulti', new THREE.BufferAttribute(randomVelocityMulti, 1));
+        geometry.setAttribute('textureIndex', new THREE.BufferAttribute(textureIndex, 1));
         this.geometry = geometry;
 
     }
@@ -354,7 +397,7 @@ class WeatherPresets{
             speed: 0.000001,
             randomRotation: true,
             randomScale: true,
-            texture: 'ui/particles/leaf1.png'
+            texture: 'ui/particles/leaf1.png,ui/particles/leaf2.png,ui/particles/leaf3.png,ui/particles/leaf4.png,ui/particles/leaf5.png,ui/particles/leaf6.png'
         } 
     }
     static getEmbersPreset(){
@@ -451,21 +494,24 @@ class WeatherPresets{
 
 
 const rain_FS = `
-uniform sampler2D diffuseTexture;
+uniform sampler2D diffuseTexture[16];
 uniform vec3 pColor;
 uniform float pOpacity;
+varying float texIndex;
 varying vec4 vColour;
 varying vec2 vAngle;
 varying vec2 vUv;
 void main() {
   vec2 coords = (gl_PointCoord - 0.5) * mat2(vAngle.x, vAngle.y, -vAngle.y, vAngle.x) + 0.5;
-  vec4 diffuse = texture2D(diffuseTexture, coords);
+  vec4 diffuse;
+  #ifBlockHere
   if ( diffuse.a < 0.01 ) discard;
   vec4 pColor4 = vec4(pColor, pOpacity);
   gl_FragColor = diffuse * pColor4;
 }
 `
 const rain_VS = `
+attribute float textureIndex;
 attribute float randomSize;
 attribute vec2 randomRot;
 varying vec2 vUv;
@@ -473,7 +519,9 @@ uniform float baseSize;
 attribute vec4 colour;
 varying vec4 vColour;
 varying vec2 vAngle;
+varying float texIndex;
 void main() {
+    texIndex = textureIndex;
     vUv = uv;
   vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
   gl_Position = projectionMatrix * mvPosition;
@@ -504,3 +552,18 @@ class Randomizer{
     }
 
 }
+
+/*
+  if(texIndex == 0){
+    diffuse = texture2D(textures[0], coords);
+    }else if(texIndex == 1){
+    diffuse = texture2D(textures[1], coords);
+    }else if(texIndex == 2){
+    diffuse = texture2D(textures[2], coords);
+    }else if(texIndex == 3){
+    diffuse = texture2D(textures[3], coords);
+    }else if(texIndex == 4){
+    diffuse = texture2D(textures[4], coords);
+    }else if(texIndex == 5){
+    diffuse = texture2D(textures[5], coords);
+    }*/

@@ -228,7 +228,8 @@
                 "notes": "Enable the shadow casting on the light - WARNING High performance impact!."
             },
             "particlePreset": {
-                "label": "Particle Preset",
+                "label1": "Particle Preset 1",
+                "label2": "Particle Preset 2",
                 "notes": "The preset to use for the particle effects.",
                 "options": {
                     "none": "None",

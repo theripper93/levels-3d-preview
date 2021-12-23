@@ -148,9 +148,28 @@ Hooks.on("renderSceneConfig", (app,html)=>{
             type: "custom",
             html: `<h3 class="form-header"><i class="fas fa-cloud-showers-heavy"></i> ${game.i18n.localize("levels3dpreview.settings.headers.particles.title")}</h3><p class="notes">${game.i18n.localize("levels3dpreview.settings.headers.particles.notes")}</p><div>`
         },
+        "particlePreset2": {
+            type: "select",
+            label: game.i18n.localize("levels3dpreview.flags.particlePreset.label1"),
+            default: "none",
+            options: {
+                "none": game.i18n.localize("levels3dpreview.flags.particlePreset.options.none"),
+                "rain": game.i18n.localize("levels3dpreview.flags.particlePreset.options.rain"),
+                "heavyrain": game.i18n.localize("levels3dpreview.flags.particlePreset.options.heavyrain"),
+                "snow": game.i18n.localize("levels3dpreview.flags.particlePreset.options.snow"),
+                "hail": game.i18n.localize("levels3dpreview.flags.particlePreset.options.hail"),
+                "leaves": game.i18n.localize("levels3dpreview.flags.particlePreset.options.leaves"),
+                "embers": game.i18n.localize("levels3dpreview.flags.particlePreset.options.embers"),
+                "mysteriouslights": game.i18n.localize("levels3dpreview.flags.particlePreset.options.mysteriouslights"),
+                "stars": game.i18n.localize("levels3dpreview.flags.particlePreset.options.stars"),
+                "dust": game.i18n.localize("levels3dpreview.flags.particlePreset.options.dust"),
+                "smoke": game.i18n.localize("levels3dpreview.flags.particlePreset.options.smoke"),
+                "toxic": game.i18n.localize("levels3dpreview.flags.particlePreset.options.toxic"),
+            }
+        },
         "particlePreset": {
             type: "select",
-            label: game.i18n.localize("levels3dpreview.flags.particlePreset.label"),
+            label: game.i18n.localize("levels3dpreview.flags.particlePreset.label2"),
             default: "none",
             options: {
                 "none": game.i18n.localize("levels3dpreview.flags.particlePreset.options.none"),
