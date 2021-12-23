@@ -233,8 +233,16 @@
                 "options": {
                     "none": "None",
                     "rain": "Rain",
+                    "heavyrain": "Heavy Rain",
                     "snow": "Snow",
+                    "hail": "Hail",
                     "leaves": "Leaves",
+                    "embers": "Embers",
+                    "mysteriouslights": "Mysterious Lights",
+                    "stars": "Stars",
+                    "smoke": "Smoke",
+                    "toxic": "Toxic Fumes",
+                    "dust": "Dust",
                     "custom": "Custom"
                 }
             },
@@ -261,6 +269,18 @@
             },
             "particleVelocity": {
                 "label": "Velocity"
+            },
+            "particleBlending": {
+                "label": "Blending"
+            },
+            "particleRandomRotation": {
+                "label": "Random Rotation"
+            },
+            "particleRandomScale": {
+                "label": "Random Size"
+            },
+            "particleBlend": {
+                "label": "Blend"
             }
         },
         "settings" : {

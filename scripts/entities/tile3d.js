@@ -64,13 +64,13 @@ export class Tile3D {
 
     _onClickLeft(e){
         const point = Ruler3D.pos3DToCanvas(e.position3D);
-        this.tile.document.checkClick(point, "click");
+        if(this.tile.document.checkClick)this.tile.document.checkClick(point, "click");
     }
 
 
     _onClickLeft2(e){
         const point = Ruler3D.pos3DToCanvas(e.position3D);
-        this.tile.document.checkClick(point, "dblclick");
+        if(this.tile.document.checkClick)this.tile.document.checkClick(point, "dblclick");
     }
 
     _onClickRight(e){

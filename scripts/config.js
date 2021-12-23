@@ -155,8 +155,16 @@ Hooks.on("renderSceneConfig", (app,html)=>{
             options: {
                 "none": game.i18n.localize("levels3dpreview.flags.particlePreset.options.none"),
                 "rain": game.i18n.localize("levels3dpreview.flags.particlePreset.options.rain"),
+                "heavyrain": game.i18n.localize("levels3dpreview.flags.particlePreset.options.heavyrain"),
                 "snow": game.i18n.localize("levels3dpreview.flags.particlePreset.options.snow"),
+                "hail": game.i18n.localize("levels3dpreview.flags.particlePreset.options.hail"),
                 "leaves": game.i18n.localize("levels3dpreview.flags.particlePreset.options.leaves"),
+                "embers": game.i18n.localize("levels3dpreview.flags.particlePreset.options.embers"),
+                "mysteriouslights": game.i18n.localize("levels3dpreview.flags.particlePreset.options.mysteriouslights"),
+                "stars": game.i18n.localize("levels3dpreview.flags.particlePreset.options.stars"),
+                "dust": game.i18n.localize("levels3dpreview.flags.particlePreset.options.dust"),
+                "smoke": game.i18n.localize("levels3dpreview.flags.particlePreset.options.smoke"),
+                "toxic": game.i18n.localize("levels3dpreview.flags.particlePreset.options.toxic"),
                 "custom": game.i18n.localize("levels3dpreview.flags.particlePreset.options.custom"),
             }
         },
@@ -231,6 +239,11 @@ Hooks.on("renderSceneConfig", (app,html)=>{
             type: "checkbox",
             label: game.i18n.localize("levels3dpreview.flags.particleRandomScale.label"),
             default: true,
+        },
+        "particleBlend": {
+            type: "checkbox",
+            label: game.i18n.localize("levels3dpreview.flags.particleBlend.label"),
+            default: false,
         },
         "partGroupEnd": {
             type: "custom",

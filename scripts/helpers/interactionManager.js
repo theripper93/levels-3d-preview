@@ -119,7 +119,7 @@ export class InteractionManager {
          return;
       }
       if(event.ctrlKey) return;
-      this.toggleControls(false);
+      if(intersect.userData?.entity3D?.embeddedName !== "Tile")this.toggleControls(false);
       this.clicks++;
       event.entity = intersect.userData.entity3D
       event.intersect = intersect;

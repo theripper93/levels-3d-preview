@@ -41,6 +41,7 @@ class miniCanvas extends Application {
         "height": "100%",
       })
       $("#board").show()
+      canvas.stage.renderable = true;
     }
 
     resize(){
@@ -57,7 +58,10 @@ class miniCanvas extends Application {
   
     close() {
       $(".vtt ").append($(this.element).find("#board"))
-      if(game.Levels3DPreview._active) $("#board").hide()
+      if(game.Levels3DPreview._active) {
+        $("#board").hide()
+        canvas.stage.renderable = false;
+      }
       super.close();
       this.updateControls(false);
     }

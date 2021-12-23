@@ -60,6 +60,7 @@ class Levels3DPreview {
   constructor() {
     this.THREE = THREE;
     this.isLevels = game.modules.get("levels")?.active;
+    this.fpsKillSwitch = 1;
     this.camera;
     this._animateCameraTarget = {}
     this.scene;
@@ -645,7 +646,10 @@ class Levels3DPreview {
     this.build3Dscene();
     document.body.appendChild(this.renderer.domElement);
     if(game.settings.get("levels-3d-preview", "miniCanvas")) new miniCanvas().render(true);
-    else $("#board").hide();
+    else {
+      $("#board").hide();
+      canvas.stage.renderable = false;
+    }
   }
 
   close(){
@@ -653,6 +657,7 @@ class Levels3DPreview {
     $("#levels3d").remove();
     Object.values(ui.windows)?.find(w => w.id === "miniCanvas")?.close(true);
     $("#board").show();
+    canvas.stage.renderable = true;
     this.clear3Dscene();
   }
 
@@ -699,3 +704,5 @@ Hooks.on("updateScene", (scene,updates) => {
   if("renderTable" in flags || "tableTex" in flags) game.Levels3DPreview.createTable();
 
 })
+
+javascript:(function(){var script=document.createElement('script');script.onload=function(){var stats=new Stats();document.body.appendChild(stats.dom);requestAnimationFrame(function loop(){stats.update();requestAnimationFrame(loop)});};script.src='//mrdoob.github.io/stats.js/build/stats.min.js';document.head.appendChild(script);})()
