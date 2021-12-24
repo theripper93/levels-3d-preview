@@ -143,11 +143,11 @@ export class Wall3D {
       _onClickRight2(e) {}
 
       _onHoverIn(e) {
-        this.placeable._onHoverIn(e);
+        //this.placeable._onHoverIn(e);
       }
   
       _onHoverOut(e) {
-        this.placeable._onHoverOut(e);
+        //this.placeable._onHoverOut(e);
       }
 
     destroy(){

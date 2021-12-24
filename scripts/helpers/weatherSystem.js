@@ -114,6 +114,8 @@ class BasicDirectionalEffect {
         this.options.density*=WeatherSystem.getDensityMultiplier();
         this.options.density = Math.min(this.options.density, 1000);
         //this.options.density = 4000;
+        this.boundsCounter = 1;
+        this.boundsCounter2 = -1;
         console.log(`%c3D Canvas\nInitializing Weather System\nParticle Count (${Math.round(this.options.density*500)})`,'color: #f5a742; font-size: 1.8em;');
         console.table(this.options);
         this.BPG = new BasicParticleGeometry(500*this.options.density, this.options.randomRotation, this.options.randomScale, this.options.direction, this.options.texture, this.options.color);
@@ -225,27 +227,74 @@ class BasicDirectionalEffect {
         const directionSin = Math.sin(direction);
         const newRot = (this.material.uniforms.rotationOffset.value + this.options.rotationSpeed)%(Math.PI*2);
         this.material.uniforms.rotationOffset.value = newRot;
-
+        this.boundsCounter*=-1
+        this.boundsCounter2++
+        if(this.boundsCounter2 > 3) this.boundsCounter2 = 0;
         let i = 0;
         let length = positions.length;
-        while(i < length){
-                velocityes[i/3] -= randomVelocityMulti[i/3] * velocity;
-                positions[i] += (-speed + velocityes[i/3]) * directionCos;
-                positions[i+1] += (-speed + velocityes[i/3]) * directionSin;
+        if(this.boundsCounter > 0){
+            if(this.boundsCounter2 == 2){
+                while(i < length){
+                    velocityes[i/3] -= randomVelocityMulti[i/3] * velocity;
     
-
-                if(positions[i] < 0 || positions[i] > bb.x ){
-                    positions[i] = this.randomizer.get() * bb.x;
-                    positions[i+1] = this.randomizer.get() * bb.y;
-                    velocityes[i/3] = 0;
+                    positions[i] += (-speed + velocityes[i/3]) * directionCos;
+                    positions[i+1] += (-speed + velocityes[i/3]) * directionSin;
+        
+                    if(positions[i] > bb.x ){
+                        positions[i] = this.randomizer.get() * bb.x;
+                        positions[i+1] = this.randomizer.get() * bb.y;
+                        velocityes[i/3] = 0;
+                    }
+                    i+=3;
                 }
-                if(positions[i+1] < 0 || positions[i+1] > bb.y ){
-                    positions[i] = this.randomizer.get() * bb.x;
-                    positions[i+1] = this.randomizer.get() * bb.y;
-                    velocityes[i/3] = 0;
+            }else{
+                while(i < length){
+                    velocityes[i/3] -= randomVelocityMulti[i/3] * velocity;
+    
+                    positions[i] += (-speed + velocityes[i/3]) * directionCos;
+                    positions[i+1] += (-speed + velocityes[i/3]) * directionSin;
+        
+                    if(positions[i] < 0){
+                        positions[i] = this.randomizer.get() * bb.x;
+                        positions[i+1] = this.randomizer.get() * bb.y;
+                        velocityes[i/3] = 0;
+                    }
+                    i+=3;
                 }
-                i+=3;
             }
+
+        }else{
+            if(this.boundsCounter2 == 0){
+                while(i < length){
+                    velocityes[i/3] -= randomVelocityMulti[i/3] * velocity;
+    
+                    positions[i] += (-speed + velocityes[i/3]) * directionCos;
+                    positions[i+1] += (-speed + velocityes[i/3]) * directionSin;
+        
+                    if(positions[i+1] > bb.y ){
+                        positions[i] = this.randomizer.get() * bb.x;
+                        positions[i+1] = this.randomizer.get() * bb.y;
+                        velocityes[i/3] = 0;
+                    }
+                    i+=3;
+                }
+            }else{
+                while(i < length){
+                    velocityes[i/3] -= randomVelocityMulti[i/3] * velocity;
+    
+                    positions[i] += (-speed + velocityes[i/3]) * directionCos;
+                    positions[i+1] += (-speed + velocityes[i/3]) * directionSin;
+        
+                    if(positions[i+1] < 0){
+                        positions[i] = this.randomizer.get() * bb.x;
+                        positions[i+1] = this.randomizer.get() * bb.y;
+                        velocityes[i/3] = 0;
+                    }
+                    i+=3;
+                }
+            }
+
+        }
 
         this.BPG.geometry.attributes.position.needsUpdate = true;
     }
@@ -426,7 +475,7 @@ class WeatherPresets{
             opacity: 1,
             velocity: 0.00000001,
             direction: Math.PI,
-            speed: 0.00005,
+            speed: 0.0001,
             randomRotation: true,
             randomScale: true,
             texture: 'modules/levels-3d-preview/assets/particles/emberssmall.png',
@@ -485,7 +534,7 @@ class WeatherPresets{
             density: 200,
             size: 0.075,
             color: "#0d0d0d",
-            opacity: 0.05,
+            opacity: 0.075,
             velocity: 0.0000005,
             direction: Math.PI*3/2,
             speed: 0.0000005,
