@@ -6,7 +6,6 @@ export class WeatherSystem {
     constructor(parent){
         this._parent = parent;
         this.effects = [];
-        if(!game.Levels3DPreview.randomizer) game.Levels3DPreview.randomizer = new Randomizer(4000*5000);;
         this.init(canvas.scene.getFlag("levels-3d-preview", "particlePreset"));
     }
 
@@ -109,6 +108,60 @@ export class WeatherSystem {
     static getDensityMultiplier(){
         return (canvas.scene.dimensions.sceneWidth*canvas.scene.dimensions.sceneHeight/(factor*factor))/9;
     }
+
+    toMacro(){
+        const config = {
+            "particlePreset": "custom",
+            "particleDensity": canvas.scene.getFlag("levels-3d-preview", "particleDensity"),
+            "particleDirection": canvas.scene.getFlag("levels-3d-preview", "particleDirection"),
+            "particleColor": canvas.scene.getFlag("levels-3d-preview", "particleColor"),
+            "particleSize": canvas.scene.getFlag("levels-3d-preview", "particleSize"),
+            "particleSpeed": canvas.scene.getFlag("levels-3d-preview", "particleSpeed"),
+            "particleVelocity": canvas.scene.getFlag("levels-3d-preview", "particleVelocity"),
+            "particleOpacity": canvas.scene.getFlag("levels-3d-preview", "particleOpacity"),
+            "particleTexture": canvas.scene.getFlag("levels-3d-preview", "particleTexture"),
+            "particleRandomRotation": canvas.scene.getFlag("levels-3d-preview", "particleRandomRotation"),
+            "particleRandomScale": canvas.scene.getFlag("levels-3d-preview", "particleRandomScale"),
+            "particleBlending": canvas.scene.getFlag("levels-3d-preview", "particleBlending"),
+            "particleRotationspeed": canvas.scene.getFlag("levels-3d-preview", "particleRotationspeed")
+        }
+        //createMacro();
+
+        new Dialog({
+            title: game.i18n.localize("levels3dpreview.macrodialog.title"),
+            content: `<form id="document-create"><div class="form-group">
+            <label> ${game.i18n.localize("levels3dpreview.macrodialog.label")}</label>
+            <div class="form-fields">
+                <input type="text" name="macroname" placeholder="${game.i18n.localize("levels3dpreview.macrodialog.placeholder")}" required="">
+            </div>
+        </div></form>`,
+            buttons: {
+                export: {
+                    label: `<i class="far fa-save"></i> ` + game.i18n.localize("levels3dpreview.macrodialog.export"),
+                    callback: (html) => {
+                        const macroname = html.find("input[name='macroname']").val();
+                        if(macroname) createMacro(macroname);
+                    }
+                },
+                cancel: {
+                    label: `<i class="fas fa-times"></i> ` + game.i18n.localize("levels3dpreview.macrodialog.cancel"),
+                    callback: () => { }
+                },
+            },
+            default: "cancel",
+          }).render(true);
+
+        function createMacro(name){
+            let script = `canvas.scene.update({ flags: { "levels-3d-preview" : #flagData} })`
+            script = script.replace("#flagData", JSON.stringify(config));            
+            Macro.create({
+                name: name,
+                command: script,
+                type: "script",
+                img: "icons/magic/air/weather-clouds-rainbow.webp"
+            })
+        }
+    }
 }
 
 class BasicDirectionalEffect {
@@ -116,9 +169,11 @@ class BasicDirectionalEffect {
         this.options = {...this.defaultOptions, ...options};
         this.options.density*=WeatherSystem.getDensityMultiplier();
         this.options.density = Math.min(this.options.density, 1000);
-        //this.options.density = 4000;
+        this.options.density = 4000;
         this.boundsCounter = 1;
         this.boundsCounter2 = -1;
+        this.frameCounter = 0;
+        this.frameThrottle = 8;
         console.log(`%c3D Canvas\nInitializing Weather System\nParticle Count (${Math.round(this.options.density*500)})`,'color: #f5a742; font-size: 1.8em;');
         console.table(this.options);
         this.BPG = new BasicParticleGeometry(500*this.options.density, this.options.randomRotation, this.options.randomScale, this.options.direction, this.options.texture, this.options.color);
@@ -126,6 +181,7 @@ class BasicDirectionalEffect {
     }
 
     async init(){
+        this.detectAnimFn(this.options.direction)
         this.object = new THREE.Group();
         this.object.position.set(canvas.scene.dimensions.paddingX/factor,0,canvas.scene.dimensions.paddingY/factor);
         this.object.userData.ignoreHover = true;
@@ -135,6 +191,25 @@ class BasicDirectionalEffect {
         this.randomizer = game.Levels3DPreview.randomizer;
         this.object.add(effect);
         this._ready = true;
+    }
+
+    detectAnimFn(d){
+        const direction = this._detectBounds(d);
+        switch(direction){
+            case "bl":
+                this.animate = this.animateBl;
+                break;
+            case "br":
+                this.animate = this.animateBr;
+                break;
+            case "tl":
+                this.animate = this.animateTl;
+                break;
+            case "tr":
+                this.animate = this.animateTr;
+                break;
+        }
+
     }
 
     async _loadTextures(){
@@ -228,8 +303,7 @@ class BasicDirectionalEffect {
         return baseShader;
     }
 
-    animate(){
-        if(!this._ready) return;
+    getAnimationData(){
         const positions = this.BPG.geometry.attributes.position.array;
         const velocityes = this.BPG.geometry.attributes.velocity.array;
         const randomVelocityMulti = this.BPG.geometry.attributes.randomVelocityMulti.array;
@@ -240,99 +314,248 @@ class BasicDirectionalEffect {
         const directionCos = Math.cos(direction);
         const directionSin = Math.sin(direction);
         const newRot = (this.material.uniforms.rotationOffset.value + this.options.rotationSpeed)%(Math.PI*2);
-        this.material.uniforms.rotationOffset.value = newRot;
-        this.boundsCounter*=-1
-        this.boundsCounter2++
-        if(this.boundsCounter2 > 3) this.boundsCounter2 = 0;
+        return { positions, velocityes, randomVelocityMulti, bb, velocity, speed, direction, directionCos, directionSin, newRot };
+    }
+
+    animate(){}
+
+    animateBl(){
+        if(!this._ready) return;
+        const { positions, velocityes, randomVelocityMulti, bb, velocity, speed, direction, directionCos, directionSin, newRot } = this.getAnimationData();
+        this.frameCounter++;
+        if(this.frameCounter > this.frameThrottle) this.frameCounter = 0;
         let i = 0;
         let length = positions.length;
+        this.material.uniforms.rotationOffset.value = newRot;
+        if(this.frameCounter > this.frameThrottle-2){
+            this.boundsCounter*=-1
+        }
+
+        if(this.frameCounter < this.frameThrottle-2){
+            while(i < length){
+                velocityes[i/3] -= randomVelocityMulti[i/3] * velocity;
+
+                positions[i] += (-speed + velocityes[i/3]) * directionCos;
+                positions[i+1] += (-speed + velocityes[i/3]) * directionSin;
+
+                i+=3;
+            }
+            this.BPG.geometry.attributes.position.needsUpdate = true;
+            return;
+        }
+
         if(this.boundsCounter > 0){
-            if(this.boundsCounter2 == 2){
-                while(i < length){
-                    velocityes[i/3] -= randomVelocityMulti[i/3] * velocity;
-    
-                    positions[i] += (-speed + velocityes[i/3]) * directionCos;
-                    positions[i+1] += (-speed + velocityes[i/3]) * directionSin;
-        
-                    if(positions[i] > bb.x ){
-                        positions[i] = this.randomizer.get() * bb.x;
-                        positions[i+1] = this.randomizer.get() * bb.y;
-                        velocityes[i/3] = 0;
-                    }
-                    i+=3;
-                }
-            }else{
-                while(i < length){
-                    velocityes[i/3] -= randomVelocityMulti[i/3] * velocity;
-    
-                    positions[i] += (-speed + velocityes[i/3]) * directionCos;
-                    positions[i+1] += (-speed + velocityes[i/3]) * directionSin;
-        
-                    if(positions[i] < 0){
-                        positions[i] = this.randomizer.get() * bb.x;
-                        positions[i+1] = this.randomizer.get() * bb.y;
-                        velocityes[i/3] = 0;
-                    }
-                    i+=3;
-                }
-            }
+            while(i < length){
+                velocityes[i/3] -= randomVelocityMulti[i/3] * velocity;
 
+                positions[i] += (-speed + velocityes[i/3]) * directionCos;
+                positions[i+1] += (-speed + velocityes[i/3]) * directionSin;
+    
+                if(positions[i] < 0){
+                    positions[i] = bb.x;
+                    velocityes[i/3] = 0;
+                }
+                i+=3;
+            }
         }else{
-            if(this.boundsCounter2 == 0){
-                while(i < length){
-                    velocityes[i/3] -= randomVelocityMulti[i/3] * velocity;
-    
-                    positions[i] += (-speed + velocityes[i/3]) * directionCos;
-                    positions[i+1] += (-speed + velocityes[i/3]) * directionSin;
-        
-                    if(positions[i+1] > bb.y ){
-                        positions[i] = this.randomizer.get() * bb.x;
-                        positions[i+1] = this.randomizer.get() * bb.y;
-                        velocityes[i/3] = 0;
-                    }
-                    i+=3;
-                }
-            }else{
-                while(i < length){
-                    velocityes[i/3] -= randomVelocityMulti[i/3] * velocity;
-    
-                    positions[i] += (-speed + velocityes[i/3]) * directionCos;
-                    positions[i+1] += (-speed + velocityes[i/3]) * directionSin;
-        
-                    if(positions[i+1] < 0){
-                        positions[i] = this.randomizer.get() * bb.x;
-                        positions[i+1] = this.randomizer.get() * bb.y;
-                        velocityes[i/3] = 0;
-                    }
-                    i+=3;
-                }
-            }
+            while(i < length){
+                velocityes[i/3] -= randomVelocityMulti[i/3] * velocity;
 
+                positions[i] += (-speed + velocityes[i/3]) * directionCos;
+                positions[i+1] += (-speed + velocityes[i/3]) * directionSin;
+    
+                if(positions[i+1] < 0 ){
+                    positions[i+1] = bb.y;
+                    velocityes[i/3] = 0;
+                }
+                i+=3;
+            }
         }
 
         this.BPG.geometry.attributes.position.needsUpdate = true;
+
     }
 
-    _detectExit(direction,bb){
-        if(direction < Math.PI*5/4 && direction > Math.PI/4){
-            return [1,bb.y];
+    animateBr(){
+        if(!this._ready) return;
+        const { positions, velocityes, randomVelocityMulti, bb, velocity, speed, direction, directionCos, directionSin, newRot } = this.getAnimationData();
+        this.frameCounter++;
+        if(this.frameCounter > this.frameThrottle) this.frameCounter = 0;
+        let i = 0;
+        let length = positions.length;
+        this.material.uniforms.rotationOffset.value = newRot;
+        if(this.frameCounter > this.frameThrottle-2){
+            this.boundsCounter*=-1
         }
-        if(direction < 2*Math.PI-Math.PI*3/4 && direction > Math.PI/2+Math.PI/4){
-            return [1,0];
+
+        if(this.frameCounter < this.frameThrottle-2){
+            while(i < length){
+                velocityes[i/3] -= randomVelocityMulti[i/3] * velocity;
+
+                positions[i] += (-speed + velocityes[i/3]) * directionCos;
+                positions[i+1] += (-speed + velocityes[i/3]) * directionSin;
+
+                i+=3;
+            }
+            this.BPG.geometry.attributes.position.needsUpdate = true;
+            return;
         }
-        if(direction > Math.PI/4 && direction < Math.PI/2+Math.PI/4){
-            return [0,bb.x];
+
+        if(this.boundsCounter > 0){
+            while(i < length){
+                velocityes[i/3] -= randomVelocityMulti[i/3] * velocity;
+
+                positions[i] += (-speed + velocityes[i/3]) * directionCos;
+                positions[i+1] += (-speed + velocityes[i/3]) * directionSin;
+    
+                if(positions[i] > bb.x){
+                    positions[i] = 0;
+                    velocityes[i/3] = 0;
+                }
+                i+=3;
+            }
         }else{
-            return [0,0];
+            while(i < length){
+                velocityes[i/3] -= randomVelocityMulti[i/3] * velocity;
+
+                positions[i] += (-speed + velocityes[i/3]) * directionCos;
+                positions[i+1] += (-speed + velocityes[i/3]) * directionSin;
+    
+                if(positions[i+1] < 0 ){
+                    positions[i+1] = bb.y;
+                    velocityes[i/3] = 0;
+                }
+                i+=3;
+            }
         }
+
+        this.BPG.geometry.attributes.position.needsUpdate = true;
+
     }
 
-    _exitZero(pos){
-        return pos > this.exit;
+    animateTl(){
+        if(!this._ready) return;
+        const { positions, velocityes, randomVelocityMulti, bb, velocity, speed, direction, directionCos, directionSin, newRot } = this.getAnimationData();
+        this.frameCounter++;
+        if(this.frameCounter > this.frameThrottle) this.frameCounter = 0;
+        let i = 0;
+        let length = positions.length;
+        this.material.uniforms.rotationOffset.value = newRot;
+        if(this.frameCounter > this.frameThrottle-2){
+            this.boundsCounter*=-1
+        }
+
+        if(this.frameCounter < this.frameThrottle-2){
+            while(i < length){
+                velocityes[i/3] -= randomVelocityMulti[i/3] * velocity;
+
+                positions[i] += (-speed + velocityes[i/3]) * directionCos;
+                positions[i+1] += (-speed + velocityes[i/3]) * directionSin;
+
+                i+=3;
+            }
+            this.BPG.geometry.attributes.position.needsUpdate = true;
+            return;
+        }
+
+        if(this.boundsCounter > 0){
+            while(i < length){
+                velocityes[i/3] -= randomVelocityMulti[i/3] * velocity;
+
+                positions[i] += (-speed + velocityes[i/3]) * directionCos;
+                positions[i+1] += (-speed + velocityes[i/3]) * directionSin;
+    
+                if(positions[i] > bb.x){
+                    positions[i] = 0;
+                    velocityes[i/3] = 0;
+                }
+                i+=3;
+            }
+        }else{
+            while(i < length){
+                velocityes[i/3] -= randomVelocityMulti[i/3] * velocity;
+
+                positions[i] += (-speed + velocityes[i/3]) * directionCos;
+                positions[i+1] += (-speed + velocityes[i/3]) * directionSin;
+    
+                if(positions[i+1] > bb.y ){
+                    positions[i+1] = 0;
+                    velocityes[i/3] = 0;
+                }
+                i+=3;
+            }
+        }
+
+        this.BPG.geometry.attributes.position.needsUpdate = true;
+
     }
 
-    _exitMax(pos){
-        return pos < 0;
+    animateTr(){
+        if(!this._ready) return;
+        const { positions, velocityes, randomVelocityMulti, bb, velocity, speed, direction, directionCos, directionSin, newRot } = this.getAnimationData();
+        this.frameCounter++;
+        if(this.frameCounter > this.frameThrottle) this.frameCounter = 0;
+        let i = 0;
+        let length = positions.length;
+        this.material.uniforms.rotationOffset.value = newRot;
+        if(this.frameCounter > this.frameThrottle-2){
+            this.boundsCounter*=-1
+        }
+
+        if(this.frameCounter < this.frameThrottle-2){
+            while(i < length){
+                velocityes[i/3] -= randomVelocityMulti[i/3] * velocity;
+
+                positions[i] += (-speed + velocityes[i/3]) * directionCos;
+                positions[i+1] += (-speed + velocityes[i/3]) * directionSin;
+
+                i+=3;
+            }
+            this.BPG.geometry.attributes.position.needsUpdate = true;
+            return;
+        }
+
+        if(this.boundsCounter > 0){
+            while(i < length){
+                velocityes[i/3] -= randomVelocityMulti[i/3] * velocity;
+
+                positions[i] += (-speed + velocityes[i/3]) * directionCos;
+                positions[i+1] += (-speed + velocityes[i/3]) * directionSin;
+    
+                if(positions[i] < 0){
+                    positions[i] = bb.x;
+                    velocityes[i/3] = 0;
+                }
+                i+=3;
+            }
+        }else{
+            while(i < length){
+                velocityes[i/3] -= randomVelocityMulti[i/3] * velocity;
+
+                positions[i] += (-speed + velocityes[i/3]) * directionCos;
+                positions[i+1] += (-speed + velocityes[i/3]) * directionSin;
+    
+                if(positions[i+1] > bb.y ){
+                    positions[i+1] = 0;
+                    velocityes[i/3] = 0;
+                }
+                i+=3;
+            }
+        }
+
+        this.BPG.geometry.attributes.position.needsUpdate = true;
+
+    }
+
+    _detectBounds(direction){
+        if(direction > 0 && direction < Math.PI/2) return "bl";
+        if(direction > Math.PI/2 && direction < Math.PI) return "br";
+        if(direction > Math.PI && direction < Math.PI*1.5) return "tl";
+        if(direction > Math.PI*1.5 && direction < Math.PI*2) return "tr";
+        if(direction == 0) return "bl";
+        if(direction == Math.PI/2) return "bl";
+        if(direction == Math.PI) return "tl";
+        if(direction == Math.PI*1.5) return "tr";
     }
 
 
@@ -354,7 +577,7 @@ class BasicDirectionalEffect {
 
 class BasicParticleGeometry{
     constructor(count = 1000, randomRotation = false, randomScale = false, direction = 0, texture, color = "#ffffff"){
-        this.count = count;
+        this.count = Math.round(count);
         this.randomRotation = randomRotation;
         this.randomScale = randomScale;
         this.direction = direction;
@@ -458,7 +681,7 @@ class WeatherPresets{
             color: "#ffffff",
             opacity: 1,
             velocity: 0.00007,
-            direction: 1.7453292519943295,
+            direction: Math.toRadians(91),
             speed: 0.001,
             randomRotation: true,
             randomScale: true,

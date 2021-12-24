@@ -20,6 +20,7 @@ import { EffectComposer } from './lib/EffectComposer.js';
 import { RenderPass } from './lib/RenderPass.js';
 import { Fog } from "./helpers/Fog.js";
 import { Exporter } from "./helpers/exporter.js";
+import { turnStartMarker } from "./helpers/turnStartMarker.js";
 export const factor = 1000;
 
 Hooks.once("ready", () => {
@@ -242,10 +243,11 @@ class Levels3DPreview {
     this.scene.add(dragplane);
     this.interactionManager.dragplane = dragplane;
     this.makeSkybox();
-    const useParticles = canvas.scene.getFlag("levels-3d-preview", "particlePreset") ?? "none";
     this.weather = new WeatherSystem(this);
     this.lights.globalIllumination = new GlobalIllumination(this);
     this.ruler.addMarkers();
+    const useTurnMarker = game.settings.get("levels-3d-preview", "startMarker")
+    if(useTurnMarker)this.turnStartMarker = new turnStartMarker(this);
     if(!this._cameraSet){
       this.resetCamera()
       this._cameraSet = true;
@@ -701,6 +703,19 @@ Hooks.on("updateScene", (scene,updates) => {
   if("renderBackground" in flags && !("img" in updates)) game.Levels3DPreview.createBoard();
   if("renderTable" in flags || "tableTex" in flags) game.Levels3DPreview.createTable();
 
+})
+
+Hooks.on("updateCombat", ()=>{
+  if(!game.Levels3DPreview?._active || !game.Levels3DPreview.turnStartMarker) return;
+  game.Levels3DPreview.turnStartMarker.update();
+})
+Hooks.on("createCombat", ()=>{
+  if(!game.Levels3DPreview?._active || !game.Levels3DPreview.turnStartMarker) return;
+  game.Levels3DPreview.turnStartMarker.update();
+})
+Hooks.on("deleteCombat", ()=>{
+  if(!game.Levels3DPreview?._active || !game.Levels3DPreview.turnStartMarker) return;
+  game.Levels3DPreview.turnStartMarker.update();
 })
 
 javascript:(function(){var script=document.createElement('script');script.onload=function(){var stats=new Stats();document.body.appendChild(stats.dom);requestAnimationFrame(function loop(){stats.update();requestAnimationFrame(loop)});};script.src='//mrdoob.github.io/stats.js/build/stats.min.js';document.head.appendChild(script);})()

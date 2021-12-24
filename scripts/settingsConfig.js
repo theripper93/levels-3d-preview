@@ -16,7 +16,7 @@ class canvas3dConfig extends FormApplication{
 	async getData(options) {
         const data = {}
         const settingsKeys = [
-            "baseStyle","solidBaseMode","solidBaseColor","highlightCombat","selectedImage","colorizeInidcator","rotateIndicator","hideTarget","templateSyle","gridMode","autoPan","camerafocuszoom","standupFace","preventNegative","globalCollision","miniCanvas","debugMode"
+            "baseStyle","solidBaseMode","solidBaseColor","highlightCombat","startMarker","selectedImage","colorizeInidcator","rotateIndicator","hideTarget","templateSyle","gridMode","autoPan","camerafocuszoom","standupFace","preventNegative","globalCollision","miniCanvas","debugMode"
         ];
         for (let key of settingsKeys) {
             data[key] = game.settings.get("levels-3d-preview", key);
@@ -88,10 +88,19 @@ Hooks.once('init', function() {
       type: String,
       default: "#2b2b2b",
     });
-
+    
     game.settings.register("levels-3d-preview", "highlightCombat", {
       name: game.i18n.localize("levels3dpreview.settings.highlightCombat.name"),
       hint: game.i18n.localize("levels3dpreview.settings.highlightCombat.hint"),
+      scope: "world",
+      config: false,
+      type: Boolean,
+      default: true,
+    });
+
+    game.settings.register("levels-3d-preview", "startMarker", {
+      name: game.i18n.localize("levels3dpreview.settings.startMarker.name"),
+      hint: game.i18n.localize("levels3dpreview.settings.startMarker.hint"),
       scope: "world",
       config: false,
       type: Boolean,

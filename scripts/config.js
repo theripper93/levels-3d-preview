@@ -162,6 +162,7 @@ Hooks.on("renderSceneConfig", (app,html)=>{
                 "embers": game.i18n.localize("levels3dpreview.flags.particlePreset.options.embers"),
                 "mysteriouslights": game.i18n.localize("levels3dpreview.flags.particlePreset.options.mysteriouslights"),
                 "stars": game.i18n.localize("levels3dpreview.flags.particlePreset.options.stars"),
+                "starfall": game.i18n.localize("levels3dpreview.flags.particlePreset.options.starfall"),
                 "dust": game.i18n.localize("levels3dpreview.flags.particlePreset.options.dust"),
                 "smoke": game.i18n.localize("levels3dpreview.flags.particlePreset.options.smoke"),
                 "toxic": game.i18n.localize("levels3dpreview.flags.particlePreset.options.toxic"),

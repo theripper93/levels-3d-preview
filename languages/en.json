@@ -347,6 +347,10 @@
                 "name": "Combat Highlight",
                 "hint": "Highlight the current combatant."
             },
+            "startMarker": {
+                "name": "Turn Start Marker",
+                "hint": "When in combat, place a marker where a token started the turn. Only owners of that token will be able to see it."
+            },
             "selectedImage": {
                 "name": "Selection Highlight Image",
                 "hint": "The image to display when selecting a token."
@@ -456,6 +460,13 @@
             "background": "Background",
             "export": "Export",
             "cancel": "Cancel"
+        },
+        "macrodialog": {
+            "title": "Export Particle Effect",
+            "label": "Name:",
+            "export": "Save to Macro",
+            "cancel": "Cancel",
+            "placeholder": "Enter a name for the macro"
         }
     }
 }
