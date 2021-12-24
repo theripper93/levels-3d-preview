@@ -52,6 +52,9 @@ export class WeatherSystem {
             case "stars":
                 this.particleSystem = new BasicDirectionalEffect(WeatherPresets.getStarsPreset());
                 break;
+            case "starfall":
+                this.particleSystem = new BasicDirectionalEffect(WeatherPresets.getStarFallPreset());
+                break;
             case "dust":
                 this.particleSystem = new BasicDirectionalEffect(WeatherPresets.getDustPreset());
                 break;
@@ -122,18 +125,29 @@ class BasicDirectionalEffect {
         this.init();
     }
 
-    init(){
+    async init(){
         this.object = new THREE.Group();
         this.object.position.set(canvas.scene.dimensions.paddingX/factor,0,canvas.scene.dimensions.paddingY/factor);
         this.object.userData.ignoreHover = true;
-        this.textures = this._loadTextures();
+        this.textures = await this._loadTextures();
         this.material = this._getMaterial();
         const effect = new THREE.Points(this.BPG.geometry,this.material);
         this.randomizer = game.Levels3DPreview.randomizer;
         this.object.add(effect);
+        this._ready = true;
     }
 
-    _loadTextures(){
+    async _loadTextures(){
+        const textures = [];
+        const texturePaths = this.options.texture.split(",").map(t => t.trim());
+        for(let tex of texturePaths){
+            const texture = await game.Levels3DPreview.helpers.loadTexture(tex)
+            textures.push(texture);
+        }
+        return textures;
+    }
+
+    _loadTexturesold(){
         const textures = [];
         const texturePaths = this.options.texture.split(",").map(t => t.trim());
         for(let tex of texturePaths){
@@ -215,7 +229,7 @@ class BasicDirectionalEffect {
     }
 
     animate(){
-
+        if(!this._ready) return;
         const positions = this.BPG.geometry.attributes.position.array;
         const velocityes = this.BPG.geometry.attributes.velocity.array;
         const randomVelocityMulti = this.BPG.geometry.attributes.randomVelocityMulti.array;
@@ -414,9 +428,9 @@ class WeatherPresets{
             size: 0.0075,
             color: "#aaaaaa",
             opacity: 1,
-            velocity: 0.0027,
+            velocity: 0.00027,
             direction: 1.7453292519943295,
-            speed: 0,
+            speed: 0.001,
             randomRotation: false,
             randomScale: true,
             texture: 'ui/particles/rain.png'
@@ -454,16 +468,16 @@ class WeatherPresets{
     }
     static getLeavesPreset(){
         return {
-            density: 10,
+            density: 2,
             size: 0.0075,
             color: "#ffffff",
             opacity: 1,
             velocity: 0.000001,
             direction: 2.530727415391778,
-            speed: 0.0002,
+            speed: 0.001,
             randomRotation: true,
             randomScale: true,
-            rotationSpeed: Math.toRadians(1)/5,
+            rotationSpeed: Math.toRadians(1),
             texture: 'ui/particles/leaf1.png,ui/particles/leaf2.png,ui/particles/leaf3.png,ui/particles/leaf4.png,ui/particles/leaf5.png,ui/particles/leaf6.png'
         } 
     }
@@ -471,7 +485,7 @@ class WeatherPresets{
         return {
             density: 10,
             size: 0.0075,
-            color: "#ff3700",
+            color: "#ff3700,#bd2900,#cf380e,#ff5900,#c24f11,#c22311,#fa1900",
             opacity: 1,
             velocity: 0.00000001,
             direction: Math.PI,
@@ -510,6 +524,23 @@ class WeatherPresets{
             randomScale: true,
             rotationSpeed: Math.toRadians(0.1)/5,
             texture: 'modules/levels-3d-preview/assets/particles/stars.png',
+            blending: THREE.AdditiveBlending,
+        }
+    }
+    static getStarFallPreset(){
+        const modFolder = game.modules.get("jb2a_patreon") ? "jb2a_patreon" : "JB2A_DnD5e";
+        return {
+            density: 1,
+            size: 0.01,
+            color: "#ffffff",
+            opacity: 1,
+            velocity: 0,
+            direction: Math.PI/2,
+            speed: 0.00078,
+            randomRotation: true,
+            randomScale: true,
+            rotationSpeed: Math.toRadians(1),
+            texture: `modules/${modFolder}/Library/Generic/Twinkling_Stars/TwinklingStars_05_Orange_100x100.webm,modules/${modFolder}/Library/Generic/Twinkling_Stars/TwinklingStars_04_Orange_100x100.webm,modules/${modFolder}/Library/Generic/Twinkling_Stars/TwinklingStars_06_Orange_100x100.webm,modules/${modFolder}/Library/Generic/Twinkling_Stars/TwinklingStars_07_Orange_100x100.webm,modules/${modFolder}/Library/Generic/Twinkling_Stars/TwinklingStars_08_Orange_100x100.webm,modules/${modFolder}/Library/Generic/Twinkling_Stars/TwinklingStars_09_Orange_100x100.webm`,
             blending: THREE.AdditiveBlending,
         }
     }
@@ -623,3 +654,9 @@ class Randomizer{
     }
 
 }
+
+
+/*
+embers - add multiple colors
+leaves - less and faster
+*/
