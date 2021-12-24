@@ -6,10 +6,12 @@ export class WeatherSystem {
     constructor(parent){
         this._parent = parent;
         this.effects = [];
+        if(!game.Levels3DPreview.randomizer) game.Levels3DPreview.randomizer = new Randomizer(4000*5000);;
         this.init(canvas.scene.getFlag("levels-3d-preview", "particlePreset"));
     }
 
     init(){
+        this.effects = [];
         this.initWeather(canvas.scene.getFlag("levels-3d-preview", "particlePreset"));
         this.initWeather(canvas.scene.getFlag("levels-3d-preview", "particlePreset2"));
         const customPresets = canvas.scene.getFlag("levels-3d-preview", "particlePresetCustom");
@@ -62,6 +64,7 @@ export class WeatherSystem {
         }
         this._parent.scene.add(this.particleSystem.object);
         this.effects.push(this.particleSystem);
+        this.particleSystem = null;
     }
 
     _getOptions(){
@@ -69,15 +72,16 @@ export class WeatherSystem {
         const direction = Math.toRadians(canvas.scene.getFlag("levels-3d-preview", "particleDirection") ?? 90);
         const color = canvas.scene.getFlag("levels-3d-preview", "particleColor") ?? "#ffffff";
         const size = 0.1*(canvas.scene.getFlag("levels-3d-preview", "particleSize") ?? 20)/factor;
-        const speed = 0.01*(canvas.scene.getFlag("levels-3d-preview", "particleSpeed") ?? 5)/factor;
+        const speed = 0.1*(canvas.scene.getFlag("levels-3d-preview", "particleSpeed") ?? 5)/factor;
         const velocity = 0.01*(canvas.scene.getFlag("levels-3d-preview", "particleVelocity") ?? 1)/factor;
         const opacity = canvas.scene.getFlag("levels-3d-preview", "particleOpacity") ?? 0.5;
         const texture = canvas.scene.getFlag("levels-3d-preview", "particleTexture");
         const randomRotation = canvas.scene.getFlag("levels-3d-preview", "particleRandomRotation") ?? false;
         const randomScale = canvas.scene.getFlag("levels-3d-preview", "particleRandomScale") ?? true;
         const blending = canvas.scene.getFlag("levels-3d-preview", "particleBlending") ? THREE.AdditiveBlending : THREE.NormalBlending;
+        const rotationSpeed = Math.toRadians((canvas.scene.getFlag("levels-3d-preview", "particleRotationspeed") ?? 0)/5);
 
-        return { density, direction, color, size, speed, velocity, opacity, texture, randomRotation, randomScale, blending };
+        return { density, direction, color, size, speed, velocity, opacity, texture, randomRotation, randomScale, blending, rotationSpeed };
     }
 
     update(){
@@ -87,7 +91,11 @@ export class WeatherSystem {
 
     destroy(){
         //if(!this.particleSystem) return;
-        this.effects.forEach(e => this._parent.scene.remove(e.object));
+        this.effects.forEach((e) => {
+            this._parent.scene.remove(e.object)
+            e.object.children[0].geometry.dispose();
+            e.object.children[0].material.dispose();
+        });
     }
 
     reload(){
@@ -106,8 +114,9 @@ class BasicDirectionalEffect {
         this.options.density*=WeatherSystem.getDensityMultiplier();
         this.options.density = Math.min(this.options.density, 1000);
         //this.options.density = 4000;
-        console.info("3D Canvas - Initializing Weather System: Particle Count (", Math.round(this.options.density*500), ")",this.options);
-        this.BPG = new BasicParticleGeometry(500*this.options.density, this.options.randomRotation, this.options.randomScale, this.options.direction, this.options.texture);
+        console.log(`%c3D Canvas\nInitializing Weather System\nParticle Count (${Math.round(this.options.density*500)})`,'color: #f5a742; font-size: 1.8em;');
+        console.table(this.options);
+        this.BPG = new BasicParticleGeometry(500*this.options.density, this.options.randomRotation, this.options.randomScale, this.options.direction, this.options.texture, this.options.color);
         this.init();
     }
 
@@ -118,7 +127,7 @@ class BasicDirectionalEffect {
         this.textures = this._loadTextures();
         this.material = this._getMaterial();
         const effect = new THREE.Points(this.BPG.geometry,this.material);
-        this.randomizer = new Randomizer(this.options.density*5000);
+        this.randomizer = game.Levels3DPreview.randomizer;
         this.object.add(effect);
     }
 
@@ -165,17 +174,16 @@ class BasicDirectionalEffect {
             baseSize: {
                 value: this.options.size*1000
             },
-            pColor: {
-                value: new THREE.Color(this.options.color)
-            },
             pOpacity: {
                 value: this.options.opacity
             },
             texCount: {
                 value: this.textures.length
-            }
+            },
+            rotationOffset: {
+                value: 0.0
+            },
           }
-          debugger;
         const rainMaterial = new THREE.ShaderMaterial({
             uniforms: uniforms,
             vertexShader: rain_VS,
@@ -210,20 +218,20 @@ class BasicDirectionalEffect {
         const velocityes = this.BPG.geometry.attributes.velocity.array;
         const randomVelocityMulti = this.BPG.geometry.attributes.randomVelocityMulti.array;
         const bb = this.BPG.boundingBox;
-
         const velocity = this.options.velocity;
         const speed = this.options.speed;
         const direction = this.options.direction;
         const directionCos = Math.cos(direction);
         const directionSin = Math.sin(direction);
-
+        const newRot = (this.material.uniforms.rotationOffset.value + this.options.rotationSpeed)%(Math.PI*2);
+        this.material.uniforms.rotationOffset.value = newRot;
 
         let i = 0;
         let length = positions.length;
         while(i < length){
-                velocityes[i/3] -= speed + randomVelocityMulti[i/3] * velocity;
-                positions[i] += velocityes[i/3] * directionCos;
-                positions[i+1] += velocityes[i/3] * directionSin;
+                velocityes[i/3] -= randomVelocityMulti[i/3] * velocity;
+                positions[i] += (-speed + velocityes[i/3]) * directionCos;
+                positions[i+1] += (-speed + velocityes[i/3]) * directionSin;
     
 
                 if(positions[i] < 0 || positions[i] > bb.x ){
@@ -276,17 +284,20 @@ class BasicDirectionalEffect {
             speed: 0.0001,
             randomRotation: false,
             randomScale: true,
+            rotationSpeed: 0,
         }
     }
 }
 
 class BasicParticleGeometry{
-    constructor(count = 1000, randomRotation = false, randomScale = false, direction = 0, texture){
+    constructor(count = 1000, randomRotation = false, randomScale = false, direction = 0, texture, color = "#ffffff"){
         this.count = count;
         this.randomRotation = randomRotation;
         this.randomScale = randomScale;
         this.direction = direction;
         this.textureCount = texture.split(",").length;
+        this.colors = color.split(",").map(c=>new THREE.Color(c));
+        this.colorCount = this.colors.length;
         this.boundingBox = new THREE.Vector3(
             canvas.scene.dimensions.sceneWidth/factor,
             Math.min(canvas.scene.dimensions.sceneWidth/factor, canvas.scene.dimensions.sceneHeight/factor)/2,
@@ -303,24 +314,29 @@ class BasicParticleGeometry{
         const randomVelocityMulti = new Float32Array(this.count);
         const randomSize = new Float32Array(this.count);
         const textureIndex = new Float32Array(this.count);
-        const randomRot = new Float32Array(this.count * 2);
+        const randomRot = new Float32Array(this.count * 1);
+        const colors = new Float32Array(this.count * 3);
         for(let i=0;i<this.count;i++) {
             positions[i * 3] = Math.random() * this.boundingBox.x;
             positions[i * 3 + 1] = Math.random() * this.boundingBox.y;
             positions[i * 3 + 2] = Math.random() * this.boundingBox.z;
+            const color = this.colors[Math.floor(Math.random() * this.colorCount)];
+            colors[i * 3] = color.r;
+            colors[i * 3 + 1] = color.g;
+            colors[i * 3 + 2] = color.b;
             velocity[i] = 0;
             randomSize[i] = this.randomScale ? Math.random()*2+0.5 : 1;
             const rotation = this.randomRotation ? Math.random()*Math.PI*2 : Math.PI - this.direction;
-            randomRot[i*2] = Math.cos(rotation);
-            randomRot[i*2+1] = Math.sin(rotation);
+            randomRot[i] = rotation;
             randomVelocityMulti[i] = Math.random();
             textureIndex[i] = Math.floor(Math.random()*this.textureCount);
 
         }
         geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        geometry.setAttribute('colors', new THREE.BufferAttribute(colors, 3));
         geometry.setAttribute('velocity', new THREE.BufferAttribute(velocity, 1));
         geometry.setAttribute('randomSize', new THREE.BufferAttribute(randomSize, 1));
-        geometry.setAttribute('randomRot', new THREE.BufferAttribute(randomRot, 2));
+        geometry.setAttribute('randomRot', new THREE.BufferAttribute(randomRot, 1));
         geometry.setAttribute('randomVelocityMulti', new THREE.BufferAttribute(randomVelocityMulti, 1));
         geometry.setAttribute('textureIndex', new THREE.BufferAttribute(textureIndex, 1));
         this.geometry = geometry;
@@ -333,11 +349,11 @@ class WeatherPresets{
         return {
             density: 10,
             size: 0.0075,
-            color: 0xaaaaaa,
+            color: "#aaaaaa",
             opacity: 1,
-            velocity: 0.00007,
+            velocity: 0.007,
             direction: 1.7453292519943295,
-            speed: 0.00075,
+            speed: 0.0055,
             randomRotation: false,
             randomScale: true,
             texture: 'ui/particles/rain.png'
@@ -347,11 +363,11 @@ class WeatherPresets{
         return {
             density: 200,
             size: 0.0075,
-            color: 0xaaaaaa,
+            color: "#aaaaaa",
             opacity: 1,
-            velocity: 0.00007,
+            velocity: 0.0027,
             direction: 1.7453292519943295,
-            speed: 0.00075,
+            speed: 0,
             randomRotation: false,
             randomScale: true,
             texture: 'ui/particles/rain.png'
@@ -359,15 +375,16 @@ class WeatherPresets{
     }
     static getSnowPreset(){
         return {
-            density: 10,
+            density: 5,
             size: 0.0075,
             color: "#ffffff",
             opacity: 1,
-            velocity: 0,
+            velocity: 0.00001,
             direction: 1.7453292519943295,
-            speed: 0.00001,
+            speed: 0.0005,
             randomRotation: true,
             randomScale: true,
+            rotationSpeed: Math.toRadians(1),
             texture: 'ui/particles/snow.png'
         } 
     }
@@ -379,7 +396,7 @@ class WeatherPresets{
             opacity: 1,
             velocity: 0.00007,
             direction: 1.7453292519943295,
-            speed: 0.00001,
+            speed: 0.001,
             randomRotation: true,
             randomScale: true,
             texture: 'modules/levels-3d-preview/assets/particles/emberssmall.png',
@@ -392,11 +409,12 @@ class WeatherPresets{
             size: 0.0075,
             color: "#ffffff",
             opacity: 1,
-            velocity: 0,
+            velocity: 0.000001,
             direction: 2.530727415391778,
-            speed: 0.000001,
+            speed: 0.0002,
             randomRotation: true,
             randomScale: true,
+            rotationSpeed: Math.toRadians(1)/5,
             texture: 'ui/particles/leaf1.png,ui/particles/leaf2.png,ui/particles/leaf3.png,ui/particles/leaf4.png,ui/particles/leaf5.png,ui/particles/leaf6.png'
         } 
     }
@@ -406,9 +424,9 @@ class WeatherPresets{
             size: 0.0075,
             color: "#ff3700",
             opacity: 1,
-            velocity: 0,
+            velocity: 0.00000001,
             direction: Math.PI,
-            speed: 0.0000001,
+            speed: 0.00005,
             randomRotation: true,
             randomScale: true,
             texture: 'modules/levels-3d-preview/assets/particles/emberssmall.png',
@@ -419,11 +437,11 @@ class WeatherPresets{
         return {
             density: 5,
             size: 0.0200,
-            color: "#0084ff",
+            color: "#0084ff,#00ff6a",
             opacity: 1,
-            velocity: 0,
+            velocity: 0.000001,
             direction: Math.PI*3/2,
-            speed: 0.0000001,
+            speed: 0.000001,
             randomRotation: true,
             randomScale: true,
             texture: 'modules/levels-3d-preview/assets/particles/emberssmall.png',
@@ -436,11 +454,12 @@ class WeatherPresets{
             size: 0.0200,
             color: "#ffff80",
             opacity: 0.7,
-            velocity: 0,
+            velocity: 0.00000005,
             direction: Math.PI*2.5/2,
             speed: 0.00000005,
             randomRotation: true,
             randomScale: true,
+            rotationSpeed: Math.toRadians(0.1)/5,
             texture: 'modules/levels-3d-preview/assets/particles/stars.png',
             blending: THREE.AdditiveBlending,
         }
@@ -451,11 +470,12 @@ class WeatherPresets{
             size: 0.175,
             color: "#5e461b",
             opacity: 0.05,
-            velocity: 0,
+            velocity: 0.0000005,
             direction: Math.PI,
             speed: 0.0000005,
             randomRotation: true,
             randomScale: true,
+            rotationSpeed: Math.toRadians(0.1)/5,
             texture: 'modules/levels-3d-preview/assets/particles/dust.png',
             blending: THREE.NormalBlending,
         }
@@ -466,11 +486,12 @@ class WeatherPresets{
             size: 0.075,
             color: "#0d0d0d",
             opacity: 0.05,
-            velocity: 0,
+            velocity: 0.0000005,
             direction: Math.PI*3/2,
             speed: 0.0000005,
             randomRotation: true,
             randomScale: true,
+            rotationSpeed: Math.toRadians(0.1)/5,
             texture: 'modules/levels-3d-preview/assets/particles/dust.png',
             blending: THREE.NormalBlending,
         }
@@ -479,13 +500,14 @@ class WeatherPresets{
         return {
             density: 10,
             size: 0.275,
-            color: "#21451c",
+            color: "#21451c,#38c75e,#1b7533",
             opacity: 0.1,
-            velocity: 0,
+            velocity: 0.0000001,
             direction: Math.PI,
             speed: 0.0000001,
             randomRotation: true,
             randomScale: true,
+            rotationSpeed: Math.toRadians(0.1)/5,
             texture: 'modules/levels-3d-preview/assets/particles/dust.png',
             blending: THREE.NormalBlending,
         }
@@ -495,30 +517,30 @@ class WeatherPresets{
 
 const rain_FS = `
 uniform sampler2D diffuseTexture[16];
-uniform vec3 pColor;
 uniform float pOpacity;
+uniform float rotationOffset;
 varying float texIndex;
-varying vec4 vColour;
-varying vec2 vAngle;
+varying vec3 vColour;
+varying float vAngle;
 varying vec2 vUv;
 void main() {
-  vec2 coords = (gl_PointCoord - 0.5) * mat2(vAngle.x, vAngle.y, -vAngle.y, vAngle.x) + 0.5;
+  vec2 coords = (gl_PointCoord - 0.5) * mat2(cos(vAngle+rotationOffset), sin(vAngle+rotationOffset), -sin(vAngle+rotationOffset), cos(vAngle+rotationOffset)) + 0.5;
   vec4 diffuse;
   #ifBlockHere
   if ( diffuse.a < 0.01 ) discard;
-  vec4 pColor4 = vec4(pColor, pOpacity);
+  vec4 pColor4 = vec4(vColour, pOpacity);
   gl_FragColor = diffuse * pColor4;
 }
 `
 const rain_VS = `
 attribute float textureIndex;
 attribute float randomSize;
-attribute vec2 randomRot;
+attribute float randomRot;
 varying vec2 vUv;
 uniform float baseSize;
-attribute vec4 colour;
-varying vec4 vColour;
-varying vec2 vAngle;
+attribute vec3 colors;
+varying vec3 vColour;
+varying float vAngle;
 varying float texIndex;
 void main() {
     texIndex = textureIndex;
@@ -527,7 +549,7 @@ void main() {
   gl_Position = projectionMatrix * mvPosition;
   gl_PointSize = baseSize * randomSize / gl_Position.w;
   vAngle = randomRot;
-  vColour = colour;
+  vColour = colors;
 }
 `
 
@@ -552,18 +574,3 @@ class Randomizer{
     }
 
 }
-
-/*
-  if(texIndex == 0){
-    diffuse = texture2D(textures[0], coords);
-    }else if(texIndex == 1){
-    diffuse = texture2D(textures[1], coords);
-    }else if(texIndex == 2){
-    diffuse = texture2D(textures[2], coords);
-    }else if(texIndex == 3){
-    diffuse = texture2D(textures[3], coords);
-    }else if(texIndex == 4){
-    diffuse = texture2D(textures[4], coords);
-    }else if(texIndex == 5){
-    diffuse = texture2D(textures[5], coords);
-    }*/

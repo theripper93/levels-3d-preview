@@ -241,6 +241,14 @@ Hooks.on("renderSceneConfig", (app,html)=>{
             max: 10,
             step: 0.1,
         },
+        "particleRotationspeed": {
+            type: "range",
+            label: game.i18n.localize("levels3dpreview.flags.particleRotationspeed.label"),
+            default: 0,
+            min: -10,
+            max: 10,
+            step: 0.1,
+        },
         "particleVelocity": {
             type: "range",
             label: game.i18n.localize("levels3dpreview.flags.particleVelocity.label"),

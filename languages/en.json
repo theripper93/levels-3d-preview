@@ -280,6 +280,9 @@
             "particleRandomScale": {
                 "label": "Random Size"
             },
+            "particleRotationspeed": {
+                "label": "Rotation Speed"
+            },
             "particleBlend": {
                 "label": "Blend"
             }
