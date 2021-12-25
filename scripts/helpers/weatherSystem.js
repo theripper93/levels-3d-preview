@@ -169,7 +169,7 @@ class BasicDirectionalEffect {
         this.options = {...this.defaultOptions, ...options};
         this.options.density*=WeatherSystem.getDensityMultiplier();
         this.options.density = Math.min(this.options.density, 1000);
-        this.options.density = 4000;
+        //this.options.density = 4000;
         this.boundsCounter = 1;
         this.boundsCounter2 = -1;
         this.frameCounter = 0;
@@ -346,28 +346,31 @@ class BasicDirectionalEffect {
 
         if(this.boundsCounter > 0){
             while(i < length){
-                velocityes[i/3] -= randomVelocityMulti[i/3] * velocity;
-
-                positions[i] += (-speed + velocityes[i/3]) * directionCos;
-                positions[i+1] += (-speed + velocityes[i/3]) * directionSin;
-    
                 if(positions[i] < 0){
                     positions[i] = bb.x;
                     velocityes[i/3] = 0;
+                }else{
+                    velocityes[i/3] -= randomVelocityMulti[i/3] * velocity;
+
+                    positions[i] += (-speed + velocityes[i/3]) * directionCos;
+                    positions[i+1] += (-speed + velocityes[i/3]) * directionSin;
                 }
                 i+=3;
             }
         }else{
             while(i < length){
-                velocityes[i/3] -= randomVelocityMulti[i/3] * velocity;
-
-                positions[i] += (-speed + velocityes[i/3]) * directionCos;
-                positions[i+1] += (-speed + velocityes[i/3]) * directionSin;
-    
                 if(positions[i+1] < 0 ){
                     positions[i+1] = bb.y;
                     velocityes[i/3] = 0;
+                }else{
+                    velocityes[i/3] -= randomVelocityMulti[i/3] * velocity;
+
+                    positions[i] += (-speed + velocityes[i/3]) * directionCos;
+                    positions[i+1] += (-speed + velocityes[i/3]) * directionSin;
                 }
+
+    
+
                 i+=3;
             }
         }
@@ -377,6 +380,69 @@ class BasicDirectionalEffect {
     }
 
     animateBr(){
+        if(!this._ready) return;
+        const { positions, velocityes, randomVelocityMulti, bb, velocity, speed, direction, directionCos, directionSin, newRot } = this.getAnimationData();
+        this.frameCounter++;
+        if(this.frameCounter > this.frameThrottle) this.frameCounter = 0;
+        let i = 0;
+        let length = positions.length;
+        this.material.uniforms.rotationOffset.value = newRot;
+        if(this.frameCounter > this.frameThrottle-2){
+            this.boundsCounter*=-1
+        }
+
+        if(this.frameCounter < this.frameThrottle-2){
+            while(i < length){
+                velocityes[i/3] -= randomVelocityMulti[i/3] * velocity;
+
+                positions[i] += (-speed + velocityes[i/3]) * directionCos;
+                positions[i+1] += (-speed + velocityes[i/3]) * directionSin;
+
+                i+=3;
+            }
+            this.BPG.geometry.attributes.position.needsUpdate = true;
+            return;
+        }
+
+        if(this.boundsCounter > 0){
+            while(i < length){
+                if(positions[i] > bb.x){
+                    positions[i] = 0;
+                    velocityes[i/3] = 0;
+                }else{
+                    velocityes[i/3] -= randomVelocityMulti[i/3] * velocity;
+
+                    positions[i] += (-speed + velocityes[i/3]) * directionCos;
+                    positions[i+1] += (-speed + velocityes[i/3]) * directionSin;
+                }
+
+    
+
+                i+=3;
+            }
+        }else{
+            while(i < length){
+                if(positions[i+1] < 0 ){
+                    positions[i+1] = bb.y;
+                    velocityes[i/3] = 0;
+                }else{
+                    velocityes[i/3] -= randomVelocityMulti[i/3] * velocity;
+
+                    positions[i] += (-speed + velocityes[i/3]) * directionCos;
+                    positions[i+1] += (-speed + velocityes[i/3]) * directionSin;
+                }
+
+    
+
+                i+=3;
+            }
+        }
+
+        this.BPG.geometry.attributes.position.needsUpdate = true;
+
+    }
+
+    animateBr_bk(){
         if(!this._ready) return;
         const { positions, velocityes, randomVelocityMulti, bb, velocity, speed, direction, directionCos, directionSin, newRot } = this.getAnimationData();
         this.frameCounter++;
@@ -460,28 +526,34 @@ class BasicDirectionalEffect {
 
         if(this.boundsCounter > 0){
             while(i < length){
-                velocityes[i/3] -= randomVelocityMulti[i/3] * velocity;
-
-                positions[i] += (-speed + velocityes[i/3]) * directionCos;
-                positions[i+1] += (-speed + velocityes[i/3]) * directionSin;
-    
                 if(positions[i] > bb.x){
                     positions[i] = 0;
                     velocityes[i/3] = 0;
+                }else{
+                    velocityes[i/3] -= randomVelocityMulti[i/3] * velocity;
+
+                    positions[i] += (-speed + velocityes[i/3]) * directionCos;
+                    positions[i+1] += (-speed + velocityes[i/3]) * directionSin;
                 }
+
+    
+
                 i+=3;
             }
         }else{
             while(i < length){
-                velocityes[i/3] -= randomVelocityMulti[i/3] * velocity;
-
-                positions[i] += (-speed + velocityes[i/3]) * directionCos;
-                positions[i+1] += (-speed + velocityes[i/3]) * directionSin;
-    
                 if(positions[i+1] > bb.y ){
                     positions[i+1] = 0;
                     velocityes[i/3] = 0;
+                }else{
+                    velocityes[i/3] -= randomVelocityMulti[i/3] * velocity;
+
+                    positions[i] += (-speed + velocityes[i/3]) * directionCos;
+                    positions[i+1] += (-speed + velocityes[i/3]) * directionSin;
                 }
+
+    
+
                 i+=3;
             }
         }
@@ -517,28 +589,34 @@ class BasicDirectionalEffect {
 
         if(this.boundsCounter > 0){
             while(i < length){
-                velocityes[i/3] -= randomVelocityMulti[i/3] * velocity;
-
-                positions[i] += (-speed + velocityes[i/3]) * directionCos;
-                positions[i+1] += (-speed + velocityes[i/3]) * directionSin;
-    
                 if(positions[i] < 0){
                     positions[i] = bb.x;
                     velocityes[i/3] = 0;
+                }else{
+                    velocityes[i/3] -= randomVelocityMulti[i/3] * velocity;
+
+                    positions[i] += (-speed + velocityes[i/3]) * directionCos;
+                    positions[i+1] += (-speed + velocityes[i/3]) * directionSin;
                 }
+
+    
+
                 i+=3;
             }
         }else{
             while(i < length){
-                velocityes[i/3] -= randomVelocityMulti[i/3] * velocity;
-
-                positions[i] += (-speed + velocityes[i/3]) * directionCos;
-                positions[i+1] += (-speed + velocityes[i/3]) * directionSin;
-    
                 if(positions[i+1] > bb.y ){
                     positions[i+1] = 0;
                     velocityes[i/3] = 0;
+                }else{
+                    velocityes[i/3] -= randomVelocityMulti[i/3] * velocity;
+
+                    positions[i] += (-speed + velocityes[i/3]) * directionCos;
+                    positions[i+1] += (-speed + velocityes[i/3]) * directionSin;
                 }
+
+    
+
                 i+=3;
             }
         }

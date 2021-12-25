@@ -74,7 +74,7 @@ export class Token3D {
       if(this.token.data.light.bright !== 0 || this.token.data.light.dim) this.loadLight();
       return token3d;
     }
-
+//remove 
     async loadTexture(){
       if(!this.imageTexture) return null;
       const extension = this.imageTexture.split('.').pop();
