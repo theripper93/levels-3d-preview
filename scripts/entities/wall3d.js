@@ -71,7 +71,7 @@ export class Wall3D {
         }
         const materials = this._getMaterials(texture,sidesTexture);
         this.mesh = new THREE.Mesh(geometry, materials);
-        if(this.wall.data.door){
+        if(this.wall.isDoor){
         this.mesh.userData.hitbox = this.mesh;
         this.mesh.userData.interactive = true;
         }

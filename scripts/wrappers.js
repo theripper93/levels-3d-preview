@@ -9,9 +9,18 @@ Hooks.once('ready', async function() {
     libWrapper.register("levels-3d-preview", "TokenLayer.prototype.cycleTokens", cycleTokens, "WRAPPER");
     libWrapper.register("levels-3d-preview", "Canvas.prototype.animatePan", animatePan, "WRAPPER");
     libWrapper.register("levels-3d-preview", "SightLayer.prototype.commitFog", updateFog, "WRAPPER");
+    libWrapper.register("levels-3d-preview", "TokenLayer.prototype.pasteObjects", pasteObjects, "WRAPPER");
 
     if(game.system.id === "dnd5e") libWrapper.register("levels-3d-preview", "game.dnd5e.canvas.AbilityTemplate.prototype.drawPreview", drawPreview, "MIXED")
     
+    function pasteObjects(wrapped,...args){
+        if(!game.Levels3DPreview?._active) return wrapped(...args);
+        const pos = game.Levels3DPreview.interactionManager.canvas2dMousePosition;
+        args[0].x = pos.x;
+        args[0].y = pos.y;
+        return wrapped(...args);
+    }
+
     function updateFog(wrapped, ...args){
         wrapped(...args);
         if(game.Levels3DPreview._active && game.Levels3DPreview.fogExploration){

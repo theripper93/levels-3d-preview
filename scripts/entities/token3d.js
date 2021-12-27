@@ -24,6 +24,7 @@ export class Token3D {
       this.elevation3d = 0;
       this.materialsCache = {};
       this.combatColor = new THREE.Color("#005eff");
+      this._loaded = false;
       this.getFlags();
     }
   
@@ -72,6 +73,7 @@ export class Token3D {
       this.texture = await this._parent.helpers.loadTexture(this.imageTexture)//this.loadTexture();
       const token3d = this.gtflPath || this.imageTexture ? await this.loadModel() : this.draw();
       if(this.token.data.light.bright !== 0 || this.token.data.light.dim) this.loadLight();
+      this._loaded = true;
       return token3d;
     }
 //remove 
@@ -720,6 +722,7 @@ export class Token3D {
     }
 
     updateVisibility(){
+      if(!this._loaded || !this.mesh || !this.nameplate || !this.bars) return;
       this.mesh.visible = this.alwaysVisible || this.token.visible;
       this.nameplate.visible = this.token.hud?.nameplate?.visible;
       this.bars.visible = this.token?.hud?.bars?.visible;
@@ -877,5 +880,12 @@ export class Token3D {
       for(let token of Object.values(game.Levels3DPreview.tokens)){
         token.refreshBorder();
       }
+    }
+  })
+
+  Hooks.on("pasteToken", (copy, data) => {
+    if(game.Levels3DPreview?._active) {
+    const pos = game.Levels3DPreview.interactionManager.canvas2dMousePosition;
+    data.forEach(td => td.elevation=pos.z)
     }
   })

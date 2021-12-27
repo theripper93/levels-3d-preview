@@ -2,7 +2,8 @@
     "levels3dpreview" : {
         "controls": {
             "preview3d": "Toggle 3D Mode",
-            "miniCanvas": "Popout/Restore Canvas"
+            "miniCanvas": "Popout/Restore Canvas",
+            "loading": "Loading 3D Canvas..."
         },
         "errors": {
             "filenotsupported": "File format not supported",
@@ -467,6 +468,13 @@
             "export": "Save to Macro",
             "cancel": "Cancel",
             "placeholder": "Enter a name for the macro"
+        },
+        "welcome": {
+            "title": "Welcome to 3D Canvas",
+            "content": "<h1>Welcome to 3D!</h1>\nWelcome to 3D Canvas! First, thanks for supporting my development endevour and making this project possible!\nSimply <b>Click the <i class='fas fa-cube'></i> button</b> (Token controls, top left) to switch a scene to 3D.\n<h2>Getting Started</h2>\nThis module, while not complicated to use has a lot of options that will give you the ability to highly customize the system. It's highly advised to <b>read the documentation</b> (by clicking the <b><i class='fas fa-book'></i> Getting Started</b> button below). You can always find the documentation later in your compendiums! The documentation also has a collection of video tutorials that you can reference.<h2>Troubleshooting</h2>\nIf you experience any <b>issue</b> or have trouble with <b>configuration</b> or <b>3d models</b> do not esitate to <b>reach out</b> on the discord channel!<hr>",
+            "ok": "Dismiss",
+            "dontshowagain": "Don't show again",
+            "opencompendium": "Getting Started"
         }
     }
 }

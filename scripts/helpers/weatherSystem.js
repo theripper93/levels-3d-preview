@@ -176,7 +176,7 @@ class BasicDirectionalEffect {
         this.frameThrottle = 8;
         console.log(`%c3D Canvas\nInitializing Weather System\nParticle Count (${Math.round(this.options.density*500)})`,'color: #f5a742; font-size: 1.8em;');
         console.table(this.options);
-        this.BPG = new BasicParticleGeometry(500*this.options.density, this.options.randomRotation, this.options.randomScale, this.options.direction, this.options.texture, this.options.color);
+        this.BPG = new BasicParticleGeometry(500*this.options.density, this.options.randomRotation, this.options.randomScale, this.options.direction, this.options.texture, this.options.color, this.options.velocity);
         this.init();
     }
 
@@ -654,11 +654,12 @@ class BasicDirectionalEffect {
 }
 
 class BasicParticleGeometry{
-    constructor(count = 1000, randomRotation = false, randomScale = false, direction = 0, texture, color = "#ffffff"){
+    constructor(count = 1000, randomRotation = false, randomScale = false, direction = 0, texture, color = "#ffffff", velocity){
         this.count = Math.round(count);
         this.randomRotation = randomRotation;
         this.randomScale = randomScale;
         this.direction = direction;
+        this.velocity = velocity;
         this.textureCount = texture.split(",").length;
         this.colors = color.split(",").map(c=>new THREE.Color(c));
         this.colorCount = this.colors.length;
@@ -692,7 +693,7 @@ class BasicParticleGeometry{
             randomSize[i] = this.randomScale ? Math.random()*2+0.5 : 1;
             const rotation = this.randomRotation ? Math.random()*Math.PI*2 : Math.PI - this.direction;
             randomRot[i] = rotation;
-            randomVelocityMulti[i] = Math.random();
+            randomVelocityMulti[i] = (Math.random()+0.5)*this.velocity;
             textureIndex[i] = Math.floor(Math.random()*this.textureCount);
 
         }
@@ -729,9 +730,9 @@ class WeatherPresets{
             size: 0.0075,
             color: "#aaaaaa",
             opacity: 1,
-            velocity: 0.00027,
+            velocity: 0.0027,
             direction: 1.7453292519943295,
-            speed: 0.001,
+            speed: 0.005,
             randomRotation: false,
             randomScale: true,
             texture: 'ui/particles/rain.png'
@@ -745,7 +746,7 @@ class WeatherPresets{
             opacity: 1,
             velocity: 0.00001,
             direction: 1.7453292519943295,
-            speed: 0.0005,
+            speed: 0.0007,
             randomRotation: true,
             randomScale: true,
             rotationSpeed: Math.toRadians(1),
@@ -853,7 +854,7 @@ class WeatherPresets{
             opacity: 0.05,
             velocity: 0.0000005,
             direction: Math.PI,
-            speed: 0.0000005,
+            speed: 0.00005,
             randomRotation: true,
             randomScale: true,
             rotationSpeed: Math.toRadians(0.1)/5,
@@ -867,9 +868,9 @@ class WeatherPresets{
             size: 0.075,
             color: "#0d0d0d",
             opacity: 0.075,
-            velocity: 0.0000005,
+            velocity: 0.00005,
             direction: Math.PI*3/2,
-            speed: 0.0000005,
+            speed: 0.00005,
             randomRotation: true,
             randomScale: true,
             rotationSpeed: Math.toRadians(0.1)/5,
@@ -883,12 +884,12 @@ class WeatherPresets{
             size: 0.275,
             color: "#21451c,#38c75e,#1b7533",
             opacity: 0.1,
-            velocity: 0.0000001,
+            velocity: 0.0001,
             direction: Math.PI,
-            speed: 0.0000001,
+            speed: 0.00001,
             randomRotation: true,
             randomScale: true,
-            rotationSpeed: Math.toRadians(0.1)/5,
+            rotationSpeed: Math.toRadians(0.2),
             texture: 'modules/levels-3d-preview/assets/particles/dust.png',
             blending: THREE.NormalBlending,
         }

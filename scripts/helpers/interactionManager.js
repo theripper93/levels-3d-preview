@@ -54,7 +54,8 @@ export class InteractionManager {
       _onEnableRuler(event){
         if(!ui.controls.isRuler && !canvas.templates._active) return
         if(ui.controls.activeTool === "select") return
-
+        const intersectData = this.findMouseIntersect(event);
+        if(intersectData?.object?.userData?.entity3D?.embeddedName == "MeasuredTemplate") return
         if(event.which === 1){
           const rulerObj = new THREE.Object3D()
           rulerObj.userData = {
@@ -159,6 +160,9 @@ export class InteractionManager {
       const intersect = this.getHoverObject();
       const object = intersect?.object;
       //Handle placeable hover event
+      if(intersect?.point){
+        this.canvas2dMousePosition = Ruler3D.pos3DToCanvas(intersect.point)
+      }
       if(object && object?.userData?.entity3D?.placeable){
         if(this.currentHover?.placeable?.id !== object?.userData?.entity3D?.placeable?.id) this.currentHover?._onHoverOut(event);
         if(this.currentHover !== object.userData.entity3D){
@@ -223,7 +227,7 @@ export class InteractionManager {
     }
 
     _onClickLeft(event){
-      if(ui.controls.isRuler || (canvas.templates._active && ui.controls.activeTool !== "select")) return
+      if(ui.controls.isRuler) return
       const entity = event.entity;
       const intersect = event.intersect;
       this.handleTriggerHappy(entity);
@@ -322,6 +326,7 @@ export class InteractionManager {
         collisionGeometries.push(tile.mesh);
       }
       for(let wall of Object.values(this._parent.walls)){
+        if(wall.placeable.isDoor && wall.placeable.data.ds === CONST.WALL_DOOR_STATES.OPEN && this.draggable) continue;
         collisionGeometries.push(wall.mesh);
       }
       const board = this._parent.board;

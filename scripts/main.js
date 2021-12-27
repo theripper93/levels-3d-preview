@@ -71,6 +71,7 @@ class Levels3DPreview {
     }
     this.setAutopan();
     this.tokens = {};
+    this.loadingTokens = {};
     this.lights = {
       sceneLights : {}
     };
@@ -105,6 +106,7 @@ class Levels3DPreview {
     this.loader = new GLTFLoader();
     this.FBXLoader = new FBXLoader();
     this._active = false;
+    this._ready = false;
     this.tokenAnimationQueue = [];
     this._cameraSet = false;
     this.helpers = new Helpers();
@@ -139,7 +141,7 @@ class Levels3DPreview {
     this.resolutionMulti = game.settings.get("levels-3d-preview", "resolution")*window.devicePixelRatio;
     this.renderer.setPixelRatio(this.resolutionMulti);
     this.renderer.alpha = true;
-
+    this.renderer.setClearColor(0x999999, 1);
     //composer
     this.composer = new EffectComposer( this.renderer );
 
@@ -150,7 +152,6 @@ class Levels3DPreview {
     this.interactionManager = new InteractionManager(this);
     this.interactionManager.activateListeners();
     this.cursors = new Cursors3D(this);
-    //this.initEnvMap();
   }
 
   async cacheModels(){
@@ -167,6 +168,7 @@ class Levels3DPreview {
   }
 
   build3Dscene() {
+    this._ready = false;
     this.clear3Dscene();
     this.scene = new THREE.Scene();
     this.composer.removePass(this.renderPass);
@@ -177,7 +179,7 @@ class Levels3DPreview {
       this.fogExploration = null;
     }
     if(canvas.scene.getFlag("levels-3d-preview", "enableFogOfWar")) this.fogExploration = new Fog(this);
-
+    this.composer.render();
     //this.scene.environment = this.envMap;
     this._active = true;
     this.debugMode = game.settings.get("levels-3d-preview", "debugMode")
@@ -255,10 +257,19 @@ class Levels3DPreview {
   }
 
   addToken(token) {
-    new Token3D(token,this).load().then((token3d) => {
-      this.scene.add(token3d.mesh);
-      this.tokens[token.id] = token3d;
-    });
+    if(!this._ready){
+      this.loadingTokens[token.id] = new Token3D(token,this);
+      this.loadingTokens[token.id].load().then((token3d) => {
+        this.tokens[token.id] = this.loadingTokens[token.id];
+        this.scene.add(token3d.mesh);
+      });
+    }else{
+      new Token3D(token,this).load().then((token3d) => {
+        this.tokens[token.id] = token3d;
+        this.scene.add(token3d.mesh);
+      });
+    }
+
   }
 
   async createGrid(){
@@ -487,6 +498,7 @@ class Levels3DPreview {
       this.scene.remove(this.scene.children[0]);
     }
     this.tokens = {};
+    this.loadingTokens = {};
     this.walls = {};
     this.doors = {};
     this.lights.sceneLights = {};
@@ -518,6 +530,7 @@ class Levels3DPreview {
   animation(time) {
     const _this = game.Levels3DPreview;
     if(!_this._active) return;
+    if(!_this._ready) return _this._onProgress();
     _this.interactionManager.dragObject();
     _this.cursors.update();
     const delta = _this.clock.getDelta();
@@ -629,6 +642,18 @@ class Levels3DPreview {
     //this.controls.update();
   }
 
+  _onProgress(){
+    const tokenArray = Object.values(this.loadingTokens);
+    const total = tokenArray.length;
+    const loaded = tokenArray.filter(token => token._loaded).length;
+    let progress = total === 0 ? 100 : Math.round(loaded/total*100) ;
+    if(total === loaded) {
+      this._ready = true;
+      this.loadingTokens = {};
+    }
+    SceneNavigation.displayProgressBar({label: game.i18n.localize("levels3dpreview.controls.loading"), pct: progress});
+  }
+
   toggle(force){
     if(force !== undefined){
       force ? this.open() : this.close();
@@ -718,4 +743,4 @@ Hooks.on("deleteCombat", ()=>{
   game.Levels3DPreview.turnStartMarker.update();
 })
 
-javascript:(function(){var script=document.createElement('script');script.onload=function(){var stats=new Stats();document.body.appendChild(stats.dom);requestAnimationFrame(function loop(){stats.update();requestAnimationFrame(loop)});};script.src='//mrdoob.github.io/stats.js/build/stats.min.js';document.head.appendChild(script);})()
+//javascript:(function(){var script=document.createElement('script');script.onload=function(){var stats=new Stats();document.body.appendChild(stats.dom);requestAnimationFrame(function loop(){stats.update();requestAnimationFrame(loop)});};script.src='//mrdoob.github.io/stats.js/build/stats.min.js';document.head.appendChild(script);})()
