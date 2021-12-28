@@ -307,8 +307,8 @@ class Levels3DPreview {
     const plane = new THREE.Mesh(geometry, material);
     plane.receiveShadow = true;
     plane.castShadow = true;
-    const offsetX = canvas.dimensions.shiftX / this.factor;
-    const offsetY = canvas.dimensions.shiftY / this.factor;
+    const offsetX = -canvas.dimensions.shiftX / this.factor;
+    const offsetY = -canvas.dimensions.shiftY / this.factor;
     plane.position.set(center.x+offsetX, center.y-depth/2-0.00001, center.z+offsetY);
     plane.rotation.x = -Math.PI / 2;
     this.board = plane;
@@ -416,7 +416,8 @@ class Levels3DPreview {
     this.renderer.outputEncoding = THREE.LinearEncoding
     this.renderer.toneMapping = THREE.NoToneMapping;
     const rootImage = canvas.scene.getFlag("levels-3d-preview", "skybox") ?? "";
-    if(rootImage.toLowerCase().endsWith(".exr")) return this.loadEXR(rootImage);
+    const exr = canvas.scene.getFlag("levels-3d-preview", "exr") ?? "";
+    if(exr) this.loadEXR(exr);
     if (!rootImage) return;
     const imagesSuffix = ["_ft", "_bk", "_up", "_dn", "_rt", "_lf"];
     let currSuffix;
@@ -447,7 +448,7 @@ class Levels3DPreview {
     this.skybox = skybox;
     const loader = new THREE.CubeTextureLoader();    
     const textureCube = loader.load( textureArray );
-    this.scene.environment = textureCube;
+    if(!exr) this.scene.environment = textureCube;
   }
 
   loadEXR(rootImage){

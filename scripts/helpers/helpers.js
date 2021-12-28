@@ -23,6 +23,7 @@ export class Helpers{
       if(isVideo){
       let video;
       video = document.createElement( 'video' );
+      video.crossOrigin="anonymous";
       video.src = texturePath;
       video.loop = true;
       video.muted = true;

@@ -73,6 +73,13 @@ Hooks.on("renderSceneConfig", (app,html)=>{
             placeholder: game.i18n.localize("levels3dpreview.flags.skybox.placeholder"),
             notes: game.i18n.localize("levels3dpreview.flags.skybox.notes"),
         },
+        "exr" : {
+            type: "filepicker.folder",
+            fpTypes: [".exr"],
+            label: game.i18n.localize("levels3dpreview.flags.exr.label"),
+            placeholder: game.i18n.localize("levels3dpreview.flags.exr.placeholder"),
+            notes: game.i18n.localize("levels3dpreview.flags.exr.notes"),
+        },
         "renderTable": {
             "type": "checkbox",
             "label": game.i18n.localize("levels3dpreview.flags.renderTable.label"),

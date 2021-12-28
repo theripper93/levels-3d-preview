@@ -32,6 +32,11 @@
                 "placeholder": "Skybox Image",
                 "notes": "The file needs to be in the same folder of 6 total files, files must contain _ft, _bk, _up, _dn, _rt, _lf."
             },
+            "exr" : {
+                "label": "HDRI",
+                "placeholder": "EXR File",
+                "notes": "If no skybox is selected, the HDRI will be used as the background. if both skybox and HDRI are selected, the skybox will be used as the background and the HDRI for lighting and reflections."
+            },
             "renderTable": {
                 "label": "Display Table",
                 "notes": "Render the table in the 3D view."
