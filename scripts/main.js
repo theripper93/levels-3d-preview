@@ -68,6 +68,7 @@ class Levels3DPreview {
     this.THREE = THREE;
     this.socket = socketlib.registerModule("levels-3d-preview");
     this.socket.register("Particle3D", this.particleSocket);
+    this.socket.register("Particle3DStop", this.Particle3DStop);
     this.isLevels = game.modules.get("levels")?.active;
     this.fpsKillSwitch = 1;
     this.camera;
@@ -707,6 +708,9 @@ class Levels3DPreview {
 
   particleSocket(...args){
     game.Levels3DPreview.particleSystem.resolveSocket(...args);
+  }
+  Particle3DStop(...args){
+    game.Levels3DPreview.particleSystem.stop(...args);
   }
 }
 
