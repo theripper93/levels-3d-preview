@@ -22,13 +22,20 @@ import { Fog } from "./helpers/Fog.js";
 import { Exporter } from "./helpers/exporter.js";
 import { turnStartMarker } from "./helpers/turnStartMarker.js";
 import { ParticleSystem } from "./helpers/particleSystem.js";
+import { Particle3D } from "./helpers/particleSystem.js";
 export const factor = 1000;
+
+globalThis.Particle3D = Particle3D;
 
 Hooks.once("ready", () => {
   game.Levels3DPreview = new Levels3DPreview();
   game.Levels3DPreview.cacheModels();
   Hooks.callAll("3DCanvasReady", game.Levels3DPreview);
 })
+
+Hooks.once("socketlib.ready", () => {
+  
+});
 
 Hooks.on("canvasReady", async () => {
   do{
@@ -59,6 +66,8 @@ export function sleep(ms) {
 class Levels3DPreview {
   constructor() {
     this.THREE = THREE;
+    this.socket = socketlib.registerModule("levels-3d-preview");
+    this.socket.register("Particle3D", this.particleSocket);
     this.isLevels = game.modules.get("levels")?.active;
     this.fpsKillSwitch = 1;
     this.camera;
@@ -694,6 +703,10 @@ class Levels3DPreview {
    this._cameraSet = false;
    this.close();
    this.open();
+  }
+
+  particleSocket(...args){
+    game.Levels3DPreview.particleSystem.resolveSocket(...args);
   }
 }
 

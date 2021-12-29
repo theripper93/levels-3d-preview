@@ -15,6 +15,7 @@ const {
   Color,
   RadialVelocity,
   SpriteRenderer,
+  LineZone,
   RandomDrift,
   Gravity,
   SphereZone,
@@ -56,7 +57,7 @@ import { getTriangleHitPointInfo } from '../lib/three-mesh-bvh.js';
         });
     }
 
-    async projectile(from,to,params){
+    async effect(from,to,params){
       to = to instanceof Array ? to : [to]; 
       const repeats = params.repeats || 1;
       const delay = params.delay || 0;
@@ -82,7 +83,7 @@ import { getTriangleHitPointInfo } from '../lib/three-mesh-bvh.js';
 
     update(delta){
       if(this.system){
-        this.system.update();
+        this.system.update(delta);
         this.effects.forEach(effect => {
           effect.animate(delta);
           if(effect._currentSpeed > 1){
@@ -98,51 +99,58 @@ import { getTriangleHitPointInfo } from '../lib/three-mesh-bvh.js';
       }
     }
 
+    resolveSocket(from,to,params){
+      if(canvas.scene.id !== params.scene || !game.Levels3DPreview._active) return;
+      from = this.fromUUID(from);
+      to = to.map(t => this.fromUUID(t));
+      if(params.type === 'projectile' || params.type === "p" ){
+        this.effect(from,to,params);
+      }
+      if(params.type === 'sprite' || params.type === "s" ){
+        params.single = true;
+        this.effect(from,to,params);
+      }
+      if(params.type === 'ray' || params.type === "r" ){
+        this.effect(from,to,params);
+      }
+    }
+
+    fromUUID(uuid){
+      if(uuid.layer){
+        return canvas.layers.find(l => l.name === uuid.layer).get(uuid.id);
+      }else{
+        return uuid;
+      }
+    }
 
   }
-  
-/*
-Projectile Params
-{
-  sprite,
-  rate: {
-    particles,
-    seconds,
-  }
-  mass,
-  life: {
-    min,
-    max,
-  }
-  emitterSize,
-  scale,
-  gravity,
-  color: {
-    start,
-    end,
-  }
-  arc,
-  speed,
-  miss,
-  repeats,
-  delay,
-  single,
-}
-*/
 
 
 class ProjectileEffect{
   constructor(from,to,params){
       this._missScale = 1;
       this._origin = this.inferPosition(from);
-      this._target = this.inferPosition(to);
+      this._target = this.inferPosition(to, true);
       this.params = {...this.defaultSettings, ...params};
+      this._duration = this.params.duration
       this.miss();
       this._dist = this._origin.distanceTo(this._target);
       const unitSpeed = this.params.speed*((canvas.dimensions.size)/factor);
       this._speed = unitSpeed/this._dist;
       this._time = 0;
       this._currentSpeed = 0;
+  }
+
+  get isSprite(){
+    return this.params.type === 'sprite' || this.params.type === 's';
+  }
+
+  get isProjectile(){
+    return this.params.type === 'projectile' || this.params.type === 'p';
+  }
+
+  get isRay(){
+    return this.params.type === 'ray' || this.params.type === 'r';
   }
 
   async init(){
@@ -161,7 +169,15 @@ class ProjectileEffect{
         new Body(await this.createSprite()),
         new Mass(this.params.mass),
         new Life(this.params.life.min, this.params.life.max),
-        new Position(new SphereZone(this.params.emitterSize)),
+        new Position(this.isRay ? new LineZone(
+          this._origin.x,
+          this._origin.y,
+          this._origin.z,
+          this._target.x,
+          this._target.y,
+          this._target.z
+          ) : new SphereZone(this.params.emitterSize)),
+        new RadialVelocity(this.params.radial.angle, this.params.radial.direction, this.params.radial.theta),
       ])
       .addBehaviours([
         new RandomDrift(0.0010, 0.0010, 0.0010, 0.05),
@@ -169,7 +185,7 @@ class ProjectileEffect{
         new Gravity(this.params.gravity),
         new Color(this.params.color.start, this.params.color.end, Infinity, ease.easeOutSine),
       ])
-      .setPosition(this._origin)
+      //.setPosition(this._origin)
       .emit();
   }
 
@@ -184,7 +200,7 @@ class ProjectileEffect{
     tex.image.currentTime = 0;
     const material = new THREE.SpriteMaterial({
       map: tex,
-      color: 0xff0000,
+      color: 0xffffff,
       blending: this.params.single ? THREE.NormalBlending : THREE.AdditiveBlending,
       fog: true,
     });
@@ -237,21 +253,33 @@ class ProjectileEffect{
         start: "#ff4d00",
         end: "#ffff00",
       },
+      radial: {
+        angle: 0,
+        direction: new THREE.Vector3(0,0,0),
+        theta: 30,
+      },
       arc: 0,
       speed: 10,
       miss: false,
       single: false,
+      duration: 2,
     }
   }
 
-  inferPosition(object){
+  inferPosition(object, isTarget){
     if(object.x !== undefined && object.y !== undefined && object.z !== undefined){
       return Ruler3D.posCanvasTo3d(object);
     }
     if(object instanceof Token){
       this._missScale = Math.max(object.data.width, object.data.height)*object.data.scale;
       const tokenPos = game.Levels3DPreview.tokens[object.id].mesh.position.clone()
-      tokenPos.y += game.Levels3DPreview.tokens[object.id].d*0.66;
+      if(isTarget){
+        tokenPos.y += game.Levels3DPreview.tokens[object.id].d*(Math.random()*0.5+0.25);
+        tokenPos.x += game.Levels3DPreview.tokens[object.id].w*((Math.random()-0.5)*0.5);
+        tokenPos.z += game.Levels3DPreview.tokens[object.id].h*((Math.random()-0.5)*0.5);
+      }else{
+        tokenPos.y += game.Levels3DPreview.tokens[object.id].d*0.66;
+      }
       return tokenPos;
     }
     const z = object.document.getFlag("levels", "heightBottom") ?? object.document.getFlag("levels", "elevation") ?? 0;
@@ -263,6 +291,11 @@ class ProjectileEffect{
   }
 
   animate(delta){
+    if(this.isRay){
+      this._duration -= delta;
+      if(this._duration <= 0) this._currentSpeed = 2;
+      return;
+    }
     if(this.animationPath){
       console.log(delta)
       this._time += delta;
@@ -278,3 +311,138 @@ class ProjectileEffect{
     }
   }
 }
+
+export class Particle3D{
+  constructor(type,socket = true){
+    this.params = {}
+    this.params.type = type ?? "p";
+    this.socket = socket;
+  }
+
+  start(){
+    this.params.scene = canvas.scene.id;
+    game.Levels3DPreview.socket.executeForEveryone("Particle3D",this._from ,this._to , this.params);
+  }
+
+  toUUID(placeable){
+    if(placeable?.layer?.name){
+      return {
+        layer: placeable.layer.name,
+        id: placeable.id,
+      }
+    }else{
+      return placeable
+    }
+  }
+
+  from(from){
+    this._from = this.toUUID(from);
+    return this;
+  }
+  to(to){
+    to = to instanceof Array ? to : [to];
+    to = to.map(t => this.toUUID(t));
+    this._to = to;
+    return this;
+  }
+  sprite(sprite){
+    this.params.sprite = sprite;
+    return this;
+  }
+  rate(particles, seconds){
+    this.params.rate = {particles, seconds};
+    return this;
+  }
+  mass(mass){
+    this.params.mass = mass;
+    return this;
+  }
+  life(min, max){
+    max = max ?? min;
+    this.params.life = {min, max};
+    return this;
+  }
+  emitterSize(size){
+    this.params.emitterSize = size;
+    return this;
+  }
+  scale(a,b){
+    if(b){
+      this.params.scale = new Span(a,b);
+    }else{
+      this.params.scale = a;
+    }
+    return this;
+  }
+  gravity(gravity){
+    this.params.gravity = gravity;
+    return this;
+  }
+  color(start, end){
+    end = end ?? start;
+    start = start instanceof Array ? start : [start];
+    end = end instanceof Array ? end : [end];
+    start = start.map(c => new THREE.Color(c));
+    end = end.map(c => new THREE.Color(c));
+    this.params.color = {start, end};
+    return this;
+  }
+  arc(arc){
+    this.params.arc = arc;
+    return this;
+  }
+  speed(speed){
+    this.params.speed = speed;
+    return this;
+  }
+  miss(miss){
+    this.params.miss = miss === undefined ? true : miss;
+    return this;
+  }
+  repeat(repeat){
+    this.params.repeats = repeat;
+    return this;
+  }
+  delay(delay){
+    this.params.delay = delay;
+    return this;
+  }
+  radial(radius, direction = {x:0,y:1,z:0}, theta = 30){
+    direction = new THREE.Vector3(direction.x, direction.y, direction.z);
+    this.params.radial = {radius, direction, theta};
+    return this;
+  }
+  duration(duration){
+    this.params.duration = duration/1000;
+    return this;
+  }
+}
+
+/*
+Projectile Params
+{
+  sprite,
+  rate: {
+    particles,
+    seconds,
+  }
+  mass,
+  life: {
+    min,
+    max,
+  }
+  emitterSize,
+  scale,
+  gravity,
+  color: {
+    start,
+    end,
+  }
+  arc,
+  speed,
+  miss,
+  repeats,
+  delay,
+  single,
+}
+*/
