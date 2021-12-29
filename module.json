@@ -51,7 +51,8 @@
   "scripts": [
     "./scripts/wrappers.js",
     "./scripts/lib/injectConfig.js",
-    "./scripts/minicanvas.js"
+    "./scripts/minicanvas.js",
+    "./scripts/lib/three-nebula.js"
   ],
   "styles": [
       "./styles/module.css"

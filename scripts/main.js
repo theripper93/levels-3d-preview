@@ -21,6 +21,7 @@ import { RenderPass } from './lib/RenderPass.js';
 import { Fog } from "./helpers/Fog.js";
 import { Exporter } from "./helpers/exporter.js";
 import { turnStartMarker } from "./helpers/turnStartMarker.js";
+import { ParticleSystem } from "./helpers/particleSystem.js";
 export const factor = 1000;
 
 Hooks.once("ready", () => {
@@ -247,6 +248,7 @@ class Levels3DPreview {
     this.makeSkybox();
     this.weather = new WeatherSystem(this);
     this.lights.globalIllumination = new GlobalIllumination(this);
+    this.particleSystem = new ParticleSystem(this);
     this.ruler.addMarkers();
     const useTurnMarker = game.settings.get("levels-3d-preview", "startMarker")
     if(useTurnMarker)this.turnStartMarker = new turnStartMarker(this);
@@ -544,7 +546,7 @@ class Levels3DPreview {
         token.faceCamera();
       }
     });
-
+    _this.particleSystem.update(delta);
     _this.checkInFog();
     _this.animateCamera(delta);
     _this.centerTokenHUD();
