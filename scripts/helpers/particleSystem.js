@@ -6,11 +6,13 @@ const {
   Position,
   Mass,
   Radius,
+  Spring,
   Life,
   Velocity,
   PointZone,
   Vector3D,
   Alpha,
+  Repulsion,
   Scale,
   Color,
   RadialVelocity,
@@ -56,6 +58,8 @@ export class ParticleSystem {
 
   async effect(from, to, params) {
     to = to instanceof Array ? to : [to];
+    if(!from) from = [null];
+    from = from instanceof Array ? from : [from];
     const repeats = params.repeats || 1;
     const delay = params.delay || 0;
     for (let repeat = 0; repeat < repeats; repeat++) {
@@ -131,7 +135,7 @@ export class ParticleSystem {
   resolveSocket(from, to, params) {
     if (canvas.scene.id !== params.scene || !game.Levels3DPreview._active)
       return;
-    from = from.map((t) => this.fromUUID(t));
+      if (params.type !== "explosion" && params.type !== "e") from = from.map((t) => this.fromUUID(t));
     to = to.map((t) => this.fromUUID(t));
     if (params.type === "projectile" || params.type === "p") {
       this.effect(from, to, params);
@@ -143,6 +147,9 @@ export class ParticleSystem {
     if (params.type === "ray" || params.type === "r") {
       this.effect(from, to, params);
     }
+    if (params.type === "explosion" || params.type === "e") {
+      this.effect(from, to, params);
+    }
   }
 
   fromUUID(uuid) {
@@ -152,17 +159,21 @@ export class ParticleSystem {
       return uuid;
     }
   }
+
+  static getScale(){
+    return canvas.scene.dimensions.size/70;
+  }
 }
 
 class ProjectileEffect {
   constructor(from, to, params) {
     this._missScale = 1;
-    this._origin = this.inferPosition(from);
-    this._target = this.inferPosition(to, true);
     this.params = { ...this.defaultSettings, ...params };
+    this._origin = this.isExplosion ? null : this.inferPosition(from);
+    this._target = this.inferPosition(to, true);
     this._duration = this.params.duration;
     this.miss();
-    this._dist = this._origin.distanceTo(this._target);
+    this._dist = this.isExplosion ? null : this._origin.distanceTo(this._target);
     const unitSpeed = this.params.speed * (canvas.dimensions.size / factor);
     this._speed = unitSpeed / this._dist;
     this._time = 0;
@@ -181,6 +192,10 @@ class ProjectileEffect {
     return this.params.type === "ray" || this.params.type === "r";
   }
 
+  get isExplosion() {
+    return this.params.type === "explosion" || this.params.type === "e";
+  }
+
   async init() {
     this.createAnimationPath();
     this.params.single
@@ -192,7 +207,7 @@ class ProjectileEffect {
 
   async createEmitter() {
     this.emitter = new Emitter();
-
+    const drift = this.isExplosion ? 10: 0;
     this.emitter
       .setRate(new Rate(this.params.rate.particles, this.params.rate.seconds))
       .addInitializers([
@@ -218,7 +233,7 @@ class ProjectileEffect {
         ),
       ])
       .addBehaviours([
-        new RandomDrift(0.001, 0.001, 0.001, 0.05),
+        new RandomDrift(0.001+drift, 0.001+drift, 0.001+drift, 0.05),
         new Scale(this.params.scale, 0),
         new Gravity(this.params.gravity),
         new Color(
@@ -227,9 +242,13 @@ class ProjectileEffect {
           Infinity,
           ease.easeOutSine
         ),
-      ])
-      //.setPosition(this._origin)
-      .emit();
+      ]).setPosition(this.isExplosion ? this._target : this._origin)
+      if(this.isExplosion){
+        this.emitter.addBehaviours([
+          new Repulsion(this._target,this.params.force,this.params.emitterSize,Infinity,ease.easeOutSine),
+        ])
+      }
+      this.emitter.emit();
   }
 
   async createSingleParticle() {
@@ -309,7 +328,8 @@ class ProjectileEffect {
       speed: 10,
       miss: false,
       single: false,
-      duration: 2,
+      duration: 0.3,
+      force: 15,
     };
   }
 
@@ -355,11 +375,11 @@ class ProjectileEffect {
   onEnd() {
     if (this.ended) return;
     this.ended = true;
-    this.params.onEnd?.forEach((e) => e.start());
+    this.params.onEnd?.forEach((e) => new Particle3D().fromObject(e).start(false));
   }
 
   animate(delta) {
-    if (this.isRay) {
+    if (this.isRay || this.isExplosion) {
       this._duration -= delta;
       if (this._duration <= 0) {
         this.onEnd();
@@ -368,7 +388,6 @@ class ProjectileEffect {
       return;
     }
     if (this.animationPath) {
-      console.log(delta);
       this._time += delta;
       this._currentSpeed = this._time * this._speed;
       if (this._currentSpeed > 1) {
@@ -393,14 +412,25 @@ export class Particle3D {
     this.params.id = randomID(20);
   }
 
-  start() {
+  fromObject(object) {
+    this.params = object.params;
+    this._from = object._from;
+    this._to = object._to;
+    return this;
+  }
+
+  start(socket = true) {
     this.params.scene = canvas.scene.id;
-    game.Levels3DPreview.socket.executeForEveryone(
-      "Particle3D",
-      this._from,
-      this._to,
-      this.params
-    );
+    if(socket){
+      game.Levels3DPreview.socket.executeForEveryone(
+        "Particle3D",
+        this._from,
+        this._to,
+        this.params
+      );
+    }else{
+      game.Levels3DPreview.particleSystem.resolveSocket(this._from, this._to, this.params);
+    }
     return this.params.id;
   }
 
@@ -432,6 +462,7 @@ export class Particle3D {
     return this;
   }
   rate(particles, seconds) {
+    seconds = seconds/1000;
     this.params.rate = { particles, seconds };
     return this;
   }
@@ -449,8 +480,10 @@ export class Particle3D {
     return this;
   }
   scale(a, b) {
+    const scale = ParticleSystem.getScale();
+    a*= scale
     if (b) {
-      this.params.scale = new Span(a, b);
+      this.params.scale = new Span(a, b*scale);
     } else {
       this.params.scale = a;
     }
@@ -479,6 +512,10 @@ export class Particle3D {
   }
   miss(miss) {
     this.params.miss = miss === undefined ? true : miss;
+    return this;
+  }
+  force(force) {
+    this.params.force = force;
     return this;
   }
   repeat(repeat) {
