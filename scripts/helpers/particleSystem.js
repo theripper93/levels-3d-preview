@@ -13,6 +13,7 @@ const {
   Vector3D,
   Alpha,
   Repulsion,
+  MeshZone,
   Scale,
   Color,
   RadialVelocity,
@@ -29,7 +30,6 @@ const {
 import * as THREE from "../lib/three.module.js";
 import { Ruler3D } from "../entities/ruler3d.js";
 import { factor } from "../main.js";
-import { getTriangleHitPointInfo } from "../lib/three-mesh-bvh.js";
 
 export class ParticleSystem {
   constructor(_parent) {
@@ -242,11 +242,14 @@ class ProjectileEffect {
           Infinity,
           ease.easeOutSine
         ),
-      ]).setPosition(this.isExplosion ? this._target : this._origin)
+      ])
       if(this.isExplosion){
         this.emitter.addBehaviours([
           new Repulsion(this._target,this.params.force,this.params.emitterSize,Infinity,ease.easeOutSine),
         ])
+      }
+      if(!this.isRay){
+        this.emitter.setPosition(this.isExplosion ? this._target : this._origin)
       }
       this.emitter.emit();
   }

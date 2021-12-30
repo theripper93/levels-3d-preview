@@ -71,6 +71,13 @@
       "path": "packs/macros.db",
       "entity": "Macro",
       "module": "levels-3d-preview"
+    },
+    {
+      "name": "partmacros",
+      "label": "3D Canvas Particle Effects",
+      "path": "packs/partmacros.db",
+      "entity": "Macro",
+      "module": "levels-3d-preview"
     }
 ],
   "minimumCoreVersion": "9",
