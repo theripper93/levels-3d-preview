@@ -1,6 +1,5 @@
 import * as THREE from "./lib/three.module.js";
 import { OrbitControls } from "./lib/OrbitControls.js";
-import { ConvexGeometry } from "./lib/ConvexGeometry.js";
 import { GLTFLoader } from "./lib/GLTFLoader.js";
 import {Token3D} from "./entities/token3d.js";
 import { Ruler3D } from "./entities/ruler3d.js";
@@ -191,7 +190,7 @@ class Levels3DPreview {
     }
     if(canvas.scene.getFlag("levels-3d-preview", "enableFogOfWar")) this.fogExploration = new Fog(this);
     this.composer.render();
-    //this.scene.environment = this.envMap;
+    this.particleSystem = new ParticleSystem(this);
     this._active = true;
     this.debugMode = game.settings.get("levels-3d-preview", "debugMode")
     this.level = this.isLevels ? parseFloat($(_levels.UI?.element)?.find(".level-item.active").find(".level-bottom").val()) ?? Infinity : Infinity;
@@ -258,7 +257,6 @@ class Levels3DPreview {
     this.makeSkybox();
     this.weather = new WeatherSystem(this);
     this.lights.globalIllumination = new GlobalIllumination(this);
-    this.particleSystem = new ParticleSystem(this);
     this.ruler.addMarkers();
     const useTurnMarker = game.settings.get("levels-3d-preview", "startMarker")
     if(useTurnMarker)this.turnStartMarker = new turnStartMarker(this);

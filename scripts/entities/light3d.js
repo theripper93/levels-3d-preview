@@ -40,6 +40,7 @@ export class Light3D {
         let top = light.data.flags.levels?.rangeTop ?? 1;
         let bottom = light.data.flags.levels?.rangeBottom ?? 1;
         const z = (top+bottom)*canvas.scene.dimensions.size/canvas.scene.dimensions.distance/2;
+        this.z = (top+bottom)/2;
         const color = this.color || "#ffffff";
         const radius = Math.max(this.dim, this.bright)*(canvas.scene.dimensions.size/canvas.scene.dimensions.distance)/factor;
         const alpha = this.alpha*6;
@@ -64,6 +65,7 @@ export class Light3D {
             this.light3d.target.position.set(lx,ly,lz);
             this.light3d.target.updateMatrixWorld();
         }
+        if(this.light.document.getFlag("levels-3d-preview", "enableParticle")) this.initParticle();
         if(!this.debugSphere) return;
         this.debugSphere.geometry = new THREE.SphereGeometry(radius, 32, 32);
         this.debugSphere.position.set(position.x, position.y, position.z);
@@ -73,6 +75,40 @@ export class Light3D {
     destroy(){
         this._parent.scene.remove(this.light3d);
         this._parent.scene.remove(this.debugSphere);
+        if(this.particleEffectId) Particle3D.stop(this.particleEffectId);
+    }
+
+    initParticle(){
+        if(this.particleEffectId) Particle3D.stop(this.particleEffectId);
+        const particleData = this.getParticleData();
+        this.particleEffect = new Particle3D("e");
+        this.particleEffect.sprite(particleData.sprite)
+            .scale(particleData.scale)
+            .color(particleData.color.split(","), particleData.color2 ? particleData.color2.split(",") : undefined)
+            .force(particleData.force)
+            .gravity(particleData.gravity)
+            .life(particleData.life)
+            .rate(particleData.count, particleData.emitTime)
+            .duration(Infinity)
+            .mass(particleData.mass)
+            .emitterSize(this.light3d.distance)
+            .to({x: this.light.center.x, y: this.light.center.y, z: this.z})
+        this.particleEffectId = this.particleEffect.start(false);
+    }
+
+    getParticleData(){
+        return {
+            sprite: this.light.document.getFlag("levels-3d-preview", "ParticleSprite") ?? "",
+            scale: this.light.document.getFlag("levels-3d-preview", "ParticleScale") ?? 0.1,
+            color: this.light.document.getFlag("levels-3d-preview", "ParticleColor") ?? "#ffffff",
+            color2: this.light.document.getFlag("levels-3d-preview", "ParticleColor2"),
+            force: this.light.document.getFlag("levels-3d-preview", "ParticleForce") ?? 0,
+            gravity: this.light.document.getFlag("levels-3d-preview", "ParticleGravity") ?? 1,
+            life: this.light.document.getFlag("levels-3d-preview", "ParticleLife") ?? 1,
+            count: this.light.document.getFlag("levels-3d-preview", "ParticleCount") ?? 5,
+            emitTime: this.light.document.getFlag("levels-3d-preview", "ParticleEmitTime") ?? 1,
+            mass: this.light.document.getFlag("levels-3d-preview", "ParticleMass") ?? 1000,
+        }
     }
 
     get lightData(){

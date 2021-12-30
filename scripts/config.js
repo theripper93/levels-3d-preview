@@ -585,6 +585,69 @@ Hooks.on("renderAmbientLightConfig", (app,html)=>{
             default: false,
             notes: game.i18n.localize("levels3dpreview.flags.castShadow.notes"),
         },
+        "enableParticle": {
+            type: "checkbox",
+            label: game.i18n.localize("levels3dpreview.flags.lightParticleEffect.enableParticle.label"),
+            default: false,
+        },
+        "ParticleSprite": {
+            type: "filepicker",
+            label: game.i18n.localize("levels3dpreview.flags.lightParticleEffect.ParticleSprite.label"),
+            default: "modules/levels-3d-preview/assets/particles/emberssmall.png",
+        },
+        "ParticleScale": {
+            type: "number",
+            label: game.i18n.localize("levels3dpreview.flags.lightParticleEffect.ParticleScale.label"),
+            default: 0.1,
+            step: 0.000001,
+        },
+        "ParticleLife": {
+            type: "number",
+            label: game.i18n.localize("levels3dpreview.flags.lightParticleEffect.ParticleLife.label"),
+            default: 1,
+            step: 0.000001,
+        },
+        "ParticleCount": {
+            type: "number",
+            label: game.i18n.localize("levels3dpreview.flags.lightParticleEffect.ParticleCount.label"),
+            default: 5,
+            step: 0.000001,
+        },
+        "ParticleEmitTime": {
+            type: "number",
+            label: game.i18n.localize("levels3dpreview.flags.lightParticleEffect.ParticleEmitTime.label"),
+            default: 1,
+            step: 0.000001,
+        },
+        "ParticleForce": {
+            type: "number",
+            label: game.i18n.localize("levels3dpreview.flags.lightParticleEffect.ParticleForce.label"),
+            default: 0,
+            step: 0.000001,
+        },
+        "ParticleGravity": {
+            type: "number",
+            label: game.i18n.localize("levels3dpreview.flags.lightParticleEffect.ParticleGravity.label"),
+            default: 1,
+            step: 0.000001,
+        },
+        "ParticleMass": {
+            type: "number",
+            label: game.i18n.localize("levels3dpreview.flags.lightParticleEffect.ParticleMass.label"),
+            default: 1000,
+            step: 0.000001,
+        },
+        "ParticleColor": {
+            type: "color",
+            label: game.i18n.localize("levels3dpreview.flags.lightParticleEffect.ParticleColor.label"),
+            default: "#ffffff",
+        },
+        "ParticleColor2": {
+            type: "color",
+            label: game.i18n.localize("levels3dpreview.flags.lightParticleEffect.ParticleColor2.label"),
+            default: "#ffffff",
+        },
+
     })
 })
 

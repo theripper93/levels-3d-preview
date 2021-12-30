@@ -233,6 +233,7 @@ class ProjectileEffect {
         ),
       ])
       .addBehaviours([
+        new Alpha(this.params.alpha.start,this.params.alpha.end,Infinity,ease.easeInOutSine),
         new RandomDrift(0.001+drift, 0.001+drift, 0.001+drift, 0.05),
         new Scale(this.params.scale, 0),
         new Gravity(this.params.gravity),
@@ -316,7 +317,7 @@ class ProjectileEffect {
         max: 0.5,
       },
       emitterSize: 0.0001,
-      scale: new Span(0.2, 0.1),
+      scale: new Span(0.2*ParticleSystem.getScale(), 0.1*ParticleSystem.getScale()),
       gravity: 0,
       color: {
         start: "#ff4d00",
@@ -326,6 +327,10 @@ class ProjectileEffect {
         angle: 0,
         direction: new THREE.Vector3(0, 0, 0),
         theta: 30,
+      },
+      alpha:{
+        start:0,
+        end:1,
       },
       arc: 0,
       speed: 10,
@@ -469,6 +474,12 @@ export class Particle3D {
     this.params.rate = { particles, seconds };
     return this;
   }
+  alpha(start, end) {
+    end = end ?? 1;
+    this.params.alpha = { start, end };
+    return this;
+  }
+
   mass(mass) {
     this.params.mass = mass;
     return this;

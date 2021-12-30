@@ -292,6 +292,41 @@
             },
             "particleBlend": {
                 "label": "Blend"
+            },
+            "lightParticleEffect": {
+                "ParticleSprite": {
+                    "label": "Sprite"
+                },
+                "ParticleScale": {
+                    "label": "Scale"
+                },
+                "ParticleColor": {
+                    "label": "Starting Color"
+                },
+                "ParticleColor2": {
+                    "label": "Ending Color"
+                },
+                "ParticleForce": {
+                    "label": "Force"
+                },
+                "ParticleLife": {
+                    "label": "Life"
+                },
+                "ParticleCount": {
+                    "label": "Count"
+                },
+                "ParticleEmitTime": {
+                    "label": "Emit Time"
+                },
+                "ParticleMass": {
+                    "label": "Mass"
+                },
+                "ParticleGravity": {
+                    "label": "Gravity"
+                },
+                "enableParticle": {
+                    "label": "Enable Particle Effect"
+                }
             }
         },
         "settings" : {
