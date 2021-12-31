@@ -177,6 +177,11 @@ class Levels3DPreview {
     };
   }
 
+  initPS(){
+    this.particleSystem?.destroy();
+    this.particleSystem = new ParticleSystem(this);
+  }
+
   build3Dscene() {
     this._ready = false;
     this.clear3Dscene();
@@ -190,8 +195,14 @@ class Levels3DPreview {
     }
     if(canvas.scene.getFlag("levels-3d-preview", "enableFogOfWar")) this.fogExploration = new Fog(this);
     this.composer.render();
-    this.particleSystem = new ParticleSystem(this);
     this._active = true;
+    this.particleSystem?.destroy();
+    if(this.particleSystem){
+      this.particleSystem._parent = this
+      this.particleSystem.move()
+    }else{
+      this.particleSystem = new ParticleSystem(this);
+    }
     this.debugMode = game.settings.get("levels-3d-preview", "debugMode")
     this.level = this.isLevels ? parseFloat($(_levels.UI?.element)?.find(".level-item.active").find(".level-bottom").val()) ?? Infinity : Infinity;
     if (isNaN(this.level)) this.level = Infinity;
@@ -761,4 +772,4 @@ Hooks.on("deleteCombat", ()=>{
   game.Levels3DPreview.turnStartMarker.update();
 })
 
-//javascript:(function(){var script=document.createElement('script');script.onload=function(){var stats=new Stats();document.body.appendChild(stats.dom);requestAnimationFrame(function loop(){stats.update();requestAnimationFrame(loop)});};script.src='//mrdoob.github.io/stats.js/build/stats.min.js';document.head.appendChild(script);})()
+javascript:(function(){var script=document.createElement('script');script.onload=function(){var stats=new Stats();document.body.appendChild(stats.dom);requestAnimationFrame(function loop(){stats.update();requestAnimationFrame(loop)});};script.src='//mrdoob.github.io/stats.js/build/stats.min.js';document.head.appendChild(script);})()

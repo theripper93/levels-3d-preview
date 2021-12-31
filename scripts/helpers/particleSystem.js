@@ -14,6 +14,7 @@ const {
   Alpha,
   Repulsion,
   MeshZone,
+  INTEGRATION_TYPE_VERLET,
   Scale,
   Color,
   RadialVelocity,
@@ -26,20 +27,18 @@ const {
   Force,
   Body,
   GPURenderer,
+  MeshRenderer,
 } = window.Nebula;
 import * as THREE from "../lib/three.module.js";
 import { Ruler3D } from "../entities/ruler3d.js";
 import { factor } from "../main.js";
 
 export class ParticleSystem {
-  constructor(_parent) {
+  constructor(_parent, renderer = "gpu") {
     this._parent = _parent;
     this.effects = new Set();
+    this.renderer = renderer;
     this.init();
-  }
-
-  get renderer() {
-    return this._parent.renderer;
   }
 
   get scene() {
@@ -48,12 +47,23 @@ export class ParticleSystem {
 
   init() {
     this.system = new System();
-    const renderer = new GPURenderer(this.scene, THREE);
+    const renderer = this.renderer = "gpu" ? new GPURenderer(this.scene, THREE) : new SpriteRenderer(this.scene, THREE);
     this.system.addRenderer(renderer).emit({
       onStart: () => {},
       onUpdate: () => {},
       onEnd: () => {},
     });
+    this.points = this.system.renderers[0].points;
+    this.points.userData.ignoreHover = true;
+  }
+
+  move(){
+    this._parent.scene.add(this.points);
+    this.system.renderers[0].container = this.scene;
+  }
+
+  destroy() {
+    this.stopAll();
   }
 
   async effect(from, to, params) {
@@ -196,6 +206,10 @@ class ProjectileEffect {
     return this.params.type === "explosion" || this.params.type === "e";
   }
 
+  get rendererScale() {
+    return game.Levels3DPreview.particleSystem.system.renderers[0].type === 'SpriteRenderer' ? 0.5 : 1;
+  }
+
   async init() {
     this.createAnimationPath();
     this.params.single
@@ -235,7 +249,7 @@ class ProjectileEffect {
       .addBehaviours([
         new Alpha(this.params.alpha.start,this.params.alpha.end,Infinity,ease.easeInOutSine),
         new RandomDrift(0.001+drift, 0.001+drift, 0.001+drift, 0.05),
-        new Scale(this.params.scale, 0),
+        new Scale(this.params.scale.start*this.rendererScale, this.params.scale.end*this.rendererScale),
         new Gravity(this.params.gravity),
         new Color(
           this.params.color.start,
@@ -317,7 +331,10 @@ class ProjectileEffect {
         max: 0.5,
       },
       emitterSize: 0.0001,
-      scale: new Span(0.2*ParticleSystem.getScale(), 0.1*ParticleSystem.getScale()),
+      scale: {
+        start:0.15*ParticleSystem.getScale() ,
+        end: 0
+      },
       gravity: 0,
       color: {
         start: "#ff4d00",
@@ -329,7 +346,7 @@ class ProjectileEffect {
         theta: 30,
       },
       alpha:{
-        start:0,
+        start:1,
         end:1,
       },
       arc: 0,
@@ -497,9 +514,9 @@ export class Particle3D {
     const scale = ParticleSystem.getScale();
     a*= scale
     if (b) {
-      this.params.scale = new Span(a, b*scale);
+      this.params.scale = {start: a, end: b*scale};
     } else {
-      this.params.scale = a;
+      this.params.scale = {start: a, end: 0};
     }
     return this;
   }

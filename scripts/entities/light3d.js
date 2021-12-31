@@ -91,6 +91,7 @@ export class Light3D {
             .rate(particleData.count, particleData.emitTime)
             .duration(Infinity)
             .mass(particleData.mass)
+            .alpha(particleData.alphaStart, particleData.alphaEnd)
             .emitterSize(this.light3d.distance)
             .to({x: this.light.center.x, y: this.light.center.y, z: this.z})
         this.particleEffectId = this.particleEffect.start(false);
@@ -108,6 +109,8 @@ export class Light3D {
             count: this.light.document.getFlag("levels-3d-preview", "ParticleCount") ?? 5,
             emitTime: this.light.document.getFlag("levels-3d-preview", "ParticleEmitTime") ?? 1,
             mass: this.light.document.getFlag("levels-3d-preview", "ParticleMass") ?? 1000,
+            alphaStart: this.light.document.getFlag("levels-3d-preview", "ParticleAlphaStart") ?? 0,
+            alphaEnd: this.light.document.getFlag("levels-3d-preview", "ParticleAlphaEnd") ?? 1,
         }
     }
 

@@ -601,6 +601,22 @@ Hooks.on("renderAmbientLightConfig", (app,html)=>{
             default: 0.1,
             step: 0.000001,
         },
+        "ParticleAlphaStart": {
+            type: "range",
+            label: game.i18n.localize("levels3dpreview.flags.lightParticleEffect.ParticleAlphaStart.label"),
+            default: 0,
+            min: 0,
+            max: 1,
+            step: 0.01,
+        },
+        "ParticleAlphaEnd": {
+            type: "range",
+            label: game.i18n.localize("levels3dpreview.flags.lightParticleEffect.ParticleAlphaEnd.label"),
+            default: 1,
+            min: 0,
+            max: 1,
+            step: 0.01,
+        },
         "ParticleLife": {
             type: "number",
             label: game.i18n.localize("levels3dpreview.flags.lightParticleEffect.ParticleLife.label"),

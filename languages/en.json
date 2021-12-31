@@ -326,6 +326,12 @@
                 },
                 "enableParticle": {
                     "label": "Enable Particle Effect"
+                },
+                "ParticleAlphaStart": {
+                    "label": "Starting Opacity"
+                },
+                "ParticleAlphaEnd": {
+                    "label": "Ending Opacity"
                 }
             }
         },
