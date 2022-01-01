@@ -65,6 +65,7 @@ export class Light3D {
             this.light3d.target.position.set(lx,ly,lz);
             this.light3d.target.updateMatrixWorld();
         }
+        this.light3d.visible = !this.light.data.hidden
         if(this.light.document.getFlag("levels-3d-preview", "enableParticle")) this.initParticle();
         if(!this.debugSphere) return;
         this.debugSphere.geometry = new THREE.SphereGeometry(radius, 32, 32);
@@ -80,6 +81,7 @@ export class Light3D {
 
     initParticle(){
         if(this.particleEffectId) Particle3D.stop(this.particleEffectId);
+        if(this.light.data.hidden && !this.light.document.getFlag("levels-3d-preview", "enableParticleHidden")) return;
         const particleData = this.getParticleData();
         this.particleEffect = new Particle3D("e");
         this.particleEffect.sprite(particleData.sprite)

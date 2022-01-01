@@ -594,6 +594,11 @@ Hooks.on("renderAmbientLightConfig", (app,html)=>{
             label: game.i18n.localize("levels3dpreview.flags.lightParticleEffect.enableParticle.label"),
             default: false,
         },
+        "enableParticleHidden": {
+            type: "checkbox",
+            label: game.i18n.localize("levels3dpreview.flags.lightParticleEffect.enableParticleHidden.label"),
+            default: false,
+        },
         "ParticleSprite": {
             type: "filepicker",
             label: game.i18n.localize("levels3dpreview.flags.lightParticleEffect.ParticleSprite.label"),

@@ -86,9 +86,9 @@ export class WeatherSystem {
         return { density, direction, color, size, speed, velocity, opacity, texture, randomRotation, randomScale, blending, rotationSpeed };
     }
 
-    update(){
+    update(delta){
         //if(!this._active) return;
-        this.effects.forEach(e => e.animate());
+        this.effects.forEach(e => e.animate(delta));
     }
 
     destroy(){
@@ -319,9 +319,13 @@ class BasicDirectionalEffect {
 
     animate(){}
 
-    animateBl(){
+    animateBl(delta){
         if(!this._ready) return;
-        const { positions, velocityes, randomVelocityMulti, bb, velocity, speed, direction, directionCos, directionSin, newRot } = this.getAnimationData();
+        const dT = delta/0.016;
+        let { positions, velocityes, randomVelocityMulti, bb, velocity, speed, direction, directionCos, directionSin, newRot } = this.getAnimationData();
+        velocity*=dT;
+        directionCos*=dT;
+        directionSin*=dT;
         this.frameCounter++;
         if(this.frameCounter > this.frameThrottle) this.frameCounter = 0;
         let i = 0;
@@ -379,9 +383,13 @@ class BasicDirectionalEffect {
 
     }
 
-    animateBr(){
+    animateBr(delta){
         if(!this._ready) return;
-        const { positions, velocityes, randomVelocityMulti, bb, velocity, speed, direction, directionCos, directionSin, newRot } = this.getAnimationData();
+        const dT = delta/0.016;
+        let { positions, velocityes, randomVelocityMulti, bb, velocity, speed, direction, directionCos, directionSin, newRot } = this.getAnimationData();
+        velocity*=dT;
+        directionCos*=dT;
+        directionSin*=dT;
         this.frameCounter++;
         if(this.frameCounter > this.frameThrottle) this.frameCounter = 0;
         let i = 0;
@@ -444,7 +452,11 @@ class BasicDirectionalEffect {
 
     animateBr_bk(){
         if(!this._ready) return;
-        const { positions, velocityes, randomVelocityMulti, bb, velocity, speed, direction, directionCos, directionSin, newRot } = this.getAnimationData();
+        const dT = delta/0.016;
+        let { positions, velocityes, randomVelocityMulti, bb, velocity, speed, direction, directionCos, directionSin, newRot } = this.getAnimationData();
+        velocity*=dT;
+        directionCos*=dT;
+        directionSin*=dT;
         this.frameCounter++;
         if(this.frameCounter > this.frameThrottle) this.frameCounter = 0;
         let i = 0;
@@ -499,9 +511,13 @@ class BasicDirectionalEffect {
 
     }
 
-    animateTl(){
+    animateTl(delta){
         if(!this._ready) return;
-        const { positions, velocityes, randomVelocityMulti, bb, velocity, speed, direction, directionCos, directionSin, newRot } = this.getAnimationData();
+        const dT = delta/0.016;
+        let { positions, velocityes, randomVelocityMulti, bb, velocity, speed, direction, directionCos, directionSin, newRot } = this.getAnimationData();
+        velocity*=dT;
+        directionCos*=dT;
+        directionSin*=dT;
         this.frameCounter++;
         if(this.frameCounter > this.frameThrottle) this.frameCounter = 0;
         let i = 0;
@@ -562,10 +578,13 @@ class BasicDirectionalEffect {
 
     }
 
-    animateTr(){
+    animateTr(delta){
         if(!this._ready) return;
-        const { positions, velocityes, randomVelocityMulti, bb, velocity, speed, direction, directionCos, directionSin, newRot } = this.getAnimationData();
-        this.frameCounter++;
+        const dT = delta/0.016;
+        let { positions, velocityes, randomVelocityMulti, bb, velocity, speed, direction, directionCos, directionSin, newRot } = this.getAnimationData();
+        velocity*=dT;
+        directionCos*=dT;
+        directionSin*=dT;this.frameCounter++;
         if(this.frameCounter > this.frameThrottle) this.frameCounter = 0;
         let i = 0;
         let length = positions.length;

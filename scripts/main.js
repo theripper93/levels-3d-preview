@@ -570,7 +570,7 @@ class Levels3DPreview {
     _this.animateCamera(delta);
     _this.centerTokenHUD();
     _this.resizeCanvasToDisplaySize(_this);
-    _this.weather?.update();
+    _this.weather?.update(delta);
     _this.controls.update();
     //_this.renderer.render(_this.scene, _this.camera);
     _this.fogExploration?.update();
@@ -772,4 +772,4 @@ Hooks.on("deleteCombat", ()=>{
   game.Levels3DPreview.turnStartMarker.update();
 })
 
-javascript:(function(){var script=document.createElement('script');script.onload=function(){var stats=new Stats();document.body.appendChild(stats.dom);requestAnimationFrame(function loop(){stats.update();requestAnimationFrame(loop)});};script.src='//mrdoob.github.io/stats.js/build/stats.min.js';document.head.appendChild(script);})()
+//javascript:(function(){var script=document.createElement('script');script.onload=function(){var stats=new Stats();document.body.appendChild(stats.dom);requestAnimationFrame(function loop(){stats.update();requestAnimationFrame(loop)});};script.src='//mrdoob.github.io/stats.js/build/stats.min.js';document.head.appendChild(script);})()

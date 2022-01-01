@@ -331,6 +331,9 @@
                 "enableParticle": {
                     "label": "Enable Particle Effect"
                 },
+                "enableParticleHidden": {
+                    "label": "Enable Particle Effect when the Light is Disabled."
+                },
                 "ParticleAlphaStart": {
                     "label": "Starting Opacity"
                 },
