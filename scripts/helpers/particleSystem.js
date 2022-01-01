@@ -177,6 +177,8 @@ export class ParticleSystem {
 
 class ProjectileEffect {
   constructor(from, to, params) {
+    this.from = from;
+    this.to = to;
     this._missScale = 1;
     this.params = { ...this.defaultSettings, ...params };
     this._origin = this.isExplosion ? null : this.inferPosition(from);
@@ -406,25 +408,34 @@ class ProjectileEffect {
   onEnd() {
     if (this.ended) return;
     this.ended = true;
-    this.params.onEnd?.forEach((e) => new Particle3D().fromObject(e).start(false));
+    this.params.onEnd?.forEach((e) => {
+      const p3d = new Particle3D().fromObject(e)
+      if(!p3d._to) p3d.to(this.to)
+      if(!p3d._from) p3d.from(this.from)
+      p3d.start(false)
+    });
   }
 
   animate(delta) {
     if (this.isRay || this.isExplosion) {
       this._duration -= delta;
       if (this._duration <= 0) {
+        this._playOnEnd = true;
         this.onEnd();
         this._currentSpeed = 2;
       }
       return;
     }
     if (this.animationPath) {
+
       this._time += delta;
       this._currentSpeed = this._time * this._speed;
       if (this._currentSpeed > 1) {
+        this._playOnEnd = true;
         this.onEnd();
         return;
       }
+
       const point = this.animationPath.getPointAt(this._currentSpeed); //this._origin.clone().lerp(this._target, this._currentSpeed);
       if (this.sprite) {
         this.emitter.position.copy(point);
@@ -451,6 +462,7 @@ export class Particle3D {
   }
 
   start(socket = true) {
+    if(!this._to) this.toTarget();
     if(!this._validate()) return false;
     this.params.scene = canvas.scene.id;
     if(socket){
@@ -487,6 +499,10 @@ export class Particle3D {
     to = to instanceof Array ? to : [to];
     to = to.map((t) => this.toUUID(t)).filter((t) => t);
     this._to = to;
+    return this;
+  }
+  toTarget(){
+    this.to("target");
     return this;
   }
   sprite(sprite) {
@@ -587,10 +603,13 @@ export class Particle3D {
   }
   onEnd(particle3d) {
     particle3d = particle3d instanceof Array ? particle3d : [particle3d];
-    particle3d.forEach((p) => {
-      if (!p instanceof Particle3D) return this;
+    for(let p of particle3d){
+      if (!(p instanceof Particle3D)) {
+        ui.notifications.error(game.i18n.localize("levels3dpreview.errors.particleSystem.onend"));
+        return this;
+      }
       p.params.id = this.params.id;
-    });
+    }
     this.params.onEnd = particle3d;
     return this;
   }
