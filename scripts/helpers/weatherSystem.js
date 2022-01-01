@@ -321,7 +321,8 @@ class BasicDirectionalEffect {
 
     animateBl(delta){
         if(!this._ready) return;
-        const dT = delta/0.016;
+        if(delta >0.25) return;
+        const dT = delta/0.016 === Infinity ? 0.016 : delta/0.016;
         let { positions, velocityes, randomVelocityMulti, bb, velocity, speed, direction, directionCos, directionSin, newRot } = this.getAnimationData();
         velocity*=dT;
         directionCos*=dT;
@@ -385,6 +386,7 @@ class BasicDirectionalEffect {
 
     animateBr(delta){
         if(!this._ready) return;
+        if(delta >0.25) return;
         const dT = delta/0.016;
         let { positions, velocityes, randomVelocityMulti, bb, velocity, speed, direction, directionCos, directionSin, newRot } = this.getAnimationData();
         velocity*=dT;
@@ -513,6 +515,7 @@ class BasicDirectionalEffect {
 
     animateTl(delta){
         if(!this._ready) return;
+        if(delta >0.25) return;
         const dT = delta/0.016;
         let { positions, velocityes, randomVelocityMulti, bb, velocity, speed, direction, directionCos, directionSin, newRot } = this.getAnimationData();
         velocity*=dT;
@@ -580,6 +583,7 @@ class BasicDirectionalEffect {
 
     animateTr(delta){
         if(!this._ready) return;
+        if(delta >0.25) return;
         const dT = delta/0.016;
         let { positions, velocityes, randomVelocityMulti, bb, velocity, speed, direction, directionCos, directionSin, newRot } = this.getAnimationData();
         velocity*=dT;
