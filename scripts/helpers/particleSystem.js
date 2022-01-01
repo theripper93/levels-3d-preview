@@ -251,6 +251,7 @@ class ProjectileEffect {
         new RandomDrift(0.001+drift, 0.001+drift, 0.001+drift, 0.05),
         new Scale(this.params.scale.start*this.rendererScale, this.params.scale.end*this.rendererScale),
         new Gravity(this.params.gravity),
+        new Force(this.params.push.dx, this.params.push.dz, this.params.push.dy),
         new Color(
           this.params.color.start,
           this.params.color.end,
@@ -349,6 +350,11 @@ class ProjectileEffect {
         start:1,
         end:1,
       },
+      push: {
+        dx: 0,
+        dy: 0,
+        dz: 0,
+      },
       arc: 0,
       speed: 10,
       miss: false,
@@ -445,6 +451,7 @@ export class Particle3D {
   }
 
   start(socket = true) {
+    if(!this._validate()) return false;
     this.params.scene = canvas.scene.id;
     if(socket){
       game.Levels3DPreview.socket.executeForEveryone(
@@ -472,13 +479,13 @@ export class Particle3D {
 
   from(from) {
     from = from instanceof Array ? from : [from];
-    from = from.map((t) => this.toUUID(t));
+    from = from.map((t) => this.toUUID(t)).filter((t) => t);
     this._from = from;
     return this;
   }
   to(to) {
     to = to instanceof Array ? to : [to];
-    to = to.map((t) => this.toUUID(t));
+    to = to.map((t) => this.toUUID(t)).filter((t) => t);
     this._to = to;
     return this;
   }
@@ -503,6 +510,8 @@ export class Particle3D {
   }
   life(min, max) {
     max = max ?? min;
+    min/=1000;
+    max/=1000;
     this.params.life = { min, max };
     return this;
   }
@@ -549,6 +558,13 @@ export class Particle3D {
     this.params.force = force;
     return this;
   }
+  push(dx,dy,dz){
+    dx = dx ?? 0;
+    dy = dy ?? 0;
+    dz = dz ?? 0;
+    this.params.push = {dx,dy,dz};
+    return this;
+  }
   repeat(repeat) {
     this.params.repeats = repeat;
     return this;
@@ -577,6 +593,28 @@ export class Particle3D {
     });
     this.params.onEnd = particle3d;
     return this;
+  }
+
+  _validate(){
+    //validate from\to
+    if(this.params.type !== "e" && this.params.type !== "explosion"){
+      if(!this._from || !this._to || this._from.length === 0 || this._to.length === 0){
+        ui.notifications.error(game.i18n.localize("levels3dpreview.errors.particleSystem.fromto"));
+        return false;
+      }
+    }else{
+      if(!this._to || !this._to.length){
+        ui.notifications.error(game.i18n.localize("levels3dpreview.errors.particleSystem.fromto"));
+        return false;
+      }
+    }
+    //validate type
+    const types = ["p", "e", "s", "r", "projectile" ,"explosion", "ray", "sprite"];
+    if(!types.includes(this.params.type)){
+      ui.notifications.error(game.i18n.localize("levels3dpreview.errors.particleSystem.type").replace("%type%", this.params.type) + types.join(", "));
+      return false;
+    }
+    return true;
   }
 
   static stop(id) {

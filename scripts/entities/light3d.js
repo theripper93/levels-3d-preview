@@ -93,6 +93,7 @@ export class Light3D {
             .mass(particleData.mass)
             .alpha(particleData.alphaStart, particleData.alphaEnd)
             .emitterSize(this.light3d.distance)
+            .push(particleData.push.dx, particleData.push.dy, particleData.push.dz)
             .to({x: this.light.center.x, y: this.light.center.y, z: this.z})
         this.particleEffectId = this.particleEffect.start(false);
     }
@@ -105,12 +106,17 @@ export class Light3D {
             color2: this.light.document.getFlag("levels-3d-preview", "ParticleColor2"),
             force: this.light.document.getFlag("levels-3d-preview", "ParticleForce") ?? 0,
             gravity: this.light.document.getFlag("levels-3d-preview", "ParticleGravity") ?? 1,
-            life: this.light.document.getFlag("levels-3d-preview", "ParticleLife") ?? 1,
+            life: this.light.document.getFlag("levels-3d-preview", "ParticleLife") ?? 1000,
             count: this.light.document.getFlag("levels-3d-preview", "ParticleCount") ?? 5,
             emitTime: this.light.document.getFlag("levels-3d-preview", "ParticleEmitTime") ?? 1,
             mass: this.light.document.getFlag("levels-3d-preview", "ParticleMass") ?? 1000,
             alphaStart: this.light.document.getFlag("levels-3d-preview", "ParticleAlphaStart") ?? 0,
             alphaEnd: this.light.document.getFlag("levels-3d-preview", "ParticleAlphaEnd") ?? 1,
+            push: {
+                dx: this.light.document.getFlag("levels-3d-preview", "ParticlePushX") ?? 0,
+                dy: this.light.document.getFlag("levels-3d-preview", "ParticlePushY") ?? 0,
+                dz: this.light.document.getFlag("levels-3d-preview", "ParticlePushZ") ?? 0,
+            }
         }
     }
 

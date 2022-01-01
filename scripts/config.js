@@ -585,6 +585,10 @@ Hooks.on("renderAmbientLightConfig", (app,html)=>{
             default: false,
             notes: game.i18n.localize("levels3dpreview.flags.castShadow.notes"),
         },
+        "partHeader": {
+            type: "custom",
+            html: `<h3 class="form-header"><i class="fas fa-fire"></i> ${game.i18n.localize("levels3dpreview.flags.lightParticleEffect.header.title")}</h3><p class="notes">${game.i18n.localize("levels3dpreview.flags.lightParticleEffect.header.notes")}</p><div>`
+        },
         "enableParticle": {
             type: "checkbox",
             label: game.i18n.localize("levels3dpreview.flags.lightParticleEffect.enableParticle.label"),
@@ -598,6 +602,7 @@ Hooks.on("renderAmbientLightConfig", (app,html)=>{
         "ParticleScale": {
             type: "number",
             label: game.i18n.localize("levels3dpreview.flags.lightParticleEffect.ParticleScale.label"),
+            units: game.i18n.localize("levels3dpreview.units.gu"),
             default: 0.1,
             step: 0.000001,
         },
@@ -620,7 +625,8 @@ Hooks.on("renderAmbientLightConfig", (app,html)=>{
         "ParticleLife": {
             type: "number",
             label: game.i18n.localize("levels3dpreview.flags.lightParticleEffect.ParticleLife.label"),
-            default: 1,
+            units: game.i18n.localize("levels3dpreview.units.ms"),
+            default: 1000,
             step: 0.000001,
         },
         "ParticleCount": {
@@ -632,12 +638,31 @@ Hooks.on("renderAmbientLightConfig", (app,html)=>{
         "ParticleEmitTime": {
             type: "number",
             label: game.i18n.localize("levels3dpreview.flags.lightParticleEffect.ParticleEmitTime.label"),
+            units: game.i18n.localize("levels3dpreview.units.ms"),
             default: 1,
             step: 0.000001,
         },
         "ParticleForce": {
             type: "number",
             label: game.i18n.localize("levels3dpreview.flags.lightParticleEffect.ParticleForce.label"),
+            default: 0,
+            step: 0.000001,
+        },
+        "ParticlePushX": {
+            type: "number",
+            label: game.i18n.localize("levels3dpreview.flags.lightParticleEffect.ParticlePushX.label"),
+            default: 0,
+            step: 0.000001,
+        },
+        "ParticlePushY": {
+            type: "number",
+            label: game.i18n.localize("levels3dpreview.flags.lightParticleEffect.ParticlePushY.label"),
+            default: 0,
+            step: 0.000001,
+        },
+        "ParticlePushZ": {
+            type: "number",
+            label: game.i18n.localize("levels3dpreview.flags.lightParticleEffect.ParticlePushZ.label"),
             default: 0,
             step: 0.000001,
         },

@@ -7,7 +7,11 @@
         },
         "errors": {
             "filenotsupported": "File format not supported",
-            "3dnotactive": "Cannot open canvas popout, the 3D mode is not active."
+            "3dnotactive": "Cannot open canvas popout, the 3D mode is not active.",
+            "particleSystem": {
+                "type": "Particle system: type '%type%' not supported, the valid types are: ",
+                "fromto": "Particle system: Target and/or Source where not specified or are undefined."
+            }
         },
         "keybindings":{
             "resetView": "Reset Camera View",
@@ -332,6 +336,19 @@
                 },
                 "ParticleAlphaEnd": {
                     "label": "Ending Opacity"
+                },
+                "ParticlePushX": {
+                    "label": "Push X"
+                },
+                "ParticlePushY": {
+                    "label": "Push Y"
+                },
+                "ParticlePushZ": {
+                    "label": "Push Z"
+                },
+                "header": {
+                    "title": "Particle Effect",
+                    "notes": "The particle effect to use for the light."
                 }
             }
         },
@@ -521,6 +538,10 @@
             "ok": "Dismiss",
             "dontshowagain": "Don't show again",
             "opencompendium": "Getting Started"
+        },
+        "units":{
+            "ms": "Milliseconds",
+            "gu": "Grid Units"
         }
     }
 }
