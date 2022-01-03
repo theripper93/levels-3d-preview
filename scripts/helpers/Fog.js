@@ -73,7 +73,6 @@ export class Fog{
 
         canvas.app.renderer.render(canvas.sight.revealed, {renderTexture: texture, clear: false});
         canvas.app.renderer.render(canvas.sight.vision, {renderTexture: texture, clear: false});
-
         const base64 = canvas.app.renderer.extract.base64(texture,"image/jpeg");
         texture.destroy(true);
         return base64;

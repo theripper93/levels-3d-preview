@@ -171,7 +171,7 @@ export class ParticleSystem {
   }
 
   static getScale(){
-    return canvas.scene.dimensions.size/70;
+    return canvas.scene.dimensions.size/100;
   }
 }
 
@@ -186,8 +186,7 @@ class ProjectileEffect {
     this._duration = this.params.duration;
     this.miss();
     this._dist = this.isExplosion ? null : this._origin.distanceTo(this._target);
-    const unitSpeed = this.params.speed * (canvas.dimensions.size / factor);
-    this._speed = unitSpeed / this._dist;
+    this._speed = this.isExplosion ? null : ((this.params.speed/this._dist)/(factor/100))*ParticleSystem.getScale()//unitSpeed / this._dist;
     this._time = 0;
     this._currentSpeed = 0;
   }
@@ -335,7 +334,7 @@ class ProjectileEffect {
       },
       emitterSize: 0.0001,
       scale: {
-        start:0.15*ParticleSystem.getScale() ,
+        start:0.8*Math.sqrt(ParticleSystem.getScale())/5 ,
         end: 0
       },
       gravity: 0,
@@ -532,11 +531,11 @@ export class Particle3D {
     return this;
   }
   emitterSize(size) {
-    this.params.emitterSize = size;
+    this.params.emitterSize = size*Math.sqrt(ParticleSystem.getScale())/10;
     return this;
   }
   scale(a, b) {
-    const scale = ParticleSystem.getScale();
+    const scale = Math.sqrt(ParticleSystem.getScale())/5;
     a*= scale
     if (b) {
       this.params.scale = {start: a, end: b*scale};
