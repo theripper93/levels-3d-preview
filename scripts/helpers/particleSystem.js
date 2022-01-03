@@ -531,7 +531,7 @@ export class Particle3D {
     return this;
   }
   emitterSize(size) {
-    this.params.emitterSize = size*Math.sqrt(ParticleSystem.getScale())/10;
+    this.params.emitterSize = size*canvas.dimensions.size/factor;
     return this;
   }
   scale(a, b) {

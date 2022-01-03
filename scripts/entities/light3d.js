@@ -94,7 +94,7 @@ export class Light3D {
             .duration(Infinity)
             .mass(particleData.mass)
             .alpha(particleData.alphaStart, particleData.alphaEnd)
-            .emitterSize(this.light3d.distance)
+            .emitterSize(Math.max(this.dim, this.bright)/canvas.scene.dimensions.distance)
             .push(particleData.push.dx, particleData.push.dy, particleData.push.dz)
             .to({x: this.light.center.x, y: this.light.center.y, z: this.z})
         this.particleEffectId = this.particleEffect.start(false);
@@ -103,7 +103,7 @@ export class Light3D {
     getParticleData(){
         return {
             sprite: this.light.document.getFlag("levels-3d-preview", "ParticleSprite") ?? "",
-            scale: this.light.document.getFlag("levels-3d-preview", "ParticleScale") ?? 0.1,
+            scale: this.light.document.getFlag("levels-3d-preview", "ParticleScale") ?? 1,
             color: this.light.document.getFlag("levels-3d-preview", "ParticleColor") ?? "#ffffff",
             color2: this.light.document.getFlag("levels-3d-preview", "ParticleColor2"),
             force: this.light.document.getFlag("levels-3d-preview", "ParticleForce") ?? 0,
