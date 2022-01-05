@@ -273,7 +273,7 @@ class ProjectileEffect {
 
   async createSingleParticle() {
     this.emitter = await this.createSprite();
-    const scale = this.params.scale.a ? this.params.scale.a : this.params.scale;
+    const scale = this.params.scale.start ? this.params.scale.start : this.params.scale.end;
     this.emitter.scale.set(scale, scale, scale);
   }
 
@@ -284,7 +284,7 @@ class ProjectileEffect {
     tex.image.currentTime = 0;
     const material = new THREE.SpriteMaterial({
       map: tex,
-      color: 0xffffff,
+      color: this.params.single ? this.params.color.start : 0xffffff,
       blending: this.params.single
         ? THREE.NormalBlending
         : THREE.AdditiveBlending,
@@ -535,7 +535,7 @@ export class Particle3D {
     return this;
   }
   scale(a, b) {
-    const scale = Math.sqrt(ParticleSystem.getScale())/5;
+    const scale = this.params.type == "s" || this.params.type == "sprite" ? canvas.scene.dimensions.size/factor : Math.sqrt(ParticleSystem.getScale())/5;
     a*= scale
     if (b) {
       this.params.scale = {start: a, end: b*scale};
@@ -545,7 +545,7 @@ export class Particle3D {
     return this;
   }
   gravity(gravity) {
-    this.params.gravity = gravity;
+    this.params.gravity = gravity*ParticleSystem.getScale();
     return this;
   }
   color(start, end) {
@@ -570,13 +570,13 @@ export class Particle3D {
     return this;
   }
   force(force) {
-    this.params.force = force;
+    this.params.force = force*ParticleSystem.getScale();
     return this;
   }
   push(dx,dy,dz){
-    dx = dx ?? 0;
-    dy = dy ?? 0;
-    dz = dz ?? 0;
+    dx = dx*ParticleSystem.getScale() ?? 0;
+    dy = dy*ParticleSystem.getScale() ?? 0;
+    dz = dz*ParticleSystem.getScale() ?? 0;
     this.params.push = {dx,dy,dz};
     return this;
   }

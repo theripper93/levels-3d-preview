@@ -64,6 +64,7 @@ export function sleep(ms) {
 
 class Levels3DPreview {
   constructor() {
+    THREE.Cache.enabled = true;
     this.THREE = THREE;
     this.socket = socketlib.registerModule("levels-3d-preview");
     this.socket.register("Particle3D", this.particleSocket);
