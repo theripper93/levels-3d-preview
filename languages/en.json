@@ -63,6 +63,10 @@
             "enableFogOfWar": {
                 "label": "Enable Fog of War (WARNING EXPERIMENTAL)"
             },
+            "bakeLights": {
+                "label": "Pre-Bake Lights",
+                "notes": "Pre-Bake the shadow casting of lights on scene load, they won't be dinamyc but they will not go through walls."
+            },
             "enableFog": {
                 "label": "Enable Fog"
             },

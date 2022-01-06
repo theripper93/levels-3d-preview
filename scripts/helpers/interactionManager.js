@@ -102,7 +102,7 @@ export class InteractionManager {
         }
         if(data.type !== "Actor") return false
         Hooks.once("preCreateToken", (token)=>{
-          token.data.update({elevation: data.elevation.toFixed(2), flags: data.flags})
+          token.data.update({elevation: Math.trunc(data.elevation*100)/100, flags: data.flags})
         })
         return canvas.tokens._onDropActorData(event, data);
       }

@@ -320,7 +320,7 @@ Hooks.once("ready", () => {
     default: false,
   });
 
-  //if(game.settings.get("levels-3d-preview", "welcomeDialog")) return;
+  if(game.settings.get("levels-3d-preview", "welcomeDialog")) return;
   const dialog = new Dialog({
     title: game.i18n.localize("levels3dpreview.welcome.title"),
     content: game.i18n.localize("levels3dpreview.welcome.content"),

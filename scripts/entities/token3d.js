@@ -26,6 +26,7 @@ export class Token3D {
       this.combatColor = new THREE.Color("#005eff");
       this._loaded = false;
       this.getFlags();
+      this.drawBars = debounce(this.drawBars, 100);
     }
   
     getFlags() {
@@ -110,7 +111,7 @@ export class Token3D {
     async getModel(){
       if(!this.gtflPath){
         const texture = this.texture;
-        const geometry = new THREE.PlaneGeometry((texture.image.width || texture.image.videoWidth)/1000, (texture.image.height || texture.image.videoHeight)/1000);
+        const geometry = new THREE.PlaneGeometry((texture.image?.width || texture.image?.videoWidth || 1)/1000, (texture.image?.height || texture.image?.videoHeight || 1)/1000);
         const material = new THREE.MeshBasicMaterial();
         const object = new THREE.Mesh(geometry, material);
         this.standUp=true;
@@ -351,7 +352,7 @@ export class Token3D {
       const z3d = this.mesh.position.z;
       const x = x3d * this.factor-this.token.w/2;
       const y = z3d * this.factor - this.token.h/2;
-      const z = ((y3d * this.factor * canvas.dimensions.distance)/(canvas.dimensions.size)).toFixed(2);
+      const z = Math.trunc(((y3d * this.factor * canvas.dimensions.distance)/(canvas.dimensions.size))*100)/100;
         const snapped = canvas.grid.getSnappedPosition(x, y);
       const dest = {
         x: useSnapped ? snapped.x : x,
@@ -683,7 +684,7 @@ export class Token3D {
 
     drawBars(){
       this.mesh.remove(this.bars);
-      if(!this.token?.hud?.bars) return;
+      if(!this.token?.hud?.bars || !this.token?.hud?.bars?.visible) return;
       const bar1 = this.token.hud.bars["bar1"].clone();
       const bar2 = this.token.hud.bars["bar2"].clone();
       const container = new PIXI.Container();
@@ -691,7 +692,6 @@ export class Token3D {
       container.addChild(bar2);
       bar2.position.set(0, bar1.height+3);
       const base64 = canvas.app.renderer.extract.base64(container);
-      
       const spriteMaterial = new THREE.SpriteMaterial({
         map: new THREE.TextureLoader().load(base64),
         alphaTest: this._parent.fogExploration ? 0.8 : 0.001,
@@ -722,10 +722,10 @@ export class Token3D {
     }
 
     updateVisibility(){
-      if(!this._loaded || !this.mesh || !this.nameplate || !this.bars) return;
+      if(!this._loaded || !this.mesh || !this.nameplate) return;
       this.mesh.visible = this.alwaysVisible || this.token.visible;
       this.nameplate.visible = this.token.hud?.nameplate?.visible;
-      this.bars.visible = this.token?.hud?.bars?.visible;
+      if(this.bars)this.bars.visible = this.token?.hud?.bars?.visible;
     }
   
     getColor() {

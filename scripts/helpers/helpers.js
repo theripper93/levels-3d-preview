@@ -36,7 +36,14 @@ export class Helpers{
       this.isVideo = true;
       return videoTexture;
       }else{
-        return await new THREE.TextureLoader().loadAsync(texturePath);
+        let texture;
+        try{
+          texture = await new THREE.TextureLoader().loadAsync(texturePath);
+        }catch(e){
+          console.error(e);
+          return new THREE.Texture();
+        }
+        return texture;
       }
 
       function resolveMetadata(video) {

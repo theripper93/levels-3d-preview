@@ -121,6 +121,12 @@ Hooks.on("renderSceneConfig", (app,html)=>{
             label: game.i18n.localize("levels3dpreview.flags.enableFogOfWar.label"),
             default: false,
         },
+        "bakeLights": {
+            type: "checkbox",
+            label: game.i18n.localize("levels3dpreview.flags.bakeLights.label"),
+            notes: game.i18n.localize("levels3dpreview.flags.bakeLights.notes"),
+            default: false,
+        },
         "sceneTint": {
             type: "color",
             label: game.i18n.localize("levels3dpreview.flags.sceneTint.label"),

@@ -155,7 +155,6 @@ class Levels3DPreview {
     this.renderer.setClearColor(0x999999, 1);
     //composer
     this.composer = new EffectComposer( this.renderer );
-
     //set dom element id
     this.renderer.domElement.id = "levels3d";
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
@@ -185,6 +184,7 @@ class Levels3DPreview {
 
   build3Dscene() {
     this._ready = false;
+    this._lightsOk = !canvas.scene.getFlag("levels-3d-preview", "bakeLights");
     this.clear3Dscene();
     this.scene = new THREE.Scene();
     this.composer.removePass(this.renderPass);
