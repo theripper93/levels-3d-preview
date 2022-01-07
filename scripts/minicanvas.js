@@ -52,6 +52,7 @@ class miniCanvas extends Application {
     }
 
     updateControls(toggle){
+      return;
       $(`li[data-tool="miniCanvas"]`).toggleClass("active", toggle);
       ui.controls.controls.find(c=>c.name=="token").tools.find(t=>t.name == "miniCanvas").active = toggle;
     }

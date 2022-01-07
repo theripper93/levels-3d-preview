@@ -4,9 +4,10 @@ Hooks.on("getSceneControlButtons", (buttons)=>{
         "name": "preview3d",
         "title": game.i18n.localize("levels3dpreview.controls.preview3d"),
         "icon": "fas fa-cube",
-        toggle: true,
+        //toggle: true,
+        button: true,
         visible: canvas?.scene?.getFlag("levels-3d-preview","enablePlayers") || game.user.isGM,
-        active: game.Levels3DPreview?._active,
+        //active: game.Levels3DPreview?._active,
         onClick: () => {
             game.Levels3DPreview.toggle();
         },
@@ -15,13 +16,14 @@ Hooks.on("getSceneControlButtons", (buttons)=>{
         "name": "miniCanvas",
         "title": game.i18n.localize("levels3dpreview.controls.miniCanvas"),
         "icon": "fas fa-sign-out-alt",
-        toggle: true,
+        //toggle: true,
+        button: true,
         visible: canvas?.scene?.getFlag("levels-3d-preview","enablePlayers") || game.user.isGM,
-        active: Object.values(ui.windows)?.find(w => w.id === "miniCanvas") ? true : false,
+        //active: Object.values(ui.windows)?.find(w => w.id === "miniCanvas") ? true : false,
         onClick: () => {
             if(!game.Levels3DPreview?._active) {
-                $(`li[data-tool="miniCanvas"]`).toggleClass("active", false);
-                ui.controls.controls.find(c=>c.name=="token").tools.find(t=>t.name == "miniCanvas").active = false;
+                /*$(`li[data-tool="miniCanvas"]`).toggleClass("active", false);
+                ui.controls.controls.find(c=>c.name=="token").tools.find(t=>t.name == "miniCanvas").active = false;*/
                 return ui.notifications.warn(game.i18n.localize("levels3dpreview.errors.3dnotactive"))
             }
             miniCanvas.toggle();
@@ -121,12 +123,12 @@ Hooks.on("renderSceneConfig", (app,html)=>{
             label: game.i18n.localize("levels3dpreview.flags.enableFogOfWar.label"),
             default: false,
         },
-        "bakeLights": {
+        /*"bakeLights": {
             type: "checkbox",
             label: game.i18n.localize("levels3dpreview.flags.bakeLights.label"),
             notes: game.i18n.localize("levels3dpreview.flags.bakeLights.notes"),
             default: false,
-        },
+        },*/
         "sceneTint": {
             type: "color",
             label: game.i18n.localize("levels3dpreview.flags.sceneTint.label"),
@@ -728,6 +730,21 @@ Hooks.on("init", () => {
           {key: "KeyX", modifiers: [ SHIFT ]}
         ],
         onDown: () => {if(game.Levels3DPreview._active) game.Levels3DPreview.setCameraToControlled()},
+    });
+
+    game.keybindings.register("levels-3d-preview", "pingcamera", {
+        name: game.i18n.localize("levels3dpreview.keybindings.pingcamera"),
+        editable: [
+          {key: "KeyQ", modifiers: [ SHIFT ]}
+        ],
+        onDown: () => {if(game.Levels3DPreview._active) game.Levels3DPreview.helpers.focusCameraToCursor()},
+    });
+    game.keybindings.register("levels-3d-preview", "ping", {
+        name: game.i18n.localize("levels3dpreview.keybindings.ping"),
+        editable: [
+          {key: "KeyE", modifiers: [ SHIFT ]}
+        ],
+        onDown: () => {if(game.Levels3DPreview._active) game.Levels3DPreview.helpers._ping()},
     });
 
     game.keybindings.register("levels-3d-preview", "freeMode", {

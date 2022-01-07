@@ -102,6 +102,7 @@ export class Wall3D {
             material = new THREE.MeshStandardMaterial({
                 color: this.sidesTexture == texturePath ? this.sidesColor : this.color,
                 transparent: this.opacity < 1,
+                depthWrite: this.opacity === 1,
                 opacity: this.opacity,
                 roughness: this.roughness,
                 metalness: this.metalness,

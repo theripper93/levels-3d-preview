@@ -162,6 +162,7 @@ export class InteractionManager {
       //Handle placeable hover event
       if(intersect?.point){
         this.canvas2dMousePosition = Ruler3D.pos3DToCanvas(intersect.point)
+        this.canvas3dMousePosition = intersect.point
       }
       if(object && object?.userData?.entity3D?.placeable){
         if(this.currentHover?.placeable?.id !== object?.userData?.entity3D?.placeable?.id) this.currentHover?._onHoverOut(event);

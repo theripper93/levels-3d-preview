@@ -121,6 +121,7 @@ class Levels3DPreview {
     this.tokenAnimationQueue = [];
     this._cameraSet = false;
     this.helpers = new Helpers();
+    this.socket.register("socketCamera", this.helpers.socketCamera);
     this.exporter = new Exporter(this);
     $("body").append(`<div id="video-texture-container" style="position: absolute; top: 0; left: 0;display: none;"></div>`);
     this.videoTextureContinaer = $("#video-texture-container");
@@ -158,6 +159,7 @@ class Levels3DPreview {
     //set dom element id
     this.renderer.domElement.id = "levels3d";
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+    game.settings.get("levels-3d-preview", "cameralockzero") && this.controls.addEventListener("change", this._onCameraChange.bind(this));
     this.ruler = new Ruler3D(this);
     this.interactionManager = new InteractionManager(this);
     this.interactionManager.activateListeners();
@@ -587,6 +589,19 @@ class Levels3DPreview {
       }
     }
     this.scene.visible = !inFog;
+  }
+
+  _onCameraChange(){
+    const centerPosition = this.controls.target.clone();
+    centerPosition.y = 0;
+    const groundPosition = this.camera.position.clone();
+    groundPosition.y = 0;
+    const d = (centerPosition.distanceTo(groundPosition));
+
+    const origin = new THREE.Vector2(this.controls.target.y,0);
+    const remote = new THREE.Vector2(0,d);
+    const angleRadians = Math.atan2(remote.y - origin.y, remote.x - origin.x);
+    this.controls.maxPolarAngle = angleRadians;
   }
 
   setAutopan(value){

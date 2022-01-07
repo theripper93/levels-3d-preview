@@ -16,7 +16,7 @@ class canvas3dConfig extends FormApplication{
 	async getData(options) {
         const data = {}
         const settingsKeys = [
-            "baseStyle","solidBaseMode","solidBaseColor","highlightCombat","startMarker","selectedImage","colorizeInidcator","rotateIndicator","hideTarget","templateSyle","gridMode","autoPan","camerafocuszoom","standupFace","preventNegative","globalCollision","miniCanvas","debugMode"
+            "canpingpan", "canping","baseStyle","solidBaseMode","solidBaseColor","highlightCombat","startMarker","selectedImage","colorizeInidcator","rotateIndicator","hideTarget","templateSyle","gridMode","autoPan","camerafocuszoom","standupFace","preventNegative","globalCollision","miniCanvas","debugMode","cameralockzero"
         ];
         for (let key of settingsKeys) {
             data[key] = game.settings.get("levels-3d-preview", key);
@@ -201,6 +201,33 @@ Hooks.once('init', function() {
       config: false,
       type: Boolean,
       default: true,
+    });
+
+    game.settings.register("levels-3d-preview", "cameralockzero", {
+      name: game.i18n.localize("levels3dpreview.settings.cameralockzero.name"),
+      hint: game.i18n.localize("levels3dpreview.settings.cameralockzero.hint"),
+      scope: "world",
+      config: false,
+      type: Boolean,
+      default: true,
+    });
+
+    game.settings.register("levels-3d-preview", "canping", {
+      name: game.i18n.localize("levels3dpreview.settings.canping.name"),
+      hint: game.i18n.localize("levels3dpreview.settings.canping.hint"),
+      scope: "world",
+      config: false,
+      type: Boolean,
+      default: true,
+    });
+
+    game.settings.register("levels-3d-preview", "canpingpan", {
+      name: game.i18n.localize("levels3dpreview.settings.canpingpan.name"),
+      hint: game.i18n.localize("levels3dpreview.settings.canpingpan.hint"),
+      scope: "world",
+      config: false,
+      type: Boolean,
+      default: false,
     });
 
     game.settings.register("levels-3d-preview", "standupFace", {

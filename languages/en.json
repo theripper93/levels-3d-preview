@@ -8,6 +8,8 @@
         "errors": {
             "filenotsupported": "File format not supported",
             "3dnotactive": "Cannot open canvas popout, the 3D mode is not active.",
+            "canping": "User lacks permission to display pings on the map.",
+            "canpingpan": "User lacks permission to send camera position.",
             "particleSystem": {
                 "type": "Particle system: type '%type%' not supported, the valid types are: ",
                 "fromto": "Particle system: Target and/or Source where not specified or are undefined.",
@@ -18,7 +20,9 @@
             "resetView": "Reset Camera View",
             "topdownView": "Top-Down Camera View",
             "cameraToToken": "Focus Camera on Selected Token",
-            "freeMode": "Free Placement mode"
+            "freeMode": "Free Placement mode",
+            "pingcamera": "Ping and move Camera to Current view for all Clients",
+            "ping": "Ping current mouse position location for all Clients"
         },
         "flags": {
             "isFog":{
@@ -27,7 +31,7 @@
             },
             "enablePlayers":{
                 "label": "Enable for Players",
-                "notes": "Allow players to open the 3D view for this scene, all walls, floors and tokens will be revealed."
+                "notes": "Allow players to open the 3D view for this scene, if the experimental fog of war option is not enabled, the map will be fully visible."
             },
             "auto3d":{
                 "label": "Enable 3D on Load"
@@ -383,6 +387,14 @@
                     "notes": "Configure the visibility of 3D Objects."
                 }
             },
+            "canping": {
+                "label": "Players Can Ping",
+                "notes": "Enable the ability to ping locations for players (default Shift+E)."
+            },
+            "canpingpan": {
+                "label": "Players Can Send Camera Position",
+                "notes": "Enable the ability to send the camera position for players (default Shift+Q)."
+            },
             "configApp": {
                 "title": "3D Canvas Configuration",
                 "hint": "Configure Global 3D Canvas Settings.",
@@ -516,9 +528,13 @@
                     "quarter": "Low"
                 }
             },
+            "cameralockzero": {
+                "name": "Prevent Negative Camera",
+                "hint": "Prevent camera to Pivot or Pan below zero (requires refresh)."
+            },
             "debugMode": {
                 "name": "Debug Mode",
-                "hint": "Show helpful debug info for troubleshooting (mainly hitboxes and lights)."
+                "hint": "Show helpful debug info for troubleshooting."
             }
         },
         "exporter" : {

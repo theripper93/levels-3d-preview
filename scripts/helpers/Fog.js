@@ -51,7 +51,7 @@ export class Fog{
         if(!this.needsUpdate && !force) return;
         this.needsUpdate = false;
         if(this.fogTexture) this.fogTexture.dispose();
-        const base64 = game.user.isGM && !canvas.tokens.controlled.length ? this.getBlankTexture() : this.generateTexture();
+        const base64 = game.user.isGM && (!canvas.tokens.controlled.length || !canvas.sight.sources.size) ? this.getBlankTexture() : this.generateTexture();
         this.fogTexture = await new THREE.TextureLoader().loadAsync( base64)
         this.fogTexture.minFilter = THREE.NearestFilter;
         const size = [this.fogTexture.image.width, this.fogTexture.image.height];
@@ -60,10 +60,12 @@ export class Fog{
     }
 
     getBlankTexture(){
+        if(this._blankTexture) return this._blankTexture;
         const g = new PIXI.Graphics().beginFill(0xffffff).drawRect(0, 0, 1, 1);
         const texture = PIXI.RenderTexture.create({width: 1, height: 1, resolution: 1});
         canvas.app.renderer.render(g, {renderTexture: texture, clear: false});
         const base64 = canvas.app.renderer.extract.base64(texture,"image/jpeg");
+        this._blankTexture = base64;
         texture.destroy(true);
         return base64;
     }
@@ -73,7 +75,6 @@ export class Fog{
 
         canvas.app.renderer.render(canvas.sight.revealed, {renderTexture: texture, clear: false});
         canvas.app.renderer.render(canvas.sight.vision, {renderTexture: texture, clear: false});
-
 
         const base64 = canvas.app.renderer.extract.base64(texture,"image/jpeg");
         texture.destroy(true);

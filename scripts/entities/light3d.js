@@ -27,8 +27,6 @@ export class Light3D {
         this.light3d.shadow.camera.near = 0.001;
         this.light3d.shadow.mapSize.width = 64;
         this.light3d.shadow.mapSize.height = 64;
-        this.light3d.shadow.autoUpdate = false;
-        this.light3d.shadow.needsUpdate = false;
         this.refresh();
         if(!this.isToken) this._parent.scene.add(this.light3d);
         if(this._parent.debugMode){
@@ -38,9 +36,7 @@ export class Light3D {
 
     refresh(){
         const light = this.light;
-        this.light3d.castShadow = (canvas.scene.getFlag("levels-3d-preview", "bakeLights") || light.document.getFlag("levels-3d-preview", "castShadows")) ?? false;
-        this.light3d.shadow.needsUpdate = this.light3d.castShadow;
-        this.light3d.shadow.autoUpdate = light.document.getFlag("levels-3d-preview", "castShadows") ?? false;
+        this.light3d.castShadow = light.document.getFlag("levels-3d-preview", "castShadows")//(canvas.scene.getFlag("levels-3d-preview", "bakeLights") || light.document.getFlag("levels-3d-preview", "castShadows")) ?? false;
         let top = light.data.flags.levels?.rangeTop ?? 1;
         let bottom = light.data.flags.levels?.rangeBottom ?? 1;
         const z = (top+bottom)*canvas.scene.dimensions.size/canvas.scene.dimensions.distance/2;

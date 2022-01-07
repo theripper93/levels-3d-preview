@@ -1,6 +1,7 @@
 import * as THREE from "../lib/three.module.js";
 import {factor} from '../main.js';
 import { Ruler3D } from "../entities/ruler3d.js";
+import { ParticleSystem } from "./particleSystem.js";
 
 export class Helpers{
 
@@ -123,6 +124,45 @@ export class Helpers{
       game.Levels3DPreview._animateCameraTarget.speed = cameraParams.speed;
 
 
+    }
+
+    focusCameraToCursor(speed = 0.04){
+      const cameraPosition = game.Levels3DPreview.camera.position.clone();
+      const cameraLookat = game.Levels3DPreview.interactionManager.canvas3dMousePosition.clone();
+      this.focusCameraToPosition(cameraPosition, cameraLookat);
+      this._ping();
+    }
+
+    _ping(){
+      if(!game.user.isGM && !game.settings.get("levels-3d-preview", "canping")) return ui.notifications.error(game.i18n.localize("levels3dpreview.errors.canping"));
+      const highPos = game.Levels3DPreview.interactionManager.canvas2dMousePosition.clone();
+      highPos.z = 500;
+      new Particle3D("r")
+          .from(highPos)
+          .to(game.Levels3DPreview.interactionManager.canvas2dMousePosition)
+          .sprite("modules/levels-3d-preview/assets/particles/trace_07.png")
+          .color(game.user.color)
+          .scale(3,3)
+          .life(1000)
+          .rate(100,1)
+          .alpha(0.2,0)
+        .start()
+    }
+
+    focusCameraToPosition(cameraPosition, cameraLookat, speed = 0.04){
+      if(!game.user.isGM && !game.settings.get("levels-3d-preview", "canpingpan")) return ui.notifications.error(game.i18n.localize("levels3dpreview.errors.canpingpan"));
+      game.Levels3DPreview.socket.executeForEveryone(
+        "socketCamera",
+        {cameraPosition, cameraLookat, speed}
+      );
+    }
+
+    socketCamera(params){
+      params.cameraPosition = new THREE.Vector3(params.cameraPosition.x, params.cameraPosition.y, params.cameraPosition.z);
+      params.cameraLookat = new THREE.Vector3(params.cameraLookat.x, params.cameraLookat.y, params.cameraLookat.z);
+      game.Levels3DPreview._animateCameraTarget.cameraPosition = params.cameraPosition;
+      game.Levels3DPreview._animateCameraTarget.cameraLookat = params.cameraLookat;
+      game.Levels3DPreview._animateCameraTarget.speed = params.speed ?? 0.04;
     }
 
 }
