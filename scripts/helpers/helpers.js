@@ -85,6 +85,44 @@ export class Helpers{
       return null;
     }
 
+    async getPBRMat(texturePath){
+      if(this.materialCache[texturePath]) return this.materialCache[texturePath];
+      let path = texturePath;
+      const extension = path.split(".").pop();
+      path = path.replace("."+extension, "");
+      const tTypes = ["Color", "Displacement", "Roughness", "Metalness", "AmbientOcclusion", "NormalGL"];
+      tTypes.forEach((t) => {path = path.replace(t,"")});
+      const tPaths = tTypes.map((t) => {return path+t+"."+extension});
+      const textures = {
+        roughnessMap: await this.loadTexture(tPaths[2]),
+        metalnessMap: await this.loadTexture(tPaths[3]),
+        map: await this.loadTexture(tPaths[0]),
+        normalMap: await this.loadTexture(tPaths[5]),
+        aoMap: await this.loadTexture(tPaths[4]),
+        //displacementMap: await this.loadTexture(tPaths[1]),
+      }
+      for(let [k, v] of Object.entries(textures)){
+        if(!v.image) delete textures[k];
+        if(v.image){
+          v.wrapS = THREE.RepeatWrapping;
+          v.wrapT = THREE.RepeatWrapping;
+        }
+      }
+      const material = new THREE.MeshStandardMaterial({...textures});
+      this.materialCache[texturePath] = material;
+      return material;
+    }
+
+    async autodetectTextureOrMaterial(path){
+      return this.isPBR(path) ? await this.getPBRMat(path) : await this.loadTexture(path);
+    }
+
+    isPBR(path){
+      if(!path) return false;
+      const tTypes = ["Displacement", "Roughness", "Metalness", "AmbientOcclusion", "NormalGL"];
+      return tTypes.some((t) => {return path.includes(t)});
+    }
+
     animateCamera(target,options = {}){
       const speed = options.speed || 0.04;
       const rotation = options.rotation || 0;

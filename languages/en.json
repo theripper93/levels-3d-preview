@@ -106,6 +106,12 @@
             "showSceneFloors": {
                 "label": "Render Tiles"
             },
+            "initialview": {
+                "label": "Initial View Position",
+                "notes": "Default camera position when the scene is loaded - before capturing the camera view set the target by using a ping.",
+                "button": "Capture Camera View",
+                "buttondel": "Clear Stored Camera View"
+            },
             "wallFloorAlpha": {
                 "label": "Wall/Floor Alpha"
             },
@@ -388,12 +394,12 @@
                 }
             },
             "canping": {
-                "label": "Players Can Ping",
-                "notes": "Enable the ability to ping locations for players (default Shift+E)."
+                "name": "Players Can Ping",
+                "hint": "Enable the ability to ping locations for players (default Shift+E)."
             },
             "canpingpan": {
-                "label": "Players Can Send Camera Position",
-                "notes": "Enable the ability to send the camera position for players (default Shift+Q)."
+                "name": "Players Can Send Camera Position",
+                "hint": "Enable the ability to send the camera position for players (default Shift+Q)."
             },
             "configApp": {
                 "title": "3D Canvas Configuration",
@@ -403,7 +409,8 @@
                     "canvas": "Canvas",
                     "token": "Token",
                     "base": "Base",
-                    "misc": "Misc"
+                    "misc": "Misc",
+                    "perm": "Permissions"
                 }
             },
             "baseStyle": {
@@ -483,6 +490,10 @@
             "screenspacepanning": {
                 "name": "Enable Screen Space Panning",
                 "hint": "Enable screen space panning for the 3D view."
+            },
+            "enabledamping": {
+                "name": "Enable Damping",
+                "hint": "Enable damping for the camera. Disable this option if you experience motion sickness. (Shift+R in 3D view to reset the camera and apply this change)."
             },
             "camerafocuszoom": {
                 "name": "Enable Camera Focus Zoom",

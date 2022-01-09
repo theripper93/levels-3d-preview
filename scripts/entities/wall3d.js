@@ -69,7 +69,7 @@ export class Wall3D {
             sidesTexture.wrapS = THREE.RepeatWrapping;
             sidesTexture.wrapT = THREE.RepeatWrapping;
         }
-        const materials = this._getMaterials(texture,sidesTexture);
+        const materials = await this._getMaterials(texture,sidesTexture);
         this.mesh = new THREE.Mesh(geometry, materials);
         if(this.wall.isDoor){
         this.mesh.userData.hitbox = this.mesh;
@@ -83,17 +83,19 @@ export class Wall3D {
         this._parent.scene.add(this.mesh);
     }
 
-    _getMaterials(texture,sidesTexture){
+    async _getMaterials(texture,sidesTexture){
         if(!this.texture || !this.sidesTexture){
-            const material = this.texture ? this._generateMaterial(this.texture,texture) : this._generateMaterial(this.sidesTexture,sidesTexture);
+            const material = this.texture ? await this._generateMaterial(this.texture,texture) : await this._generateMaterial(this.sidesTexture,sidesTexture);
             return material;
         }
-        const material = this._generateMaterial(this.texture,texture);
-        const sidesMaterial = this._generateMaterial(this.sidesTexture,sidesTexture);
+        const material = await this._generateMaterial(this.texture,texture);
+        const sidesMaterial = await this._generateMaterial(this.sidesTexture,sidesTexture);
         return [material,material, sidesMaterial,sidesMaterial,sidesMaterial,sidesMaterial];
     }
 
-    _generateMaterial(texturePath, texture){
+    async _generateMaterial(texturePath, texture){
+        const isPBR = this._parent.helpers.isPBR(texturePath);
+        if(isPBR) return await this._parent.helpers.getPBRMat(texturePath)
         let material;
         const materialId = `${this.color}${this.opacity}${texturePath}${this.isVisible}${this.metalness}${this.roughness}`;
         if(this._parent.helpers.materialCache[materialId]){

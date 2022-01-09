@@ -349,13 +349,27 @@ class Levels3DPreview {
     const height = canvas.scene.dimensions.height / this.factor;
     const center = this.canvasCenter;
     const depth = Math.max(width, height) / 10;
-    const texture = await this.helpers.loadTexture(canvas.scene.getFlag("levels-3d-preview", "tableTex"));
+    const textureMat = await this.helpers.autodetectTextureOrMaterial(canvas.scene.getFlag("levels-3d-preview", "tableTex"));
     const geometry = new THREE.BoxGeometry(width, height, depth);
-    const material = new THREE.MeshStandardMaterial({
-      map: texture,
+    let uvAttribute = geometry.attributes.uv;
+		
+    for ( let i = 0; i < uvAttribute.count; i ++ ) {  
+        let u = uvAttribute.getX( i );
+        let v = uvAttribute.getY( i );
+        u*=Math.round(canvas.scene.dimensions.width/canvas.scene.dimensions.size)/10;
+        v*=Math.round(canvas.scene.dimensions.height/canvas.scene.dimensions.size)/10;
+        uvAttribute.setXY( i, u, v );
+            
+    }
+    if(textureMat.image){
+      textureMat.wrapS = THREE.RepeatWrapping;
+      textureMat.wrapT = THREE.RepeatWrapping;
+    }
+    const material = textureMat.image ? new THREE.MeshStandardMaterial({
+      map: textureMat,
       roughness: 1,
       metalness: 1,
-    });
+    }) : textureMat;
     material.toneMapped = false;
     const plane = new THREE.Mesh(geometry, material);
     plane.receiveShadow = true;
@@ -647,7 +661,7 @@ class Levels3DPreview {
   resetCamera(topdown = false) {
     const center = this.canvasCenter;
     this.controls.reset();
-    this.controls.enableDamping = true;
+    this.controls.enableDamping = game.settings.get("levels-3d-preview", "enabledamping")//true;
     this.controls.dampingFactor = 0.07;
     this.controls.maxDistance = 20;
     this.controls.minDistance = 0.1;
@@ -655,7 +669,16 @@ class Levels3DPreview {
     this.controls.target.set(center.x, center.y, center.z);
     topdown ? this.camera.position.set(center.x, center.y + 4, center.z) : this.camera.position.set(center.x*1.5, center.y + 1, center.z*2);
     this.camera.lookAt(center);
+    this.loadInitialCameraPosition();
     this.controls.update();
+  }
+
+  loadInitialCameraPosition(){
+    const initialPos = canvas.scene.getFlag("levels-3d-preview", "initialPosition");
+    if(!initialPos) return;
+    this.camera.position.set(initialPos.position.x,initialPos.position.y,initialPos.position.z);
+    this.controls.target.set(initialPos.target.x,initialPos.target.y,initialPos.target.z);
+    this.camera.lookAt(initialPos.target);
   }
 
   setCameraToControlled(token){

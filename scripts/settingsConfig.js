@@ -194,6 +194,15 @@ Hooks.once('init', function() {
       default: true,
     });
 
+    game.settings.register("levels-3d-preview", "enabledamping", {
+      name: game.i18n.localize("levels3dpreview.settings.enabledamping.name"),
+      hint: game.i18n.localize("levels3dpreview.settings.enabledamping.hint"),
+      scope: "client",
+      config: true,
+      type: Boolean,
+      default: true,
+    });
+
     game.settings.register("levels-3d-preview", "camerafocuszoom", {
       name: game.i18n.localize("levels3dpreview.settings.camerafocuszoom.name"),
       hint: game.i18n.localize("levels3dpreview.settings.camerafocuszoom.hint"),

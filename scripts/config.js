@@ -65,6 +65,25 @@ Hooks.on("renderSceneConfig", (app,html)=>{
             label: game.i18n.localize("levels3dpreview.flags.enableRuler.label"),
             default: true,
         },
+        "initialposition": {
+            type: "custom",
+            html: `
+            
+            <div class="form-group">
+                <label>${game.i18n.localize("levels3dpreview.flags.initialview.label")}</label>
+                <div class="form-fields">
+                    <button class="capture-position" type="button" id="clear-3d-view" title="${game.i18n.localize("levels3dpreview.flags.initialview.buttondel")}">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                    <button class="capture-position" type="button" id="capture-3d-view" title="${game.i18n.localize("levels3dpreview.flags.initialview.button")}">
+                        <i class="fas fa-crop-alt fa-fw"></i>
+                    </button>
+                </div>
+                <p class="notes">${game.i18n.localize("levels3dpreview.flags.initialview.notes")}</p>
+            </div>
+            
+            `
+        },
         "header2": {
             type: "custom",
             html: `<h3 class="form-header"><i class="fas fa-cloud-sun"></i> ${game.i18n.localize("levels3dpreview.settings.headers.environment.title")}</h3><p class="notes">${game.i18n.localize("levels3dpreview.settings.headers.environment.notes")}</p><div>`
@@ -339,6 +358,17 @@ Hooks.on("renderSceneConfig", (app,html)=>{
             animate: true,
         }
     })
+    html.on("click", "#clear-3d-view", (e)=>{
+        e.preventDefault();
+        canvas.scene.update({"flags.levels-3d-preview.initialPosition": false}, {render: false});
+    })
+    html.on("click", "#capture-3d-view", (e)=>{
+        e.preventDefault();
+        canvas.scene.update({"flags.levels-3d-preview.initialPosition": {
+            target: game.Levels3DPreview.controls.target.clone(),
+            position: game.Levels3DPreview.camera.position.clone(),
+        }}, {render: false});
+    })
 })
 
 Hooks.on("renderTokenConfig", (app,html)=>{
@@ -370,6 +400,7 @@ Hooks.on("renderTokenConfig", (app,html)=>{
                 "plastic": game.i18n.localize("levels3dpreview.flags.material.options.plastic"),
                 "wood": game.i18n.localize("levels3dpreview.flags.material.options.wood"),
                 "metal": game.i18n.localize("levels3dpreview.flags.material.options.metal"),
+                "pbr": game.i18n.localize("levels3dpreview.flags.material.options.pbr"),
             }
         },
         "color": {

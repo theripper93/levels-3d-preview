@@ -147,7 +147,7 @@ export class Token3D {
       const object = loaded.object;
       const scene = loaded.scene;
       const model = loaded.model;
-      this.setMaterial(model);
+      await this.setMaterial(model);
       //Apply rotation
       model.rotation.set(
         this.rotationX + model.rotation._x,
@@ -247,9 +247,10 @@ export class Token3D {
       return this;
     }
 
-    setMaterial(model){
+    async setMaterial(model){
       let materialType = this.material;
       if((!this.material || this.material === "none") && !this.standUp) return;
+      if(materialType === "pbr") return await this.loadPBRMat(model);
       //model.geometry.uvsNeedUpdate = true;
       //model.geometry.buffersNeedUpdate = true;
       let roughness = 0;
@@ -309,6 +310,20 @@ export class Token3D {
 
 
 
+    }
+
+    async loadPBRMat(model){
+      const material = await this._parent.helpers.getPBRMat(this.imageTexture)
+      if(model.material){
+        model.material = material;
+      }
+      if(model.children?.length){
+        model.traverse((child) => {
+          if(child.isMesh){
+              child.material = material;
+          }
+        });
+      }
     }
 
     loadLight(){
