@@ -10,13 +10,22 @@
         },
         "errors": {
             "filenotsupported": "このファイルの拡張子はサポートされていません。",
-            "3dnotactive": "3Dモードに切り替えるまで2Dキャンバスは表示できません。"
+            "3dnotactive": "3Dモードに切り替えるまで2Dキャンバスは表示できません。",
+            "canping": "このユーザは注目マーカを使う権限を有していません。",
+            "canpingpan": "このユーザはカメラの位置を送信する権限を有していません。",
+            "particleSystem": {
+                "type": "パーティクルシステム：'%type%'タイプはサポートされていません。有効なタイプは次のとおりです：",
+                "fromto": "パーティクルシステム：ターゲットまたはソースが定義されていません。",
+                "onend": "パーティクルシステム：.onEnd()にはParticle3Dのインスタンスに含まれていないパラメータが存在しています。"
+            }
         },
         "keybindings":{
             "resetView": "カメラリセット",
             "topdownView": "見下ろしカメラ",
             "cameraToToken": "コマにカメラを注目",
-            "freeMode": "任意配置モード"
+            "freeMode": "任意配置モード",
+            "pingcamera": "注目マーカを表示し、全員に同じカメラ位置を同期します。",
+            "ping": "現在のマウスの位置に注目マーカを表示します。"
         },
         "flags": {
             "isFog":{
@@ -34,6 +43,11 @@
                 "label": "背景画像（Skybox）",
                 "placeholder": "背景画像パス",
                 "notes": "選択したファイルと同じフォルダに同名の_ft, _bk, _up, _dn, _rt, _lfが名前に記述されたファイルがあった場合、背景の前、後、上、下、右、左の画像が個別に読み込まれます。"
+            },
+            "exr" : {
+                "label": "HDRI",
+                "placeholder": "EXR ファイル",
+                "notes": "背景画像が設定されていない場合、HDRIが背景として使用されます。背景画像とHDRIが両方選択されている場合背景画像はそのままで、光源などにはHDRIが使用されます。"
             },
             "renderTable": {
                 "label": "テーブルを表示",
@@ -55,6 +69,10 @@
             },
             "enableFogOfWar": {
                 "label": "Fog of warマスク使用（動作が不安定です！）"
+            },
+            "bakeLights": {
+                "label": "光源固定化",
+                "notes": "シーンロード時に影などの照明関連の動作を固定化します。動的に変更されなくなりますが、壁を超えることもなくなります。"
             },
             "enableFog": {
                 "label": "マスク使用"
@@ -91,6 +109,12 @@
             "showSceneFloors": {
                 "label": "シーンの床・ポリゴンを表示する"
             },
+            "initialview": {
+                "label": "初期カメラ位置",
+                "notes": "シーンロードが終わったときに最初に見るカメラの位置です。注目マーカを先に使ってから初期カメラ位置を設定してください。",
+                "button": "カメラ位置を記憶",
+                "buttondel": "記憶クリア"
+            },
             "wallFloorAlpha": {
                 "label": "壁・床のアルファチャンネル"
             },
@@ -104,10 +128,10 @@
                 "label": "テクスチャ"
             },
             "wallSidesTexture": {
-                "label": "Sides Texture"
+                "label": "面テクスチャ"
             },
             "wallSidesTint": {
-                "label": "Sides Tint"
+                "label": "面彩色"
             },
             "material": {
                 "label": "素材",
@@ -117,7 +141,6 @@
                     "texcol": "テクスチャ・色",
                     "plastic": "プラスチック",
                     "wood": "木製",
-                    "glass": "ガラス",
                     "metal": "メタル"
                 }
             },
@@ -291,6 +314,63 @@
         },
         "particleBlend": {
             "label": "ブレンド"
+        },
+        "lightParticleEffect": {
+            "ParticleSprite": {
+                "label": "スプライト"
+            },
+            "ParticleScale": {
+                "label": "スケール"
+            },
+            "ParticleColor": {
+                "label": "初期色"
+            },
+            "ParticleColor2": {
+                "label": "最終色"
+            },
+            "ParticleForce": {
+                "label": "強度"
+            },
+            "ParticleLife": {
+                "label": "残存時間"
+            },
+            "ParticleCount": {
+                "label": "数"
+            },
+            "ParticleEmitTime": {
+                "label": "発動時間"
+            },
+            "ParticleMass": {
+                "label": "質量"
+            },
+            "ParticleGravity": {
+                "label": "重力"
+            },
+            "enableParticle": {
+                "label": "パーティクル効果有効化"
+            },
+            "enableParticleHidden": {
+                "label": "ライト無効化時、パーティクル効果を使用します。"
+            },
+            "ParticleAlphaStart": {
+                "label": "初期不透明度"
+            },
+            "ParticleAlphaEnd": {
+                "label": "最終不透明度"
+            },
+            "ParticlePushX": {
+                "label": "Xプッシュ"
+            },
+            "ParticlePushY": {
+                "label": "Yプッシュ"
+            },
+            "ParticlePushZ": {
+                "label": "Zプッシュ"
+            },
+            "header": {
+                "title": "パーティクル効果",
+                "notes": "光源に使用するパーティクル効果。"
+            }
         }
     },
     "settings" : {
@@ -316,9 +396,17 @@
                 "notes": "3Dオブジェクトやコマの視覚設定"
             }
         },
+        "canping": {
+            "name": "PL注目許可",
+            "hint": "Shift+EでPLにも注目マーカを使用する権限を与えます。"
+        },
+        "canpingpan": {
+            "name": "PLカメラ位置同期許可",
+            "hint": "Shift+QでPLにもカメラの位置を同期する権限を与えます。"
+        },
         "configApp": {
             "title": "3Dキャンバス設定",
-            "hint": "全体に影響する3Dキャンバス設定",
+            "hint": "3Dキャンバス全体設定",
             "save": "設定保存",
             "tabs": {
                 "canvas": "キャンバス",
@@ -403,7 +491,7 @@
             },
             "screenspacepanning": {
                 "name": "空間パンを使用",
-                "hint": "3Dモードの右クリックの挙動が変化します。有効時は右クリック＋ドラッグでカメラを上下左右にパンし、無効化時は右クリック＋ドラッグで奥・手前へスライドします。無効化時でもShift+右クリックで有効化のときと同じ挙動ができます。（再起動必要）"
+                "hint": "3Dモードの右クリックの挙動が変化します。有効時は右クリック＋ドラッグでカメラを上下左右にパンし、無効化時は右クリック＋ドラッグで奥・手前へスライドします。無効化時でもShift+右クリックで有効化のときと同じ挙動ができます。（要再起動）"
             },
             "camerafocuszoom": {
                 "name": "注目時にズーム",
@@ -449,6 +537,10 @@
                     "quarter": "低"
                 }
             },
+            "cameralockzero": {
+                "name": "ネガティブカメラ禁止",
+                "hint": "カメラを0より下に移動するのを禁止します（要再起動）。"
+            },
             "debugMode": {
                 "name": "デバッグモード",
                 "hint": "トラブルシューティング用のデバッグ情報を表示します。（コマの選択ボックスや光源等）"
@@ -472,6 +564,17 @@
             "export": "マクロとして保存",
             "cancel": "キャンセル",
             "placeholder": "マクロ名を入力してください。"
+        },
+        "welcome": {
+            "title": "3D Canvasへようこそ！",
+            "content": "<h1>3Dの世界へようこそ！</h1>\n3D Canvas（3D化Mod）へようこそ！このModの開発を支援いただきありがとうございます！\n左にあるツールバーの<b>四角いアイコン<i class='fas fa-cube'></i> </b>をクリックするだけで現在のシーンが3D化されます。\n<h2>はじめに</h2>\nこのModは複雑ではないものの、ご利用のシステムを最大限カスタマイズするためのオプションが数多く存在します。<b>ドキュメンテーションの確認</b>を強くお勧めします。下記の<b><i class='fas fa-book'></i>はじめに</b>ボタンからアクセスできます。ドキュメンテーションは後から辞典の中でも確認できますし、便利な動画もおいていますのでぜひ参考にしてみてください。<h2>お困りですか？</h2>\n<b>不具合</b>、<b>設定や</b><b>3Dモデル</b>でお困りの場合はDiscordチャンネルよりご連絡ください。（日本語のチャンネルもあります）<hr>",
+            "ok": "閉じる",
+            "dontshowagain": "今後表示しない",
+            "opencompendium": "はじめに"
+        },
+        "units":{
+            "ms": "ミリ秒",
+            "gu": "マス目単位"
         }
     }
 }

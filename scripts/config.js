@@ -360,7 +360,7 @@ Hooks.on("renderSceneConfig", (app,html)=>{
     })
     html.on("click", "#clear-3d-view", (e)=>{
         e.preventDefault();
-        canvas.scene.update({"flags.levels-3d-preview.initialPosition": false}, {render: false});
+        canvas.scene.update({"flags.levels-3d-preview.-=initialPosition": null}, {render: false});
     })
     html.on("click", "#capture-3d-view", (e)=>{
         e.preventDefault();

@@ -566,6 +566,22 @@ class Levels3DPreview {
     Ruler3D.centerElement(hud.element, center);
   }
 
+  allignChatBubbles(){
+    const bubbles = $(".chat-bubble");
+    bubbles.each((index, bubble) => {
+      const token3D = this.tokens[bubble.dataset.tokenId];
+      const center = token3D.mesh.position.clone();
+      center.y += token3D.hitbox.geometry.boundingBox.max.y*2;
+      $("body").append(bubble);
+      $(bubble).css({
+        "transform-origin": "bottom center",
+      });
+      Ruler3D.centerElement(bubble, center, true);
+      debugger;
+    }
+    )
+  }
+
   animation(time) {
     const _this = game.Levels3DPreview;
     if(!_this._active) return;
@@ -586,6 +602,7 @@ class Levels3DPreview {
     _this.checkInFog();
     _this.animateCamera(delta);
     _this.centerTokenHUD();
+    _this.allignChatBubbles();
     _this.resizeCanvasToDisplaySize(_this);
     _this.weather?.update(delta);
     _this.controls.update();
