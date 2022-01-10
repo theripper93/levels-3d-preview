@@ -189,6 +189,7 @@ class Levels3DPreview {
     this._lightsOk = !canvas.scene.getFlag("levels-3d-preview", "bakeLights");
     this.clear3Dscene();
     this.scene = new THREE.Scene();
+    this.scene.background = new THREE.Color(canvas.scene.data.backgroundColor ?? 0xffffff);
     this.composer.removePass(this.renderPass);
     this.renderPass = new RenderPass( this.scene, this.camera );
     this.composer.addPass( this.renderPass );
@@ -445,7 +446,7 @@ class Levels3DPreview {
   }
 
   makeSkybox() {
-    this.scene.background = null;
+    this.scene.background = new THREE.Color(canvas.scene.data.backgroundColor ?? 0xffffff);
     this.scene.environment = null;
     this.isEXR = false;
     this.scene.remove(this.skybox);

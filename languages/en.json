@@ -138,7 +138,8 @@
                     "texcol": "Texture/Color",
                     "plastic": "Plastic",
                     "wood": "Wood",
-                    "metal": "Metal"
+                    "metal": "Metal",
+                    "pbr": "PBR"
                 }
             },
             "color": {

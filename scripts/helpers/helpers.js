@@ -41,7 +41,6 @@ export class Helpers{
         try{
           texture = await new THREE.TextureLoader().loadAsync(texturePath);
         }catch(e){
-          console.error(e);
           return new THREE.Texture();
         }
         return texture;
