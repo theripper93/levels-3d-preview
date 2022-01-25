@@ -87,18 +87,19 @@ export class Helpers{
     async getPBRMat(texturePath){
       if(this.materialCache[texturePath]) return this.materialCache[texturePath];
       let path = texturePath;
+      const folder = path.split("/").slice(0,-1).join("/");
       const extension = path.split(".").pop();
       path = path.replace("."+extension, "");
-      const tTypes = ["Color", "Displacement", "Roughness", "Metalness", "AmbientOcclusion", "NormalGL"];
+      const tTypes = ["Color", "Roughness", "Metalness", "AmbientOcclusion", "NormalGL", "Emissive"];
       tTypes.forEach((t) => {path = path.replace(t,"")});
       const tPaths = tTypes.map((t) => {return path+t+"."+extension});
       const textures = {
-        roughnessMap: await this.loadTexture(tPaths[2]),
-        metalnessMap: await this.loadTexture(tPaths[3]),
         map: await this.loadTexture(tPaths[0]),
-        normalMap: await this.loadTexture(tPaths[5]),
-        aoMap: await this.loadTexture(tPaths[4]),
-        //displacementMap: await this.loadTexture(tPaths[1]),
+        roughnessMap: await this.loadTexture(tPaths[1]),
+        metalnessMap: await this.loadTexture(tPaths[2]),
+        aoMap: await this.loadTexture(tPaths[3]),
+        normalMap: await this.loadTexture(tPaths[4]),
+        emissiveMap: await this.loadTexture(tPaths[5]),
       }
       for(let [k, v] of Object.entries(textures)){
         if(!v.image) delete textures[k];
@@ -118,7 +119,7 @@ export class Helpers{
 
     isPBR(path){
       if(!path) return false;
-      const tTypes = ["Displacement", "Roughness", "Metalness", "AmbientOcclusion", "NormalGL"];
+      const tTypes = ["Color", "Roughness", "Metalness", "AmbientOcclusion", "NormalGL", "Emissive"];
       return tTypes.some((t) => {return path.includes(t)});
     }
 

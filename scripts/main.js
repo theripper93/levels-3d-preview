@@ -800,7 +800,8 @@ Hooks.on("updateScene", (scene,updates) => {
     "showSceneWalls" in flags ||
     "showSceneFloors" in flags ||
     "renderSceneLights" in flags ||
-    "skybox" in flags
+    "skybox" in flags ||
+    "exr" in flags
   ){
     game.Levels3DPreview.reload();
     return

@@ -631,6 +631,7 @@ export class Token3D {
     }
 
     updateTargetTexture(){
+      if(!this.isBase) return;
       const colors = Array.from(this.token.targeted).map(t => t.color);
       const colorstring = colors.join("");
       if(!colors.length) return;
