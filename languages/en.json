@@ -6,7 +6,7 @@
             "loading": "Loading 3D Canvas..."
         },
         "errors": {
-            "filenotsupported": "File format not supported",
+            "filenotsupported": "File format not supported or missing",
             "3dnotactive": "Cannot open canvas popout, the 3D mode is not active.",
             "canping": "User lacks permission to display pings on the map.",
             "canpingpan": "User lacks permission to send camera position.",
