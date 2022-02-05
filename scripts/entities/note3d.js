@@ -7,10 +7,12 @@ export class Note3D {
         this.note = note;
         this.embeddedName = note.document.documentName
         this.placeable = note;
+        this.nameplate = new THREE.Object3D();
         this.bottom = note.data.flags.levels?.rangeBottom ?? 0;
         this._parent = game.Levels3DPreview
         this.mesh = new THREE.Group();
         this.draw()
+        this._drawTooltip()
         this.setPosition()
         this.scene.add(this.mesh)
         this._parent.notes[this.note.id] = this
@@ -22,7 +24,7 @@ export class Note3D {
 
     async draw(){
         const texture = await this._parent.helpers.loadTexture(this.note.data.icon);
-        const size = canvas.scene.dimensions.size*0.7/factor
+        const size = this.note.data.iconSize/factor
         const geometry = new THREE.BoxGeometry(size, size, size)
         const material = new THREE.MeshBasicMaterial({map: texture,})
         const mesh = new THREE.Mesh(geometry, material)
@@ -33,6 +35,27 @@ export class Note3D {
         mesh.userData.isHitbox = true
         this.mesh.add(mesh)
     }
+
+    _drawTooltip(){
+        if(this.nameplate) this.mesh.remove(this.nameplate);
+        const name = this.note._drawTooltip();
+        name.visible = true;
+        const container = new PIXI.Container();
+        container.addChild(name);
+        const base64 = canvas.app.renderer.extract.base64(container);
+        const spriteMaterial = new THREE.SpriteMaterial({
+          map: new THREE.TextureLoader().load(base64),
+          alphaTest: this._parent.fogExploration ? 0.8 : 0.001,
+        });
+        const sprite = new THREE.Sprite(spriteMaterial);
+        sprite.center.set(0.5,0.5);
+        this.nameplate = sprite;
+        const width = name.width/factor;
+        const height = name.height/factor;
+        this.nameplate.scale.set(width,height,1);
+        this.nameplate.position.set(0, (this.note.data.iconSize/factor)/2 + height/2 + 0.022, 0);
+        this.mesh.add(this.nameplate);
+      }
 
     setPosition(){
         const position = Ruler3D.posCanvasTo3d({
@@ -45,6 +68,7 @@ export class Note3D {
 
     updateVisibility(){
         this.mesh.visible = this.placeable.visible
+        this.nameplate.visible = this.note.tooltip.visible
     }
 
     destroy(){
