@@ -284,7 +284,7 @@ export class InteractionManager {
       this.raycaster.setFromCamera(this.mouse, this.camera);
       let intersectTargets = []
       for(let child of this.scene.children){
-        if(canvas.activeLayer.options.objectClass.embeddedName !== child.userData?.entity3D?.embeddedName && child.userData?.entity3D?.embeddedName !== "Wall" && child.userData?.entity3D?.embeddedName !== "Tile") continue;
+        if(canvas.activeLayer.options.objectClass.embeddedName !== child.userData?.entity3D?.embeddedName && child.userData?.entity3D?.embeddedName !== "Wall" && child.userData?.entity3D?.embeddedName !== "Tile"  && child.userData?.entity3D?.embeddedName !== "Note") continue;
         if(child.userData?.hitbox && child.userData.interactive) intersectTargets.push(child.userData.hitbox);
       }
       const intersects = this.raycaster.intersectObjects(intersectTargets,true);

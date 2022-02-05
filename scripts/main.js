@@ -6,6 +6,7 @@ import { Ruler3D } from "./entities/ruler3d.js";
 import { Light3D } from "./entities/light3d.js";
 import { Wall3D } from "./entities/wall3d.js";
 import { Tile3D } from "./entities/tile3d.js";
+import { Note3D } from "./entities/note3d.js";
 import { Template3D } from "./entities/template3d.js";
 import { Cursors3D } from "./entities/cursors.js";
 import { FBXLoader } from './lib/FBXLoader.js';
@@ -93,6 +94,7 @@ class Levels3DPreview {
     this.doors = {};
     this.tiles = {};
     this.templates = {};
+    this.notes = {};
     this.models = {
       target : new THREE.Mesh(new THREE.SphereGeometry(0.1,32,32))
     };
@@ -222,6 +224,7 @@ class Levels3DPreview {
     drawFloors && this.isLevels && this.createFloors(this.level);
     drawWalls && this.createWalls(this.level);
     drawLights && this.createSceneLights();
+    this.createNotes();
     this.createBoard();
     this.createTable();
     for (let token of canvas.tokens.placeables) {
@@ -344,7 +347,7 @@ class Levels3DPreview {
 
   async createTable(){
     this.scene.remove(this.table);
-    if(!(canvas.scene.getFlag("levels-3d-preview", "renderTable") ?? false)) return;
+    if(!(canvas.scene.getFlag("levels-3d-preview", "renderTable") ?? false) || !canvas.scene.getFlag("levels-3d-preview", "tableTex")) return;
     //make a plane and apply a texture
     const width = canvas.scene.dimensions.width / this.factor;
     const height = canvas.scene.dimensions.height / this.factor;
@@ -445,6 +448,16 @@ class Levels3DPreview {
     this.templates[template.id] = new Template3D(template);
   }
 
+  createNotes(){
+    for(let note of canvas.notes.placeables){
+      this.createNote(note);
+    }
+  }
+
+  createNote(note){
+    this.notes[note.id] = new Note3D(note);
+  }
+
   makeSkybox() {
     this.scene.background = new THREE.Color(canvas.scene.data.backgroundColor ?? 0xffffff);
     this.scene.environment = null;
@@ -543,6 +556,8 @@ class Levels3DPreview {
     this.doors = {};
     this.lights.sceneLights = {};
     this.tiles = {};
+    this.notes = {};
+    this.templates = {};
     this.cursors.clear();
   }
 
@@ -599,6 +614,7 @@ class Levels3DPreview {
         token.faceCamera();
       }
     });
+    Object.values(_this.notes).forEach((note) => { note.updateVisibility(); });
     _this.particleSystem.update(delta);
     _this.checkInFog();
     _this.animateCamera(delta);
