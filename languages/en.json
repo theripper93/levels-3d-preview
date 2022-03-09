@@ -103,6 +103,9 @@
             "showSceneWalls": {
                 "label": "Render Walls"
             },
+            "showSceneDoors": {
+                "label": "Render Doors"
+            },
             "showSceneFloors": {
                 "label": "Render Tiles"
             },

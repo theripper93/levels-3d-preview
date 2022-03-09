@@ -2,7 +2,7 @@
   "name": "levels-3d-preview",
   "title": "3D Canvas",
   "description": "Bring your games to the 3rd dimension!",
-  "version": "2.2.1",
+  "version": "2.3",
   "author": "theripper93",
   "authors": [
       {
@@ -62,21 +62,21 @@
         "name": "documentation",
         "label": "3D Canvas Documentation",
         "path": "packs/journals.db",
-        "entity": "JournalEntry",
+        "type": "JournalEntry",
         "module": "levels-3d-preview"
     },
     {
       "name": "macros",
       "label": "3D Canvas Macros",
       "path": "packs/macros.db",
-      "entity": "Macro",
+      "type": "Macro",
       "module": "levels-3d-preview"
     },
     {
       "name": "partmacros",
       "label": "3D Canvas Particle Effects",
       "path": "packs/partmacros.db",
-      "entity": "Macro",
+      "type": "Macro",
       "module": "levels-3d-preview"
     }
 ],

@@ -321,6 +321,11 @@ Hooks.on("renderSceneConfig", (app,html)=>{
             label: game.i18n.localize("levels3dpreview.flags.showSceneWalls.label"),
             default: true,
         },
+        "showSceneDoors": {
+            type: "checkbox",
+            label: game.i18n.localize("levels3dpreview.flags.showSceneDoors.label"),
+            default: true,
+        },
         "showSceneFloors": {
             type: "checkbox",
             label: game.i18n.localize("levels3dpreview.flags.showSceneFloors.label"),

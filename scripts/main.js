@@ -221,9 +221,9 @@ class Levels3DPreview {
     const enableFog = canvas.scene.getFlag("levels-3d-preview", "enableFog") ?? false;
     const fogColor = canvas.scene.getFlag("levels-3d-preview", "fogColor") ?? "#000000";
     const fogDistance = (canvas.scene.getFlag("levels-3d-preview", "fogDistance") ?? 3000) / this.factor;
-    drawFloors && this.isLevels && this.createFloors(this.level);
-    drawWalls && this.createWalls(this.level);
-    drawLights && this.createSceneLights();
+    this.isLevels && this.createFloors(this.level);
+    this.createWalls(this.level);
+    this.createSceneLights();
     this.createNotes();
     this.createBoard();
     this.createTable();
@@ -282,6 +282,7 @@ class Levels3DPreview {
       this.resetCamera()
       this._cameraSet = true;
     }
+    this.lights.globalIllumination.setSunlightFromFlags(false);
   }
 
   addToken(token) {
@@ -393,6 +394,7 @@ class Levels3DPreview {
 
   addLight(light){
     this.lights.sceneLights[light.id]?.destroy();
+    if(canvas.scene.getFlag("levels-3d-preview", "renderSceneLights") === false) return;
     const light3d = new Light3D(light, this);
     this.lights.sceneLights[light.id] = light3d;
   }
@@ -419,7 +421,7 @@ class Levels3DPreview {
   }
 
   createTile(tile){
-    if(this.debugMode) return;
+    if(this.debugMode || canvas.scene.getFlag("levels-3d-preview", "showSceneFloors") === false) return;
     this.tiles[tile.id] = new Tile3D(tile, this);
   }
 
@@ -434,6 +436,10 @@ class Levels3DPreview {
   }
 
   createWall(wall){
+    debugger;
+    const isDoor = wall.isDoor
+    if(canvas.scene.getFlag("levels-3d-preview", "showSceneWalls") === false && !isDoor) return;
+    if(canvas.scene.getFlag("levels-3d-preview", "showSceneDoors") === false && isDoor) return;
     this.walls[wall.id] = new Wall3D(wall, this)
     if(wall.data.door) this.doors[wall.id] = this.walls[wall.id];
   }

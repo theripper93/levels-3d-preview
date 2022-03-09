@@ -10,9 +10,34 @@ Hooks.once('ready', async function() {
     libWrapper.register("levels-3d-preview", "Canvas.prototype.animatePan", animatePan, "WRAPPER");
     libWrapper.register("levels-3d-preview", "SightLayer.prototype.commitFog", updateFog, "WRAPPER");
     libWrapper.register("levels-3d-preview", "TokenLayer.prototype.pasteObjects", pasteObjects, "WRAPPER");
+    libWrapper.register("levels-3d-preview", "Scenes.prototype.preload", preload3D, "OVERRIDE");
+    
 
     if(game.system.id === "dnd5e") libWrapper.register("levels-3d-preview", "game.dnd5e.canvas.AbilityTemplate.prototype.drawPreview", drawPreview, "MIXED")
     
+    async function preload3D(sceneId, push=false) {
+        if ( push ) return game.socket.emit('preloadScene', sceneId, () => this.preload(sceneId));
+        let scene = this.get(sceneId);
+        const promises = [];
+    
+        // Preload sounds
+        if ( scene.playlistSound?.data.path ) promises.push(AudioHelper.preloadSound(scene.playlistSound.data.path));
+        else if ( scene.playlist?.playbackOrder.length ) {
+          const first = scene.playlist.sounds.get(scene.playlist.playbackOrder[0]);
+          if ( first ) promises.push(AudioHelper.preloadSound(first.data.path))
+        }
+    
+        // Preload textures without expiring current ones
+        promises.push(TextureLoader.loadSceneTextures(scene, {expireCache: false}));
+        debugger
+        const models3D = scene.tokens.map(t=>t.getFlag("levels-3d-preview","model3d")).filter(m=>m)
+        for(let model of models3D) {
+            promises.push(game.Levels3DPreview.helpers.preloadModel(model));
+        }
+        return Promise.all(promises);
+
+    }
+
     function pasteObjects(wrapped,...args){
         if(!game.Levels3DPreview?._active) return wrapped(...args);
         const pos = game.Levels3DPreview.interactionManager.canvas2dMousePosition;

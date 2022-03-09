@@ -66,6 +66,39 @@ export class Helpers {
     return model;
   }
 
+  /*preloadModel(modelPath) {
+    const filePath = modelPath;
+    const extension = filePath.split(".").pop().toLowerCase();
+    try {
+      if (extension == "gltf" || extension == "glb") {
+        return game.Levels3DPreview.loader.load(filePath);
+      }
+      if (extension == "fbx") {
+        return game.Levels3DPreview.FBXLoader.load(filePath);
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }*/
+
+  preloadModel(modelPath) {
+    return new Promise((resolve, reject) => {
+      const filePath = modelPath;
+      const extension = filePath.split(".").pop().toLowerCase();
+      try {
+        if (extension == "gltf" || extension == "glb") {
+          game.Levels3DPreview.loader.load(filePath, resolve, undefined, reject);
+        }
+        if (extension == "fbx") {
+          game.Levels3DPreview.FBXLoader.load(filePath, resolve, undefined, reject);
+        }
+      } catch (e) {
+        reject(e);
+      }
+    });
+  }  
+
   async getModel(modelPath) {
     const filePath = modelPath;
     const extension = filePath.split(".").pop().toLowerCase();
