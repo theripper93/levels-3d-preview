@@ -29,7 +29,6 @@ Hooks.once('ready', async function() {
     
         // Preload textures without expiring current ones
         promises.push(TextureLoader.loadSceneTextures(scene, {expireCache: false}));
-        debugger
         const models3D = scene.tokens.map(t=>t.getFlag("levels-3d-preview","model3d")).filter(m=>m)
         for(let model of models3D) {
             promises.push(game.Levels3DPreview.helpers.preloadModel(model));

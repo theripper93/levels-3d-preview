@@ -9,10 +9,10 @@ export class Wall3D {
         this.embeddedName = "Wall";
         this.placeable = wall;
         this._parent = parent;
-        this.top = wall.data.flags.wallHeight?.wallHeightTop ?? 10;
+        this.top = wall.document.getFlag("wall-height","top") ?? 10;
         this.externalWall = wall.data.flags.betterroofs?.externalWall ?? false;
         if(this.externalWall) this.top++;
-        this.bottom = wall.data.flags.wallHeight?.wallHeightBottom ?? 0;
+        this.bottom = wall.document.getFlag("wall-height","bottom") ?? 0;
         this.vec1 = Ruler3D.posCanvasTo3d({x: wall.data.c[0],y: wall.data.c[1], z: this.top});
         this.vec2 = Ruler3D.posCanvasTo3d({x: wall.data.c[2],y: wall.data.c[3], z: this.bottom});
         this.center = Ruler3D.posCanvasTo3d({x: wall.center.x,y: wall.center.y,z: (this.top+this.bottom)/2});

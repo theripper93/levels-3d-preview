@@ -436,7 +436,6 @@ class Levels3DPreview {
   }
 
   createWall(wall){
-    debugger;
     const isDoor = wall.isDoor
     if(canvas.scene.getFlag("levels-3d-preview", "showSceneWalls") === false && !isDoor) return;
     if(canvas.scene.getFlag("levels-3d-preview", "showSceneDoors") === false && isDoor) return;
@@ -599,7 +598,6 @@ class Levels3DPreview {
         "transform-origin": "bottom center",
       });
       Ruler3D.centerElement(bubble, center, true);
-      debugger;
     }
     )
   }
