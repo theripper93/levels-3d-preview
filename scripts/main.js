@@ -553,7 +553,13 @@ class Levels3DPreview {
   }
 
   clear3Dscene() {
+    this.scene.traverse((child) => {
+      if (child.isMesh) {
+        child.dispose?.();
+      }
+    })
     while (this.scene.children.length > 0) {
+      this.scene.children[0].dispose?.();
       this.scene.remove(this.scene.children[0]);
     }
     this.tokens = {};

@@ -548,6 +548,15 @@ Hooks.on("renderTileConfig", (app,html)=>{
             fpTypes: [".gltf", ".GLTF", ".glb", ".GLB", ".fbx", ".FBX"],
             label: game.i18n.localize("levels3dpreview.flags.model3d.label"),
         },
+        "fillType": {
+            type: "select",
+            label: game.i18n.localize("levels3dpreview.flags.fillType.label"),
+            default: "stretch",
+            options: {
+                "stretch": game.i18n.localize("levels3dpreview.flags.fillType.options.stretch"),
+                "tile": game.i18n.localize("levels3dpreview.flags.fillType.options.tile"),
+            }
+        },
         "imageTexture":{
             type: "filepicker",
             label: game.i18n.localize("levels3dpreview.flags.imageTexture.label"),
@@ -557,6 +566,12 @@ Hooks.on("renderTileConfig", (app,html)=>{
             type: "color",
             label: game.i18n.localize("levels3dpreview.flags.tint.label"),
             default: "#ffffff",
+        },
+        "tileScale": {
+            type: "number",
+            label: game.i18n.localize("levels3dpreview.flags.tileScale.label"),
+            step: 0.00001,
+            default: 1,
         },
         "enableAnim": {
             type: "checkbox",
@@ -701,7 +716,7 @@ Hooks.on("renderAmbientLightConfig", (app,html)=>{
             type: "number",
             label: game.i18n.localize("levels3dpreview.flags.lightParticleEffect.ParticleScale.label"),
             units: game.i18n.localize("levels3dpreview.units.gu"),
-            default: 0.1,
+            default: 1,
             step: 0.000001,
         },
         "ParticleAlphaStart": {

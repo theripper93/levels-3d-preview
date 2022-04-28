@@ -136,6 +136,13 @@
             "wallSidesTint": {
                 "label": "Sides Tint"
             },
+            "fillType": {
+                "label": "Fill Type",
+                "options": {
+                    "stretch": "Stretch",
+                    "tile": "Repeat"
+                }
+            },
             "material": {
                 "label": "Material",
                 "options": {
@@ -228,6 +235,9 @@
             },
             "scale": {
                 "label": "Scale"
+            },
+            "tileScale": {
+                "label": "Tile Scale"
             },
             "wallOpacity": {
                 "label": "Opacity"

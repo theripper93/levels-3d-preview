@@ -31,7 +31,11 @@ export class Tile3D {
         this.mirrorY = this.tile.data.height < 0
         this.rotSign = this.tile.data.width/Math.abs(this.tile.data.width)*this.tile.data.height/Math.abs(this.tile.data.height)
         this.getFlags();
-        this.gtflPath ? this.initModel() : this.init();
+        if(this.gtflPath){
+            this.fillType === "stretch" ? this.initModel() : this.initInstanced();
+        }else{
+            this.init();
+        }
     }
 
     getFlags(){
@@ -41,6 +45,8 @@ export class Tile3D {
         this.animSpeed = this.tile.document.getFlag("levels-3d-preview", "animSpeed") ?? 1;
         this.color = this.tile.document.getFlag("levels-3d-preview", "color") ?? "#ffffff";
         this.imageTexture = this.tile.document.getFlag("levels-3d-preview", "imageTexture") ?? "";
+        this.fillType = this.tile.document.getFlag("levels-3d-preview", "fillType") ?? "stretch";
+        this.scale= this.tile.document.getFlag("levels-3d-preview", "tileScale") ?? 1;
     }
 
     async init(){
@@ -77,7 +83,7 @@ export class Tile3D {
         const mWidth = box.max.x - box.min.x;
         const mHeight = box.max.z - box.min.z;
         const mDepth = box.max.y - box.min.y;
-        const scaleFit = Math.min(this.width/mWidth, this.height/mHeight);
+        const scaleFit = Math.max(this.width/mWidth, this.height/mHeight);
         object.scale.set(this.width/mWidth,scaleFit,this.height/mHeight);
         const color = new THREE.Color(this.color);
         object.traverse((child) => {
@@ -100,6 +106,75 @@ export class Tile3D {
 
         container.add(object);
         object.position.set(0,0,0);
+        container.position.set(this.center.x,this.center.y,this.center.z);
+        container.rotation.set(0,-this.angle*this.rotSign,0);
+        container.userData.hitbox = container;
+        container.userData.interactive = true;
+        container.userData.entity3D = this;
+        this._parent.scene.add(container);
+    }
+
+    async initInstanced(){
+        const model = await this.getModel();
+        const object = model.scene;
+        const box = new THREE.Box3().setFromObject(object);
+        const mWidth = box.max.x - box.min.x;
+        const mHeight = box.max.z - box.min.z;
+        const mDepth = box.max.y - box.min.y;
+        const grid = (canvas.grid.size * this.scale)/factor;
+        const rows = Math.round(this.height/grid) || 1;
+        const cols = Math.round(this.width/grid) || 1;
+        const count = rows*cols;
+
+        const container = new THREE.Group();
+        const gridX = this.width/cols;
+        const gridZ = this.height/rows;
+        const max = Math.max(mWidth, mHeight);
+        const scaleFit = grid/max;
+        const color = new THREE.Color(this.color);
+        const dummy = new THREE.Object3D();
+        object.traverse((child) => {
+            if (child.isMesh) {
+              child.castShadow = true;
+              child.receiveShadow = true;
+              child.geometry.computeBoundsTree();
+              child.material.color.set(child.material.color.multiply(color));
+
+              //generate instanceed
+
+            const instancedMesh = new THREE.InstancedMesh(
+                child.geometry,
+                child.material,
+                count
+            );
+    
+            instancedMesh.instanceMatrix.setUsage( THREE.DynamicDrawUsage );
+    
+            let i = 0;
+    
+            for(let z = 0; z < rows; z++){
+                for(let x = 0; x < cols; x++){
+                    const offsetx = (mWidth*scaleFit-gridX)/2;
+                    const offsetz = (mHeight*scaleFit-gridZ)/2;
+                    dummy.position.set(child.position.x+x*gridX+offsetx,child.position.y,child.position.z+z*gridZ+offsetz);
+                    dummy.scale.set(child.scale.x*scaleFit,child.scale.y*scaleFit,child.scale.z*scaleFit);
+                    dummy.rotation.copy(child.rotation);
+
+                    dummy.updateMatrix();
+                    instancedMesh.setMatrixAt(i++, dummy.matrix);
+                }
+            }
+    
+            instancedMesh.instanceMatrix.needsUpdate = true;
+            instancedMesh.position.set(-this.width/2+gridX/2,0,-this.height/2+gridZ/2);
+            instancedMesh.geometry.computeBoundsTree();
+            container.add(instancedMesh);
+
+            }
+        });
+
+        this.mesh = container;
+
         container.position.set(this.center.x,this.center.y,this.center.z);
         container.rotation.set(0,-this.angle*this.rotSign,0);
         container.userData.hitbox = container;
@@ -131,6 +206,11 @@ export class Tile3D {
 
     destroy(){
         this._parent.scene.remove(this.mesh);
+        this.mesh.traverse((child) => {
+            if (child.isMesh) {
+                child.dispose();
+            }
+        })
         delete this._parent.tiles[this.tile.id];
     }
 
