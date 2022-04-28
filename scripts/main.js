@@ -209,6 +209,7 @@ class Levels3DPreview {
     }else{
       this.particleSystem = new ParticleSystem(this);
     }
+    this.mirrorLevelsVisibility = canvas.scene.getFlag("levels-3d-preview", "mirrorLevels") ?? false;
     this.debugMode = game.settings.get("levels-3d-preview", "debugMode")
     this.level = this.isLevels ? parseFloat($(_levels.UI?.element)?.find(".level-item.active").find(".level-bottom").val()) ?? Infinity : Infinity;
     if (isNaN(this.level)) this.level = Infinity;
@@ -618,6 +619,12 @@ class Levels3DPreview {
         token.faceCamera();
       }
     });
+    Object.values(_this.tiles).forEach((tile) => { 
+      tile.updateVisibility();
+      if(tile.mixer){
+        tile.mixer.update(delta);
+      }
+     });
     Object.values(_this.notes).forEach((note) => { note.updateVisibility(); });
     _this.particleSystem.update(delta);
     _this.checkInFog();
@@ -821,7 +828,8 @@ Hooks.on("updateScene", (scene,updates) => {
     "showSceneFloors" in flags ||
     "renderSceneLights" in flags ||
     "skybox" in flags ||
-    "exr" in flags
+    "exr" in flags ||
+    "mirrorLevels" in flags
   ){
     game.Levels3DPreview.reload();
     return

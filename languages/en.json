@@ -121,6 +121,9 @@
             "renderSceneLights": {
                 "label": "Render Scene Lights"
             },
+            "mirrorLevels": {
+                "label": "Mirror Levels Tile Visibility"
+            },
             "model3d" : {
                 "label": "3D Model"
             },
@@ -148,6 +151,9 @@
             "color": {
                 "label": "Color",
                 "notes": "Material and Color will work only on some models, usually the grey/untextured ones."
+            },
+            "tint": {
+                "label": "Tint Color"
             },
             "baseColor": {
                 "label": "Base Color"

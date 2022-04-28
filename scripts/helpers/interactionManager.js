@@ -324,7 +324,7 @@ export class InteractionManager {
       const collisionObjects = Object.values(this._parent.tokens).filter(t => t.collisionPlane && t.token.id != draggableId).map(t => t.model);
       let collisionGeometries = collisionObjects;
       for(let tile of Object.values(this._parent.tiles)){
-        collisionGeometries.push(tile.mesh);
+        if(tile.mesh.visible)collisionGeometries.push(tile.mesh);
       }
       for(let wall of Object.values(this._parent.walls)){
         if(wall.placeable.isDoor && wall.placeable.data.ds === CONST.WALL_DOOR_STATES.OPEN && this.draggable) continue;

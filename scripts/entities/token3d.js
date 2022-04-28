@@ -3,7 +3,6 @@ import {factor} from '../main.js';
 import {sleep} from '../main.js';
 import { Light3D } from "./light3d.js";
 import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from '../lib/three-mesh-bvh.js';
-import { PIXIContainer } from "../helpers/pixilayer.js";
 THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
 THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
 THREE.Mesh.prototype.raycast = acceleratedRaycast;

@@ -336,6 +336,11 @@ Hooks.on("renderSceneConfig", (app,html)=>{
             label: game.i18n.localize("levels3dpreview.flags.renderSceneLights.label"),
             default: true,
         },
+        "mirrorLevels": {
+            type: "checkbox",
+            label: game.i18n.localize("levels3dpreview.flags.mirrorLevels.label"),
+            default: false,
+        }
     }
 
     injectConfig.inject(app,html,data);
@@ -528,6 +533,50 @@ Hooks.on("renderTokenConfig", (app,html)=>{
             default: 1,
         },
     }, app.token)
+})
+
+Hooks.on("renderTileConfig", (app,html)=>{
+    injectConfig.inject(app,html,{
+        "moduleId": "levels-3d-preview",
+        "tab" : {
+            "name": "levels-3d-preview",
+            "label": "3D",
+            "icon": "fas fa-cube",
+        },
+        "model3d" : {
+            type: "filepicker.folder",
+            fpTypes: [".gltf", ".GLTF", ".glb", ".GLB", ".fbx", ".FBX"],
+            label: game.i18n.localize("levels3dpreview.flags.model3d.label"),
+        },
+        "imageTexture":{
+            type: "filepicker",
+            label: game.i18n.localize("levels3dpreview.flags.imageTexture.label"),
+
+        },
+        "color": {
+            type: "color",
+            label: game.i18n.localize("levels3dpreview.flags.tint.label"),
+            default: "#ffffff",
+        },
+        "enableAnim": {
+            type: "checkbox",
+            label: game.i18n.localize("levels3dpreview.flags.enableAnim.label"),
+            default: true,
+        },
+        "animIndex":{
+            type: "number",
+            label: game.i18n.localize("levels3dpreview.flags.animIndex.label"),
+            default: 0,
+        },
+        "animSpeed":{
+            type: "range",
+            label: game.i18n.localize("levels3dpreview.flags.animSpeed.label"),
+            default: 1,
+            min: 0,
+            max: 10,
+            step: 0.1,
+        }
+    })
 })
 
 Hooks.on("renderWallConfig", (app,html)=>{
