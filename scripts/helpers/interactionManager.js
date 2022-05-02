@@ -110,17 +110,14 @@ export class InteractionManager {
 
     _onMouseDown(event){
       this._parent.stopCameraAnimation();
+      if(event.which === 1 && event.ctrlKey) canvas.tokens.releaseAll();
       this.mousedown = true;
       this.mousePosition = { x: event.clientX, y: event.clientY };
       if(event.which !== 1 && event.which !== 3) return;
       //if(event.shiftKey) return;
       const intersectData = this.findMouseIntersect(event);
       const intersect = intersectData?.object;
-      if(!intersect){
-        if(event.which === 1 && event.ctrlKey) canvas.tokens.releaseAll();
-         return;
-      }
-      if(event.ctrlKey) return;
+      if(!intersect || event.ctrlKey) return;
       if(intersect.userData?.entity3D?.embeddedName !== "Tile")this.toggleControls(false);
       this.clicks++;
       event.entity = intersect.userData.entity3D
