@@ -366,7 +366,7 @@ export class Token3D {
       const z3d = this.mesh.position.z;
       const x = x3d * this.factor-this.token.w/2;
       const y = z3d * this.factor - this.token.h/2;
-      const z = Math.trunc(((y3d * this.factor * canvas.dimensions.distance)/(canvas.dimensions.size))*100)/100;
+      const z = Math.round(((y3d * this.factor * canvas.dimensions.distance)/(canvas.dimensions.size))*100)/100;
         const snapped = canvas.grid.getSnappedPosition(x, y);
       const dest = {
         x: useSnapped ? snapped.x : x,
@@ -393,7 +393,7 @@ export class Token3D {
           _id: token.id,
           x: token.data.x + deltas.x,
           y: token.data.y + deltas.y,
-          elevation: (token.data.elevation + deltas.elevation).toFixed(2),
+          elevation: Math.round((token.data.elevation + deltas.elevation)*1000)/1000,
         })
       }
       canvas.scene.updateEmbeddedDocuments("Token", updates)

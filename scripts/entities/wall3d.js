@@ -125,6 +125,26 @@ export class Wall3D {
         return true;
     }
 
+    updateVisibility(){
+        if(!this.mesh) return;
+        this.mesh.visible = this.isVisible;
+        if(game.Levels3DPreview.mirrorLevelsVisibility){
+            if(_levels.UI?.rangeEnabled){
+                const isLevelsVisible = this.wall.visible;
+                this.mesh.visible = isLevelsVisible;
+            }else{
+                const elevation = WallHeight.tokenElevation;
+                const isControlled = canvas.tokens.controlled[0];
+                const isGM = game.user.isGM;
+                if(isGM && !isControlled) return;
+                if(elevation < this.bottom){
+                    this.mesh.visible = false;
+                }
+            }
+
+        }
+    }
+
     _onClickLeft(e) {
         if(!this.wall.doorControl.visible) return;
         e.data = {

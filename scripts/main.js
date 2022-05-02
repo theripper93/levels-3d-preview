@@ -56,7 +56,7 @@ Hooks.on("canvasReady", async () => {
 
 Hooks.on("levelsUiChangeLevel", () => {
   if (!game.user.isGM || $("#levels3d").length == 0) return;
-  game.Levels3DPreview.build3Dscene();
+  //game.Levels3DPreview.build3Dscene();
 });
 
 export function sleep(ms) {
@@ -211,7 +211,7 @@ class Levels3DPreview {
     }
     this.mirrorLevelsVisibility = canvas.scene.getFlag("levels-3d-preview", "mirrorLevels") ?? false;
     this.debugMode = game.settings.get("levels-3d-preview", "debugMode")
-    this.level = this.isLevels ? parseFloat($(_levels.UI?.element)?.find(".level-item.active").find(".level-bottom").val()) ?? Infinity : Infinity;
+    this.level = Infinity//this.isLevels ? parseFloat($(_levels.UI?.element)?.find(".level-item.active").find(".level-bottom").val()) ?? Infinity : Infinity;
     if (isNaN(this.level)) this.level = Infinity;
     this.showSun = this.debugMode;
     this.createTemplates();
@@ -631,6 +631,12 @@ class Levels3DPreview {
         tile.mixer.update(delta);
       }
      });
+    if(_this.mirrorLevelsVisibility){
+      Object.values(_this.walls).forEach((wall) => {
+        wall.updateVisibility();
+      })
+    }
+
     Object.values(_this.notes).forEach((note) => { note.updateVisibility(); });
     _this.particleSystem.update(delta);
     _this.checkInFog();

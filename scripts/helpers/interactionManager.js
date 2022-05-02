@@ -200,6 +200,7 @@ export class InteractionManager {
 
     _collisionFilter(object){
       if(object.userData.ignoreHover) return false;
+      if(!object.visible) return false;
       return true;
     }
 
@@ -286,6 +287,7 @@ export class InteractionManager {
       let intersectTargets = []
       for(let child of this.scene.children){
         if(canvas.activeLayer.options.objectClass.embeddedName !== child.userData?.entity3D?.embeddedName && child.userData?.entity3D?.embeddedName !== "Wall" && child.userData?.entity3D?.embeddedName !== "Tile"  && child.userData?.entity3D?.embeddedName !== "Note") continue;
+        if(!child.visible) continue;
         if(child.userData?.hitbox && child.userData.interactive) intersectTargets.push(child.userData.hitbox);
       }
       const intersects = this.raycaster.intersectObjects(intersectTargets,true);
@@ -329,6 +331,7 @@ export class InteractionManager {
       }
       for(let wall of Object.values(this._parent.walls)){
         if(wall.placeable.isDoor && wall.placeable.data.ds === CONST.WALL_DOOR_STATES.OPEN && this.draggable) continue;
+        if(!wall.mesh.visible) continue;
         collisionGeometries.push(wall.mesh);
       }
       const board = this._parent.board;
