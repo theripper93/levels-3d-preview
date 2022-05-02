@@ -84,6 +84,16 @@ Hooks.on("renderSceneConfig", (app,html)=>{
             
             `
         },
+        "lockCamera": {
+            type: "select",
+            label: game.i18n.localize("levels3dpreview.flags.lockCamera.label"),
+            default: "off",
+            options: {
+                "off": game.i18n.localize("levels3dpreview.flags.lockCamera.options.off"),
+                "players": game.i18n.localize("levels3dpreview.flags.lockCamera.options.players"),
+                "all": game.i18n.localize("levels3dpreview.flags.lockCamera.options.all")
+            }
+        },
         "header2": {
             type: "custom",
             html: `<h3 class="form-header"><i class="fas fa-cloud-sun"></i> ${game.i18n.localize("levels3dpreview.settings.headers.environment.title")}</h3><p class="notes">${game.i18n.localize("levels3dpreview.settings.headers.environment.notes")}</p><div>`
@@ -548,15 +558,6 @@ Hooks.on("renderTileConfig", (app,html)=>{
             fpTypes: [".gltf", ".GLTF", ".glb", ".GLB", ".fbx", ".FBX"],
             label: game.i18n.localize("levels3dpreview.flags.model3d.label"),
         },
-        "fillType": {
-            type: "select",
-            label: game.i18n.localize("levels3dpreview.flags.fillType.label"),
-            default: "stretch",
-            options: {
-                "stretch": game.i18n.localize("levels3dpreview.flags.fillType.options.stretch"),
-                "tile": game.i18n.localize("levels3dpreview.flags.fillType.options.tile"),
-            }
-        },
         "imageTexture":{
             type: "filepicker",
             label: game.i18n.localize("levels3dpreview.flags.imageTexture.label"),
@@ -566,12 +567,6 @@ Hooks.on("renderTileConfig", (app,html)=>{
             type: "color",
             label: game.i18n.localize("levels3dpreview.flags.tint.label"),
             default: "#ffffff",
-        },
-        "tileScale": {
-            type: "number",
-            label: game.i18n.localize("levels3dpreview.flags.tileScale.label"),
-            step: 0.00001,
-            default: 1,
         },
         "enableAnim": {
             type: "checkbox",
@@ -590,7 +585,37 @@ Hooks.on("renderTileConfig", (app,html)=>{
             min: 0,
             max: 10,
             step: 0.1,
-        }
+        },
+        "yScale": {
+            type: "number",
+            label: game.i18n.localize("levels3dpreview.flags.yScale.label"),
+            default: 1,
+            step: 0.000001,
+        },
+        "header1": {
+            type: "custom",
+            html: `<h3 class="form-header"><i class="fas fa-th"></i> ${game.i18n.localize("levels3dpreview.flags.tiling.label")}</h3><div>`
+        },
+        "fillType": {
+            type: "select",
+            label: game.i18n.localize("levels3dpreview.flags.fillType.label"),
+            default: "stretch",
+            options: {
+                "stretch": game.i18n.localize("levels3dpreview.flags.fillType.options.stretch"),
+                "tile": game.i18n.localize("levels3dpreview.flags.fillType.options.tile"),
+            }
+        },
+        "tileScale": {
+            type: "number",
+            label: game.i18n.localize("levels3dpreview.flags.tileScale.label"),
+            step: 0.00001,
+            default: 1,
+        },
+        "randomRotation":{
+            type: "checkbox",
+            label: game.i18n.localize("levels3dpreview.flags.randomRotation.label"),
+            default: false,
+        },
     })
 })
 

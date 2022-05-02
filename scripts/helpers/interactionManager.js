@@ -21,6 +21,7 @@ export class InteractionManager {
         this.factor = levels3dPreview.factor;
         this.clicks = 0;
         this.lcTime = 0;
+        this.controls.enableRotate = !this.isCameraLocked
     }
 
     get scene(){
@@ -339,9 +340,16 @@ export class InteractionManager {
     }
 
     toggleControls(toggle, reset = false){
-      this.controls.enableRotate = toggle;
+      this.controls.enableRotate = !this.isCameraLocked && toggle;
       this.controls.enableZoom = toggle;
       if(reset) this.draggable = undefined;
+    }
+
+    get isCameraLocked(){
+      const cameraLock = canvas.scene.getFlag("levels-3d-preview", "lockCamera");
+      if(cameraLock === "all") return true;
+      if(cameraLock === "players") return !game.user.isGM;
+      return false;
     }
 
     screen3DtoCanvas2D(screenPosition){

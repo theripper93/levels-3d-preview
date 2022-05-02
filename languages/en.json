@@ -91,6 +91,14 @@
                     "darkness": "Scene Darkness"
                 }
             },
+            "lockCamera": {
+                "label": "Lock Camera Perspective",
+                "options": {
+                    "off": "Off",
+                    "players": "Players Only",
+                    "all": "Everyone"
+                }
+            },
             "sunPosition": {
                 "label": "Sun Position"
             },
@@ -236,8 +244,17 @@
             "scale": {
                 "label": "Scale"
             },
+            "yScale": {
+                "label": "Y Scale"
+            },
             "tileScale": {
                 "label": "Tile Scale"
+            },
+            "randomRotation": {
+                "label": "Randomize Rotation"
+            },
+            "tiling": {
+                "label": "Tiling Options"
             },
             "wallOpacity": {
                 "label": "Opacity"

@@ -733,6 +733,7 @@ class Levels3DPreview {
   }
 
   setCameraToControlled(token){
+    if(game.Levels3DPreview.interactionManager.isCameraLocked) return;
     const zoom = game.settings.get("levels-3d-preview", "camerafocuszoom")
     const cToken = token ?? _token;
     if(!cToken) return;

@@ -192,6 +192,7 @@ Hooks.once('init', function() {
       config: true,
       type: Boolean,
       default: true,
+      onChange: value => { game.Levels3DPreview.controls.screenSpacePanning = value }
     });
 
     game.settings.register("levels-3d-preview", "enabledamping", {

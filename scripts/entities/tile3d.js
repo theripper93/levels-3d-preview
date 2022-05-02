@@ -47,6 +47,8 @@ export class Tile3D {
         this.imageTexture = this.tile.document.getFlag("levels-3d-preview", "imageTexture") ?? "";
         this.fillType = this.tile.document.getFlag("levels-3d-preview", "fillType") ?? "stretch";
         this.scale= this.tile.document.getFlag("levels-3d-preview", "tileScale") ?? 1;
+        this.yScale = this.tile.document.getFlag("levels-3d-preview", "yScale") ?? 1;
+        this.randomRotation = this.tile.document.getFlag("levels-3d-preview", "randomRotation") ?? false;
     }
 
     async init(){
@@ -78,6 +80,7 @@ export class Tile3D {
 
     async initModel(){
         const model = await this.getModel();
+        const texture = this.imageTexture ? await this._parent.helpers.loadTexture(this.imageTexture) : null;
         const object = model.scene;
         const box = new THREE.Box3().setFromObject(object);
         const mWidth = box.max.x - box.min.x;
@@ -92,6 +95,7 @@ export class Tile3D {
               child.receiveShadow = true;
               child.geometry.computeBoundsTree();
               child.material.color.set(child.material.color.multiply(color));
+              child.material.map = texture;
             }
         });
 
@@ -116,6 +120,7 @@ export class Tile3D {
 
     async initInstanced(){
         const model = await this.getModel();
+        const texture = this.imageTexture ? await this._parent.helpers.loadTexture(this.imageTexture) : null;
         const object = model.scene;
         const box = new THREE.Box3().setFromObject(object);
         const mWidth = box.max.x - box.min.x;
@@ -139,7 +144,8 @@ export class Tile3D {
               child.receiveShadow = true;
               child.geometry.computeBoundsTree();
               child.material.color.set(child.material.color.multiply(color));
-
+              child.material.map = texture;
+ 
               //generate instanceed
 
             const instancedMesh = new THREE.InstancedMesh(
@@ -156,9 +162,11 @@ export class Tile3D {
                 for(let x = 0; x < cols; x++){
                     const offsetx = (mWidth*scaleFit-gridX)/2;
                     const offsetz = (mHeight*scaleFit-gridZ)/2;
+                    dummy.matrix.set(child.matrix);
+                    const randomRotation = this.randomRotation ? Math.ceil(Math.random()*3)*Math.PI/2 : 0;
                     dummy.position.set(child.position.x+x*gridX+offsetx,child.position.y,child.position.z+z*gridZ+offsetz);
-                    dummy.scale.set(child.scale.x*scaleFit,child.scale.y*scaleFit,child.scale.z*scaleFit);
-                    dummy.rotation.copy(child.rotation);
+                    dummy.scale.set(child.scale.x*scaleFit,child.scale.y*scaleFit*this.yScale,child.scale.z*scaleFit);
+                    dummy.rotation.set(child.rotation.x,child.rotation.y+randomRotation,child.rotation.z);
 
                     dummy.updateMatrix();
                     instancedMesh.setMatrixAt(i++, dummy.matrix);
@@ -198,7 +206,7 @@ export class Tile3D {
     updateVisibility(){
         if(!this.mesh) return;
         this.mesh.visible = !this.tile.data.hidden;
-        if(game.Levels3DPreview.mirrorLevelsVisibility){
+        if(game.Levels3DPreview.mirrorLevelsVisibility && this.tile.data.overhead){
             const isLevelsVisible = _levels.floorContainer.spriteIndex[this.tile.id]?.parent ? true : false;
             this.mesh.visible = this.tile.visible || isLevelsVisible;
         }
@@ -208,7 +216,7 @@ export class Tile3D {
         this._parent.scene.remove(this.mesh);
         this.mesh.traverse((child) => {
             if (child.isMesh) {
-                child.dispose();
+                child.dispose?.();
             }
         })
         delete this._parent.tiles[this.tile.id];

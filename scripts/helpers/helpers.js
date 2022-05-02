@@ -1,7 +1,6 @@
 import * as THREE from "../lib/three.module.js";
 import {factor} from '../main.js';
 import { Ruler3D } from "../entities/ruler3d.js";
-import { ParticleSystem } from "./particleSystem.js";
 
 export class Helpers {
   constructor() {
@@ -187,6 +186,7 @@ export class Helpers {
   }
 
   animateCamera(target, options = {}) {
+    if(game.Levels3DPreview.interactionManager.isCameraLocked) return;
     const speed = options.speed || 0.04;
     const rotation = options.rotation || 0;
     const distance = (options.distance || 3000) / factor;
@@ -252,6 +252,7 @@ export class Helpers {
   }
 
   focusCameraToCursor(speed = 0.04) {
+    if(game.Levels3DPreview.interactionManager.isCameraLocked) return;
     const cameraPosition = game.Levels3DPreview.camera.position.clone();
     const cameraLookat =
       game.Levels3DPreview.interactionManager.canvas3dMousePosition.clone();
@@ -280,6 +281,7 @@ export class Helpers {
   }
 
   focusCameraToPosition(cameraPosition, cameraLookat, speed = 0.04) {
+    if(game.Levels3DPreview.interactionManager.isCameraLocked) return;
     if (
       !game.user.isGM &&
       !game.settings.get("levels-3d-preview", "canpingpan")
