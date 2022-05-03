@@ -213,7 +213,7 @@ export class Ruler3D {
     }
 
     static measureDistance(position1,position2){
-        if(position1.y !== position2.y || !Ruler3D.useSnapped()) return ((position1.distanceTo(position2)*factor)/canvas.scene.dimensions.size*canvas.scene.dimensions.distance).toFixed(1);
+        if(Math.round(position1.y*1000)/1000 !== Math.round(position2.y*1000)/1000 || !Ruler3D.useSnapped()) return ((position1.distanceTo(position2)*factor)/canvas.scene.dimensions.size*canvas.scene.dimensions.distance).toFixed(1);
         const pos1Canvas = Ruler3D.pos3DToCanvas(position1);
         const pos2Canvas = Ruler3D.pos3DToCanvas(position2);
         const ray = new Ray({

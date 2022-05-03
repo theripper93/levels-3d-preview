@@ -809,7 +809,7 @@ class Levels3DPreview {
     if(!this._active) return;
    this._cameraSet = false;
    this.close();
-   this.open();
+   setTimeout(() => this.open(), 300);
   }
 
   particleSocket(...args){
@@ -842,7 +842,9 @@ Hooks.on("updateScene", (scene,updates) => {
     "renderSceneLights" in flags ||
     "skybox" in flags ||
     "exr" in flags ||
-    "mirrorLevels" in flags
+    "mirrorLevels" in flags ||
+    "gridAlpha" in updates ||
+    "gridColor" in updates
   ){
     game.Levels3DPreview.reload();
     return
