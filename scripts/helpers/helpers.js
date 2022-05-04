@@ -65,28 +65,12 @@ export class Helpers {
     return model;
   }
 
-  /*preloadModel(modelPath) {
-    const filePath = modelPath;
-    const extension = filePath.split(".").pop().toLowerCase();
-    try {
-      if (extension == "gltf" || extension == "glb") {
-        return game.Levels3DPreview.loader.load(filePath);
-      }
-      if (extension == "fbx") {
-        return game.Levels3DPreview.FBXLoader.load(filePath);
-      }
-      return null;
-    } catch (e) {
-      return null;
-    }
-  }*/
-
   preloadModel(modelPath) {
     return new Promise((resolve, reject) => {
       const filePath = modelPath;
       const extension = filePath.split(".").pop().toLowerCase();
       try {
-        if (extension == "gltf" || extension == "glb") {
+        if (extension == "gltf" || extension == "glb" || extension.startsWith("[heroforge]")) {
           game.Levels3DPreview.loader.load(filePath, resolve, undefined, reject);
         }
         if (extension == "fbx") {
@@ -102,7 +86,7 @@ export class Helpers {
     const filePath = modelPath;
     const extension = filePath.split(".").pop().toLowerCase();
     try {
-      if (extension == "gltf" || extension == "glb") {
+      if (extension == "gltf" || extension == "glb" || extension.startsWith("[heroforge]")) {
         const object = await game.Levels3DPreview.loader.loadAsync(filePath);
         return {
           object: object,
