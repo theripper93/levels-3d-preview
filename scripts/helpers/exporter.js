@@ -10,7 +10,7 @@ export class Exporter{
     async export(){
         const exportData = await this.renderDialog();
         if(!exportData) return;
-        const objects = exportData.all ? this._parent.scene : this._parent.scene.children.filter((o) => {
+        let objects = exportData.all ? this._parent.scene : this._parent.scene.children.filter((o) => {
             const documentType = o.userData?.entity3D?.embeddedName;
             if(exportData.background && o.userData?.isBackground) return true;
             if(!documentType) return false;
@@ -24,6 +24,7 @@ export class Exporter{
             if(exportData.doors && documentType === "Wall" && o.userData?.entity3D.placeable.isDoor) return true;
             return false;
         });
+        objects = objects.filter((o) => !o.userData.entity3D.gtflPath.includes("[HeroForge]"))
         if(exportData.all){
             objects.traverse(child => { child.userData = {} });
         }else{
