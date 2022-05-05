@@ -599,8 +599,9 @@ Hooks.on("renderTileConfig", (app,html)=>{
         "fillType": {
             type: "select",
             label: game.i18n.localize("levels3dpreview.flags.fillType.label"),
-            default: "stretch",
+            default: "fit",
             options: {
+                "fit": game.i18n.localize("levels3dpreview.flags.fillType.options.fit"),
                 "stretch": game.i18n.localize("levels3dpreview.flags.fillType.options.stretch"),
                 "tile": game.i18n.localize("levels3dpreview.flags.fillType.options.tile"),
             }

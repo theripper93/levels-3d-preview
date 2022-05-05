@@ -812,6 +812,15 @@ class Levels3DPreview {
    setTimeout(() => this.open(), 300);
   }
 
+  open3DFilePicker(){
+    const fp = new FilePicker({
+      type: "folder",
+      tileSize: true
+    });
+    fp.extensions = [".glb", ".GLB", ".gltf", ".GLTF", ".fbx", ".FBX"]; 
+    fp.render(true);
+  }
+
   particleSocket(...args){
     game.Levels3DPreview.particleSystem.resolveSocket(...args);
   }

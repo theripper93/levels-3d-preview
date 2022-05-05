@@ -148,6 +148,7 @@
                 "label": "Fill Type",
                 "options": {
                     "stretch": "Stretch",
+                    "fit": "Fit",
                     "tile": "Repeat"
                 }
             },

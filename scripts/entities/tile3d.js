@@ -11,6 +11,7 @@ export class Tile3D {
         this.tile = tile;
         this._parent = parent;
         this.isOverhead = this.tile.data.overhead;
+        //this.draggable = true;
         this.embeddedName = "Tile"
         this.bottom = tile.data.flags.levels?.rangeBottom ?? 0;
         this.index = canvas.background.placeables.indexOf(this.tile) ?? canvas.foreground.placeables.indexOf(this.tile) ?? 0;
@@ -32,7 +33,7 @@ export class Tile3D {
         this.rotSign = this.tile.data.width/Math.abs(this.tile.data.width)*this.tile.data.height/Math.abs(this.tile.data.height)
         this.getFlags();
         if(this.gtflPath){
-            this.fillType === "stretch" ? this.initModel() : this.initInstanced();
+            this.fillType === "stretch" || this.fillType === "fit" ? this.initModel() : this.initInstanced();
         }else{
             this.init();
         }
@@ -45,7 +46,7 @@ export class Tile3D {
         this.animSpeed = this.tile.document.getFlag("levels-3d-preview", "animSpeed") ?? 1;
         this.color = this.tile.document.getFlag("levels-3d-preview", "color") ?? "#ffffff";
         this.imageTexture = this.tile.document.getFlag("levels-3d-preview", "imageTexture") ?? "";
-        this.fillType = this.tile.document.getFlag("levels-3d-preview", "fillType") ?? "stretch";
+        this.fillType = this.tile.document.getFlag("levels-3d-preview", "fillType") ?? "fit";
         this.scale= this.tile.document.getFlag("levels-3d-preview", "tileScale") ?? 1;
         this.yScale = this.tile.document.getFlag("levels-3d-preview", "yScale") ?? 1;
         this.randomRotation = this.tile.document.getFlag("levels-3d-preview", "randomRotation") ?? false;
@@ -79,6 +80,7 @@ export class Tile3D {
     }
 
     async initModel(){
+        const stretch = this.fillType === "stretch";
         const model = await this.getModel();
         const texture = this.imageTexture ? await this._parent.helpers.loadTexture(this.imageTexture) : null;
         const object = model.scene;
@@ -86,8 +88,23 @@ export class Tile3D {
         const mWidth = box.max.x - box.min.x;
         const mHeight = box.max.z - box.min.z;
         const mDepth = box.max.y - box.min.y;
-        const scaleFit = Math.max(this.width/mWidth, this.height/mHeight);
-        object.scale.set(this.width/mWidth,scaleFit,this.height/mHeight);
+        if(stretch){
+            const yScale = this.width > this.height ? this.width/mDepth : this.height/mDepth;
+            const scaleFit = Math.max(this.width/mWidth, this.height/mHeight);
+            object.scale.set(this.width/mWidth,yScale,this.height/mHeight);
+        }else{
+            const largest = Math.max(mWidth, mHeight, mDepth);
+            let scale = 1;
+            if(largest === mWidth){
+                scale = this.width/mWidth;
+            }else if(largest === mHeight){
+                scale = this.height/mHeight;
+            }else{
+                scale = (Math.min(this.width, this.height))/mDepth;
+            }
+            object.scale.set(scale,scale,scale);
+        }
+
         const color = new THREE.Color(this.color);
         object.traverse((child) => {
             if (child.isMesh) {
@@ -115,6 +132,7 @@ export class Tile3D {
         container.userData.hitbox = container;
         container.userData.interactive = true;
         container.userData.entity3D = this;
+        this.mesh.userData.draggable = true;
         this._parent.scene.add(container);
     }
 

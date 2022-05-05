@@ -99,13 +99,32 @@ export class InteractionManager {
         data.flags = {
           levels: {
             rangeBottom: coord3d.z
+          },
+          "levels-3d-preview": {
+            model3d: data.img
           }
         }
-        if(data.type !== "Actor") return false
-        Hooks.once("preCreateToken", (token)=>{
-          token.data.update({elevation: Math.trunc(data.elevation*100)/100, flags: data.flags})
-        })
-        return canvas.tokens._onDropActorData(event, data);
+        if(data.type === "Actor"){
+          Hooks.once("preCreateToken", (token)=>{
+            token.data.update({elevation: Math.trunc(data.elevation*100)/100, flags: data.flags})
+          })
+          return canvas.tokens._onDropActorData(event, data);
+        }
+        if(data.type === "Tile"){
+          const useSnapped = Ruler3D.useSnapped();
+          let snapped;
+          if(useSnapped){
+            snapped = canvas.grid.getCenter(data.x,data.y)
+          }
+          const size = canvas.grid.size;
+          canvas.scene.createEmbeddedDocuments("Tile", [{
+            x: (snapped ? snapped[0] : data.x) - size/2,
+            y: (snapped ? snapped[1] : data.y) - size/2,
+            width: size,
+            height: size,
+            flags: data.flags,
+          }])
+        }
       }
 
     _onMouseDown(event){
@@ -232,12 +251,12 @@ export class InteractionManager {
       const intersect = event.intersect;
       this.handleTriggerHappy(entity);
       entity._onClickLeft(event);
-      if(event.altKey || !this.mousedown || !entity.isOwner){
+      if(event.altKey || !this.mousedown || !(entity.isOwner || game.user.isGM)){
         this.toggleControls(true, true);
         return this.clicks = 0;
       }
       entity.isAnimating = false;
-      entity.setPosition();
+      entity.setPosition?.();
       if(!entity.draggable) return this.toggleControls(true, true);
       this.draggable = intersect;
       this.toggleControls(false);
