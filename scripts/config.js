@@ -1,4 +1,5 @@
 Hooks.on("getSceneControlButtons", (buttons)=>{
+    debugger;
     buttons.find(b => b.name === "token")?.tools?.push(
     {
         "name": "preview3d",
@@ -29,6 +30,7 @@ Hooks.on("getSceneControlButtons", (buttons)=>{
             miniCanvas.toggle();
         }
     });
+    if(game.Levels3DPreview?._active && game.user.isGM) buttons.find(b => b.name === "tiles").tools.find(t => t.name === "browse").onClick = () => { game.Levels3DPreview.open3DFilePicker() }
 })
 
 Hooks.on("renderSceneConfig", (app,html)=>{
@@ -880,6 +882,15 @@ Hooks.on("init", () => {
         ],
         onDown: () => {game.Levels3DPreview.interactionManager.isFreeMode = true},
         onUp: () => {game.Levels3DPreview.interactionManager.isFreeMode = false},
+    });
+
+    game.keybindings.register("levels-3d-preview", "scalingMode", {
+        name: game.i18n.localize("levels3dpreview.keybindings.scalingMode"),
+        editable: [
+          {key: "KeyX"}
+        ],
+        onDown: () => {game.Levels3DPreview.interactionManager.scalingMode = true},
+        onUp: () => {game.Levels3DPreview.interactionManager.scalingMode = false},
     });
 
 })

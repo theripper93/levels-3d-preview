@@ -122,6 +122,7 @@ export class InteractionManager {
             y: (snapped ? snapped[1] : data.y) - size/2,
             width: size,
             height: size,
+            overhead: canvas.activeLayer.name !== "BackgroundLayer",
             flags: data.flags,
           }])
         }
@@ -129,7 +130,7 @@ export class InteractionManager {
 
     _onMouseDown(event){
       this._parent.stopCameraAnimation();
-      if(event.which === 1 && event.ctrlKey) canvas.tokens.releaseAll();
+      if(event.which === 1 && event.ctrlKey) canvas.activeLayer.releaseAll();
       this.mousedown = true;
       this.mousePosition = { x: event.clientX, y: event.clientY };
       if(event.which !== 1 && event.which !== 3) return;
@@ -137,7 +138,7 @@ export class InteractionManager {
       const intersectData = this.findMouseIntersect(event);
       const intersect = intersectData?.object;
       if(!intersect || event.ctrlKey) return;
-      if(intersect.userData?.entity3D?.embeddedName !== "Tile")this.toggleControls(false);
+      if(intersect.userData?.entity3D?.embeddedName === canvas.activeLayer.options.objectClass.embeddedName)this.toggleControls(false);
       this.clicks++;
       event.entity = intersect.userData.entity3D
       event.intersect = intersect;
@@ -236,11 +237,30 @@ export class InteractionManager {
           entity3D.elevation3d = 0;
         }
       }
-      if(!this.draggable && event.ctrlKey && canvas.tokens.controlled.length){
+      if(!this.draggable && event.ctrlKey && !event.altKey && canvas.activeLayer.controlled.length){
         const dBig = canvas.grid.type > CONST.GRID_TYPES.SQUARE ? 60 : 45;
         let snap = event.shiftKey ? dBig : 15;
         const delta = Math.sign(event.deltaY)*snap;
-        canvas.tokens.rotateMany({delta,snap});
+        canvas.activeLayer.rotateMany({delta,snap});
+      }
+      if(!this.draggable && event.altKey && event.ctrlKey && canvas.activeLayer.controlled.length){
+        let updates = [];
+        const multi = Math.sign(event.deltaY) < 0 ? 1.1 : 0.9;
+        for(let placeable of canvas.activeLayer.controlled){
+          const width = placeable.data.width;
+          const height = placeable.data.height;
+          const newWidth = width*multi;
+          const newHeight = height*multi;
+          const update = {
+            _id: placeable.id,
+            width: newWidth,
+            height: newHeight,
+            x: placeable.data.x - (newWidth - width)/2,
+            y: placeable.data.y - (newHeight - height)/2
+          }
+          updates.push(update);
+        }
+        canvas.scene.updateEmbeddedDocuments(canvas.activeLayer.options.objectClass.embeddedName,updates);
       }
 
     }
@@ -257,7 +277,7 @@ export class InteractionManager {
       }
       entity.isAnimating = false;
       entity.setPosition?.();
-      if(!entity.draggable) return this.toggleControls(true, true);
+      if(!entity.draggable || entity.mesh.userData?.entity3D?.embeddedName !== canvas.activeLayer.options.objectClass.embeddedName) return this.toggleControls(true, true);
       this.draggable = intersect;
       this.toggleControls(false);
     }
@@ -343,6 +363,7 @@ export class InteractionManager {
       const collisionObjects = Object.values(this._parent.tokens).filter(t => t.collisionPlane && t.token.id != draggableId).map(t => t.model);
       let collisionGeometries = collisionObjects;
       for(let tile of Object.values(this._parent.tiles)){
+        if(this.draggable?.userData?.entity3D?.tile?.id === tile.tile.id) continue;
         if(tile.mesh.visible)collisionGeometries.push(tile.mesh);
       }
       for(let wall of Object.values(this._parent.walls)){

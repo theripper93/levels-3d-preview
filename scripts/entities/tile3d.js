@@ -11,7 +11,7 @@ export class Tile3D {
         this.tile = tile;
         this._parent = parent;
         this.isOverhead = this.tile.data.overhead;
-        //this.draggable = true;
+        this.draggable = true;
         this.embeddedName = "Tile"
         this.bottom = tile.data.flags.levels?.rangeBottom ?? 0;
         this.index = canvas.background.placeables.indexOf(this.tile) ?? canvas.foreground.placeables.indexOf(this.tile) ?? 0;
@@ -77,6 +77,7 @@ export class Tile3D {
         this.mesh.userData.interactive = true;
         this.mesh.userData.entity3D = this;
         this._parent.scene.add(this.mesh);
+        this.initBoundingBox();
     }
 
     async initModel(){
@@ -134,6 +135,7 @@ export class Tile3D {
         container.userData.entity3D = this;
         this.mesh.userData.draggable = true;
         this._parent.scene.add(container);
+        this.initBoundingBox();
     }
 
     async initInstanced(){
@@ -207,6 +209,7 @@ export class Tile3D {
         container.userData.interactive = true;
         container.userData.entity3D = this;
         this._parent.scene.add(container);
+        this.initBoundingBox();
     }
 
     async getModel(){
@@ -221,14 +224,75 @@ export class Tile3D {
         return new THREE.Mesh(new THREE.BoxGeometry(1,1,1), new THREE.MeshStandardMaterial({color: 0xff0000}));
     }
 
+    initBoundingBox(){
+        const box = new THREE.Box3().setFromObject(this.mesh);
+        const c = new THREE.Color();
+        c.set(CONFIG.Canvas.dispositionColors.CONTROLLED);
+        const cube = new THREE.Mesh(new THREE.BoxGeometry(box.max.x - box.min.x, box.max.y - box.min.y, box.max.z - box.min.z), new THREE.MeshBasicMaterial({color: c, wireframe: true}));
+        cube.position.set(0, (box.max.y - box.min.y) / 2, 0);
+        this.controlledBox = cube;
+    }
+
+    toggleBoundingBox(){
+        if(!game.user.isGM) return;
+        const isTileControlled = this.tile._controlled;
+        if(this._controlled === isTileControlled) return;
+        this._controlled = isTileControlled;
+        if(isTileControlled){
+            this.mesh.add(this.controlledBox);
+        }else{
+            this.mesh.remove(this.controlledBox);
+        }
+    }
+
     updateVisibility(){
         if(!this.mesh) return;
+        this.toggleBoundingBox();
         this.mesh.visible = !this.tile.data.hidden;
         if(game.Levels3DPreview.mirrorLevelsVisibility && this.tile.data.overhead){
             const isLevelsVisible = _levels.floorContainer.spriteIndex[this.tile.id]?.parent ? true : false;
             this.mesh.visible = this.tile.visible || isLevelsVisible;
         }
     }
+
+    updatePositionFrom3D(e){
+        this.skipMoveAnimation = true;
+        const useSnapped = Ruler3D.useSnapped();
+        const x3d = this.mesh.position.x;
+        const y3d = this.mesh.position.y;
+        const z3d = this.mesh.position.z;
+        const x = x3d * factor - this.tile.data.width/2;
+        const y = z3d * factor - this.tile.data.height/2;
+        const z = Math.round(((y3d * factor * canvas.dimensions.distance)/(canvas.dimensions.size))*100)/100;
+        const snapped = canvas.grid.getSnappedPosition(x, y);
+        const {rangeTop, rangeBottom} = _levels.getFlagsForObject(this.tile);
+        const dest = {
+          x: useSnapped ? snapped.x : x,
+          y: useSnapped ? snapped.y : y,
+          elevation: z,
+        }
+        const deltas = {
+          x: dest.x - this.tile.data.x,
+          y: dest.y - this.tile.data.y,
+          elevation: dest.elevation - rangeBottom,
+        }
+        let updates = [];
+        for(let tile of canvas.activeLayer.controlled){
+        const tileFlags = _levels.getFlagsForObject(tile);
+          updates.push({
+            _id: tile.id,
+            x: tile.data.x + deltas.x,
+            y: tile.data.y + deltas.y,
+            flags: {
+                levels: {
+                    rangeBottom: Math.round((tileFlags.rangeBottom + deltas.elevation)*1000)/1000
+                }
+            },
+          })
+        }
+        canvas.scene.updateEmbeddedDocuments("Tile", updates)
+        return true;
+      }
 
     destroy(){
         this._parent.scene.remove(this.mesh);
@@ -241,22 +305,57 @@ export class Tile3D {
     }
 
     _onClickLeft(e){
-        const point = Ruler3D.pos3DToCanvas(e.position3D);
-        if(this.tile.document.checkClick)this.tile.document.checkClick(point, "click");
+        if(canvas.activeLayer.options.objectClass.embeddedName !== "Tile"){
+            const point = Ruler3D.pos3DToCanvas(e.position3D);
+            if(this.tile.document.checkClick)this.tile.document.checkClick(point, "click");
+        }else{
+            const event = {
+                stopPropagation: () => {},
+                data: {
+                  originalEvent: e,
+                }
+              }
+              this.tile._onClickLeft(event);
+        }
+
     }
 
 
     _onClickLeft2(e){
-        const point = Ruler3D.pos3DToCanvas(e.position3D);
-        if(this.tile.document.checkClick)this.tile.document.checkClick(point, "dblclick");
+        if(canvas.activeLayer.options.objectClass.embeddedName !== "Tile"){
+            const point = Ruler3D.pos3DToCanvas(e.position3D);
+            if(this.tile.document.checkClick)this.tile.document.checkClick(point, "dblclick");
+        }else{
+            const event = {
+                stopPropagation: () => {},
+                data: {
+                  originalEvent: e,
+                }
+              }
+              this.tile._onClickLeft2(event);
+        }
     }
 
     _onClickRight(e){
-
+        if(canvas.activeLayer.options.objectClass.embeddedName !== "Tile") return;
+        const event = {
+            stopPropagation: () => {},
+            data: {
+              originalEvent: e,
+            }
+          }
+          this.tile._onClickRight(event);
     }
 
     _onClickRight2(e){
-
+        if(canvas.activeLayer.options.objectClass.embeddedName !== "Tile") return;
+        const event = {
+            stopPropagation: () => {},
+            data: {
+              originalEvent: e,
+            }
+          }
+          this.tile._onClickRight2(event);
     }
 }
 
