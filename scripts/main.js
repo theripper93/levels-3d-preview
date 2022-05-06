@@ -7,6 +7,7 @@ import { Light3D } from "./entities/light3d.js";
 import { Wall3D } from "./entities/wall3d.js";
 import { Tile3D } from "./entities/tile3d.js";
 import { Note3D } from "./entities/note3d.js";
+import { Grid3D } from "./entities/grid3d.js";
 import { Template3D } from "./entities/template3d.js";
 import { Cursors3D } from "./entities/cursors.js";
 import { FBXLoader } from './lib/FBXLoader.js';
@@ -233,34 +234,11 @@ class Levels3DPreview {
     }
     if (this.debugMode) this.scene.add(new THREE.AxesHelper(3));
 
-    const size =
-      (Math.max(canvas.scene.dimensions.width, canvas.dimensions.height) /
-        this.factor)
-      ;
-    const divisions =
-      (Math.max(canvas.scene.dimensions.width, canvas.dimensions.height) /
-        canvas.scene.dimensions.size)
-      ;
-    if (canvas.scene.getFlag("levels-3d-preview", "enableGrid")) {
-      const gridMode = game.settings.get("levels-3d-preview", "gridMode");
-      if(gridMode === "fast"){
-        const gridColor = canvas.scene.data.gridColor ?? 0x424242;
-        const gridHelper = new THREE.GridHelper(
-          size,
-          divisions,
-          gridColor,
-          gridColor
-        );
-        gridHelper.colorGrid = gridColor;
-        gridHelper.position.set(size/2, 0.01, size/2);
-        gridHelper.material.transparent = true;
-        gridHelper.material.opacity = canvas.scene.data.gridAlpha;
-        gridHelper.userData.ignoreHover = true;
-        this.scene.add(gridHelper);
-      }else{
-        this.createGrid();
-      }
-    }
+    this.grid = new Grid3D(this);
+
+    const size = (Math.max(canvas.scene.dimensions.width, canvas.dimensions.height) / this.factor);
+
+
     if(enableFog) this.scene.fog = new THREE.Fog(fogColor, 1, fogDistance);
     //add raycasting plane
 
@@ -300,18 +278,6 @@ class Levels3DPreview {
       });
     }
 
-  }
-
-  async createGrid(){
-      const base64 = canvas.app.renderer.extract.base64(canvas.grid.grid)
-      const texture = await new THREE.TextureLoader().load(base64);
-      const plane = new THREE.Mesh(
-        new THREE.PlaneGeometry(canvas.grid.width/factor, canvas.grid.height/factor),
-        new THREE.MeshBasicMaterial({ map: texture, transparent:true })
-      );
-      plane.rotateX(-Math.PI / 2);
-      plane.position.set((canvas.grid.width/factor)/2 + canvas.grid.grid._localBounds.minX/factor, 0.01, (canvas.grid.height/factor)/2 + canvas.grid.grid._localBounds.minY/factor);
-      this.scene.add(plane);
   }
 
   async createBoard(){
@@ -616,6 +582,7 @@ class Levels3DPreview {
     _this.interactionManager.dragObject();
     _this.cursors.update();
     const delta = _this.clock.getDelta();
+    _this.grid?.updateGrid();
     Object.values(_this.tokens).forEach((token) => {
       token.updateVisibility();
       if(token.mixer){

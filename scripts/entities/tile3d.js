@@ -113,7 +113,7 @@ export class Tile3D {
               child.receiveShadow = true;
               child.geometry.computeBoundsTree();
               child.material.color.set(child.material.color.multiply(color));
-              child.material.map = texture;
+              if(texture) child.material.map = texture;
             }
         });
 
@@ -164,7 +164,7 @@ export class Tile3D {
               child.receiveShadow = true;
               child.geometry.computeBoundsTree();
               child.material.color.set(child.material.color.multiply(color));
-              child.material.map = texture;
+              if(texture) child.material.map = texture;
  
               //generate instanceed
 

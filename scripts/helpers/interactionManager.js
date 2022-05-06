@@ -122,6 +122,7 @@ export class InteractionManager {
             y: (snapped ? snapped[1] : data.y) - size/2,
             width: size,
             height: size,
+            img: "modules/levels-3d-preview/assets/blank.webp",
             overhead: canvas.activeLayer.name !== "BackgroundLayer",
             flags: data.flags,
           }])
