@@ -209,7 +209,8 @@ export class Tile3D {
         container.userData.interactive = true;
         container.userData.entity3D = this;
         this._parent.scene.add(container);
-        this.initBoundingBox();
+
+        this.initBoundingBox(mDepth*scaleFit);
     }
 
     async getModel(){
@@ -224,8 +225,16 @@ export class Tile3D {
         return new THREE.Mesh(new THREE.BoxGeometry(1,1,1), new THREE.MeshStandardMaterial({color: 0xff0000}));
     }
 
-    initBoundingBox(){
-        const box = new THREE.Box3().setFromObject(this.mesh);
+    initBoundingBox(depth){
+        let box;
+        if(this.fillType === "tile"){
+            //const sizeBox = new THREE.Box3().setFromObject(obj);
+            const v1 = new THREE.Vector3(0,0,0);
+            const v2 = new THREE.Vector3(this.width,depth,this.height);
+            box = new THREE.Box3(v1,v2);
+        }else{
+            box = new THREE.Box3().setFromObject(this.mesh);
+        }
         const c = new THREE.Color();
         c.set(CONFIG.Canvas.dispositionColors.CONTROLLED);
         const cube = new THREE.Mesh(new THREE.BoxGeometry(box.max.x - box.min.x, box.max.y - box.min.y, box.max.z - box.min.z), new THREE.MeshBasicMaterial({color: c, wireframe: true}));
