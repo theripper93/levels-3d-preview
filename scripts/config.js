@@ -1,5 +1,4 @@
 Hooks.on("getSceneControlButtons", (buttons)=>{
-    debugger;
     buttons.find(b => b.name === "token")?.tools?.push(
     {
         "name": "preview3d",
@@ -189,6 +188,13 @@ Hooks.on("renderSceneConfig", (app,html)=>{
             min: 0,
             max: 2,
             step: 0.01,
+        },
+        "shadowBias": {
+            type: "number",
+            label: game.i18n.localize("levels3dpreview.flags.shadowBias.label"),
+            notes: game.i18n.localize("levels3dpreview.flags.shadowBias.notes"),
+            default: -0.035,
+            step: 0.000001,
         },
         "header4": {
             type: "custom",

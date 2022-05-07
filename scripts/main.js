@@ -582,7 +582,7 @@ class Levels3DPreview {
     _this.interactionManager.dragObject();
     _this.cursors.update();
     const delta = _this.clock.getDelta();
-    _this.grid?.updateGrid();
+    //_this.grid?.updateGrid();
     Object.values(_this.tokens).forEach((token) => {
       token.updateVisibility();
       if(token.mixer){

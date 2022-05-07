@@ -108,6 +108,10 @@
             "sunIntensity": {
                 "label": "Sun Intensity"
             },
+            "shadowBias": {
+                "label": "Shadow Bias",
+                "notes": "Number that determines how shadows are rendered, if you notice black stripes on entities in the scene, you can adjust this number. Correct values for this number tend to be very small, it's suggested to make increments or decrements of 0.001 or less."
+            },
             "showSceneWalls": {
                 "label": "Render Walls"
             },

@@ -33,20 +33,9 @@ export class Grid3D {
           gridHelper.userData.ignoreHover = true;
           this.grid = gridHelper;
           this.scene.add(gridHelper);
-          this.secondaryGrid = new THREE.GridHelper(
-            size,
-            divisions,
-            "#5c9aff",
-            "#5c9aff"
-          );
-          this.secondaryGrid.material.opacity = 0.2;
-        this.secondaryGrid.material.transparent = true;
-          this.secondaryGrid.position.set(size/2, 0.01, size/2);
         }else{
           await this.createGrid();
         }
-        this.secondaryGrid.visible = false;
-        this.scene.add(this.secondaryGrid);
         this.setPosition();
     }
 
@@ -65,7 +54,6 @@ export class Grid3D {
 
     setPosition(){
         this.grid.position.y = 0.001;
-        this.secondaryGrid.position.y = 0.1;
     }
 
     updateGrid(){

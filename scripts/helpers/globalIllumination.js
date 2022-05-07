@@ -15,6 +15,7 @@ export class GlobalIllumination {
     const spotLight = new THREE.DirectionalLight(0xffa95c, 4);
     const adjustmentSpotlight = new THREE.DirectionalLight(0xffa95c, 4);
     this.lights.spotLight = spotLight;
+    this.lights.spotLight.shadow.bias = canvas.scene.getFlag("levels-3d-preview", "shadowBias") ?? -0.035;
     this._setShadowQuality();
     this.lights.adjustmentSpotlight = adjustmentSpotlight;
     const sunlightSphere = new THREE.SphereGeometry(6 / 10, 16, 16);
@@ -52,6 +53,7 @@ export class GlobalIllumination {
     }
 
     set sunlight(data){
+      this.lights.spotLight.shadow.bias = canvas.scene.getFlag("levels-3d-preview", "shadowBias") ?? -0.035;
         const targetLighting = {
           center : this._parent.canvasCenter,
           color : new THREE.Color(data.color),
