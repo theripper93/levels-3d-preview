@@ -652,7 +652,14 @@ Hooks.on("renderTileConfig", (app,html)=>{
             label: game.i18n.localize("levels3dpreview.flags.randomPosition.label"),
             default: false,
         },
+        "randomSeed": {
+            type: "text",
+            label: game.i18n.localize("levels3dpreview.flags.randomSeed.label"),
+            notes: game.i18n.localize("levels3dpreview.flags.randomSeed.notes"),
+            default: app.object.id.substring(0,7),
+        }
     })
+    html.find(`input[name="flags.levels-3d-preview.randomSeed"]`).prop("maxlength", 7);
 })
 
 Hooks.on("renderWallConfig", (app,html)=>{

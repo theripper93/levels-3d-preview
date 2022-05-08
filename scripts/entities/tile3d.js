@@ -10,7 +10,6 @@ THREE.Mesh.prototype.raycast = acceleratedRaycast;
 export class Tile3D {
     constructor(tile,parent){
         this.tile = tile;
-        this.initRandom();
         this._parent = parent;
         this.isOverhead = this.tile.data.overhead;
         this.draggable = true;
@@ -34,6 +33,7 @@ export class Tile3D {
         this.mirrorY = this.tile.data.height < 0
         this.rotSign = this.tile.data.width/Math.abs(this.tile.data.width)*this.tile.data.height/Math.abs(this.tile.data.height)
         this.getFlags();
+        this.initRandom();
         if(this.gtflPath){
             this.fillType === "stretch" || this.fillType === "fit" ? this.initModel() : this.initInstanced();
         }else{
@@ -43,7 +43,7 @@ export class Tile3D {
 
     initRandom(){
         let seed = "";
-        for(let c of this.tile.id){
+        for(let c of this.randomSeed){
             seed += c.charCodeAt().toString();
         }
         seed = parseInt(seed);
@@ -52,11 +52,6 @@ export class Tile3D {
 
     get pseudoRandom(){
         return this.marsenne.random() + 0.5;
-        this._randomIndex = (this._randomIndex + 1) % this._randomSeed.length;
-        let randomNumber;
-        let charAt = this._randomSeed[this._randomIndex].charCodeAt();
-        randomNumber = charAt/100+0.1;
-        return randomNumber;
     }
 
     async getFlags(){
@@ -74,6 +69,8 @@ export class Tile3D {
         this.randomDepth = this.tile.document.getFlag("levels-3d-preview", "randomDepth") ?? false;
         this.randomPosition = this.tile.document.getFlag("levels-3d-preview", "randomPosition") ?? false;
         this.gap = this.tile.document.getFlag("levels-3d-preview", "gap") ?? 0;
+        this.randomSeed = this.tile.document.getFlag("levels-3d-preview", "randomSeed") || this.tile.id;
+        this.randomSeed = this.randomSeed.substring(0,7);
     }
 
     async init(){
@@ -176,7 +173,7 @@ export class Tile3D {
         const mDepth = box.max.y - box.min.y;
         const rows = Math.round((this.height+gap/2)/grid) || 1;
         const cols = Math.round((this.width+gap/2)/grid) || 1;
-        const count = rows*cols;
+        const count = (rows)*(cols);
         const realWidth = grid*cols;
         const realHeight = grid*rows;
         this.realHeight = realHeight;
@@ -188,12 +185,32 @@ export class Tile3D {
         const scaleFit = this.scale*(grid-gap)/max;
         const color = new THREE.Color(this.color);
         const dummy = new THREE.Object3D();
+        const maxZ = rows*gridZ
+        const maxX = cols*gridX
+        let randomData = [];
+
+        for(let i = 0; i < count; i++){
+            //Random Data
+            const randomX = this.randomPosition ? this.pseudoRandom*maxX : 0;
+            const randomZ = this.randomPosition ? this.pseudoRandom*maxZ : 0;
+            const offsetx = -gap/2+randomX//gap//(mWidth*scaleFit-gridX)/2;
+            const offsetz = -gap/2+randomZ//gap//(mHeight*scaleFit-gridZ)/2;
+            
+            const randomRotation = this.randomRotation ? this.pseudoRandom*Math.PI*2 : 0;
+            const randomDepth = this.randomDepth ? this.pseudoRandom : 1;
+            const randomScale = this.randomScale ? this.pseudoRandom : 1;
+            ///////////////////////////////////////////////////////////
+            const randomFrag = { randomX, randomZ, randomRotation, randomDepth, randomScale, offsetx, offsetz };
+            randomData.push(randomFrag);
+        }
+
+
         object.traverse((child) => {
             if (child.isMesh) {
               child.castShadow = true;
               child.receiveShadow = true;
               child.geometry.computeBoundsTree();
-              child.material.color.set(child.material.color.multiply(color));
+              if(this.color) child.material.color.set(child.material.color.multiply(color));
               if(texture) child.material.map = texture;
  
               //generate instanceed
@@ -205,23 +222,16 @@ export class Tile3D {
             );
     
             instancedMesh.instanceMatrix.setUsage( THREE.DynamicDrawUsage );
-    
-            const maxZ = cols*gridX
-            const maxX = rows*gridZ
+
+
+
 
             let i = 0;
     
             for(let z = 0; z < rows; z++){
                 for(let x = 0; x < cols; x++){
-                    const randomX = this.randomPosition ? this.pseudoRandom*maxX : 0;
-                    const randomZ = this.randomPosition ? this.pseudoRandom*maxZ : 0;
-                    const offsetx = -gap/2+randomX//gap//(mWidth*scaleFit-gridX)/2;
-                    const offsetz = -gap/2+randomZ//gap//(mHeight*scaleFit-gridZ)/2;
+                    const { randomX, randomZ, randomRotation, randomDepth, randomScale, offsetx, offsetz } = randomData[i];
                     dummy.matrix.set(child.matrix);
-                    const randomRotation = this.randomRotation ? this.pseudoRandom*Math.PI*2 : 0;
-                    const randomDepth = this.randomDepth ? this.pseudoRandom : 1;
-                    const randomScale = this.randomScale ? this.pseudoRandom : 1;
-                    
                     dummy.position.set((child.position.x+x*gridX+offsetx)%maxX,child.position.y,(child.position.z+z*gridZ+offsetz)%maxZ);
                     dummy.scale.set(randomScale*child.scale.x*scaleFit,randomDepth*randomScale*child.scale.y*scaleFit*this.yScale,randomScale*child.scale.z*scaleFit);
                     dummy.rotation.set(child.rotation.x,child.rotation.y+randomRotation,child.rotation.z);
@@ -423,3 +433,19 @@ Hooks.on("createTile", (tile) => {
 Hooks.on("deleteTile", (tile) => {
 if(game.Levels3DPreview?._active) game.Levels3DPreview.tiles[tile.id]?.destroy();
 })
+
+Hooks.on("pasteTile", (copy, data) => {
+    if(game.Levels3DPreview?._active) {
+    const pos = game.Levels3DPreview.interactionManager.canvas2dMousePosition;
+    data.forEach(td => {
+        const data3d = {
+            flags: {
+                levels: {
+                    rangeBottom: pos.z
+                }
+            }
+        }
+        mergeObject(td, data3d);
+    })
+    }
+  })

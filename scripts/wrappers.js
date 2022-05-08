@@ -9,7 +9,7 @@ Hooks.once('ready', async function() {
     libWrapper.register("levels-3d-preview", "TokenLayer.prototype.cycleTokens", cycleTokens, "WRAPPER");
     libWrapper.register("levels-3d-preview", "Canvas.prototype.animatePan", animatePan, "WRAPPER");
     libWrapper.register("levels-3d-preview", "SightLayer.prototype.commitFog", updateFog, "WRAPPER");
-    libWrapper.register("levels-3d-preview", "TokenLayer.prototype.pasteObjects", pasteObjects, "WRAPPER");
+    libWrapper.register("levels-3d-preview", "PlaceablesLayer.prototype.pasteObjects", pasteObjects, "WRAPPER");
     libWrapper.register("levels-3d-preview", "Scenes.prototype.preload", preload3D, "OVERRIDE");
     
 

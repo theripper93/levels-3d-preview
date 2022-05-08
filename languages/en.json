@@ -276,6 +276,9 @@
             "randomPosition": {
                 "label": "Randomize Position"
             },
+            "randomSeed": {
+                "label": "Random Seed"
+            },
             "tiling": {
                 "label": "Tiling Options"
             },
