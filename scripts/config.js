@@ -646,7 +646,12 @@ Hooks.on("renderTileConfig", (app,html)=>{
             type: "checkbox",
             label: game.i18n.localize("levels3dpreview.flags.randomDepth.label"),
             default: false,
-        }
+        },
+        "randomPosition": {
+            type: "checkbox",
+            label: game.i18n.localize("levels3dpreview.flags.randomPosition.label"),
+            default: false,
+        },
     })
 })
 

@@ -267,6 +267,15 @@
             "randomRotation": {
                 "label": "Randomize Rotation"
             },
+            "randomDepth": {
+                "label": "Randomize Depth"
+            },
+            "randomScale": {
+                "label": "Randomize Scale"
+            },
+            "randomPosition": {
+                "label": "Randomize Position"
+            },
             "tiling": {
                 "label": "Tiling Options"
             },

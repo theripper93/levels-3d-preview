@@ -1,4 +1,5 @@
 import * as THREE from "../lib/three.module.js";
+import { MersenneTwister } from "../lib/marsenneTwister.js";
 import { Ruler3D } from "./ruler3d.js";
 import {factor} from '../main.js'; 
 import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from '../lib/three-mesh-bvh.js';
@@ -9,9 +10,8 @@ THREE.Mesh.prototype.raycast = acceleratedRaycast;
 export class Tile3D {
     constructor(tile,parent){
         this.tile = tile;
+        this.initRandom();
         this._parent = parent;
-        this._randomIndex = 0;
-        this._randomSeed = this.tile.id;
         this.isOverhead = this.tile.data.overhead;
         this.draggable = true;
         this.embeddedName = "Tile"
@@ -41,11 +41,21 @@ export class Tile3D {
         }
     }
 
+    initRandom(){
+        let seed = "";
+        for(let c of this.tile.id){
+            seed += c.charCodeAt().toString();
+        }
+        seed = parseInt(seed);
+        this.marsenne = new MersenneTwister(seed);
+    }
+
     get pseudoRandom(){
+        return this.marsenne.random() + 0.5;
         this._randomIndex = (this._randomIndex + 1) % this._randomSeed.length;
         let randomNumber;
         let charAt = this._randomSeed[this._randomIndex].charCodeAt();
-        randomNumber = charAt/100;
+        randomNumber = charAt/100+0.1;
         return randomNumber;
     }
 
@@ -62,6 +72,7 @@ export class Tile3D {
         this.randomRotation = this.tile.document.getFlag("levels-3d-preview", "randomRotation") ?? false;
         this.randomScale = this.tile.document.getFlag("levels-3d-preview", "randomScale") ?? false;
         this.randomDepth = this.tile.document.getFlag("levels-3d-preview", "randomDepth") ?? false;
+        this.randomPosition = this.tile.document.getFlag("levels-3d-preview", "randomPosition") ?? false;
         this.gap = this.tile.document.getFlag("levels-3d-preview", "gap") ?? 0;
     }
 
@@ -195,17 +206,23 @@ export class Tile3D {
     
             instancedMesh.instanceMatrix.setUsage( THREE.DynamicDrawUsage );
     
+            const maxZ = cols*gridX
+            const maxX = rows*gridZ
+
             let i = 0;
     
             for(let z = 0; z < rows; z++){
                 for(let x = 0; x < cols; x++){
-                    const offsetx = -gap/2//gap//(mWidth*scaleFit-gridX)/2;
-                    const offsetz = -gap/2//gap//(mHeight*scaleFit-gridZ)/2;
+                    const randomX = this.randomPosition ? this.pseudoRandom*maxX : 0;
+                    const randomZ = this.randomPosition ? this.pseudoRandom*maxZ : 0;
+                    const offsetx = -gap/2+randomX//gap//(mWidth*scaleFit-gridX)/2;
+                    const offsetz = -gap/2+randomZ//gap//(mHeight*scaleFit-gridZ)/2;
                     dummy.matrix.set(child.matrix);
-                    const randomRotation = this.randomRotation ? Math.ceil(this.pseudoRandom*3)*Math.PI/2 : 0;
+                    const randomRotation = this.randomRotation ? this.pseudoRandom*Math.PI*2 : 0;
                     const randomDepth = this.randomDepth ? this.pseudoRandom : 1;
                     const randomScale = this.randomScale ? this.pseudoRandom : 1;
-                    dummy.position.set(child.position.x+x*gridX+offsetx,child.position.y,child.position.z+z*gridZ+offsetz);
+                    
+                    dummy.position.set((child.position.x+x*gridX+offsetx)%maxX,child.position.y,(child.position.z+z*gridZ+offsetz)%maxZ);
                     dummy.scale.set(randomScale*child.scale.x*scaleFit,randomDepth*randomScale*child.scale.y*scaleFit*this.yScale,randomScale*child.scale.z*scaleFit);
                     dummy.rotation.set(child.rotation.x,child.rotation.y+randomRotation,child.rotation.z);
 
