@@ -4,10 +4,8 @@ Hooks.on("getSceneControlButtons", (buttons)=>{
         "name": "preview3d",
         "title": game.i18n.localize("levels3dpreview.controls.preview3d"),
         "icon": "fas fa-cube",
-        //toggle: true,
         button: true,
         visible: canvas?.scene?.getFlag("levels-3d-preview","enablePlayers") || game.user.isGM,
-        //active: game.Levels3DPreview?._active,
         onClick: () => {
             game.Levels3DPreview.toggle();
         },
@@ -16,19 +14,26 @@ Hooks.on("getSceneControlButtons", (buttons)=>{
         "name": "miniCanvas",
         "title": game.i18n.localize("levels3dpreview.controls.miniCanvas"),
         "icon": "fas fa-sign-out-alt",
-        //toggle: true,
         button: true,
         visible: canvas?.scene?.getFlag("levels-3d-preview","enablePlayers") || game.user.isGM,
-        //active: Object.values(ui.windows)?.find(w => w.id === "miniCanvas") ? true : false,
         onClick: () => {
             if(!game.Levels3DPreview?._active) {
-                /*$(`li[data-tool="miniCanvas"]`).toggleClass("active", false);
-                ui.controls.controls.find(c=>c.name=="token").tools.find(t=>t.name == "miniCanvas").active = false;*/
                 return ui.notifications.warn(game.i18n.localize("levels3dpreview.errors.3dnotactive"))
             }
             miniCanvas.toggle();
         }
     });
+    buttons.find(b => b.name === "tiles")?.tools?.push(
+        {
+            "name": "controlsRef",
+            "title": game.i18n.localize(`levels3dpreview.tileEditor.controlsReference.title`),
+            "icon": "fas fa-gamepad",
+            button: true,
+            visible: game.Levels3DPreview?._active,
+            onClick: () => {
+                game.Levels3DPreview.interactionManager.showControlReference()
+            },
+        });
     if(game.Levels3DPreview?._active && game.user.isGM) buttons.find(b => b.name === "tiles").tools.find(t => t.name === "browse").onClick = () => { game.Levels3DPreview.open3DFilePicker() }
 })
 
@@ -620,11 +625,28 @@ Hooks.on("renderTileConfig", (app,html)=>{
             step: 0.00001,
             default: 1,
         },
+        "gap": {
+            type: "number",
+            label: game.i18n.localize("levels3dpreview.flags.gap.label"),
+            units: game.i18n.localize("levels3dpreview.units.gu"),
+            default: 0,
+            step: 0.00001,
+        },
         "randomRotation":{
             type: "checkbox",
             label: game.i18n.localize("levels3dpreview.flags.randomRotation.label"),
             default: false,
         },
+        "randomScale":{
+            type: "checkbox",
+            label: game.i18n.localize("levels3dpreview.flags.randomScale.label"),
+            default: false,
+        },
+        "randomDepth": {
+            type: "checkbox",
+            label: game.i18n.localize("levels3dpreview.flags.randomDepth.label"),
+            default: false,
+        }
     })
 })
 
@@ -890,13 +912,77 @@ Hooks.on("init", () => {
         onUp: () => {game.Levels3DPreview.interactionManager.isFreeMode = false},
     });
 
-    game.keybindings.register("levels-3d-preview", "scalingMode", {
-        name: game.i18n.localize("levels3dpreview.keybindings.scalingMode"),
+    game.keybindings.register("levels-3d-preview", "scale", {
+        name: game.i18n.localize("levels3dpreview.keybindings.scale"),
         editable: [
-          {key: "KeyX"}
+          {key: "KeyS", modifiers: [ CONTROL ]}
         ],
-        onDown: () => {game.Levels3DPreview.interactionManager.scalingMode = true},
-        onUp: () => {game.Levels3DPreview.interactionManager.scalingMode = false},
+        onDown: () => {game.Levels3DPreview.interactionManager.scale = true},
+        onUp: () => {game.Levels3DPreview.interactionManager.scale = false},
+    });
+
+    game.keybindings.register("levels-3d-preview", "scaleWidth", {
+        name: game.i18n.localize("levels3dpreview.keybindings.scaleWidth"),
+        editable: [
+          {key: "KeyQ", modifiers: [ CONTROL ]}
+        ],
+        onDown: () => {game.Levels3DPreview.interactionManager.scaleWidth = true},
+        onUp: () => {game.Levels3DPreview.interactionManager.scaleWidth = false},
+    });
+
+    game.keybindings.register("levels-3d-preview", "scaleHeight", {
+        name: game.i18n.localize("levels3dpreview.keybindings.scaleHeight"),
+        editable: [
+          {key: "KeyW", modifiers: [ CONTROL ]}
+        ],
+        onDown: () => {game.Levels3DPreview.interactionManager.scaleHeight = true},
+        onUp: () => {game.Levels3DPreview.interactionManager.scaleHeight = false},
+    });
+
+    game.keybindings.register("levels-3d-preview", "scaleGap", {
+        name: game.i18n.localize("levels3dpreview.keybindings.scaleGap"),
+        editable: [
+          {key: "KeyE", modifiers: [ CONTROL ]}
+        ],
+        onDown: () => {game.Levels3DPreview.interactionManager.scaleGap = true},
+        onUp: () => {game.Levels3DPreview.interactionManager.scaleGap = false},
+    });
+
+    game.keybindings.register("levels-3d-preview", "scaleScale", {
+        name: game.i18n.localize("levels3dpreview.keybindings.scaleScale"),
+        editable: [
+          {key: "KeyR", modifiers: [ CONTROL ]}
+        ],
+        onDown: () => {game.Levels3DPreview.interactionManager.scaleScale = true},
+        onUp: () => {game.Levels3DPreview.interactionManager.scaleScale = false},
+    });
+
+    game.keybindings.register("levels-3d-preview", "toggleMode", {
+        name: game.i18n.localize("levels3dpreview.keybindings.toggleMode"),
+        editable: [
+          {key: "KeyT", modifiers: [ CONTROL ]}
+        ],
+        onDown: () => {
+            const updates = [];
+            for(let placeable of canvas.activeLayer.controlled){
+                const modes = ["fit", "stretch", "tile"]
+                const mode = placeable.document.getFlag("levels-3d-preview", "fillType") ?? "fit";
+                const index = modes.indexOf(mode);
+                if(index === -1) continue;
+                const next = modes[(index + 1) % modes.length];
+                const update = {
+                    _id: placeable.id,
+                    flags: {
+                        "levels-3d-preview": {
+                            fillType: next,
+                        }
+                    }
+                };
+                updates.push(update);
+            }
+            canvas.scene.updateEmbeddedDocuments(canvas.activeLayer.options.objectClass.embeddedName,updates);
+        },
+        onUp: () => {},
     });
 
 })

@@ -238,26 +238,43 @@ export class InteractionManager {
           entity3D.elevation3d = 0;
         }
       }
-      if(!this.draggable && event.ctrlKey && !event.altKey && canvas.activeLayer.controlled.length){
+      const isSpecialKey = this.scaleWidth || this.scaleHeight || this.scaleGap || this.scaleScale || this.scale;
+      if(!this.draggable && event.ctrlKey && !isSpecialKey && !event.altKey && canvas.activeLayer.controlled.length){
         const dBig = canvas.grid.type > CONST.GRID_TYPES.SQUARE ? 60 : 45;
         let snap = event.shiftKey ? dBig : 15;
         const delta = Math.sign(event.deltaY)*snap;
         canvas.activeLayer.rotateMany({delta,snap});
       }
-      if(!this.draggable && event.altKey && event.ctrlKey && canvas.activeLayer.controlled.length){
+      if(!this.draggable && (isSpecialKey) && event.ctrlKey && canvas.activeLayer.controlled.length){
         let updates = [];
         const multi = Math.sign(event.deltaY) < 0 ? 1.1 : 0.9;
+        const gridS = -Math.sign(event.deltaY)*canvas.grid.size;
         for(let placeable of canvas.activeLayer.controlled){
           const width = placeable.data.width;
           const height = placeable.data.height;
-          const newWidth = width*multi;
-          const newHeight = height*multi;
+          const gap = placeable.document.getFlag("levels-3d-preview", "gap");
+          const tileScale = placeable.document.getFlag("levels-3d-preview", "tileScale");
+          const isTiled = placeable.document.getFlag("levels-3d-preview", "fillType") === "tile";
+          const newWidth = isTiled ? (width+gridS)-(width+gridS)%gridS : width*multi;
+          const newHeight = isTiled ? (height+gridS)-(height+gridS)%gridS : height*multi;
           const update = {
             _id: placeable.id,
-            width: newWidth,
-            height: newHeight,
-            x: placeable.data.x - (newWidth - width)/2,
-            y: placeable.data.y - (newHeight - height)/2
+            width: this.scaleHeight ? width : newWidth,
+            height: this.scaleWidth ? height : newHeight,
+            x: isTiled ? placeable.data.x : placeable.data.x - (newWidth - width)/2,
+            y: isTiled ? placeable.data.y : placeable.data.y - (newHeight - height)/2,
+            flags: {
+              "levels-3d-preview": {
+                gap: this.scaleGap ? gap+(gridS/factor)/5 : gap,
+                tileScale: this.scaleScale ? tileScale*multi : tileScale
+              }
+            }
+          }
+          if(!this.scale && !this.scaleHeight && !this.scaleWidth){
+            update.width = width;
+            update.height = height;
+            update.x = placeable.data.x;
+            update.y = placeable.data.y;
           }
           updates.push(update);
         }
@@ -494,5 +511,36 @@ export class InteractionManager {
       if(!entity.token || !game.triggers) return;
       const downTriggers = game.triggers._getTriggersFromTokens(game.triggers.triggers, [entity.token], "click");
       game.triggers._executeTriggers(downTriggers);
+    }
+    
+    showControlReference(){
+      const keybindings = ["scale", "scaleWidth", "scaleHeight", "scaleGap", "scaleScale", "toggleMode"]
+      const kbObj = {}
+      keybindings.forEach(key => {
+        kbObj[key] = game.keybindings.get("levels-3d-preview", key)[0];
+        kbObj[key].key = kbObj[key].key.replace("Key", "");
+      })
+    
+      let controlsReference = `
+    <h2>${game.i18n.localize(`levels3dpreview.tileEditor.controlsReference.title`)}</h2>
+    `
+    for(let [k,v] of Object.entries(kbObj)){
+      const mods = v.modifiers.join("+");
+      controlsReference += `<p><strong>${game.i18n.localize(`levels3dpreview.tileEditor.controlsReference.${k}`)}</strong>: ${mods + " + " + v.key}</p>`
+    }
+    
+    controlsReference += `<p>${game.i18n.localize(`levels3dpreview.tileEditor.controlsReference.wheel`)}</p>`
+    
+    ChatMessage.create({
+      content: controlsReference,
+      whisper: [game.user.id],
+      flavor: game.i18n.localize(`levels3dpreview.tileEditor.controlsReference.title`),
+      flags: {
+        core: {
+          canPopout: true
+        }
+      }
+    })
+    
     }
 }

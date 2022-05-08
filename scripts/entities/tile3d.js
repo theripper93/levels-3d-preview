@@ -10,6 +10,8 @@ export class Tile3D {
     constructor(tile,parent){
         this.tile = tile;
         this._parent = parent;
+        this._randomIndex = 0;
+        this._randomSeed = this.tile.id;
         this.isOverhead = this.tile.data.overhead;
         this.draggable = true;
         this.embeddedName = "Tile"
@@ -39,7 +41,15 @@ export class Tile3D {
         }
     }
 
-    getFlags(){
+    get pseudoRandom(){
+        this._randomIndex = (this._randomIndex + 1) % this._randomSeed.length;
+        let randomNumber;
+        let charAt = this._randomSeed[this._randomIndex].charCodeAt();
+        randomNumber = charAt/100;
+        return randomNumber;
+    }
+
+    async getFlags(){
         this.gtflPath = this.tile.document.getFlag("levels-3d-preview", "model3d");
         this.enableAnim = this.tile.document.getFlag("levels-3d-preview", "enableAnim") ?? true;
         this.animIndex = this.tile.document.getFlag("levels-3d-preview", "animIndex") ?? 0;
@@ -50,6 +60,9 @@ export class Tile3D {
         this.scale= this.tile.document.getFlag("levels-3d-preview", "tileScale") ?? 1;
         this.yScale = this.tile.document.getFlag("levels-3d-preview", "yScale") ?? 1;
         this.randomRotation = this.tile.document.getFlag("levels-3d-preview", "randomRotation") ?? false;
+        this.randomScale = this.tile.document.getFlag("levels-3d-preview", "randomScale") ?? false;
+        this.randomDepth = this.tile.document.getFlag("levels-3d-preview", "randomDepth") ?? false;
+        this.gap = this.tile.document.getFlag("levels-3d-preview", "gap") ?? 0;
     }
 
     async init(){
@@ -76,6 +89,7 @@ export class Tile3D {
         this.mesh.userData.hitbox = this.mesh
         this.mesh.userData.interactive = true;
         this.mesh.userData.entity3D = this;
+        if(this._destroyed) return;
         this._parent.scene.add(this.mesh);
         this.initBoundingBox();
     }
@@ -92,7 +106,7 @@ export class Tile3D {
         if(stretch){
             const yScale = this.width > this.height ? this.width/mDepth : this.height/mDepth;
             const scaleFit = Math.max(this.width/mWidth, this.height/mHeight);
-            object.scale.set(this.width/mWidth,yScale,this.height/mHeight);
+            object.scale.set(this.scale*this.width/mWidth,yScale*this.yScale*this.scale,this.scale*this.height/mHeight);
         }else{
             const largest = Math.max(mWidth, mHeight, mDepth);
             let scale = 1;
@@ -103,7 +117,7 @@ export class Tile3D {
             }else{
                 scale = (Math.min(this.width, this.height))/mDepth;
             }
-            object.scale.set(scale,scale,scale);
+            object.scale.set(this.scale*scale,this.scale*scale,this.scale*scale);
         }
 
         const color = new THREE.Color(this.color);
@@ -134,6 +148,7 @@ export class Tile3D {
         container.userData.interactive = true;
         container.userData.entity3D = this;
         this.mesh.userData.draggable = true;
+        if(this._destroyed) return;
         this._parent.scene.add(container);
         this.initBoundingBox();
     }
@@ -143,19 +158,23 @@ export class Tile3D {
         const texture = this.imageTexture ? await this._parent.helpers.loadTexture(this.imageTexture) : null;
         const object = model.scene;
         const box = new THREE.Box3().setFromObject(object);
+        const gap = this.gap*canvas.grid.size/factor;
+        const grid = (canvas.grid.size * this.scale)/factor+gap;
         const mWidth = box.max.x - box.min.x;
         const mHeight = box.max.z - box.min.z;
         const mDepth = box.max.y - box.min.y;
-        const grid = (canvas.grid.size * this.scale)/factor;
-        const rows = Math.round(this.height/grid) || 1;
-        const cols = Math.round(this.width/grid) || 1;
+        const rows = Math.round((this.height+gap/2)/grid) || 1;
+        const cols = Math.round((this.width+gap/2)/grid) || 1;
         const count = rows*cols;
-
+        const realWidth = grid*cols;
+        const realHeight = grid*rows;
+        this.realHeight = realHeight;
+        this.realWidth = realWidth;
         const container = new THREE.Group();
-        const gridX = this.width/cols;
-        const gridZ = this.height/rows;
+        const gridX = realWidth/cols;
+        const gridZ = realHeight/rows;
         const max = Math.max(mWidth, mHeight);
-        const scaleFit = grid/max;
+        const scaleFit = this.scale*(grid-gap)/max;
         const color = new THREE.Color(this.color);
         const dummy = new THREE.Object3D();
         object.traverse((child) => {
@@ -180,12 +199,14 @@ export class Tile3D {
     
             for(let z = 0; z < rows; z++){
                 for(let x = 0; x < cols; x++){
-                    const offsetx = (mWidth*scaleFit-gridX)/2;
-                    const offsetz = (mHeight*scaleFit-gridZ)/2;
+                    const offsetx = -gap/2//gap//(mWidth*scaleFit-gridX)/2;
+                    const offsetz = -gap/2//gap//(mHeight*scaleFit-gridZ)/2;
                     dummy.matrix.set(child.matrix);
-                    const randomRotation = this.randomRotation ? Math.ceil(Math.random()*3)*Math.PI/2 : 0;
+                    const randomRotation = this.randomRotation ? Math.ceil(this.pseudoRandom*3)*Math.PI/2 : 0;
+                    const randomDepth = this.randomDepth ? this.pseudoRandom : 1;
+                    const randomScale = this.randomScale ? this.pseudoRandom : 1;
                     dummy.position.set(child.position.x+x*gridX+offsetx,child.position.y,child.position.z+z*gridZ+offsetz);
-                    dummy.scale.set(child.scale.x*scaleFit,child.scale.y*scaleFit*this.yScale,child.scale.z*scaleFit);
+                    dummy.scale.set(randomScale*child.scale.x*scaleFit,randomDepth*randomScale*child.scale.y*scaleFit*this.yScale,randomScale*child.scale.z*scaleFit);
                     dummy.rotation.set(child.rotation.x,child.rotation.y+randomRotation,child.rotation.z);
 
                     dummy.updateMatrix();
@@ -208,6 +229,7 @@ export class Tile3D {
         container.userData.hitbox = container;
         container.userData.interactive = true;
         container.userData.entity3D = this;
+        if(this._destroyed) return;
         this._parent.scene.add(container);
 
         this.initBoundingBox(mDepth*scaleFit);
@@ -304,6 +326,8 @@ export class Tile3D {
       }
 
     destroy(){
+        this._destroyed = true;
+        if(!this.mesh) return;
         this._parent.scene.remove(this.mesh);
         this.mesh.traverse((child) => {
             if (child.isMesh) {

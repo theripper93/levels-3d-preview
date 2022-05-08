@@ -46,7 +46,7 @@ export class Wall3D {
     async init(){
         const geometry = new THREE.BoxGeometry(
             this.depth,
-            this.vec1.y - this.vec2.y,
+            (this.vec1.y - this.vec2.y)-0.001,
             this.distance
         )
         let uvAttribute = geometry.attributes.uv;

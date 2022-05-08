@@ -22,7 +22,13 @@
             "cameraToToken": "Focus Camera on Selected Token",
             "freeMode": "Free Placement mode",
             "pingcamera": "Ping and move Camera to Current view for all Clients",
-            "ping": "Ping current mouse position location for all Clients"
+            "ping": "Ping current mouse position location for all Clients",
+            "scaleWidth": "Tile Editor: Scale Width",
+            "scaleHeight": "Tile Editor: Scale Height",
+            "scaleGap": "Tile Editor: Scale Gap",
+            "scale": "Tile Editor: Scale",
+            "scaleScale": "Tile Editor: Scale Tile Scale",
+            "toggleMode": "Tile Editor: Cycle Fill Style"
         },
         "flags": {
             "isFog":{
@@ -254,6 +260,9 @@
             },
             "tileScale": {
                 "label": "Tile Scale"
+            },
+            "gap": {
+                "label": "Gap"
             },
             "randomRotation": {
                 "label": "Randomize Rotation"
@@ -615,6 +624,18 @@
             "ok": "Dismiss",
             "dontshowagain": "Don't show again",
             "opencompendium": "Getting Started"
+        },
+        "tileEditor": {
+            "controlsReference": {
+                "title": "3D Canvas Tile Editor Controls",
+                "scale": "Scale",
+                "scaleWidth": "Width",
+                "scaleHeight": "Height",
+                "scaleGap": "Gap",
+                "scaleScale": "Tile Scale",
+                "toggleMode": "Fill Mode",
+                "wheel": "Mouse Wheel to Increase/Decrease Values"
+            }
         },
         "units":{
             "ms": "Milliseconds",
