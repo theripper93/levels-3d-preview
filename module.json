@@ -30,7 +30,7 @@
     "./scripts/lib/ConvexGeometry.js",
     "./scripts/lib/ConvexHull.js",
     "./scripts/lib/GLTFLoader.js",
-    "./scripts/lib/marsenneTwister.js",
+    "./scripts/lib/mersenneTwister.js",
     "./scripts/entities/token3d.js",
     "./scripts/entities/ruler3d.js",
     "./scripts/entities/light3d.js",

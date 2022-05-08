@@ -363,6 +363,11 @@ Hooks.on("renderSceneConfig", (app,html)=>{
             type: "checkbox",
             label: game.i18n.localize("levels3dpreview.flags.mirrorLevels.label"),
             default: false,
+        },
+        "object3dSight": {
+            type: "checkbox",
+            label: game.i18n.localize("levels3dpreview.flags.object3dSight.label"),
+            default: false,
         }
     }
 
@@ -604,6 +609,11 @@ Hooks.on("renderTileConfig", (app,html)=>{
             label: game.i18n.localize("levels3dpreview.flags.yScale.label"),
             default: 1,
             step: 0.000001,
+        },
+        "collision": {
+            type: "checkbox",
+            label: game.i18n.localize("levels3dpreview.flags.tcollision.label"),
+            default: true,
         },
         "header1": {
             type: "custom",

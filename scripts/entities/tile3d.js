@@ -1,5 +1,5 @@
 import * as THREE from "../lib/three.module.js";
-import { MersenneTwister } from "../lib/marsenneTwister.js";
+import { MersenneTwister } from "../lib/mersenneTwister.js";
 import { Ruler3D } from "./ruler3d.js";
 import {factor} from '../main.js'; 
 import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from '../lib/three-mesh-bvh.js';
@@ -71,6 +71,7 @@ export class Tile3D {
         this.gap = this.tile.document.getFlag("levels-3d-preview", "gap") ?? 0;
         this.randomSeed = this.tile.document.getFlag("levels-3d-preview", "randomSeed") || this.tile.id;
         this.randomSeed = this.randomSeed.substring(0,7);
+        this.collision = this.tile.document.getFlag("levels-3d-preview", "collision") ?? true;
     }
 
     async init(){
@@ -185,8 +186,8 @@ export class Tile3D {
         const scaleFit = this.scale*(grid-gap)/max;
         const color = new THREE.Color(this.color);
         const dummy = new THREE.Object3D();
-        const maxZ = rows*gridZ
-        const maxX = cols*gridX
+        const maxZ = rows*gridZ-mHeight*scaleFit*1.5;
+        const maxX = cols*gridX-mWidth*scaleFit*1.5;
         let randomData = [];
 
         for(let i = 0; i < count; i++){

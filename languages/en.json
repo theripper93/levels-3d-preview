@@ -142,6 +142,9 @@
             "mirrorLevels": {
                 "label": "Mirror Levels Tile Visibility"
             },
+            "object3dSight": {
+                "label": "Use 3D Geometry for sight calculations"
+            },
             "model3d" : {
                 "label": "3D Model"
             },
@@ -299,6 +302,9 @@
             },
             "stretchTex": {
                 "label": "Stretch Texture"
+            },
+            "tcollision": {
+                "label": "Block Sight/Movement"
             },
             "enableCollision": {
                 "label": "Enable Collision",

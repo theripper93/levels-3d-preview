@@ -12,6 +12,9 @@ export class InteractionManager {
         this._parent = levels3dPreview;
         this.raycaster = new THREE.Raycaster();
         this.raycaster.firstHitOnly = true;
+        this.sightRaycaster = new THREE.Raycaster();
+        this.sightRaycaster.firstHitOnly = true;
+        this._sightCollisions = [];
         this.mouse = new THREE.Vector2();
         this.mousemove = new THREE.Vector2();
         this.controls = levels3dPreview.controls;
@@ -37,6 +40,37 @@ export class InteractionManager {
         x: (this._currentMousePosition.x ?? 0) * factor,
         y: (this._currentMousePosition.y ?? 0) * factor
       }
+    }
+
+    generateSightCollisions(){
+      const collisionObjects = [];
+      for(let tile of Object.values(this._parent.tiles)){
+        if(!tile.collision) continue;
+        if(tile.mesh.visible)collisionObjects.push(tile.mesh);
+      }
+      for(let wall of Object.values(this._parent.walls)){
+        if(wall.placeable.isDoor && wall.placeable.data.ds === CONST.WALL_DOOR_STATES.OPEN) continue;
+        if(!wall.mesh.visible) continue;
+        collisionObjects.push(wall.mesh);
+      }
+      const board = this._parent.board;
+      if(board) collisionObjects.push(board);
+      const table = this._parent.table;
+      if(table) collisionObjects.push(table);
+      this._sightCollisions = collisionObjects;
+    }
+
+    computeSightCollision(v1,v2){
+      const origin = Ruler3D.posCanvasTo3d(v1);
+      const target = Ruler3D.posCanvasTo3d(v2);
+      const direction = target.sub(origin).normalize();
+      const distance = origin.distanceTo(target);
+      this.sightRaycaster.set(origin, direction);
+      const collisions = this.sightRaycaster.intersectObjects(this._sightCollisions, true);
+      if(!collisions.length) return false;
+      const collision = collisions[0];
+      if(collision.distance > distance) return false;
+      return collision.point;
     }
 
     activateListeners() {
@@ -381,6 +415,7 @@ export class InteractionManager {
       const collisionObjects = Object.values(this._parent.tokens).filter(t => t.collisionPlane && t.token.id != draggableId).map(t => t.model);
       let collisionGeometries = collisionObjects;
       for(let tile of Object.values(this._parent.tiles)){
+        if(!tile.collision && draggableId) continue;
         if(this.draggable?.userData?.entity3D?.tile?.id === tile.tile.id) continue;
         if(tile.mesh.visible)collisionGeometries.push(tile.mesh);
       }
@@ -544,3 +579,9 @@ export class InteractionManager {
     
     }
 }
+
+Hooks.on("sightRefresh", () => {
+  if(game.Levels3DPreview?._active){
+    game.Levels3DPreview?.interactionManager?.generateSightCollisions();
+  }
+})
