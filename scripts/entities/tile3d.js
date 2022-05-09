@@ -71,6 +71,7 @@ export class Tile3D {
         this.gap = this.tile.document.getFlag("levels-3d-preview", "gap") ?? 0;
         this.randomSeed = this.tile.document.getFlag("levels-3d-preview", "randomSeed") || this.tile.id;
         this.randomSeed = this.randomSeed.substring(0,7);
+        this.randomColor = this.tile.document.getFlag("levels-3d-preview", "randomColor") ?? false;
         this.collision = this.tile.document.getFlag("levels-3d-preview", "collision") ?? true;
         this.tiltX = this.tile.document.getFlag("levels-3d-preview", "tiltX") ?? 0;
         this.tiltX = Math.toRadians(this.tiltX);
@@ -112,7 +113,7 @@ export class Tile3D {
         const stretch = this.fillType === "stretch";
         const model = await this.getModel();
         const texture = this.imageTexture ? await this._parent.helpers.loadTexture(this.imageTexture) : null;
-        const object = model.scene;
+        const object = game.Levels3DPreview.helpers.groundModel(model.scene);
         const box = new THREE.Box3().setFromObject(object);
         const mWidth = box.max.x - box.min.x;
         const mHeight = box.max.z - box.min.z;
@@ -170,7 +171,7 @@ export class Tile3D {
     async initInstanced(){
         const model = await this.getModel();
         const texture = this.imageTexture ? await this._parent.helpers.loadTexture(this.imageTexture) : null;
-        const object = model.scene;
+        const object = game.Levels3DPreview.helpers.groundModel(model.scene);
         const box = new THREE.Box3().setFromObject(object);
         const gap = this.gap*canvas.grid.size/factor;
         const grid = (canvas.grid.size * this.scale)/factor+gap;
@@ -189,6 +190,7 @@ export class Tile3D {
         const gridZ = realHeight/rows;
         const max = Math.max(mWidth, mHeight);
         const scaleFit = this.scale*(grid-gap)/max;
+        this.scaleFit = scaleFit;
         const color = new THREE.Color(this.color);
         const dummy = new THREE.Object3D();
         const maxZ = rows*gridZ-mHeight*scaleFit*1.5;
@@ -201,12 +203,12 @@ export class Tile3D {
             const randomZ = this.randomPosition ? this.pseudoRandom*maxZ : 0;
             const offsetx = -gap/2+randomX//gap//(mWidth*scaleFit-gridX)/2;
             const offsetz = -gap/2+randomZ//gap//(mHeight*scaleFit-gridZ)/2;
-            
+            const randomColor = this.randomColor ? this.pseudoRandom : 0;
             const randomRotation = this.randomRotation ? this.pseudoRandom*Math.PI*2 : 0;
             const randomDepth = this.randomDepth ? this.pseudoRandom : 1;
             const randomScale = this.randomScale ? this.pseudoRandom : 1;
             ///////////////////////////////////////////////////////////
-            const randomFrag = { randomX, randomZ, randomRotation, randomDepth, randomScale, offsetx, offsetz };
+            const randomFrag = { randomColor, randomRotation, randomDepth, randomScale, offsetx, offsetz };
             randomData.push(randomFrag);
         }
 
@@ -232,22 +234,32 @@ export class Tile3D {
 
 
 
+
             let i = 0;
     
             for(let z = 0; z < rows; z++){
                 for(let x = 0; x < cols; x++){
-                    const { randomX, randomZ, randomRotation, randomDepth, randomScale, offsetx, offsetz } = randomData[i];
+                    const { randomColor , randomRotation, randomDepth, randomScale, offsetx, offsetz } = randomData[i];
                     dummy.matrix.set(child.matrix);
-                    dummy.position.set((child.position.x+x*gridX+offsetx)%maxX,child.position.y,(child.position.z+z*gridZ+offsetz)%maxZ);
+                    dummy.position.set((child.position.x+x*gridX+offsetx)%maxX,child.position.y*scaleFit*this.yScale,(child.position.z+z*gridZ+offsetz)%maxZ);
                     dummy.scale.set(randomScale*child.scale.x*scaleFit,randomDepth*randomScale*child.scale.y*scaleFit*this.yScale,randomScale*child.scale.z*scaleFit);
                     dummy.rotation.set(child.rotation.x,child.rotation.y+randomRotation,child.rotation.z);
-
                     dummy.updateMatrix();
-                    instancedMesh.setMatrixAt(i++, dummy.matrix);
+                    if(this.randomColor){
+                        const originalColor = child.material.color;
+                        const color = new THREE.Color(originalColor.r,originalColor.g,originalColor.b);
+                        const hsl = color.getHSL({});
+                        hsl.l/=randomColor;
+                        color.setHSL(hsl.h,hsl.s,hsl.l);
+                        instancedMesh.setColorAt(i, color);
+                    }
+                    instancedMesh.setMatrixAt(i, dummy.matrix);
+                    i++;
                 }
             }
     
             instancedMesh.instanceMatrix.needsUpdate = true;
+            if(this.randomColor) instancedMesh.instanceColor.needsUpdate = true;
             instancedMesh.position.set(-this.width/2+gridX/2,0,-this.height/2+gridZ/2);
             instancedMesh.geometry.computeBoundsTree();
             container.add(instancedMesh);
@@ -260,6 +272,7 @@ export class Tile3D {
             if (child.isMesh) {
               child.castShadow = true;
               child.receiveShadow = true;
+              child.geometry.computeBoundsTree();
             }
         })
         container.position.set(this.center.x,this.center.y,this.center.z);
@@ -290,7 +303,7 @@ export class Tile3D {
         if(this.fillType === "tile"){
             //const sizeBox = new THREE.Box3().setFromObject(obj);
             const v1 = new THREE.Vector3(0,0,0);
-            const v2 = new THREE.Vector3(this.width,depth,this.height);
+            const v2 = new THREE.Vector3(this.width,depth*this.scaleFit*this.yScale,this.height);
             box = new THREE.Box3(v1,v2);
         }else{
             box = new THREE.Box3().setFromObject(this.mesh);

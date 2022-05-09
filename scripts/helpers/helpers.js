@@ -154,6 +154,17 @@ export class Helpers {
       : await this.loadTexture(path);
   }
 
+  groundModel(object){
+    const box = new THREE.Box3().setFromObject(object);
+    const minY = box.min.y;
+    object.traverse((child) => {
+      if (child.isMesh) {
+        child.position.y -= minY;
+      }
+    })
+    return object;
+  }
+
   isPBR(path) {
     if (!path) return false;
     const tTypes = [

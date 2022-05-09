@@ -210,6 +210,7 @@ class Levels3DPreview {
     }else{
       this.particleSystem = new ParticleSystem(this);
     }
+    this.object3dSight = canvas.scene.getFlag("levels-3d-preview", "object3dSight") ?? false;
     this.mirrorLevelsVisibility = canvas.scene.getFlag("levels-3d-preview", "mirrorLevels") ?? false;
     this.debugMode = game.settings.get("levels-3d-preview", "debugMode")
     this.level = Infinity//this.isLevels ? parseFloat($(_levels.UI?.element)?.find(".level-item.active").find(".level-bottom").val()) ?? Infinity : Infinity;

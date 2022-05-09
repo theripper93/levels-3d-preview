@@ -46,24 +46,24 @@ export class InteractionManager {
       const collisionObjects = [];
       for(let tile of Object.values(this._parent.tiles)){
         if(!tile.collision) continue;
-        if(tile.mesh?.visible)collisionObjects.push(tile.mesh);
+        if(tile.mesh?.visible) collisionObjects.push(tile.mesh);
       }
       for(let wall of Object.values(this._parent.walls)){
         if(wall.placeable.isDoor && wall.placeable.data.ds === CONST.WALL_DOOR_STATES.OPEN) continue;
         if(!wall.mesh?.visible) continue;
         collisionObjects.push(wall.mesh);
       }
-      const board = this._parent.board;
+      /*const board = this._parent.board;
       if(board) collisionObjects.push(board);
       const table = this._parent.table;
-      if(table) collisionObjects.push(table);
+      if(table) collisionObjects.push(table);*/
       this._sightCollisions = collisionObjects;
     }
 
     computeSightCollision(v1,v2){
       const origin = Ruler3D.posCanvasTo3d(v1);
       const target = Ruler3D.posCanvasTo3d(v2);
-      const direction = target.sub(origin).normalize();
+      const direction = target.clone().sub(origin).normalize();
       const distance = origin.distanceTo(target);
       this.sightRaycaster.set(origin, direction);
       const collisions = this.sightRaycaster.intersectObjects(this._sightCollisions, true);
@@ -286,11 +286,11 @@ export class InteractionManager {
         for(let placeable of canvas.activeLayer.controlled){
           const width = placeable.data.width;
           const height = placeable.data.height;
-          const gap = placeable.document.getFlag("levels-3d-preview", "gap");
-          const tileScale = placeable.document.getFlag("levels-3d-preview", "tileScale");
+          const gap = placeable.document.getFlag("levels-3d-preview", "gap") ?? 0;
+          const tileScale = placeable.document.getFlag("levels-3d-preview", "tileScale") ?? 1;
           const isTiled = placeable.document.getFlag("levels-3d-preview", "fillType") === "tile";
-          const tiltX = placeable.document.getFlag("levels-3d-preview", "tiltX");
-          const tiltZ = placeable.document.getFlag("levels-3d-preview", "tiltZ");
+          const tiltX = placeable.document.getFlag("levels-3d-preview", "tiltX") ?? 0;
+          const tiltZ = placeable.document.getFlag("levels-3d-preview", "tiltZ") ?? 0;
           const newWidth = isTiled ? (width+gridS)-(width+gridS)%gridS : width*multi;
           const newHeight = isTiled ? (height+gridS)-(height+gridS)%gridS : height*multi;
           const newTiltX = tiltX+delta;
@@ -304,7 +304,7 @@ export class InteractionManager {
             flags: {
               "levels-3d-preview": {
                 gap: this.scaleGap ? gap+(gridS/factor)/5 : gap,
-                tileScale: this.scaleScale ? tileScale*multi : tileScale,
+                tileScale: Math.max(0.00001, this.scaleScale ? tileScale*multi : tileScale),
                 tiltX: this.tiltX ? newTiltX : tiltX,
                 tiltZ: this.tiltZ ? newTiltZ : tiltZ
               }
@@ -588,7 +588,7 @@ export class InteractionManager {
 }
 
 Hooks.on("sightRefresh", () => {
-  if(game.Levels3DPreview?._active){
+  if(game.Levels3DPreview?._active && game.Levels3DPreview?.object3dSight){
     game.Levels3DPreview?.interactionManager?.generateSightCollisions();
   }
 })

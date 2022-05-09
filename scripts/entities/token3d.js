@@ -376,7 +376,22 @@ export class Token3D {
       if ( !game.user.isGM ) {
         if(game.paused) return false;
         const center = canvas.grid.getCenter(x,y);
-        let collides = this.token.checkCollision({x:center[0], y:center[1]});
+        const geometryCollisions = game.Levels3DPreview?.object3dSight;
+        let collides;
+        if(geometryCollisions){
+          const tokenHeight = this.token.losHeight - this.token.data.elevation;
+          collides = _levels.testCollision({
+            x: this.token.center.x,
+            y: this.token.center.y,
+            z: this.token.losHeight,
+          },{
+            x: dest.x,
+            y: dest.y,
+            z: dest.elevation+tokenHeight,
+          }, "collision")
+        }else{
+          collides = this.token.checkCollision({x:center[0], y:center[1]});
+        }
         if ( collides ) {
           ui.notifications.error("ERROR.TokenCollide", {localize: true});
           return false
