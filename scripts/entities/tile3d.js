@@ -72,6 +72,11 @@ export class Tile3D {
         this.randomSeed = this.tile.document.getFlag("levels-3d-preview", "randomSeed") || this.tile.id;
         this.randomSeed = this.randomSeed.substring(0,7);
         this.collision = this.tile.document.getFlag("levels-3d-preview", "collision") ?? true;
+        this.tiltX = this.tile.document.getFlag("levels-3d-preview", "tiltX") ?? 0;
+        this.tiltX = Math.toRadians(this.tiltX);
+        this.tiltZ = this.tile.document.getFlag("levels-3d-preview", "tiltZ") ?? 0;
+        this.tiltZ = Math.toRadians(this.tiltZ);
+
     }
 
     async init(){
@@ -126,7 +131,7 @@ export class Tile3D {
             }else{
                 scale = (Math.min(this.width, this.height))/mDepth;
             }
-            object.scale.set(this.scale*scale,this.scale*scale,this.scale*scale);
+            object.scale.set(this.scale*scale,this.yScale*this.scale*scale,this.scale*scale);
         }
 
         const color = new THREE.Color(this.color);
@@ -152,7 +157,7 @@ export class Tile3D {
         container.add(object);
         object.position.set(0,0,0);
         container.position.set(this.center.x,this.center.y,this.center.z);
-        container.rotation.set(0,-this.angle*this.rotSign,0);
+        container.rotation.set(this.tiltX,-this.angle*this.rotSign,this.tiltZ);
         container.userData.hitbox = container;
         container.userData.interactive = true;
         container.userData.entity3D = this;
@@ -251,9 +256,14 @@ export class Tile3D {
         });
 
         this.mesh = container;
-
+        this.mesh.traverse((child) => {
+            if (child.isMesh) {
+              child.castShadow = true;
+              child.receiveShadow = true;
+            }
+        })
         container.position.set(this.center.x,this.center.y,this.center.z);
-        container.rotation.set(0,-this.angle*this.rotSign,0);
+        container.rotation.set(this.tiltX,-this.angle*this.rotSign,this.tiltZ);
         container.userData.hitbox = container;
         container.userData.interactive = true;
         container.userData.entity3D = this;

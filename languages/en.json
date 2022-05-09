@@ -28,7 +28,9 @@
             "scaleGap": "Tile Editor: Scale Gap",
             "scale": "Tile Editor: Scale",
             "scaleScale": "Tile Editor: Scale Tile Scale",
-            "toggleMode": "Tile Editor: Cycle Fill Style"
+            "toggleMode": "Tile Editor: Cycle Fill Style",
+            "tiltX": "Tile Editor: Tilt X",
+            "tiltY": "Tile Editor: Tilt Y"
         },
         "flags": {
             "isFog":{
@@ -267,8 +269,17 @@
             "gap": {
                 "label": "Gap"
             },
+            "tiltX": {
+                "label": "Tilt X"
+            },
+            "tiltZ": {
+                "label": "Tilt Y"
+            },
             "randomRotation": {
                 "label": "Randomize Rotation"
+            },
+            "randomColor": {
+                "label": "Randomize Color"
             },
             "randomDepth": {
                 "label": "Randomize Depth"
@@ -649,6 +660,8 @@
                 "scale": "Scale",
                 "scaleWidth": "Width",
                 "scaleHeight": "Height",
+                "tiltX": "Tilt X",
+                "tiltZ": "Tilt Y",
                 "scaleGap": "Gap",
                 "scaleScale": "Tile Scale",
                 "toggleMode": "Fill Mode",

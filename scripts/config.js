@@ -198,7 +198,7 @@ Hooks.on("renderSceneConfig", (app,html)=>{
             type: "number",
             label: game.i18n.localize("levels3dpreview.flags.shadowBias.label"),
             notes: game.i18n.localize("levels3dpreview.flags.shadowBias.notes"),
-            default: -0.035,
+            default: -0.00001,
             step: 0.000001,
         },
         "header4": {
@@ -604,6 +604,18 @@ Hooks.on("renderTileConfig", (app,html)=>{
             max: 10,
             step: 0.1,
         },
+        "tiltX": {
+            type: "number",
+            label: game.i18n.localize("levels3dpreview.flags.tiltX.label"),  
+            default: 0,
+            step: 1,
+        },
+        "tiltZ": {
+            type: "number",
+            label: game.i18n.localize("levels3dpreview.flags.tiltZ.label"),
+            default: 0,
+            step: 1,
+        },
         "yScale": {
             type: "number",
             label: game.i18n.localize("levels3dpreview.flags.yScale.label"),
@@ -660,6 +672,11 @@ Hooks.on("renderTileConfig", (app,html)=>{
         "randomPosition": {
             type: "checkbox",
             label: game.i18n.localize("levels3dpreview.flags.randomPosition.label"),
+            default: false,
+        },
+        "randomColor": {
+            type: "checkbox",
+            label: game.i18n.localize("levels3dpreview.flags.randomColor.label"),
             default: false,
         },
         "randomSeed": {
@@ -959,6 +976,24 @@ Hooks.on("init", () => {
         ],
         onDown: () => {game.Levels3DPreview.interactionManager.scaleHeight = true},
         onUp: () => {game.Levels3DPreview.interactionManager.scaleHeight = false},
+    });
+
+    game.keybindings.register("levels-3d-preview", "tiltX", {
+        name: game.i18n.localize("levels3dpreview.keybindings.tilt"),
+        editable: [
+          {key: "KeyD", modifiers: [ CONTROL ]}
+        ],
+        onDown: () => {game.Levels3DPreview.interactionManager.tiltX = true},
+        onUp: () => {game.Levels3DPreview.interactionManager.tiltX = false},
+    });
+
+    game.keybindings.register("levels-3d-preview", "tiltZ", {
+        name: game.i18n.localize("levels3dpreview.keybindings.tilt"),
+        editable: [
+          {key: "KeyF", modifiers: [ CONTROL ]}
+        ],
+        onDown: () => {game.Levels3DPreview.interactionManager.tiltZ = true},
+        onUp: () => {game.Levels3DPreview.interactionManager.tiltZ = false},
     });
 
     game.keybindings.register("levels-3d-preview", "scaleGap", {

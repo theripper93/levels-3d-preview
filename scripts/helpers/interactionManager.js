@@ -46,11 +46,11 @@ export class InteractionManager {
       const collisionObjects = [];
       for(let tile of Object.values(this._parent.tiles)){
         if(!tile.collision) continue;
-        if(tile.mesh.visible)collisionObjects.push(tile.mesh);
+        if(tile.mesh?.visible)collisionObjects.push(tile.mesh);
       }
       for(let wall of Object.values(this._parent.walls)){
         if(wall.placeable.isDoor && wall.placeable.data.ds === CONST.WALL_DOOR_STATES.OPEN) continue;
-        if(!wall.mesh.visible) continue;
+        if(!wall.mesh?.visible) continue;
         collisionObjects.push(wall.mesh);
       }
       const board = this._parent.board;
@@ -150,7 +150,7 @@ export class InteractionManager {
           if(useSnapped){
             snapped = canvas.grid.getCenter(data.x,data.y)
           }
-          const size = canvas.grid.size;
+          const size = canvas.grid.size*(canvas.grid.size/data.tileSize);
           canvas.scene.createEmbeddedDocuments("Tile", [{
             x: (snapped ? snapped[0] : data.x) - size/2,
             y: (snapped ? snapped[1] : data.y) - size/2,
@@ -272,11 +272,11 @@ export class InteractionManager {
           entity3D.elevation3d = 0;
         }
       }
-      const isSpecialKey = this.scaleWidth || this.scaleHeight || this.scaleGap || this.scaleScale || this.scale;
+      const isSpecialKey = this.tiltX || this.tiltZ || this.scaleWidth || this.scaleHeight || this.scaleGap || this.scaleScale || this.scale;
+      const dBig = canvas.grid.type > CONST.GRID_TYPES.SQUARE ? 60 : 45;
+      let snap = event.shiftKey ? dBig : 15;
+      const delta = Math.sign(event.deltaY)*snap;
       if(!this.draggable && event.ctrlKey && !isSpecialKey && !event.altKey && canvas.activeLayer.controlled.length){
-        const dBig = canvas.grid.type > CONST.GRID_TYPES.SQUARE ? 60 : 45;
-        let snap = event.shiftKey ? dBig : 15;
-        const delta = Math.sign(event.deltaY)*snap;
         canvas.activeLayer.rotateMany({delta,snap});
       }
       if(!this.draggable && (isSpecialKey) && event.ctrlKey && canvas.activeLayer.controlled.length){
@@ -289,8 +289,12 @@ export class InteractionManager {
           const gap = placeable.document.getFlag("levels-3d-preview", "gap");
           const tileScale = placeable.document.getFlag("levels-3d-preview", "tileScale");
           const isTiled = placeable.document.getFlag("levels-3d-preview", "fillType") === "tile";
+          const tiltX = placeable.document.getFlag("levels-3d-preview", "tiltX");
+          const tiltZ = placeable.document.getFlag("levels-3d-preview", "tiltZ");
           const newWidth = isTiled ? (width+gridS)-(width+gridS)%gridS : width*multi;
           const newHeight = isTiled ? (height+gridS)-(height+gridS)%gridS : height*multi;
+          const newTiltX = tiltX+delta;
+          const newTiltZ = tiltZ+delta*(-1);
           const update = {
             _id: placeable.id,
             width: this.scaleHeight ? width : newWidth,
@@ -300,7 +304,9 @@ export class InteractionManager {
             flags: {
               "levels-3d-preview": {
                 gap: this.scaleGap ? gap+(gridS/factor)/5 : gap,
-                tileScale: this.scaleScale ? tileScale*multi : tileScale
+                tileScale: this.scaleScale ? tileScale*multi : tileScale,
+                tiltX: this.tiltX ? newTiltX : tiltX,
+                tiltZ: this.tiltZ ? newTiltZ : tiltZ
               }
             }
           }
@@ -521,6 +527,7 @@ export class InteractionManager {
       this.draggable = undefined;
       if(entity3D.token)Hooks.call("updateToken", entity3D.token.document, {x: entity3D.token.data.x});
       if(entity3D.template)Hooks.call("updateMeasuredTemplate", entity3D.template.document, {x: entity3D.template.data.x});
+      if(entity3D.tile) Hooks.call("updateTile", entity3D.tile.document, {x: entity3D.tile.data.x});
       this.controls.enableRotate = true;
       this.controls.enableZoom = true;
       setTimeout(() => {
@@ -549,7 +556,7 @@ export class InteractionManager {
     }
     
     showControlReference(){
-      const keybindings = ["scale", "scaleWidth", "scaleHeight", "scaleGap", "scaleScale", "toggleMode"]
+      const keybindings = ["scale", "scaleWidth", "scaleHeight", "tiltX", "tiltZ", "scaleGap", "scaleScale", "toggleMode"]
       const kbObj = {}
       keybindings.forEach(key => {
         kbObj[key] = game.keybindings.get("levels-3d-preview", key)[0];
