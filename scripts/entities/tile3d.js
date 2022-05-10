@@ -181,6 +181,7 @@ export class Tile3D {
         const rows = Math.round((this.height+gap/2)/grid) || 1;
         const cols = Math.round((this.width+gap/2)/grid) || 1;
         const count = (rows)*(cols);
+        this.count = count;
         const realWidth = grid*cols;
         const realHeight = grid*rows;
         this.realHeight = realHeight;

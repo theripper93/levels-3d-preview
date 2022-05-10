@@ -134,8 +134,8 @@ export class InteractionManager {
           levels: {
             rangeBottom: coord3d.z
           },
-          "levels-3d-preview": {
-            model3d: data.img
+          betterroofs: {
+            brMode: 2,
           }
         }
         if(data.type === "Actor"){
@@ -143,6 +143,9 @@ export class InteractionManager {
             token.data.update({elevation: Math.trunc(data.elevation*100)/100, flags: data.flags})
           })
           return canvas.tokens._onDropActorData(event, data);
+        }
+        data.flags["levels-3d-preview"] = {
+          model3d: data.img
         }
         if(data.type === "Tile"){
           const useSnapped = Ruler3D.useSnapped();
@@ -252,6 +255,7 @@ export class InteractionManager {
 
     _collisionFilter(object){
       if(object.userData.ignoreHover) return false;
+      if(canvas.activeLayer.options.objectClass.embeddedName !== "Tile" && object.userData?.entity3D?.embeddedName === "Tile" && !object.userData?.entity3D?.collision) return false
       if(!object.visible) return false;
       return true;
     }
@@ -382,6 +386,7 @@ export class InteractionManager {
       for(let child of this.scene.children){
         if(canvas.activeLayer.options.objectClass.embeddedName !== child.userData?.entity3D?.embeddedName && child.userData?.entity3D?.embeddedName !== "Wall" && child.userData?.entity3D?.embeddedName !== "Tile"  && child.userData?.entity3D?.embeddedName !== "Note") continue;
         if(!child.visible) continue;
+        if(canvas.activeLayer.options.objectClass.embeddedName !== "Tile" && child.userData?.entity3D?.embeddedName === "Tile" && !child.userData?.entity3D?.collision) continue;
         if(child.userData?.hitbox && child.userData.interactive) intersectTargets.push(child.userData.hitbox);
       }
       const intersects = this.raycaster.intersectObjects(intersectTargets,true);
