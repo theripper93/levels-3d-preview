@@ -66,6 +66,7 @@ export class Token3D {
       this.faceCameraOption = this.token.document.getFlag("levels-3d-preview", "faceCamera") ?? "0";
       this.stem = this.token.document.getFlag("levels-3d-preview", "stem") ?? false;
       this.standupFace = game.settings.get("levels-3d-preview", "standupFace");
+      this.wasFreeMode = this.token.document.getFlag("levels-3d-preview", "wasFreeMode") ?? false;
       if(this.faceCameraOption !== "0") this.standupFace = this.faceCameraOption == "1" ? true : false;
     }
   
@@ -410,6 +411,11 @@ export class Token3D {
           x: token.data.x + deltas.x,
           y: token.data.y + deltas.y,
           elevation: Math.round((token.data.elevation + deltas.elevation)*1000)/1000,
+          flags: {
+            "levels-3d-preview": {
+              wasFreeMode: this.wasFreeMode
+            }
+          }
         })
       }
       canvas.scene.updateEmbeddedDocuments("Token", updates)
@@ -865,8 +871,9 @@ export class Token3D {
 
   Hooks.on("updateToken", (token, updates) => {
     if(!game.Levels3DPreview._active) return;
+    const wasFreeUpdated = updates?.flags && updates?.flags["levels-3d-preview"] && updates?.flags["levels-3d-preview"].wasFreeMode !== undefined;
     if(
-      (updates?.flags && updates?.flags["levels-3d-preview"]) ||
+      (updates?.flags && updates?.flags["levels-3d-preview"] && !wasFreeUpdated) ||
       "light" in updates ||
       "width" in updates ||
       "height" in updates ||
