@@ -604,6 +604,11 @@ Hooks.on("renderTileConfig", (app,html)=>{
             max: 10,
             step: 0.1,
         },
+        "paused": {
+            type: "checkbox",
+            label: game.i18n.localize("levels3dpreview.flags.paused.label"),
+            default: false,
+        },
         "tiltX": {
             type: "number",
             label: game.i18n.localize("levels3dpreview.flags.tiltX.label"),  

@@ -352,7 +352,7 @@ export class InteractionManager {
         return this.toggleControls(true);
       }
       if(this.draggable) return this.cancelDrag();
-      else entity.isOwner && entity._onClickRight(event);
+      else (entity.isOwner || game.user.isGM) && entity._onClickRight(event);
       this.toggleControls(true);
     }
 

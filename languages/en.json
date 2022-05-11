@@ -215,6 +215,9 @@
             "animSpeed":{
                 "label": "Animation Speed"
             },
+            "paused": {
+                "label": "Paused"
+            },
             "faceCamera":{
                 "label": "Face Camera Mode",
                 "options": {

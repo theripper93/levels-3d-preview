@@ -551,14 +551,23 @@ class Levels3DPreview {
     }
   }
 
-  centerTokenHUD(){
-    const hud = canvas.hud.token;
-    if(!hud.object || !this._active) return;
-    const token3D = this.tokens[hud.object.id];
-    if(!token3D) return;
-    const center = token3D.mesh.position.clone();
-    center.y += token3D.hitbox.geometry.boundingBox.max.y;
-    Ruler3D.centerElement(hud.element, center);
+  centerHUD(){
+    if(!this._active) return;
+    let hud = canvas.hud.token;
+    if(hud.object){
+      const token3D = this.tokens[hud.object.id];
+      if(!token3D) return;
+      const center = token3D.mesh.position.clone();
+      center.y += token3D.hitbox.geometry.boundingBox.max.y;
+      Ruler3D.centerElement(hud.element, center);
+    }
+    hud = canvas.hud.tile;
+    if(hud.object){
+      const tile3D = this.tiles[hud.object.id];
+      if(!tile3D) return;
+      const center = tile3D.mesh.position.clone();
+      Ruler3D.centerElement(hud.element, center);
+    }
   }
 
   allignChatBubbles(){
@@ -595,7 +604,7 @@ class Levels3DPreview {
     });
     Object.values(_this.tiles).forEach((tile) => { 
       tile.updateVisibility();
-      if(tile.mixer){
+      if(tile.mixer && !tile.paused){
         tile.mixer.update(delta);
       }
      });
@@ -609,7 +618,7 @@ class Levels3DPreview {
     _this.particleSystem.update(delta);
     _this.checkInFog();
     _this.animateCamera(delta);
-    _this.centerTokenHUD();
+    _this.centerHUD();
     _this.allignChatBubbles();
     _this.resizeCanvasToDisplaySize(_this);
     _this.weather?.update(delta);

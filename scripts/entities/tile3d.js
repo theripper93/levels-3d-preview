@@ -12,6 +12,7 @@ export class Tile3D {
         this.tile = tile;
         this._parent = parent;
         this.isOverhead = this.tile.data.overhead;
+        this.isAnimated = false;
         this.draggable = true;
         this.embeddedName = "Tile"
         this.bottom = tile.data.flags.levels?.rangeBottom ?? 0;
@@ -52,6 +53,14 @@ export class Tile3D {
 
     get pseudoRandom(){
         return this.marsenne.random() + 0.5;
+    }
+
+    get paused(){
+        return (this.tile.data.flags && this.tile.data.flags["levels-3d-preview"]?.paused) ?? false
+    }
+
+    get scene(){
+        return this._parent.scene;
     }
 
     async getFlags(){
@@ -112,7 +121,7 @@ export class Tile3D {
     async initModel(){
         const stretch = this.fillType === "stretch";
         const model = await this.getModel();
-        const texture = this.imageTexture ? await this._parent.helpers.loadTexture(this.imageTexture) : null;
+        const {textureOrMat, isPBR} = await this.getTextureOrMat();
         const object = game.Levels3DPreview.helpers.groundModel(model.scene);
         const box = new THREE.Box3().setFromObject(object);
         const mWidth = box.max.x - box.min.x;
@@ -141,13 +150,15 @@ export class Tile3D {
               child.castShadow = true;
               child.receiveShadow = true;
               child.geometry.computeBoundsTree();
-              child.material.color.set(child.material.color.multiply(color));
-              if(texture) child.material.map = texture;
+              if(isPBR) child.material = textureOrMat;
+              if(this.color) child.material.color.set(child.material.color.multiply(color));
+              if(textureOrMat && !isPBR) child.material.map = textureOrMat;
             }
         });
 
         if(model.object.animations.length > 0 && this.enableAnim) {
-            this.mixer = new THREE.AnimationMixer( scene );
+            this.isAnimated = true;
+            this.mixer = new THREE.AnimationMixer( model.scene );
             this.mixer.timeScale = this.animSpeed;
             this.mixer.clipAction( model.object.animations[this.animIndex] ).play();
         }
@@ -170,7 +181,7 @@ export class Tile3D {
 
     async initInstanced(){
         const model = await this.getModel();
-        const texture = this.imageTexture ? await this._parent.helpers.loadTexture(this.imageTexture) : null;
+        const {textureOrMat, isPBR} = await this.getTextureOrMat();
         const object = game.Levels3DPreview.helpers.groundModel(model.scene);
         const box = new THREE.Box3().setFromObject(object);
         const gap = this.gap*canvas.grid.size/factor;
@@ -219,8 +230,9 @@ export class Tile3D {
               child.castShadow = true;
               child.receiveShadow = true;
               child.geometry.computeBoundsTree();
+              if(isPBR) child.material = textureOrMat;
               if(this.color) child.material.color.set(child.material.color.multiply(color));
-              if(texture) child.material.map = texture;
+              if(textureOrMat && !isPBR) child.material.map = textureOrMat;
  
               //generate instanceed
 
@@ -299,6 +311,16 @@ export class Tile3D {
         return new THREE.Mesh(new THREE.BoxGeometry(1,1,1), new THREE.MeshStandardMaterial({color: 0xff0000}));
     }
 
+    async getTextureOrMat(){
+        let textureOrMat = null;
+        let isPBR = null;
+        if(!this.imageTexture) return {textureOrMat, isPBR};
+        textureOrMat = await this._parent.helpers.autodetectTextureOrMaterial(this.imageTexture)
+        isPBR = this._parent.helpers.isPBR(this.imageTexture)
+        if(textureOrMat) return {textureOrMat, isPBR};
+        return {textureOrMat, isPBR};
+    }
+
     initBoundingBox(depth){
         let box;
         if(this.fillType === "tile"){
@@ -313,6 +335,7 @@ export class Tile3D {
         c.set(CONFIG.Canvas.dispositionColors.CONTROLLED);
         const cube = new THREE.Mesh(new THREE.BoxGeometry(box.max.x - box.min.x, box.max.y - box.min.y, box.max.z - box.min.z), new THREE.MeshBasicMaterial({color: c, wireframe: true}));
         cube.position.set(0, (box.max.y - box.min.y) / 2, 0);
+        cube.geometry.computeBoundingBox();
         this.controlledBox = cube;
     }
 
@@ -444,10 +467,18 @@ export class Tile3D {
     }
 }
 
-Hooks.on("updateTile", (tile) => {
-    if(game.Levels3DPreview?._active && tile.object){
+Hooks.on("updateTile", (tile, updates) => {
+    if(game.Levels3DPreview?._active && tile.object && !isAnimOnly(updates)){
         game.Levels3DPreview.tiles[tile.id]?.destroy();
         game.Levels3DPreview.createTile(tile.object);
+    }
+
+    function isAnimOnly(updates){
+        if(!updates.flags) return false;
+        if(!updates.flags["levels-3d-preview"]) return false;
+        if(Object.values(updates.flags["levels-3d-preview"]).length !== 1) return false;
+        if(updates.flags["levels-3d-preview"].paused !== undefined) return true;
+        return false;
     }
 })
 
@@ -474,3 +505,31 @@ Hooks.on("pasteTile", (copy, data) => {
     })
     }
   })
+
+Hooks.on("renderTileHUD", (hud) => {
+    if(!game.Levels3DPreview?._active) return;
+    const tile3d = game.Levels3DPreview.tiles[hud.object.id];
+    if(!tile3d?.isAnimated) return;
+
+    const images = {
+        pause: "fa-play",
+        play: "fa-pause",
+    }
+
+    const isPaused = tile3d.isPaused;
+
+    const controlButton = $(`
+    <div class="control-icon" data-action="play-pause-3d">
+        <i class="fas ${isPaused ? images.pause : images.play}" title="Overhead Tile"></i>
+    </div>
+    `)
+
+    controlButton.on("click", (e) => {
+        e.stopPropagation();
+        hud.object.document.setFlag("levels-3d-preview", "paused", !hud.object.document.getFlag("levels-3d-preview", "paused"));
+        controlButton.find("i").toggleClass(`${images.play} ${images.pause}`);
+    })
+
+    hud.element.find(`div[data-action="locked"]`).before(controlButton);
+
+})
