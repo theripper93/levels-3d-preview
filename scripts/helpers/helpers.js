@@ -143,6 +143,7 @@ export class Helpers {
         v.wrapT = THREE.RepeatWrapping;
       }
     }
+    if(textures.emissiveMap) textures.emissive = new THREE.Color(1, 1, 1);
     const material = new THREE.MeshStandardMaterial({ ...textures });
     this.materialCache[texturePath] = material;
     return material;

@@ -64,6 +64,7 @@ export class Token3D {
       this.colorizeIndicator = game.settings.get("levels-3d-preview", "colorizeInidcator");
       this.rotateIndicator = game.settings.get("levels-3d-preview", "rotateIndicator");
       this.faceCameraOption = this.token.document.getFlag("levels-3d-preview", "faceCamera") ?? "0";
+      this.stem = this.token.document.getFlag("levels-3d-preview", "stem") ?? false;
       this.standupFace = game.settings.get("levels-3d-preview", "standupFace");
       if(this.faceCameraOption !== "0") this.standupFace = this.faceCameraOption == "1" ? true : false;
     }
@@ -639,9 +640,28 @@ export class Token3D {
         }
       }
       this.border.add(mesh);
+      this.addStem(Math.min(width,height));
       if(indicatorMesh) this.border.add(indicatorMesh);
       if(highlightMesh)this.border.add(highlightMesh);
 
+    }
+
+    addStem(radius){
+      if(!this.isBase || !this.stem) return;
+      radius*=0.03;
+      const height = new THREE.Box3().setFromObject(this.model).min.y*2;
+      const stemMesh = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, height, 64), new THREE.MeshStandardMaterial({
+        color: this.color,
+        transparent: true,
+        opacity: 0.5,
+        roughness: 0,
+        metalness: 1,
+
+      }));
+      stemMesh.position.set(0,height/2,0);
+      stemMesh.castShadow = true;
+      stemMesh.receiveShadow = true;
+      this.border.add(stemMesh);
     }
 
     updateTargetTexture(){

@@ -328,6 +328,9 @@
                     "2": "On (From Sky)"
                 }
             },
+            "stem": {
+                "label": "Enable Stem"
+            },
             "collisionPlane": {
                 "label": "Collision Plane"
             },

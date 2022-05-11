@@ -467,7 +467,12 @@ Hooks.on("renderTokenConfig", (app,html)=>{
                 "ontop": game.i18n.localize("levels3dpreview.flags.solidBaseMode.options.ontop"),
             }
         },
-        "draggable": {
+        "stem": {
+            type: "checkbox",
+            label: game.i18n.localize("levels3dpreview.flags.stem.label"),
+            default: false,
+        },
+        /*"draggable": {
             type: "checkbox",
             label: game.i18n.localize("levels3dpreview.flags.draggable.label"),
             default: true,
@@ -481,7 +486,7 @@ Hooks.on("renderTokenConfig", (app,html)=>{
             type: "checkbox",
             label: game.i18n.localize("levels3dpreview.flags.alwaysVisible.label"),
             default: false,
-        },
+        },*/
         "enableAnim": {
             type: "checkbox",
             label: game.i18n.localize("levels3dpreview.flags.enableAnim.label"),
@@ -952,7 +957,10 @@ Hooks.on("init", () => {
           {key: "KeyF"}
         ],
         onDown: () => {game.Levels3DPreview.interactionManager.isFreeMode = true},
-        onUp: () => {game.Levels3DPreview.interactionManager.isFreeMode = false},
+        onUp: () => {
+            game.Levels3DPreview.interactionManager.isFreeMode = false
+            game.Levels3DPreview.interactionManager.forceFree = false
+        },
     });
 
     game.keybindings.register("levels-3d-preview", "scale", {

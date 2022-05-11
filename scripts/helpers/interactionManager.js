@@ -267,6 +267,9 @@ export class InteractionManager {
         const entity3D = this.draggable.userData.entity3D;
         if(entity3D.template){
           entity3D.onRotate(delta);
+        }else{
+          this.forceFree = true;
+          entity3D.wasFreeMode = true;
         }
         let elevationDiff = 5;
         if(event.shiftKey) elevationDiff = 1;
@@ -410,8 +413,10 @@ export class InteractionManager {
       const center = this._parent.canvasCenter;
       if(object){
         this.buildCollisionGeos();
+        this.forceFree = object.userData.entity3D.wasFreeMode
         this.dragplane.position.set(center.x, object.userData.entity3D.mesh.position.y, center.z);
       }else{
+        this.forceFree = false;
         this.dragplane.position.set(center.x, 0, center.z);
       }
       if(this.ruler && (canvas.scene.getFlag("levels-3d-preview", "enableRuler") ?? true)) this.ruler.object = object;
@@ -499,8 +504,8 @@ export class InteractionManager {
 
       const collisionGeometries = this._collisionGeometries;
       const target = this.draggable.userData.isHitbox ? this.draggable.parent : this.draggable;
-      const isFree = this.isFreeMode
-
+      const isFree = this.isFreeMode || this.forceFree
+      this.draggable.userData.entity3D.wasFreeMode = isFree;
       const center = this._parent.canvasCenter;
       if(this.draggable.userData.entity3D.mesh.position.y < 0){
       this.dragplane.position.set(center.x, this.draggable.userData.entity3D.mesh.position.y, center.z);
