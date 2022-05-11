@@ -86,6 +86,7 @@ export class Tile3D {
         this.tiltX = Math.toRadians(this.tiltX);
         this.tiltZ = this.tile.document.getFlag("levels-3d-preview", "tiltZ") ?? 0;
         this.tiltZ = Math.toRadians(this.tiltZ);
+        this.wasFreeMode = this.tile.document.getFlag("levels-3d-preview", "wasFreeMode") ?? false;
 
     }
 
@@ -390,6 +391,9 @@ export class Tile3D {
             x: tile.data.x + deltas.x,
             y: tile.data.y + deltas.y,
             flags: {
+                "levels-3d-preview": {
+                    wasFreeMode: this.wasFreeMode,
+                },
                 levels: {
                     rangeBottom: Math.round((tileFlags.rangeBottom + deltas.elevation)*1000)/1000
                 }
