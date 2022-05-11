@@ -597,8 +597,45 @@ export class InteractionManager {
     }
 }
 
-Hooks.on("sightRefresh", () => {
+Hooks.on("updateTile", () => {
   if(game.Levels3DPreview?._active && game.Levels3DPreview?.object3dSight){
     game.Levels3DPreview?.interactionManager?.generateSightCollisions();
+  }
+})
+
+Hooks.on("createTile", () => {
+  if(game.Levels3DPreview?._active && game.Levels3DPreview?.object3dSight){
+    game.Levels3DPreview?.interactionManager?.generateSightCollisions();
+  }
+})
+
+Hooks.on("deleteTile", () => {
+  if(game.Levels3DPreview?._active && game.Levels3DPreview?.object3dSight){
+    game.Levels3DPreview?.interactionManager?.generateSightCollisions();
+  }
+})
+
+Hooks.on("updateWall", () => {
+  if(game.Levels3DPreview?._active && game.Levels3DPreview?.object3dSight){
+    game.Levels3DPreview?.interactionManager?.generateSightCollisions();
+  }
+})
+
+Hooks.on("createWall", () => {
+  if(game.Levels3DPreview?._active && game.Levels3DPreview?.object3dSight){
+    game.Levels3DPreview?.interactionManager?.generateSightCollisions();
+  }
+})
+
+Hooks.on("deleteWall", () => {
+  if(game.Levels3DPreview?._active && game.Levels3DPreview?.object3dSight){
+    game.Levels3DPreview?.interactionManager?.generateSightCollisions();
+  }
+})
+
+Hooks.on("3DCanvasSceneReady", () => {
+  if(game.Levels3DPreview?._active && game.Levels3DPreview?.object3dSight){
+    game.Levels3DPreview?.interactionManager?.generateSightCollisions();
+    canvas.sight.refresh();
   }
 })

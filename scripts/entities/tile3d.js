@@ -35,11 +35,17 @@ export class Tile3D {
         this.rotSign = this.tile.data.width/Math.abs(this.tile.data.width)*this.tile.data.height/Math.abs(this.tile.data.height)
         this.getFlags();
         this.initRandom();
+
+    }
+
+    async load(){
         if(this.gtflPath){
-            this.fillType === "stretch" || this.fillType === "fit" ? this.initModel() : this.initInstanced();
+            this.fillType === "stretch" || this.fillType === "fit" ? await this.initModel() : await this.initInstanced();
         }else{
-            this.init();
+            await this.init();
         }
+        this._loaded = true;
+        return this;
     }
 
     initRandom(){
@@ -63,7 +69,7 @@ export class Tile3D {
         return this._parent.scene;
     }
 
-    async getFlags(){
+    getFlags(){
         this.gtflPath = this.tile.document.getFlag("levels-3d-preview", "model3d");
         this.enableAnim = this.tile.document.getFlag("levels-3d-preview", "enableAnim") ?? true;
         this.animIndex = this.tile.document.getFlag("levels-3d-preview", "animIndex") ?? 0;

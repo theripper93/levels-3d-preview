@@ -159,6 +159,7 @@ class Levels3DPreview {
     this.renderer.setClearColor(0x999999, 1);
     //composer
     this.composer = new EffectComposer( this.renderer );
+    this.composer.setPixelRatio(this.resolutionMulti);
     //set dom element id
     this.renderer.domElement.id = "levels3d";
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
@@ -390,7 +391,16 @@ class Levels3DPreview {
 
   createTile(tile){
     if(this.debugMode || canvas.scene.getFlag("levels-3d-preview", "showSceneFloors") === false) return;
-    this.tiles[tile.id] = new Tile3D(tile, this);
+    if(!this._ready){
+      this.loadingTiles[tile.id] = new Tile3D(tile, this);
+      this.loadingTiles[tile.id].load().then((tile3d) => {
+        this.tiles[tile.id] = this.loadingTiles[tile.id];
+      });
+    }else{
+      new Tile3D(tile, this).load().then((tile3d) => {
+        this.tiles[tile.id] = tile3d;
+      });
+    }
   }
 
   createWalls() {
@@ -531,6 +541,7 @@ class Levels3DPreview {
     }
     this.tokens = {};
     this.loadingTokens = {};
+    this.loadingTiles = {};
     this.walls = {};
     this.doors = {};
     this.lights.sceneLights = {};
@@ -740,12 +751,15 @@ class Levels3DPreview {
 
   _onProgress(){
     const tokenArray = Object.values(this.loadingTokens);
-    const total = tokenArray.length;
-    const loaded = tokenArray.filter(token => token._loaded).length;
+    const tileArray = Object.values(this.loadingTiles);
+    const total = tokenArray.length + tileArray.length;
+    const loaded = tokenArray.filter(token => token._loaded).length + tileArray.filter(tile => tile._loaded).length;
     let progress = total === 0 ? 100 : Math.round(loaded/total*100) ;
     if(total === loaded) {
       this._ready = true;
       this.loadingTokens = {};
+      this.loadingTiles = {};
+      Hooks.callAll("3DCanvasSceneReady", game.Levels3DPreview);
     }
     SceneNavigation.displayProgressBar({label: game.i18n.localize("levels3dpreview.controls.loading"), pct: progress});
   }
