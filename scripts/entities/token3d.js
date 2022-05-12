@@ -2,6 +2,7 @@ import * as THREE from "../lib/three.module.js";
 import {factor} from '../main.js'; 
 import {sleep} from '../main.js';
 import { Light3D } from "./light3d.js";
+import { TokenAnimationHandler } from "../helpers/tokenAnimationHandler.js";
 import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from '../lib/three-mesh-bvh.js';
 THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
 THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
@@ -27,6 +28,7 @@ export class Token3D {
       this._loaded = false;
       this.getFlags();
       this.drawBars = debounce(this.drawBars, 100);
+      this.animationHandler = new TokenAnimationHandler(this);
     }
   
     getFlags() {
@@ -78,6 +80,7 @@ export class Token3D {
       const token3d = this.gtflPath || this.imageTexture ? await this.loadModel() : this.draw();
       if(this.token.data.light.bright !== 0 || this.token.data.light.dim) this.loadLight();
       this._loaded = true;
+      this.animationHandler.init();
       return token3d;
     }
 //remove 
@@ -796,7 +799,7 @@ export class Token3D {
       this.proneHandler.proneInit = true;
       this.proneHandler.originalPosition = this.model.position.clone();
       this.proneHandler.originalRotation = this.model.rotation.clone();
-      if(this.gtflPath.includes("hawk")) debugger
+      this.proneHandler.originalScale = this.model.scale.clone();
       const offsetY = this.solidBaseMode === "ontop" ? 0 : 0.008;
       const box = new THREE.Box3().setFromObject(this.model)
       const center = box.getCenter(new THREE.Vector3());
@@ -873,6 +876,7 @@ export class Token3D {
     }
 
     updateProne(delta){
+      this.animationHandler.animate(delta);
       if(!this.proneHandler || !this.animateProne || !this.proneHandler.currentTarget) return;
       this.proneHandler.currentDelta += delta;
       this.model.position.lerp(this.proneHandler.currentTarget.position, this.proneHandler.currentDelta);

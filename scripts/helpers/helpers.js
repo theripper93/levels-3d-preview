@@ -292,6 +292,17 @@ export class Helpers {
     });
   }
 
+  playTokenAnimationSocket(params){
+    let {tokenIds, animationId, options} = params
+    if(!game.Levels3DPreview?._active) return;
+    for(let id of tokenIds){
+      const token = game.Levels3DPreview.tokens[id];
+      if(token){
+        token.animationHandler.playAnimation(animationId, options);
+      }
+    }
+  }
+
   socketCamera(params) {
     params.cameraPosition = new THREE.Vector3(
       params.cameraPosition.x,

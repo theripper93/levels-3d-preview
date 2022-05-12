@@ -24,6 +24,8 @@ import { Exporter } from "./helpers/exporter.js";
 import { turnStartMarker } from "./helpers/turnStartMarker.js";
 import { ParticleSystem } from "./helpers/particleSystem.js";
 import { Particle3D } from "./helpers/particleSystem.js";
+import { defaultTokenAnimations } from "./helpers/tokenAnimationHandler.js";
+
 export const factor = 1000;
 
 globalThis.Particle3D = Particle3D;
@@ -81,6 +83,7 @@ class Levels3DPreview {
     this.debugMode = game.settings.get("levels-3d-preview", "debugMode")
     this.CONFIG = {
       autoPan: false,
+      tokenAnimations : defaultTokenAnimations,
     }
     this.setAutopan();
     this.tokens = {};
@@ -125,6 +128,7 @@ class Levels3DPreview {
     this._cameraSet = false;
     this.helpers = new Helpers();
     this.socket.register("socketCamera", this.helpers.socketCamera);
+    this.socket.register("playTokenAnimationSocket", this.helpers.playTokenAnimationSocket);
     this.exporter = new Exporter(this);
     $("body").append(`<div id="video-texture-container" style="position: absolute; top: 0; left: 0;display: none;"></div>`);
     this.videoTextureContinaer = $("#video-texture-container");
@@ -811,6 +815,12 @@ class Levels3DPreview {
     });
     fp.extensions = [".glb", ".GLB", ".gltf", ".GLTF", ".fbx", ".FBX"]; 
     fp.render(true);
+  }
+
+  playTokenAnimation(tokenIds, animationId, options = {}){
+    tokenIds instanceof Array || (tokenIds = [tokenIds]);
+    tokenIds = tokenIds.map(id => id.id ?? id);
+    this.socket.executeForEveryone("playTokenAnimationSocket", {tokenIds,animationId,options});
   }
 
   particleSocket(...args){
