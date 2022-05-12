@@ -22,6 +22,7 @@ export class Token3D {
       this.targetSize = 0.1;
       this.elevation3d = 0;
       this.materialsCache = {};
+      this.proneHandler = {};
       this.combatColor = new THREE.Color("#005eff");
       this._loaded = false;
       this.getFlags();
@@ -67,6 +68,7 @@ export class Token3D {
       this.stem = this.token.document.getFlag("levels-3d-preview", "stem") ?? false;
       this.standupFace = game.settings.get("levels-3d-preview", "standupFace");
       this.wasFreeMode = this.token.document.getFlag("levels-3d-preview", "wasFreeMode") ?? false;
+      this.removeBase = this.token.document.getFlag("levels-3d-preview", "removeBase") ?? false;
       if(this.faceCameraOption !== "0") this.standupFace = this.faceCameraOption == "1" ? true : false;
     }
   
@@ -148,6 +150,14 @@ export class Token3D {
       const object = loaded.object;
       const scene = loaded.scene;
       const model = loaded.model;
+      if(this.removeBase){
+        let base = model.children?.find(c => c.name === "base");
+        if(base) model.remove(base);
+        base = scene.children?.find(c => c.name === "base");
+        if(base) scene.remove(base);
+        base = object.children?.find(c => c.name === "base");
+        if(base) object.remove(base);
+      }
       await this.setMaterial(model);
       //Apply rotation
       model.rotation.set(
@@ -245,6 +255,7 @@ export class Token3D {
       this.drawBars();
       this.reDraw();
       this.setPosition();
+      this.setUpProne();
       return this;
     }
 
@@ -525,9 +536,25 @@ export class Token3D {
 
     }
 
+    get isTokenProne(){
+      const token = this.token;
+      switch (game.system.id) {
+        case "pf2e":
+          return token.actor?.hasCondition("prone") ?? false;
+        case "pf1":
+          return token.actor?.effects.some(e => e.getFlag("core", "statusId") === "pf1_prone") ?? false;
+        // D35E: no prone condition?
+      }
+      // dnd5e, dnd4e, sfrpg, dsa5, cyberpunk2020, shadowrun5e, swade, wfrp4e, ...
+      return token.actor?.effects.some(e => e.getFlag("core", "statusId") === "prone") ?? false;
+    }
+
     drawEffects(){
       //remove old effects
       if(!this.effectsContainer) return;
+      const oldProne = this.isProne ? true : false;
+      this.isProne = this.token?.actor?.effects?.find(e => e.getFlag("core", "statusId") === CONFIG.Combat.defeatedStatusId) || this.isTokenProne ? true : false;
+      if(oldProne !== this.isProne) this.toggleProne();
       const tokenEffects = this.token.data.effects;
       const actorEffects = this.token.actor?.temporaryEffects || [];
       const effects = tokenEffects.concat(actorEffects).map(e => e.data?.icon);
@@ -667,6 +694,7 @@ export class Token3D {
       stemMesh.position.set(0,height/2,0);
       stemMesh.castShadow = true;
       stemMesh.receiveShadow = true;
+      this.stem = stemMesh;
       this.border.add(stemMesh);
     }
 
@@ -760,6 +788,103 @@ export class Token3D {
       this.bars.scale.set(width,height,1);
       this.bars.position.set(0, this.d -height + 0.037, 0);
       this.mesh.add(this.bars);
+    }
+
+    setUpProne(){
+      if(this.proneHandler.proneInit) return;
+      this.proneHandler = {};
+      this.proneHandler.proneInit = true;
+      this.proneHandler.originalPosition = this.model.position.clone();
+      this.proneHandler.originalRotation = this.model.rotation.clone();
+      if(this.gtflPath.includes("hawk")) debugger
+      const offsetY = this.solidBaseMode === "ontop" ? 0 : 0.008;
+      const box = new THREE.Box3().setFromObject(this.model)
+      const center = box.getCenter(new THREE.Vector3());
+      const dimensions = box.getSize(new THREE.Vector3());
+
+      const targetRotation = this.model.rotation.clone();
+
+      const targetPosition = this.model.position.clone();
+
+      targetPosition.y = targetPosition.y - box.min.y;
+
+      if(isBird(dimensions, center)){
+        targetRotation.z = -Math.PI;
+        targetPosition.y += dimensions.y + center.y;
+      }else if(isCrab(dimensions)){
+        targetRotation.z = -Math.PI;
+        targetPosition.y += dimensions.y;
+      }else if(isDog(dimensions)){
+        targetRotation.z = -Math.PI/2;
+        targetPosition.x -= dimensions.y/2;
+        targetPosition.y += dimensions.x/2;
+
+      }else if(isFlat(this.standUp)){
+        targetRotation.x = -Math.PI/2;
+        targetPosition.y = targetPosition.y - dimensions.y/2 + 0.009;
+      }else if(isHuman(dimensions)){
+        targetRotation.x = -Math.PI/2;
+        targetPosition.z += dimensions.y/2;
+        targetPosition.y += dimensions.z/2;
+      }
+
+      targetPosition.y -= offsetY;
+
+      function isBird(box,center){
+        return isCrab(box) && center.y > box.y;
+      }
+      function isCrab(box){
+        return box.y < box.x && box.y < box.z
+      }
+      function isDog(box){
+        return box.y > box.x && (box.x < box.z/1.5 || box.z < box.x/1.5)
+      }
+      function isFlat(box){
+        return box
+      }
+      function isHuman(box){
+        return true;
+      }
+
+      this.proneHandler.targetPosition = targetPosition;
+      this.proneHandler.targetRotation = targetRotation;
+      if(this.isProne){
+        this.model.position.copy(this.proneHandler.targetPosition);
+        this.model.rotation.copy(this.proneHandler.targetRotation);
+        if(this.stem) this.stem.visible = !this.isProne;
+      }
+    }
+
+    toggleProne(){
+      if(!this.proneHandler.targetPosition){
+        this.setUpProne();
+      }
+      this.animateProne = true;
+      this.proneHandler.currentDelta = 0;
+      this.proneHandler.currentTarget = {}
+      if(this.isProne){
+        this.proneHandler.currentTarget.position = this.proneHandler.targetPosition
+        this.proneHandler.currentTarget.rotation = this.proneHandler.targetRotation
+      }else{
+        this.proneHandler.currentTarget.position = this.proneHandler.originalPosition
+        this.proneHandler.currentTarget.rotation = this.proneHandler.originalRotation
+      }
+      if(this.stem) this.stem.visible = !this.isProne;
+    }
+
+    updateProne(delta){
+      if(!this.proneHandler || !this.animateProne || !this.proneHandler.currentTarget) return;
+      this.proneHandler.currentDelta += delta;
+      this.model.position.lerp(this.proneHandler.currentTarget.position, this.proneHandler.currentDelta);
+      const oRotationV3 = new THREE.Vector3(this.proneHandler.currentTarget.rotation.x, this.proneHandler.currentTarget.rotation.y, this.proneHandler.currentTarget.rotation.z);
+      const mRotationV3 = new THREE.Vector3(this.model.rotation.x, this.model.rotation.y, this.model.rotation.z);
+      mRotationV3.lerp(oRotationV3, this.proneHandler.currentDelta);
+      this.model.rotation.set(mRotationV3.x, mRotationV3.y, mRotationV3.z);
+      if(this.proneHandler.currentDelta >= 1){
+        this.animateProne = false;
+        this.model.position.set(this.proneHandler.currentTarget.position.x, this.proneHandler.currentTarget.position.y, this.proneHandler.currentTarget.position.z);
+        this.model.rotation.set(this.proneHandler.currentTarget.rotation.x, this.proneHandler.currentTarget.rotation.y, this.proneHandler.currentTarget.rotation.z);
+      }
     }
 
     faceCamera(){

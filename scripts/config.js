@@ -457,6 +457,12 @@ Hooks.on("renderTokenConfig", (app,html)=>{
             label: game.i18n.localize("levels3dpreview.flags.disableBase.label"),
             default: false,
         },
+        "removeBase": {
+            type: "checkbox",
+            label: game.i18n.localize("levels3dpreview.flags.removeBase.label"),
+            notes: game.i18n.localize("levels3dpreview.flags.removeBase.notes"),
+            default: false,
+        },
         "solidBaseMode": {
             type: "select",
             label: game.i18n.localize("levels3dpreview.flags.solidBaseMode.label"),

@@ -606,6 +606,7 @@ class Levels3DPreview {
     //_this.grid?.updateGrid();
     Object.values(_this.tokens).forEach((token) => {
       token.updateVisibility();
+      token.updateProne(delta);
       if(token.mixer){
         token.mixer.update(delta);
       }

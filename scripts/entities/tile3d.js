@@ -45,6 +45,7 @@ export class Tile3D {
             await this.init();
         }
         this._loaded = true;
+        this.elevation3d = this.mesh.position.y;
         return this;
     }
 

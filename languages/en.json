@@ -192,6 +192,10 @@
             "disableBase": {
                 "label": "Disable Base"
             },
+            "removeBase": {
+                "label": "Remove Base",
+                "notes": "Removes the original model's base, this will only work if the base is named 'base' in the 3D Model data."
+            },
             "solidBaseMode": {
                 "label": "Base Mode",
                 "options": {
