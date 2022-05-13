@@ -72,25 +72,29 @@ export class ParticleSystem {
     from = from instanceof Array ? from : [from];
     const repeats = params.repeats || 1;
     const delay = params.delay || 0;
+    const startAfter = params.startAfter || 0;
     const tokenAnimation = params.tokenAnimation;
     for (let repeat = 0; repeat < repeats; repeat++) {
       for (let origin of from) {
         if(tokenAnimation?.from && tokenAnimation.from.options.start) this.playTokenAnimation(tokenAnimation.from, origin);
         for (let target of to) {
           if(tokenAnimation?.to && tokenAnimation.to.options.start) this.playTokenAnimation(tokenAnimation.to, target);
-          const projectileEmitter = new ProjectileEffect(
-            origin,
-            target,
-            params
-          );
-          const emitter = await projectileEmitter.init();
-          if (projectileEmitter.emitter instanceof THREE.Sprite) {
-            this.effects.add(projectileEmitter);
-            this.scene.add(projectileEmitter.emitter);
-          } else {
-            this.system.addEmitter(projectileEmitter.emitter);
-            this.effects.add(projectileEmitter);
-          }
+          this.sleep(startAfter).then(async () => {
+            const projectileEmitter = new ProjectileEffect(
+              origin,
+              target,
+              params
+            );
+            const emitter = await projectileEmitter.init();
+            if (projectileEmitter.emitter instanceof THREE.Sprite) {
+              this.effects.add(projectileEmitter);
+              this.scene.add(projectileEmitter.emitter);
+            } else {
+              this.system.addEmitter(projectileEmitter.emitter);
+              this.effects.add(projectileEmitter);
+            }
+          })
+          
         }
         await this.sleep(delay);
       }
@@ -618,6 +622,10 @@ export class Particle3D {
     this.params.delay = delay;
     return this;
   }
+  startAfter(delay) {
+    this.params.startAfter = delay;
+    return this;
+  }
   radial(radius, direction = { x: 0, y: 1, z: 0 }, theta = 30) {
     direction = new THREE.Vector3(direction.x, direction.y, direction.z);
     this.params.radial = { radius, direction, theta };
@@ -630,6 +638,10 @@ export class Particle3D {
   playAnimation(animationData){
     const animationFrom = animationData.from
     const animationTo = animationData.to
+    const animData = game.Levels3DPreview.CONFIG.tokenAnimations[animationFrom?.id]
+    if(animData?.particleDelay){
+      this.startAfter(animData.particleDelay)
+    }
     if(animationFrom){
       animationFrom.options = animationFrom.options ?? {};
       animationFrom.options.start = animationFrom.options.start ?? true;

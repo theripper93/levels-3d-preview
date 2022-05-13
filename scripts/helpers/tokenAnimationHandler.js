@@ -161,6 +161,7 @@ export const defaultTokenAnimations = {
         id: "twirl",
         icon: "icons/svg/explosion.svg",
         resetTime: 200,
+        particleDelay: 500,
         animation: [
             {
                 position: (box3, size, center, initialData) => {},
