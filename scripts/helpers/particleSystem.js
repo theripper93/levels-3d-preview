@@ -72,9 +72,12 @@ export class ParticleSystem {
     from = from instanceof Array ? from : [from];
     const repeats = params.repeats || 1;
     const delay = params.delay || 0;
+    const tokenAnimation = params.tokenAnimation;
     for (let repeat = 0; repeat < repeats; repeat++) {
       for (let origin of from) {
+        if(tokenAnimation?.from && tokenAnimation.from.options.start) this.playTokenAnimation(tokenAnimation.from, origin);
         for (let target of to) {
+          if(tokenAnimation?.to && tokenAnimation.to.options.start) this.playTokenAnimation(tokenAnimation.to, target);
           const projectileEmitter = new ProjectileEffect(
             origin,
             target,
@@ -92,6 +95,12 @@ export class ParticleSystem {
         await this.sleep(delay);
       }
     }
+  }
+
+  playTokenAnimation(animationData, tokenIds){
+    tokenIds instanceof Array || (tokenIds = [tokenIds]);
+    tokenIds = tokenIds.map(id => id.id ?? id);
+    game.Levels3DPreview.helpers.playTokenAnimationSocket({tokenIds: tokenIds, animationId: animationData.id, options: animationData.options});
   }
 
   async sleep(ms) {
@@ -407,12 +416,33 @@ class ProjectileEffect {
   onEnd() {
     if (this.ended) return;
     this.ended = true;
+    debugger
+    this.resolveTokenAnimation()
     this.params.onEnd?.forEach((e) => {
       const p3d = new Particle3D().fromObject(e)
       if(!p3d._to) p3d.to(this.to)
       if(!p3d._from) p3d.from(this.from)
       p3d.start(false)
     });
+  }
+
+  resolveTokenAnimation(){
+    const tokenAnimation = this.params.tokenAnimation
+    if(!tokenAnimation) return
+    const from = tokenAnimation.from
+    const to = tokenAnimation.to
+    if(from && from.options.end){
+      this.playTokenAnimation(from, this.from)
+    }
+    if(to && to.options.end){
+      this.playTokenAnimation(to, this.to)
+    }
+  }
+
+  playTokenAnimation(animationData, tokenIds){
+    tokenIds instanceof Array || (tokenIds = [tokenIds]);
+    tokenIds = tokenIds.map(id => id.id ?? id);
+    game.Levels3DPreview.helpers.playTokenAnimationSocket({tokenIds: tokenIds, animationId: animationData.id, options: animationData.options});
   }
 
   animate(delta) {
@@ -595,6 +625,22 @@ export class Particle3D {
   }
   duration(duration) {
     this.params.duration = duration / 1000;
+    return this;
+  }
+  playAnimation(animationData){
+    const animationFrom = animationData.from
+    const animationTo = animationData.to
+    if(animationFrom){
+      animationFrom.options = animationFrom.options ?? {};
+      animationFrom.options.start = animationFrom.options.start ?? true;
+      animationFrom.options.end = animationFrom.options.end ?? false;
+    }
+    if(animationTo){
+      animationTo.options = animationTo.options ?? {};
+      animationTo.options.start = animationTo.options.start ?? false;
+      animationTo.options.end = animationTo.options.end ?? true;
+    }
+    this.params.tokenAnimation = animationData;
     return this;
   }
   name(name) {

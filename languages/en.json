@@ -678,6 +678,19 @@
                 "wheel": "Mouse Wheel to Increase/Decrease Values"
             }
         },
+        "tokenAnimations": {
+            "title": "Animations",
+            "twirl": "Twirl",
+            "slash": "Slash",
+            "charge": "Charge",
+            "swipe": "Swipe",
+            "buff": "Bulk Up",
+            "debuff": "Bulk Down",
+            "bow": "Bow",
+            "breath": "Breath",
+            "shake": "Shake"
+
+        },
         "units":{
             "ms": "Milliseconds",
             "gu": "Grid Units"

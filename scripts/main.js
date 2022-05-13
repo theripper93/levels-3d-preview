@@ -85,6 +85,9 @@ class Levels3DPreview {
       autoPan: false,
       tokenAnimations : defaultTokenAnimations,
     }
+    for(let [k,v] of Object.entries(this.CONFIG.tokenAnimations)){
+      v.name = game.i18n.localize(`levels3dpreview.tokenAnimations.${k}`)
+    }
     this.setAutopan();
     this.tokens = {};
     this.loadingTokens = {};

@@ -1075,3 +1075,35 @@ export class Token3D {
     data.forEach(td => td.elevation=pos.z)
     }
   })
+
+  Hooks.on("renderTokenHUD", (hud) => {
+    if(!game.Levels3DPreview?._active) return
+    const tokenAnimations = game.Levels3DPreview.CONFIG.tokenAnimations
+    const height = hud.element.find(`div[data-action="effects"]`).height()
+    let taMenuHtml = `<div class="control-icon" data-action="3d-animations" style="font-size: 1.3rem;">
+    <i class="fas fa-magic" title="${game.i18n.localize(`levels3dpreview.tokenAnimations.title`)}" data-action="3d-animations"></i>
+    <div class="status-effects" style="transform: translateY(${height}px);" >`
+    for(let anim of Object.values(tokenAnimations)){
+      if(anim.icon.includes(".")){
+        taMenuHtml+= `<img class="effect-control" src="${anim.icon}" title="${anim.name}" data-anim-id="${anim.id}"></i>`
+      }else{
+        taMenuHtml+= `<i class="${anim.icon ?? "fas fa-magic"} effect-control" title="${anim.name}" data-anim-id="${anim.id}"></i>`
+      }
+          
+    }
+    taMenuHtml+=`</div></div>`
+    const $taMenu = $(taMenuHtml);
+    $taMenu.on("click", (e) => {
+      e.preventDefault();
+      if(e.currentTarget.dataset.action !== "3d-animations") return
+      const $statusEffects = $taMenu.find(".status-effects");
+      $taMenu.toggleClass("active");
+      $statusEffects.toggleClass("active");
+    })
+    $taMenu.on("click", ".effect-control", (e) => {
+      const $effectControl = $(e.currentTarget);
+      const animId = $effectControl.data("animId");
+      game.Levels3DPreview.playTokenAnimation(hud.object.id, animId);
+    })
+    hud.element.find(`div[data-action="effects"]`).after($taMenu);
+  })
