@@ -1080,7 +1080,7 @@ export class Token3D {
     if(!game.Levels3DPreview?._active) return
     const tokenAnimations = game.Levels3DPreview.CONFIG.tokenAnimations
     const height = hud.element.find(`div[data-action="effects"]`).height()
-    let taMenuHtml = `<div class="control-icon" data-action="3d-animations" style="font-size: 1.3rem;">
+    let taMenuHtml = `<div class="control-icon" data-action="3d-animations">
     <i class="fas fa-magic" title="${game.i18n.localize(`levels3dpreview.tokenAnimations.title`)}" data-action="3d-animations"></i>
     <div class="status-effects" style="transform: translateY(${height}px);" >`
     for(let anim of Object.values(tokenAnimations)){
@@ -1095,7 +1095,7 @@ export class Token3D {
     const $taMenu = $(taMenuHtml);
     $taMenu.on("click", (e) => {
       e.preventDefault();
-      if(e.currentTarget.dataset.action !== "3d-animations") return
+      if(e.target.dataset.action !== "3d-animations") return
       const $statusEffects = $taMenu.find(".status-effects");
       $taMenu.toggleClass("active");
       $statusEffects.toggleClass("active");

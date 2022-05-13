@@ -688,8 +688,8 @@
             "debuff": "Bulk Down",
             "bow": "Bow",
             "breath": "Breath",
-            "shake": "Shake"
-
+            "shake": "Shake",
+            "knockback": "Knockback"
         },
         "units":{
             "ms": "Milliseconds",

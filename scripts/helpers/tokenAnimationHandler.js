@@ -317,6 +317,7 @@ export const defaultTokenAnimations = {
         id: "buff",
         icon: "icons/svg/pill.svg",
         resetTime: 200,
+        allowProne: true,
         animation: [
             {
                 position: (box3, size, center, initialData) => {},
@@ -360,6 +361,7 @@ export const defaultTokenAnimations = {
         id: "debuff",
         icon: "icons/svg/poison.svg",
         resetTime: 200,
+        allowProne: true,
         animation: [
             {
                 position: (box3, size, center, initialData) => {},
@@ -457,7 +459,7 @@ export const defaultTokenAnimations = {
     },
     "knockback": {
         id: "knockback",
-        icon: "icons/svg/explosion.svg",
+        icon: "icons/svg/falling.svg",
         resetTime: 200,
         animation: [
             {
