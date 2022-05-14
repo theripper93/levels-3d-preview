@@ -249,10 +249,12 @@ export class Light3D {
     }
 
     _onHoverIn(e) {
+        if(canvas.activeLayer.options.objectClass.embeddedName !== "AmbientLight") return;
         this.placeable._onHoverIn(e);
       }
   
     _onHoverOut(e) {
+        if(canvas.activeLayer.options.objectClass.embeddedName !== "AmbientLight") return;
         this.placeable._onHoverOut(e);
     }
 

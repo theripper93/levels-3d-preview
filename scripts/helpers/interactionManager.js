@@ -180,6 +180,8 @@ export class InteractionManager {
       this._parent.stopCameraAnimation();
       if(event.which === 1 && event.ctrlKey) canvas.activeLayer.releaseAll();
       this.mousedown = true;
+      if(event.which === 1) this._leftDown = true;
+      if(event.which === 3) this._rightDown = true;
       this.mousePosition = { x: event.clientX, y: event.clientY };
       if(event.which !== 1 && event.which !== 3) return;
       //if(event.shiftKey) return;
@@ -230,6 +232,9 @@ export class InteractionManager {
     }
 
     _onMouseUp(event){
+      if(event.which === 1) this._leftDown = false;
+      if(event.which === 3) this._rightDown = false;
+      if(!this._leftDown && !this._rightDown) this.toggleControls(true);
       event.entity = this.eventData?.entity;
       event.intersect = this.eventData?.intersect;
       event.position3D = this.eventData?.position3D;
@@ -244,6 +249,7 @@ export class InteractionManager {
       this.mousedown = false;
       if(event.which !== 1) return;
       if(this.draggable){
+        this.draggable.position.copy(this.currentDragTarget);
         this.ruler.placeTemplate();
         if(!this.draggable?.userData.entity3D.updatePositionFrom3D(event)) this.cancelDrag();
         this.draggable = null;
@@ -569,7 +575,8 @@ export class InteractionManager {
         const distance = target.position.distanceTo(intersects[0].point);
         let lerpFactor = 1/(1+distance*20);
         if(lerpFactor < 0.1) lerpFactor = 0.1;
-        target.position.lerp(new THREE.Vector3(intersects[0].point.x, !isFree ? intersects[0].point.y : entity3D.elevation3d, intersects[0].point.z), lerpFactor);
+        this.currentDragTarget = new THREE.Vector3(intersects[0].point.x, !isFree ? intersects[0].point.y : entity3D.elevation3d, intersects[0].point.z)
+        target.position.lerp(this.currentDragTarget, lerpFactor);
         if(!isFree){
           entity3D.elevation3d = intersects[0].point.y;
           this.dragplane.position.set(center.x, intersects[0].point.y, center.z);
@@ -587,11 +594,6 @@ export class InteractionManager {
       if(entity3D.token)Hooks.call("updateToken", entity3D.token.document, {x: entity3D.token.data.x});
       if(entity3D.template)Hooks.call("updateMeasuredTemplate", entity3D.template.document, {x: entity3D.template.data.x});
       if(entity3D.tile) Hooks.call("updateTile", entity3D.tile.document, {x: entity3D.tile.data.x});
-      this.controls.enableRotate = true;
-      this.controls.enableZoom = true;
-      setTimeout(() => {
-        this.toggleControls(true);
-      }, 150);
     }
 
     broadcastCursorPosition(pos3d){
