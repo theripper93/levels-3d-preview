@@ -1,12 +1,17 @@
 import * as THREE from "../lib/three.module.js";
 import {factor} from '../main.js'; 
+import { Ruler3D } from "./ruler3d.js";
 
 export class Light3D {
     constructor(light,parent, isToken){
         this.light = light;
-        //this.embeddedName = this.light.document.documentName;
         this._parent = parent
         this.isToken = isToken;
+        if(!this.isToken){
+            this.embeddedName = this.light.document.documentName;
+            this.draggable = true;
+            this.placeable = this.light;
+        }
         this.init();
     }
 
@@ -22,6 +27,7 @@ export class Light3D {
                     })
             );
         }
+        this.mesh = new THREE.Group();
         this.light3d.shadow.bias = -0.035;
         this.light3d.shadow.camera.near = 0.0001;
         this.light3d.shadow.camera.far = 100;
@@ -29,11 +35,82 @@ export class Light3D {
         this.light3d.shadow.mapSize.width = 64;
         this.light3d.shadow.mapSize.height = 64;
         this.refresh();
-        if(!this.isToken) this._parent.scene.add(this.light3d);
+        if(!this.isToken) {
+            this.mesh.add(this.light3d);
+            this._parent.scene.add(this.mesh);
+            if(game.user.isGM) this.createHandle();
+        }
         if(this._parent.debugMode){
             this._parent.scene.add(this.debugSphere);
         }
     }
+
+    createHandle(){
+        const texture = this._parent.textures.lightOn
+        const size = canvas.scene.dimensions.size*0.7/factor
+        const geometry = new THREE.BoxGeometry(size, size, size)
+        const material = new THREE.MeshBasicMaterial({map: texture,})
+        const mesh = new THREE.Mesh(geometry, material)
+        this.mesh.userData.hitbox = mesh
+        this.mesh.userData.interactive = true
+        this.mesh.userData.entity3D = this
+        mesh.userData.entity3D = this
+        mesh.userData.isHitbox = true
+        this.dragHandle = mesh
+        this.mesh.add(mesh)
+    }
+
+    updateHandle(){
+        if(!this.dragHandle) return;
+        this.dragHandle.visible = canvas.lighting._active;
+        if(!this.dragHandle.visible) return;
+        this.dragHandle.material.map = this.light.data.hidden ? this._parent.textures.lightOff : this._parent.textures.lightOn;
+        this.dragHandle.material.color.set(this.light.data.hidden ? '#ff0000' : '#ffffff');
+    }
+
+    updatePositionFrom3D(e){
+        debugger
+        this.skipMoveAnimation = true;
+        const useSnapped = Ruler3D.useSnapped();
+        const x3d = this.mesh.position.x;
+        const y3d = this.mesh.position.y;
+        const z3d = this.mesh.position.z;
+        const x = x3d * factor;
+        const y = z3d * factor;
+        const z = Math.round(((y3d * factor * canvas.dimensions.distance)/(canvas.dimensions.size))*100)/100;
+        const snapped = canvas.grid.getSnappedPosition(x, y);
+        const {rangeTop, rangeBottom} = _levels.getFlagsForObject(this.light);
+        const dest = {
+          x: useSnapped ? snapped.x : x,
+          y: useSnapped ? snapped.y : y,
+          elevation: z,
+        }
+        const deltas = {
+          x: dest.x - this.light.data.x,
+          y: dest.y - this.light.data.y,
+          elevation: dest.elevation - rangeBottom,
+        }
+        let updates = [];
+        for(let light of canvas.activeLayer.controlled.length ? canvas.activeLayer.controlled : [this.light]){
+        const lightFlags = _levels.getFlagsForObject(light);
+          updates.push({
+            _id: light.id,
+            x: light.data.x + deltas.x,
+            y: light.data.y + deltas.y,
+            flags: {
+                "levels-3d-preview": {
+                    wasFreeMode: this.wasFreeMode,
+                },
+                levels: {
+                    rangeBottom: Math.round((lightFlags.rangeBottom + deltas.elevation)*1000)/1000,
+                    rangeTop: Math.round((lightFlags.rangeBottom + deltas.elevation)*1000)/1000
+                }
+            },
+          })
+        }
+        canvas.scene.updateEmbeddedDocuments("AmbientLight", updates)
+        return true;
+      }
 
     refresh(){
         const light = this.light;
@@ -44,14 +121,16 @@ export class Light3D {
         this.z = (top+bottom)/2;
         const color = this.color || "#ffffff";
         const radius = Math.max(this.dim, this.bright)*(canvas.scene.dimensions.size/canvas.scene.dimensions.distance)/factor;
-        const alpha = this.alpha*6;
+        const alpha = this.alpha*9;
         const decay = this.dim/(this.bright+10)*2;
         const position = {
             x: light.data.x/factor,
             y: z/factor,
             z: light.data.y/factor,
         }
-        if(!this.isToken) this.light3d.position.set(position.x, position.y, position.z);
+        if(!this.isToken) {
+            this.mesh.position.set(position.x, position.y, position.z);
+        }
         this.light3d.color.set(color);
         this.light3d.distance = radius;
         this.light3d.decay = decay;
@@ -76,7 +155,7 @@ export class Light3D {
     }
 
     destroy(){
-        this._parent.scene.remove(this.light3d);
+        this._parent.scene.remove(this.mesh);
         this._parent.scene.remove(this.debugSphere);
         if(this.particleEffectId) Particle3D.stop(this.particleEffectId);
     }
@@ -122,6 +201,59 @@ export class Light3D {
                 dz: this.light.document.getFlag("levels-3d-preview", "ParticlePushZ") ?? 0,
             }
         }
+    }
+
+    _onClickLeft(e){
+        if(canvas.activeLayer.options.objectClass.embeddedName !== "AmbientLight") return;
+        const event = {
+            stopPropagation: () => {},
+            data: {
+                originalEvent: e,
+            }
+            }
+            this.light._onClickLeft(event);
+    }
+
+
+    _onClickLeft2(e){
+        if(canvas.activeLayer.options.objectClass.embeddedName !== "AmbientLight") return;
+        const event = {
+            stopPropagation: () => {},
+            data: {
+                originalEvent: e,
+            }
+            }
+            this.light._onClickLeft2(event);
+    }
+
+    _onClickRight(e){
+        if(canvas.activeLayer.options.objectClass.embeddedName !== "AmbientLight") return;
+        const event = {
+            stopPropagation: () => {},
+            data: {
+              originalEvent: e,
+            }
+          }
+          this.light._onClickRight(event);
+    }
+
+    _onClickRight2(e){
+        if(canvas.activeLayer.options.objectClass.embeddedName !== "AmbientLight") return;
+        const event = {
+            stopPropagation: () => {},
+            data: {
+              originalEvent: e,
+            }
+          }
+          this.light._onClickRight2(event);
+    }
+
+    _onHoverIn(e) {
+        this.placeable._onHoverIn(e);
+      }
+  
+    _onHoverOut(e) {
+        this.placeable._onHoverOut(e);
     }
 
     get lightData(){

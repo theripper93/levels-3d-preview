@@ -111,6 +111,8 @@ class Levels3DPreview {
     };
     this.textures = {
       template: new THREE.TextureLoader().load("icons/svg/explosion.svg"),
+      lightOn: new THREE.TextureLoader().load("icons/svg/light.svg"),
+      lightOff: new THREE.TextureLoader().load("icons/svg/light-off.svg"),
       indicator: {
         //aoRM: new THREE.TextureLoader().load("modules/levels-3d-preview/assets/DefaultMaterial_occlusionRoughnessMetallic.png"),
         normal: new THREE.TextureLoader().load("modules/levels-3d-preview/assets/DefaultMaterial_normal.webp", (texture) => {
@@ -636,7 +638,7 @@ class Levels3DPreview {
         wall.updateVisibility();
       })
     }
-
+    Object.values(_this.lights.sceneLights).forEach((light) => { light.updateHandle(); });
     Object.values(_this.notes).forEach((note) => { note.updateVisibility(); });
     _this.particleSystem.update(delta);
     _this.checkInFog();

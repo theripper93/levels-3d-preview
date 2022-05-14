@@ -86,11 +86,18 @@ export class InteractionManager {
 
       }
 
+      get allowedRulerDrag(){
+        return [
+          "MeasuredTemplate",
+          "AmbientLight",
+        ]
+      }
+
       isRulerDrag(event, intersectData){
-        if(!ui.controls.isRuler && !canvas.templates._active) return false
         if(ui.controls.activeTool === "select") return false
-        if(intersectData?.object?.userData?.entity3D?.embeddedName == "MeasuredTemplate") return false
+        if(!ui.controls.isRuler && !this.allowedRulerDrag.some(a => a=== canvas.activeLayer.options.objectClass.embeddedName) ) return false
         if(!this.mouseIntersection3DCollision({x:event.clientX, y: event.clientY})?.length) return false
+        if(this.allowedRulerDrag.some(a => a=== intersectData?.object?.userData?.entity3D?.embeddedName)) return false
         return true;
       }
 

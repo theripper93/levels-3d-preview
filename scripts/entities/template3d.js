@@ -5,6 +5,10 @@ import {factor} from '../main.js';
 export class Template3D {
     constructor(template, A,B){
         this.template = template;
+        if(this.template.data.t === "light"){
+            this.template.data.t = "circle"
+            this.isLight = true
+        }
         this.embeddedName = "MeasuredTemplate"
         this.placeable = template;
         this.initialDirection = this.template.data.direction
@@ -66,7 +70,7 @@ export class Template3D {
     }
 
     createHandle(){
-        const texture = this._parent.textures.template
+        const texture = this.isLight ? this._parent.textures.lightOn : this._parent.textures.template
         const size = canvas.scene.dimensions.size*0.7/factor
         const geometry = new THREE.BoxGeometry(size, size, size)
         const material = new THREE.MeshBasicMaterial({map: texture,})
@@ -88,7 +92,30 @@ export class Template3D {
     }
     
     fromPreview(){
+
         const origin2d = this.isPreview ? Ruler3D.pos3DToCanvas(this.mesh.position) : Ruler3D.pos3DToCanvas(this.A)
+
+        if(this.isLight){
+            debugger
+            const lightData = {
+                config: {
+                    dim: this.distance,
+                    bright: this.distance/2,
+                    color: null,
+                },
+                x: origin2d.x,
+                y: origin2d.y,
+                flags: {
+                    levels: {
+                        rangeBottom: parseFloat((origin2d.z+0.1).toFixed(2)),
+                        rangeTop: parseFloat((origin2d.z+0.1).toFixed(2)),
+                    }
+                }
+            }
+            canvas.scene.createEmbeddedDocuments("AmbientLight",[lightData])
+            return this.destroy();
+        }
+
         const templateData = {
             angle: this.angle,
             distance: this.distance,

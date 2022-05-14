@@ -17,10 +17,14 @@ export class Ruler3D {
         this.init();
     }
 
+    get allowedRulerDrag(){
+        return game.Levels3DPreview.interactionManager.allowedRulerDrag
+      }
+
     drawTemplate(){
-        if(ui.controls.activeTool === "select" || !canvas.templates._active) return;
+        if(ui.controls.activeTool === "select" || !this.allowedRulerDrag.some(a => a=== canvas.activeLayer.options.objectClass.embeddedName)) return;
         if(this.template?.isPreview) return;
-        if(this._object?.userData?.entity3D?.placeable?.document?.documentName === "MeasuredTemplate") return;
+        if(this.allowedRulerDrag.some(a => a=== this._object?.userData?.entity3D?.placeable?.document?.documentName)) return;
         this.template?.destroy();
         const template = new Template3D({data:{t:ui.controls.activeTool}},this._origin,this._object.position);
         this.template = template;
