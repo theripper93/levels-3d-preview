@@ -162,7 +162,7 @@ export class Ruler3D {
     static centerElement(element,position, ontop = false){
         //get distance between element and camera
         const dist = game.Levels3DPreview.camera.position.distanceTo(position);
-        const scale = 1/dist;
+        const scale = Math.max(0.3, 1/dist);
         const centerPosition = Ruler3D.position3dtoScreen(position);
         const elementWidth = $(element).width();
         const elementHeight = ontop ? $(element).height()*2 : $(element).height();
