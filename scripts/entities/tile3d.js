@@ -10,6 +10,7 @@ THREE.Mesh.prototype.raycast = acceleratedRaycast;
 export class Tile3D {
     constructor(tile,parent){
         this.tile = tile;
+        this.placeable = tile;
         this._parent = parent;
         this.isOverhead = this.tile.data.overhead;
         this.isAnimated = false;
@@ -475,6 +476,14 @@ export class Tile3D {
             }
           }
           this.tile._onClickRight2(event);
+    }
+
+    _onHoverIn(e) {
+        this.placeable._onHoverIn(e);
+      }
+  
+    _onHoverOut(e) {
+    this.placeable._onHoverOut(e);
     }
 }
 

@@ -75,7 +75,7 @@ export class InteractionManager {
 
     activateListeners() {
         this.domElement.addEventListener("mousedown", this._onMouseDown.bind(this), false);
-        this.domElement.addEventListener("mousedown", this._onEnableRuler.bind(this), false);
+        //this.domElement.addEventListener("mousedown", this._onEnableRuler.bind(this), false);
         this.domElement.addEventListener("mouseup", this._onMouseUp.bind(this), false);
         this.domElement.addEventListener("mousemove", this._onMouseMove.bind(this), false);
         this.domElement.addEventListener("wheel", this._onWheel.bind(this), false);
@@ -86,11 +86,15 @@ export class InteractionManager {
 
       }
 
+      isRulerDrag(event, intersectData){
+        if(!ui.controls.isRuler && !canvas.templates._active) return false
+        if(ui.controls.activeTool === "select") return false
+        if(intersectData?.object?.userData?.entity3D?.embeddedName == "MeasuredTemplate") return false
+        if(!this.mouseIntersection3DCollision({x:event.clientX, y: event.clientY})?.length) return false
+        return true;
+      }
+
       _onEnableRuler(event){
-        if(!ui.controls.isRuler && !canvas.templates._active) return
-        if(ui.controls.activeTool === "select") return
-        const intersectData = this.findMouseIntersect(event);
-        if(intersectData?.object?.userData?.entity3D?.embeddedName == "MeasuredTemplate") return
         if(event.which === 1){
           const rulerObj = new THREE.Object3D()
           rulerObj.userData = {
@@ -101,9 +105,8 @@ export class InteractionManager {
               }
             }
           rulerObj.parent = rulerObj.userData.entity3D.mesh
-          const position = this.mouseIntersection3DCollision({x:event.clientX, y: event.clientY})
-          if(!position.length) return
           this.toggleControls(false);
+          const position = this.mouseIntersection3DCollision({x:event.clientX, y: event.clientY});
           const intersectPos = position[0].point
           rulerObj.position.set(intersectPos.x, intersectPos.y, intersectPos.z)
           this.draggable = rulerObj
@@ -175,37 +178,69 @@ export class InteractionManager {
       //if(event.shiftKey) return;
       const intersectData = this.findMouseIntersect(event);
       const intersect = intersectData?.object;
+      if(this.isRulerDrag(event, intersectData)) this.toggleControls(false);
       if(!intersect || event.ctrlKey) return;
       if(intersect.userData?.entity3D?.embeddedName === canvas.activeLayer.options.objectClass.embeddedName)this.toggleControls(false);
       this.clicks++;
       event.entity = intersect.userData.entity3D
       event.intersect = intersect;
       event.position3D = intersectData.point;
+      this.prevEventData = this.eventData ?? null;
+      this.eventData = {
+        entity: event.entity,
+        position3D: event.position3D,
+        intersect: event.intersect,
+      }
       if (this.clicks === 1) {
         setTimeout(() => {
-          if(this.clicks !== 1) return this.clicks = 0;
           if(event.which === 1){
-            this._onClickLeft(event);
+            this.mousedown ? this.startDrag(event, intersectData) : this._triggerLeft = true;
           }else{
-            this._onClickRight(event);
+            this._triggerRight = true;
           }
-          this.clicks = 0;
         }, 250);
       }else{
-        this.clicks = 0;
         if(this.draggable) return this.cancelDrag();
-        else event.which === 1 ? this._onClickLeft2(event) : this._onClickRight2(event);
+        else event.which === 1 ? this._triggerLeft2 = true : this._triggerRight2 = true;
         this.toggleControls(true);
       }
     }
 
+    set clicks(val){
+      this._clicks = val;
+      if(val === 0){
+        this._triggerLeft = false;
+        this._triggerRight = false;
+        this._triggerLeft2 = false;
+        this._triggerRight2 = false;
+        this.prevEventData = null;
+        this.eventData = null;
+      }
+    }
+
+    get clicks(){
+      return this._clicks;
+    }
+
     _onMouseUp(event){
+      event.entity = this.eventData?.entity;
+      event.intersect = this.eventData?.intersect;
+      event.position3D = this.eventData?.position3D;
+      setTimeout(() => {
+      if(this.prevEventData && this.prevEventData.entity !== this.eventData.entity) return this.clicks = 0;
+      if(this._triggerLeft2) this._onClickLeft2(event);
+      else if(this._triggerLeft) this._onClickLeft(event);
+      if(this._triggerRight2) this._onClickRight2(event);
+      else if(this._triggerRight) this._onClickRight(event);
+      if(this._triggerLeft || this._triggerRight || this._triggerLeft2 || this._triggerRight2) this.clicks = 0;
+      }, 250);
       this.mousedown = false;
       if(event.which !== 1) return;
       if(this.draggable){
         this.ruler.placeTemplate();
         if(!this.draggable?.userData.entity3D.updatePositionFrom3D(event)) this.cancelDrag();
         this.draggable = null;
+        this.clicks = 0;
       }
       this.toggleControls(true, true);
     }
@@ -330,21 +365,28 @@ export class InteractionManager {
 
     }
 
+    startDrag(event, intersectData){
+      if(this.isRulerDrag(event, intersectData)) return this._onEnableRuler(event);
+      const entity = event.entity;
+      const intersect = event.intersect;
+      const placeable = entity.placeable;
+      if(!entity.draggable || entity.mesh.userData?.entity3D?.embeddedName !== canvas.activeLayer.options.objectClass.embeddedName) return this.toggleControls(true, true);
+      if(!placeable._controlled) placeable.control({releaseOthers: true});
+      entity.isAnimating = false;
+      entity.setPosition?.();
+      this.draggable = intersect;
+      this.toggleControls(false);
+    }
+
     _onClickLeft(event){
-      if(ui.controls.isRuler) return
+      if(ui.controls.isRuler || this.draggable) return;
       const entity = event.entity;
       const intersect = event.intersect;
       this.handleTriggerHappy(entity);
       entity._onClickLeft(event);
       if(event.altKey || !this.mousedown || !(entity.isOwner || game.user.isGM)){
         this.toggleControls(true, true);
-        return this.clicks = 0;
-      }
-      entity.isAnimating = false;
-      entity.setPosition?.();
-      if(!entity.draggable || entity.mesh.userData?.entity3D?.embeddedName !== canvas.activeLayer.options.objectClass.embeddedName) return this.toggleControls(true, true);
-      this.draggable = intersect;
-      this.toggleControls(false);
+      }      
     }
 
     _onClickRight(event){

@@ -420,7 +420,6 @@ class ProjectileEffect {
   onEnd() {
     if (this.ended) return;
     this.ended = true;
-    debugger
     this.resolveTokenAnimation()
     this.params.onEnd?.forEach((e) => {
       const p3d = new Particle3D().fromObject(e)

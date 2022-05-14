@@ -4,6 +4,7 @@ import {factor} from '../main.js';
 export class Light3D {
     constructor(light,parent, isToken){
         this.light = light;
+        //this.embeddedName = this.light.document.documentName;
         this._parent = parent
         this.isToken = isToken;
         this.init();
