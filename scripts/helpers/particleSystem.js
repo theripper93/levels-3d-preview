@@ -294,7 +294,7 @@ class ProjectileEffect {
     const tex = await game.Levels3DPreview.helpers.loadTexture(
       this.params.sprite
     );
-    tex.image.currentTime = 0;
+    if(tex.image?.currentTime) tex.image.currentTime = 0;
     const material = new THREE.SpriteMaterial({
       map: tex,
       color: this.params.single ? this.params.color.start : 0xffffff,
