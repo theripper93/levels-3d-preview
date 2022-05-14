@@ -21,6 +21,7 @@ export class Token3D {
       this.color = this.getColor();
       this.factor = factor;
       this.targetSize = 0.1;
+      this.baseDepth = 0.008*(canvas.grid.size/100);
       this.elevation3d = 0;
       this.materialsCache = {};
       this.proneHandler = {};
@@ -47,7 +48,7 @@ export class Token3D {
       this.token.document.getFlag("levels-3d-preview", "offsetX") ?? 0;
       this.offsetY =
       this.token.document.getFlag("levels-3d-preview", "offsetY") ?? 0;
-      this.offsetY += this.solidBaseMode === "ontop" ? 0.008*factor : 0;
+      this.offsetY += this.solidBaseMode === "ontop" ? this.baseDepth*factor : 0;
       this.offsetZ =
       this.token.document.getFlag("levels-3d-preview", "offsetZ") ?? 0;
       this.scale =
@@ -154,12 +155,14 @@ export class Token3D {
       const scene = loaded.scene;
       const model = loaded.model;
       if(this.removeBase){
-        let base = model.children?.find(c => c.name === "base");
-        if(base) model.remove(base);
-        base = scene.children?.find(c => c.name === "base");
-        if(base) scene.remove(base);
-        base = object.children?.find(c => c.name === "base");
-        if(base) object.remove(base);
+        removeBaseAndReposition(object);
+        removeBaseAndReposition(scene);
+        removeBaseAndReposition(model);
+      }
+      function removeBaseAndReposition(object){
+        let base = object.children?.find(c => c.name === "base");
+        if(!base) return;
+        object.remove(base);
       }
       await this.setMaterial(model);
       //Apply rotation
@@ -565,7 +568,7 @@ export class Token3D {
       if(effects.length === this.effectsContainer.children.length) return;
       this.effectsContainer.remove(...this.effectsContainer.children)
       let effectsize = this.h/5;
-      effectsize = Math.min(Math.max(effectsize, 0.02), 0.05)
+      effectsize = Math.min(Math.max(effectsize, 0.02), 0.05)*(canvas.grid.size/100);
       let xOffset = effectsize*0.5-this.w/2;
       let zOffset = effectsize*0.5-this.h/2;
 
@@ -607,12 +610,12 @@ export class Token3D {
         this.border.remove(child);
       });
       const baseRadius = Math.max(this.token.w, this.token.h);
-      const slant = 0.005;
+      const slant = 0.005*(canvas.grid.size/100);
       let width = (baseRadius*1.02)/this.factor;
       width -= ((width*Math.SQRT2)/5)/2;
       let height = (baseRadius*1.02)/this.factor;
       height -= ((height*Math.SQRT2)/5)/2;
-      const depth = this.isBase ? 0.008 : 0.000001;
+      const depth = this.isBase ? this.baseDepth : 0.000001;
       const cubesize = Math.max(width, height)/6;
       let mesh,indicatorMesh,highlightMesh;
       if(!this.isBase){
@@ -800,7 +803,7 @@ export class Token3D {
       this.proneHandler.originalPosition = this.model.position.clone();
       this.proneHandler.originalRotation = this.model.rotation.clone();
       this.proneHandler.originalScale = this.model.scale.clone();
-      const offsetY = this.solidBaseMode === "ontop" ? 0 : 0.008;
+      const offsetY = this.solidBaseMode === "ontop" ? 0 : this.baseDepth;
       const box = new THREE.Box3().setFromObject(this.model)
       const center = box.getCenter(new THREE.Vector3());
       const dimensions = box.getSize(new THREE.Vector3());
