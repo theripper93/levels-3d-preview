@@ -410,9 +410,8 @@ class Levels3DPreview {
         this.tiles[tile.id] = this.loadingTiles[tile.id];
       });
     }else{
-      new Tile3D(tile, this).load().then((tile3d) => {
-        this.tiles[tile.id] = tile3d;
-      });
+      this.tiles[tile.id] = new Tile3D(tile, this)
+      this.tiles[tile.id].load();
     }
   }
 
@@ -617,6 +616,7 @@ class Levels3DPreview {
     _this.cursors.update();
     const delta = _this.clock.getDelta();
     //_this.grid?.updateGrid();
+    _this.grid?.updateGrid();
     Object.values(_this.tokens).forEach((token) => {
       token.updateVisibility();
       token.updateProne(delta);

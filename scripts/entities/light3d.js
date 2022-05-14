@@ -69,7 +69,6 @@ export class Light3D {
     }
 
     updatePositionFrom3D(e){
-        debugger
         this.skipMoveAnimation = true;
         const useSnapped = Ruler3D.useSnapped();
         const x3d = this.mesh.position.x;
@@ -114,6 +113,9 @@ export class Light3D {
 
     refresh(){
         const light = this.light;
+        if(this.dragHandle){
+            this.dragHandle.position.set(0,0,0);
+        }
         this.light3d.castShadow = light.document.getFlag("levels-3d-preview", "castShadows")//(canvas.scene.getFlag("levels-3d-preview", "bakeLights") || light.document.getFlag("levels-3d-preview", "castShadows")) ?? false;
         let top = light.data.flags.levels?.rangeTop ?? 1;
         let bottom = light.data.flags.levels?.rangeBottom ?? 1;

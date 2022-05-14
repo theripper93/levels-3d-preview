@@ -414,14 +414,15 @@ export class Tile3D {
 
     destroy(){
         this._destroyed = true;
-        if(!this.mesh) return;
+        delete this._parent.tiles[this.tile.id];
+        if(!this.mesh) return
         this._parent.scene.remove(this.mesh);
         this.mesh.traverse((child) => {
             if (child.isMesh) {
                 child.dispose?.();
             }
         })
-        delete this._parent.tiles[this.tile.id];
+        
     }
 
     _onClickLeft(e){

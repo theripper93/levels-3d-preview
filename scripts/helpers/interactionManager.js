@@ -497,6 +497,8 @@ export class InteractionManager {
       }
       const board = this._parent.board;
       if(board) collisionGeometries.push(board);
+      const buildPlane = this._parent.grid.secondaryGrid
+      if(buildPlane) collisionGeometries.push(buildPlane);
       const table = this._parent.table;
       if(table) collisionGeometries.push(table);
       collisionGeometries = collisionGeometries.filter(g => g);

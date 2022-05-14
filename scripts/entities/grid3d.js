@@ -5,6 +5,7 @@ import {factor} from '../main.js';
 export class Grid3D {
     constructor(){
         if(!canvas.scene.getFlag("levels-3d-preview", "enableGrid")) return;
+        this.buildPlaneThickness = 0.1;
         this.init();
     }
 
@@ -36,7 +37,19 @@ export class Grid3D {
         }else{
           await this.createGrid();
         }
+        this.createBuildPlane();
         this.setPosition();
+    }
+
+    createBuildPlane(){
+        const plane = new THREE.Mesh(
+          new THREE.BoxGeometry(canvas.scene.dimensions.sceneWidth/factor, this.buildPlaneThickness, canvas.scene.dimensions.sceneHeight/factor),
+          new THREE.MeshStandardMaterial({ color: "#fc03f4", transparent:true, opacity: 0.5 })
+        );
+        plane.position.set((canvas.grid.width/factor)/2 , -100000, (canvas.grid.height/factor)/2);
+        plane.visible = false;
+        this.secondaryGrid = plane;
+        this.scene.add(plane);
     }
 
     async createGrid(){
@@ -54,18 +67,16 @@ export class Grid3D {
 
     setPosition(){
         this.grid.position.y = 0.001;
+        this.secondaryGrid.visible = false;
+        this.secondaryGrid.position.y = -100000;
     }
 
     updateGrid(){
-        if(!this.secondaryGrid) return;
-        this.secondaryGrid.visible = canvas.tokens.controlled.length > 0;
-        if(!this.secondaryGrid.visible){
-            this.secondaryGrid.position.y = 0;
-            return;
-        }
-        const y = game.Levels3DPreview.tokens[canvas.tokens.controlled[0].id].mesh.position.y;
-        this.secondaryGrid.position.y = y;
-    }
+        if(!this.secondaryGrid || !_levels.UI?.rangeEnabled) return this.setPosition();
+        this.secondaryGrid.visible = _levels.UI.rangeEnabled ? true : false;
+        this.secondaryGrid.position.y = ((_levels.UI.range[0]*canvas.grid.size)/canvas.scene.data.gridDistance)/factor-this.buildPlaneThickness/2;
+        this.grid.position.y = this.secondaryGrid.position.y + 0.0001 + this.buildPlaneThickness/2;
+      }
 
     get scene(){
         return game.Levels3DPreview.scene
