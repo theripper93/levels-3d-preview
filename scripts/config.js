@@ -999,7 +999,7 @@ Hooks.on("init", () => {
     });
 
     game.keybindings.register("levels-3d-preview", "tiltX", {
-        name: game.i18n.localize("levels3dpreview.keybindings.tilt"),
+        name: game.i18n.localize("levels3dpreview.keybindings.tiltX"),
         editable: [
           {key: "KeyD", modifiers: [ CONTROL ]}
         ],
@@ -1008,7 +1008,7 @@ Hooks.on("init", () => {
     });
 
     game.keybindings.register("levels-3d-preview", "tiltZ", {
-        name: game.i18n.localize("levels3dpreview.keybindings.tilt"),
+        name: game.i18n.localize("levels3dpreview.keybindings.tiltY"),
         editable: [
           {key: "KeyF", modifiers: [ CONTROL ]}
         ],
