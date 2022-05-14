@@ -228,16 +228,11 @@ export class Token3D {
         })
       );
       hitbox.position.set(0, center.y+centerOffset.y, 0);
-      /*if(game.settings.get("levels-3d-preview", "conservativeHitbox")){
-      //scale Hitbox
-      const baseHitboxScale = hitbox.scale.x;
-      const multiHitboxScale = baseHitboxScale/this.scale;
-      hitbox.scale.set(multiHitboxScale, baseHitboxScale, multiHitboxScale);
-      }*/
+
       this.hitbox = hitbox;
       this.hitbox.geometry.computeBoundingBox();
       this._size = this.hitbox.geometry.boundingBox.getSize(new THREE.Vector3());
-      //pivot.add(hitbox);
+
       this.mesh = pivot;
       this.adjust = {
         x: this.offsetX/factor,
