@@ -88,7 +88,6 @@ export class TokenAnimationHandler{
         if(this._currentDelta > 1) return this.advanceStage();
 
         const initial = this._currentAnimationStartingState
-
         //Position
         if(this._currentStepAnimation.position && !this.areV3Equal(this.model.position, this._currentStepAnimation.position)) this.model.position.lerp(this._currentStepAnimation.position, this._currentDelta);
         
@@ -199,7 +198,7 @@ export const defaultTokenAnimations = {
         animation: [
             {
                 position: (box3, size, center, initialData) => {
-                    const move = size.z * 0.2;
+                    const move = Math.max(size.z,size.x) * 0.2;
                     const position = initialData.position;
                     position.z += move;
                     return position;
@@ -222,7 +221,7 @@ export const defaultTokenAnimations = {
         animation: [
             {
                 position: (box3, size, center, initialData) => {
-                    const move = size.z * 0.2;
+                    const move = Math.max(size.z,size.x) * 0.2;
                     const position = initialData.position;
                     position.z -= move;
                     return position;
@@ -238,7 +237,7 @@ export const defaultTokenAnimations = {
             },
             {
                 position: (box3, size, center, initialData) => {
-                    const move = size.z * 0.2;
+                    const move = Math.max(size.z,size.x) * 0.2;
                     const position = initialData.position;
                     position.z += move*2;
                     return position;
@@ -261,7 +260,7 @@ export const defaultTokenAnimations = {
         animation: [
             {
                 position: (box3, size, center, initialData) => {
-                    const move = size.z * 0.2;
+                    const move = Math.max(size.z,size.x) * 0.2;
                     const position = initialData.position;
                     position.z -= move;
                     return position;
@@ -277,7 +276,7 @@ export const defaultTokenAnimations = {
             },
             {
                 position: (box3, size, center, initialData) => {
-                    const move = size.z * 0.2;
+                    const move = Math.max(size.z,size.x) * 0.2;
                     const position = initialData.position;
                     position.z += move*6;
                     return position;
@@ -299,7 +298,7 @@ export const defaultTokenAnimations = {
         animation: [
             {
                 position: (box3, size, center, initialData) => {
-                    const move = size.z * 0.2;
+                    const move = Math.max(size.z,size.x) * 0.2;
                     const position = initialData.position;
                     position.z -= move;
                     return position;
@@ -441,7 +440,7 @@ export const defaultTokenAnimations = {
             for (let i = 0; i < count; i++) {
                 animation.push({
                     position: (box3, size, center, initialData, initalState) => {
-                        const move = size.z * 0.1;
+                        const move = Math.max(size.z,size.x) * 0.1;
                         const position = initialData.position;
                         const initial = initalState.position;
                         position.x = initial.x + Math.random()*move*(Math.random() > 0.5 ? 1 : -1);
