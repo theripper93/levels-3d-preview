@@ -109,6 +109,7 @@ Hooks.on("renderSceneConfig", (app,html)=>{
             label: game.i18n.localize("levels3dpreview.flags.skybox.label"),
             placeholder: game.i18n.localize("levels3dpreview.flags.skybox.placeholder"),
             notes: game.i18n.localize("levels3dpreview.flags.skybox.notes"),
+            default: "modules/levels-3d-preview/assets/skybox/humble/humble_bk.jpg"
         },
         "exr" : {
             type: "filepicker.folder",
@@ -116,6 +117,7 @@ Hooks.on("renderSceneConfig", (app,html)=>{
             label: game.i18n.localize("levels3dpreview.flags.exr.label"),
             placeholder: game.i18n.localize("levels3dpreview.flags.exr.placeholder"),
             notes: game.i18n.localize("levels3dpreview.flags.exr.notes"),
+            default: "modules/levels-3d-preview/assets/skybox/venice_sunrise_1k.exr"
         },
         "renderTable": {
             "type": "checkbox",

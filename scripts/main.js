@@ -84,6 +84,10 @@ class Levels3DPreview {
     this.CONFIG = {
       autoPan: false,
       tokenAnimations : defaultTokenAnimations,
+      skybox: {
+        sky: "modules/levels-3d-preview/assets/skybox/humble/humble_bk.jpg",
+        exr: "modules/levels-3d-preview/assets/skybox/venice_sunrise_1k.exr"
+      }
     }
     for(let [k,v] of Object.entries(this.CONFIG.tokenAnimations)){
       v.name = game.i18n.localize(`levels3dpreview.tokenAnimations.${k}`)
@@ -457,8 +461,8 @@ class Levels3DPreview {
     const size = sceneSize < 80 ? 80 : sceneSize;
     this.renderer.outputEncoding = THREE.LinearEncoding
     this.renderer.toneMapping = THREE.NoToneMapping;
-    const rootImage = canvas.scene.getFlag("levels-3d-preview", "skybox") ?? "";
-    const exr = canvas.scene.getFlag("levels-3d-preview", "exr") ?? "";
+    const rootImage = canvas.scene.getFlag("levels-3d-preview", "skybox") ?? this.CONFIG.skybox.sky;
+    const exr = canvas.scene.getFlag("levels-3d-preview", "exr") ?? this.CONFIG.skybox.exr;
     if(exr) this.loadEXR(exr);
     if (!rootImage) return;
     const imagesSuffix = ["_ft", "_bk", "_up", "_dn", "_rt", "_lf"];

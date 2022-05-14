@@ -475,9 +475,9 @@ export class Token3D {
       let toLerp = rotations;
       if(!lerp)mesh.rotation.set(rotations.x,rotations.y,rotations.z);
       else {
-        toLerp = new THREE.Vector3(mesh.rotation._x, mesh.rotation._y, mesh.rotation._z);
-        toLerp.lerp(new THREE.Vector3(rotations.x, rotations.y, rotations.z), 0.10);
-        mesh.rotation.set(toLerp.x, toLerp.y, toLerp.z);
+        toLerp = new THREE.Quaternion().setFromEuler(mesh.rotation);
+        toLerp.slerp(new THREE.Quaternion().setFromEuler(new THREE.Euler().setFromVector3(rotations)), 0.10);
+        mesh.rotation.setFromQuaternion(toLerp);
       }
       this.elevation3d = y;
       if(this.border && !this.rotateIndicator){
