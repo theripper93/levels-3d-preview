@@ -96,7 +96,6 @@ export class Template3D {
         const origin2d = this.isPreview ? Ruler3D.pos3DToCanvas(this.mesh.position) : Ruler3D.pos3DToCanvas(this.A)
 
         if(this.isLight){
-            debugger
             const lightData = {
                 config: {
                     dim: this.distance,
@@ -121,6 +120,7 @@ export class Template3D {
             distance: this.distance,
             direction: this.isPreview ? this.template.data.direction : this.direction,
             width: this.width,
+            user: game.user.id,
             fillColor: game.user.color,
             t: this._getBaseShape(),
             x: origin2d.x,

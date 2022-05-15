@@ -66,9 +66,11 @@ export class Grid3D {
     }
 
     setPosition(){
-        this.grid.position.y = 0.001;
-        this.secondaryGrid.visible = false;
-        this.secondaryGrid.position.y = -100000;
+        if(this.grid) this.grid.position.y = 0.001;
+        if(this.secondaryGrid){
+          this.secondaryGrid.visible = false;
+          this.secondaryGrid.position.y = -100000;
+        }
     }
 
     updateGrid(){
