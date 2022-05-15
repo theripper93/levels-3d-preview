@@ -321,3 +321,25 @@ export class Helpers {
     game.Levels3DPreview._animateCameraTarget.speed = params.speed ?? 0.04;
   }
 }
+
+
+export function toggleAdvancedSettings(app, html, settings){
+  for(let setting of settings){
+    html.find(`[name="flags.levels-3d-preview.${setting}"]`).closest(".form-group").toggle();
+  }
+  app.setPosition({height: "auto"});
+}
+
+export function injectAdvancedToggle(app, html, settings, injected){
+  const alwaysShowAdvanced = game.settings.get("levels-3d-preview", "showAdvanced");
+  if(alwaysShowAdvanced) return;
+  const toggleAdvanced = $(`<div class="form-group"><a style="text-align: center; font-weight: bolder; text-decoration: underline;">${game.i18n.localize("levels3dpreview.settings.showAdvanced.show")}</a></div>`);
+  (injected.find(".form-group").last().length ? injected.find(".form-group").last() : $(injected[injected.length-1])).after(toggleAdvanced);
+  toggleAdvanced.click(() => {
+    toggleAdvancedSettings(app, html, settings)
+    toggleAdvanced.find("a").text(toggleAdvanced.find("a").text() === game.i18n.localize("levels3dpreview.settings.showAdvanced.show") ? game.i18n.localize("levels3dpreview.settings.showAdvanced.hide") : game.i18n.localize("levels3dpreview.settings.showAdvanced.show"));
+  });
+  for(let setting of settings){
+    html.find(`[name="flags.levels-3d-preview.${setting}"]`).closest(".form-group").toggle();
+  }
+}

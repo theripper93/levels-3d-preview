@@ -214,7 +214,7 @@ class Levels3DPreview {
       this.fogExploration.dispose();
       this.fogExploration = null;
     }
-    if(canvas.scene.getFlag("levels-3d-preview", "enableFogOfWar")) this.fogExploration = new Fog(this);
+    if(canvas.scene.data.tokenVision && canvas.scene.data.fogExploration) this.fogExploration = new Fog(this);
     this.composer.render();
     this._active = true;
     this.particleSystem?.destroy();
@@ -849,11 +849,14 @@ Hooks.on("sightRefresh", () => {
 Hooks.on("updateScene", (scene,updates) => {
   if(!game.Levels3DPreview?._active || scene.id !== canvas.scene.id) return;
   if("img" in updates) game.Levels3DPreview.createBoard();
+  if("fogExploration" in updates || "tokenVision" in updates){
+    game.Levels3DPreview.reload();
+    return
+  }
   const flags = updates.flags ? updates.flags["levels-3d-preview"] : undefined;
   if(!flags) return;
   if(//do reload
     "enableGrid"  in flags ||
-    "enableFogOfWar" in flags ||
     "enableFog" in flags ||
     "fogColor" in flags ||
     "fogDistance" in flags ||

@@ -1,3 +1,5 @@
+import { toggleAdvancedSettings, injectAdvancedToggle } from './helpers/helpers.js';
+
 Hooks.on("getSceneControlButtons", (buttons)=>{
     buttons.find(b => b.name === "token")?.tools?.push(
     {
@@ -155,15 +157,9 @@ Hooks.on("renderSceneConfig", (app,html)=>{
             type: "custom",
             html: `<h3 class="form-header"><i class="fas fas fa-lightbulb"></i> ${game.i18n.localize("levels3dpreview.settings.headers.lighting.title")}</h3><p class="notes">${game.i18n.localize("levels3dpreview.settings.headers.lighting.notes")}</p><div>`
         },
-        "enableFogOfWar": {
+        /*"enableFogOfWar": {
             type: "checkbox",
             label: game.i18n.localize("levels3dpreview.flags.enableFogOfWar.label"),
-            default: false,
-        },
-        /*"bakeLights": {
-            type: "checkbox",
-            label: game.i18n.localize("levels3dpreview.flags.bakeLights.label"),
-            notes: game.i18n.localize("levels3dpreview.flags.bakeLights.notes"),
             default: false,
         },*/
         "sceneTint": {
@@ -373,7 +369,7 @@ Hooks.on("renderSceneConfig", (app,html)=>{
         }
     }
 
-    injectConfig.inject(app,html,data);
+    const injected = injectConfig.inject(app,html,data);
     html.on("change", `select[name="flags.levels-3d-preview.particlePreset"]`, (e) => {
         const value = e.target.value;
         if (value === "custom") {
@@ -383,6 +379,11 @@ Hooks.on("renderSceneConfig", (app,html)=>{
         }
     })
     html.find(`select[name="flags.levels-3d-preview.particlePreset"]`).trigger("change");
+
+    const advancedSettings = ["enableGrid","enableRuler","lockCamera","exr","renderBackground","enableFog","fogColor","fogDistance","sceneTint","timeSync","sunPosition","shadowBias","showSceneWalls","showSceneDoors","showSceneFloors","renderSceneLights"];
+
+    injectAdvancedToggle(app,html,advancedSettings, injected);
+
     if(canvas.scene.id !== app.object.id) return;
     html.on("change", "input", (e)=>{
         if(!game.Levels3DPreview._active) return;
@@ -412,7 +413,7 @@ Hooks.on("renderSceneConfig", (app,html)=>{
 })
 
 Hooks.on("renderTokenConfig", (app,html)=>{
-    injectConfig.inject(app,html,{
+    const injected = injectConfig.inject(app,html,{
         "moduleId": "levels-3d-preview",
         "tab" : {
             "name": "levels-3d-preview",
@@ -574,6 +575,10 @@ Hooks.on("renderTokenConfig", (app,html)=>{
             default: 1,
         },
     }, app.token)
+
+    const advancedSettings = ["imageTexture","material","color","baseColor","disableBase","removeBase","solidBaseMode","animIndex","animSpeed","faceCamera","autoCenter","rotationX","rotationY","rotationZ","offsetX","offsetY","offsetZ"];
+
+    injectAdvancedToggle(app,html,advancedSettings, injected);
 })
 
 Hooks.on("renderTileConfig", (app,html)=>{

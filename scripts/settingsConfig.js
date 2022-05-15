@@ -16,7 +16,7 @@ class canvas3dConfig extends FormApplication{
 	async getData(options) {
         const data = {}
         const settingsKeys = [
-            "canpingpan", "canping","baseStyle","solidBaseMode","solidBaseColor","highlightCombat","startMarker","selectedImage","colorizeInidcator","rotateIndicator","hideTarget","templateSyle","gridMode","autoPan","camerafocuszoom","standupFace","preventNegative","globalCollision","miniCanvas","debugMode","cameralockzero"
+            "showAdvanced", "canpingpan", "canping","baseStyle","solidBaseMode","solidBaseColor","highlightCombat","startMarker","selectedImage","colorizeInidcator","rotateIndicator","hideTarget","templateSyle","gridMode","autoPan","camerafocuszoom","standupFace","preventNegative","miniCanvas","debugMode","cameralockzero"
         ];
         for (let key of settingsKeys) {
             data[key] = game.settings.get("levels-3d-preview", key);
@@ -141,7 +141,7 @@ Hooks.once('init', function() {
       scope: "world",
       config: false,
       type: Boolean,
-      default: true,
+      default: false,
     });
 
     game.settings.register("levels-3d-preview", "templateSyle", {
@@ -258,13 +258,13 @@ Hooks.once('init', function() {
       default: true,
     });
 
-    game.settings.register("levels-3d-preview", "globalCollision", {
-      name: game.i18n.localize("levels3dpreview.settings.globalCollision.name"),
-      hint: game.i18n.localize("levels3dpreview.settings.globalCollision.hint"),
+    game.settings.register("levels-3d-preview", "showAdvanced", {
+      name: game.i18n.localize("levels3dpreview.settings.showAdvanced.name"),
+      hint: game.i18n.localize("levels3dpreview.settings.showAdvanced.hint"),
       scope: "world",
       config: false,
       type: Boolean,
-      default: true,
+      default: false,
     });
 
     game.settings.register("levels-3d-preview", "miniCanvas", {
@@ -273,7 +273,7 @@ Hooks.once('init', function() {
       scope: "world",
       config: false,
       type: Boolean,
-      default: true,
+      default: false,
     });
 
     game.settings.register("levels-3d-preview", "disableLighting", {

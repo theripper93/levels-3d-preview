@@ -26,12 +26,6 @@
       </div>
 
       <div class="form-group">
-        <label>{{localize "levels3dpreview.settings.globalCollision.name"}}</label>
-        <input type="checkbox" name="globalCollision" data-dtype="Boolean" {{checked globalCollision}} />
-        <p class="notes">{{localize "levels3dpreview.settings.globalCollision.hint"}}</p>
-      </div>
-
-      <div class="form-group">
         <label>{{localize "levels3dpreview.settings.templateSyle.name"}}</label>
         <select name="templateSyle" data-dtype="String">
           {{#select templateSyle}}
@@ -184,6 +178,12 @@
         <label>{{localize "levels3dpreview.settings.miniCanvas.name"}}</label>
         <input type="checkbox" name="miniCanvas" data-dtype="Boolean" {{checked miniCanvas}} />
         <p class="notes">{{localize "levels3dpreview.settings.miniCanvas.hint"}}</p>
+      </div>
+
+      <div class="form-group">
+        <label>{{localize "levels3dpreview.settings.showAdvanced.name"}}</label>
+        <input type="checkbox" name="showAdvanced" data-dtype="Boolean" {{checked showAdvanced}} />
+        <p class="notes">{{localize "levels3dpreview.settings.showAdvanced.hint"}}</p>
       </div>
 
       <div class="form-group">

@@ -461,6 +461,12 @@
             }
         },
         "settings" : {
+            "showAdvanced": {
+                "show": "Show Advanced Settings",
+                "hide": "Hide Advanced Settings",
+                "name": "Always Show Advanced Settings",
+                "hint": "Show the advanced settings in configuration menus by default."
+            },
             "headers":{
                 "basics": {
                     "title": "Basics",
