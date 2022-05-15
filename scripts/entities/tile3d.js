@@ -314,10 +314,11 @@ export class Tile3D {
         const model = await game.Levels3DPreview.helpers.loadModel(this.gtflPath);
         if(model) return model;
         //make 1x1 cube
-        const errText = game.i18n.localize("levels3dpreview.errors.filenotsupported") + "(" + extension +"): " + filePath + " Token: " + this.token.data.name
+        const errText = game.i18n.localize("levels3dpreview.errors.filenotsupported") + "(" + extension +"): " + filePath + " Tile: " + this.tile.id
         console.error(errText);
         ui.notifications.error(errText);
-        return new THREE.Mesh(new THREE.BoxGeometry(1,1,1), new THREE.MeshStandardMaterial({color: 0xff0000}));
+        const obj = new THREE.Mesh(new THREE.BoxGeometry(1,1,1), new THREE.MeshStandardMaterial({color: 0xff0000}))
+        return {scene: obj, model: obj, object: obj};
     }
 
     async getTextureOrMat(){
@@ -480,11 +481,11 @@ export class Tile3D {
     }
 
     _onHoverIn(e) {
-        this.placeable._onHoverIn(e);
+        //this.placeable._onHoverIn(e);
       }
   
     _onHoverOut(e) {
-    this.placeable._onHoverOut(e);
+        //this.placeable._onHoverOut(e);
     }
 }
 
