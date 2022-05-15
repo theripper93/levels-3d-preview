@@ -166,10 +166,14 @@ export class Tile3D {
         });
 
         if(model.object.animations.length > 0 && this.enableAnim) {
-            this.isAnimated = true;
-            this.mixer = new THREE.AnimationMixer( model.scene );
-            this.mixer.timeScale = this.animSpeed;
-            this.mixer.clipAction( model.object.animations[this.animIndex] ).play();
+            if(!model.object.animations[this.animIndex]) {
+                console.error("Animation index out of bounds", this.tile);
+              }else{
+                this.isAnimated = true;
+                this.mixer = new THREE.AnimationMixer( model.scene );
+                this.mixer.timeScale = this.animSpeed;
+                this.mixer.clipAction( model.object.animations[this.animIndex] ).play();
+              }
         }
 
         const container = new THREE.Group();

@@ -195,9 +195,13 @@ export class Token3D {
       }
 
       if(object.animations.length > 0 && this.enableAnim) {
-        this.mixer = new THREE.AnimationMixer( scene );
-        this.mixer.timeScale = this.animSpeed;
-        this.mixer.clipAction( object.animations[this.animIndex] ).play();
+        if(!object.animations[this.animIndex]) {
+          console.error("Animation index out of bounds", this.token);
+        }else{
+          this.mixer = new THREE.AnimationMixer( scene );
+          this.mixer.timeScale = this.animSpeed;
+          this.mixer.clipAction( object.animations[this.animIndex] ).play();
+        }
       }
       model.position.set(centerOffset.x, centerOffset.y, centerOffset.z);
       model.traverse((child) => {

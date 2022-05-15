@@ -19,7 +19,7 @@ export class Grid3D {
           canvas.scene.dimensions.size)
         ;
         const gridMode = game.settings.get("levels-3d-preview", "gridMode");
-        if(gridMode === "fast"){
+        if(gridMode === "fast" && canvas.scene.data.gridType < 2){
           const gridColor = canvas.scene.data.gridColor ?? 0x424242;
           const gridHelper = new THREE.GridHelper(
             size,
