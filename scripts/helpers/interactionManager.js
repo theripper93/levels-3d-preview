@@ -178,6 +178,7 @@ export class InteractionManager {
 
     _onMouseDown(event){
       this._parent.stopCameraAnimation();
+      this._downCameraPosition = this._parent.camera.position.clone();
       if(event.which === 1 && event.ctrlKey) canvas.activeLayer.releaseAll();
       this.mousedown = true;
       if(event.which === 1) this._leftDown = true;
@@ -235,6 +236,7 @@ export class InteractionManager {
       if(event.which === 1) this._leftDown = false;
       if(event.which === 3) this._rightDown = false;
       if(!this._leftDown && !this._rightDown) this.toggleControls(true);
+      this._upCameraPosition = this._parent.camera.position.clone();
       event.entity = this.eventData?.entity;
       event.intersect = this.eventData?.intersect;
       event.position3D = this.eventData?.position3D;
@@ -394,6 +396,10 @@ export class InteractionManager {
     _onClickLeft(event){
       if(ui.controls.isRuler || this.draggable) return;
       const entity = event.entity;
+      if((entity?.tile && canvas.activeLayer.options.objectClass.name !== "Tile") || !entity){
+        if(this._downCameraPosition.distanceTo(this._upCameraPosition)<0.01) canvas.activeLayer.releaseAll();
+      }
+      if(!entity) return
       const intersect = event.intersect;
       this.handleTriggerHappy(entity);
       entity._onClickLeft(event);
@@ -404,6 +410,7 @@ export class InteractionManager {
 
     _onClickRight(event){
       const entity = event.entity;
+      if(!entity) return;
       const intersect = event.intersect;
       if(entity.type === "Wall") {
         entity._onClickRight(event);
@@ -416,12 +423,14 @@ export class InteractionManager {
 
     _onClickLeft2(event){
       const entity = event.entity;
+      if(!entity) return;
       const intersect = event.intersect;
       entity._onClickLeft2(event)
     }
 
     _onClickRight2(event){
       const entity = event.entity;
+      if(!entity) return;
       const intersect = event.intersect;
       entity._onClickRight2(event)
     }
@@ -447,6 +456,14 @@ export class InteractionManager {
         if(canvas.activeLayer.options.objectClass.embeddedName !== "Tile" && child.userData?.entity3D?.embeddedName === "Tile" && !child.userData?.entity3D?.collision) continue;
         if(child.userData?.hitbox && child.userData.interactive) intersectTargets.push(child.userData.hitbox);
       }
+
+      const board = this._parent.board;
+      if(board) intersectTargets.push(board);
+      const buildPlane = this._parent.grid.secondaryGrid
+      if(buildPlane) intersectTargets.push(buildPlane);
+      const table = this._parent.table;
+      if(table) intersectTargets.push(table);
+
       const intersects = this.raycaster.intersectObjects(intersectTargets,true);
       if(!intersects.length) return null;
       let parentInt
