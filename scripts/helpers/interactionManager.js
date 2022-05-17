@@ -25,6 +25,7 @@ export class InteractionManager {
         this.clicks = 0;
         this.lcTime = 0;
         this.controls.enableRotate = !this.isCameraLocked
+        this.generateSightCollisions = debounce(this.generateSightCollisions.bind(this), 100);
     }
 
     get scene(){
@@ -53,16 +54,16 @@ export class InteractionManager {
         if(!wall.mesh?.visible) continue;
         collisionObjects.push(wall.mesh);
       }
-      /*const board = this._parent.board;
-      if(board) collisionObjects.push(board);
-      const table = this._parent.table;
-      if(table) collisionObjects.push(table);*/
       this._sightCollisions = collisionObjects;
     }
 
     computeSightCollision(v1,v2){
       const origin = Ruler3D.posCanvasTo3d(v1);
       const target = Ruler3D.posCanvasTo3d(v2);
+      return this.computeSightCollisionFrom3DPositions(origin, target);
+    }
+
+    computeSightCollisionFrom3DPositions(origin,target){
       const direction = target.clone().sub(origin).normalize();
       const distance = origin.distanceTo(target);
       this.sightRaycaster.set(origin, direction);
@@ -668,7 +669,7 @@ export class InteractionManager {
 }
 
 Hooks.on("updateTile", () => {
-  if(game.Levels3DPreview?._active && game.Levels3DPreview?.object3dSight){
+  if(game.Levels3DPreview?._active){
     game.Levels3DPreview?.interactionManager?.generateSightCollisions();
   }
 })
@@ -680,31 +681,31 @@ Hooks.on("createTile", () => {
 })
 
 Hooks.on("deleteTile", () => {
-  if(game.Levels3DPreview?._active && game.Levels3DPreview?.object3dSight){
+  if(game.Levels3DPreview?._active){
     game.Levels3DPreview?.interactionManager?.generateSightCollisions();
   }
 })
 
 Hooks.on("updateWall", () => {
-  if(game.Levels3DPreview?._active && game.Levels3DPreview?.object3dSight){
+  if(game.Levels3DPreview?._active){
     game.Levels3DPreview?.interactionManager?.generateSightCollisions();
   }
 })
 
 Hooks.on("createWall", () => {
-  if(game.Levels3DPreview?._active && game.Levels3DPreview?.object3dSight){
+  if(game.Levels3DPreview?._active){
     game.Levels3DPreview?.interactionManager?.generateSightCollisions();
   }
 })
 
 Hooks.on("deleteWall", () => {
-  if(game.Levels3DPreview?._active && game.Levels3DPreview?.object3dSight){
+  if(game.Levels3DPreview?._active){
     game.Levels3DPreview?.interactionManager?.generateSightCollisions();
   }
 })
 
 Hooks.on("3DCanvasSceneReady", () => {
-  if(game.Levels3DPreview?._active && game.Levels3DPreview?.object3dSight){
+  if(game.Levels3DPreview?._active){
     game.Levels3DPreview?.interactionManager?.generateSightCollisions();
     canvas.sight.refresh();
   }

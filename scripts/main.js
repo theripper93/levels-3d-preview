@@ -749,11 +749,22 @@ class Levels3DPreview {
     if(!token3D) return;
     //this.controls.target.set(token3D.mesh.position.x, token3D.mesh.position.y, token3D.mesh.position.z);
     if(zoom){
+      let targetPosition;
       const size = Math.max(token3D.w, token3D.h, token3D.d, 0.6)*2;
       const rotation = token3D.mesh.rotation.y-Math.PI/2;
       const offset = new THREE.Vector3(-size*Math.cos(rotation), size, size*Math.sin(rotation));
       offset.add(token3D.mesh.position);
-      this._animateCameraTarget.cameraPosition = offset;
+      targetPosition = offset;
+      const headPoint = token3D.head
+      const collision = this.interactionManager.computeSightCollisionFrom3DPositions(headPoint,offset)
+
+      if(collision){
+        const collisionPoint = new THREE.Vector3(collision.x, collision.y, collision.z);
+        collisionPoint.lerp(headPoint, 0.1);
+        targetPosition = collisionPoint;
+      }
+
+      this._animateCameraTarget.cameraPosition = targetPosition;
       //this.camera.position.copy(offset);
 
     }

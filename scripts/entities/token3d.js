@@ -995,6 +995,14 @@ export class Token3D {
     get d(){
       return this._size.y;
     }
+
+    get head(){
+      return new THREE.Vector3(
+        this.mesh.position.x,
+        this.mesh.position.y + this.d,
+        this.mesh.position.z
+      )
+    }
   }
 
 
