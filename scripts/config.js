@@ -954,8 +954,14 @@ Hooks.on("init", () => {
         editable: [
           {key: "KeyW"}
         ],
-        onDown: () => {game.Levels3DPreview.interactionManager._panKeys.panUp = true},
-        onUp: () => {game.Levels3DPreview.interactionManager._panKeys.panUp = false},
+        onDown: () => {
+            game.Levels3DPreview.interactionManager._panKeys.panUp = true
+            game.Levels3DPreview.controls.screenSpacePanning = false
+        },
+        onUp: () => {
+            game.Levels3DPreview.interactionManager._panKeys.panUp = false
+            game.Levels3DPreview.controls.screenSpacePanning = game.settings.get("levels-3d-preview", "screenspacepanning");
+        },
     });
 
     game.keybindings.register("levels-3d-preview", "panDown", {
@@ -963,8 +969,14 @@ Hooks.on("init", () => {
         editable: [
           {key: "KeyS"}
         ],
-        onDown: () => {game.Levels3DPreview.interactionManager._panKeys.panDown = true},
-        onUp: () => {game.Levels3DPreview.interactionManager._panKeys.panDown = false},
+        onDown: () => {
+            game.Levels3DPreview.interactionManager._panKeys.panDown = true
+            game.Levels3DPreview.controls.screenSpacePanning = false
+        },
+        onUp: () => {
+            game.Levels3DPreview.interactionManager._panKeys.panDown = false
+            game.Levels3DPreview.controls.screenSpacePanning = game.settings.get("levels-3d-preview", "screenspacepanning");
+        },
     });
 
     game.keybindings.register("levels-3d-preview", "panLeft", {
@@ -972,8 +984,14 @@ Hooks.on("init", () => {
         editable: [
           {key: "KeyA"}
         ],
-        onDown: () => {game.Levels3DPreview.interactionManager._panKeys.panLeft = true},
-        onUp: () => {game.Levels3DPreview.interactionManager._panKeys.panLeft = false},
+        onDown: () => {
+            game.Levels3DPreview.interactionManager._panKeys.panLeft = true
+            game.Levels3DPreview.controls.screenSpacePanning = false
+        },
+        onUp: () => {
+            game.Levels3DPreview.interactionManager._panKeys.panLeft = false
+            game.Levels3DPreview.controls.screenSpacePanning = game.settings.get("levels-3d-preview", "screenspacepanning");
+        },
     });
 
     game.keybindings.register("levels-3d-preview", "panRight", {
@@ -981,8 +999,14 @@ Hooks.on("init", () => {
         editable: [
           {key: "KeyD"}
         ],
-        onDown: () => {game.Levels3DPreview.interactionManager._panKeys.panRight = true},
-        onUp: () => {game.Levels3DPreview.interactionManager._panKeys.panRight = false},
+        onDown: () => {
+            game.Levels3DPreview.interactionManager._panKeys.panRight = true
+            game.Levels3DPreview.controls.screenSpacePanning = false
+        },
+        onUp: () => {
+            game.Levels3DPreview.interactionManager._panKeys.panRight = false
+            game.Levels3DPreview.controls.screenSpacePanning = game.settings.get("levels-3d-preview", "screenspacepanning");
+        },
     });
 
     game.keybindings.register("levels-3d-preview", "pingcamera", {

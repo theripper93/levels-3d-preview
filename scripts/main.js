@@ -179,12 +179,6 @@ class Levels3DPreview {
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.controls.listenToKeyEvents(document)
     this.controls.keyPanSpeed = 12;
-    this.controls.keys = {
-      UP: game.keybindings.get("levels-3d-preview", "panUp")[0].key,
-      BOTTOM: game.keybindings.get("levels-3d-preview", "panDown")[0].key,
-      LEFT: game.keybindings.get("levels-3d-preview", "panLeft")[0].key,
-      RIGHT: game.keybindings.get("levels-3d-preview", "panRight")[0].key,
-    }
     game.settings.get("levels-3d-preview", "cameralockzero") && this.controls.addEventListener("change", this._onCameraChange.bind(this));
     this.ruler = new Ruler3D(this);
     this.interactionManager = new InteractionManager(this);

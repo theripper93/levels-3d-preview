@@ -363,7 +363,6 @@ class OrbitControls extends EventDispatcher {
 		}
 
 		function getZoomScale() {
-
 			return Math.pow( 0.95, scope.zoomSpeed );
 
 		}
@@ -446,8 +445,11 @@ class OrbitControls extends EventDispatcher {
 				} else if ( scope.object.isOrthographicCamera ) {
 
 					// orthographic
-					panLeft( deltaX * ( scope.object.right - scope.object.left ) / scope.object.zoom / element.clientWidth, scope.object.matrix );
-					panUp( deltaY * ( scope.object.top - scope.object.bottom ) / scope.object.zoom / element.clientHeight, scope.object.matrix );
+					panLeft( deltaX * ( scope.object.right - scope.object.left )  / element.clientWidth, scope.object.matrix );
+					panUp( deltaY * ( scope.object.top - scope.object.bottom )  / element.clientHeight, scope.object.matrix );
+
+					//panLeft( deltaX * ( scope.object.right - scope.object.left ) / scope.object.zoom / element.clientWidth, scope.object.matrix );
+					//panUp( deltaY * ( scope.object.top - scope.object.bottom ) / scope.object.zoom / element.clientHeight, scope.object.matrix );
 
 				} else {
 
