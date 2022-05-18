@@ -21,6 +21,9 @@
                 "title": "3D Canvas: Remove Core Keybindings",
                 "content": "For 3D Canvas controls to not overlap core controls, it's higly suggested to remove the core WASD Keybindings. You will still be able to move Tokens or other Entities with Arrow Keys or NumPad. Do you want to remove them?"
             },
+            "rotate": "Tile Editor: Rotate",
+            "translate": "Tile Editor: Translate",
+            "toggleGizmo": "Tile Editor: Toggle Gizmo",
             "resetView": "Reset Camera View",
             "topdownView": "Top-Down Camera View",
             "cameraToToken": "Focus Camera on Selected Token",
@@ -681,7 +684,10 @@
         "tileEditor": {
             "controlsReference": {
                 "title": "3D Canvas Tile Editor Controls",
+                "translate": "Translate",
+                "rotate": "Rotate",
                 "scale": "Scale",
+                "toggleGizmo": "Toggle Gizmo",
                 "scaleWidth": "Width",
                 "scaleHeight": "Height",
                 "tiltX": "Tilt X",

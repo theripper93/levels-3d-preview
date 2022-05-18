@@ -47,6 +47,7 @@ export class Tile3D {
         }
         this._loaded = true;
         this.elevation3d = this.mesh.position.y;
+        this.updateControls();
         return this;
     }
 
@@ -347,10 +348,56 @@ export class Tile3D {
         }
         const c = new THREE.Color();
         c.set(CONFIG.Canvas.dispositionColors.CONTROLLED);
-        const cube = new THREE.Mesh(new THREE.BoxGeometry(box.max.x - box.min.x, box.max.y - box.min.y, box.max.z - box.min.z), new THREE.MeshBasicMaterial({color: c, wireframe: true}));
+        const cube = new THREE.Mesh(new THREE.BoxGeometry(this.tile.data.width/factor, box.max.y - box.min.y, this.tile.data.height/factor), new THREE.MeshBasicMaterial({color: c, wireframe: true}));
         cube.position.set(0, (box.max.y - box.min.y) / 2, 0);
         cube.geometry.computeBoundingBox();
         this.controlledBox = cube;
+    }
+
+    updateControls(){
+        const controls = this._parent.transformControls
+        const gizmoEnabled = game.Levels3DPreview.interactionManager._gizmoEnabled
+        if(!gizmoEnabled){
+            return controls.detach()
+        }
+        if(this.tile._controlled) controls.attach(this.mesh);
+        if(!canvas.activeLayer.controlled.length) controls.detach();
+    }
+
+    updateFromTransform(){
+        const controls = this._parent.transformControls
+        controls.detach();
+        this.updatePositionFrom3D();
+    }
+
+    processRotation(update){
+
+        const currentTiltX = this.mesh.rotation.x;
+        const currentTiltZ = this.mesh.rotation.z;
+        const currentTiltY = this.mesh.rotation.y;
+
+        const newTiltX = Math.toDegrees((currentTiltX)%(Math.PI*2));
+        const newTiltZ = Math.toDegrees((currentTiltZ)%(Math.PI*2));
+        const newTiltY = Math.toDegrees((-currentTiltY*this.rotSign)%(Math.PI*2));
+
+        update.rotation = newTiltY;
+        update.flags["levels-3d-preview"].tiltX = newTiltX;
+        update.flags["levels-3d-preview"].tiltZ = newTiltZ;
+
+    }
+
+    processScale(update){
+        debugger
+        const scaleX = this.mesh.scale.x;
+        const scaleZ = this.mesh.scale.z;
+        const newWidth = this.tile.data.width*scaleX;
+        const newHeight = this.tile.data.height*scaleZ;
+        const x = (update.x ?? this.tile.data.x) - (newWidth-this.tile.data.width)/2;
+        const z = (update.y ?? this.tile.data.y) - (newHeight-this.tile.data.height)/2;
+        update.x = Math.round(x);
+        update.y = Math.round(z);
+        update.width = newWidth;
+        update.height = newHeight;
     }
 
     toggleBoundingBox(){
@@ -399,7 +446,7 @@ export class Tile3D {
         let updates = [];
         for(let tile of canvas.activeLayer.controlled){
         const tileFlags = _levels.getFlagsForObject(tile);
-          updates.push({
+          const update = {
             _id: tile.id,
             x: tile.data.x + deltas.x,
             y: tile.data.y + deltas.y,
@@ -411,7 +458,10 @@ export class Tile3D {
                     rangeBottom: Math.round((tileFlags.rangeBottom + deltas.elevation)*1000)/1000
                 }
             },
-          })
+          }
+          this.processScale(update)
+          this.processRotation(update)
+          updates.push(update)
         }
         canvas.scene.updateEmbeddedDocuments("Tile", updates)
         return true;
@@ -558,4 +608,9 @@ Hooks.on("renderTileHUD", (hud) => {
 
     hud.element.find(`div[data-action="locked"]`).before(controlButton);
 
+})
+
+Hooks.on("controlTile", (tile, controlled) => {
+    if(!game.Levels3DPreview?._active || !game.user.isGM) return;
+    Object.values(game.Levels3DPreview.tiles).forEach(tile3d => { tile3d.updateControls() })
 })

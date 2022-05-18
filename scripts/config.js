@@ -631,13 +631,13 @@ Hooks.on("renderTileConfig", (app,html)=>{
             type: "number",
             label: game.i18n.localize("levels3dpreview.flags.tiltX.label"),  
             default: 0,
-            step: 1,
+            step: "any",
         },
         "tiltZ": {
             type: "number",
             label: game.i18n.localize("levels3dpreview.flags.tiltZ.label"),
             default: 0,
-            step: 1,
+            step: "any",
         },
         "yScale": {
             type: "number",
@@ -1041,68 +1041,48 @@ Hooks.on("init", () => {
         editable: [
           {key: "KeyS"}
         ],
-        onDown: () => {game.Levels3DPreview.interactionManager.scale = true},
-        onUp: () => {game.Levels3DPreview.interactionManager.scale = false},
+        onDown: () => {
+            game.Levels3DPreview.transformControls.setMode('scale')
+            game.Levels3DPreview.transformControls.showY = false;
+        },
     });
 
-    game.keybindings.register("levels-3d-preview", "scaleWidth", {
-        name: game.i18n.localize("levels3dpreview.keybindings.scaleWidth"),
+    game.keybindings.register("levels-3d-preview", "translate", {
+        name: game.i18n.localize("levels3dpreview.keybindings.translate"),
         editable: [
-          {key: "KeyQ"}
+          {key: "KeyT"}
         ],
-        onDown: () => {game.Levels3DPreview.interactionManager.scaleWidth = true},
-        onUp: () => {game.Levels3DPreview.interactionManager.scaleWidth = false},
+        onDown: () => {
+            game.Levels3DPreview.transformControls.setMode('translate')
+            game.Levels3DPreview.transformControls.showY = true;
+        },
     });
 
-    game.keybindings.register("levels-3d-preview", "scaleHeight", {
-        name: game.i18n.localize("levels3dpreview.keybindings.scaleHeight"),
-        editable: [
-          {key: "KeyW"}
-        ],
-        onDown: () => {game.Levels3DPreview.interactionManager.scaleHeight = true},
-        onUp: () => {game.Levels3DPreview.interactionManager.scaleHeight = false},
-    });
-
-    game.keybindings.register("levels-3d-preview", "tiltX", {
-        name: game.i18n.localize("levels3dpreview.keybindings.tiltX"),
-        editable: [
-          {key: "KeyD"}
-        ],
-        onDown: () => {game.Levels3DPreview.interactionManager.tiltX = true},
-        onUp: () => {game.Levels3DPreview.interactionManager.tiltX = false},
-    });
-
-    game.keybindings.register("levels-3d-preview", "tiltZ", {
-        name: game.i18n.localize("levels3dpreview.keybindings.tiltY"),
-        editable: [
-          {key: "KeyF"}
-        ],
-        onDown: () => {game.Levels3DPreview.interactionManager.tiltZ = true},
-        onUp: () => {game.Levels3DPreview.interactionManager.tiltZ = false},
-    });
-
-    game.keybindings.register("levels-3d-preview", "scaleGap", {
-        name: game.i18n.localize("levels3dpreview.keybindings.scaleGap"),
-        editable: [
-          {key: "KeyE"}
-        ],
-        onDown: () => {game.Levels3DPreview.interactionManager.scaleGap = true},
-        onUp: () => {game.Levels3DPreview.interactionManager.scaleGap = false},
-    });
-
-    game.keybindings.register("levels-3d-preview", "scaleScale", {
-        name: game.i18n.localize("levels3dpreview.keybindings.scaleScale"),
+    game.keybindings.register("levels-3d-preview", "rotate", {
+        name: game.i18n.localize("levels3dpreview.keybindings.rotate"),
         editable: [
           {key: "KeyR"}
         ],
-        onDown: () => {game.Levels3DPreview.interactionManager.scaleScale = true},
-        onUp: () => {game.Levels3DPreview.interactionManager.scaleScale = false},
+        onDown: () => {
+            game.Levels3DPreview.transformControls.setMode('rotate')
+            game.Levels3DPreview.transformControls.showY = true;
+        },
+    });
+
+    game.keybindings.register("levels-3d-preview", "toggleGizmo", {
+        name: game.i18n.localize("levels3dpreview.keybindings.toggleGizmo"),
+        editable: [
+          {key: "KeyG"}
+        ],
+        onDown: () => {
+            game.Levels3DPreview.interactionManager.toggleGizmo();
+        },
     });
 
     game.keybindings.register("levels-3d-preview", "toggleMode", {
         name: game.i18n.localize("levels3dpreview.keybindings.toggleMode"),
         editable: [
-          {key: "KeyT"}
+          {key: "KeyQ"}
         ],
         onDown: () => {
             const updates = [];

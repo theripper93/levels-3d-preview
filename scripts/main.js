@@ -1,5 +1,6 @@
 import * as THREE from "./lib/three.module.js";
 import { OrbitControls } from "./lib/OrbitControls.js";
+import { TransformControls } from "./lib/TransformControls.js";
 import { GLTFLoader } from "./lib/GLTFLoader.js";
 import {Token3D} from "./entities/token3d.js";
 import { Ruler3D } from "./entities/ruler3d.js";
@@ -227,6 +228,10 @@ class Levels3DPreview {
     }else{
       this.particleSystem = new ParticleSystem(this);
     }
+    this.transformControls?.dispose();
+    this.transformControls = new TransformControls(this.camera, this.renderer.domElement);
+    this.scene.add(this.transformControls);
+    this.interactionManager.initTransformControls();
     this.object3dSight = canvas.scene.getFlag("levels-3d-preview", "object3dSight") ?? false;
     this.mirrorLevelsVisibility = canvas.scene.getFlag("levels-3d-preview", "mirrorLevels") ?? false;
     this.debugMode = game.settings.get("levels-3d-preview", "debugMode")

@@ -11,6 +11,7 @@ export class InteractionManager {
         this._draggable = null;
         this._parent = levels3dPreview;
         this._panKeys = {};
+        this._gizmoEnabled = true;
         this.raycaster = new THREE.Raycaster();
         this.raycaster.firstHitOnly = true;
         this.sightRaycaster = new THREE.Raycaster();
@@ -88,11 +89,38 @@ export class InteractionManager {
 
       }
 
+    initTransformControls(){
+      this._parent.transformControls.addEventListener("mouseUp", this._onTransformEnd.bind(this));
+      this._parent.transformControls.addEventListener("mouseDown", this._onTransformStart.bind(this));
+    }
+
       get allowedRulerDrag(){
         return [
           "MeasuredTemplate",
           "AmbientLight",
         ]
+      }
+
+      _onTransformStart(event){
+        this.controls.enabled = false;
+        this.preventSelect = true;
+      }
+
+      _onTransformEnd(event){
+        this.controls.enabled = true;
+        this.preventSelect = false;
+        const object3d = event.target.object.userData.entity3D;
+        if(!object3d) return;
+        object3d.updateFromTransform();
+      }
+
+      toggleGizmo(){
+        this._gizmoEnabled = !this._gizmoEnabled;
+        if(!this._gizmoEnabled){ this._parent.transformControls.detach();}
+        else{
+          if(canvas.activeLayer.options.objectClass.name !== "Tile") return;
+          Object.values(game.Levels3DPreview.tiles).forEach(tile3d => { tile3d.updateControls() })
+        }
       }
 
       isRulerDrag(event, intersectData){
@@ -179,6 +207,7 @@ export class InteractionManager {
       }
 
     _onMouseDown(event){
+      if(this.preventSelect) return;
       this._parent.stopCameraAnimation();
       this._downCameraPosition = this._parent.camera.position.clone();
       if(event.which === 1 && event.ctrlKey) canvas.activeLayer.releaseAll();
@@ -638,7 +667,7 @@ export class InteractionManager {
     }
     
     showControlReference(){
-      const keybindings = ["scale", "scaleWidth", "scaleHeight", "tiltX", "tiltZ", "scaleGap", "scaleScale", "toggleMode"]
+      const keybindings = ["translate", "rotate", "scale","toggleGizmo", "toggleMode" ]
       const kbObj = {}
       keybindings.forEach(key => {
         kbObj[key] = game.keybindings.get("levels-3d-preview", key)[0];
@@ -653,7 +682,7 @@ export class InteractionManager {
       controlsReference += `<p><strong>${game.i18n.localize(`levels3dpreview.tileEditor.controlsReference.${k}`)}</strong>: ${mods + (v.modifiers.length ? " + " : "") + v.key}</p>`
     }
     
-    controlsReference += `<p>${game.i18n.localize(`levels3dpreview.tileEditor.controlsReference.wheel`)}</p>`
+    //controlsReference += `<p>${game.i18n.localize(`levels3dpreview.tileEditor.controlsReference.wheel`)}</p>`
     
     ChatMessage.create({
       content: controlsReference,
