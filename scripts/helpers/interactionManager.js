@@ -10,6 +10,7 @@ export class InteractionManager {
     constructor(levels3dPreview){
         this._draggable = null;
         this._parent = levels3dPreview;
+        this._panKeys = {};
         this.raycaster = new THREE.Raycaster();
         this.raycaster.firstHitOnly = true;
         this.sightRaycaster = new THREE.Raycaster();
@@ -648,8 +649,8 @@ export class InteractionManager {
     <h2>${game.i18n.localize(`levels3dpreview.tileEditor.controlsReference.title`)}</h2>
     `
     for(let [k,v] of Object.entries(kbObj)){
-      const mods = v.modifiers.join("+");
-      controlsReference += `<p><strong>${game.i18n.localize(`levels3dpreview.tileEditor.controlsReference.${k}`)}</strong>: ${mods + " + " + v.key}</p>`
+      const mods = v.modifiers.length = v.modifiers.join("+");
+      controlsReference += `<p><strong>${game.i18n.localize(`levels3dpreview.tileEditor.controlsReference.${k}`)}</strong>: ${mods + (v.modifiers.length ? " + " : "") + v.key}</p>`
     }
     
     controlsReference += `<p>${game.i18n.localize(`levels3dpreview.tileEditor.controlsReference.wheel`)}</p>`
@@ -665,6 +666,24 @@ export class InteractionManager {
       }
     })
     
+    }
+
+    async removeWASDBindings(){
+
+      Dialog.confirm({
+        title: game.i18n.localize(`levels3dpreview.keybindings.dialog.title`),
+        content: game.i18n.localize(`levels3dpreview.keybindings.dialog.content`),
+        yes: async () => {
+          await game.keybindings.set("core","panUp",game.keybindings.get("core", "panUp").filter(b => b.key != "KeyW" && b.key != "ArrowUp" && b.key != "Numpad8"));
+          await game.keybindings.set("core","panDown",game.keybindings.get("core", "panDown").filter(b => b.key != "KeyS" && b.key != "ArrowDown" && b.key != "Numpad2"));
+          await game.keybindings.set("core","panLeft",game.keybindings.get("core", "panLeft").filter(b => b.key != "KeyA" && b.key != "ArrowLeft" && b.key != "Numpad4"));
+          await game.keybindings.set("core","panRight",game.keybindings.get("core", "panRight").filter(b => b.key != "KeyD" && b.key != "ArrowRight" && b.key != "Numpad6"));
+          await game.settings.set("levels-3d-preview", "removeKeybindingsPrompt", true);
+        },
+        no: () => {
+          game.settings.set("levels-3d-preview", "removeKeybindingsPrompt", true);
+        },
+      })
     }
 }
 

@@ -303,9 +303,7 @@ class OrbitControls extends EventDispatcher {
 			scope.domElement.removeEventListener( 'pointermove', onPointerMove );
 			scope.domElement.removeEventListener( 'pointerup', onPointerUp );
 
-
 			if ( scope._domElementKeyEvents !== null ) {
-
 				scope._domElementKeyEvents.removeEventListener( 'keydown', onKeyDown );
 
 			}
@@ -581,12 +579,6 @@ class OrbitControls extends EventDispatcher {
 
 		}
 
-		function handleMouseUp( /*event*/ ) {
-
-			// no-op
-
-		}
-
 		function handleMouseWheel( event ) {
 
 			if ( event.deltaY < 0 ) {
@@ -605,9 +597,30 @@ class OrbitControls extends EventDispatcher {
 
 		function handleKeyDown( event ) {
 
+			if(!game.Levels3DPreview._active) return;
+
 			let needsUpdate = false;
 
-			switch ( event.code ) {
+			const {panUp, panDown, panLeft, panRight} = game.Levels3DPreview.interactionManager._panKeys;
+
+			if(panUp){
+				pan( 0, scope.keyPanSpeed );
+				needsUpdate = true;
+			}
+			if(panDown){
+				pan( 0, - scope.keyPanSpeed );
+				needsUpdate = true;
+			}
+			if(panLeft){
+				pan( scope.keyPanSpeed, 0 );
+				needsUpdate = true;
+			}
+			if(panRight){
+				pan( - scope.keyPanSpeed, 0 );
+				needsUpdate = true;
+			}
+
+			/*switch ( event.code ) {
 
 				case scope.keys.UP:
 					pan( 0, scope.keyPanSpeed );
@@ -629,7 +642,7 @@ class OrbitControls extends EventDispatcher {
 					needsUpdate = true;
 					break;
 
-			}
+			}*/
 
 			if ( needsUpdate ) {
 
@@ -793,12 +806,6 @@ class OrbitControls extends EventDispatcher {
 
 		}
 
-		function handleTouchEnd( /*event*/ ) {
-
-			// no-op
-
-		}
-
 		//
 		// event handlers - FSM: listen for events and reset state
 		//
@@ -850,30 +857,20 @@ class OrbitControls extends EventDispatcher {
 
 		function onPointerUp( event ) {
 
-			if ( scope.enabled === false ) return;
+		    removePointer( event );
 
-			if ( event.pointerType === 'touch' ) {
+		    if ( pointers.length === 0 ) {
 
-				onTouchEnd();
+		        scope.domElement.releasePointerCapture( event.pointerId );
 
-			} else {
+		        scope.domElement.removeEventListener( 'pointermove', onPointerMove );
+		        scope.domElement.removeEventListener( 'pointerup', onPointerUp );
 
-				onMouseUp( event );
+		    }
 
-			}
+		    scope.dispatchEvent( _endEvent );
 
-			removePointer( event );
-
-			//
-
-			if ( pointers.length === 0 ) {
-
-				scope.domElement.releasePointerCapture( event.pointerId );
-
-				scope.domElement.removeEventListener( 'pointermove', onPointerMove );
-				scope.domElement.removeEventListener( 'pointerup', onPointerUp );
-
-			}
+		    state = STATE.NONE;
 
 		}
 
@@ -1014,19 +1011,9 @@ class OrbitControls extends EventDispatcher {
 
 		}
 
-		function onMouseUp( event ) {
-
-			handleMouseUp( event );
-
-			scope.dispatchEvent( _endEvent );
-
-			state = STATE.NONE;
-
-		}
-
 		function onMouseWheel( event ) {
 
-			if ( scope.enabled === false || scope.enableZoom === false || ( state !== STATE.NONE && state !== STATE.ROTATE ) ) return;
+			if ( scope.enabled === false || scope.enableZoom === false || state !== STATE.NONE ) return;
 
 			event.preventDefault();
 
@@ -1181,16 +1168,6 @@ class OrbitControls extends EventDispatcher {
 					state = STATE.NONE;
 
 			}
-
-		}
-
-		function onTouchEnd( event ) {
-
-			handleTouchEnd( event );
-
-			scope.dispatchEvent( _endEvent );
-
-			state = STATE.NONE;
 
 		}
 

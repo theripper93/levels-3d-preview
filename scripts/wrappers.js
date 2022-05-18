@@ -1,6 +1,5 @@
 Hooks.once('ready', async function() {
-    if(game.version > 9)libWrapper.register("levels-3d-preview", "ClientKeybindings.prototype._handleMovement", _handleMovement, "MIXED")
-    else libWrapper.register("levels-3d-preview", "KeyboardManager.prototype._handleMovement", _handleMovement, "MIXED")
+    libWrapper.register("levels-3d-preview", "ClientKeybindings.prototype._handleMovement", _handleMovement, "MIXED");
     libWrapper.register("levels-3d-preview", "TokenHUD.prototype.setPosition", TokenHUDsetPosition, "WRAPPER")
     libWrapper.register("levels-3d-preview", "TileHUD.prototype.setPosition", TileHUDsetPosition, "WRAPPER")
     libWrapper.register("levels-3d-preview", "CONFIG.Token.objectClass.prototype.refresh", reDraw, "WRAPPER")
@@ -79,7 +78,6 @@ Hooks.once('ready', async function() {
     function _handleMovement(wrapped,...args){
         const layer = args[1];
         if(!game.Levels3DPreview?._active || !canvas.tokens.controlled[0]) return wrapped(...args);
-
         const positions = handleArrowKeys(this.moveKeys)
         if(!positions) return
         let dx = positions.x

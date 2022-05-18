@@ -45,6 +45,13 @@ class canvas3dConfig extends FormApplication{
 
 Hooks.once('init', function() {
 
+  game.settings.register("levels-3d-preview", "removeKeybindingsPrompt", {
+    scope: "client",
+    config: false,
+    type: Boolean,
+    default: false,
+  });
+
   game.settings.registerMenu("levels-3d-preview", "configMenu", {
     label: game.i18n.localize("levels3dpreview.settings.configApp.hint"),
     icon: "fas fa-cogs",

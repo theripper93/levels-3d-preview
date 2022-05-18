@@ -949,6 +949,42 @@ Hooks.on("init", () => {
         onDown: () => {if(game.Levels3DPreview._active) game.Levels3DPreview.setCameraToControlled()},
     });
 
+    game.keybindings.register("levels-3d-preview", "panUp", {
+        name: game.i18n.localize("levels3dpreview.keybindings.panUp"),
+        editable: [
+          {key: "KeyW"}
+        ],
+        onDown: () => {game.Levels3DPreview.interactionManager._panKeys.panUp = true},
+        onUp: () => {game.Levels3DPreview.interactionManager._panKeys.panUp = false},
+    });
+
+    game.keybindings.register("levels-3d-preview", "panDown", {
+        name: game.i18n.localize("levels3dpreview.keybindings.panDown"),
+        editable: [
+          {key: "KeyS"}
+        ],
+        onDown: () => {game.Levels3DPreview.interactionManager._panKeys.panDown = true},
+        onUp: () => {game.Levels3DPreview.interactionManager._panKeys.panDown = false},
+    });
+
+    game.keybindings.register("levels-3d-preview", "panLeft", {
+        name: game.i18n.localize("levels3dpreview.keybindings.panLeft"),
+        editable: [
+          {key: "KeyA"}
+        ],
+        onDown: () => {game.Levels3DPreview.interactionManager._panKeys.panLeft = true},
+        onUp: () => {game.Levels3DPreview.interactionManager._panKeys.panLeft = false},
+    });
+
+    game.keybindings.register("levels-3d-preview", "panRight", {
+        name: game.i18n.localize("levels3dpreview.keybindings.panRight"),
+        editable: [
+          {key: "KeyD"}
+        ],
+        onDown: () => {game.Levels3DPreview.interactionManager._panKeys.panRight = true},
+        onUp: () => {game.Levels3DPreview.interactionManager._panKeys.panRight = false},
+    });
+
     game.keybindings.register("levels-3d-preview", "pingcamera", {
         name: game.i18n.localize("levels3dpreview.keybindings.pingcamera"),
         editable: [
@@ -979,7 +1015,7 @@ Hooks.on("init", () => {
     game.keybindings.register("levels-3d-preview", "scale", {
         name: game.i18n.localize("levels3dpreview.keybindings.scale"),
         editable: [
-          {key: "KeyS", modifiers: [ CONTROL ]}
+          {key: "KeyS"}
         ],
         onDown: () => {game.Levels3DPreview.interactionManager.scale = true},
         onUp: () => {game.Levels3DPreview.interactionManager.scale = false},
@@ -988,7 +1024,7 @@ Hooks.on("init", () => {
     game.keybindings.register("levels-3d-preview", "scaleWidth", {
         name: game.i18n.localize("levels3dpreview.keybindings.scaleWidth"),
         editable: [
-          {key: "KeyQ", modifiers: [ CONTROL ]}
+          {key: "KeyQ"}
         ],
         onDown: () => {game.Levels3DPreview.interactionManager.scaleWidth = true},
         onUp: () => {game.Levels3DPreview.interactionManager.scaleWidth = false},
@@ -997,7 +1033,7 @@ Hooks.on("init", () => {
     game.keybindings.register("levels-3d-preview", "scaleHeight", {
         name: game.i18n.localize("levels3dpreview.keybindings.scaleHeight"),
         editable: [
-          {key: "KeyW", modifiers: [ CONTROL ]}
+          {key: "KeyW"}
         ],
         onDown: () => {game.Levels3DPreview.interactionManager.scaleHeight = true},
         onUp: () => {game.Levels3DPreview.interactionManager.scaleHeight = false},
@@ -1006,7 +1042,7 @@ Hooks.on("init", () => {
     game.keybindings.register("levels-3d-preview", "tiltX", {
         name: game.i18n.localize("levels3dpreview.keybindings.tiltX"),
         editable: [
-          {key: "KeyD", modifiers: [ CONTROL ]}
+          {key: "KeyD"}
         ],
         onDown: () => {game.Levels3DPreview.interactionManager.tiltX = true},
         onUp: () => {game.Levels3DPreview.interactionManager.tiltX = false},
@@ -1015,7 +1051,7 @@ Hooks.on("init", () => {
     game.keybindings.register("levels-3d-preview", "tiltZ", {
         name: game.i18n.localize("levels3dpreview.keybindings.tiltY"),
         editable: [
-          {key: "KeyF", modifiers: [ CONTROL ]}
+          {key: "KeyF"}
         ],
         onDown: () => {game.Levels3DPreview.interactionManager.tiltZ = true},
         onUp: () => {game.Levels3DPreview.interactionManager.tiltZ = false},
@@ -1024,7 +1060,7 @@ Hooks.on("init", () => {
     game.keybindings.register("levels-3d-preview", "scaleGap", {
         name: game.i18n.localize("levels3dpreview.keybindings.scaleGap"),
         editable: [
-          {key: "KeyE", modifiers: [ CONTROL ]}
+          {key: "KeyE"}
         ],
         onDown: () => {game.Levels3DPreview.interactionManager.scaleGap = true},
         onUp: () => {game.Levels3DPreview.interactionManager.scaleGap = false},
@@ -1033,7 +1069,7 @@ Hooks.on("init", () => {
     game.keybindings.register("levels-3d-preview", "scaleScale", {
         name: game.i18n.localize("levels3dpreview.keybindings.scaleScale"),
         editable: [
-          {key: "KeyR", modifiers: [ CONTROL ]}
+          {key: "KeyR"}
         ],
         onDown: () => {game.Levels3DPreview.interactionManager.scaleScale = true},
         onUp: () => {game.Levels3DPreview.interactionManager.scaleScale = false},
@@ -1042,7 +1078,7 @@ Hooks.on("init", () => {
     game.keybindings.register("levels-3d-preview", "toggleMode", {
         name: game.i18n.localize("levels3dpreview.keybindings.toggleMode"),
         editable: [
-          {key: "KeyT", modifiers: [ CONTROL ]}
+          {key: "KeyT"}
         ],
         onDown: () => {
             const updates = [];
