@@ -579,7 +579,7 @@ export class Token3D {
           z: zOffset,
         }
 
-        const geometry = new THREE.BoxGeometry(effectsize, effectsize, effectsize);
+        const geometry = new THREE.DodecahedronGeometry(effectsize/2)//new THREE.BoxGeometry(effectsize, effectsize, effectsize);
         const material = this._getEffectMaterial(effect);
         const mesh = new THREE.Mesh(geometry, material);
         mesh.position.set(position.x, position.y, position.z);

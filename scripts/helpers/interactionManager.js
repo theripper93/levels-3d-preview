@@ -28,6 +28,7 @@ export class InteractionManager {
         this.lcTime = 0;
         this.controls.enableRotate = !this.isCameraLocked
         this.generateSightCollisions = debounce(this.generateSightCollisions.bind(this), 100);
+        this.updateHoverObj = debounce(this.updateHoverObj.bind(this), 100);
     }
 
     get scene(){
@@ -291,9 +292,14 @@ export class InteractionManager {
       this.toggleControls(true, true);
     }
 
+    updateHoverObj(){
+      this._hoverobj = this._parent.scene.children.filter(this._collisionFilter);
+    }
+
     _onMouseMove(event){
       this.mousemove.x = (event.clientX / window.innerWidth) * 2 - 1;
       this.mousemove.y = -(event.clientY / window.innerHeight) * 2 + 1;
+      this.updateHoverObj();
       const intersect = this.getHoverObject();
       const object = intersect?.object;
       //Handle placeable hover event
@@ -319,8 +325,7 @@ export class InteractionManager {
     }
 
     getHoverObject(){
-      if(!this._hoverobj || !this._hoverobj.length || this._prevSceneChildrenCount !== this.scene.children.length) this._hoverobj = this._parent.scene.children.filter(this._collisionFilter);
-      this._prevSceneChildrenCount = this._parent.scene.children.length;
+      if(!this._hoverobj || !this._hoverobj.length) this._hoverobj = this._parent.scene.children.filter(this._collisionFilter);
       this.raycaster.setFromCamera(this.mousemove, this.camera);
       const intersects = this.raycaster.intersectObjects(this._hoverobj, true)
       if(!intersects.length) return null;
@@ -414,8 +419,10 @@ export class InteractionManager {
     startDrag(event, intersectData){
       if(this.isRulerDrag(event, intersectData)) return this._onEnableRuler(event);
       const entity = event.entity;
+      if(!entity) return
       const intersect = event.intersect;
       const placeable = entity.placeable;
+      if(!placeable?.isOwner) return;
       if(!entity.draggable || entity.mesh.userData?.entity3D?.embeddedName !== canvas.activeLayer.options.objectClass.embeddedName) return this.toggleControls(true, true);
       if(!placeable._controlled) placeable.control({releaseOthers: true});
       entity.isAnimating = false;

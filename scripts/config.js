@@ -1043,7 +1043,7 @@ Hooks.on("init", () => {
         ],
         onDown: () => {
             game.Levels3DPreview.transformControls.setMode('scale')
-            game.Levels3DPreview.transformControls.showY = false;
+            //game.Levels3DPreview.transformControls.showY = false;
         },
     });
 
@@ -1054,7 +1054,7 @@ Hooks.on("init", () => {
         ],
         onDown: () => {
             game.Levels3DPreview.transformControls.setMode('translate')
-            game.Levels3DPreview.transformControls.showY = true;
+            //game.Levels3DPreview.transformControls.showY = true;
         },
     });
 
@@ -1065,7 +1065,7 @@ Hooks.on("init", () => {
         ],
         onDown: () => {
             game.Levels3DPreview.transformControls.setMode('rotate')
-            game.Levels3DPreview.transformControls.showY = true;
+            //game.Levels3DPreview.transformControls.showY = true;
         },
     });
 
