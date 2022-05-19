@@ -555,48 +555,104 @@ export class Token3D {
       return token.actor?.effects.some(e => e.getFlag("core", "statusId") === "prone") ?? false;
     }
 
+    updateHiden(){
+      if(!game.user.isGM) return;
+      if(!this.originalMatData){
+        this.originalMatData = {}
+        this.model.traverse(child => {
+          if(child.isMesh){
+            this.originalMatData[child.material.uuid] = {
+              transparent: child.material.transparent,
+              opacity: child.material.opacity,
+              format: child.material.format,
+              alphaTest: child.material.alphaTest,
+            }
+          }
+        })
+      }
+      if(this._hidden === this.token.data.hidden) return;
+      this._hidden = this.token.data.hidden;
+      const hidden = this.token.data.hidden;
+      this.model.traverse(child => {
+        if(child.isMesh){
+          if(hidden){
+            child.material.transparent = true;
+            child.material.opacity = 0.5;
+            child.material.alphaTest = 0;
+            child.material.format = THREE.RGBAFormat
+            child.material.needsUpdate = true;
+          }else{
+            const originalData = this.originalMatData[child.material.uuid];
+            child.material.transparent = originalData.transparent;
+            child.material.opacity = originalData.opacity;
+            child.material.alphaTest = originalData.alphaTest;
+            child.material.format = originalData.format; 
+            child.material.needsUpdate = true;
+          }
+
+        }
+      })
+    }
+
     drawEffects(){
       //remove old effects
       if(!this.effectsContainer) return;
+      this.updateHiden();
       const oldProne = this.isProne ? true : false;
       this.isProne = this.token?.actor?.effects?.find(e => e.getFlag("core", "statusId") === CONFIG.Combat.defeatedStatusId) || this.isTokenProne ? true : false;
       if(oldProne !== this.isProne) this.toggleProne();
       const tokenEffects = this.token.data.effects;
       const actorEffects = this.token.actor?.temporaryEffects || [];
       const effects = tokenEffects.concat(actorEffects).map(e => e.data?.icon);
-      if(this.token.data.hidden && !this.alwaysVisible) effects.push("icons/svg/mystery-man.svg");
       if(effects.length === this.effectsContainer.children.length) return;
-      this.effectsContainer.remove(...this.effectsContainer.children)
+      const toRemove = this.effectsContainer.children.filter(child => !effects.includes(child.userData.effect));
+      toRemove.forEach(child => {
+        child.userData.targetPosition = new THREE.Vector3(0,0,0);
+        child.userData.initialPosition = child.position.clone();
+        child.userData.delta = 0;
+      })
+      //this.effectsContainer.remove(...toRemove)
       let effectsize = this.h/5;
       effectsize = Math.min(Math.max(effectsize, 0.02), 0.05)*(canvas.grid.size/100);
-      let xOffset = effectsize*0.5-this.w/2;
-      let zOffset = effectsize*0.5-this.h/2;
 
-      for(let effect of effects){
+      const radiusSubdivision = (Math.PI*2)/effects.length;
+      let currentRadius = 0;
+      const currentEffects = this.effectsContainer.children.map(child => child.userData.effect);      for(let effect of effects){
+
 
         const position = {
-          x: xOffset,
-          y: this.d,
-          z: zOffset,
+          x: Math.sin(currentRadius)*(this.h/2),
+          y: this.d+effectsize*0.5,
+          z: Math.cos(currentRadius)*(this.h/2),
         }
-
-        /*const geometry = new THREE.DodecahedronGeometry(effectsize/2)//new THREE.BoxGeometry(effectsize, effectsize, effectsize);
-        const material = this._getEffectMaterial(effect);
-        const mesh = new THREE.Mesh(geometry, material);*/
         const mesh = this._getEffectMesh(effect, effectsize);
-        mesh.position.set(position.x, position.y, position.z);
+        mesh.userData.delta = 0;
+        mesh.userData.effect = effect;
+        mesh.userData.targetPosition = new THREE.Vector3(position.x,position.y,position.z) //mesh.position.set(position.x, position.y, position.z);
+        mesh.userData.initialPosition = mesh.position.clone();
 
         this.effectsContainer.add(mesh);
-        xOffset += effectsize*1;
-        if(xOffset > this.h/2){
-          xOffset = effectsize*0.5-this.h/2;
-          zOffset += effectsize*1;
-        }
+        currentRadius += radiusSubdivision;
       }
 
 
     }
 
+    rotateEffects(delta){
+      if(!this.effectsContainer || !this.effectsContainer?.children?.length) return;
+      const speed = delta/8
+      this.effectsContainer.rotation.y += speed;
+      this.effectsContainer.children.forEach(c => {
+        c.rotation.x-=speed/2
+        if(c.userData.delta < 1) {
+          c.userData.delta += delta;
+          c.position.lerp(c.userData.targetPosition, c.userData.delta);
+          console.log(delta, c.userData.delta)
+        }else{
+          if(c.position.y <= 0.01) c.removeFromParent();
+        }
+      })
+    }
     _getEffectMesh(effect,effectsize){
       if(this._effectsCache[effect]) return this._effectsCache[effect];
       const effectBaseMesh = game.Levels3DPreview.models.effect.clone();
@@ -789,8 +845,8 @@ export class Token3D {
       this.mesh.add(this.nameplate);
     }
 
-    drawBars(){
-      this.mesh.remove(this.bars);
+    async drawBars(){
+      //this.mesh.remove(this.bars);
       if(!this.token?.hud?.bars || !this.token?.hud?.bars?.visible) return;
       const bar1 = this.token.hud.bars["bar1"].clone();
       const bar2 = this.token.hud.bars["bar2"].clone();
@@ -800,11 +856,12 @@ export class Token3D {
       bar2.position.set(0, bar1.height+3);
       const base64 = canvas.app.renderer.extract.base64(container);
       const spriteMaterial = new THREE.SpriteMaterial({
-        map: new THREE.TextureLoader().load(base64),
+        map: await new THREE.TextureLoader().loadAsync(base64),
         alphaTest: this._parent.fogExploration ? 0.8 : 0.001,
       });
       const sprite = new THREE.Sprite(spriteMaterial);
       sprite.center.set(0.5,0.5);
+      this.mesh.remove(this.bars);
       this.bars = sprite;
       const width = container.width/this.factor;
       const height = container.height/this.factor;

@@ -296,6 +296,10 @@ export class InteractionManager {
       this._hoverobj = this._parent.scene.children.filter(this._collisionFilter);
     }
 
+    updateHoverObjNoDebounce(){
+      this._hoverobj = this._parent.scene.children.filter(this._collisionFilter);
+    }
+
     _onMouseMove(event){
       this.mousemove.x = (event.clientX / window.innerWidth) * 2 - 1;
       this.mousemove.y = -(event.clientY / window.innerHeight) * 2 + 1;
@@ -341,6 +345,7 @@ export class InteractionManager {
 
     _collisionFilter(object){
       if(object.userData.ignoreHover) return false;
+      if(canvas.activeLayer.options.objectClass.embeddedName !== object.userData?.entity3D?.embeddedName && object.userData?.entity3D?.embeddedName !== "Note") return false;
       if(canvas.activeLayer.options.objectClass.embeddedName !== "Tile" && object.userData?.entity3D?.embeddedName === "Tile" && !object.userData?.entity3D?.collision) return false
       if(!object.visible) return false;
       return true;
@@ -434,6 +439,7 @@ export class InteractionManager {
 
     abortDrag(){
       this.draggable = null;
+      this.clicks = 0;
       this.toggleControls(true, true);
     }
 
@@ -534,7 +540,6 @@ export class InteractionManager {
       }else{
         this.forceFree = false;
         this.dragplane.position.set(center.x, 0, center.z);
-        this.clicks = 0;
       }
       if(this.ruler && (canvas.scene.getFlag("levels-3d-preview", "enableRuler") ?? true)) this.ruler.object = object;
     }
@@ -770,5 +775,11 @@ Hooks.on("3DCanvasSceneReady", () => {
   if(game.Levels3DPreview?._active){
     game.Levels3DPreview?.interactionManager?.generateSightCollisions();
     canvas.sight.refresh();
+  }
+})
+
+Hooks.on("renderSceneControls", ()=>{
+  if(game.Levels3DPreview?._active){
+    game.Levels3DPreview?.interactionManager?.updateHoverObjNoDebounce();
   }
 })

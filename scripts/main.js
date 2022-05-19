@@ -710,6 +710,7 @@ class Levels3DPreview {
       Object.values(this.tokens).forEach((token) => {
         token.updateVisibility();
         token.updateProne(delta);
+        token.rotateEffects(delta);
         if (token.mixer) {
           token.mixer.update(delta);
         }
