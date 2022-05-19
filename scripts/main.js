@@ -45,7 +45,7 @@ Hooks.once("socketlib.ready", () => {
 Hooks.on("canvasReady", async () => {
   do{
     await sleep(100);
-    if(!game.Levels3DPreview) continue;
+    if(!game.Levels3DPreview || !game.Levels3DPreview?._init) continue;
     game.Levels3DPreview._cameraSet = false;
     game.Levels3DPreview.close();
     game.Levels3DPreview.controls.reset();
@@ -54,7 +54,7 @@ Hooks.on("canvasReady", async () => {
     if(canvas.scene.getFlag("levels-3d-preview", "auto3d") && (enablePlayers || isGM)){
       game.Levels3DPreview.open();
     }
-  }while(!game.Levels3DPreview)
+  }while(!game.Levels3DPreview || !game.Levels3DPreview?._init)
 
 
 });
@@ -204,6 +204,17 @@ class Levels3DPreview {
       )
     ).model;
     this.models.target.children[0].material = new THREE.MeshBasicMaterial();
+    this.models.effect = await (
+      await this.helpers.loadModel(
+        "modules/levels-3d-preview/assets/effect.glb"
+      )
+    ).model
+    const box3 = new THREE.Box3().setFromObject(this.models.effect);
+    //scale model to make it 1x1x1
+    this.models.effect.scale.multiplyScalar(
+      1 / Math.max(box3.max.x - box3.min.x, box3.max.y - box3.min.y, box3.max.z - box3.min.z)
+    );
+    this._init = true;
   }
 
   get canvasCenter() {

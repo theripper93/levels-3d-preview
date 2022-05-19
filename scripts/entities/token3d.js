@@ -24,6 +24,7 @@ export class Token3D {
       this.baseDepth = 0.008*(canvas.grid.size/100);
       this.elevation3d = 0;
       this.materialsCache = {};
+      this._effectsCache = {};  
       this.proneHandler = {};
       this.combatColor = new THREE.Color("#005eff");
       this._loaded = false;
@@ -579,19 +580,34 @@ export class Token3D {
           z: zOffset,
         }
 
-        const geometry = new THREE.DodecahedronGeometry(effectsize/2)//new THREE.BoxGeometry(effectsize, effectsize, effectsize);
+        /*const geometry = new THREE.DodecahedronGeometry(effectsize/2)//new THREE.BoxGeometry(effectsize, effectsize, effectsize);
         const material = this._getEffectMaterial(effect);
-        const mesh = new THREE.Mesh(geometry, material);
+        const mesh = new THREE.Mesh(geometry, material);*/
+        const mesh = this._getEffectMesh(effect, effectsize);
         mesh.position.set(position.x, position.y, position.z);
+
         this.effectsContainer.add(mesh);
-        zOffset += effectsize*1;
-        if(zOffset > this.h/2){
-          zOffset = effectsize*0.5-this.h/2;
-          xOffset += effectsize*1;
+        xOffset += effectsize*1;
+        if(xOffset > this.h/2){
+          xOffset = effectsize*0.5-this.h/2;
+          zOffset += effectsize*1;
         }
       }
 
 
+    }
+
+    _getEffectMesh(effect,effectsize){
+      if(this._effectsCache[effect]) return this._effectsCache[effect];
+      const effectBaseMesh = game.Levels3DPreview.models.effect.clone();
+      effectBaseMesh.scale.multiplyScalar(effectsize);
+      const mesh = effectBaseMesh;
+      mesh.traverse(child => {
+        if(child.isMesh && child.material.name == "effect") child.material = this._getEffectMaterial(effect);
+      })
+      mesh.rotation.set(Math.random()*Math.PI*2,Math.random()*Math.PI*2,Math.random()*Math.PI*2);
+      this._effectsCache[effect] = mesh;
+      return mesh;
     }
 
     _getEffectMaterial(effect){
@@ -599,6 +615,8 @@ export class Token3D {
       if(cachedEffect) return cachedEffect;
       const material = new THREE.MeshBasicMaterial({
         map: new THREE.TextureLoader().load(effect),
+        metalness: 0.5,
+        roughness: 0.5,
       });
       this._parent.effectsCache[effect] = material;
       return material;

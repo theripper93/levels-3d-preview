@@ -419,16 +419,22 @@ export class InteractionManager {
     startDrag(event, intersectData){
       if(this.isRulerDrag(event, intersectData)) return this._onEnableRuler(event);
       const entity = event.entity;
-      if(!entity) return
+      if(!entity) return this.abortDrag();
       const intersect = event.intersect;
       const placeable = entity.placeable;
-      if(!placeable?.isOwner) return;
-      if(!entity.draggable || entity.mesh.userData?.entity3D?.embeddedName !== canvas.activeLayer.options.objectClass.embeddedName) return this.toggleControls(true, true);
+      if(placeable?.data?.locked) return this.abortDrag();
+      if(!placeable?.isOwner && !game.user.isGM) return this.abortDrag();
+      if(!entity.draggable || entity.mesh.userData?.entity3D?.embeddedName !== canvas.activeLayer.options.objectClass.embeddedName) return this.abortDrag();
       if(!placeable._controlled) placeable.control({releaseOthers: true});
       entity.isAnimating = false;
       entity.setPosition?.();
       this.draggable = intersect;
       this.toggleControls(false);
+    }
+
+    abortDrag(){
+      this.draggable = null;
+      this.toggleControls(true, true);
     }
 
     _onClickLeft(event){
@@ -528,6 +534,7 @@ export class InteractionManager {
       }else{
         this.forceFree = false;
         this.dragplane.position.set(center.x, 0, center.z);
+        this.clicks = 0;
       }
       if(this.ruler && (canvas.scene.getFlag("levels-3d-preview", "enableRuler") ?? true)) this.ruler.object = object;
     }
