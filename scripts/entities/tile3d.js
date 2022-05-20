@@ -387,7 +387,6 @@ export class Tile3D {
     }
 
     processScale(update){
-        debugger
         const scaleX = this.mesh.scale.x;
         const scaleZ = this.mesh.scale.z;
         const newWidth = this.tile.data.width*scaleX;
