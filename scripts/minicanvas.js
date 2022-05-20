@@ -16,15 +16,17 @@ class miniCanvas extends Application {
         title: "Canvas",
         id: "miniCanvas",
         template: `modules/levels-3d-preview/templates/minicanvas.hbs`,
-        resizable: false,
-        width: 300*aspectRatio,
-        height: 300,
+        resizable: true,
+        width: position.width ?? 300*aspectRatio,
+        height: position.height ?? 300,
         left: position.left,
         top: position.top,
       };
     }
 
     setPosition({left, top, width, height, scale}={}) {
+      const aspectRatio = window.innerWidth / window.innerHeight;
+      height = width / aspectRatio;
       super.setPosition({left, top, width, height, scale});
       this.savePosition();
     }
@@ -49,6 +51,11 @@ class miniCanvas extends Application {
         "width": "100%",
         "height": "100%",
       })
+    }
+
+    _onResize(e){
+      super._onResize(e);
+      
     }
 
     updateControls(toggle){

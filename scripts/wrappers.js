@@ -86,18 +86,14 @@ Hooks.once('ready', async function() {
     }
 
     function handleArrowKeys(directions){
-        const camera = game.Levels3DPreview.camera.position.clone();
-        const target = game.Levels3DPreview.tokens[_token?.id];
-        if(!target) return undefined
-        const p2 = {
-            x: camera.x,
-            y: camera.z
-        }
-        const p1 = {
-            x: target.mesh.position.x,
-            y: target.mesh.position.z
-        }
-        const angle = Math.atan2(p2.y - p1.y, p2.x - p1.x)+Math.PI;
+
+        if(!directions.size) return
+
+        const cPos = game.Levels3DPreview.camera.position
+        const cTar = game.Levels3DPreview.controls.target
+
+        const angle = Math.atan2(cTar.z - cPos.z, cTar.x - cPos.x);
+
         let dx = 0;
         let dy = 0;
     
@@ -116,8 +112,8 @@ Hooks.once('ready', async function() {
             x: dx,
             y: dy,
         }
-        const dAngle = Math.atan2(d2.y - d1.y, d2.x - d1.x)+Math.PI;
-        const fAngle = (dAngle + angle)%(Math.PI*2);
+        const dAngle = Math.atan2(d2.y - d1.y, d2.x - d1.x);
+        const fAngle = dAngle + angle - Math.PI;
         const nX = Math.round(Math.sin(fAngle));
         const nY = Math.round(-Math.cos(fAngle));
         return {x: nX, y: nY}
