@@ -669,8 +669,6 @@ export class Token3D {
       if(cachedEffect) return cachedEffect;
       const material = new THREE.MeshBasicMaterial({
         map: new THREE.TextureLoader().load(effect),
-        metalness: 0.5,
-        roughness: 0.5,
       });
       this._parent.effectsCache[effect] = material;
       return material;

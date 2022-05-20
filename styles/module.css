@@ -26,3 +26,13 @@
     cursor: pointer;
     text-shadow: rgba(255, 0, 0, 0.75) 0 0 5px;
 }
+
+#clip-navigation{
+    transform-origin: top right;
+    transform: rotate(-90deg);
+}
+
+#clip-navigation input{
+    height: 100%;
+    width: 100%;
+}

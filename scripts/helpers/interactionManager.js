@@ -13,7 +13,7 @@ export class InteractionManager {
         this._panKeys = {};
         this._gizmoEnabled = true;
         this.raycaster = new THREE.Raycaster();
-        this.raycaster.firstHitOnly = true;
+        //this.raycaster.firstHitOnly = true;
         this.sightRaycaster = new THREE.Raycaster();
         this.sightRaycaster.firstHitOnly = true;
         this._sightCollisions = [];
@@ -328,10 +328,15 @@ export class InteractionManager {
 
     }
 
+    _clippingFilter(i){
+      if(!i.object.material?.clippingPlanes) return true;
+      return i.object.material?.clippingPlanes[0].constant > i.point.y
+    }
+
     getHoverObject(){
       if(!this._hoverobj || !this._hoverobj.length) this._hoverobj = this._parent.scene.children.filter(this._collisionFilter);
       this.raycaster.setFromCamera(this.mousemove, this.camera);
-      const intersects = this.raycaster.intersectObjects(this._hoverobj, true)
+      const intersects = this.raycaster.intersectObjects(this._hoverobj, true).filter(this._clippingFilter);
       if(!intersects.length) return null;
       let parentInt
       if(!intersects[0].object.userData.entity3D && !intersects[0].object.userData.ignoreHover) intersects[0].object.traverseAncestors(parent => {
@@ -514,7 +519,7 @@ export class InteractionManager {
       const table = this._parent.table;
       if(table) intersectTargets.push(table);
 
-      const intersects = this.raycaster.intersectObjects(intersectTargets,true);
+      const intersects = this.raycaster.intersectObjects(intersectTargets,true).filter(this._clippingFilter);
       if(!intersects.length) return null;
       let parentInt
       if(!intersects[0].object.userData.entity3D) intersects[0].object.traverseAncestors(parent => {
@@ -636,7 +641,7 @@ export class InteractionManager {
       }
 
       this.raycaster.setFromCamera(this.mousemove, this.camera);
-      let intersects = this.raycaster.intersectObjects(collisionGeometries.length && !isFree ? collisionGeometries : [this.dragplane], true);
+      let intersects = this.raycaster.intersectObjects(collisionGeometries.length && !isFree ? collisionGeometries : [this.dragplane], true).filter(this._clippingFilter);
       if(!intersects.length) intersects = this.raycaster.intersectObjects([this.dragplane], true);
 
       if (intersects.length > 0) {

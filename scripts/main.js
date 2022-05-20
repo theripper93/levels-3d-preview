@@ -26,6 +26,7 @@ import { turnStartMarker } from "./helpers/turnStartMarker.js";
 import { ParticleSystem } from "./helpers/particleSystem.js";
 import { Particle3D } from "./helpers/particleSystem.js";
 import { defaultTokenAnimations } from "./helpers/tokenAnimationHandler.js";
+import { ClipNavigation } from "./clipNavigation.js";
 
 export const factor = 1000;
 
@@ -82,6 +83,7 @@ class Levels3DPreview {
     this.scene;
     this.renderer;
     this.factor = factor;
+    this.ClipNavigation = ClipNavigation
     this.debugMode = game.settings.get("levels-3d-preview", "debugMode");
     this.CONFIG = {
       autoPan: false,
@@ -195,6 +197,11 @@ class Levels3DPreview {
     this.interactionManager = new InteractionManager(this);
     this.interactionManager.activateListeners();
     this.cursors = new Cursors3D(this);
+
+    //clipping
+    this.renderer.localClippingEnabled = true;
+
+
   }
 
   async cacheModels() {
@@ -580,14 +587,15 @@ class Levels3DPreview {
         })
       );
     }
-    const skyboxGeometry = new THREE.BoxGeometry(size, size, size);
+    /*const skyboxGeometry = new THREE.BoxGeometry(size, size, size);
     const skybox = new THREE.Mesh(skyboxGeometry, materialArray);
     const center = this.canvasCenter;
     skybox.position.set(center.x, center.y, center.z);
     this.scene.add(skybox);
-    this.skybox = skybox;
+    this.skybox = skybox;*/
     const loader = new THREE.CubeTextureLoader();
     const textureCube = loader.load(textureArray);
+    this.scene.background = textureCube;
     if (!exr) this.scene.environment = textureCube;
   }
 
@@ -604,7 +612,7 @@ class Levels3DPreview {
           ? exrCubeRenderTarget.texture
           : null;
         _this.scene.environment = newEnvMap;
-        _this.scene.background = newEnvMap;
+        if(_this.scene.background instanceof THREE.Color) _this.scene.background = newEnvMap;
       });
     this.renderer.outputEncoding = THREE.sRGBEncoding;
     //this.renderer.toneMapping = THREE.ACESFilmicToneMapping;

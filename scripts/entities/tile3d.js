@@ -100,9 +100,10 @@ export class Tile3D {
     }
 
     async init(){
-        const texture = this.texture ? await this._parent.helpers.loadTexture(this.texture) : null;
+        const {textureOrMat, isPBR} = await this.getTextureOrMat(this.texture);
+        const texture = textureOrMat
         const geometry = new THREE.PlaneGeometry(this.width, this.height);
-        const material = new THREE.MeshStandardMaterial({
+        const material = isPBR ? textureOrMat : new THREE.MeshStandardMaterial({
             color: this.color,
             //transparent: true,
             opacity: this.opacity,
@@ -125,6 +126,7 @@ export class Tile3D {
         this.mesh.userData.entity3D = this;
         if(this._destroyed) return;
         this._parent.scene.add(this.mesh);
+        this.isPlane = true;
         this.initBoundingBox();
     }
 
@@ -326,12 +328,13 @@ export class Tile3D {
         return {scene: obj, model: obj, object: obj};
     }
 
-    async getTextureOrMat(){
+    async getTextureOrMat(texture){
+        if(!texture) texture = this.imageTexture
         let textureOrMat = null;
         let isPBR = null;
-        if(!this.imageTexture) return {textureOrMat, isPBR};
-        textureOrMat = await this._parent.helpers.autodetectTextureOrMaterial(this.imageTexture)
-        isPBR = this._parent.helpers.isPBR(this.imageTexture)
+        if(!texture) return {textureOrMat, isPBR};
+        textureOrMat = await this._parent.helpers.autodetectTextureOrMaterial(texture)
+        isPBR = this._parent.helpers.isPBR(texture)
         if(textureOrMat) return {textureOrMat, isPBR};
         return {textureOrMat, isPBR};
     }
@@ -350,6 +353,7 @@ export class Tile3D {
         c.set(CONFIG.Canvas.dispositionColors.CONTROLLED);
         const cube = new THREE.Mesh(new THREE.BoxGeometry(this.tile.data.width/factor, box.max.y - box.min.y, this.tile.data.height/factor), new THREE.MeshBasicMaterial({color: c, wireframe: true}));
         cube.position.set(0, (box.max.y - box.min.y) / 2, 0);
+        if(this.isPlane) cube.rotation.set(-Math.PI/2,0,0);
         cube.geometry.computeBoundingBox();
         this.controlledBox = cube;
     }
@@ -431,7 +435,8 @@ export class Tile3D {
         const y = z3d * factor - this.tile.data.height/2;
         const z = Math.round(((y3d * factor * canvas.dimensions.distance)/(canvas.dimensions.size))*100)/100;
         const snapped = canvas.grid.getSnappedPosition(x, y);
-        const {rangeTop, rangeBottom} = _levels.getFlagsForObject(this.tile);
+        let {rangeTop, rangeBottom} = _levels.getFlagsForObject(this.tile);
+        if(!rangeBottom || rangeBottom == -Infinity) rangeBottom = 0;
         const dest = {
           x: useSnapped ? snapped.x : x,
           y: useSnapped ? snapped.y : y,
@@ -444,7 +449,8 @@ export class Tile3D {
         }
         let updates = [];
         for(let tile of canvas.activeLayer.controlled){
-        const tileFlags = _levels.getFlagsForObject(tile);
+        let tileFlags = _levels.getFlagsForObject(tile) || {};
+        if(!tileFlags.rangeBottom || tileFlags.rangeBottom == -Infinity) tileFlags.rangeBottom = 0;
           const update = {
             _id: tile.id,
             x: tile.data.x + deltas.x,
