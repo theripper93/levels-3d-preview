@@ -83,7 +83,7 @@ Hooks.once('init', function() {
         "players": game.i18n.localize("levels3dpreview.settings.navigatorAuto.options.players"),
         "all": game.i18n.localize("levels3dpreview.settings.navigatorAuto.options.all"),
       },
-    default: "none",
+    default: "players",
 });
 
   game.settings.register("levels-3d-preview", "solidBaseMode", {
