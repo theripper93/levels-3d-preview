@@ -83,7 +83,7 @@ class Levels3DPreview {
     this.scene;
     this.renderer;
     this.factor = factor;
-    this.ClipNavigation = ClipNavigation
+    this.ClipNavigation = new ClipNavigation();
     this.debugMode = game.settings.get("levels-3d-preview", "debugMode");
     this.CONFIG = {
       autoPan: false,
@@ -144,6 +144,7 @@ class Levels3DPreview {
     this._cameraSet = false;
     this.helpers = new Helpers();
     this.socket.register("socketCamera", this.helpers.socketCamera);
+    this.socket.register("syncClipNavigator", this.helpers.syncClipNavigator);
     this.socket.register(
       "playTokenAnimationSocket",
       this.helpers.playTokenAnimationSocket
@@ -883,8 +884,12 @@ class Levels3DPreview {
   setCameraToControlled(token) {
     if (game.Levels3DPreview.interactionManager.isCameraLocked) return;
     const zoom = game.settings.get("levels-3d-preview", "camerafocuszoom");
-    const cToken = token ?? _token;
+    let cToken = token ?? _token;
+    if(!cToken && !game.user.isGM){
+      cToken = canvas.tokens.placeables.find(t => t.isOwner);
+    }
     if (!cToken) return;
+    cToken.control();
     const token3D = this.tokens[cToken.id];
     if (!token3D) return;
     //this.controls.target.set(token3D.mesh.position.x, token3D.mesh.position.y, token3D.mesh.position.z);
@@ -941,12 +946,17 @@ class Levels3DPreview {
       this._ready = true;
       this.loadingTokens = {};
       this.loadingTiles = {};
+      this._onReady();
       Hooks.callAll("3DCanvasSceneReady", game.Levels3DPreview);
     }
     SceneNavigation.displayProgressBar({
       label: game.i18n.localize("levels3dpreview.controls.loading"),
       pct: progress,
     });
+  }
+
+  _onReady(){
+    this.ClipNavigation = new ClipNavigation().render(true);
   }
 
   toggle(force) {
@@ -975,6 +985,7 @@ class Levels3DPreview {
 
   close() {
     this._active = false;
+    this.ClipNavigation.close();
     $("#levels3d").remove();
     Object.values(ui.windows)
       ?.find((w) => w.id === "miniCanvas")
@@ -1073,5 +1084,15 @@ Hooks.on("deleteCombat", ()=>{
   if(!game.Levels3DPreview?._active || !game.Levels3DPreview.turnStartMarker) return;
   game.Levels3DPreview.turnStartMarker.update();
 })
+
+Hooks.on("collapseSidebar", () => {
+  if (game.Levels3DPreview?._active) game.Levels3DPreview.ClipNavigation.render(true);
+})
+
+["updateTile", "createTile", "deleteTile", "updateWall", "createWall", "deleteWall"].forEach((h)=>{
+  Hooks.on(h, () => {
+    if (game.Levels3DPreview?._active) game.Levels3DPreview.ClipNavigation?.update();
+  });
+});
 
 //javascript:(function(){var script=document.createElement('script');script.onload=function(){var stats=new Stats();document.body.appendChild(stats.dom);requestAnimationFrame(function loop(){stats.update();requestAnimationFrame(loop)});};script.src='//mrdoob.github.io/stats.js/build/stats.min.js';document.head.appendChild(script);})()

@@ -1,4 +1,16 @@
 <div id="clip-navigation">
-  <input type="range" id="volume" name="volume"
-         min="0" max="100">
+  <div id="clip-navigation-btns">
+    <i class="fas fa-video" id="clip-navigation-camera" title="{{localize "levels3dpreview.clipNavigator.cameraToToken"}}"></i>
+    {{#if isGM}}
+      <i class="fas fa-random" id="clip-navigation-sync" title="{{localize "levels3dpreview.clipNavigator.sync"}}"></i>
+    {{/if}}
+  </div>
+  <div id="clip-navigation-range">
+  {{#if showRange}}
+    {{#each levels}}
+      <span class="clip-navigation-range-label" data-top={{top}} data-bottom={{bottom}}>{{name}}</span>
+    {{/each}}
+      <input type="range" step="any" min="{{range.min}}" max="{{range.max}}" value="{{range.curr}}">
+  {{/if}}
+  </div>
 </div>

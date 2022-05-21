@@ -16,6 +16,12 @@
                 "onend": "Particle system: .onEnd() - one or more arguments were not an instance of Particle3D."
             }
         },
+        "clipNavigator": {
+            "disabled": "Show All",
+            "sync": "Sync with Players",
+            "syncNotification": "Level View for {{level}} Synced with all Players",
+            "cameraToToken": "Focus Camera on Selected Token"
+        },
         "keybindings":{
             "dialog": {
                 "title": "3D Canvas: Remove Core Keybindings",

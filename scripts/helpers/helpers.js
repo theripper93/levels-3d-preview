@@ -320,6 +320,10 @@ export class Helpers {
       params.cameraLookat;
     game.Levels3DPreview._animateCameraTarget.speed = params.speed ?? 0.04;
   }
+
+  syncClipNavigator(range){
+    game.Levels3DPreview.ClipNavigation.set(range);
+  }
 }
 
 

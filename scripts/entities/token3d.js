@@ -647,6 +647,7 @@ export class Token3D {
         if(c.userData.delta < 1) {
           c.userData.delta += delta;
           c.position.lerp(c.userData.targetPosition, c.userData.delta);
+          if(delta > 1) c.position.set(c.userData.targetPosition.x, c.userData.targetPosition.y, c.userData.targetPosition.z);
           if(c.userData.targetPosition.y == 0 && c.position.y <= this.baseDepth) c.removeFromParent();
         }
       })
