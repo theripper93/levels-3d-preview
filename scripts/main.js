@@ -37,6 +37,18 @@ Hooks.once("ready", () => {
   game.Levels3DPreview.cacheModels();
   if(!game.settings.get("levels-3d-preview", "removeKeybindingsPrompt")) game.Levels3DPreview.interactionManager.removeWASDBindings()
   Hooks.callAll("3DCanvasReady", game.Levels3DPreview);
+
+  const navHooks = ["updateTile", "createTile", "deleteTile", "updateWall", "createWall", "deleteWall"]
+  navHooks.forEach((h)=>{
+    Hooks.on(h, () => {
+      if (game.Levels3DPreview?._active) game.Levels3DPreview.ClipNavigation?.update();
+    });
+  });
+
+  Hooks.on("updateScene", () => {
+    if (game.Levels3DPreview?._active) game.Levels3DPreview.ClipNavigation?.render(true);
+  })
+
 })
 
 Hooks.once("socketlib.ready", () => {
@@ -83,7 +95,7 @@ class Levels3DPreview {
     this.scene;
     this.renderer;
     this.factor = factor;
-    this.ClipNavigation = new ClipNavigation();
+    this.ClipNavigation = null;
     this.debugMode = game.settings.get("levels-3d-preview", "debugMode");
     this.CONFIG = {
       autoPan: false,
@@ -985,7 +997,7 @@ class Levels3DPreview {
 
   close() {
     this._active = false;
-    this.ClipNavigation.close();
+    this.ClipNavigation?.close();
     $("#levels3d").remove();
     Object.values(ui.windows)
       ?.find((w) => w.id === "miniCanvas")
@@ -1088,11 +1100,5 @@ Hooks.on("deleteCombat", ()=>{
 Hooks.on("collapseSidebar", () => {
   if (game.Levels3DPreview?._active) game.Levels3DPreview.ClipNavigation.render(true);
 })
-
-["updateTile", "createTile", "deleteTile", "updateWall", "createWall", "deleteWall"].forEach((h)=>{
-  Hooks.on(h, () => {
-    if (game.Levels3DPreview?._active) game.Levels3DPreview.ClipNavigation?.update();
-  });
-});
 
 //javascript:(function(){var script=document.createElement('script');script.onload=function(){var stats=new Stats();document.body.appendChild(stats.dom);requestAnimationFrame(function loop(){stats.update();requestAnimationFrame(loop)});};script.src='//mrdoob.github.io/stats.js/build/stats.min.js';document.head.appendChild(script);})()

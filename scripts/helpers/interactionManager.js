@@ -350,6 +350,7 @@ export class InteractionManager {
 
     _collisionFilter(object){
       if(object.userData.ignoreHover) return false;
+      if(!canvas.activeLayer) return true;
       if(canvas.activeLayer.options.objectClass.embeddedName !== object.userData?.entity3D?.embeddedName && object.userData?.entity3D?.embeddedName !== "Note" && object.userData?.entity3D?.embeddedName !== "Tile") return false;
       if(canvas.activeLayer.options.objectClass.embeddedName !== "Tile" && object.userData?.entity3D?.embeddedName === "Tile" && !object.userData?.entity3D?.collision) return false
       if(!object.visible) return false;

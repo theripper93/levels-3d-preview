@@ -1,6 +1,7 @@
 export class ClipNavigation extends Application{
     constructor() {
         super()
+        this.init();
       }
     
       static get defaultOptions() {
@@ -28,6 +29,8 @@ export class ClipNavigation extends Application{
             name: l[2]
           }
         })
+        data.showRange = levels.length > 0
+        if(!data.showRange) return data
         this.lowestLevel = levels.reduce((a,b)=>{
           return a.bottom < b.bottom ? a : b
         })
@@ -37,7 +40,7 @@ export class ClipNavigation extends Application{
         this.offLevel = {
           bottom: 0,
           top: this.higestLevel.top + 5,
-          name: "Disable"
+          name: game.i18n.localize("levels3dpreview.clipNavigator.disabled")
         }
         levels.push(this.offLevel)
         data.levels = levels;
@@ -47,7 +50,6 @@ export class ClipNavigation extends Application{
           curr: this.currentRange ?? this.higestLevel.top + 5
         }
         data.isGM = game.user.isGM
-        data.showRange = levels.length > 0
         this.max = data.range.max
         this.min = data.range.min
         this.levels = levels
@@ -98,7 +100,32 @@ export class ClipNavigation extends Application{
           });
       }
 
+      init(){
+        const clippingPlane = new game.Levels3DPreview.THREE.Plane( new game.Levels3DPreview.THREE.Vector3( 0, -1, 0 ), 10000 );
+
+        Object.values(game.Levels3DPreview.tiles).forEach(t => {
+            t.mesh.traverse((c)=>{
+              if(c.isMesh){
+                c.material.clippingPlanes = [clippingPlane]
+              }
+            })
+        })
+        Object.values(game.Levels3DPreview.walls).forEach(t => {
+          t.mesh.traverse((c)=>{
+            if(c.isMesh){
+              c.material.clippingPlanes = [clippingPlane]
+            }
+          })
+      })
+      game.Levels3DPreview.scene.traverse((c)=>{
+        if(c.isMesh){
+            c.material.clippingPlanes = null
+        }
+      })
+      }
+
       update(){
+        if(!this.showRange) return;
         $(this.element).find("#clip-navigation-range input").trigger("change");
       }
 

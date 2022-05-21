@@ -74,7 +74,7 @@ export class Grid3D {
     }
 
     updateGrid(){
-        if(!this.secondaryGrid || !_levels.UI?.rangeEnabled) return this.setPosition();
+        if(!this.secondaryGrid || !_levels.UI?.rangeEnabled || !_levels.UI?.range || isNaN(_levels.UI?.range[0])) return this.setPosition();
         this.secondaryGrid.visible = _levels.UI.rangeEnabled ? true : false;
         this.secondaryGrid.position.y = ((_levels.UI.range[0]*canvas.grid.size)/canvas.scene.data.gridDistance)/factor-this.buildPlaneThickness/2;
         this.grid.position.y = this.secondaryGrid.position.y + 0.0001 + this.buildPlaneThickness/2;
