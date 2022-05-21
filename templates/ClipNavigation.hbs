@@ -1,6 +1,7 @@
 <div id="clip-navigation">
   <div id="clip-navigation-btns">
     <i class="fas fa-video" id="clip-navigation-camera" title="{{localize "levels3dpreview.clipNavigator.cameraToToken"}}"></i>
+    <i class="fas fa-street-view{{#if autoMode}} clip-navigation-enabled{{/if}}" id="clip-navigation-automode" title="{{localize "levels3dpreview.clipNavigator.automode"}}"></i>
     {{#if isGM}}
       <i class="fas fa-random" id="clip-navigation-sync" title="{{localize "levels3dpreview.clipNavigator.sync"}}"></i>
     {{/if}}

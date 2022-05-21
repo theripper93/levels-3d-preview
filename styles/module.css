@@ -56,6 +56,10 @@
     width: 100%;
 }
 
+#clip-navigation i{
+    transition: color 0.5s ease-in-out;
+}
+
 #clip-navigation i:hover{
     text-shadow: 0 0 8px var(--color-shadow-primary);
     cursor: pointer;
@@ -71,4 +75,8 @@
 
 #clip-navigation .clip-navigation-range-label.level-active{
     opacity: 1;
+}
+
+#clip-navigation i.clip-navigation-enabled{
+    color: var(--color-shadow-highlight);
 }

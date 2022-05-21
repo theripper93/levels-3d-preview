@@ -1,6 +1,10 @@
 export class ClipNavigation extends Application{
     constructor() {
         super()
+        const autoModeSetting = game.settings.get("levels-3d-preview", "navigatorAuto");
+        if(autoModeSetting == "none") this.autoMode = false
+        else if(autoModeSetting == "players") this.autoMode = !game.user.isGM
+        else this.autoMode = true
         this.init();
       }
     
@@ -29,7 +33,9 @@ export class ClipNavigation extends Application{
             name: l[2]
           }
         })
+        data.autoMode = this.autoMode
         data.showRange = levels.length > 0
+        this.showRange = data.showRange
         if(!data.showRange) return data
         this.lowestLevel = levels.reduce((a,b)=>{
           return a.bottom < b.bottom ? a : b
@@ -98,6 +104,10 @@ export class ClipNavigation extends Application{
             game.Levels3DPreview.socket.executeForEveryone("syncClipNavigator", this.currentRange)
             ui.notifications.info(game.i18n.localize("levels3dpreview.clipNavigator.syncNotification").replace("{{level}}", this.currentLevel.name))
           });
+          html.on("click", "#clip-navigation-automode", (e)=>{
+            this.autoMode = !this.autoMode
+            $(e.currentTarget).toggleClass("clip-navigation-enabled")
+          });
       }
 
       init(){
@@ -130,8 +140,24 @@ export class ClipNavigation extends Application{
       }
 
       set(val){
+        if(!this.showRange) return;
         this.currentRange = val
         this.render(true)
+      }
+
+      setToClosest(value){
+        if(!this.showRange) return;
+        if(!value && this.autoMode) value = (canvas.tokens.controlled[0] ?? _token)?.data.elevation
+        if(isNaN(value)) return;
+        const input = $(this.element).find("#clip-navigation-range input")
+        const closest = this.levels.reduce((a,b)=>{
+          return Math.abs(a.top - value) < Math.abs(b.top - value) ? a : b
+        })
+        if(closest.top === this.currentRange) return;
+        input.val(closest.top)
+        this.currentRange = closest.top
+        this.currentLevel = closest
+        this._onRangeChange()
       }
 
       _onRangeSnap(e) {
@@ -143,11 +169,11 @@ export class ClipNavigation extends Application{
         input.val(closest.top)
         this.currentRange = closest.top
         this.currentLevel = closest
-        this._onRangeChange(e)
+        this._onRangeChange()
       }
 
-    _onRangeChange(e) {
-        const input = $(e.currentTarget)
+    _onRangeChange() {
+        const input = $(this.element).find("#clip-navigation-range input")
         const value = parseFloat(input.val())
         const disabled = value == this.offLevel.top
 
@@ -191,3 +217,17 @@ export class ClipNavigation extends Application{
       })
     }
 }
+
+Hooks.on("controlToken", (token,controlled)=>{
+  if(!game.Levels3DPreview._active) return;
+  if(controlled){
+    game.Levels3DPreview.ClipNavigation.setToClosest()
+  }
+})
+
+Hooks.on("updateToken", (token,updates)=>{
+  if(!game.Levels3DPreview._active) return;
+  if("elevation" in updates && token.object?._controlled){
+    game.Levels3DPreview.ClipNavigation.setToClosest()
+  }
+})

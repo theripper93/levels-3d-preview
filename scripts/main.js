@@ -902,6 +902,7 @@ class Levels3DPreview {
     }
     if (!cToken) return;
     cToken.control();
+    this.ClipNavigation.setToClosest(cToken.data.elevation);
     const token3D = this.tokens[cToken.id];
     if (!token3D) return;
     //this.controls.target.set(token3D.mesh.position.x, token3D.mesh.position.y, token3D.mesh.position.z);
@@ -1038,6 +1039,10 @@ class Levels3DPreview {
   }
   Particle3DStop(...args) {
     game.Levels3DPreview.particleSystem.stop(...args);
+  }
+
+  setCursor(cursor) {
+    this.renderer.domElement.style.cursor = cursor;
   }
 }
 

@@ -2,7 +2,7 @@
   "name": "levels-3d-preview",
   "title": "3D Canvas",
   "description": "Bring your games to the 3rd dimension!",
-  "version": "2.9.5",
+  "version": "2.9.6",
   "author": "theripper93",
   "authors": [
       {
@@ -25,6 +25,7 @@
   ],
   "esmodules": [
     "./scripts/main.js",
+    "./scripts/clipNavigation.js",
     "./scripts/globalIllumination.js",
     "./scripts/lib/OrbitControls.js",
     "./scripts/lib/ConvexGeometry.js",

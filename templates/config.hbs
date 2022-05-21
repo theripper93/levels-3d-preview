@@ -181,6 +181,19 @@
       </div>
 
       <div class="form-group">
+        <label>{{localize "levels3dpreview.settings.navigatorAuto.name"}}</label>
+        <select name="navigatorAuto" data-dtype="String">
+          {{#select navigatorAuto}}
+          <option value="none">{{localize "levels3dpreview.settings.navigatorAuto.options.none"}}</option>
+          <option value="players">{{localize "levels3dpreview.settings.navigatorAuto.options.players"}}</option>
+          <option value="all">{{localize "levels3dpreview.settings.navigatorAuto.options.all"}}
+          </option>
+          {{/select}}
+        </select>
+        <p class="notes">{{localize "levels3dpreview.settings.navigatorAuto.hint"}}</p>
+      </div>
+
+      <div class="form-group">
         <label>{{localize "levels3dpreview.settings.showAdvanced.name"}}</label>
         <input type="checkbox" name="showAdvanced" data-dtype="Boolean" {{checked showAdvanced}} />
         <p class="notes">{{localize "levels3dpreview.settings.showAdvanced.hint"}}</p>

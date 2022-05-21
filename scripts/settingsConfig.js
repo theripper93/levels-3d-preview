@@ -16,7 +16,7 @@ class canvas3dConfig extends FormApplication{
 	async getData(options) {
         const data = {}
         const settingsKeys = [
-            "showAdvanced", "canpingpan", "canping","baseStyle","solidBaseMode","solidBaseColor","highlightCombat","startMarker","selectedImage","colorizeInidcator","rotateIndicator","hideTarget","templateSyle","gridMode","autoPan","camerafocuszoom","standupFace","preventNegative","miniCanvas","debugMode","cameralockzero"
+            "navigatorAuto", "showAdvanced", "canpingpan", "canping","baseStyle","solidBaseMode","solidBaseColor","highlightCombat","startMarker","selectedImage","colorizeInidcator","rotateIndicator","hideTarget","templateSyle","gridMode","autoPan","camerafocuszoom","standupFace","preventNegative","miniCanvas","debugMode","cameralockzero"
         ];
         for (let key of settingsKeys) {
             data[key] = game.settings.get("levels-3d-preview", key);
@@ -73,6 +73,18 @@ Hooks.once('init', function() {
         },
       default: "solidindicator",
   });
+
+  game.settings.register("levels-3d-preview", "navigatorAuto", {
+    scope: "world",
+    config: false,
+    type: String,
+    choices: {
+        "none": game.i18n.localize("levels3dpreview.settings.navigatorAuto.options.none"),
+        "players": game.i18n.localize("levels3dpreview.settings.navigatorAuto.options.players"),
+        "all": game.i18n.localize("levels3dpreview.settings.navigatorAuto.options.all"),
+      },
+    default: "none",
+});
 
   game.settings.register("levels-3d-preview", "solidBaseMode", {
       name: game.i18n.localize("levels3dpreview.settings.solidBaseMode.name"),

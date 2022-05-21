@@ -1040,10 +1040,12 @@ export class Token3D {
 
     _onHoverIn(e) {
       this.placeable._onHoverIn(e);
+      this._parent.setCursor('pointer');
     }
 
     _onHoverOut(e) {
       this.placeable._onHoverOut(e);
+      this._parent.setCursor('auto');
     }
 
     destroy(){

@@ -20,7 +20,8 @@
             "disabled": "Show All",
             "sync": "Sync with Players",
             "syncNotification": "Level View for {{level}} Synced with all Players",
-            "cameraToToken": "Focus Camera on Selected Token"
+            "cameraToToken": "Focus Camera on Selected Token",
+            "automode": "Follow Mode"
         },
         "keybindings":{
             "dialog": {
@@ -483,6 +484,15 @@
                 "hide": "Hide Advanced Settings",
                 "name": "Always Show Advanced Settings",
                 "hint": "Show the advanced settings in configuration menus by default."
+            },
+            "navigatorAuto": {
+                "name": "Navigator Follow Mode",
+                "hint": "Automatically enables the Follow Mode for the 3D Navigator on scene load.",
+                "options": {
+                    "none": "Nobody",
+                    "players": "Players Only",
+                    "all": "Players and GMs"
+                }
             },
             "headers":{
                 "basics": {
