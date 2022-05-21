@@ -44,7 +44,7 @@ export class ClipNavigation extends Application{
           return a.top > b.top ? a : b
         })
         this.offLevel = {
-          bottom: 0,
+          bottom: this.higestLevel.top + 5,
           top: this.higestLevel.top + 5,
           name: game.i18n.localize("levels3dpreview.clipNavigator.disabled")
         }
@@ -108,6 +108,10 @@ export class ClipNavigation extends Application{
             this.autoMode = !this.autoMode
             $(e.currentTarget).toggleClass("clip-navigation-enabled")
           });
+          if(!this._setOnLoad){
+            this.setToClosest();
+            this._setOnLoad = true;
+          }
       }
 
       init(){
@@ -132,6 +136,7 @@ export class ClipNavigation extends Application{
             c.material.clippingPlanes = null
         }
       })
+
       }
 
       update(){
@@ -151,7 +156,7 @@ export class ClipNavigation extends Application{
         if(isNaN(value)) return;
         const input = $(this.element).find("#clip-navigation-range input")
         const closest = this.levels.reduce((a,b)=>{
-          return Math.abs(a.top - value) < Math.abs(b.top - value) ? a : b
+          return Math.abs(a.bottom - value) < Math.abs(b.bottom - value) ? a : b
         })
         if(closest.top === this.currentRange) return;
         input.val(closest.top)
