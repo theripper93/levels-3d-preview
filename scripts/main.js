@@ -69,7 +69,6 @@ Hooks.on("canvasReady", async () => {
     }
   }while(!game.Levels3DPreview || !game.Levels3DPreview?._init)
 
-
 });
 
 Hooks.on("levelsUiChangeLevel", () => {
