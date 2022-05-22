@@ -924,7 +924,7 @@ class Levels3DPreview {
           offset
         );
 
-      if (collision) {
+      if (collision && targetPosition.y < (this.ClipNavigation._clipHeight ?? Infinity)) {
         const collisionPoint = new THREE.Vector3(
           collision.x,
           collision.y,

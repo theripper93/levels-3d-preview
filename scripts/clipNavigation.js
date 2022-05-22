@@ -116,7 +116,7 @@ export class ClipNavigation extends Application{
 
       init(){
         const clippingPlane = new game.Levels3DPreview.THREE.Plane( new game.Levels3DPreview.THREE.Vector3( 0, -1, 0 ), 10000 );
-
+        this._clipHeight = 10000;
         Object.values(game.Levels3DPreview.tiles).forEach(t => {
             t.mesh.traverse((c)=>{
               if(c.isMesh){
@@ -203,7 +203,7 @@ export class ClipNavigation extends Application{
         }
         const pxUnit = canvas.scene.dimensions.size/canvas.scene.dimensions.distance
         const clipHeight = (pxUnit*value)/game.Levels3DPreview.factor
-
+        this._clipHeight = clipHeight
         const clippingPlane = new game.Levels3DPreview.THREE.Plane( new game.Levels3DPreview.THREE.Vector3( 0, -1, 0 ), clipHeight );
 
         Object.values(game.Levels3DPreview.tiles).forEach(t => {
