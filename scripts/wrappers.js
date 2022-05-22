@@ -10,11 +10,53 @@ Hooks.once('ready', async function() {
     libWrapper.register("levels-3d-preview", "Canvas.prototype.animatePan", animatePan, "WRAPPER");
     libWrapper.register("levels-3d-preview", "SightLayer.prototype.commitFog", updateFog, "WRAPPER");
     libWrapper.register("levels-3d-preview", "PlaceablesLayer.prototype.pasteObjects", pasteObjects, "WRAPPER");
+    libWrapper.register("levels-3d-preview", "ClockwiseSweepPolygon.prototype._compute", _computePolygon, "WRAPPER");
     libWrapper.register("levels-3d-preview", "Scenes.prototype.preload", preload3D, "OVERRIDE");
     
 
     if(game.system.id === "dnd5e") libWrapper.register("levels-3d-preview", "game.dnd5e.canvas.AbilityTemplate.prototype.drawPreview", drawPreview, "MIXED")
     
+    function _computePolygon(wrapped, ...args){
+        
+        wrapped(...args);
+        if(!game.Levels3DPreview?._active){
+            const object3dSight = canvas.scene.getFlag("levels-3d-preview", "object3dSight") ?? false;
+            if(object3dSight){
+                this.points = [0,0,0,0,0,0,0,0]
+            }
+            return
+        }
+        if(!game.Levels3DPreview?.object3dSight || !canvas.scene.data.fogExploration) return;
+        const polygonPoints = [];
+        const aMax = this.config.aMax
+        const aMin = this.config.aMin
+        const radius = Math.max(this.config.radius, this.config.radius2);
+        const nPoints = this.config.angle*0.5;
+        const origin = this.origin
+        const factor = game.Levels3DPreview.factor
+
+        if(this.config.hasLimitedAngle) polygonPoints.push(origin.x, origin.y);
+
+        const z = origin.b ?? 0;
+
+        for (let i = 0, n = this.config.hasLimitedAngle ? nPoints + 1 : nPoints; i < n; i++){
+            const a = aMin + (aMax - aMin) * (i / nPoints);
+            const x = origin.x + radius * Math.cos(a)
+            const y = origin.y + radius * Math.sin(a)
+
+            const collision = game.Levels3DPreview.interactionManager.computeSightCollision({x: origin.x, y: origin.y, z: z}, {x: x, y: y, z: z});
+            if(collision){
+                polygonPoints.push(collision.x*factor, collision.z*factor);
+            }else{
+                polygonPoints.push(x,y);
+            }
+        }
+
+        if(this.config.hasLimitedAngle) polygonPoints.push(origin.x, origin.y);
+        this.points = polygonPoints;
+    }
+
+
     async function preload3D(sceneId, push=false) {
         if ( push ) return game.socket.emit('preloadScene', sceneId, () => this.preload(sceneId));
         let scene = this.get(sceneId);

@@ -198,6 +198,7 @@ class Levels3DPreview {
     //composer
     this.composer = new EffectComposer(this.renderer);
     this.composer.setPixelRatio(this.resolutionMulti);
+    this.composer.setSize(window.innerWidth, window.innerHeight);
     //set dom element id
     this.renderer.domElement.id = "levels3d";
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
@@ -1103,6 +1104,23 @@ Hooks.on("deleteCombat", ()=>{
 
 Hooks.on("collapseSidebar", () => {
   if (game.Levels3DPreview?._active) game.Levels3DPreview.ClipNavigation.render(true);
+})
+
+$(document).on("keyup", (event) => {
+  if(event.key != "Shift" || !game.Levels3DPreview?._active) return;
+  const ts = game.Levels3DPreview.transformControls;
+  const snapSize = canvas.scene.dimensions.size/factor/2;
+  ts.setTranslationSnap(snapSize);
+  ts.setRotationSnap(Math.PI/4);
+  ts.setScaleSnap(snapSize);
+})
+
+$(document).on("keydown", (event) => {
+  if(event.key != "Shift" || !game.Levels3DPreview?._active) return;
+  const ts = game.Levels3DPreview.transformControls;
+  ts.setTranslationSnap(undefined);
+  ts.setRotationSnap(undefined);
+  ts.setScaleSnap(undefined);
 })
 
 //javascript:(function(){var script=document.createElement('script');script.onload=function(){var stats=new Stats();document.body.appendChild(stats.dom);requestAnimationFrame(function loop(){stats.update();requestAnimationFrame(loop)});};script.src='//mrdoob.github.io/stats.js/build/stats.min.js';document.head.appendChild(script);})()

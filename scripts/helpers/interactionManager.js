@@ -91,8 +91,13 @@ export class InteractionManager {
       }
 
     initTransformControls(){
-      this._parent.transformControls.addEventListener("mouseUp", this._onTransformEnd.bind(this));
-      this._parent.transformControls.addEventListener("mouseDown", this._onTransformStart.bind(this));
+      const ts = this._parent.transformControls;
+      const snapSize = canvas.scene.dimensions.size/factor/2;
+      ts.setTranslationSnap(snapSize);
+      ts.setRotationSnap(Math.PI/4);
+      ts.setScaleSnap(snapSize);
+      ts.addEventListener("mouseUp", this._onTransformEnd.bind(this));
+      ts.addEventListener("mouseDown", this._onTransformStart.bind(this));
     }
 
       get allowedRulerDrag(){
@@ -190,14 +195,14 @@ export class InteractionManager {
         }
         if(data.type === "Tile"){
           const useSnapped = Ruler3D.useSnapped();
+          const size = canvas.grid.size*(canvas.grid.size/data.tileSize);
           let snapped;
           if(useSnapped){
-            snapped = canvas.grid.getCenter(data.x,data.y)
+            snapped = canvas.grid.getSnappedPosition(data.x - size/2,data.y - size/2)
           }
-          const size = canvas.grid.size*(canvas.grid.size/data.tileSize);
           canvas.scene.createEmbeddedDocuments("Tile", [{
-            x: (snapped ? snapped[0] : data.x) - size/2,
-            y: (snapped ? snapped[1] : data.y) - size/2,
+            x: snapped ? snapped.x : data.x - size/2,
+            y: snapped ? snapped.y : data.y - size/2,
             width: size,
             height: size,
             img: "modules/levels-3d-preview/assets/blank.webp",

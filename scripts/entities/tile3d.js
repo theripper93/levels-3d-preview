@@ -48,6 +48,9 @@ export class Tile3D {
         this._loaded = true;
         this.elevation3d = this.mesh.position.y;
         this.updateControls();
+        setTimeout(()=>{
+            this.updateControls();
+        }, 150)
         return this;
     }
 
@@ -359,19 +362,20 @@ export class Tile3D {
     }
 
     updateControls(){
+        if(!this.mesh.parent) return;
         const controls = this._parent.transformControls
-        const gizmoEnabled = game.Levels3DPreview.interactionManager._gizmoEnabled
+        const gizmoEnabled = this._parent.interactionManager._gizmoEnabled
         if(!gizmoEnabled){
             return controls.detach()
         }
-        if(this.tile._controlled) controls.attach(this.mesh);
+        if(this.tile._controlled && !this.tile.data.locked) controls.attach(this.mesh);
         if(!canvas.activeLayer.controlled.length) controls.detach();
     }
 
     updateFromTransform(){
         const controls = this._parent.transformControls
         controls.detach();
-        this.updatePositionFrom3D();
+        this.updatePositionFrom3D(true);
     }
 
     processRotation(update){
@@ -425,15 +429,15 @@ export class Tile3D {
         }
     }
 
-    updatePositionFrom3D(e){
+    updatePositionFrom3D(transform = false){
         this.skipMoveAnimation = true;
-        const useSnapped = Ruler3D.useSnapped();
         const x3d = this.mesh.position.x;
         const y3d = this.mesh.position.y;
         const z3d = this.mesh.position.z;
         const x = x3d * factor - this.tile.data.width/2;
         const y = z3d * factor - this.tile.data.height/2;
         const z = Math.round(((y3d * factor * canvas.dimensions.distance)/(canvas.dimensions.size))*100)/100;
+        const useSnapped = Ruler3D.useSnapped() && !transform;
         const snapped = canvas.grid.getSnappedPosition(x, y);
         let {rangeTop, rangeBottom} = _levels.getFlagsForObject(this.tile);
         if(!rangeBottom || rangeBottom == -Infinity) rangeBottom = 0;

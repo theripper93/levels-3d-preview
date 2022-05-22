@@ -21,7 +21,6 @@ export class Fog{
         this._parent.composer.removePass( this.fogPass );
         this.fogPass = new ShaderPass( this.shader );
         this._parent.composer.addPass( this.fogPass );
-
     }
 
     update(){
