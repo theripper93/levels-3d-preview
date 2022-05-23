@@ -84,6 +84,7 @@ class Levels3DPreview {
   constructor() {
     THREE.Cache.enabled = true;
     this.THREE = THREE;
+    this._errCount = 0;
     this.socket = socketlib.registerModule("levels-3d-preview");
     this.socket.register("Particle3D", this.particleSocket);
     this.socket.register("Particle3DStop", this.Particle3DStop);
@@ -768,7 +769,13 @@ class Levels3DPreview {
       this.fogExploration?.update();
       this.composer.render(time);
     } catch (error) {
+      this._errCount++;
       console.error("3D Canvas: An Error Occured in the Rendering Loop", error);
+      if(this._errCount > 200){
+        this._errCount = 0;
+        ui.notifications.error(game.i18n.localize("levels3dpreview.errors.critical"));
+        this.reload();
+      }
     }
   }
 

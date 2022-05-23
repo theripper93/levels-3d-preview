@@ -14,7 +14,8 @@
                 "type": "Particle system: type '%type%' not supported, the valid types are: ",
                 "fromto": "Particle system: Target and/or Source where not specified or are undefined.",
                 "onend": "Particle system: .onEnd() - one or more arguments were not an instance of Particle3D."
-            }
+            },
+            "critical": "3D Canvas: A Fatal Error was encountered in the Rendering Loop. Attempting to recover..."
         },
         "clipNavigator": {
             "disabled": "Show All",
