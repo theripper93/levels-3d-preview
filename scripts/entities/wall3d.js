@@ -9,7 +9,7 @@ export class Wall3D {
         this.embeddedName = "Wall";
         this.placeable = wall;
         this._parent = parent;
-        this.top = wall.document.getFlag("wall-height","top") ?? 10;
+        this.top = wall.document.getFlag("wall-height","top") ?? canvas.scene.dimensions.distance*2;
         this.externalWall = wall.data.flags.betterroofs?.externalWall ?? false;
         if(this.externalWall) this.top++;
         this.bottom = wall.document.getFlag("wall-height","bottom") ?? 0;

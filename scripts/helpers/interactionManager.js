@@ -373,9 +373,9 @@ export class InteractionManager {
           this.forceFree = true;
           entity3D.wasFreeMode = true;
         }
-        let elevationDiff = 5;
-        if(event.shiftKey) elevationDiff = 1;
-        if(event.ctrlKey) elevationDiff = 0.1;
+        let elevationDiff = canvas.scene.dimensions.distance;
+        if(event.shiftKey) elevationDiff = canvas.scene.dimensions.distance/5;
+        if(event.ctrlKey) elevationDiff = canvas.scene.dimensions.distance/50;
         entity3D.elevation3d += -delta*this.elevationTick*elevationDiff;
         if(game.settings.get("levels-3d-preview", "preventNegative") && entity3D.elevation3d < 0){
           entity3D.elevation3d = 0;

@@ -121,7 +121,10 @@ export class Token3D {
         const texture = this.texture;
         const geometry = new THREE.PlaneGeometry((texture.image?.width || texture.image?.videoWidth || 1)/1000, (texture.image?.height || texture.image?.videoHeight || 1)/1000);
         const material = new THREE.MeshBasicMaterial();
-        const object = new THREE.Mesh(geometry, material);
+        const standupModel = new THREE.Mesh(geometry, material);
+        standupModel.userData.standupModel = true;
+        const object = new THREE.Group();
+        object.add(standupModel);
         this.standUp=true;
         return {
           object: object,
@@ -967,17 +970,17 @@ export class Token3D {
 
     faceCamera(){
       const camera = this._parent.camera;
-      const vector = new THREE.Vector3(0, -1, 0);
+      const vector = new THREE.Vector3(0, this._parent.camera.position.y >= Number.EPSILON ? -1 : 1, 0);
       vector.applyQuaternion(camera.quaternion);
-      const angle = Math.atan2(vector.x, vector.z);
-      this.mesh.rotation.set(this.mesh.rotation._x, angle, this.mesh.rotation._z);
-      if(this.standUp && this.standupFace) {
-        this.border.rotation.set(
-        0,
-        -angle - (this.rotateIndicator ? Math.toRadians(this.token.data.rotation) : 0),
-        0,
-      )
-    }
+      const angle = Math.atan2(vector.x, vector.z)-this.mesh.rotation.y;
+      if(this.isProne){
+        this.model.children[0].rotation.y = 0;
+        this.model.children[0].rotation.z = angle;
+      }else{
+        this.model.children[0].rotation.z = 0;
+        this.model.children[0].rotation.y = angle;
+      }
+
     }
 
     updateVisibility(){

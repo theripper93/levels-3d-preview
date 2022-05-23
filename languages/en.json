@@ -91,7 +91,8 @@
                 "label": "Enable Ruler"
             },
             "enableFogOfWar": {
-                "label": "Enable Fog of War (WARNING EXPERIMENTAL)"
+                "label": "Enable Fog of War",
+                "notes": "Performance Heavy. This option will enable Fog of War in 3D, if 'Use 3D Geometry for Sight calculations' is enabled, Fog of War will be calculated based on 3D Geometry (it will still be two dimensional)."
             },
             "bakeLights": {
                 "label": "Pre-Bake Lights",
@@ -479,6 +480,10 @@
             }
         },
         "settings" : {
+            "fogDebounce": {
+                "name": "Fog of War Update Throttling",
+                "hint": "If Disabled vision and Fog of War will be constantly refreshed."
+            },
             "showAdvanced": {
                 "show": "Show Advanced Settings",
                 "hide": "Hide Advanced Settings",

@@ -265,7 +265,7 @@ class Levels3DPreview {
       this.fogExploration.dispose();
       this.fogExploration = null;
     }
-    if (canvas.scene.data.tokenVision && canvas.scene.data.fogExploration)
+    if (canvas.scene.data.tokenVision && canvas.scene.getFlag("levels-3d-preview", "enableFogOfWar"))
       this.fogExploration = new Fog(this);
     this.composer.render();
     this._active = true;
@@ -682,6 +682,7 @@ class Levels3DPreview {
     const height = canvas.clientHeight;
     if (canvas.width !== width || canvas.height !== height) {
       this.renderer.setSize(width, height, false);
+      this.composer.setSize(width, height, false);
       this.camera.aspect = width / height;
       this.camera.updateProjectionMatrix();
     }
@@ -1073,7 +1074,8 @@ Hooks.on("updateScene", (scene,updates) => {
     "exr" in flags ||
     "mirrorLevels" in flags ||
     "gridAlpha" in updates ||
-    "gridColor" in updates
+    "gridColor" in updates ||
+    "enableFogOfWar" in flags
   ){
     game.Levels3DPreview.reload();
     return

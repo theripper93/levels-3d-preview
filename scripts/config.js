@@ -63,6 +63,12 @@ Hooks.on("renderSceneConfig", (app,html)=>{
             "label": game.i18n.localize("levels3dpreview.flags.auto3d.label"),
             "default": false,
         },
+        "enableFogOfWar": {
+            type: "checkbox",
+            label: game.i18n.localize("levels3dpreview.flags.enableFogOfWar.label"),
+            notes: game.i18n.localize("levels3dpreview.flags.enableFogOfWar.notes"),
+            default: false,
+        },
         "enableGrid": {
             type: "checkbox",
             label: game.i18n.localize("levels3dpreview.flags.enableGrid.label"),
@@ -157,11 +163,6 @@ Hooks.on("renderSceneConfig", (app,html)=>{
             type: "custom",
             html: `<h3 class="form-header"><i class="fas fas fa-lightbulb"></i> ${game.i18n.localize("levels3dpreview.settings.headers.lighting.title")}</h3><p class="notes">${game.i18n.localize("levels3dpreview.settings.headers.lighting.notes")}</p><div>`
         },
-        /*"enableFogOfWar": {
-            type: "checkbox",
-            label: game.i18n.localize("levels3dpreview.flags.enableFogOfWar.label"),
-            default: false,
-        },*/
         "sceneTint": {
             type: "color",
             label: game.i18n.localize("levels3dpreview.flags.sceneTint.label"),

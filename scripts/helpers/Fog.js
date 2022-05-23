@@ -7,7 +7,7 @@ export class Fog{
     constructor(parent){
         this._parent = parent;
         this.needsUpdate = true;
-        this.debouncedUpdate = debounce(this.updateTexture, 300);
+        this.debouncedUpdate = debounce(this.updateTexture, game.settings.get("levels-3d-preview", "fogDebounce") ? 300 : 0);
         this.init();
     }
 
@@ -72,7 +72,7 @@ export class Fog{
     generateTexture(){
         const texture = PIXI.RenderTexture.create({width: canvas.dimensions.width, height: canvas.dimensions.height, resolution: 0.1});
 
-        canvas.app.renderer.render(canvas.sight.revealed, {renderTexture: texture, clear: false});
+        if(canvas.scene.data.fogExploration) canvas.app.renderer.render(canvas.sight.revealed, {renderTexture: texture, clear: false});
         canvas.app.renderer.render(canvas.sight.vision, {renderTexture: texture, clear: false});
 
         const base64 = canvas.app.renderer.extract.base64(texture,"image/jpeg");
