@@ -110,6 +110,12 @@ export class InteractionManager {
       _onTransformStart(event){
         this.controls.enabled = false;
         this.preventSelect = true;
+        if(this.isCtrl){
+          const object3d = event.target.object.userData.entity3D;
+          if(!object3d) return;
+          const objData = object3d.placeable.document.data;
+          setTimeout(()=>{canvas.scene.createEmbeddedDocuments(object3d.placeable.document.documentName, [objData]);}) 
+        }
       }
 
       _onTransformEnd(event){
@@ -498,11 +504,13 @@ export class InteractionManager {
 
     _onKeyDown(event){
       if(event.ctrlKey){
+        this.isCtrl = true;
         this.controls.enableZoom = false
       }
     }
 
     _onKeyUp(event){
+      this.isCtrl = false;
       if(!this.draggable) this.controls.enableZoom = true
     }
   
