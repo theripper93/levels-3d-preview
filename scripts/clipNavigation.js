@@ -224,14 +224,14 @@ export class ClipNavigation extends Application{
 }
 
 Hooks.on("controlToken", (token,controlled)=>{
-  if(!game.Levels3DPreview._active) return;
+  if(!game.Levels3DPreview?._active) return;
   if(controlled){
     game.Levels3DPreview.ClipNavigation.setToClosest()
   }
 })
 
 Hooks.on("updateToken", (token,updates)=>{
-  if(!game.Levels3DPreview._active) return;
+  if(!game.Levels3DPreview?._active) return;
   if("elevation" in updates && token.object?._controlled){
     game.Levels3DPreview.ClipNavigation.setToClosest()
   }
