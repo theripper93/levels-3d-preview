@@ -20,13 +20,13 @@ Hooks.once('ready', async function() {
         
         wrapped(...args);
         if(!game.Levels3DPreview?._active){
-            const object3dSight = canvas.scene.getFlag("levels-3d-preview", "object3dSight") ?? false;
+            const object3dSight = canvas.scene.getFlag("levels-3d-preview", "enableFogOfWar") ?? false;
             if(object3dSight){
                 this.points = [0,0,0,0,0,0,0,0]
             }
             return
         }
-        if(!game.Levels3DPreview?.object3dSight || !canvas.scene.data.fogExploration) return;
+        if(!game.Levels3DPreview?.object3dSight || !game.Levels3DPreview?.fogExploration) return;
         const polygonPoints = [];
         const aMax = this.config.aMax
         const aMin = this.config.aMin

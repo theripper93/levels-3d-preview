@@ -236,7 +236,7 @@ export class InteractionManager {
         catch (err) {
           return false;
         }
-        const coord3d = this.screen3DtoCanvas2DWithCollision({x:event.clientX, y: event.clientY})
+        const coord3d = this.screen3DtoCanvas2DWithCollision(event)
         data.x = coord3d.x
         data.y = coord3d.y
         data.elevation = coord3d.z
@@ -671,9 +671,9 @@ export class InteractionManager {
       return intersects.length > 0 ? Ruler3D.pos3DToCanvas(intersects[0].point) : undefined;
     }
 
-    screen3DtoCanvas2DWithCollision(screenPosition){
-      const intersects = this.mouseIntersection3DCollision(screenPosition)
-      const pos = intersects.length > 0 ? Ruler3D.pos3DToCanvas(intersects[0].point) : undefined;
+    screen3DtoCanvas2DWithCollision(event){
+      const intersect = this.findMouseIntersect(event)
+      const pos = intersect ? Ruler3D.pos3DToCanvas(intersect.point) : undefined;
       return pos;
     }
 

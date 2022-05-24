@@ -383,13 +383,25 @@ export class Tile3D {
 
         const worldRotation = new THREE.Euler().setFromQuaternion(this.mesh.getWorldQuaternion(new THREE.Quaternion()));
 
+        if(Math.abs(worldRotation.x) === Math.PI && Math.abs(worldRotation.z) === Math.PI){
+            worldRotation.y = (Math.PI + (worldRotation.y))*Math.sign(worldRotation.x);
+            worldRotation.x = 0;
+            worldRotation.z = 0;
+        }
+
         const currentTiltX = worldRotation.x;
         const currentTiltZ = worldRotation.z;
         const currentTiltY = worldRotation.y;
 
-        const newTiltX = Math.round(Math.toDegrees((currentTiltX)%(Math.PI*2)));
-        const newTiltZ = Math.round(Math.toDegrees((currentTiltZ)%(Math.PI*2)));
-        const newTiltY = Math.round(Math.toDegrees((-currentTiltY*this.rotSign)%(Math.PI*2)));
+        let newTiltX = Math.round(Math.toDegrees((currentTiltX)%(Math.PI*2)));
+        let newTiltZ = Math.round(Math.toDegrees((currentTiltZ)%(Math.PI*2)));
+        let newTiltY = Math.round(Math.toDegrees((-currentTiltY*this.rotSign)%(Math.PI*2)));
+
+        if(newTiltX === -180 && newTiltZ === -180 && newTiltY === 0){
+            newTiltX = 0;
+            newTiltZ = 0;
+            newTiltY+= 180;
+        }
 
         update.rotation = newTiltY;
         update.flags["levels-3d-preview"].tiltX = newTiltX;

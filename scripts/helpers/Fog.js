@@ -206,14 +206,3 @@ export class Fog{
     }
 
 }
-
-/*
-                    if(worldPosition.y > 0.0){
-                        finalColor = depthTexel;
-                    }else{
-                        float depth = readDepth( tDepth, vUv );
-
-                        finalColor.rgb = 1.0 - vec3( depth );
-                        finalColor.a = 1.0;
-                    }
-*/

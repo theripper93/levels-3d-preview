@@ -197,7 +197,17 @@ class Levels3DPreview {
     this.renderer.alpha = true;
     this.renderer.setClearColor(0x999999, 1);
     //composer
-    this.composer = new EffectComposer(this.renderer);
+
+    let target
+
+      target = new THREE.WebGLMultisampleRenderTarget(window.innerWidth, window.innerHeight, {
+        format: THREE.RGBAFormat,
+        encoding: THREE.sRGBEncoding,
+      })
+      target.samples = 8
+
+
+    this.composer = new EffectComposer(this.renderer, target);
     this.composer.setPixelRatio(this.resolutionMulti);
     this.composer.setSize(window.innerWidth, window.innerHeight);
     //set dom element id
