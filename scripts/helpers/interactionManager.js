@@ -111,19 +111,77 @@ export class InteractionManager {
         this.controls.enabled = false;
         this.preventSelect = true;
         if(this.isCtrl){
-          const object3d = event.target.object.userData.entity3D;
-          if(!object3d) return;
-          const objData = object3d.placeable.document.data;
-          setTimeout(()=>{canvas.scene.createEmbeddedDocuments(object3d.placeable.document.documentName, [objData]);}) 
+          const tilesToCreate = [];
+          for(let tile of canvas.activeLayer.controlled){
+            tilesToCreate.push(tile.document.data);
+          }
+          canvas.scene.createEmbeddedDocuments("Tile", tilesToCreate);
         }
       }
 
       _onTransformEnd(event){
         this.controls.enabled = true;
         this.preventSelect = false;
-        const object3d = event.target.object.userData.entity3D;
+        const object3d = event.target.object//.userData.entity3D;
         if(!object3d) return;
-        object3d.updateFromTransform();
+        for(let child of object3d.children){
+          child.userData.entity3D.updateFromTransform();
+        }
+        //object3d.updateFromTransform();
+      }
+
+      setControlledGroup(object3d){
+        this.clearControlledGroup();
+        this.controlledGroupSetPosition();
+        const controlledGroup = this._parent.controlledGroup;
+        for(let placeable of canvas.activeLayer.controlled){
+          const tile3d = this._parent.tiles[placeable.id]
+          if(!tile3d) continue;
+          const mesh = tile3d.mesh
+          const offsetPos = mesh.position.clone().sub(controlledGroup.position);
+          mesh.position.copy(offsetPos);
+          controlledGroup.add(mesh);
+        }
+      }
+
+      clearControlledGroup(){
+        const controlledGroup = this._parent.controlledGroup;
+        while(controlledGroup.children.length){
+          const tile3d = controlledGroup.children[0].userData.entity3D;
+          if(!tile3d) continue;
+          this.removeFromcontrolledGroup(tile3d);
+        }
+        controlledGroup.rotation.set(0,0,0);
+        controlledGroup.scale.set(1,1,1);
+      }
+
+      removeFromcontrolledGroup(object3d){
+        const controlledGroup = this._parent.controlledGroup;
+        const mesh = object3d.mesh
+        const offset = mesh.position.clone().sub(controlledGroup.position.clone().multiplyScalar(-1));
+        mesh.position.copy(offset);
+        this._parent.scene.add(mesh);
+      }
+
+      controlledGroupSetPosition(){
+        const controlledGroup = this._parent.controlledGroup;
+        let maxX,maxY,maxZ,minX,minY,minZ = 0;
+        
+        for(let placeable of canvas.activeLayer.controlled){
+          const tile3d = this._parent.tiles[placeable.id]
+          if(!tile3d) continue;
+          const pos = tile3d.mesh.position;
+          if(!maxX || pos.x > maxX) maxX = pos.x;
+          if(!maxY || pos.y > maxY) maxY = pos.y;
+          if(!maxZ || pos.z > maxZ) maxZ = pos.z;
+          if(!minX || pos.x < minX) minX = pos.x;
+          if(!minY || pos.y < minY) minY = pos.y;
+          if(!minZ || pos.z < minZ) minZ = pos.z;
+        }
+
+        const center = new THREE.Vector3((maxX+minX)/2,(maxY+minY)/2,(maxZ+minZ)/2);
+        controlledGroup.position.copy(center);
+
       }
 
       toggleGizmo(){
@@ -519,7 +577,7 @@ export class InteractionManager {
       this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
       this.raycaster.setFromCamera(this.mouse, this.camera);
       let intersectTargets = []
-      for(let child of this.scene.children){
+      for(let child of this.scene.children.concat(this._parent.controlledGroup.children)){
         if(canvas.activeLayer.options.objectClass.embeddedName !== child.userData?.entity3D?.embeddedName && child.userData?.entity3D?.embeddedName !== "Wall" && child.userData?.entity3D?.embeddedName !== "Tile"  && child.userData?.entity3D?.embeddedName !== "Note") continue;
         if(!child.visible) continue;
         if(canvas.activeLayer.options.objectClass.embeddedName !== "Tile" && child.userData?.entity3D?.embeddedName === "Tile" && !child.userData?.entity3D?.collision) continue;

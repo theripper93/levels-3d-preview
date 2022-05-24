@@ -51,6 +51,7 @@ export class Tile3D {
         setTimeout(()=>{
             this.updateControls();
         }, 150)
+        if(this.tile._controlled) this._parent.interactionManager.setControlledGroup(this);
         return this;
     }
 
@@ -368,7 +369,7 @@ export class Tile3D {
         if(!gizmoEnabled){
             return controls.detach()
         }
-        if(this.tile._controlled && !this.tile.data.locked) controls.attach(this.mesh);
+        if(this.tile._controlled && !this.tile.data.locked) controls.attach(this._parent.controlledGroup);
         if(!canvas.activeLayer.controlled.length) controls.detach();
     }
 
@@ -378,15 +379,17 @@ export class Tile3D {
         this.updatePositionFrom3D(true);
     }
 
-    processRotation(update){
+    processRotation(update, tile){
 
-        const currentTiltX = this.mesh.rotation.x;
-        const currentTiltZ = this.mesh.rotation.z;
-        const currentTiltY = this.mesh.rotation.y;
+        const worldRotation = new THREE.Euler().setFromQuaternion(this.mesh.getWorldQuaternion(new THREE.Quaternion()));
 
-        const newTiltX = Math.toDegrees((currentTiltX)%(Math.PI*2));
-        const newTiltZ = Math.toDegrees((currentTiltZ)%(Math.PI*2));
-        const newTiltY = Math.toDegrees((-currentTiltY*this.rotSign)%(Math.PI*2));
+        const currentTiltX = worldRotation.x;
+        const currentTiltZ = worldRotation.z;
+        const currentTiltY = worldRotation.y;
+
+        const newTiltX = Math.round(Math.toDegrees((currentTiltX)%(Math.PI*2)));
+        const newTiltZ = Math.round(Math.toDegrees((currentTiltZ)%(Math.PI*2)));
+        const newTiltY = Math.round(Math.toDegrees((-currentTiltY*this.rotSign)%(Math.PI*2)));
 
         update.rotation = newTiltY;
         update.flags["levels-3d-preview"].tiltX = newTiltX;
@@ -394,9 +397,10 @@ export class Tile3D {
 
     }
 
-    processScale(update){
-        const scaleX = this.mesh.scale.x;
-        const scaleZ = this.mesh.scale.z;
+    processScale(update, tile){
+        const scale = this.mesh.getWorldScale(new THREE.Vector3());
+        const scaleX = scale.x;
+        const scaleZ = scale.z;
         const newWidth = this.tile.data.width*scaleX;
         const newHeight = this.tile.data.height*scaleZ;
         const x = (update.x ?? this.tile.data.x) - (newWidth-this.tile.data.width)/2;
@@ -429,11 +433,12 @@ export class Tile3D {
         }
     }
 
-    updatePositionFrom3D(transform = false){
+    async updatePositionFrom3D(transform = false){
         this.skipMoveAnimation = true;
-        const x3d = this.mesh.position.x;
-        const y3d = this.mesh.position.y;
-        const z3d = this.mesh.position.z;
+        const worldPosition = this.mesh.getWorldPosition(new THREE.Vector3());
+        const x3d = worldPosition.x;
+        const y3d = worldPosition.y;
+        const z3d = worldPosition.z;
         const x = x3d * factor - this.tile.data.width/2;
         const y = z3d * factor - this.tile.data.height/2;
         const z = Math.round(((y3d * factor * canvas.dimensions.distance)/(canvas.dimensions.size))*100)/100;
@@ -452,7 +457,7 @@ export class Tile3D {
           elevation: dest.elevation - rangeBottom,
         }
         let updates = [];
-        for(let tile of canvas.activeLayer.controlled){
+        let tile = this.tile
         let tileFlags = _levels.getFlagsForObject(tile) || {};
         if(!tileFlags.rangeBottom || tileFlags.rangeBottom == -Infinity) tileFlags.rangeBottom = 0;
           const update = {
@@ -468,11 +473,10 @@ export class Tile3D {
                 }
             },
           }
-          this.processScale(update)
-          this.processRotation(update)
+          this.processScale(update, tile)
+          this.processRotation(update, tile)
           updates.push(update)
-        }
-        canvas.scene.updateEmbeddedDocuments("Tile", updates)
+        await canvas.scene.updateEmbeddedDocuments("Tile", updates)
         return true;
       }
 
@@ -480,7 +484,7 @@ export class Tile3D {
         this._destroyed = true;
         delete this._parent.tiles[this.tile.id];
         if(!this.mesh) return
-        this._parent.scene.remove(this.mesh);
+        this.mesh.removeFromParent();
         this.mesh.traverse((child) => {
             if (child.isMesh) {
                 child.dispose?.();

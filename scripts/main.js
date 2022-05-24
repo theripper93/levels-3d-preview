@@ -282,6 +282,8 @@ class Levels3DPreview {
       this.camera,
       this.renderer.domElement
     );
+    this.controlledGroup = new THREE.Group();
+    this.scene.add(this.controlledGroup);
     this.scene.add(this.transformControls);
     this.interactionManager.initTransformControls();
     this.object3dSight =
@@ -1113,6 +1115,13 @@ Hooks.on("deleteCombat", ()=>{
 
 Hooks.on("collapseSidebar", () => {
   if (game.Levels3DPreview?._active) game.Levels3DPreview.ClipNavigation.render(true);
+})
+
+Hooks.on("controlTile", (tile, control) => {
+  if (!game.Levels3DPreview?._active) return
+  const tile3d = game.Levels3DPreview.tiles[tile.id];
+  if(!tile3d) return;
+  game.Levels3DPreview.interactionManager.setControlledGroup(tile3d,control);
 })
 
 $(document).on("keyup", (event) => {
