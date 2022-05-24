@@ -199,13 +199,13 @@ class Levels3DPreview {
     //composer
 
     let target
-
+    if(window.WebGL2RenderingContext){
       target = new THREE.WebGLMultisampleRenderTarget(window.innerWidth, window.innerHeight, {
         format: THREE.RGBAFormat,
         encoding: THREE.sRGBEncoding,
       })
       target.samples = 8
-
+    }
 
     this.composer = new EffectComposer(this.renderer, target);
     this.composer.setPixelRatio(this.resolutionMulti);
