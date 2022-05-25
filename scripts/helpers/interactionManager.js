@@ -16,7 +16,7 @@ export class InteractionManager {
         //this.raycaster.firstHitOnly = true;
         this.sightRaycaster = new THREE.Raycaster();
         this.sightRaycaster.firstHitOnly = true;
-        this._sightCollisions = [];
+        this._sightCollisions = {};
         this.mouse = new THREE.Vector2();
         this.mousemove = new THREE.Vector2();
         this.controls = levels3dPreview.controls;
@@ -48,29 +48,35 @@ export class InteractionManager {
 
     generateSightCollisions(){
       const collisionObjects = [];
+      const sightObjects = [];
       for(let tile of Object.values(this._parent.tiles)){
-        if(!tile.collision) continue;
-        if(tile.mesh?.visible) collisionObjects.push(tile.mesh);
+        if(!tile.mesh?.visible) continue;
+        if(tile.collision) collisionObjects.push(tile.mesh);
+        if(tile.sight) sightObjects.push(tile.mesh);
       }
       for(let wall of Object.values(this._parent.walls)){
         if(wall.placeable.isDoor && wall.placeable.data.ds === CONST.WALL_DOOR_STATES.OPEN) continue;
         if(!wall.mesh?.visible) continue;
-        collisionObjects.push(wall.mesh);
+        if(wall.placeable.data.sight >= 10) sightObjects.push(wall.mesh);
+        if(wall.placeable.data.move > 0) collisionObjects.push(wall.mesh);
       }
-      this._sightCollisions = collisionObjects;
+      this._sightCollisions = {
+        collision: collisionObjects,
+        sight: sightObjects
+      }
     }
 
-    computeSightCollision(v1,v2){
+    computeSightCollision(v1,v2, type = "collision"){
       const origin = Ruler3D.posCanvasTo3d(v1);
       const target = Ruler3D.posCanvasTo3d(v2);
-      return this.computeSightCollisionFrom3DPositions(origin, target);
+      return this.computeSightCollisionFrom3DPositions(origin, target, type);
     }
 
-    computeSightCollisionFrom3DPositions(origin,target){
+    computeSightCollisionFrom3DPositions(origin,target, type){
       const direction = target.clone().sub(origin).normalize();
       const distance = origin.distanceTo(target);
       this.sightRaycaster.set(origin, direction);
-      const collisions = this.sightRaycaster.intersectObjects(this._sightCollisions, true);
+      const collisions = this.sightRaycaster.intersectObjects(this._sightCollisions[type] ?? this._sightCollisions["collision"], true);
       if(!collisions.length) return false;
       const collision = collisions[0];
       if(collision.distance > distance) return false;
@@ -521,7 +527,7 @@ export class InteractionManager {
     _onClickLeft(event){
       if(ui.controls.isRuler || this.draggable) return;
       const entity = event.entity;
-      if((entity?.tile && canvas.activeLayer.options.objectClass.name !== "Tile") || !entity){
+      if((entity?.tile && canvas.activeLayer.options.objectClass.name !== "Tile" && !entity?.isDoor) || !entity){
         if(this._downCameraPosition.distanceTo(this._upCameraPosition)<0.01) canvas.activeLayer.releaseAll();
       }
       if(!entity) return
@@ -580,7 +586,7 @@ export class InteractionManager {
       for(let child of this.scene.children.concat(this._parent.controlledGroup.children)){
         if(canvas.activeLayer.options.objectClass.embeddedName !== child.userData?.entity3D?.embeddedName && child.userData?.entity3D?.embeddedName !== "Wall" && child.userData?.entity3D?.embeddedName !== "Tile"  && child.userData?.entity3D?.embeddedName !== "Note") continue;
         if(!child.visible) continue;
-        if(canvas.activeLayer.options.objectClass.embeddedName !== "Tile" && child.userData?.entity3D?.embeddedName === "Tile" && !child.userData?.entity3D?.collision) continue;
+        if(canvas.activeLayer.options.objectClass.embeddedName !== "Tile" && child.userData?.entity3D?.embeddedName === "Tile" && (!child.userData?.entity3D?.collision && !child.userData?.entity3D?.isDoor)) continue;
         if(child.userData?.hitbox && child.userData.interactive) intersectTargets.push(child.userData.hitbox);
       }
 
@@ -593,17 +599,17 @@ export class InteractionManager {
 
       const intersects = this.raycaster.intersectObjects(intersectTargets,true).filter(this._clippingFilter);
       if(!intersects.length) return null;
-      let parentInt
-      if(!intersects[0].object.userData.entity3D) intersects[0].object.traverseAncestors(parent => {
-        if(parent.userData.entity3D && !parentInt) parentInt = parent;
-      });
-      if(parentInt) return {
-        object: parentInt,
-        point: intersects[0].point
-      };
+      for(let int of intersects){
+        let actualObject
+        if(!int.object.userData.entity3D) int.object.traverseAncestors(parent => {
+          if(parent.userData.entity3D && !actualObject) actualObject = parent;
+        });
+        int.object = actualObject ?? int.object;
+      }
+      const intersect = intersects.find(i => i.object?.userData?.entity3D?.token) ?? intersects[0]
       return {
-        object: intersects[0]?.object,
-        point: intersects[0]?.point
+        object: intersect?.object,
+        point: intersect?.point
       };
     }
   
@@ -745,8 +751,6 @@ export class InteractionManager {
     broadcastCursorPosition(pos3d){
       const sc = game.user.hasPermission("SHOW_CURSOR");
       if ( !sc ) return;
-          //const pos3d = game.Levels3DPreview.interactionManager.mousePostionToWorld();
-          //const position = {x: pos3d?.x, y: pos3d?.z}
           const position = {x: pos3d?.x, y: pos3d?.y, z: pos3d?.z}
           const positionToString = JSON.stringify(position);
           this._currentMousePosition = position

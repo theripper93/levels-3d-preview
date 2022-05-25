@@ -52,6 +52,7 @@ export class Tile3D {
             this.updateControls();
         }, 150)
         if(this.tile._controlled) this._parent.interactionManager.setControlledGroup(this);
+        this.setupDoor();
         return this;
     }
 
@@ -95,12 +96,36 @@ export class Tile3D {
         this.randomSeed = this.randomSeed.substring(0,7);
         this.randomColor = this.tile.document.getFlag("levels-3d-preview", "randomColor") ?? false;
         this.collision = this.tile.document.getFlag("levels-3d-preview", "collision") ?? true;
+        this.sight = this.tile.document.getFlag("levels-3d-preview", "sight") ?? true;
         this.tiltX = this.tile.document.getFlag("levels-3d-preview", "tiltX") ?? 0;
         this.tiltX = Math.toRadians(this.tiltX);
         this.tiltZ = this.tile.document.getFlag("levels-3d-preview", "tiltZ") ?? 0;
         this.tiltZ = Math.toRadians(this.tiltZ);
         this.wasFreeMode = this.tile.document.getFlag("levels-3d-preview", "wasFreeMode") ?? false;
+        this.doorType = this.tile.document.getFlag("levels-3d-preview", "doorType") ?? 0;
+        this.doorState = this.tile.document.getFlag("levels-3d-preview", "doorState") ?? 0;
+        this.isDoor = this.doorType != 0;
+        this.isSecret = this.doorType == 2;
+        this.isOpen = this.doorState == 1;
+        this.isLocked = this.doorState == 2;
+        if(this.isOpen) {
+            this.collision = false;
+            this.sight = false;
+        }
+    }
 
+    setupDoor(){
+        if(!this.isDoor) return;
+        debugger
+        if(this.isOpen){
+            this.mesh.traverse(child => {
+                if(child.isMesh){
+                    child.material.transparent = true;
+                    child.material.opacity = 0.4;
+                    child.material.format = THREE.RGBAFormat;
+                }
+            })
+        }
     }
 
     async init(){
@@ -505,7 +530,24 @@ export class Tile3D {
         
     }
 
+    get isToFar(){
+        if(game.user.isGM) return false;
+        const maxDist = (canvas.dimensions.size*3)/factor
+        let minDist = Infinity;
+        for(let token of canvas.tokens.controlled){
+            const token3d = this._parent.tokens[token.id];
+            if(!token3d) continue;
+            const dist = token3d.mesh.getWorldPosition(new THREE.Vector3()).distanceTo(this.mesh.getWorldPosition(new THREE.Vector3()));
+            if(dist < minDist) minDist = dist;
+        }
+        return minDist > maxDist;
+    }   
+
     _onClickLeft(e){
+        if(canvas.activeLayer.options.objectClass.embeddedName === "Token" && this.isDoor && !(this.isSecret && !game.user.isGM)){
+            if(this.isToFar) ui.notifications.error(game.i18n.localize("levels3dpreview.errors.toofarfromdoor"));
+            else this._parent.socket.executeAsGM("toggleDoor", this.tile.id, canvas.scene.id, game.user.id)
+        }
         if(canvas.activeLayer.options.objectClass.embeddedName !== "Tile"){
             const point = Ruler3D.pos3DToCanvas(e.position3D);
             if(this.tile.document.checkClick)this.tile.document.checkClick(point, "click");
@@ -538,6 +580,12 @@ export class Tile3D {
     }
 
     _onClickRight(e){
+        if(canvas.activeLayer.options.objectClass.embeddedName === "Token" && game.user.isGM){
+            if(this.isDoor){
+                if(this.isLocked) this.tile.document.setFlag("levels-3d-preview", "doorState", 0);
+                else this.tile.document.setFlag("levels-3d-preview", "doorState", 2);
+            }
+        }
         if(canvas.activeLayer.options.objectClass.embeddedName !== "Tile") return;
         const event = {
             stopPropagation: () => {},

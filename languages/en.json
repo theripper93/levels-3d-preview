@@ -7,6 +7,7 @@
         },
         "errors": {
             "filenotsupported": "File format not supported or missing",
+            "toofarfromdoor": "Your Token is too far to open the door",
             "3dnotactive": "Cannot open canvas popout, the 3D mode is not active.",
             "canping": "User lacks permission to display pings on the map.",
             "canpingpan": "User lacks permission to send camera position.",
@@ -52,6 +53,20 @@
             "tiltY": "Tile Editor: Tilt Y"
         },
         "flags": {
+            "doorType":{
+                "options": {
+                    "none": "None",
+                    "door": "Door",
+                    "secret" : "Secret"
+                }
+            },
+            "doorState": {
+                "options": {
+                    "open": "Open",
+                    "closed": "Closed",
+                    "locked": "Locked"
+                }
+            },
             "isFog":{
                 "label": "Is Fog of War Box?",
                 "notes": "Obscure view when camera enters this template. Works only for rectangle templates."
@@ -342,7 +357,10 @@
                 "label": "Stretch Texture"
             },
             "tcollision": {
-                "label": "Block Sight/Movement"
+                "label": "Block Movement"
+            },
+            "tsight": {
+                "label": "Block Sight"
             },
             "enableCollision": {
                 "label": "Enable Collision",

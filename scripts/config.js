@@ -651,6 +651,31 @@ Hooks.on("renderTileConfig", (app,html)=>{
             label: game.i18n.localize("levels3dpreview.flags.tcollision.label"),
             default: true,
         },
+        "sight": {
+            type: "checkbox",
+            label: game.i18n.localize("levels3dpreview.flags.tsight.label"),
+            default: true,
+        },
+        "doorType": {
+            type: "select",
+            label: game.i18n.localize("WALLS.Door"),
+            default: 0,
+            options: {
+                0: game.i18n.localize("levels3dpreview.flags.doorType.options.none"),
+                1: game.i18n.localize("levels3dpreview.flags.doorType.options.door"),
+                2: game.i18n.localize("levels3dpreview.flags.doorType.options.secret"),
+            }
+        },
+        "doorState": {
+            type: "select",
+            label: game.i18n.localize("WALLS.DoorState"),
+            default: 0,
+            options: {
+                0: game.i18n.localize("levels3dpreview.flags.doorState.options.closed"),
+                1: game.i18n.localize("levels3dpreview.flags.doorState.options.open"),
+                2: game.i18n.localize("levels3dpreview.flags.doorState.options.locked"),
+            }
+        },
         "header1": {
             type: "custom",
             html: `<h3 class="form-header"><i class="fas fa-th"></i> ${game.i18n.localize("levels3dpreview.flags.tiling.label")}</h3><div>`
