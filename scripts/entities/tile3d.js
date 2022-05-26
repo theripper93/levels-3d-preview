@@ -52,7 +52,7 @@ export class Tile3D {
             this.updateControls();
         }, 150)
         if(this.tile._controlled) this._parent.interactionManager.setControlledGroup(this);
-        this.setupDoor();
+        setTimeout(() => {this.setupDoor()}, 100);
         return this;
     }
 
@@ -116,7 +116,13 @@ export class Tile3D {
 
     setupDoor(){
         if(!this.isDoor) return;
-        debugger
+
+        this._parent.interactionManager?.generateSightCollisions();
+        canvas.perception.schedule({
+            lighting: { initialize: true /* calls updateSource on each light source */, refresh: true },
+            sight: { initialize: true /* calls updateSource on each token */, refresh: true /* you probably to refesh sight as well */, forceUpdateFog: true /* not sure if you need this */ },
+        });
+
         if(this.isOpen){
             this.mesh.traverse(child => {
                 if(child.isMesh){

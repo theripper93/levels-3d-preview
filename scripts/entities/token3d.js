@@ -197,14 +197,16 @@ export class Token3D {
       if(this.standUp) {
         centerOffset.y += updatedSize.y/2;
       }
-
+      this.mixerAnimations = [];
       if(object.animations.length > 0 && this.enableAnim) {
+        this.mixerAnimations = object.animations;
         if(!object.animations[this.animIndex]) {
           console.error("Animation index out of bounds", this.token);
         }else{
           this.mixer = new THREE.AnimationMixer( scene );
           this.mixer.timeScale = this.animSpeed;
-          this.mixer.clipAction( object.animations[this.animIndex] ).play();
+          object.animations.forEach(anim => {this.mixer.clipAction(anim)})
+          this.mixer._actions[this.animIndex].play();
         }
       }
       model.position.set(centerOffset.x, centerOffset.y, centerOffset.z);
@@ -514,6 +516,21 @@ export class Token3D {
       this.drawTargets();
       this.drawEffects();
       this.refreshBorder();
+    }
+
+    updateAnimation(){
+      if(!this.mixer) return;
+      const currAction = this.mixer._actions[this.animIndex];
+      //this.mixer.stopAllAction();
+      this.animIndex = this.token.document.getFlag("levels-3d-preview", "animIndex") ?? 0;
+      if(this.mixerAnimations.length > 0 && this.enableAnim) {
+        if(!this.mixerAnimations[this.animIndex]) {
+          console.error("Animation index out of bounds", this.token);
+        }else{
+          this.mixer._actions[this.animIndex].enabled = true;
+          currAction.crossFadeTo(this.mixer._actions[this.animIndex], 0.3).play()//this.mixer.clipAction( this.mixerAnimations[this.animIndex] ).play();
+        }
+      }
     }
 
     drawTargets(){
@@ -1088,8 +1105,13 @@ export class Token3D {
   Hooks.on("updateToken", (token, updates) => {
     if(!game.Levels3DPreview._active) return;
     const wasFreeUpdated = updates?.flags && updates?.flags["levels-3d-preview"] && updates?.flags["levels-3d-preview"].wasFreeMode !== undefined;
+    const animChanged = updates?.flags && updates?.flags["levels-3d-preview"] && updates?.flags["levels-3d-preview"].animIndex !== undefined;
+    const onlyAnim = animChanged === true && Object.values(updates?.flags["levels-3d-preview"]).length === 1;
+    if(animChanged){
+      game.Levels3DPreview.tokens[token.id]?.updateAnimation();
+    }
     if(
-      (updates?.flags && updates?.flags["levels-3d-preview"] && !wasFreeUpdated) ||
+      (updates?.flags && updates?.flags["levels-3d-preview"] && !wasFreeUpdated && !onlyAnim) ||
       "light" in updates ||
       "width" in updates ||
       "height" in updates ||
@@ -1165,6 +1187,7 @@ export class Token3D {
 
   Hooks.on("renderTokenHUD", (hud) => {
     if(!game.Levels3DPreview?._active) return
+    const token3d = game.Levels3DPreview.tokens[hud.object.id];
     const tokenAnimations = game.Levels3DPreview.CONFIG.tokenAnimations
     const height = hud.element.find(`div[data-action="effects"]`).height()
     let taMenuHtml = `<div class="control-icon" data-action="3d-animations">
@@ -1172,12 +1195,21 @@ export class Token3D {
     <div class="status-effects" style="transform: translateY(${height}px);" >`
     for(let anim of Object.values(tokenAnimations)){
       if(anim.icon.includes(".")){
-        taMenuHtml+= `<img class="effect-control" src="${anim.icon}" title="${anim.name}" data-anim-id="${anim.id}"></i>`
+        taMenuHtml+= `<img class="effect-control" src="${anim.icon}" title="${anim.name}" data-anim-id="${anim.id}">`
       }else{
         taMenuHtml+= `<i class="${anim.icon ?? "fas fa-magic"} effect-control" title="${anim.name}" data-anim-id="${anim.id}"></i>`
       }
           
     }
+    if(token3d.mixerAnimations?.length > 1){
+      for(let i=0; i<token3d.mixerAnimations.length; i++){
+        const modelAnim = token3d.mixerAnimations[i];
+        const name = modelAnim.name || "A";
+        const firstLetter = name.charAt(0).toUpperCase();
+        taMenuHtml+= `<i class="effect-control" style="line-height: 24px;" title="${modelAnim.name}" data-anim-index="${i}">${firstLetter}</i>`
+      }
+    }
+
     taMenuHtml+=`</div></div>`
     const $taMenu = $(taMenuHtml);
     $taMenu.on("click", (e) => {
@@ -1190,7 +1222,13 @@ export class Token3D {
     $taMenu.on("click", ".effect-control", (e) => {
       const $effectControl = $(e.currentTarget);
       const animId = $effectControl.data("animId");
-      game.Levels3DPreview.playTokenAnimation(hud.object.id, animId);
+      const animIndex = $effectControl.data("animIndex");
+      if(animId){
+        game.Levels3DPreview.playTokenAnimation(hud.object.id, animId);
+      }else{
+        hud.object.document.setFlag("levels-3d-preview", "animIndex", animIndex)
+      }
+
     })
     hud.element.find(`div[data-action="effects"]`).after($taMenu);
   })

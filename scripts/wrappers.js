@@ -31,7 +31,7 @@ Hooks.once('ready', async function() {
         const aMax = this.config.aMax
         const aMin = this.config.aMin
         const radius = Math.max(this.config.radius, this.config.radius2);
-        const nPoints = this.config.angle*0.5;
+        const nPoints = this.config.angle*0.25;
         const origin = this.origin
         const factor = game.Levels3DPreview.factor
 
