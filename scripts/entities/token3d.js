@@ -72,7 +72,7 @@ export class Token3D {
       this.stem = this.token.document.getFlag("levels-3d-preview", "stem") ?? false;
       this.standupFace = game.settings.get("levels-3d-preview", "standupFace");
       this.wasFreeMode = this.token.document.getFlag("levels-3d-preview", "wasFreeMode") ?? false;
-      this.removeBase = this.token.document.getFlag("levels-3d-preview", "removeBase") ?? false;
+      this.removeBase = this.token.document.getFlag("levels-3d-preview", "removeBase") ?? true;
       if(this.faceCameraOption !== "0") this.standupFace = this.faceCameraOption == "1" ? true : false;
     }
   
@@ -520,10 +520,9 @@ export class Token3D {
 
     updateAnimation(){
       if(!this.mixer) return;
-      const currAction = this.mixer._actions[this.animIndex];
-      //this.mixer.stopAllAction();
+      const currAction = this.mixer._actions.find(a => a._clip.uuid == this.mixerAnimations[this.animIndex].uuid)
       this.animIndex = this.token.document.getFlag("levels-3d-preview", "animIndex") ?? 0;
-      const newAction = this.mixer._actions[this.animIndex];
+      const newAction = this.mixer._actions.find(a => a._clip.uuid == this.mixerAnimations[this.animIndex].uuid)
       for(let act of this.mixer._actions){
         if(act != newAction && act != currAction){
           act.enabled = false;
