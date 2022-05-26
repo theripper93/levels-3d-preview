@@ -26,10 +26,10 @@ export class Fog{
     update(){
         this.updateTexture();
         if(this.target) this.target.dispose();
-        this.target = new THREE.WebGLRenderTarget( window.innerWidth, window.innerHeight );
+        this.target = new THREE.WebGLRenderTarget( window.innerWidth*this._parent.resolutionMulti, window.innerHeight*this._parent.resolutionMulti );
         this.target.texture.format = THREE.RGBFormat;
         this.target.texture.minFilter = THREE.NearestFilter;
-        this.target.texture.magFilter = THREE.NearestFilter;
+        //this.target.texture.magFilter = THREE.NearestFilter;
         this.target.texture.generateMipmaps = false;
         this.target.stencilBuffer = true;
         this.target.depthBuffer = true;
@@ -146,7 +146,7 @@ export class Fog{
                 void main() {
 
                     float depth = texture(tDepth, vUv).x;
-
+                    
                     vec4 clipSpacePosition = vec4(vUv * 2.0 - 1.0, depth * 2.0 - 1.0, 1.0);
                     vec4 viewSpacePosition = projectionMatrixInverse * clipSpacePosition;
                 
@@ -154,13 +154,13 @@ export class Fog{
                 
                     vec4 worldSpacePosition = worldMatrixInverse * viewSpacePosition;
 
-
                     vec4 finalColor;
                     vec4 texel = texture( tDiffuse, vUv );
                     float sceneX = worldSpacePosition.x*factor;
                     float sceneY = worldSpacePosition.z*factor;
                     float fogTexX = (sceneX)*texDimensions.x/(sceneDimensions.x*factor);
                     float fogTexY = texDimensions.y - (sceneY)*texDimensions.y/(sceneDimensions.y*factor);
+
                     //sample a 10x10 pixel texture
                     vec4 fogTexel = vec4(0.0);
                     for(int i = 0; i < 10; i++){

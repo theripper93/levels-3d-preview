@@ -129,6 +129,7 @@ export class Tile3D {
                     child.material.transparent = true;
                     child.material.opacity = 0.4;
                     child.material.format = THREE.RGBAFormat;
+                    child.material.depthWrite = false;
                 }
             })
         }

@@ -523,6 +523,12 @@ export class Token3D {
       const currAction = this.mixer._actions[this.animIndex];
       //this.mixer.stopAllAction();
       this.animIndex = this.token.document.getFlag("levels-3d-preview", "animIndex") ?? 0;
+      const newAction = this.mixer._actions[this.animIndex];
+      for(let act of this.mixer._actions){
+        if(act != newAction && act != currAction){
+          act.enabled = false;
+        }
+      }
       if(this.mixerAnimations.length > 0 && this.enableAnim) {
         if(!this.mixerAnimations[this.animIndex]) {
           console.error("Animation index out of bounds", this.token);
@@ -1202,11 +1208,12 @@ export class Token3D {
           
     }
     if(token3d.mixerAnimations?.length > 1){
+      const currentAnim = token3d.animIndex
       for(let i=0; i<token3d.mixerAnimations.length; i++){
         const modelAnim = token3d.mixerAnimations[i];
         const name = modelAnim.name || "A";
         const firstLetter = name.charAt(0).toUpperCase();
-        taMenuHtml+= `<i class="effect-control" style="line-height: 24px;" title="${modelAnim.name}" data-anim-index="${i}">${firstLetter}</i>`
+        taMenuHtml+= `<i class="effect-control${i === currentAnim ? " active" : ""}" style="line-height: 24px;" title="${modelAnim.name}" data-anim-index="${i}">${firstLetter}</i>`
       }
     }
 
@@ -1226,6 +1233,8 @@ export class Token3D {
       if(animId){
         game.Levels3DPreview.playTokenAnimation(hud.object.id, animId);
       }else{
+        $taMenu.find(".effect-control").removeClass("active");
+        $effectControl.addClass("active");
         hud.object.document.setFlag("levels-3d-preview", "animIndex", animIndex)
       }
 
