@@ -915,9 +915,7 @@ class Levels3DPreview {
   }
 
   setCameraToControlled(token) {
-    if (game.Levels3DPreview.interactionManager.isCameraLocked) return;
-    const zoom = game.settings.get("levels-3d-preview", "camerafocuszoom");
-    let cToken = token ?? _token;
+    let cToken = token;
     if(!cToken && !game.user.isGM){
       cToken = canvas.tokens.placeables.find(t => t.isOwner);
     }
@@ -926,46 +924,33 @@ class Levels3DPreview {
     this.ClipNavigation.setToClosest(cToken.data.elevation);
     const token3D = this.tokens[cToken.id];
     if (!token3D) return;
-    //this.controls.target.set(token3D.mesh.position.x, token3D.mesh.position.y, token3D.mesh.position.z);
-    if (zoom) {
-      let targetPosition;
-      const size = Math.max(token3D.w, token3D.h, token3D.d, 0.6) * 2;
-      const rotation = token3D.mesh.rotation.y - Math.PI / 2;
-      const offset = new THREE.Vector3(
-        -size * Math.cos(rotation),
-        size,
-        size * Math.sin(rotation)
-      );
-      offset.add(token3D.mesh.position);
-      targetPosition = offset;
-      const headPoint = token3D.head;
-      const collision =
-        this.interactionManager.computeSightCollisionFrom3DPositions(
-          headPoint,
-          offset
-        );
 
-      if (collision && targetPosition.y < (this.ClipNavigation._clipHeight ?? Infinity)) {
-        const collisionPoint = new THREE.Vector3(
-          collision.x,
-          collision.y,
-          collision.z
-        );
-        collisionPoint.lerp(headPoint, 0.1);
-        targetPosition = collisionPoint;
-      }
-
-      this._animateCameraTarget.cameraPosition = targetPosition;
-      //this.camera.position.copy(offset);
-    }
-    const targetLookat = new THREE.Vector3(
-      token3D.mesh.position.x,
-      token3D.mesh.position.y,
-      token3D.mesh.position.z
-    );
+    const targetLookat = token3D.head.clone();
     this._animateCameraTarget.cameraLookat = targetLookat;
-    //this.camera.lookAt(targetLookat);
-    //this.controls.update();
+
+    const cameraPosition = this.camera.position.clone();
+    const diff = this.controls.target.clone().sub(targetLookat.clone())
+    let targetPosition = cameraPosition.sub(diff);
+
+    const headPoint = token3D.head;
+    const collision =
+      this.interactionManager.computeSightCollisionFrom3DPositions(
+        headPoint,
+        targetPosition
+      );
+
+    if (collision && targetPosition.y < (this.ClipNavigation._clipHeight ?? Infinity)) {
+      const collisionPoint = new THREE.Vector3(
+        collision.x,
+        collision.y,
+        collision.z
+      );
+      collisionPoint.lerp(headPoint, 0.1);
+      targetPosition = collisionPoint;
+    }
+
+    this._animateCameraTarget.cameraPosition = targetPosition;
+
   }
 
   _onProgress() {

@@ -232,15 +232,6 @@ Hooks.once('init', function() {
       default: true,
     });
 
-    game.settings.register("levels-3d-preview", "camerafocuszoom", {
-      name: game.i18n.localize("levels3dpreview.settings.camerafocuszoom.name"),
-      hint: game.i18n.localize("levels3dpreview.settings.camerafocuszoom.hint"),
-      scope: "world",
-      config: false,
-      type: Boolean,
-      default: true,
-    });
-
     game.settings.register("levels-3d-preview", "cameralockzero", {
       name: game.i18n.localize("levels3dpreview.settings.cameralockzero.name"),
       hint: game.i18n.localize("levels3dpreview.settings.cameralockzero.hint"),
@@ -372,6 +363,21 @@ Hooks.once('init', function() {
     });
 
 });
+
+Hooks.once("ready", () => {
+  let clipNavigatorFollowClientDefault = false;
+const autoModeSetting = game.settings.get("levels-3d-preview", "navigatorAuto");
+if(autoModeSetting == "none") clipNavigatorFollowClientDefault = false
+else if(autoModeSetting == "players") clipNavigatorFollowClientDefault = !game.user.isGM
+else clipNavigatorFollowClientDefault = true
+
+game.settings.register("levels-3d-preview", "clipNavigatorFollowClient", {
+  scope: "client",
+  config: false,
+  type: Boolean,
+  default: clipNavigatorFollowClientDefault,
+});
+})
 
 
 //Welcome Message

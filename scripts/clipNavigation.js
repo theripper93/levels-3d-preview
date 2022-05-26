@@ -1,10 +1,7 @@
 export class ClipNavigation extends Application{
     constructor() {
         super()
-        const autoModeSetting = game.settings.get("levels-3d-preview", "navigatorAuto");
-        if(autoModeSetting == "none") this.autoMode = false
-        else if(autoModeSetting == "players") this.autoMode = !game.user.isGM
-        else this.autoMode = true
+        this.autoMode = game.settings.get("levels-3d-preview", "clipNavigatorFollowClient")
         this.init();
       }
     
@@ -106,6 +103,7 @@ export class ClipNavigation extends Application{
           });
           html.on("click", "#clip-navigation-automode", (e)=>{
             this.autoMode = !this.autoMode
+            game.settings.set("levels-3d-preview", "clipNavigatorFollowClient", this.autoMode)
             $(e.currentTarget).toggleClass("clip-navigation-enabled")
           });
           if(!this._setOnLoad){
