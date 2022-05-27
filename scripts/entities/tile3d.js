@@ -178,7 +178,7 @@ export class Tile3D {
         if(stretch){
             const yScale = this.width > this.height ? this.width/mDepth : this.height/mDepth;
             const scaleFit = Math.max(this.width/mWidth, this.height/mHeight);
-            object.scale.set(this.scale*this.width/mWidth,yScale*this.yScale*this.scale,this.scale*this.height/mHeight);
+            object.scale.set(this.width/mWidth,yScale*this.yScale,this.height/mHeight);
         }else{
             const largest = Math.max(mWidth, mHeight, mDepth);
             let scale = 1;
@@ -189,7 +189,7 @@ export class Tile3D {
             }else{
                 scale = (Math.min(this.width, this.height))/mDepth;
             }
-            object.scale.set(this.scale*scale,this.yScale*this.scale*scale,this.scale*scale);
+            object.scale.set(scale,this.yScale*scale,scale);
         }
 
         const color = new THREE.Color(this.color);
@@ -253,18 +253,18 @@ export class Tile3D {
         const gridX = realWidth/cols;
         const gridZ = realHeight/rows;
         const max = Math.max(mWidth, mHeight);
-        const scaleFit = this.scale*(grid-gap)/max;
+        const scaleFit = (grid-gap)/max;
         this.scaleFit = scaleFit;
         const color = new THREE.Color(this.color);
         const dummy = new THREE.Object3D();
-        const maxZ = rows*gridZ-mHeight*scaleFit*1.5;
-        const maxX = cols*gridX-mWidth*scaleFit*1.5;
+        const maxZ = this.height-mHeight*scaleFit*1.5;
+        const maxX =this.width-mWidth*scaleFit*1.5;
         let randomData = [];
 
         for(let i = 0; i < count; i++){
             //Random Data
-            const randomX = this.randomPosition ? this.pseudoRandom*maxX : 0;
-            const randomZ = this.randomPosition ? this.pseudoRandom*maxZ : 0;
+            const randomX = this.randomPosition ? ((this.pseudoRandom-0.5)*maxX) : 0;
+            const randomZ = this.randomPosition ? ((this.pseudoRandom-0.5)*maxZ) : 0;
             const offsetx = -gap/2+randomX//gap//(mWidth*scaleFit-gridX)/2;
             const offsetz = -gap/2+randomZ//gap//(mHeight*scaleFit-gridZ)/2;
             const randomColor = this.randomColor ? this.pseudoRandom : 0;
@@ -306,7 +306,11 @@ export class Tile3D {
                 for(let x = 0; x < cols; x++){
                     const { randomColor , randomRotation, randomDepth, randomScale, offsetx, offsetz } = randomData[i];
                     dummy.matrix.set(child.matrix);
-                    dummy.position.set((child.position.x+x*gridX+offsetx)%maxX,child.position.y*scaleFit*this.yScale,(child.position.z+z*gridZ+offsetz)%maxZ);
+                    if(this.randomPosition){
+                        dummy.position.set((child.position.x+offsetx),child.position.y*scaleFit*this.yScale,(child.position.z+offsetz));
+                    }else{
+                        dummy.position.set((child.position.x+x*gridX+offsetx),child.position.y*scaleFit*this.yScale,(child.position.z+z*gridZ+offsetz));
+                    }
                     dummy.scale.set(randomScale*child.scale.x*scaleFit,randomDepth*randomScale*child.scale.y*scaleFit*this.yScale,randomScale*child.scale.z*scaleFit);
                     dummy.rotation.set(child.rotation.x,child.rotation.y+randomRotation,child.rotation.z);
                     dummy.updateMatrix();

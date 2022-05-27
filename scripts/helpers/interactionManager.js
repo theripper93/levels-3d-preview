@@ -125,10 +125,10 @@ export class InteractionManager {
         }
       }
 
-      _onTransformEnd(event){
+      _onTransformEnd(){
         this.controls.enabled = true;
         this.preventSelect = false;
-        const object3d = event.target.object//.userData.entity3D;
+        const object3d = this._parent.controlledGroup//.userData.entity3D;
         if(!object3d) return;
         for(let child of object3d.children){
           child.userData.entity3D.updateFromTransform();
@@ -511,7 +511,7 @@ export class InteractionManager {
       if(placeable?.data?.locked) return this.abortDrag();
       if(!placeable?.isOwner && !game.user.isGM) return this.abortDrag();
       if(!entity.draggable || entity.mesh.userData?.entity3D?.embeddedName !== canvas.activeLayer.options.objectClass.embeddedName) return this.abortDrag();
-      if(!placeable._controlled) placeable.control({releaseOthers: true});
+      if(!placeable?._controlled && placeable) placeable.control({releaseOthers: true});
       entity.isAnimating = false;
       entity.setPosition?.();
       this.draggable = intersect;
@@ -606,7 +606,9 @@ export class InteractionManager {
         });
         int.object = actualObject ?? int.object;
       }
-      const intersect = intersects.find(i => i.object?.userData?.entity3D?.token) ?? intersects[0]
+      let intersect = intersects.find(i => i.object?.userData?.entity3D?.token) ?? intersects[0]
+      const controlledGroup = this._parent.controlledGroup;
+      if(intersect?.object?.parent === controlledGroup) intersect.object = controlledGroup
       return {
         object: intersect?.object,
         point: intersect?.point
@@ -635,9 +637,10 @@ export class InteractionManager {
       const draggableId = this.draggable?.userData?.entity3D?.token?.id;
       const collisionObjects = Object.values(this._parent.tokens).filter(t => t.collisionPlane && t.token.id != draggableId).map(t => t.model);
       let collisionGeometries = collisionObjects;
+      const cgIds = this._parent.controlledGroup.children.map(c => c.userData.entity3D.placeable.id);
       for(let tile of Object.values(this._parent.tiles)){
         if(!tile.collision && draggableId) continue;
-        if(this.draggable?.userData?.entity3D?.tile?.id === tile.tile.id) continue;
+        if(cgIds.includes(tile.placeable.id)) continue;
         if(tile.mesh.visible)collisionGeometries.push(tile.mesh);
       }
       for(let wall of Object.values(this._parent.walls)){

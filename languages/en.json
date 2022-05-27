@@ -753,7 +753,8 @@
         },
         "units":{
             "ms": "Milliseconds",
-            "gu": "Grid Units"
+            "gu": "Grid Units",
+            "gs": "Grid Squares"
         }
     }
 }

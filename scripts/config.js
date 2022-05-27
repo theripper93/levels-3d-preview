@@ -583,7 +583,7 @@ Hooks.on("renderTokenConfig", (app,html)=>{
 })
 
 Hooks.on("renderTileConfig", (app,html)=>{
-    injectConfig.inject(app,html,{
+    const injected = injectConfig.inject(app,html,{
         "moduleId": "levels-3d-preview",
         "tab" : {
             "name": "levels-3d-preview",
@@ -699,7 +699,7 @@ Hooks.on("renderTileConfig", (app,html)=>{
         "gap": {
             type: "number",
             label: game.i18n.localize("levels3dpreview.flags.gap.label"),
-            units: game.i18n.localize("levels3dpreview.units.gu"),
+            units: game.i18n.localize("levels3dpreview.units.gs"),
             default: 0,
             step: 0.00001,
         },
@@ -734,7 +734,27 @@ Hooks.on("renderTileConfig", (app,html)=>{
             default: app.object.id.substring(0,7),
         }
     })
+
+    const advancedSettings = ["imageTexture","enableAnim","color","animSpeed","animIndex","paused","tiltX","tiltZ","yScale"];
+
+    injectAdvancedToggle(app,html,advancedSettings, injected);
+
     html.find(`input[name="flags.levels-3d-preview.randomSeed"]`).prop("maxlength", 7);
+    const tilingFlags = ["tileScale", "gap", "randomRotation", "randomScale", "randomDepth", "randomPosition", "randomColor", "randomSeed"];
+    html.on("change", `select[name="flags.levels-3d-preview.fillType"]`, (e) => {
+        const value = e.target.value;
+        if (value === "tile") {
+            tilingFlags.forEach(flag => {
+                html.find(`input[name="flags.levels-3d-preview.${flag}"]`).closest(".form-group").show();
+            })
+        } else {
+            tilingFlags.forEach(flag => {
+                html.find(`input[name="flags.levels-3d-preview.${flag}"]`).closest(".form-group").hide();
+            })
+        }
+        app.setPosition({height: "auto"});
+    })
+    html.find(`select[name="flags.levels-3d-preview.fillType"]`).trigger("change");
 })
 
 Hooks.on("renderWallConfig", (app,html)=>{

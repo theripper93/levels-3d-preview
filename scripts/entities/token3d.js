@@ -994,7 +994,8 @@ export class Token3D {
       const camera = this._parent.camera;
       const vector = new THREE.Vector3(0, this._parent.camera.position.y >= Number.EPSILON ? -1 : 1, 0);
       vector.applyQuaternion(camera.quaternion);
-      const angle = Math.atan2(vector.x, vector.z)-this.mesh.rotation.y;
+      const modelRotation = Math.abs(this.mesh.rotation.x) == Math.PI ? Math.sign(this.mesh.rotation.x)*(Math.PI + (this.mesh.rotation.y)) : this.mesh.rotation.y
+      const angle = Math.atan2(vector.x, vector.z)-modelRotation;
       if(this.isProne){
         this.model.children[0].rotation.y = 0;
         this.model.children[0].rotation.z = angle;
@@ -1002,7 +1003,6 @@ export class Token3D {
         this.model.children[0].rotation.z = 0;
         this.model.children[0].rotation.y = angle;
       }
-
     }
 
     updateVisibility(){

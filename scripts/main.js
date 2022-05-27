@@ -294,6 +294,22 @@ class Levels3DPreview {
       this.renderer.domElement
     );
     this.controlledGroup = new THREE.Group();
+    this.controlledGroup.userData = {
+      entity3D: {
+        updatePositionFrom3D : () => {
+          game.Levels3DPreview.interactionManager._onTransformEnd();
+        },
+        mesh: this.controlledGroup,
+        elevation3d: 0,
+        isTransformControls: true,
+        draggable: true,
+        embeddedName: "Tile",
+        _onClickLeft: (e) => { return this.controlledGroup.children[0]?.userData.entity3D._onClickLeft(e) },
+        _onClickRight: (e) => { return this.controlledGroup.children[0]?.userData.entity3D._onClickRight(e) },
+        _onClickLeft2: (e) => { return this.controlledGroup.children[0]?.userData.entity3D._onClickLeft2(e) },
+        _onClickRight2: (e) => { return this.controlledGroup.children[0]?.userData.entity3D._onClickRight2(e) },
+      }
+    }
     this.scene.add(this.controlledGroup);
     this.scene.add(this.transformControls);
     this.interactionManager.initTransformControls();
@@ -915,7 +931,7 @@ class Levels3DPreview {
   }
 
   setCameraToControlled(token) {
-    let cToken = token;
+    let cToken = token ?? canvas.tokens.controlled[0];
     if(!cToken && !game.user.isGM){
       cToken = canvas.tokens.placeables.find(t => t.isOwner);
     }
@@ -924,6 +940,18 @@ class Levels3DPreview {
     this.ClipNavigation.setToClosest(cToken.data.elevation);
     const token3D = this.tokens[cToken.id];
     if (!token3D) return;
+
+    let oldCameraData
+
+    if(this._animateCameraTarget.cameraLookat){
+      oldCameraData = {
+        cameraPosition: this.camera.position.clone(),
+        cameraLookat: this.controls.target.clone(),
+      }
+      this.camera.position.copy(this._animateCameraTarget.cameraPosition);
+      this.controls.target.copy(this._animateCameraTarget.cameraLookat);
+      this.camera.lookAt(this._animateCameraTarget.cameraLookat);
+    }
 
     const targetLookat = token3D.head.clone();
     this._animateCameraTarget.cameraLookat = targetLookat;
@@ -950,6 +978,12 @@ class Levels3DPreview {
     }
 
     this._animateCameraTarget.cameraPosition = targetPosition;
+
+    if(oldCameraData){
+      this.camera.position.copy(oldCameraData.cameraPosition);
+      this.controls.target.copy(oldCameraData.cameraLookat);
+      this.camera.lookAt(oldCameraData.cameraLookat);
+    }
 
   }
 
