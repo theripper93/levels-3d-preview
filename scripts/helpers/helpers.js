@@ -158,11 +158,12 @@ export class Helpers {
   groundModel(object){
     const box = new THREE.Box3().setFromObject(object);
     const minY = box.min.y;
-    object.traverse((child) => {
+    object.position.y -= minY;
+    /*object.traverse((child) => {
       if (child.isMesh) {
         child.position.y -= minY;
       }
-    })
+    })*/
     return object;
   }
 

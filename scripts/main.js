@@ -745,8 +745,9 @@ class Levels3DPreview {
     const bubbles = $(".chat-bubble");
     bubbles.each((index, bubble) => {
       const token3D = this.tokens[bubble.dataset.tokenId];
-      const center = token3D.mesh.position.clone();
-      center.y += token3D.hitbox.geometry.boundingBox.max.y * 2;
+      const center = token3D.head;
+      center.y += 0.03;
+      //center.y += token3D.hitbox.geometry.boundingBox.max.y * 2;
       $("body").append(bubble);
       $(bubble).css({
         "transform-origin": "bottom center",
