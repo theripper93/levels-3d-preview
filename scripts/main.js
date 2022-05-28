@@ -27,6 +27,7 @@ import { ParticleSystem } from "./helpers/particleSystem.js";
 import { Particle3D } from "./helpers/particleSystem.js";
 import { defaultTokenAnimations } from "./helpers/tokenAnimationHandler.js";
 import { ClipNavigation } from "./clipNavigation.js";
+import { presetMaterials, PresetMaterialHandler } from "./helpers/presetMaterials.js";
 
 export const factor = 1000;
 
@@ -34,6 +35,7 @@ globalThis.Particle3D = Particle3D;
 
 Hooks.once("ready", () => {
   game.Levels3DPreview = new Levels3DPreview();
+  Hooks.callAll("3DCanvasInit", game.Levels3DPreview);
   game.Levels3DPreview.cacheModels();
   if(!game.settings.get("levels-3d-preview", "removeKeybindingsPrompt")) game.Levels3DPreview.interactionManager.removeWASDBindings()
   Hooks.callAll("3DCanvasReady", game.Levels3DPreview);
@@ -105,6 +107,7 @@ class Levels3DPreview {
         sky: "modules/levels-3d-preview/assets/skybox/humble/humble_bk.jpg",
         exr: "modules/levels-3d-preview/assets/skybox/venice_sunrise_1k.exr",
       },
+      presetMaterials: presetMaterials
     };
     for (let [k, v] of Object.entries(this.CONFIG.tokenAnimations)) {
       v.name = game.i18n.localize(`levels3dpreview.tokenAnimations.${k}`);
@@ -230,6 +233,7 @@ class Levels3DPreview {
   }
 
   async cacheModels() {
+    this.presetMaterialHandler = new PresetMaterialHandler(this.CONFIG.presetMaterials);
     this.models.target = await (
       await this.helpers.loadModel(
         "modules/levels-3d-preview/assets/targetIndicator.fbx"

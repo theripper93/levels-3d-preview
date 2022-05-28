@@ -274,6 +274,19 @@ export class Token3D {
       let materialType = this.material;
       if((!this.material || this.material === "none") && !this.standUp) return;
       if(materialType === "pbr") return await this.loadPBRMat(model);
+
+      if(materialType.includes("preset-")){
+        const material = this._parent.presetMaterialHandler.get(materialType);
+        material.color = new THREE.Color(this.color);
+        if(model.children?.length){
+          model.traverse((child) => {
+            if(child.isMesh){
+              child.material = material;
+            }
+          });
+        }
+        return;
+      }
       //model.geometry.uvsNeedUpdate = true;
       //model.geometry.buffersNeedUpdate = true;
       let roughness = 0;

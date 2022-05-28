@@ -206,6 +206,17 @@
                 "label": "Material",
                 "options": {
                     "none": "Default",
+                    "optgroup": {
+                        "presets": "Presets",
+                        "advanced": "Advanced"
+                    },
+                    "presets": {
+                        "basic-plastic": "Basic Plastic",
+                        "premium-plastic": "Premium Plastic",
+                        "steel": "Steel",
+                        "bronze": "Bronze",
+                        "copper": "Copper"
+                    },
                     "basic": "Basic (no Lighting/Shadows)",
                     "texcol": "Texture/Color",
                     "plastic": "Plastic",

@@ -47,7 +47,11 @@ var injectConfig = {
                         <label for="${k}">${v.label || ""}</label>
                             <select name="${flag}">`;
                     for(const [i,j] of Object.entries(v.options)){
-                        injectHtml += `<option value="${i}" ${flagValue === i ? "selected" : ""}>${j}</option>`;
+                        if(j.optgroup){
+                            injectHtml += j.optgroup.start ? `<optgroup label="${j.optgroup.label}">` : "</optgroup>" ;
+                        }else{
+                            injectHtml += `<option value="${i}" ${flagValue === i ? "selected" : ""}>${j}</option>`;
+                        }
                     }
                     injectHtml += `</select>${notes}
                     </div>`;

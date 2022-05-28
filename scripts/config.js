@@ -414,6 +414,10 @@ Hooks.on("renderSceneConfig", (app,html)=>{
 })
 
 Hooks.on("renderTokenConfig", (app,html)=>{
+    const dmSelect = {}
+    game.Levels3DPreview.CONFIG.presetMaterials.forEach(m => { dmSelect["preset-"+m.id] = m.name || game.i18n.localize(`levels3dpreview.flags.material.options.presets.${m.id}`) })
+
+
     const injected = injectConfig.inject(app,html,{
         "moduleId": "levels-3d-preview",
         "tab" : {
@@ -437,12 +441,27 @@ Hooks.on("renderTokenConfig", (app,html)=>{
             default: "none",
             options: {
                 "none": game.i18n.localize("levels3dpreview.flags.material.options.none"),
+                "preOptStart": {
+                    optgroup: {
+                        start: true,
+                        label: game.i18n.localize("levels3dpreview.flags.material.options.optgroup.presets"),
+                    }
+                },
+                ...dmSelect,
+                "preOptEnd": { optgroup: {} },
+                "advOptStart": {
+                    optgroup: {
+                        start: true,
+                        label: game.i18n.localize("levels3dpreview.flags.material.options.optgroup.advanced"),
+                    }
+                },
                 "basic": game.i18n.localize("levels3dpreview.flags.material.options.basic"),
                 "texcol": game.i18n.localize("levels3dpreview.flags.material.options.texcol"),
                 "plastic": game.i18n.localize("levels3dpreview.flags.material.options.plastic"),
                 "wood": game.i18n.localize("levels3dpreview.flags.material.options.wood"),
                 "metal": game.i18n.localize("levels3dpreview.flags.material.options.metal"),
                 "pbr": game.i18n.localize("levels3dpreview.flags.material.options.pbr"),
+                "advOptEnd": { optgroup: {} },
             }
         },
         "color": {
@@ -577,7 +596,7 @@ Hooks.on("renderTokenConfig", (app,html)=>{
         },
     }, app.token)
 
-    const advancedSettings = ["imageTexture","material","color","baseColor","disableBase","removeBase","solidBaseMode","animIndex","animSpeed","faceCamera","autoCenter","rotationX","rotationY","rotationZ","offsetX","offsetY","offsetZ"];
+    const advancedSettings = ["imageTexture","color","baseColor","disableBase","removeBase","solidBaseMode","animIndex","animSpeed","faceCamera","autoCenter","rotationX","rotationY","rotationZ","offsetX","offsetY","offsetZ"];
 
     injectAdvancedToggle(app,html,advancedSettings, injected);
 })
