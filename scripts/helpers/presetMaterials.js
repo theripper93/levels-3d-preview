@@ -83,5 +83,30 @@ export const presetMaterials = [
         rootDir: rootDir,
         name: "",
         mapIndex: ["map", "normalMap", "roughnessMap", "metalnessMap"],
-    }
+    },
+    {
+        id: "hammered-steel",
+        rootDir: rootDir,
+        name: "",
+        mapIndex: ["map", "normalMap", "roughnessMap", "metalnessMap"],
+    },
+    {
+        id: "leather",
+        rootDir: rootDir,
+        name: "",
+        mapIndex: ["map", "normalMap", "roughnessMap"],
+    },
+    {
+        id: "marble",
+        rootDir: rootDir,
+        name: "",
+        mapIndex: ["map", "normalMap", "roughnessMap"],
+    },
+    {
+        id: "wood",
+        rootDir: rootDir,
+        name: "",
+        mapIndex: ["map", "normalMap", "roughnessMap"],
+    },
+
 ]

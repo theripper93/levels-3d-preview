@@ -178,7 +178,7 @@ class Levels3DPreview {
       60,
       window.innerWidth / window.innerHeight,
       0.01,
-      10000000
+      100
     );
     this.camera.position.set(8, 2, 8).setLength(8);
     this.camera.zoom = 1;

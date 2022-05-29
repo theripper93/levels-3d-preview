@@ -215,7 +215,11 @@
                         "premium-plastic": "Premium Plastic",
                         "steel": "Steel",
                         "bronze": "Bronze",
-                        "copper": "Copper"
+                        "copper": "Copper",
+                        "hammered-steel": "Hammered Steel",
+                        "leather": "Leather",
+                        "marble": "Marble",
+                        "wood": "Wood"
                     },
                     "basic": "Basic (no Lighting/Shadows)",
                     "texcol": "Texture/Color",
