@@ -1004,6 +1004,7 @@ export class Token3D {
     }
 
     faceCamera(){
+      if(!this.model?.children[0]) return;
       const camera = this._parent.camera;
       const vector = new THREE.Vector3(0, this._parent.camera.position.y >= Number.EPSILON ? -1 : 1, 0);
       vector.applyQuaternion(camera.quaternion);

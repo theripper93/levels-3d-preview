@@ -110,3 +110,58 @@ export const presetMaterials = [
     },
 
 ]
+
+export async function populateScene(){
+    const root = "modules/canvas3dtokencompendium/miniatures/Adventurers"
+    const models = []
+
+    await processDir(root);
+
+    async function processDir(directory){
+        const files = await FilePicker.browse("user", directory)
+        for(let file of files.files){
+            models.push(file)
+        }
+        for(let dir of files.dirs){
+            await processDir(dir)
+        }
+    }
+
+    let tokenDatas = []
+    const size = canvas.scene.dimensions.size;
+    const sceneStart = {
+        x: canvas.scene.dimensions.paddingX+size,
+        y: canvas.scene.dimensions.paddingY+size,
+    }
+    const rows = (canvas.scene.dimensions.sceneWidth / size)/2;
+    const cols = (canvas.scene.dimensions.sceneHeight / size)/2;
+    const max = rows*cols;
+    let modelcount = 0;
+    for(let model of models){
+        const randomMaterial = presetMaterials[Math.floor(Math.random() * (presetMaterials.length-1))];
+        const position = {
+            x: sceneStart.x + (modelcount % rows) * size * 2,
+            y: sceneStart.y + Math.floor(modelcount / rows) * size * 2,
+        }
+        const data = {
+            name: model.name,
+            flags: {
+                "levels-3d-preview": {
+                    "model3d": model,
+                    "material": "preset-steel"// + randomMaterial.id,
+                }
+            },
+            x: position.x,
+            y: position.y,
+        }
+        modelcount++
+        tokenDatas.push(data)
+        if(modelcount >= max) break;
+    }
+
+    canvas.scene.createEmbeddedDocuments("Token", tokenDatas);
+
+    console.log(models)
+
+
+}

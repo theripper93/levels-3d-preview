@@ -506,12 +506,18 @@ export class InteractionManager {
       if(this.isRulerDrag(event, intersectData)) return this._onEnableRuler(event);
       const entity = event.entity;
       if(!entity) return this.abortDrag();
-      const intersect = event.intersect;
+      let intersect = event.intersect;
       const placeable = entity.placeable;
       if(placeable?.data?.locked) return this.abortDrag();
       if(!placeable?.isOwner && !game.user.isGM) return this.abortDrag();
       if(!entity.draggable || entity.mesh.userData?.entity3D?.embeddedName !== canvas.activeLayer.options.objectClass.embeddedName) return this.abortDrag();
       if(!placeable?._controlled && placeable) placeable.control({releaseOthers: true});
+      if(entity.mesh.userData?.entity3D?.embeddedName == "Tile") {
+        this.setControlledGroup()
+        if(!entity.mesh?.userData?.isTransformControls){
+          intersect = this._parent.controlledGroup
+        }
+      }
       entity.isAnimating = false;
       entity.setPosition?.();
       this.draggable = intersect;

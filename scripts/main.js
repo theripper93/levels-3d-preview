@@ -27,7 +27,7 @@ import { ParticleSystem } from "./helpers/particleSystem.js";
 import { Particle3D } from "./helpers/particleSystem.js";
 import { defaultTokenAnimations } from "./helpers/tokenAnimationHandler.js";
 import { ClipNavigation } from "./clipNavigation.js";
-import { presetMaterials, PresetMaterialHandler } from "./helpers/presetMaterials.js";
+import { presetMaterials, PresetMaterialHandler, populateScene } from "./helpers/presetMaterials.js";
 
 export const factor = 1000;
 
@@ -86,6 +86,7 @@ class Levels3DPreview {
   constructor() {
     THREE.Cache.enabled = true;
     this.THREE = THREE;
+    this.populateScene = populateScene;
     this._errCount = 0;
     this.socket = socketlib.registerModule("levels-3d-preview");
     this.socket.register("Particle3D", this.particleSocket);
