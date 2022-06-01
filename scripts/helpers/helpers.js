@@ -166,6 +166,11 @@ export class Helpers {
     })*/
     return object;
   }
+  
+  is3DModel(filename){
+    filename = filename.toLowerCase();
+    return filename.endsWith(".fbx") || filename.endsWith(".glb") || filename.endsWith(".gltf");
+  }
 
   isPBR(path) {
     if (!path) return false;

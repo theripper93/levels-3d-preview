@@ -86,7 +86,7 @@ export class ParticleSystem {
               params
             );
             const emitter = await projectileEmitter.init();
-            if (projectileEmitter.emitter instanceof THREE.Sprite) {
+            if (projectileEmitter.emitter instanceof THREE.Sprite || projectileEmitter.emitter instanceof THREE.Object3D) {
               this.effects.add(projectileEmitter);
               this.scene.add(projectileEmitter.emitter);
             } else {
@@ -118,8 +118,9 @@ export class ParticleSystem {
         effect.animate(delta);
         if (effect._currentSpeed > 1) {
           this.effects.delete(effect);
-          if (effect.emitter instanceof THREE.Sprite) {
+          if (effect.emitter instanceof THREE.Sprite || effect.emitter instanceof THREE.Object3D) {
             this.scene.remove(effect.emitter);
+            effect.emitter?.dispose?.();
           } else {
             effect.emitter.destroy();
           }
@@ -197,6 +198,7 @@ class ProjectileEffect {
     this._origin = this.isExplosion ? null : this.inferPosition(from);
     this._target = this.inferPosition(to, true);
     this._duration = this.params.duration;
+    this._rotation = this.params.rotation;
     this.miss();
     this._dist = this.isExplosion ? null : this._origin.distanceTo(this._target);
     this._speed = this.isExplosion ? null : ((this.params.speed/this._dist)/(factor/100))*ParticleSystem.getScale()//unitSpeed / this._dist;
@@ -229,7 +231,7 @@ class ProjectileEffect {
     this.params.single
       ? await this.createSingleParticle()
       : await this.createEmitter();
-    this.sprite = this.emitter instanceof THREE.Sprite;
+    this.sprite = this.emitter instanceof THREE.Sprite || this.emitter instanceof THREE.Object3D;
     return this;
   }
 
@@ -291,6 +293,23 @@ class ProjectileEffect {
   }
 
   async createSprite() {
+    if(game.Levels3DPreview.helpers.is3DModel(this.params.sprite)){
+      this.isModel = true;
+      const model = (await game.Levels3DPreview.helpers.loadModel(this.params.sprite))?.model ?? new THREE.Group();
+      const color = new THREE.Color(this.params.color.start[0] ?? 0xffffff);
+      model.traverse((child) => {
+        if (child.isMesh) {
+          child.castShadow = true;
+          child.receiveShadow = true;
+          child.material.color.multiply(color);
+        }
+      })
+      model.position.sub( new THREE.Box3().setFromObject( model ).getCenter( new THREE.Vector3() ) );
+      const group = new THREE.Group();
+      group.add(model);
+      group.up = this._rotation ? new THREE.Vector3(this._rotation[0], this._rotation[1], this._rotation[2]) : new THREE.Vector3(0, 1, 0);
+      return group;
+    }
     const tex = await game.Levels3DPreview.helpers.loadTexture(
       this.params.sprite
     );
@@ -316,19 +335,21 @@ class ProjectileEffect {
 
   createAnimationPath() {
     const points = [];
+    const origin = this.params.rotateTowards ? this._target : this._origin;
+    const target = this.params.rotateTowards ? this._bottomTarget : this._target;
     for (let i = 0, l = this.params.arc; i < l; i++) {
       const t = (i + 2) / (l + 2);
-      const point = this._origin.clone();
-      point.lerp(this._target, t);
+      const point = origin.clone();
+      point.lerp(target, t);
       point.x += (Math.random() - 0.5) * this._dist * 0.2;
       point.z += (Math.random() - 0.5) * this._dist * 0.2;
       points.push(point);
     }
 
     this.animationPath = new THREE.CatmullRomCurve3([
-      this._origin,
+      origin,
       ...points,
-      this._target,
+      target,
     ]);
     this.animationPath.curveType = "chordal";
   }
@@ -404,6 +425,8 @@ class ProjectileEffect {
       } else {
         tokenPos.y += game.Levels3DPreview.tokens[object.id].d * 0.66;
       }
+      this._bottomTarget = game.Levels3DPreview.tokens[object.id].mesh.position.clone()
+      this._bottomTarget.y -= game.Levels3DPreview.tokens[object.id].d;
       return tokenPos;
     }
     const z =
@@ -467,10 +490,13 @@ class ProjectileEffect {
         this.onEnd();
         return;
       }
-
-      const point = this.animationPath.getPointAt(this._currentSpeed); //this._origin.clone().lerp(this._target, this._currentSpeed);
+      
+      const point = this.params.rotateTowards ? this._origin : this.animationPath.getPointAt(this._currentSpeed); //this._origin.clone().lerp(this._target, this._currentSpeed);
       if (this.sprite) {
         this.emitter.position.copy(point);
+        if(this.isModel){
+          this.emitter.lookAt(this.params.rotateTowards ? this.animationPath.getPointAt(this._currentSpeed) : this._target);
+        }
       } else {
         this.emitter.setPosition(point);
       }
@@ -632,6 +658,14 @@ export class Particle3D {
   }
   duration(duration) {
     this.params.duration = duration / 1000;
+    return this;
+  }
+  rotation(x,y,z){
+    this.params.rotation = [x,y,z];
+    return this;
+  }
+  rotateTowards(){
+    this.params.rotateTowards = true;
     return this;
   }
   playAnimation(animationData){
