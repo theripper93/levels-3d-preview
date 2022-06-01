@@ -590,7 +590,7 @@ export class Token3D {
         // D35E: no prone condition?
       }
       // dnd5e, dnd4e, sfrpg, dsa5, cyberpunk2020, shadowrun5e, swade, wfrp4e, ...
-      return token.actor?.effects.some(e => e.getFlag("core", "statusId") === "prone") ?? false;
+      return token.actor?.effects.some(e => e.getFlag("core", "statusId")?.toLowerCase()?.includes("prone")) ?? false;
     }
 
     updateHiden(){

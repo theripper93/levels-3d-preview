@@ -1016,6 +1016,11 @@ class Levels3DPreview {
 
   _onReady(){
     this.ClipNavigation = new ClipNavigation().render(true);
+    canvas.sight.refresh();
+    canvas.perception.schedule({
+      lighting: { initialize: true /* calls updateSource on each light source */, refresh: true },
+      sight: { initialize: true /* calls updateSource on each token */, refresh: true /* you probably to refesh sight as well */, forceUpdateFog: true /* not sure if you need this */ },
+    });
   }
 
   toggle(force) {
@@ -1122,8 +1127,12 @@ Hooks.on("updateScene", (scene,updates) => {
   }
   const flags = updates.flags ? updates.flags["levels-3d-preview"] : undefined;
   if(!flags) return;
+  if("object3dSight" in flags){
+    canvas.draw();
+    return 
+  }
   if(//do reload
-    "enableGrid"  in flags ||
+    "enableGrid" in flags ||
     "enableFog" in flags ||
     "fogColor" in flags ||
     "fogDistance" in flags ||
