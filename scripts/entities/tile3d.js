@@ -198,9 +198,12 @@ export class Tile3D {
               child.castShadow = true;
               child.receiveShadow = true;
               child.geometry.computeBoundsTree();
-              if(isPBR) child.material = textureOrMat;
-              if(this.color) child.material.color.set(child.material.color.multiply(color));
-              if(textureOrMat && !isPBR) child.material.map = textureOrMat;
+              const childMat = child.material instanceof Array ? child.material : [child.material];
+              childMat.forEach(mat => {
+                if(isPBR) mat = textureOrMat;
+                if(this.color) mat.color.set(mat.color.multiply(color));
+                if(textureOrMat && !isPBR) mat.map = textureOrMat;
+              })
             }
         });
 
@@ -282,9 +285,12 @@ export class Tile3D {
               child.castShadow = true;
               child.receiveShadow = true;
               child.geometry.computeBoundsTree();
-              if(isPBR) child.material = textureOrMat;
-              if(this.color) child.material.color.set(child.material.color.multiply(color));
-              if(textureOrMat && !isPBR) child.material.map = textureOrMat;
+              const childMat = child.material instanceof Array ? child.material : [child.material];
+              childMat.forEach(mat => {
+                if(isPBR) mat = textureOrMat;
+                if(this.color) mat.color.set(mat.color.multiply(color));
+                if(textureOrMat && !isPBR) mat.map = textureOrMat;
+              })
  
               //generate instanceed
 

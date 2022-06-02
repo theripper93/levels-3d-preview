@@ -198,7 +198,8 @@ class ProjectileEffect {
     this._origin = this.isExplosion ? null : this.inferPosition(from);
     this._target = this.inferPosition(to, true);
     this._duration = this.params.duration;
-    this._rotation = this.params.rotation;
+    this._rotation = new THREE.Euler(this.params.rotation[0], this.params.rotation[1], this.params.rotation[2]);
+    this._up = new THREE.Vector3(this.params.up[0], this.params.up[1], this.params.up[2]);
     this.miss();
     this._dist = this.isExplosion ? null : this._origin.distanceTo(this._target);
     this._speed = this.isExplosion ? null : ((this.params.speed/this._dist)/(factor/100))*ParticleSystem.getScale()//unitSpeed / this._dist;
@@ -304,10 +305,13 @@ class ProjectileEffect {
           child.material.color.multiply(color);
         }
       })
-      model.position.sub( new THREE.Box3().setFromObject( model ).getCenter( new THREE.Vector3() ) );
+      const box =  new THREE.Box3().setFromObject( model );
+      model.position.sub( box.getCenter( new THREE.Vector3() ) );
+      model.position.y = -box.min.y;
+      model.rotation.copy(this._rotation);
       const group = new THREE.Group();
       group.add(model);
-      group.up = this._rotation ? new THREE.Vector3(this._rotation[0], this._rotation[1], this._rotation[2]) : new THREE.Vector3(0, 1, 0);
+      group.up = this._up
       return group;
     }
     const tex = await game.Levels3DPreview.helpers.loadTexture(
@@ -396,6 +400,9 @@ class ProjectileEffect {
       single: false,
       duration: 0.3,
       force: 15,
+      up: [0,1,0],
+      rotateTowards: false,
+      rotation: [0,0,0],
     };
   }
 
@@ -661,7 +668,11 @@ export class Particle3D {
     return this;
   }
   rotation(x,y,z){
-    this.params.rotation = [x,y,z];
+    this.params.rotation = [Math.toRadians(x), Math.toRadians(y), Math.toRadians(z)];
+    return this;
+  }
+  up(x,y,z){
+    this.params.up = [x,y,z];
     return this;
   }
   rotateTowards(){
