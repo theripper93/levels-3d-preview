@@ -29,6 +29,7 @@ export class Token3D {
       this.combatColor = new THREE.Color("#005eff");
       this._loaded = false;
       this.getFlags();
+      this._baseColor = new THREE.Color(this.baseColor);
       this.drawBars = debounce(this.drawBars, 100);
       this.animationHandler = new TokenAnimationHandler(this);
     }
@@ -49,7 +50,7 @@ export class Token3D {
       this.token.document.getFlag("levels-3d-preview", "offsetX") ?? 0;
       this.offsetY =
       this.token.document.getFlag("levels-3d-preview", "offsetY") ?? 0;
-      this.offsetY += this.solidBaseMode === "ontop" ? this.baseDepth*factor : 0;
+      //this.offsetY += this.solidBaseMode === "ontop" ? this.baseDepth*factor : 0;
       this.offsetZ =
       this.token.document.getFlag("levels-3d-preview", "offsetZ") ?? 0;
       this.scale =
@@ -261,12 +262,12 @@ export class Token3D {
       this.mesh.add(this.effectsContainer);
       this.border = new THREE.Group();
       this.mesh.add(this.border);
+      //this.setUpProne();
       this.drawBorder();
       this.drawName();
       this.drawBars();
       this.reDraw();
       this.setPosition();
-      this.setUpProne();
       return this;
     }
 
@@ -713,6 +714,75 @@ export class Token3D {
       return material;
     }
 
+    _newdrawBorder(){
+      this.border.children.forEach(child => {
+        this.border.remove(child);
+      });
+
+      this._setupBorderMaterials();
+
+      this._parent.helpers.loadModel("modules/levels-3d-preview/assets/tokenBases/baseRounded.glb").then(res => {
+        const base = res.model
+        const box = new THREE.Box3().setFromObject(base);
+        const maxDimension = Math.max(box.max.x - box.min.x, box.max.y - box.min.y, box.max.z - box.min.z);
+        const scale = (((Math.max(this.token.data.width, this.token.data.height)*canvas.grid.size)/factor)/maxDimension)*0.9;
+        base.scale.multiplyScalar(scale);
+        base.position.set(0,0,0);
+        const offsetMesh = base.children.find(child => child.name == "base");
+        base.traverse(child => {
+          if(child.isMesh) child.material.color = new THREE.Color(this.baseColor);
+        })
+        const offsetBox = new THREE.Box3().setFromObject(offsetMesh);
+        const offset = offsetBox.max.y
+        if(this.solidBaseMode === "ontop") {
+          this.model.position.y += offset*scale
+        }
+        const hlMeshes = []
+        const hlrMeshes = []
+        base.traverse(child => {
+          if(child.material?.name == "highlight") hlMeshes.push(child);
+          if(child.material?.name == "highlight_ring") hlrMeshes.push(child);
+        })
+        this.border.userData.highlight = hlMeshes;
+        this.border.userData.highlight_ring = hlrMeshes;
+        this.border.add(base);
+        this.refreshBorder();
+        this.setUpProne(true);
+      })
+      
+      this.addStem();
+
+    }
+
+    _setupBorderMaterials(){
+      const mat1 = new THREE.MeshStandardMaterial({
+        color: 0xffffff,
+        emissive: 0xffffff,
+        emissiveIntensity: 0.8,
+        roughness: 0.4,
+      });
+      const mat2 = new THREE.MeshStandardMaterial({
+        color: new THREE.Color(this.baseColor),//0x1c1c1c,
+        roughness: 0.4,
+        normalMap: this._parent.textures.indicator.normal,
+        normalScale: new THREE.Vector2(0.2,0.2),
+      });
+      const mat3 = mat1.clone();
+      //const mat4 = mat1.clone();
+      const mat4 = new THREE.MeshStandardMaterial({
+        emissiveIntensity: 0.8,
+      });
+      mat3.emissive = this.combatColor;
+      mat3.color = this.combatColor;
+
+      this.materialsCache = {
+        base: mat2,
+        highlight: mat1,
+        combat: mat3,
+        targeted: mat4,
+      }
+    }
+
     drawBorder(){
       this.border.children.forEach(child => {
         this.border.remove(child);
@@ -793,9 +863,13 @@ export class Token3D {
 
     }
 
-    addStem(radius){
+    addStem(baseRadius){
       if(!this.isBase || !this.stem) return;
-      radius*=0.03;
+      let w = (baseRadius*1.02)/this.factor;
+      width -= ((width*Math.SQRT2)/5)/2;
+      let h = (baseRadius*1.02)/this.factor;
+      const radius = Math.min(w,h)*0.03;
+      height -= ((height*Math.SQRT2)/5)/2;
       const height = new THREE.Box3().setFromObject(this.model).min.y*2;
       const stemMesh = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, height, 64), new THREE.MeshStandardMaterial({
         color: this.color,
@@ -830,8 +904,45 @@ export class Token3D {
       }else{
         text = this._parent.targetTextures[colorstring];
       }
+      this._targetMap = text;
       this.materialsCache.targeted.map = text;
-      this.materialsCache.targeted.emissiveMap = text;
+    }
+
+    _newrefreshBorder(){
+      if(!this.border) return;
+      const isInactive = !this.token._controlled && !this.token._hover
+      const color = isInactive ? this.baseColor : this.token.border?._lineStyle?.color;
+      const combatColor = this.combatColor;
+      const isActiveCombatant = game.combat?.current?.tokenId === this.token.id && game.settings.get("levels-3d-preview", "highlightCombat");
+      const threeColor = isInactive && isActiveCombatant ? this.combatColor : new THREE.Color(color);
+      const highlightMaterial = this.border.userData.highlight
+      const highlight_ringMaterial = this.border.userData.highlight_ring
+      const isEmissive = !(isInactive && !isActiveCombatant)
+      if(highlightMaterial?.length){
+        highlightMaterial.forEach(m => {
+          m.material.color = threeColor;
+          m.material.emissive = isEmissive ? threeColor : new THREE.Color(1,1,1);
+          m.material.emissiveIntensity = isEmissive ? 0.8 : 0;
+        })
+
+
+      }
+
+      if(highlight_ringMaterial?.length){
+        highlight_ringMaterial.forEach(m => {
+          m.material.color = isActiveCombatant ? combatColor : new THREE.Color(color);
+          if(this.token.targeted.size){
+            m.material.color = new THREE.Color(1,1,1);
+            m.material.emissiveMap = this._targetMap;
+            m.material.map = this._targetMap;
+            m.material.emissiveIntensity = 0.8;
+            m.material.needsUpdate = true;
+          }else{
+            m.material.emissiveMap = null;
+            m.material.map = null;
+          }
+        })
+      }
 
     }
 
