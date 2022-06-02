@@ -61,6 +61,7 @@ Hooks.on("canvasReady", async () => {
   do{
     await sleep(100);
     if(!game.Levels3DPreview || !game.Levels3DPreview?._init) continue;
+    if(game.threeportrait && !game.threeportrait._dataReady) continue;
     game.Levels3DPreview._cameraSet = false;
     game.Levels3DPreview.close();
     game.Levels3DPreview.controls.reset();
