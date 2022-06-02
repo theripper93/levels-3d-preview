@@ -714,7 +714,7 @@ export class Token3D {
       return material;
     }
 
-    drawBorder(){
+    _newdrawBorder(){
       this.border.children.forEach(child => {
         this.border.remove(child);
       });
@@ -783,7 +783,10 @@ export class Token3D {
       }
     }
 
-    _oldDrawBorder(){
+    drawBorder(){
+      this.border.children.forEach(child => {
+        this.border.remove(child);
+      });
       const baseRadius = Math.max(this.token.w, this.token.h);
       const slant = 0.005*(canvas.grid.size/100);
       let width = (baseRadius*1.02)/this.factor;
@@ -792,7 +795,7 @@ export class Token3D {
       height -= ((height*Math.SQRT2)/5)/2;
       const depth = this.isBase ? this.baseDepth : 0.000001;
       const cubesize = Math.max(width, height)/6;
-      let mesh,indicatorMesh,highlightMesh,roundedMesh;
+      let mesh,indicatorMesh,highlightMesh;
       if(!this.isBase){
       const geometry = new THREE.BoxGeometry(width, depth , height);
       const material = new THREE.MeshStandardMaterial({
@@ -840,7 +843,7 @@ export class Token3D {
         if(this.baseMode === "solidindicator"){
           const indicatorGeometry = new THREE.BoxGeometry(cubesize, depth-0.00001 , cubesize);
           indicatorMesh = new THREE.Mesh(indicatorGeometry, [mat2, mat1, mat2, mat2, mat1, mat2]);
-          indicatorMesh.position.set(0,depth/2,(width-slant*2)/2);
+          indicatorMesh.position.set(0,depth/2,(width-slant*2)/2.2);
           indicatorMesh.rotation.set(0,Math.PI/4,0);
           indicatorMesh.castShadow = true;
           indicatorMesh.receiveShadow = true;
@@ -852,18 +855,12 @@ export class Token3D {
           combat: mat3,
           targeted: mat4,
         }
-        const tubeRadius = (depth/2)*1.1
-        const tubeInnerRadius = (width/2-slant+height/2)/2
-        const roundedBorder = new THREE.TorusGeometry(tubeInnerRadius*0.99,tubeRadius, 64, 64)
-        roundedMesh = new THREE.Mesh(roundedBorder, mat1)
-        roundedMesh.rotation.x = Math.PI/2
-        roundedMesh.scale.z = (depth*1.25)/(tubeRadius*2)
-        roundedMesh.position.y += tubeRadius*roundedMesh.scale.z*0.75
       }
       this.border.add(mesh);
+      this.addStem(Math.min(width,height));
       if(indicatorMesh) this.border.add(indicatorMesh);
       if(highlightMesh)this.border.add(highlightMesh);
-      if(roundedMesh)this.border.add(roundedMesh);
+
     }
 
     addStem(){
@@ -908,9 +905,10 @@ export class Token3D {
         text = this._parent.targetTextures[colorstring];
       }
       this._targetMap = text;
+      this.materialsCache.targeted.map = text;
     }
 
-    refreshBorder(){
+    _newrefreshBorder(){
       if(!this.border) return;
       const isInactive = !this.token._controlled && !this.token._hover
       const color = isInactive ? this.baseColor : this.token.border?._lineStyle?.color;
@@ -944,6 +942,31 @@ export class Token3D {
             m.material.map = null;
           }
         })
+      }
+
+    }
+
+    refreshBorder(){
+      if(!this.border) return;
+      if(!this.isBase){
+        const color = this.token.border?._lineStyle?.color ?? 0xffffff;
+        const visible = this.token.border?.height ? true : false;
+        this.border.children.forEach(child => {
+          child.material.color = this.colorizeIndicator ? new THREE.Color(color) : new THREE.Color(color);
+          child.material.visible = visible;
+        });
+      }else{
+        const color = this.token.border?._lineStyle?.color ?? 0xffffff;
+        const isInactive = !color
+        const isActiveCombatant = game.combat?.current?.tokenId === this.token.id && game.settings.get("levels-3d-preview", "highlightCombat");
+        const threeColor = isInactive && isActiveCombatant ? new THREE.Color(this.combatColor) : new THREE.Color(color);
+        const material = this.border.children[0].material[0];
+        material.color = threeColor;
+        material.emissive = threeColor;
+        if(this.border.children[2])this.border.children[2].material = isActiveCombatant ? this.materialsCache.combat : this.materialsCache.highlight;
+        if(this.token.targeted.size && this.border.children[2]){
+          this.border.children[2].material = this.materialsCache.targeted;
+        }
       }
 
     }
