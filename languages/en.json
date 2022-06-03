@@ -617,8 +617,8 @@
                 "hint": "Hide the target indicator if the token has the base enabled, the targets will be shown in the base ring highlight."
             },
             "rotateIndicator": {
-                "name": "Rotate Highlight Image",
-                "hint": "Rotate the Highlight Image to match the token rotation."
+                "name": "Rotate Base",
+                "hint": "Rotate the 3D Base to match token Rotation."
             },
             "templateSyle" : {
                 "name": "Template Style",

@@ -115,76 +115,91 @@ class Levels3DPreview {
           id: "sharp",
           path: "modules/levels-3d-preview/assets/tokenBases/baseSharp.glb",
           name: game.i18n.localize(`levels3dpreview.baseStyles.sharp`),
+          scale: 0.9,
         },
         {
           id: "sharpIndicator",
           path: "modules/levels-3d-preview/assets/tokenBases/baseSharpIndicator.glb",
           name: game.i18n.localize(`levels3dpreview.baseStyles.sharpIndicator`),
+          scale: 0.9,
         },
         {
           id: "rounded",
           path: "modules/levels-3d-preview/assets/tokenBases/baseRounded.glb",
           name: game.i18n.localize(`levels3dpreview.baseStyles.rounded`),
+          scale: 0.9,
         },
         {
           id: "jb2around1Indicator",
           path: "modules/levels-3d-preview/assets/tokenBases/JB2A/jb2around1Indicator.glb",
-          name: game.i18n.localize(`levels3dpreview.baseStyles.jb2around1Indicator`)
+          name: game.i18n.localize(`levels3dpreview.baseStyles.jb2around1Indicator`),
+          scale: 0.9,
         },
         {
           id: "jb2around1",
           path: "modules/levels-3d-preview/assets/tokenBases/JB2A/jb2around1.glb",
-          name: game.i18n.localize(`levels3dpreview.baseStyles.jb2around1`)
+          name: game.i18n.localize(`levels3dpreview.baseStyles.jb2around1`),
+          scale: 0.9,
         },
         {
           id: "jb2around2Indicator",
           path: "modules/levels-3d-preview/assets/tokenBases/JB2A/jb2around2Indicator.glb",
-          name: game.i18n.localize(`levels3dpreview.baseStyles.jb2around2Indicator`)
+          name: game.i18n.localize(`levels3dpreview.baseStyles.jb2around2Indicator`),
+          scale: 0.9,
         },
         {
           id: "jb2around2",
           path: "modules/levels-3d-preview/assets/tokenBases/JB2A/jb2around2.glb",
-          name: game.i18n.localize(`levels3dpreview.baseStyles.jb2around2`)
+          name: game.i18n.localize(`levels3dpreview.baseStyles.jb2around2`),
+          scale: 0.9,
         },
         {
           id: "jb2ahex1Indicator",
           path: "modules/levels-3d-preview/assets/tokenBases/JB2A/jb2ahex1Indicator.glb",
-          name: game.i18n.localize(`levels3dpreview.baseStyles.jb2ahex1Indicator`)
+          name: game.i18n.localize(`levels3dpreview.baseStyles.jb2ahex1Indicator`),
+          scale: 1.2,
         },
         {
           id: "jb2ahex1",
           path: "modules/levels-3d-preview/assets/tokenBases/JB2A/jb2ahex1.glb",
-          name: game.i18n.localize(`levels3dpreview.baseStyles.jb2ahex1`)
+          name: game.i18n.localize(`levels3dpreview.baseStyles.jb2ahex1`),
+          scale: 1.2,
         },
         {
           id: "jb2ahex2Indicator",
           path: "modules/levels-3d-preview/assets/tokenBases/JB2A/jb2ahex2Indicator.glb",
-          name: game.i18n.localize(`levels3dpreview.baseStyles.jb2ahex2Indicator`)
+          name: game.i18n.localize(`levels3dpreview.baseStyles.jb2ahex2Indicator`),
+          scale: 1.2,
         },
         {
           id: "jb2ahex2",
           path: "modules/levels-3d-preview/assets/tokenBases/JB2A/jb2ahex2.glb",
-          name: game.i18n.localize(`levels3dpreview.baseStyles.jb2ahex2`)
+          name: game.i18n.localize(`levels3dpreview.baseStyles.jb2ahex2`),
+          scale: 1.2,
         },
         {
           id: "jb2asquare1Indicator",
           path: "modules/levels-3d-preview/assets/tokenBases/JB2A/jb2asquare1Indicator.glb",
-          name: game.i18n.localize(`levels3dpreview.baseStyles.jb2asquare1Indicator`)
+          name: game.i18n.localize(`levels3dpreview.baseStyles.jb2asquare1Indicator`),
+          scale: 0.9,
         },
         {
           id: "jb2asquare1",
           path: "modules/levels-3d-preview/assets/tokenBases/JB2A/jb2asquare1.glb",
-          name: game.i18n.localize(`levels3dpreview.baseStyles.jb2asquare1`)
+          name: game.i18n.localize(`levels3dpreview.baseStyles.jb2asquare1`),
+          scale: 0.9,
         },
         {
           id: "jb2asquare2Indicator",
           path: "modules/levels-3d-preview/assets/tokenBases/JB2A/jb2asquare2Indicator.glb",
-          name: game.i18n.localize(`levels3dpreview.baseStyles.jb2asquare2Indicator`)
+          name: game.i18n.localize(`levels3dpreview.baseStyles.jb2asquare2Indicator`),
+          scale: 0.9,
         },
         {
           id: "jb2asquare2",
           path: "modules/levels-3d-preview/assets/tokenBases/JB2A/jb2asquare2.glb",
-          name: game.i18n.localize(`levels3dpreview.baseStyles.jb2asquare2`)
+          name: game.i18n.localize(`levels3dpreview.baseStyles.jb2asquare2`),
+          scale: 0.9,
         },
       ]
     };

@@ -51,7 +51,7 @@ export class Token3D {
       this.offsetY =
       this.token.document.getFlag("levels-3d-preview", "offsetY") ?? 0;
       //this.offsetY += this.solidBaseMode === "ontop" ? this.baseDepth*factor : 0;
-      this.rotateIndicator = !this.token.data.lockRotation;
+      this.rotateIndicator = game.settings.get("levels-3d-preview", "rotateIndicator")//!this.token.data.lockRotation;
       this.offsetZ =
       this.token.document.getFlag("levels-3d-preview", "offsetZ") ?? 0;
       this.scale =
@@ -149,6 +149,17 @@ export class Token3D {
         model: object,
       };
     }
+
+    removeBaseAndReposition(object){
+      let base = object.children?.find(c => c.name === "base");
+      if(!base) return;
+      //this.offsetY -= baseYOffset;
+      object.remove(base);
+      const box = new THREE.Box3().setFromObject(object);
+      object.children.forEach(c => {
+        c.position.y -= 0.0022;
+      })
+    }
   
     async loadModel() {
 
@@ -158,15 +169,11 @@ export class Token3D {
       const scene = loaded.scene;
       const model = loaded.model;
       if(this.removeBase){
-        removeBaseAndReposition(object);
-        removeBaseAndReposition(scene);
-        removeBaseAndReposition(model);
+        this.removeBaseAndReposition(object);
+        this.removeBaseAndReposition(scene);
+        this.removeBaseAndReposition(model);
       }
-      function removeBaseAndReposition(object){
-        let base = object.children?.find(c => c.name === "base");
-        if(!base) return;
-        object.remove(base);
-      }
+
       await this.setMaterial(model);
       //Apply rotation
       model.rotation.set(
@@ -720,11 +727,15 @@ export class Token3D {
 
       this._setupBorderMaterials();
 
-      this._parent.helpers.getBase().then(base => {
+      this._parent.helpers.getBase().then(resp => {
+        const base = resp.model;
+        const scaleFactor = resp.scale;
         const box = new THREE.Box3().setFromObject(base);
-        const maxDimension = Math.max(box.max.x - box.min.x, box.max.y - box.min.y, box.max.z - box.min.z);
-        const scale = (((Math.max(this.token.data.width, this.token.data.height)*canvas.grid.size)/factor)/maxDimension)*0.9;
-        base.scale.multiplyScalar(scale);
+        const sphere = box.getBoundingSphere(new THREE.Sphere());
+        const maxDimension = sphere.radius*2 //Math.max(box.max.x - box.min.x, box.max.y - box.min.y, box.max.z - box.min.z);
+        const maxComputed = (Math.max(this.token.data.width, this.token.data.height)*canvas.grid.size)/factor;
+        const scale = (maxComputed*Math.SQRT2)/maxDimension;
+        base.scale.multiplyScalar(scale*scaleFactor);
         base.position.set(0,0,0);
         const offsetMesh = base.children.find(child => child.name == "base");
         base.traverse(child => {
@@ -861,14 +872,13 @@ export class Token3D {
 
     }
 
-    addStem(baseRadius){
-      return
+    addStem(){
+      debugger
+      const baseRadius = (Math.SQRT2*((Math.max(this.token.data.width, this.token.data.height)*canvas.grid.size)/factor))/2
       if(!this.isBase || !this.stem) return;
-      let w = (baseRadius*1.02)/this.factor;
-      width -= ((width*Math.SQRT2)/5)/2;
-      let h = (baseRadius*1.02)/this.factor;
+      let w = (baseRadius*1.02);
+      let h = (baseRadius*1.02);
       const radius = Math.min(w,h)*0.03;
-      height -= ((height*Math.SQRT2)/5)/2;
       const height = new THREE.Box3().setFromObject(this.model).min.y*2;
       const stemMesh = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, height, 64), new THREE.MeshStandardMaterial({
         color: this.color,
@@ -996,7 +1006,7 @@ export class Token3D {
       this.proneHandler.originalPosition = this.model.position.clone();
       this.proneHandler.originalRotation = this.model.rotation.clone();
       this.proneHandler.originalScale = this.model.scale.clone();
-      const offsetY = this.solidBaseMode === "ontop" ? 0 : this.baseDepth;
+      const offsetY = 0;
       const box = new THREE.Box3().setFromObject(this.model)
       const center = box.getCenter(new THREE.Vector3());
       const dimensions = box.getSize(new THREE.Vector3());
@@ -1020,7 +1030,7 @@ export class Token3D {
 
       }else if(isFlat(this.standUp)){
         targetRotation.x = -Math.PI/2;
-        targetPosition.y = targetPosition.y - dimensions.y/2 + 0.009;
+        targetPosition.y = targetPosition.y - dimensions.y/2 + 0.02;
       }else if(isHuman(dimensions)){
         targetRotation.x = -Math.PI/2;
         targetPosition.z += dimensions.y/2;

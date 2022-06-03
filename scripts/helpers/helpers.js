@@ -84,13 +84,16 @@ export class Helpers {
   }  
 
   async getBase(path){
+    let scale = 1;
     if(!path){
       const sett = game.settings.get("levels-3d-preview", "baseStyle");
-      path = game.Levels3DPreview.CONFIG.tokenBase.find(b => b?.id == sett)?.path ?? game.Levels3DPreview.CONFIG.tokenBase[0].path;
+      const bData = game.Levels3DPreview.CONFIG.tokenBase.find(b => b?.id == sett) ?? game.Levels3DPreview.CONFIG.tokenBase[0];
+      path = bData.path;
+      scale = bData.scale ?? 1;
     }
       const data = await this.loadModel(path);
       const model = data.model;
-      return model;
+      return {model, scale};
 
   }
 
