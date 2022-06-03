@@ -6,6 +6,7 @@ export class Helpers {
   constructor() {
     this.textureCache = {};
     this.materialCache = {};
+    this.baseCache = {};
   }
 
   async loadTexture(texturePath) {
@@ -81,6 +82,17 @@ export class Helpers {
       }
     });
   }  
+
+  async getBase(path){
+    if(!path){
+      const sett = game.settings.get("levels-3d-preview", "baseStyle");
+      path = game.Levels3DPreview.CONFIG.tokenBase.find(b => b?.id == sett)?.path ?? game.Levels3DPreview.CONFIG.tokenBase[0].path;
+    }
+      const data = await this.loadModel(path);
+      const model = data.model;
+      return model;
+
+  }
 
   async getModel(modelPath) {
     const filePath = modelPath;

@@ -766,6 +766,23 @@
             "shake": "Shake",
             "knockback": "Knockback"
         },
+        "baseStyles": {
+            "sharp": "Sharp",
+            "sharpIndicator": "Sharp + Indicator",
+            "rounded": "Rounded",
+            "jb2ahex1": "Hex 1 (JB2A)",
+            "jb2ahex1Indicator": "Hex 1 + Indicator (JB2A)",
+            "jb2ahex2": "Hex 2 (JB2A)",
+            "jb2ahex2Indicator": "Hex 2 + Indicator (JB2A)",
+            "jb2around1": "Round 1 (JB2A)",
+            "jb2around1Indicator": "Round 1 + Indicator (JB2A)",
+            "jb2around2": "Round 2 (JB2A)",
+            "jb2around2Indicator": "Round 2 + Indicator (JB2A)",
+            "jb2asquare1": "Square 1 (JB2A)",
+            "jb2asquare1Indicator": "Square 1 + Indicator (JB2A)",
+            "jb2asquare2": "Square 2 (JB2A)",
+            "jb2asquare2Indicator": "Square 2 + Indicator (JB2A)"
+        },
         "units":{
             "ms": "Milliseconds",
             "gu": "Grid Units",

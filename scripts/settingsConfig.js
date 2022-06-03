@@ -16,11 +16,12 @@ class canvas3dConfig extends FormApplication{
 	async getData(options) {
         const data = {}
         const settingsKeys = [
-            "navigatorAuto", "showAdvanced", "canpingpan", "canping","baseStyle","solidBaseMode","solidBaseColor","highlightCombat","startMarker","selectedImage","colorizeInidcator","rotateIndicator","hideTarget","templateSyle","gridMode","autoPan","standupFace","preventNegative","miniCanvas","debugMode","cameralockzero"
+            "navigatorAuto", "showAdvanced", "canpingpan", "canping","baseStyle","solidBaseMode","solidBaseColor","highlightCombat","startMarker","hideTarget","templateSyle","gridMode","autoPan","standupFace","preventNegative","miniCanvas","debugMode","cameralockzero"
         ];
         for (let key of settingsKeys) {
             data[key] = game.settings.get("levels-3d-preview", key);
         }
+        data.CONFIG = game.Levels3DPreview.CONFIG
 		return data;
 	}
 	activateListeners(html) {
@@ -66,12 +67,7 @@ Hooks.once('init', function() {
       scope: "world",
       config: false,
       type: String,
-      choices: {
-          "image": game.i18n.localize("levels3dpreview.settings.baseStyle.options.image"),
-          "solid": game.i18n.localize("levels3dpreview.settings.baseStyle.options.solid"),
-          "solidindicator": game.i18n.localize("levels3dpreview.settings.baseStyle.options.solidindicator"),
-        },
-      default: "solidindicator",
+      default: "sharpIndicator",
   });
 
   game.settings.register("levels-3d-preview", "navigatorAuto", {
@@ -120,34 +116,6 @@ Hooks.once('init', function() {
     game.settings.register("levels-3d-preview", "startMarker", {
       name: game.i18n.localize("levels3dpreview.settings.startMarker.name"),
       hint: game.i18n.localize("levels3dpreview.settings.startMarker.hint"),
-      scope: "world",
-      config: false,
-      type: Boolean,
-      default: true,
-    });
-
-  game.settings.register("levels-3d-preview", "selectedImage", {
-      name: game.i18n.localize("levels3dpreview.settings.selectedImage.name"),
-      hint: game.i18n.localize("levels3dpreview.settings.selectedImage.hint"),
-      scope: "world",
-      config: false,
-      type: String,
-      default: "modules/levels-3d-preview/assets/indicator.webp",
-      filePicker: "imagevideo",
-    });
-
-    game.settings.register("levels-3d-preview", "colorizeInidcator", {
-      name: game.i18n.localize("levels3dpreview.settings.colorizeInidcator.name"),
-      hint: game.i18n.localize("levels3dpreview.settings.colorizeInidcator.hint"),
-      scope: "world",
-      config: false,
-      type: Boolean,
-      default: true,
-    });
-
-    game.settings.register("levels-3d-preview", "rotateIndicator", {
-      name: game.i18n.localize("levels3dpreview.settings.rotateIndicator.name"),
-      hint: game.i18n.localize("levels3dpreview.settings.rotateIndicator.hint"),
       scope: "world",
       config: false,
       type: Boolean,

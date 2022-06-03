@@ -51,6 +51,7 @@ export class Token3D {
       this.offsetY =
       this.token.document.getFlag("levels-3d-preview", "offsetY") ?? 0;
       //this.offsetY += this.solidBaseMode === "ontop" ? this.baseDepth*factor : 0;
+      this.rotateIndicator = !this.token.data.lockRotation;
       this.offsetZ =
       this.token.document.getFlag("levels-3d-preview", "offsetZ") ?? 0;
       this.scale =
@@ -61,14 +62,11 @@ export class Token3D {
       this.interactive = (this.token.document.getFlag("levels-3d-preview", "draggable") ?? true);
       if(!this.interactive || this.token.document.getFlag("levels-3d-preview", "disableBase")) this.isBase = false;
       this.draggable = true;
-      this.selectedImage = game.settings.get("levels-3d-preview", "selectedImage") ?? "";
       this.color = this.token.document.getFlag("levels-3d-preview", "color") ?? "#ffffff";
       this.material = this.token.document.getFlag("levels-3d-preview", "material") ?? "";
       this.imageTexture = this.token.document.getFlag("levels-3d-preview", "imageTexture") ?? "";
       this.alwaysVisible = this.token.document.getFlag("levels-3d-preview", "alwaysVisible") ?? false;
       this.collisionPlane = true;
-      this.colorizeIndicator = game.settings.get("levels-3d-preview", "colorizeInidcator");
-      this.rotateIndicator = game.settings.get("levels-3d-preview", "rotateIndicator");
       this.faceCameraOption = this.token.document.getFlag("levels-3d-preview", "faceCamera") ?? "0";
       this.stem = this.token.document.getFlag("levels-3d-preview", "stem") ?? false;
       this.standupFace = game.settings.get("levels-3d-preview", "standupFace");
@@ -691,6 +689,7 @@ export class Token3D {
         }
       })
     }
+
     _getEffectMesh(effect,effectsize){
       if(this._effectsCache[effect]) return this._effectsCache[effect];
       const effectBaseMesh = game.Levels3DPreview.models.effect.clone();
@@ -721,8 +720,7 @@ export class Token3D {
 
       this._setupBorderMaterials();
 
-      this._parent.helpers.loadModel("modules/levels-3d-preview/assets/tokenBases/baseRounded.glb").then(res => {
-        const base = res.model
+      this._parent.helpers.getBase().then(base => {
         const box = new THREE.Box3().setFromObject(base);
         const maxDimension = Math.max(box.max.x - box.min.x, box.max.y - box.min.y, box.max.z - box.min.z);
         const scale = (((Math.max(this.token.data.width, this.token.data.height)*canvas.grid.size)/factor)/maxDimension)*0.9;
