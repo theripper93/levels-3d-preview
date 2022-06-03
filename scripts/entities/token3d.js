@@ -151,13 +151,14 @@ export class Token3D {
     }
 
     removeBaseAndReposition(object){
-      let base = object.children?.find(c => c.name === "base");
+      let model = object?.scene
+      if(!model) return;
+      let base = model.children?.find(c => c.name === "base");
       if(!base) return;
-      //this.offsetY -= baseYOffset;
-      object.remove(base);
-      const box = new THREE.Box3().setFromObject(object);
-      object.children.forEach(c => {
-        c.position.y -= 0.0022;
+      const groundOffset = object?.asset?.extras?.heroForge?.groundOffset ?? 0;
+      model.remove(base);
+      model.children.forEach(c => {
+        c.position.y += groundOffset;
       })
     }
   
@@ -170,8 +171,6 @@ export class Token3D {
       const model = loaded.model;
       if(this.removeBase){
         this.removeBaseAndReposition(object);
-        this.removeBaseAndReposition(scene);
-        this.removeBaseAndReposition(model);
       }
 
       await this.setMaterial(model);
@@ -744,7 +743,7 @@ export class Token3D {
         const offsetBox = new THREE.Box3().setFromObject(offsetMesh);
         const offset = offsetBox.max.y
         if(this.solidBaseMode === "ontop") {
-          this.model.position.y += offset*scale
+          this.model.position.y += offset*scale*scaleFactor
         }
         const hlMeshes = []
         const hlrMeshes = []
@@ -873,7 +872,6 @@ export class Token3D {
     }
 
     addStem(){
-      debugger
       const baseRadius = (Math.SQRT2*((Math.max(this.token.data.width, this.token.data.height)*canvas.grid.size)/factor))/2
       if(!this.isBase || !this.stem) return;
       let w = (baseRadius*1.02);
