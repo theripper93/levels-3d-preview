@@ -738,7 +738,7 @@ export class Token3D {
         base.position.set(0,0,0);
         const offsetMesh = base.children.find(child => child.name == "base");
         base.traverse(child => {
-          if(child.isMesh) child.material.color = new THREE.Color(this.baseColor);
+          if(child.isMesh && child != offsetMesh) child.material.color = new THREE.Color(this.baseColor);
         })
         const offsetBox = new THREE.Box3().setFromObject(offsetMesh);
         const offset = offsetBox.max.y
@@ -927,7 +927,7 @@ export class Token3D {
       if(highlightMaterial?.length){
         highlightMaterial.forEach(m => {
           m.material.color = threeColor;
-          m.material.emissive = isEmissive ? threeColor : new THREE.Color(1,1,1);
+          m.material.emissive = isEmissive ? threeColor : new THREE.Color(0,0,0);
           m.material.emissiveIntensity = isEmissive ? 0.8 : 0;
         })
 
@@ -946,6 +946,10 @@ export class Token3D {
           }else{
             m.material.emissiveMap = null;
             m.material.map = null;
+            m.material.color = threeColor;
+            m.material.emissive = isEmissive ? threeColor : new THREE.Color(0,0,0);
+            m.material.emissiveIntensity = isEmissive ? 0.8 : 0;
+            m.material.needsUpdate = true;
           }
         })
       }

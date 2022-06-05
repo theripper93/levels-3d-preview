@@ -101,6 +101,8 @@ export class Tile3D {
         this.tiltX = Math.toRadians(this.tiltX);
         this.tiltZ = this.tile.document.getFlag("levels-3d-preview", "tiltZ") ?? 0;
         this.tiltZ = Math.toRadians(this.tiltZ);
+        this.textureMode = this.tile.document.getFlag("levels-3d-preview", "textureMode") ?? "stretch";
+        this.textureRepeat = this.tile.document.getFlag("levels-3d-preview", "textureRepeat") ?? 1;
         this.wasFreeMode = this.tile.document.getFlag("levels-3d-preview", "wasFreeMode") ?? false;
         this.doorType = this.tile.document.getFlag("levels-3d-preview", "doorType") ?? 0;
         this.doorState = this.tile.document.getFlag("levels-3d-preview", "doorState") ?? 0;
@@ -381,8 +383,20 @@ export class Tile3D {
         if(!texture) return {textureOrMat, isPBR};
         textureOrMat = await this._parent.helpers.autodetectTextureOrMaterial(texture)
         isPBR = this._parent.helpers.isPBR(texture)
+        if(isPBR){
+            Object.values(textureOrMat).forEach(v => this.setTexture(v))
+        }else{
+            this.setTexture(textureOrMat);
+        }
         if(textureOrMat) return {textureOrMat, isPBR};
         return {textureOrMat, isPBR};
+    }
+
+    setTexture(tex){
+        if(this.textureMode == "stretch" || !tex.isTexture) return;
+        tex.wrapS = THREE.RepeatWrapping;
+        tex.wrapT = THREE.RepeatWrapping;
+        tex.repeat.set( this.textureRepeat, this.textureRepeat );
     }
 
     initBoundingBox(depth){

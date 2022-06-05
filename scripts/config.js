@@ -501,21 +501,6 @@ Hooks.on("renderTokenConfig", (app,html)=>{
             label: game.i18n.localize("levels3dpreview.flags.stem.label"),
             default: false,
         },
-        /*"draggable": {
-            type: "checkbox",
-            label: game.i18n.localize("levels3dpreview.flags.draggable.label"),
-            default: true,
-        },
-        "collisionPlane": {
-            type: "checkbox",
-            label: game.i18n.localize("levels3dpreview.flags.collisionPlane.label"),
-            default: false,
-        },
-        "alwaysVisible": {
-            type: "checkbox",
-            label: game.i18n.localize("levels3dpreview.flags.alwaysVisible.label"),
-            default: false,
-        },*/
         "enableAnim": {
             type: "checkbox",
             label: game.i18n.localize("levels3dpreview.flags.enableAnim.label"),
@@ -596,7 +581,7 @@ Hooks.on("renderTokenConfig", (app,html)=>{
         },
     }, app.token)
 
-    const advancedSettings = ["imageTexture","color","baseColor","disableBase","removeBase","solidBaseMode","animIndex","animSpeed","faceCamera","autoCenter","rotationX","rotationY","rotationZ","offsetX","offsetY","offsetZ"];
+    const advancedSettings = ["imageTexture","baseColor","disableBase","removeBase","solidBaseMode","animIndex","animSpeed","faceCamera","autoCenter","rotationX","rotationY","rotationZ","offsetX","offsetY","offsetZ"];
 
     injectAdvancedToggle(app,html,advancedSettings, injected);
 })
@@ -618,6 +603,23 @@ Hooks.on("renderTileConfig", (app,html)=>{
             type: "filepicker",
             label: game.i18n.localize("levels3dpreview.flags.imageTexture.label"),
 
+        },
+        "textureMode": {
+            type: "select",
+            label: game.i18n.localize("levels3dpreview.flags.textureMode.label"),
+            default: "stretch",
+            options: {
+                "stretch": game.i18n.localize("levels3dpreview.flags.textureMode.options.stretch"),
+                "repeat": game.i18n.localize("levels3dpreview.flags.textureMode.options.repeat"),
+            }
+        },
+        "textureRepeat": {
+            type: "range",
+            label: game.i18n.localize("levels3dpreview.flags.textureRepeat.label"),
+            default: 1,
+            min: 1,
+            max: 16,
+            step: 1,
         },
         "color": {
             type: "color",
@@ -754,7 +756,7 @@ Hooks.on("renderTileConfig", (app,html)=>{
         }
     })
 
-    const advancedSettings = ["imageTexture","enableAnim","color","animSpeed","animIndex","paused","tiltX","tiltZ","yScale"];
+    const advancedSettings = ["imageTexture", "textureMode", "textureRepeat","enableAnim","color","animSpeed","animIndex","paused","tiltX","tiltZ","yScale"];
 
     injectAdvancedToggle(app,html,advancedSettings, injected);
 

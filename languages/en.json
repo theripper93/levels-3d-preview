@@ -60,6 +60,16 @@
                     "secret" : "Secret"
                 }
             },
+            "textureMode": {
+                "label": "Texture Mode",
+                "options": {
+                    "stretch": "Stretch",
+                    "repeat": "Repeat"
+                }
+            },
+            "textureRepeat": {
+                "label": "Texture Repeat"
+            },
             "doorState": {
                 "options": {
                     "open": "Open",
@@ -767,6 +777,7 @@
             "knockback": "Knockback"
         },
         "baseStyles": {
+            "roundDoubleRing": "Round Double Ring",
             "sharp": "Sharp",
             "sharpIndicator": "Sharp + Indicator",
             "rounded": "Rounded",

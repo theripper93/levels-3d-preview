@@ -112,6 +112,12 @@ class Levels3DPreview {
       presetMaterials: presetMaterials,
       tokenBase: [
         {
+          id: "roundDoubleRing",
+          path: "modules/levels-3d-preview/assets/tokenBases/roundDoubleRing.glb",
+          name: game.i18n.localize(`levels3dpreview.baseStyles.roundDoubleRing`),
+          scale: 0.8,
+        },
+        {
           id: "sharp",
           path: "modules/levels-3d-preview/assets/tokenBases/baseSharp.glb",
           name: game.i18n.localize(`levels3dpreview.baseStyles.sharp`),
