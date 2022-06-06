@@ -24,7 +24,7 @@ export class Exporter{
             if(exportData.doors && documentType === "Wall" && o.userData?.entity3D.placeable.isDoor) return true;
             return false;
         });
-        objects = objects.filter((o) => !o.userData.entity3D.gtflPath.includes("[HeroForge]"))
+        objects = objects.filter((o) => !o?.userData?.entity3D?.gtflPath?.includes("[HeroForge]"))
         if(exportData.all){
             objects.traverse(child => { child.userData = {} });
         }else{
