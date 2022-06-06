@@ -360,7 +360,11 @@ export class InteractionManager {
       if(this.draggable){
         this.draggable.position.copy(this.currentDragTarget);
         this.ruler.placeTemplate();
-        if(!this.draggable?.userData.entity3D.updatePositionFrom3D(event)) this.cancelDrag();
+        const entity3D = this.draggable?.userData?.entity3D;
+        if(!entity3D.updatePositionFrom3D(event)) this.cancelDrag();
+        if(entity3D.token){
+          entity3D.setPosition(false,true)
+        }
         this.draggable = null;
         this.clicks = 0;
       }
@@ -628,15 +632,44 @@ export class InteractionManager {
         this.buildCollisionGeos();
         this.forceFree = object.userData.entity3D.wasFreeMode
         this.dragplane.position.set(center.x, object.userData.entity3D.mesh.position.y, center.z);
+        this.makeClone();
       }else{
         this.forceFree = false;
         this.dragplane.position.set(center.x, 0, center.z);
+        this.removeClone();
       }
       if(this.ruler && (canvas.scene.getFlag("levels-3d-preview", "enableRuler") ?? true)) this.ruler.object = object;
     }
   
     get draggable(){
       return this._draggable;
+    }
+
+    makeClone(){
+      const entity3D = this.draggable?.userData?.entity3D;
+      if(!entity3D?.token) return;
+      const userDataCache = {}
+      entity3D.mesh.traverse(child => {
+        if(child.userData){
+           userDataCache[child.uuid] = child.userData;
+           child.userData = {}
+          }
+      })
+      this.clone = entity3D.mesh.clone();
+      entity3D.mesh.traverse(child => {
+        if(child.userData){
+          child.userData = userDataCache[child.uuid]
+        }
+      })
+      this._parent.scene.add(this.clone);
+    }
+
+    removeClone(){
+      if(this.clone){
+        this._parent.scene.remove(this.clone);
+        this.clone = null;
+      }
+
     }
 
     buildCollisionGeos(){
@@ -755,6 +788,7 @@ export class InteractionManager {
       if(entity3D.token)Hooks.call("updateToken", entity3D.token.document, {x: entity3D.token.data.x});
       if(entity3D.template)Hooks.call("updateMeasuredTemplate", entity3D.template.document, {x: entity3D.template.data.x});
       if(entity3D.tile) Hooks.call("updateTile", entity3D.tile.document, {x: entity3D.tile.data.x});
+      this.clicks = 0;
     }
 
     broadcastCursorPosition(pos3d){

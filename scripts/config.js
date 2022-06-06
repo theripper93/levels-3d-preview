@@ -17,7 +17,7 @@ Hooks.on("getSceneControlButtons", (buttons)=>{
         "title": game.i18n.localize("levels3dpreview.controls.miniCanvas"),
         "icon": "fas fa-sign-out-alt",
         button: true,
-        visible: canvas?.scene?.getFlag("levels-3d-preview","enablePlayers") || game.user.isGM,
+        visible: !game.settings.get("levels-3d-preview", "sharedContext") && (canvas?.scene?.getFlag("levels-3d-preview","enablePlayers") || game.user.isGM),
         onClick: () => {
             if(!game.Levels3DPreview?._active) {
                 return ui.notifications.warn(game.i18n.localize("levels3dpreview.errors.3dnotactive"))

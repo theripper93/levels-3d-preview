@@ -195,19 +195,7 @@ export class Tile3D {
         }
 
         const color = new THREE.Color(this.color);
-        object.traverse((child) => {
-            if (child.isMesh) {
-              child.castShadow = true;
-              child.receiveShadow = true;
-              child.geometry.computeBoundsTree();
-              const childMat = child.material instanceof Array ? child.material : [child.material];
-              childMat.forEach(mat => {
-                if(isPBR) mat = textureOrMat;
-                if(this.color) mat.color.set(mat.color.multiply(color));
-                if(textureOrMat && !isPBR) mat.map = textureOrMat;
-              })
-            }
-        });
+        this._processModel(object, textureOrMat, isPBR, color);
 
         if(model.object.animations.length > 0 && this.enableAnim) {
             if(!model.object.animations[this.animIndex]) {
@@ -281,18 +269,10 @@ export class Tile3D {
             randomData.push(randomFrag);
         }
 
+        this._processModel(object, textureOrMat, isPBR, color);
 
         object.traverse((child) => {
             if (child.isMesh) {
-              child.castShadow = true;
-              child.receiveShadow = true;
-              child.geometry.computeBoundsTree();
-              const childMat = child.material instanceof Array ? child.material : [child.material];
-              childMat.forEach(mat => {
-                if(isPBR) mat = textureOrMat;
-                if(this.color) mat.color.set(mat.color.multiply(color));
-                if(textureOrMat && !isPBR) mat.map = textureOrMat;
-              })
  
               //generate instanceed
 
@@ -392,8 +372,35 @@ export class Tile3D {
         return {textureOrMat, isPBR};
     }
 
+    _processModel(object, textureOrMat, isPBR, color){
+        const setMaterial = (mat) => {
+                
+                if(this.color) mat.color.set(mat.color.multiply(color));
+                if(textureOrMat && !isPBR) mat.map = textureOrMat;
+                mat.needsUpdate = true;
+        }
+        object.traverse((child) => {
+            if (child.isMesh) {
+              child.castShadow = true;
+              child.receiveShadow = true;
+              child.geometry.computeBoundsTree();
+            
+              if(child.material instanceof Array){
+                for(i = 0, l = child.material.length; i < l; i++){
+                    if(isPBR) child.material[i] = textureOrMat;
+                    setMaterial(child.material[i]);
+                }
+              }else{
+                if(isPBR) child.material = textureOrMat;
+                  setMaterial(child.material);
+              }
+            }
+        });
+        
+    }
+
     setTexture(tex){
-        if(this.textureMode == "stretch" || !tex.isTexture) return;
+        if(this.textureMode == "stretch" || !tex?.isTexture) return;
         tex.wrapS = THREE.RepeatWrapping;
         tex.wrapT = THREE.RepeatWrapping;
         tex.repeat.set( this.textureRepeat, this.textureRepeat );

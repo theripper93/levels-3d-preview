@@ -528,6 +528,10 @@
                 "name": "Fog of War Update Throttling",
                 "hint": "If Disabled vision and Fog of War will be constantly refreshed."
             },
+            "sharedContext": {
+                "name": "Shared Context",
+                "hint": "If Enabled, Fog of War performance will be drastically improved but you will not be able to use the Mini Canvas."
+            },
             "showAdvanced": {
                 "show": "Show Advanced Settings",
                 "hide": "Hide Advanced Settings",

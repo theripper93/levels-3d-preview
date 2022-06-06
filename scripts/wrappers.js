@@ -27,7 +27,7 @@ Hooks.once('ready', async function() {
             return
         }
         if(!game.Levels3DPreview?.object3dSight || !game.Levels3DPreview?.fogExploration) return;
-        const splits = 8;
+        const splits = 2;
         const timeoutLimit = splits*64;
         const polygonPoints = [];
         const aMax = this.config.aMax
@@ -168,7 +168,62 @@ Hooks.once('ready', async function() {
         if(!positions) return
         let dx = positions.x
         let dy = positions.y
-        layer.moveMany({dx, dy, rotate: false});
+        const factor = game.Levels3DPreview.factor
+        if(canvas.activeLayer.options.objectClass.embeddedName == "Token" && game.Levels3DPreview?.object3dSight){
+            for(let token of canvas.tokens.controlled){
+                const oldPos = {
+                    x: token.center.x,
+                    y: token.center.y,
+                    z: token.losHeight,
+                }
+                const newPos = {
+                    x: oldPos.x + dx*canvas.grid.size,
+                    y: oldPos.y + dy*canvas.grid.size,
+                    z: token.losHeight,
+                }
+                const collision = game.Levels3DPreview.interactionManager.computeSightCollision(oldPos, newPos, "collision");
+                if(collision){
+                    dx = 0;
+                    dy = 0;
+                    return layer.moveMany({dx, dy, rotate: false});
+                }
+            }
+        }
+        if(canvas.activeLayer.options.objectClass.embeddedName == "Token"){
+            let updates = []
+            for(let token of canvas.tokens.controlled){
+                const oldPos = {
+                    x: token.center.x,
+                    y: token.center.y,
+                    z: token.losHeight,
+                }
+                const newPos = {
+                    x: oldPos.x + dx*canvas.grid.size,
+                    y: oldPos.y + dy*canvas.grid.size,
+                    z: token.losHeight,
+                }
+                const collisionPos = {
+                    x: newPos.x,
+                    y: newPos.y,
+                    z: -100000 ,
+                }
+                const collision = game.Levels3DPreview.interactionManager.computeSightCollision(newPos, collisionPos, "collision");
+                let targetElevation = token.data.elevation
+                if(collision){
+                    point2d = game.Levels3DPreview.helpers.ruler3d.pos3DToCanvas(collision)
+                    targetElevation = point2d.z.toFixed(2)
+                }
+                updates.push({
+                    _id: token.id,
+                    x: token.data.x + dx*canvas.grid.size,
+                    y: token.data.y + dy*canvas.grid.size,
+                    elevation: targetElevation,
+                })
+            }
+            canvas.scene.updateEmbeddedDocuments("Token", updates)
+        }else{
+            layer.moveMany({dx, dy, rotate: false});
+        }
     }
 
     function handleArrowKeys(directions){
@@ -240,6 +295,9 @@ Hooks.once('ready', async function() {
         wrapped(...args);
         if(game.Levels3DPreview?._active){
           const token3D = game.Levels3DPreview.tokens[this.id];
+          if(token3D){
+              token3D.setPositionFrom2D();
+          }
           if(token3D && token3D.fallbackAnimation){
               token3D.isAnimating = false;
               token3D.setPosition();

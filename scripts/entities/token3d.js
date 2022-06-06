@@ -462,7 +462,7 @@ export class Token3D {
       return true;
     }
   
-    setPosition(lerp = false, forcePosition) {
+    _old_setPosition(lerp = false, forcePosition) {
       const currentPosition = {
         x: Math.round(this.mesh.position.x*1000)/1000,
         y: Math.round(this.mesh.position.y*1000)/1000,
@@ -528,6 +528,89 @@ export class Token3D {
         return true;
       }
       
+    }
+
+    setPosition(lerp = false, forcePosition) {
+      const currentPosition = {
+        x: Math.round(this.mesh.position.x*1000)/1000,
+        y: Math.round(this.mesh.position.y*1000)/1000,
+        z: Math.round(this.mesh.position.z*1000)/1000,
+      };
+      const currentRotation = {
+        x: Math.round(this.mesh.rotation._x*1000)/1000,
+        y: Math.round(this.mesh.rotation._y*1000)/1000,
+        z: Math.round(this.mesh.rotation._z*1000)/1000,
+      };
+      const mesh = this.mesh;
+      const token = this.token;
+      const tokenCenter = {
+        x: (forcePosition?.x ?? token.data.x) + token.w / 2,
+        y: (forcePosition?.y ?? token.data.y) + token.h / 2,
+      }
+      if (!mesh) return;
+      const f = this.factor;
+      const x = tokenCenter.x / f;
+      const z = tokenCenter.y / f;
+      let y
+      if(this.isModel){
+        y =
+        ((token.data.elevation) * canvas.scene.dimensions.size) / canvas.dimensions.distance / f;
+      }else{
+        y = ((token.data.elevation + (token.losHeight - token.data.elevation) / 2) * canvas.scene.dimensions.size) / canvas.dimensions.distance / f;
+      }
+
+      this.setPositionFrom2D();
+      
+      if(!lerp)mesh.position.y = y;
+      else {
+        const newPos = mesh.position.clone().lerp(new THREE.Vector3(x, y, z), lerp);
+        mesh.position.y = newPos.y;
+      }
+      const rotations = {
+        x: 0,
+        y: -Math.toRadians(token.data.rotation),
+        z: 0,
+      };
+      let toLerp = rotations;
+      if(!lerp)mesh.rotation.set(rotations.x,rotations.y,rotations.z);
+      else {
+        toLerp = new THREE.Quaternion().setFromEuler(mesh.rotation);
+        toLerp.slerp(new THREE.Quaternion().setFromEuler(new THREE.Euler().setFromVector3(rotations)), 0.10);
+        mesh.rotation.setFromQuaternion(toLerp);
+      }
+      this.elevation3d = y;
+      if(this.border && !this.rotateIndicator){
+        this.border.rotation.set(
+          - toLerp.x,
+          - toLerp.y,
+          - toLerp.z,
+        );
+      }
+      if(this.light && this.token.data.light.angle != 360){
+        const rotationy = rotations.y;
+        const distance = 1
+        const lx = Math.sin(rotationy) * distance + x;
+        const ly = y + this.d/2;
+        const lz = Math.cos(rotationy) * distance + z;
+        this.light.light3d.target.position.set(lx,ly,lz);
+        this.light.light3d.target.updateMatrixWorld();
+      }
+      if(currentPosition.x === x && currentPosition.y === y && currentPosition.z === z && currentRotation.x === Math.round(rotations.x*1000)/1000 && currentRotation.y === Math.round(rotations.y*1000)/1000 && currentRotation.z === Math.round(rotations.z*1000)/1000){
+        return false;
+      }else{
+        return true;
+      }
+      
+    }
+
+    setPositionFrom2D(){
+      const tokenCenter = this.token.center
+      if (!this.mesh) return;
+      const f = this.factor;
+      const x = tokenCenter.x / f;
+      const z = tokenCenter.y / f;
+      this.mesh.position.x = x;
+      this.mesh.position.z = z;
     }
 
     reDraw(){

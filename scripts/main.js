@@ -274,6 +274,7 @@ class Levels3DPreview {
   }
 
   init3d() {
+    this._sharedContext = game.settings.get("levels-3d-preview", "sharedContext")
     this.camera = new THREE.PerspectiveCamera(
       60,
       window.innerWidth / window.innerHeight,
@@ -287,9 +288,10 @@ class Levels3DPreview {
     this.scene = new THREE.Scene();
     this.material = new THREE.MeshNormalMaterial();
 
-    this.renderer = new THREE.WebGLRenderer({ antialias: true });
+    this.renderer = this._sharedContext ? new THREE.WebGLRenderer({ antialias: true, context: canvas.app.renderer.context.gl }) : new THREE.WebGLRenderer({ antialias: true });
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.renderer.setAnimationLoop(this.animation.bind(this));
+    if(this._sharedContext) canvas.app.renderer.options.antialias = true;
     this.renderer.shadowMap.enabled = true;
     //this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.renderer.antialias = true;
@@ -860,6 +862,10 @@ class Levels3DPreview {
     try {
       if (!this._active) return;
       if (!this._ready) return this._onProgress();
+      if(this._sharedContext){
+        canvas.app.renderer.reset()
+        this.renderer.resetState();
+      }
       this.interactionManager.dragObject();
       this.cursors.update();
       const delta = this.clock.getDelta();
@@ -902,6 +908,10 @@ class Levels3DPreview {
       this.controls.update();
       this.fogExploration?.update();
       this.composer.render(time);
+      if(this._sharedContext){
+        canvas.app.renderer.reset()
+        this.renderer.resetState();
+      }
     } catch (error) {
       this._errCount++;
       console.error("3D Canvas: An Error Occured in the Rendering Loop", error);
@@ -1136,14 +1146,24 @@ class Levels3DPreview {
 
   open() {
     if (this._active) return;
+    if(this._sharedContext){
+      canvas.app.renderer.reset()
+      this.renderer.resetState();
+    }
     this.build3Dscene();
     document.body.appendChild(this.renderer.domElement);
-    if (game.settings.get("levels-3d-preview", "miniCanvas"))
-      new miniCanvas().render(true);
-    else {
-      $("#board").hide();
+    if(this._sharedContext){
       canvas.stage.renderable = false;
+    }else{
+      document.body.appendChild(this.renderer.domElement);
+      if (game.settings.get("levels-3d-preview", "miniCanvas"))
+        new miniCanvas().render(true);
+      else {
+        $("#board").hide();
+        canvas.stage.renderable = false;
+      }
     }
+
   }
 
   close() {
@@ -1156,6 +1176,10 @@ class Levels3DPreview {
     $("#board").show();
     canvas.stage.renderable = true;
     this.clear3Dscene();
+    if(this._sharedContext){
+      canvas.app.renderer.reset()
+      this.renderer.resetState();
+    }
   }
 
   reload() {

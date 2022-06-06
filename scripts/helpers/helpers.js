@@ -7,6 +7,7 @@ export class Helpers {
     this.textureCache = {};
     this.materialCache = {};
     this.baseCache = {};
+    this.ruler3d = Ruler3D;
   }
 
   async loadTexture(texturePath) {

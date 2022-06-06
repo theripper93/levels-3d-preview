@@ -16,7 +16,7 @@ class canvas3dConfig extends FormApplication{
 	async getData(options) {
         const data = {}
         const settingsKeys = [
-          "rotateIndicator","navigatorAuto", "showAdvanced", "canpingpan", "canping","baseStyle","solidBaseMode","solidBaseColor","highlightCombat","startMarker","hideTarget","templateSyle","gridMode","autoPan","standupFace","preventNegative","miniCanvas","debugMode","cameralockzero"
+          "sharedContext", "rotateIndicator","navigatorAuto", "showAdvanced", "canpingpan", "canping","baseStyle","solidBaseMode","solidBaseColor","highlightCombat","startMarker","hideTarget","templateSyle","gridMode","autoPan","standupFace","preventNegative","miniCanvas","debugMode","cameralockzero"
         ];
         for (let key of settingsKeys) {
             data[key] = game.settings.get("levels-3d-preview", key);
@@ -125,6 +125,13 @@ Hooks.once('init', function() {
     game.settings.register("levels-3d-preview", "hideTarget", {
       name: game.i18n.localize("levels3dpreview.settings.hideTarget.name"),
       hint: game.i18n.localize("levels3dpreview.settings.hideTarget.hint"),
+      scope: "world",
+      config: false,
+      type: Boolean,
+      default: false,
+    });
+
+    game.settings.register("levels-3d-preview", "sharedContext", {
       scope: "world",
       config: false,
       type: Boolean,
