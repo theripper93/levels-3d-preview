@@ -38,6 +38,7 @@
     "./scripts/entities/wall3d.js",
     "./scripts/entities/tile3d.js",
     "./scripts/entities/cursors.js",
+    "./scripts/entities/rangeFinder.js",
     "./scripts/lib/fflate.module.js",
     "./scripts/lib/NURBSCurve.js",
     "./scripts/lib/FBXLoader.js",

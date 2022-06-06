@@ -27,6 +27,7 @@ export class InteractionManager {
         this.clicks = 0;
         this.lcTime = 0;
         this.controls.enableRotate = !this.isCameraLocked
+        this.forceSightCollisions = this.generateSightCollisions.bind(this);
         this.generateSightCollisions = debounce(this.generateSightCollisions.bind(this), 100);
         this.updateHoverObj = debounce(this.updateHoverObj.bind(this), 100);
     }
@@ -76,6 +77,7 @@ export class InteractionManager {
       const direction = target.clone().sub(origin).normalize();
       const distance = origin.distanceTo(target);
       this.sightRaycaster.set(origin, direction);
+      if(!this._sightCollisions[type] && !this._sightCollisions["collision"])  this.forceSightCollisions();
       const collisions = this.sightRaycaster.intersectObjects(this._sightCollisions[type] ?? this._sightCollisions["collision"], true);
       if(!collisions.length) return false;
       const collision = collisions[0];
@@ -656,17 +658,23 @@ export class InteractionManager {
           }
       })
       this.clone = entity3D.mesh.clone();
+      this.clone.userData.original = entity3D;
       entity3D.mesh.traverse(child => {
         if(child.userData){
           child.userData = userDataCache[child.uuid]
         }
       })
+      entity3D.hasClone = true;
+      entity3D.updateHiden()
       this._parent.scene.add(this.clone);
     }
 
     removeClone(){
       if(this.clone){
+        const entity3D = this.clone.userData.original;
         this._parent.scene.remove(this.clone);
+        entity3D.hasClone = false;
+        entity3D.updateHiden()
         this.clone = null;
       }
 

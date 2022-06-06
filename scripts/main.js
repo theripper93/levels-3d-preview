@@ -136,6 +136,12 @@ class Levels3DPreview {
           scale: 0.9,
         },
         {
+          id: "ringHollow",
+          path: "modules/levels-3d-preview/assets/tokenBases/ringHollow.glb",
+          name: game.i18n.localize(`levels3dpreview.baseStyles.ringHollow`),
+          scale: 0.9,
+        },
+        {
           id: "jb2around1Indicator",
           path: "modules/levels-3d-preview/assets/tokenBases/JB2A/jb2around1Indicator.glb",
           name: game.i18n.localize(`levels3dpreview.baseStyles.jb2around1Indicator`),
@@ -214,6 +220,7 @@ class Levels3DPreview {
     }
     this.setAutopan();
     this.tokens = {};
+    this.rangeFinders = [];
     this.loadingTokens = {};
     this.lights = {
       sceneLights: {},
@@ -801,6 +808,7 @@ class Levels3DPreview {
       this.scene.remove(this.scene.children[0]);
     }
     this.tokens = {};
+    this.rangeFinders = [];
     this.loadingTokens = {};
     this.loadingTiles = {};
     this.walls = {};
@@ -898,6 +906,9 @@ class Levels3DPreview {
       Object.values(this.notes).forEach((note) => {
         note.updateVisibility();
       });
+      this.rangeFinders.forEach((rangeFinder) => {
+        rangeFinder.updateText();
+      })
       this.particleSystem.update(delta);
       this.checkInFog();
       this.animateCamera(delta);
@@ -1129,7 +1140,7 @@ class Levels3DPreview {
     canvas.perception.schedule({
       lighting: { initialize: true /* calls updateSource on each light source */, refresh: true },
       sight: { initialize: true /* calls updateSource on each token */, refresh: true /* you probably to refesh sight as well */, forceUpdateFog: true /* not sure if you need this */ },
-    });
+    });    
   }
 
   toggle(force) {

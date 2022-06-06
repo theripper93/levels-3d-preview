@@ -682,7 +682,7 @@ export class Token3D {
     }
 
     updateHiden(){
-      if(!game.user.isGM) return;
+      if(!game.user.isGM && this.token.data.hidden) return;
       if(!this.originalMatData){
         this.originalMatData = {}
         this.model.traverse(child => {
@@ -692,19 +692,21 @@ export class Token3D {
               opacity: child.material.opacity,
               format: child.material.format,
               alphaTest: child.material.alphaTest,
+              depthWrite: child.material.depthWrite,
             }
           }
         })
       }
-      if(this._hidden === this.token.data.hidden) return;
-      this._hidden = this.token.data.hidden;
-      const hidden = this.token.data.hidden;
+      const hidden = this.token.data.hidden || this.hasClone;
+      if(this._hidden === hidden) return;
+      this._hidden = this.token.data.hidden || this.hasClone;
       this.model.traverse(child => {
         if(child.isMesh){
           if(hidden){
             child.material.transparent = true;
             child.material.opacity = 0.5;
             child.material.alphaTest = 0;
+            child.material.depthWrite = false;
             child.material.format = THREE.RGBAFormat
             child.material.needsUpdate = true;
           }else{
@@ -712,6 +714,7 @@ export class Token3D {
             child.material.transparent = originalData.transparent;
             child.material.opacity = originalData.opacity;
             child.material.alphaTest = originalData.alphaTest;
+            child.material.depthWrite = originalData.depthWrite;
             child.material.format = originalData.format; 
             child.material.needsUpdate = true;
           }
@@ -821,7 +824,16 @@ export class Token3D {
         base.position.set(0,0,0);
         const offsetMesh = base.children.find(child => child.name == "base");
         base.traverse(child => {
-          if(child.isMesh && child != offsetMesh) child.material.color = new THREE.Color(this.baseColor);
+          if(child.isMesh){
+            if(child == offsetMesh){
+              if(child.material.color.r = 1 && child.material.color.g == 1 && child.material.color.b == 1){
+                child.material.color = new THREE.Color(this.baseColor);
+              }
+            }else{
+              child.material.color = new THREE.Color(this.baseColor);
+            }
+             
+            }
         })
         const offsetBox = new THREE.Box3().setFromObject(offsetMesh);
         const offset = offsetBox.max.y
