@@ -368,38 +368,63 @@ game.settings.register("levels-3d-preview", "clipNavigatorFollowClient", {
 
 Hooks.once("ready", () => {
   if(!game.user.isGM) return;
-  game.settings.register("levels-3d-preview", "welcomeDialog", {
+  game.settings.register("levels-3d-preview", "oneTimeMessages", {
     scope: "world",
     config: false,
-    type: Boolean,
-    default: false,
+    type: Object,
+    default: {},
   });
 
-  if(game.settings.get("levels-3d-preview", "welcomeDialog")) return;
-  const dialog = new Dialog({
-    title: game.i18n.localize("levels3dpreview.welcome.title"),
-    content: game.i18n.localize("levels3dpreview.welcome.content"),
-    buttons: {
-        ok:{
-            label: `<i class="fas fa-times"></i> ` + game.i18n.localize("levels3dpreview.welcome.ok"),
-        },
-        dontshowagain: {
-            label: `<i class="fas fa-check-double"></i> ` + game.i18n.localize("levels3dpreview.welcome.dontshowagain"),
-            callback: () => {game.settings.set("levels-3d-preview", "welcomeDialog", true);}
-        },
-        opencompendium: {
-            label: `<i class="fas fa-book"></i> ` + game.i18n.localize("levels3dpreview.welcome.opencompendium"),
-            callback: () => {game.packs.get("levels-3d-preview.documentation").render(true);}
-        },
-    },
-    default: "ok",
-  })
-  dialog.render(true);
-  Hooks.once("renderDialog", (app,html)=>{
-    html.find("button").css({
-      height: "3rem"
-    })
-    app.setPosition({width: 500,height:"auto", left: window.innerWidth/2-250})
+  async function setSetting(key){
+    let oldSett = game.settings.get("levels-3d-preview", "oneTimeMessages");
+    oldSett[key] = true;
+    await game.settings.set("levels-3d-preview", "oneTimeMessages", oldSett);
+  }
 
-  })
+  if(!game.settings.get("levels-3d-preview", "oneTimeMessages").welcome){
+    const dialog = new Dialog({
+      title: game.i18n.localize("levels3dpreview.welcome.title"),
+      content: game.i18n.localize("levels3dpreview.welcome.content"),
+      buttons: {
+          ok:{
+              label: `<i class="fas fa-times"></i> ` + game.i18n.localize("levels3dpreview.welcome.ok"),
+          },
+          dontshowagain: {
+              label: `<i class="fas fa-check-double"></i> ` + game.i18n.localize("levels3dpreview.welcome.dontshowagain"),
+              callback: () => {
+                setSetting("welcome");
+              }
+          },
+          opencompendium: {
+              label: `<i class="fas fa-book"></i> ` + game.i18n.localize("levels3dpreview.welcome.opencompendium"),
+              callback: () => {game.packs.get("levels-3d-preview.documentation").render(true);}
+          },
+      },
+      default: "ok",
+    })
+    dialog.render(true);
+    Hooks.once("renderDialog", (app,html)=>{
+      html.find("button").css({
+        height: "3rem"
+      })
+      app.setPosition({width: 500,height:"auto", left: window.innerWidth/2-250})
+  
+    })
+  }
+
+  if(!game.settings.get("levels-3d-preview", "oneTimeMessages").sharedRenderer){
+    Dialog.confirm({
+      title: "3D Canvas: Enable Shared Context?",
+      content: "Enabling the Shared Context will massively imporove FoW Performance BUT it will disable the 2D Canvas Popout. Do you want to enable it? You can always disable this setting later in the module settings under the Misc tab.",
+      yes: async () => {
+        await game.settings.set("levels-3d-preview", "oneTimeMessages", {sharedRenderer: true});
+        await setSetting("sharedContext");
+        window.location.reload();
+      },
+      no: () => {
+        setSetting("sharedContext");
+      },
+    })
+  }
+
 })
