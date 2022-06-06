@@ -427,8 +427,8 @@ export class Token3D {
             y: this.token.center.y,
             z: this.token.losHeight,
           },{
-            x: dest.x,
-            y: dest.y,
+            x: dest.x+this.token.data.width*canvas.grid.size*0.5,
+            y: dest.y+this.token.data.height*canvas.grid.size*0.5,
             z: dest.elevation+tokenHeight,
           }, "collision")
         }else{

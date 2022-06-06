@@ -5,6 +5,9 @@ import { Ruler3D } from "./ruler3d.js";
 export class RangeFinder {
   constructor(token) {
     if (!token.visible) return;
+    const RFMode = this._parent.rangeFinderMode
+    if(RFMode === "none") return;
+    if(RFMode === "combat" && !game.combat?.started) return;
     this.tokenId = token.id;
     this.token = token;
     this.sources = canvas.tokens.controlled.filter(t => t.id != token.id).map((t) => this._parent.tokens[t.id]);
@@ -39,7 +42,7 @@ export class RangeFinder {
     bezCtrlg,
     target
     );
-    midcurve = curve.getPoint(0.5);
+    midcurve = curve.getPoint(1);
 
     const geometry = new THREE.TubeGeometry(
       curve,

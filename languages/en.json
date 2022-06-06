@@ -524,6 +524,15 @@
             }
         },
         "settings" : {
+            "rangeFinder": {
+                "name": "Range Finder",
+                "hint": "Show distance to tokens when hovering over them.",
+                "options": {
+                    "none": "Disabled",
+                    "combat": "Only in Combat",
+                    "always": "Always"
+                }
+            },
             "fogDebounce": {
                 "name": "Fog of War Update Throttling",
                 "hint": "If Disabled vision and Fog of War will be constantly refreshed."

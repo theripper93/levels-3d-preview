@@ -383,6 +383,7 @@ class Levels3DPreview {
     this.scene.background = new THREE.Color(
       canvas.scene.data.backgroundColor ?? 0xffffff
     );
+    this.rangeFinderMode = game.settings.get("levels-3d-preview", "rangeFinder");
     this.composer.removePass(this.renderPass);
     this.renderPass = new RenderPass(this.scene, this.camera);
     this.composer.addPass(this.renderPass);

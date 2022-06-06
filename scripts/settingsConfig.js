@@ -16,7 +16,7 @@ class canvas3dConfig extends FormApplication{
 	async getData(options) {
         const data = {}
         const settingsKeys = [
-          "sharedContext", "rotateIndicator","navigatorAuto", "showAdvanced", "canpingpan", "canping","baseStyle","solidBaseMode","solidBaseColor","highlightCombat","startMarker","hideTarget","templateSyle","gridMode","autoPan","standupFace","preventNegative","miniCanvas","debugMode","cameralockzero"
+          "rangeFinder", "sharedContext", "rotateIndicator","navigatorAuto", "showAdvanced", "canpingpan", "canping","baseStyle","solidBaseMode","solidBaseColor","highlightCombat","startMarker","hideTarget","templateSyle","gridMode","autoPan","standupFace","preventNegative","miniCanvas","debugMode","cameralockzero"
         ];
         for (let key of settingsKeys) {
             data[key] = game.settings.get("levels-3d-preview", key);
@@ -40,11 +40,24 @@ class canvas3dConfig extends FormApplication{
     for(let [key, value] of Object.entries(formData)){
         await game.settings.set("levels-3d-preview", key, value);
     }
+    game.settings.set("levels-3d-preview", "sceneReload", !game.settings.get("levels-3d-preview", "sceneReload"));
 	}
 
 }
 
 Hooks.once('init', function() {
+
+  game.settings.register("levels-3d-preview", "sceneReload", {
+    scope: "world",
+    config: false,
+    type: Boolean,
+    default: false,
+    onChange: () => {
+      if(game.Levels3DPreview?._active){
+        game.Levels3DPreview.reload();
+      }
+    }
+  });
 
   game.settings.register("levels-3d-preview", "removeKeybindingsPrompt", {
     scope: "client",
@@ -186,6 +199,13 @@ Hooks.once('init', function() {
         },
       default: "all",
       onChange: value => { game.Levels3DPreview.setAutopan(value) }
+    });
+
+    game.settings.register("levels-3d-preview", "rangeFinder", {
+      scope: "world",
+      config: false,
+      type: String,
+      default: "combat",
     });
 
     game.settings.register("levels-3d-preview", "screenspacepanning", {
