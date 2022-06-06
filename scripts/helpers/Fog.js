@@ -7,7 +7,7 @@ export class Fog{
     constructor(parent){
         this._parent = parent;
         this.needsUpdate = true;
-        this.debouncedUpdate = game.settings.get("levels-3d-preview", "fogDebounce") ? debounce(this.updateTexture, 300) : this.updateTexture;
+        this.debouncedUpdate = game.settings.get("levels-3d-preview", "fogDebounce") && !this._sharedContext ? debounce(this.updateTexture, 300) : this.updateTexture;
         this.initTexture();
         this.init();
     }
