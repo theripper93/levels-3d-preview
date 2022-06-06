@@ -27,24 +27,39 @@ Hooks.once('ready', async function() {
             return
         }
         if(!game.Levels3DPreview?.object3dSight || !game.Levels3DPreview?.fogExploration) return;
+        const splits = 8;
+        const timeoutLimit = splits*64;
         const polygonPoints = [];
         const aMax = this.config.aMax
         const aMin = this.config.aMin
         const radius = Math.max(this.config.radius, this.config.radius2);
-        const nPoints = this.config.angle*0.25;
+        const nPoints = Math.ceil((this.config.angle*0.25)/splits) * splits;
         const origin = this.origin
         const factor = game.Levels3DPreview.factor
+        const splitAngle = nPoints/splits;
+        const computeFull = this.config.source._polygon3DCache?.currentSplit === undefined || (Date.now() - (this.config.source._polygon3DCache?.computeTime ?? 0)) > timeoutLimit;
+        const currentSplit = this.config.source._polygon3DCache?.currentSplit ?? 0;
+        const splitStart = computeFull ? 0 : currentSplit*splitAngle;
+        const splitEnd = computeFull ? nPoints : splitStart + splitAngle;
 
-        if(this.config.hasLimitedAngle) polygonPoints.push(origin.x, origin.y);
+        if(currentSplit === 0 && this.config.source._polygon3DCache?.cacheId){
+            const id = this.config.source._polygon3DCache.cacheId;
+            setTimeout(() => {
+                if(this.config.source._polygon3DCache?.cacheId === id && !this.config.source._polygon3DCache?.complete){
+                    console.log("polygon incomplete, recalculating")
+                    this.config.source.object.updateSource();
+                }
+            }, timeoutLimit+16);
+        }
 
         const z = origin.b ?? 0;
 
-        for (let i = 0, n = this.config.hasLimitedAngle ? nPoints + 1 : nPoints; i < n; i++){
+        for (let i = splitStart, n = this.config.hasLimitedAngle ? splitEnd + 1 : splitEnd; i < n; i++){
             const a = aMin + (aMax - aMin) * (i / nPoints);
             const x = origin.x + radius * Math.cos(a)
             const y = origin.y + radius * Math.sin(a)
 
-            const collision = game.Levels3DPreview.interactionManager.computeSightCollision({x: origin.x, y: origin.y, z: z}, {x: x, y: y, z: z});
+            const collision = game.Levels3DPreview.interactionManager.computeSightCollision({x: origin.x, y: origin.y, z: z}, {x: x, y: y, z: z}, "sight");
             if(collision){
                 polygonPoints.push(collision.x*factor, collision.z*factor);
             }else{
@@ -52,8 +67,37 @@ Hooks.once('ready', async function() {
             }
         }
 
-        if(this.config.hasLimitedAngle) polygonPoints.push(origin.x, origin.y);
-        this.points = polygonPoints;
+        if(currentSplit === splits - 1){
+            const finalPoints = [];
+            Object.values(this.config.source._polygon3DCache.pointsCache).forEach(points => {
+                finalPoints.push(...points);
+            })
+            finalPoints.push(...polygonPoints);
+            if(this.config.hasLimitedAngle) finalPoints.push(origin.x, origin.y);
+            this.config.source._polygon3DCache = {
+                pointsCache : {},
+                currentSplit: 0,
+                points: finalPoints,
+                computeTime: Date.now(),
+                complete: true,
+                cacheId : randomID(20),
+            }
+        }else if(computeFull){
+            if(this.config.hasLimitedAngle) polygonPoints.push(origin.x, origin.y);
+            this.config.source._polygon3DCache = {
+                pointsCache : {},
+                currentSplit: 0,
+                points: polygonPoints,
+                computeTime: Date.now(),
+                complete: true,
+                cacheId : randomID(20),
+            }
+        }else{
+            this.config.source._polygon3DCache.currentSplit = currentSplit + 1,
+            this.config.source._polygon3DCache.pointsCache[currentSplit] = polygonPoints
+            this.config.source._polygon3DCache.complete = false
+        }
+        this.points = this.config.source._polygon3DCache.points;
     }
 
 

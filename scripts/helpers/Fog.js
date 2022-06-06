@@ -158,8 +158,8 @@ export class Fog{
                     vec4 texel = texture( tDiffuse, vUv );
                     float sceneX = worldSpacePosition.x*factor;
                     float sceneY = worldSpacePosition.z*factor;
-                    float fogTexX = (sceneX)*texDimensions.x/(sceneDimensions.x*factor);
-                    float fogTexY = texDimensions.y - (sceneY)*texDimensions.y/(sceneDimensions.y*factor);
+                    float fogTexX = (sceneX)*texDimensions.x/(sceneDimensions.x*factor)-5.0;
+                    float fogTexY = texDimensions.y - (sceneY)*texDimensions.y/(sceneDimensions.y*factor)-5.0;
 
                     //sample a 10x10 pixel texture
                     vec4 fogTexel = vec4(0.0);
