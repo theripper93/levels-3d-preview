@@ -404,7 +404,6 @@ export class InteractionManager {
       }
 
       if(game.user.hasPermission("SHOW_CURSOR")){
-        console.log(intersect?.point)
         this.broadcastCursorPosition(intersect?.point);
       }
 
