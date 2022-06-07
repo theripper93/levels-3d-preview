@@ -1,5 +1,6 @@
 import * as THREE from "./lib/three.module.js";
 import { OrbitControls } from "./lib/OrbitControls.js";
+import { GameCamera } from "./helpers/GameCamera.js";
 import { TransformControls } from "./lib/TransformControls.js";
 import { GLTFLoader } from "./lib/GLTFLoader.js";
 import {Token3D} from "./entities/token3d.js";
@@ -336,6 +337,8 @@ class Levels3DPreview {
     this.interactionManager.activateListeners();
     this.cursors = new Cursors3D(this);
 
+
+    this.GameCamera = new GameCamera(this.camera, this.controls, this);
     //clipping
     this.renderer.localClippingEnabled = true;
 
@@ -918,6 +921,7 @@ class Levels3DPreview {
       this.allignChatBubbles();
       this.resizeCanvasToDisplaySize(this);
       this.weather?.update(delta);
+      this.GameCamera.update(delta);
       this.controls.update();
       this.fogExploration?.update();
       this.composer.render(time);
@@ -973,35 +977,32 @@ class Levels3DPreview {
   }
 
   animateCamera(delta) {
-    if (
-      this._animateCameraTarget.cameraPosition !== undefined &&
-      this._animateCameraTarget.cameraLookat !== undefined
-    ) {
+
+    if (this._animateCameraTarget.cameraPosition !== undefined) {
       const targetPos = this._animateCameraTarget.cameraPosition.clone();
+      this.camera.position.lerp(targetPos,this._animateCameraTarget.speed ?? 0.04);
+      if(this.camera.position.distanceTo(targetPos) < 0.001){
+        this._animateCameraTarget.cameraPosition = undefined;
+      }
+    }
+    if(this._animateCameraTarget.cameraLookat !== undefined){
       const targetLookat = this._animateCameraTarget.cameraLookat.clone();
       const currentLookat =
         this._animateCameraTarget.currentLookat ?? this.controls.target.clone();
       const lerpLookat = currentLookat.lerp(targetLookat, 0.1);
       this._animateCameraTarget.currentLookat = lerpLookat.clone();
-      this.camera.position.lerp(
-        targetPos,
-        this._animateCameraTarget.speed ?? 0.04
-      );
+
       this.controls.target.set(lerpLookat.x, lerpLookat.y, lerpLookat.z);
       if (
-        this.camera.position.distanceTo(targetPos) < 0.01 &&
-        lerpLookat.distanceTo(targetLookat) < 0.01
+        lerpLookat.distanceTo(targetLookat) < 0.00001
       ) {
         this.controls.target.set(
           targetLookat.x,
           targetLookat.y,
           targetLookat.z
         );
-        this._animateCameraTarget = {
-          cameraPosition: undefined,
-          cameraLookat: undefined,
-          currentLookat: undefined,
-        };
+        this._animateCameraTarget.cameraLookat = undefined;
+        this._animateCameraTarget.currentLookat = undefined;
       }
     }
   }
@@ -1015,19 +1016,23 @@ class Levels3DPreview {
   }
 
   resetCamera(topdown = false) {
+
     const center = this.canvasCenter;
     this.controls.reset();
+    if(!this.GameCamera.enabled){
+      this.controls.maxDistance = 20;
+      this.controls.minDistance = 0.1;
+      this.controls.screenSpacePanning = game.settings.get(
+        "levels-3d-preview",
+        "screenspacepanning"
+      );
+    }
     this.controls.enableDamping = game.settings.get(
       "levels-3d-preview",
       "enabledamping"
     ); //true;
     this.controls.dampingFactor = 0.07;
-    this.controls.maxDistance = 20;
-    this.controls.minDistance = 0.1;
-    this.controls.screenSpacePanning = game.settings.get(
-      "levels-3d-preview",
-      "screenspacepanning"
-    );
+
     this.controls.target.set(center.x, center.y, center.z);
     const loaded = topdown ? false : this.loadInitialCameraPosition();
     if (!loaded) {
@@ -1059,15 +1064,22 @@ class Levels3DPreview {
   }
 
   setCameraToControlled(token) {
-    let cToken = token ?? canvas.tokens.controlled[0];
-    if(!cToken && !game.user.isGM){
-      cToken = canvas.tokens.placeables.find(t => t.isOwner);
+    let cToken,token3D
+    if(!(token instanceof Token3D) && !token?.userData?.original){
+      cToken = token ?? canvas.tokens.controlled[0];
+      if(!cToken && !game.user.isGM){
+        cToken = canvas.tokens.placeables.find(t => t.isOwner);
+      }
+      if (!cToken) return;
+      cToken.control();
+      this.ClipNavigation.setToClosest(cToken.data.elevation);
+      token3D = this.tokens[cToken.id];
+      if (!token3D) return;
+    }else{
+      token3D = token;
+      cToken = token3D.token;
     }
-    if (!cToken) return;
-    cToken.control();
-    this.ClipNavigation.setToClosest(cToken.data.elevation);
-    const token3D = this.tokens[cToken.id];
-    if (!token3D) return;
+
 
     let oldCameraData
 
@@ -1089,11 +1101,14 @@ class Levels3DPreview {
     let targetPosition = cameraPosition.sub(diff);
 
     const headPoint = token3D.head;
-    const collision =
+    let collision
+    if(!this.GameCamera.enabled){
+      collision =
       this.interactionManager.computeSightCollisionFrom3DPositions(
         headPoint,
         targetPosition
       );
+    }
 
     if (collision && targetPosition.y < (this.ClipNavigation._clipHeight ?? Infinity)) {
       const collisionPoint = new THREE.Vector3(

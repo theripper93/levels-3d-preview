@@ -410,6 +410,10 @@ export class InteractionManager {
     }
 
     _clippingFilter(i){
+      const camera = game.Levels3DPreview.camera;
+      if(!i.object.material?.clippingPlanes && camera.near === 0.01) return true;
+      const distToCamera = i.point.distanceTo(camera.position);
+      if(distToCamera < camera.near) return false;
       if(!i.object.material?.clippingPlanes) return true;
       return i.object.material?.clippingPlanes[0].constant > i.point.y
     }
@@ -659,12 +663,13 @@ export class InteractionManager {
       })
       this.clone = entity3D.mesh.clone();
       this.clone.userData.original = entity3D;
+      this.clone.head = entity3D.head;
       entity3D.mesh.traverse(child => {
         if(child.userData){
           child.userData = userDataCache[child.uuid]
         }
       })
-      entity3D.hasClone = true;
+      entity3D.hasClone = this.clone;
       entity3D.updateHiden()
       this._parent.scene.add(this.clone);
     }
@@ -673,7 +678,7 @@ export class InteractionManager {
       if(this.clone){
         const entity3D = this.clone.userData.original;
         this._parent.scene.remove(this.clone);
-        entity3D.hasClone = false;
+        entity3D.hasClone = null;
         entity3D.updateHiden()
         this.clone = null;
       }

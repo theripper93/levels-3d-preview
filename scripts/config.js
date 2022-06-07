@@ -1016,6 +1016,16 @@ Hooks.on("init", () => {
         onDown: () => {if(game.Levels3DPreview._active) game.Levels3DPreview.setCameraToControlled()},
     });
 
+    game.keybindings.register("levels-3d-preview", "lockcamera", {
+        name: game.i18n.localize("levels3dpreview.keybindings.lockcamera"),
+        editable: [
+          {key: "Space"}
+        ],
+        onDown: () => {
+            game.Levels3DPreview.GameCamera.lock = true
+        },
+    });
+
     game.keybindings.register("levels-3d-preview", "panUp", {
         name: game.i18n.localize("levels3dpreview.keybindings.panUp"),
         editable: [

@@ -3,7 +3,7 @@ import {factor} from '../main.js';
 import { Ruler3D } from "./ruler3d.js";
 
 export class RangeFinder {
-  constructor(token, options) {
+  constructor(token, options = {}) {
     if (!token.visible) return;
     this.options = options;
     const RFMode = this._parent.rangeFinderMode
@@ -11,7 +11,7 @@ export class RangeFinder {
     if(RFMode === "combat" && !game.combat?.started) return;
     this.tokenId = token.id;
     this.token = token;
-    this.sources = canvas.tokens.controlled.filter(t => t.id != token.id).map((t) => this._parent.tokens[t.id]);
+    this.sources = (options.sources ?? canvas.tokens.controlled).filter(t => t.id != token.id).map((t) => this._parent.tokens[t.id]);
     if(!this.sources.length) return;
     this.target = this._parent.tokens[token.id].mesh.position.clone().lerp(this._parent.tokens[token.id].head, 0.5);
     this.lineRadius = 0.001;

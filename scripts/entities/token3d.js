@@ -1324,6 +1324,14 @@ export class Token3D {
         this.mesh.position.z
       )
     }
+
+    get mid(){
+      return new THREE.Vector3(
+        this.mesh.position.x,
+        this.mesh.position.y + this.d/2,
+        this.mesh.position.z
+      )
+    }
   }
 
 
