@@ -3,8 +3,9 @@ import {factor} from '../main.js';
 import { Ruler3D } from "./ruler3d.js";
 
 export class RangeFinder {
-  constructor(token) {
+  constructor(token, options) {
     if (!token.visible) return;
+    this.options = options;
     const RFMode = this._parent.rangeFinderMode
     if(RFMode === "none") return;
     if(RFMode === "combat" && !game.combat?.started) return;
@@ -58,7 +59,7 @@ export class RangeFinder {
 
     const label = $(`<div id="levels3d-ruler-text"></div>`);
     $("body").append(label);
-    const text = `${distance} ${canvas.scene.data.gridUnits}.`;
+    const text = this.options.text ?? `${distance} ${canvas.scene.data.gridUnits}.`;
     label.text(text);
     Ruler3D.centerElement(label, midcurve);
     RFCurve.userData.label = label;
@@ -109,7 +110,7 @@ export class RangeFinder {
           }
       }
       const color = CONFIG.Canvas.dispositionColors[disp]
-      return new THREE.Color(color)
+      return new THREE.Color(this.options.color ?? color)
   }
 
   updateText() {

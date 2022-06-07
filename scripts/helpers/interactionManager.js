@@ -540,7 +540,7 @@ export class InteractionManager {
       if(ui.controls.isRuler || this.draggable) return;
       const entity = event.entity;
       if((entity?.tile && canvas.activeLayer.options.objectClass.name !== "Tile" && !entity?.isDoor) || !entity){
-        if(this._downCameraPosition.distanceTo(this._upCameraPosition)<0.01) canvas.activeLayer.releaseAll();
+        if(this._downCameraPosition.distanceTo(this._upCameraPosition)<0.01 && game.settings.get("core","leftClickRelease")) canvas.activeLayer.releaseAll();
       }
       if(!entity) return
       const intersect = event.intersect;

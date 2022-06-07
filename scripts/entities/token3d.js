@@ -20,6 +20,7 @@ export class Token3D {
       this.baseMode = game.settings.get("levels-3d-preview", "baseStyle");
       this.color = this.getColor();
       this.factor = factor;
+      this.dispositionColor = this.getDispColor();
       this.targetSize = 0.1;
       this.baseDepth = 0.008*(canvas.grid.size/100);
       this.elevation3d = 0;
@@ -815,6 +816,10 @@ export class Token3D {
       this._parent.helpers.getBase().then(resp => {
         const base = resp.model;
         const scaleFactor = resp.scale;
+        const showDisp = resp.showDisp;
+        if(showDisp){
+          this.baseColor = this.dispositionColor;
+        }
         const box = new THREE.Box3().setFromObject(base);
         const sphere = box.getBoundingSphere(new THREE.Sphere());
         const maxDimension = sphere.radius*2 //Math.max(box.max.x - box.min.x, box.max.y - box.min.y, box.max.z - box.min.z);
@@ -1230,6 +1235,18 @@ export class Token3D {
       }
       return 0xf2ff00;
     }
+
+    getDispColor(){
+      const disposition = this.token.data.disposition
+      let disp = "NEUTRAL"
+      for(const [k,v] of Object.entries(CONST.TOKEN_DISPOSITIONS)){
+          if(v === disposition){
+              disp = k
+          }
+      }
+      const color = CONFIG.Canvas.dispositionColors[disp]
+      return new THREE.Color(color)
+  }
 
     _onClickLeft(e) {
       const event = {

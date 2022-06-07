@@ -139,7 +139,8 @@ class Levels3DPreview {
           id: "ringHollow",
           path: "modules/levels-3d-preview/assets/tokenBases/ringHollow.glb",
           name: game.i18n.localize(`levels3dpreview.baseStyles.ringHollow`),
-          scale: 0.9,
+          scale: 0.7,
+          showDisp: true,
         },
         {
           id: "jb2around1Indicator",
