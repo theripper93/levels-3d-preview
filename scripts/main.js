@@ -329,7 +329,7 @@ class Levels3DPreview {
     this.renderer.domElement.id = "levels3d";
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.controls.listenToKeyEvents(document);
-    this.controls.keyPanSpeed = 22;
+    this.controls.keyPanSpeed = 35;
     game.settings.get("levels-3d-preview", "cameralockzero") &&
       this.controls.addEventListener("change", this._onCameraChange.bind(this));
     this.ruler = new Ruler3D(this);
@@ -494,7 +494,9 @@ class Levels3DPreview {
       this.resetCamera();
       this._cameraSet = true;
     }
+    this.GameCamera.init();
     this.lights.globalIllumination.setSunlightFromFlags(false);
+    this.interactionManager._cacheKeybinds();
   }
 
   addToken(token) {
@@ -884,14 +886,16 @@ class Levels3DPreview {
       const delta = this.clock.getDelta();
       this.grid?.updateGrid();
       Object.values(this.tokens).forEach((token) => {
-        token.updateVisibility();
-        token.updateProne(delta);
-        token.rotateEffects(delta);
-        if (token.mixer) {
-          token.mixer.update(delta);
-        }
-        if (token.standUp && token.standupFace) {
-          token.faceCamera();
+        if(token){
+          token.updateVisibility();
+          token.updateProne(delta);
+          token.rotateEffects(delta);
+          if (token.mixer) {
+            token.mixer.update(delta);
+          }
+          if (token.standUp && token.standupFace) {
+            token.faceCamera();
+          }
         }
       });
       Object.values(this.tiles).forEach((tile) => {

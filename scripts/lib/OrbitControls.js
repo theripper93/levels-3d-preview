@@ -425,7 +425,6 @@ class OrbitControls extends EventDispatcher {
 			const offset = new Vector3();
 
 			return function pan( deltaX, deltaY ) {
-
 				const element = scope.domElement;
 
 				if ( scope.object.isPerspectiveCamera ) {
@@ -523,7 +522,13 @@ class OrbitControls extends EventDispatcher {
 
 		function handleMouseDownPan( event ) {
 
+			const oldCameraPos = scope.object.position.clone();
 			panStart.set( event.clientX, event.clientY );
+			setTimeout( () => {
+				if(oldCameraPos.distanceTo(scope.object.position) > 0.01) {
+					game.Levels3DPreview.GameCamera.lock = false;
+				}
+			}, 100 );
 
 		}
 
@@ -595,6 +600,8 @@ class OrbitControls extends EventDispatcher {
 
 			scope.update();
 
+			game.Levels3DPreview.GameCamera.currentZoomDist = scope.object.position.y - (game.Levels3DPreview.controls.target.y + game.Levels3DPreview.GameCamera.collisionPoint)
+
 		}
 
 		function handleKeyDown( event ) {
@@ -605,23 +612,22 @@ class OrbitControls extends EventDispatcher {
 
 			const {panUp, panDown, panLeft, panRight} = game.Levels3DPreview.interactionManager._panKeys;
 
-			if(panUp){
+			if(panUp.includes(event.code)){
 				pan( 0, scope.keyPanSpeed );
 				needsUpdate = true;
 			}
-			if(panDown){
+			if(panDown.includes(event.code)){
 				pan( 0, - scope.keyPanSpeed );
 				needsUpdate = true;
 			}
-			if(panLeft){
+			if(panLeft.includes(event.code)){
 				pan( scope.keyPanSpeed, 0 );
 				needsUpdate = true;
 			}
-			if(panRight){
+			if(panRight.includes(event.code)){
 				pan( - scope.keyPanSpeed, 0 );
 				needsUpdate = true;
 			}
-
 			/*switch ( event.code ) {
 
 				case scope.keys.UP:
@@ -649,8 +655,8 @@ class OrbitControls extends EventDispatcher {
 			if ( needsUpdate ) {
 
 				// prevent the browser from scrolling on cursor keys
-				event.preventDefault();
-
+				//event.preventDefault();
+				game.Levels3DPreview.GameCamera.lock = false;
 				scope.update();
 
 			}

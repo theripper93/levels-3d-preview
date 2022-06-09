@@ -108,6 +108,19 @@ export class InteractionManager {
       ts.addEventListener("mouseDown", this._onTransformStart.bind(this));
     }
 
+    _cacheKeybinds(){
+      const panDown = game.keybindings.get("levels-3d-preview", "panDown")
+      const panUp = game.keybindings.get("levels-3d-preview", "panUp")
+      const panLeft = game.keybindings.get("levels-3d-preview", "panLeft")
+      const panRight = game.keybindings.get("levels-3d-preview", "panRight")
+      this._panKeys = {
+        panDown: panDown.map(k => k.key),
+        panUp: panUp.map(k => k.key),
+        panLeft: panLeft.map(k => k.key),
+        panRight: panRight.map(k => k.key)
+      }
+    }
+
       get allowedRulerDrag(){
         return [
           "MeasuredTemplate",
@@ -664,6 +677,7 @@ export class InteractionManager {
       this.clone = entity3D.mesh.clone();
       this.clone.userData.original = entity3D;
       this.clone.head = entity3D.head;
+      this.clone.mid = entity3D.mid;
       entity3D.mesh.traverse(child => {
         if(child.userData){
           child.userData = userDataCache[child.uuid]

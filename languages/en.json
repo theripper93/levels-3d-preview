@@ -21,6 +21,7 @@
         "clipNavigator": {
             "disabled": "Show All",
             "sync": "Sync with Players",
+            "gamecamera": "Toggle Game Camera",
             "syncNotification": "Level View for {{level}} Synced with all Players",
             "cameraToToken": "Focus Camera on Selected Token",
             "automode": "Follow Mode"
@@ -586,6 +587,26 @@
                 "name": "Players Can Send Camera Position",
                 "hint": "Enable the ability to send the camera position for players (default Shift+Q)."
             },
+            "enableGameCamera": {
+                "name": "Enable Game Camera",
+                "hint": "Enable the 'Video Game' like camera. This will be forced on for players while the GM will be albe to toggle it."
+            },
+            "gameCameraMinAngle": {
+                "name": "Min Angle",
+                "hint": "The minimum angle the camera can be rotated to."
+            },
+            "gameCameraMaxAngle": {
+                "name": "Max Angle",
+                "hint": "The maximum angle the camera can be rotated to."
+            },
+            "gameCameraClipping": {
+                "name": "Clipping",
+                "hint": "If enabled hide objects covering the current camera target."
+            },
+            "gameCameraDefaultGm": {
+                "name": "GM Default On",
+                "hint": "Wheter GMs should have the Game Camera toggled on when first loading a scene."
+            },
             "configApp": {
                 "title": "3D Canvas Configuration",
                 "hint": "Configure Global 3D Canvas Settings.",
@@ -595,7 +616,8 @@
                     "token": "Token",
                     "base": "Base",
                     "misc": "Misc",
-                    "perm": "Permissions"
+                    "perm": "Permissions",
+                    "gc": "Game Camera"
                 }
             },
             "baseStyle": {

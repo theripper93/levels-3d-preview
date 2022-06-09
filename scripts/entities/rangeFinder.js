@@ -120,9 +120,9 @@ export class RangeFinder {
   }
 
   destroy(){
-      this.meshes.forEach(mesh => { 
-          mesh.removeFromParent();
-          mesh.userData.label.remove();
+    this.meshes.forEach(mesh => { 
+        mesh.removeFromParent();
+        mesh.userData.label.remove();
     });
     game.Levels3DPreview.rangeFinders = game.Levels3DPreview.rangeFinders.filter(rf => rf != this);
   }

@@ -18,6 +18,7 @@ export class ClipNavigation extends Application{
 
       getData() {
         const data = super.getData();
+        data.isGC = game.user.isGM && game.settings.get("levels-3d-preview", "enableGameCamera");
         const levels = (canvas.scene.getFlag("levels","sceneLevels") ?? [])
         .filter((l) => l[1] !== undefined && l[0] !== undefined)
         .sort((a,b)=>{
@@ -94,6 +95,7 @@ export class ClipNavigation extends Application{
           html.on("input", "input", this._onRangeChange.bind(this));
           html.find("#clip-navigation-range input").on("change", this._onRangeSnap.bind(this));
           html.find("#clip-navigation-range input").trigger("change");
+          html.find("#game-camera-toggle").toggleClass("clip-navigation-enabled", game.Levels3DPreview.GameCamera.enabled)
           html.on("click", "#clip-navigation-camera", ()=>{
             if(game.Levels3DPreview._active) game.Levels3DPreview.setCameraToControlled()
           });
@@ -105,6 +107,10 @@ export class ClipNavigation extends Application{
             this.autoMode = !this.autoMode
             game.settings.set("levels-3d-preview", "clipNavigatorFollowClient", this.autoMode)
             $(e.currentTarget).toggleClass("clip-navigation-enabled")
+          });
+          html.on("click", "#game-camera-toggle", (e)=>{
+            game.Levels3DPreview.GameCamera.toggle()
+            $(e.currentTarget).toggleClass("clip-navigation-enabled", game.Levels3DPreview.GameCamera.enabled)
           });
           if(!this._setOnLoad){
             this.setToClosest();

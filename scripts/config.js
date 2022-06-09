@@ -1032,11 +1032,10 @@ Hooks.on("init", () => {
           {key: "KeyW"}
         ],
         onDown: () => {
-            game.Levels3DPreview.interactionManager._panKeys.panUp = true
             game.Levels3DPreview.controls.screenSpacePanning = false
+            game.Levels3DPreview.GameCamera.lock = false
         },
         onUp: () => {
-            game.Levels3DPreview.interactionManager._panKeys.panUp = false
             game.Levels3DPreview.controls.screenSpacePanning = game.settings.get("levels-3d-preview", "screenspacepanning");
         },
     });
@@ -1047,11 +1046,10 @@ Hooks.on("init", () => {
           {key: "KeyS"}
         ],
         onDown: () => {
-            game.Levels3DPreview.interactionManager._panKeys.panDown = true
             game.Levels3DPreview.controls.screenSpacePanning = false
+            game.Levels3DPreview.GameCamera.lock = false
         },
         onUp: () => {
-            game.Levels3DPreview.interactionManager._panKeys.panDown = false
             game.Levels3DPreview.controls.screenSpacePanning = game.settings.get("levels-3d-preview", "screenspacepanning");
         },
     });
@@ -1062,11 +1060,10 @@ Hooks.on("init", () => {
           {key: "KeyA"}
         ],
         onDown: () => {
-            game.Levels3DPreview.interactionManager._panKeys.panLeft = true
             game.Levels3DPreview.controls.screenSpacePanning = false
+            game.Levels3DPreview.GameCamera.lock = false
         },
         onUp: () => {
-            game.Levels3DPreview.interactionManager._panKeys.panLeft = false
             game.Levels3DPreview.controls.screenSpacePanning = game.settings.get("levels-3d-preview", "screenspacepanning");
         },
     });
@@ -1077,11 +1074,10 @@ Hooks.on("init", () => {
           {key: "KeyD"}
         ],
         onDown: () => {
-            game.Levels3DPreview.interactionManager._panKeys.panRight = true
             game.Levels3DPreview.controls.screenSpacePanning = false
+            game.Levels3DPreview.GameCamera.lock = false
         },
         onUp: () => {
-            game.Levels3DPreview.interactionManager._panKeys.panRight = false
             game.Levels3DPreview.controls.screenSpacePanning = game.settings.get("levels-3d-preview", "screenspacepanning");
         },
     });
