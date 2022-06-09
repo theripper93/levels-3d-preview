@@ -221,17 +221,59 @@ export class Ruler3D {
         const pos1Canvas = Ruler3D.pos3DToCanvas(position1);
         const pos2Canvas = Ruler3D.pos3DToCanvas(position2);
         const ray = new Ray({
-            x: pos1Canvas.x,
-            y: pos1Canvas.y,
+            x: Math.round(pos1Canvas.x),
+            y: Math.round(pos1Canvas.y),
         },
         {
-            x: pos2Canvas.x,
-            y: pos2Canvas.y,
+            x: Math.round(pos2Canvas.x),
+            y: Math.round(pos2Canvas.y),
         })
         return canvas.grid.measureDistances([{ ray }], {gridSpaces: true,})[0].toFixed(1);
     }
 
-    static measureMinTokenDistance(token1,token2){
-        const box1 = new THREE.Box3(new THREE.Vector3(0,0,0), new THREE.Vector3(token1.data.width/factor,token1.losHeight,token1.data.height/factor));
+    static measureMinTokenDistance(origin,target){
+        const square = (canvas.scene.dimensions.size/factor)
+        const halfSquare = square/2;
+        const generatePoints = (token) => {
+            const tokenHeight = (token.token.losHeight-token.token.data.elevation)/canvas.scene.dimensions.distance;
+            const tokenPositions = [];
+            const tokenStart = token.mesh.position.clone();
+            tokenStart.x += -token.token.data.width*halfSquare+halfSquare
+            tokenStart.y += halfSquare
+            tokenStart.z += -token.token.data.height*halfSquare+halfSquare
+
+            for(let i = 0; i < token.token.data.width; i++){
+                for(let j = 0; j < token.token.data.height; j++){
+                    for(let k = 0; k < tokenHeight; k++){
+                        const position = new THREE.Vector3(
+                            tokenStart.x + i*square,
+                            tokenStart.y + k*square,
+                            tokenStart.z + j*square
+                        );
+                        tokenPositions.push(position);
+                    }
+                }
+            }
+            return tokenPositions;
+        }
+        const measurements = [];
+        const originPoints = generatePoints(origin);
+        const targetPoints = generatePoints(target);
+        for(const oPoint of originPoints){
+            for(const tPoint of targetPoints){
+                const distance = Ruler3D.measureDistance(oPoint,tPoint);
+                const sphere1 =  new THREE.Mesh(new THREE.SphereGeometry(0.01,16,16),new THREE.MeshBasicMaterial({color: 0x00ff00}));
+                const sphere2 =  new THREE.Mesh(new THREE.SphereGeometry(0.01,16,16),new THREE.MeshBasicMaterial({color: 0xff0000}));
+                if(distance == 10){
+                    sphere1.position.copy(oPoint);
+                    sphere2.position.copy(tPoint);
+                    game.Levels3DPreview.scene.add(sphere1);
+                    game.Levels3DPreview.scene.add(sphere2);
+                }
+
+                measurements.push(distance);
+            }
+        }
+        return Math.min(...measurements);
     }
 }

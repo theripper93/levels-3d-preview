@@ -1332,6 +1332,10 @@ export class Token3D {
         this.mesh.position.z
       )
     }
+
+    get radius(){
+       return Math.min(this.token.data.width/factor, this.token.data.height/factor)/2.1
+    }
   }
 
 

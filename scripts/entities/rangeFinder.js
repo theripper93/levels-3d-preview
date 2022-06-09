@@ -14,6 +14,7 @@ export class RangeFinder {
     this.sources = (options.sources ?? canvas.tokens.controlled).filter(t => t.id != token.id).map((t) => this._parent.tokens[t.id]);
     if(!this.sources.length) return;
     this.target = this._parent.tokens[token.id].mesh.position.clone().lerp(this._parent.tokens[token.id].head, 0.5);
+    this.target3d = this._parent.tokens[token.id]
     this.lineRadius = 0.001;
     this.meshes = [];
     this.labels = [];
@@ -27,13 +28,13 @@ export class RangeFinder {
 
   init() {
     for(const token of this.sources){
-        this.createCurve(token.mesh.position.clone().lerp(token.head, 0.5));
+        this.createCurve(token.mesh.position.clone().lerp(token.head, 0.5), token);
     }
   }
 
-  createCurve(origin){
+  createCurve(origin, origin3d){
     const target = this.target
-    const distance = Ruler3D.measureDistance(origin, target);
+    const distance = Ruler3D.measureMinTokenDistance(origin3d, this.target3d);
 
     let midcurve = origin.clone().lerp(target, 0.5); //new THREE.Vector3(this._origin.x + (targetPos.x - this._origin.x)/2, this._origin.y + (targetPos.y - this._origin.y)/2, this._origin.z + (targetPos.z - this._origin.z)/2);
     midcurve.y += origin.distanceTo(target)/2;
