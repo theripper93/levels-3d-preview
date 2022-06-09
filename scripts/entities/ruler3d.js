@@ -262,15 +262,6 @@ export class Ruler3D {
         for(const oPoint of originPoints){
             for(const tPoint of targetPoints){
                 const distance = Ruler3D.measureDistance(oPoint,tPoint);
-                const sphere1 =  new THREE.Mesh(new THREE.SphereGeometry(0.01,16,16),new THREE.MeshBasicMaterial({color: 0x00ff00}));
-                const sphere2 =  new THREE.Mesh(new THREE.SphereGeometry(0.01,16,16),new THREE.MeshBasicMaterial({color: 0xff0000}));
-                if(distance == 10){
-                    sphere1.position.copy(oPoint);
-                    sphere2.position.copy(tPoint);
-                    game.Levels3DPreview.scene.add(sphere1);
-                    game.Levels3DPreview.scene.add(sphere2);
-                }
-
                 measurements.push(distance);
             }
         }

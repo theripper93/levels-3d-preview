@@ -59,6 +59,7 @@ export class RangeFinder {
     );
 
     const label = $(`<div id="levels3d-ruler-text"></div>`);
+    if(this.options.style) label.css(this.options.style);
     $("body").append(label);
     const text = this.options.text ?? `${distance} ${canvas.scene.data.gridUnits}.`;
     label.text(text);

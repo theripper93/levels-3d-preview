@@ -386,7 +386,7 @@ export class Tile3D {
               child.geometry.computeBoundsTree();
             
               if(child.material instanceof Array){
-                for(i = 0, l = child.material.length; i < l; i++){
+                for(let i = 0; i < child.material.length; i++){
                     if(isPBR) child.material[i] = textureOrMat;
                     setMaterial(child.material[i]);
                 }

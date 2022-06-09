@@ -10,6 +10,7 @@ import { Wall3D } from "./entities/wall3d.js";
 import { Tile3D } from "./entities/tile3d.js";
 import { Note3D } from "./entities/note3d.js";
 import { Grid3D } from "./entities/grid3d.js";
+import { RangeFinder } from "./entities/rangeFinder.js";
 import { Template3D } from "./entities/template3d.js";
 import { Cursors3D } from "./entities/cursors.js";
 import { FBXLoader } from './lib/FBXLoader.js';
@@ -104,6 +105,9 @@ class Levels3DPreview {
     this.ClipNavigation = null;
     this.debugMode = game.settings.get("levels-3d-preview", "debugMode");
     this.CONFIG = {
+      entityClass: {
+        RangeFinder,
+      },
       autoPan: false,
       tokenAnimations: defaultTokenAnimations,
       skybox: {
