@@ -606,7 +606,7 @@ class OrbitControls extends EventDispatcher {
 
 		function handleKeyDown( event ) {
 
-			if(!game.Levels3DPreview._active) return;
+			if(!game.Levels3DPreview._active || !game.Levels3DPreview.hasFocus) return;
 
 			let needsUpdate = false;
 

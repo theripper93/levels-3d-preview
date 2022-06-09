@@ -286,6 +286,10 @@ class Levels3DPreview {
     this.init3d();
   }
 
+  get hasFocus(){
+    return document.activeElement.classList.contains("vtt")
+  }
+
   init3d() {
     this._sharedContext = game.settings.get("levels-3d-preview", "sharedContext")
     this.camera = new THREE.PerspectiveCamera(

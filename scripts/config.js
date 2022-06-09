@@ -997,7 +997,10 @@ Hooks.on("init", () => {
         editable: [
           {key: "KeyR", modifiers: [ SHIFT ]}
         ],
-        onDown: () => {if(game.Levels3DPreview._active) game.Levels3DPreview.resetCamera()},
+        onDown: () => {
+            if(!game.Levels3DPreview._active || !game.Levels3DPreview.hasFocus) return;
+            game.Levels3DPreview.resetCamera()
+        },
     });
 
     game.keybindings.register("levels-3d-preview", "topdownView", {
@@ -1005,7 +1008,10 @@ Hooks.on("init", () => {
         editable: [
           {key: "KeyT", modifiers: [ SHIFT ]}
         ],
-        onDown: () => {if(game.Levels3DPreview._active) game.Levels3DPreview.resetCamera(true)},
+        onDown: () => {
+            if(!game.Levels3DPreview._active || !game.Levels3DPreview.hasFocus) return;
+            game.Levels3DPreview.resetCamera(true)
+        },
     });
 
     game.keybindings.register("levels-3d-preview", "cameraToToken", {
@@ -1013,7 +1019,10 @@ Hooks.on("init", () => {
         editable: [
           {key: "KeyX", modifiers: [ SHIFT ]}
         ],
-        onDown: () => {if(game.Levels3DPreview._active) game.Levels3DPreview.setCameraToControlled()},
+        onDown: () => {
+            if(!game.Levels3DPreview._active || !game.Levels3DPreview.hasFocus) return;
+            game.Levels3DPreview.setCameraToControlled()
+        },
     });
 
     game.keybindings.register("levels-3d-preview", "lockcamera", {
@@ -1022,7 +1031,19 @@ Hooks.on("init", () => {
           {key: "Space"}
         ],
         onDown: () => {
+            if(!game.Levels3DPreview._active || !game.Levels3DPreview.hasFocus) return;
             game.Levels3DPreview.GameCamera.lock = true
+        },
+    });
+
+    game.keybindings.register("levels-3d-preview", "lockcamera", {
+        name: game.i18n.localize("levels3dpreview.keybindings.lockcamera"),
+        editable: [
+          {key: "KeyO"}
+        ],
+        onDown: () => {
+            if(!game.Levels3DPreview._active || !game.Levels3DPreview.hasFocus) return;
+            game.Levels3DPreview.GameCamera.toggleTopDown()
         },
     });
 
@@ -1032,6 +1053,7 @@ Hooks.on("init", () => {
           {key: "KeyW"}
         ],
         onDown: () => {
+            if(!game.Levels3DPreview._active || !game.Levels3DPreview.hasFocus) return;
             game.Levels3DPreview.controls.screenSpacePanning = false
             game.Levels3DPreview.GameCamera.lock = false
         },
@@ -1046,6 +1068,7 @@ Hooks.on("init", () => {
           {key: "KeyS"}
         ],
         onDown: () => {
+            if(!game.Levels3DPreview._active || !game.Levels3DPreview.hasFocus) return;
             game.Levels3DPreview.controls.screenSpacePanning = false
             game.Levels3DPreview.GameCamera.lock = false
         },
@@ -1060,6 +1083,7 @@ Hooks.on("init", () => {
           {key: "KeyA"}
         ],
         onDown: () => {
+            if(!game.Levels3DPreview._active || !game.Levels3DPreview.hasFocus) return;
             game.Levels3DPreview.controls.screenSpacePanning = false
             game.Levels3DPreview.GameCamera.lock = false
         },
@@ -1074,6 +1098,7 @@ Hooks.on("init", () => {
           {key: "KeyD"}
         ],
         onDown: () => {
+            if(!game.Levels3DPreview._active || !game.Levels3DPreview.hasFocus) return;
             game.Levels3DPreview.controls.screenSpacePanning = false
             game.Levels3DPreview.GameCamera.lock = false
         },
@@ -1087,14 +1112,20 @@ Hooks.on("init", () => {
         editable: [
           {key: "KeyQ", modifiers: [ SHIFT ]}
         ],
-        onDown: () => {if(game.Levels3DPreview._active) game.Levels3DPreview.helpers.focusCameraToCursor()},
+        onDown: () => {
+            if(!game.Levels3DPreview._active || !game.Levels3DPreview.hasFocus) return;
+            game.Levels3DPreview.helpers.focusCameraToCursor()
+        },
     });
     game.keybindings.register("levels-3d-preview", "ping", {
         name: game.i18n.localize("levels3dpreview.keybindings.ping"),
         editable: [
           {key: "KeyE", modifiers: [ SHIFT ]}
         ],
-        onDown: () => {if(game.Levels3DPreview._active) game.Levels3DPreview.helpers._ping()},
+        onDown: () => {
+            if(!game.Levels3DPreview._active || !game.Levels3DPreview.hasFocus) return;
+             game.Levels3DPreview.helpers._ping()
+            },
     });
 
     game.keybindings.register("levels-3d-preview", "freeMode", {
@@ -1102,7 +1133,9 @@ Hooks.on("init", () => {
         editable: [
           {key: "KeyF"}
         ],
-        onDown: () => {game.Levels3DPreview.interactionManager.isFreeMode = true},
+        onDown: () => {
+            game.Levels3DPreview.interactionManager.isFreeMode = true
+        },
         onUp: () => {
             game.Levels3DPreview.interactionManager.isFreeMode = false
             game.Levels3DPreview.interactionManager.forceFree = false
@@ -1115,6 +1148,7 @@ Hooks.on("init", () => {
           {key: "KeyS"}
         ],
         onDown: () => {
+            if(!game.Levels3DPreview._active || !game.Levels3DPreview.hasFocus) return;
             game.Levels3DPreview.transformControls.setMode('scale')
             //game.Levels3DPreview.transformControls.showY = false;
         },
@@ -1126,6 +1160,7 @@ Hooks.on("init", () => {
           {key: "KeyT"}
         ],
         onDown: () => {
+            if(!game.Levels3DPreview._active || !game.Levels3DPreview.hasFocus) return;
             game.Levels3DPreview.transformControls.setMode('translate')
             //game.Levels3DPreview.transformControls.showY = true;
         },
@@ -1137,6 +1172,7 @@ Hooks.on("init", () => {
           {key: "KeyR"}
         ],
         onDown: () => {
+            if(!game.Levels3DPreview._active || !game.Levels3DPreview.hasFocus) return;
             game.Levels3DPreview.transformControls.setMode('rotate')
             //game.Levels3DPreview.transformControls.showY = true;
         },
@@ -1148,6 +1184,7 @@ Hooks.on("init", () => {
           {key: "KeyG"}
         ],
         onDown: () => {
+            if(!game.Levels3DPreview._active || !game.Levels3DPreview.hasFocus) return;
             game.Levels3DPreview.interactionManager.toggleGizmo();
         },
     });
@@ -1158,6 +1195,7 @@ Hooks.on("init", () => {
           {key: "KeyQ"}
         ],
         onDown: () => {
+            if(!game.Levels3DPreview._active || !game.Levels3DPreview.hasFocus) return;
             const updates = [];
             for(let placeable of canvas.activeLayer.controlled){
                 const modes = ["fit", "stretch", "tile"]

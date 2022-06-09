@@ -13,6 +13,7 @@ export class GameCamera{
         this._currentZoomDist = 1;
         this.maxDistTarget = 1;
         this.lock = true;
+        this.topDown = false;
         this.CONFIG = {};
         this.CONSTS = {
             MINDIST: 0.2,
@@ -50,14 +51,38 @@ export class GameCamera{
 
     init(){
         if(!this.enabled) return;
+        this.computeBounds();
         this.setInitalParams();
         this.enabled = this.CONFIG.defaultGm;
+    }
+
+    computeBounds(){
+        const dimensions = canvas.scene.dimensions;
+        const minBounds = new THREE.Vector3((dimensions.paddingX/2)/factor,-100000,(dimensions.paddingY/2)/factor);
+        const maxBounds = new THREE.Vector3((dimensions.sceneWidth+dimensions.paddingX*1.5)/factor,100000,(dimensions.sceneHeight+dimensions.paddingY*1.5)/factor);
+        const box = new THREE.Box3(minBounds, maxBounds);
+        this._bounds = box;
+    }
+
+    toggleTopDown(){
+        this.topDown = !this.topDown;
+        if(this.topDown){
+            this.CONFIG.minPolarAngle = this.CONFIG.minPolarAngleTopDown;
+            this.CONFIG.maxPolarAngle = this.CONFIG.maxPolarAngleTopDown;
+        }else{
+            this.CONFIG.minPolarAngle = this.CONFIG.minPolarAngleRegular;
+            this.CONFIG.maxPolarAngle = this.CONFIG.maxPolarAngleRegular;
+        }
     }
 
     setInitalParams(){
         this.CONFIG = {
             minPolarAngle : Math.toRadians(game.settings.get("levels-3d-preview", "gameCameraMinAngle") ?? 45),
             maxPolarAngle : Math.toRadians(game.settings.get("levels-3d-preview", "gameCameraMaxAngle") ?? 45),
+            minPolarAngleRegular : Math.toRadians(game.settings.get("levels-3d-preview", "gameCameraMinAngle") ?? 45),
+            maxPolarAngleRegular : Math.toRadians(game.settings.get("levels-3d-preview", "gameCameraMaxAngle") ?? 45),
+            minPolarAngleTopDown : 0,
+            maxPolarAngleTopDown : 0,
             clipping: game.settings.get("levels-3d-preview", "gameCameraClipping"),
             defaultGm: game.settings.get("levels-3d-preview", "gameCameraDefaultGm"),
         }
@@ -87,6 +112,16 @@ export class GameCamera{
         if(!this.enabled) return;
         this.setClipping();
         this.setHeight();
+        this.keepInBounds();
+    }
+
+    keepInBounds(){
+        if(!this.enabled || !this._bounds) return;
+        if(!this._bounds.containsPoint(this.camera.position) || !this._bounds.containsPoint(this.controls.target)){
+            this._bounds.clampPoint(this.camera.position, this.camera.position);
+            this._bounds.clampPoint(this.controls.target, this.controls.target);
+        }
+
     }
 
     update(delta){
