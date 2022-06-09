@@ -56,8 +56,8 @@ export class GameCamera{
 
     setInitalParams(){
         this.CONFIG = {
-            minPolarAngle : Math.toRadians(game.settings.get("levels-3d-preview", "gameCameraMinAngle")),
-            maxPolarAngle : Math.toRadians(game.settings.get("levels-3d-preview", "gameCameraMaxAngle")),
+            minPolarAngle : Math.toRadians(game.settings.get("levels-3d-preview", "gameCameraMinAngle") ?? 45),
+            maxPolarAngle : Math.toRadians(game.settings.get("levels-3d-preview", "gameCameraMaxAngle") ?? 45),
             clipping: game.settings.get("levels-3d-preview", "gameCameraClipping"),
             defaultGm: game.settings.get("levels-3d-preview", "gameCameraDefaultGm"),
         }

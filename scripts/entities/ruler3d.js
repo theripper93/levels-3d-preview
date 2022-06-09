@@ -230,4 +230,8 @@ export class Ruler3D {
         })
         return canvas.grid.measureDistances([{ ray }], {gridSpaces: true,})[0].toFixed(1);
     }
+
+    static measureMinTokenDistance(token1,token2){
+        const box1 = new THREE.Box3(new THREE.Vector3(0,0,0), new THREE.Vector3(token1.data.width/factor,token1.losHeight,token1.data.height/factor));
+    }
 }
