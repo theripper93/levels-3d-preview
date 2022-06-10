@@ -89,7 +89,10 @@ export class Fog{
     generateTexture(){
         if(this._sharedContext){
             this.pixiRenderTexture?.destroy(true)
-            this.pixiRenderTexture = PIXI.RenderTexture.create({width: canvas.dimensions.width, height: canvas.dimensions.height, resolution: 1});
+            const maxDimension = Math.max(canvas.dimensions.width, canvas.dimensions.height);
+            const maxResolution = this._parent.renderer.capabilities.maxTextureSize
+            const fogTexResolution = Math.min(maxResolution/maxDimension, 1)
+            this.pixiRenderTexture = PIXI.RenderTexture.create({width: canvas.dimensions.width, height: canvas.dimensions.height, resolution: fogTexResolution});
             this.texWidth = canvas.dimensions.width;
             this.texHeight = canvas.dimensions.height;
             if(canvas.scene.data.fogExploration) canvas.app.renderer.render(canvas.sight.revealed, {renderTexture: this.pixiRenderTexture, clear: false});
