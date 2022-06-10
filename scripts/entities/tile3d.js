@@ -228,7 +228,7 @@ export class Tile3D {
     async initInstanced(){
         const model = await this.getModel();
         const {textureOrMat, isPBR} = await this.getTextureOrMat();
-        const object = game.Levels3DPreview.helpers.groundModel(model.scene);
+        const object = model.scene
         const box = new THREE.Box3().setFromObject(object);
         const gap = this.gap*canvas.grid.size/factor;
         const grid = (canvas.grid.size * this.scale)/factor+gap;

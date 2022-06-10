@@ -275,7 +275,7 @@ Hooks.on("renderSceneConfig", (app,html)=>{
             label: game.i18n.localize("levels3dpreview.flags.particleSize.label"),
             default: 20,
             min: 1,
-            max: 100,
+            max: 10000,
             step: 1,
         },
         "particleColor": {
