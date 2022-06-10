@@ -318,6 +318,9 @@
             "autoCenter": {
                 "label": "Auto Center"
             },
+            "autoGround": {
+                "label": "Auto Ground"
+            },
             "rotationX" : {
                 "label": "Rotation X"
             },

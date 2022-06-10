@@ -102,6 +102,7 @@ export class Tile3D {
         this.tiltZ = this.tile.document.getFlag("levels-3d-preview", "tiltZ") ?? 0;
         this.tiltZ = Math.toRadians(this.tiltZ);
         this.autoCenter = this.tile.document.getFlag("levels-3d-preview", "autoCenter") ?? false;
+        this.autoGround = this.tile.document.getFlag("levels-3d-preview", "autoGround") ?? false;
         this.textureMode = this.tile.document.getFlag("levels-3d-preview", "textureMode") ?? "stretch";
         this.textureRepeat = this.tile.document.getFlag("levels-3d-preview", "textureRepeat") ?? 1;
         this.wasFreeMode = this.tile.document.getFlag("levels-3d-preview", "wasFreeMode") ?? false;
@@ -173,7 +174,7 @@ export class Tile3D {
         const stretch = this.fillType === "stretch";
         const model = await this.getModel();
         const {textureOrMat, isPBR} = await this.getTextureOrMat();
-        const object = game.Levels3DPreview.helpers.groundModel(model.scene);
+        const object = game.Levels3DPreview.helpers.groundModel(model.scene, this.autoGround, this.autoCenter);
         const box = new THREE.Box3().setFromObject(object);
         const mWidth = box.max.x - box.min.x;
         const mHeight = box.max.z - box.min.z;
@@ -348,7 +349,7 @@ export class Tile3D {
         const filePath = this.gtflPath;
         const extension = filePath.split(".").pop().toLowerCase();
         const model = await game.Levels3DPreview.helpers.loadModel(this.gtflPath);
-        game.Levels3DPreview.helpers.groundModel(model.model, this.autoCenter)
+        game.Levels3DPreview.helpers.groundModel(model.model, this.autoGround ,this.autoCenter)
         if(model) return model;
         //make 1x1 cube
         const errText = game.i18n.localize("levels3dpreview.errors.filenotsupported") + "(" + extension +"): " + filePath + " Tile: " + this.tile.id
@@ -448,11 +449,11 @@ export class Tile3D {
 
         const worldRotation = new THREE.Euler().setFromQuaternion(this.mesh.getWorldQuaternion(new THREE.Quaternion()));
 
-        if(Math.abs(worldRotation.x) === Math.PI && Math.abs(worldRotation.z) === Math.PI){
+        /*if(Math.abs(worldRotation.x) === Math.PI && Math.abs(worldRotation.z) === Math.PI){
             worldRotation.y = (Math.PI + (worldRotation.y))*Math.sign(worldRotation.x);
             worldRotation.x = 0;
             worldRotation.z = 0;
-        }
+        }*/
 
         const currentTiltX = worldRotation.x;
         const currentTiltZ = worldRotation.z;
@@ -518,7 +519,7 @@ export class Tile3D {
         const z3d = worldPosition.z;
         const x = x3d * factor - this.tile.data.width/2;
         const y = z3d * factor - this.tile.data.height/2;
-        const z = Math.round(((y3d * factor * canvas.dimensions.distance)/(canvas.dimensions.size))*100)/100;
+        const z = ((y3d * factor * canvas.dimensions.distance)/(canvas.dimensions.size));
         const useSnapped = Ruler3D.useSnapped() && !transform;
         const snapped = canvas.grid.getSnappedPosition(x, y);
         let {rangeTop, rangeBottom} = _levels.getFlagsForObject(this.tile);
@@ -546,7 +547,7 @@ export class Tile3D {
                     wasFreeMode: this.wasFreeMode,
                 },
                 levels: {
-                    rangeBottom: Math.round((tileFlags.rangeBottom + deltas.elevation)*1000)/1000
+                    rangeBottom: (tileFlags.rangeBottom + deltas.elevation)
                 }
             },
           }

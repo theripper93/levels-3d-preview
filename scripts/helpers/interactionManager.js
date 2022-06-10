@@ -65,15 +65,16 @@ export class InteractionManager {
         collision: collisionObjects,
         sight: sightObjects
       }
+      canvas.tokens.controlled.forEach(t => t.updateSource())
     }
 
-    computeSightCollision(v1,v2, type = "collision"){
+    computeSightCollision(v1,v2, type = "collision", elongate = false){
       const origin = Ruler3D.posCanvasTo3d(v1);
       const target = Ruler3D.posCanvasTo3d(v2);
-      return this.computeSightCollisionFrom3DPositions(origin, target, type);
+      return this.computeSightCollisionFrom3DPositions(origin, target, type, elongate);
     }
 
-    computeSightCollisionFrom3DPositions(origin,target, type){
+    computeSightCollisionFrom3DPositions(origin,target, type, elongate){
       const direction = target.clone().sub(origin).normalize();
       const distance = origin.distanceTo(target);
       this.sightRaycaster.set(origin, direction);
@@ -82,6 +83,9 @@ export class InteractionManager {
       if(!collisions.length) return false;
       const collision = collisions[0];
       if(collision.distance > distance) return false;
+      if(elongate){
+        return collision.point.add(direction.multiplyScalar(0.025));
+      }
       return collision.point;
     }
 
@@ -276,7 +280,8 @@ export class InteractionManager {
           return canvas.tokens._onDropActorData(event, data);
         }
         data.flags["levels-3d-preview"] = {
-          model3d: data.img
+          model3d: data.img,
+          autoGround: true,
         }
         if(data.type === "Tile" && canvas.activeLayer.options.objectClass.embeddedName === "Tile"){
           const object3d = await this._parent.helpers.loadModel(data.img)

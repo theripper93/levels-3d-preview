@@ -632,6 +632,11 @@ Hooks.on("renderTileConfig", (app,html)=>{
             label: game.i18n.localize("levels3dpreview.flags.autoCenter.label"),
             default: false,
         },
+        "autoGround": {
+            type: "checkbox",
+            label: game.i18n.localize("levels3dpreview.flags.autoGround.label"),
+            default: false,
+        },
         "enableAnim": {
             type: "checkbox",
             label: game.i18n.localize("levels3dpreview.flags.enableAnim.label"),
