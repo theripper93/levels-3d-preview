@@ -937,7 +937,7 @@ class Levels3DPreview {
       this.GameCamera.update(delta);
       this.controls.update();
       this.fogExploration?.update();
-      this.composer.render(time);
+      this.composer.render(time)
       if(this._sharedContext){
         canvas.app.renderer.reset()
         this.renderer.resetState();

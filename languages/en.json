@@ -604,7 +604,7 @@
             },
             "enableGameCamera": {
                 "name": "Enable Game Camera",
-                "hint": "Enable the 'Video Game' like camera. This will be forced on for players while the GM will be albe to toggle it."
+                "hint": "Enable the 'Video Game' like camera. This will be forced on for players while the GM will be able to toggle it."
             },
             "gameCameraMinAngle": {
                 "name": "Min Angle",
