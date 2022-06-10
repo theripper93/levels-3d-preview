@@ -112,6 +112,10 @@ export class ClipNavigation extends Application{
             game.Levels3DPreview.GameCamera.toggle()
             $(e.currentTarget).toggleClass("clip-navigation-enabled", game.Levels3DPreview.GameCamera.enabled)
           });
+          html.on("click", "#clip-navigation-controls", (e)=>{
+            game.Levels3DPreview.interactionManager.showIntro(true)
+          });
+          
           if(!this._setOnLoad){
             this.setToClosest();
             this._setOnLoad = true;

@@ -1036,8 +1036,8 @@ Hooks.on("init", () => {
         },
     });
 
-    game.keybindings.register("levels-3d-preview", "lockcamera", {
-        name: game.i18n.localize("levels3dpreview.keybindings.lockcamera"),
+    game.keybindings.register("levels-3d-preview", "gameCameraTopDown", {
+        name: game.i18n.localize("levels3dpreview.keybindings.gameCameraTopDown"),
         editable: [
           {key: "KeyO"}
         ],

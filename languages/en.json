@@ -3,7 +3,19 @@
         "controls": {
             "preview3d": "Toggle 3D Mode",
             "miniCanvas": "Popout/Restore Canvas",
-            "loading": "Loading 3D Canvas..."
+            "loading": "Loading 3D Canvas...",
+            "gameCameraIntro": {
+                "title": "Welcome to 3D Canvas",
+                "intro": "Here are the basic controls. Press the <strong>?</strong> icon in the scene navigator controls (Top Left of the Chat Sidebar) to show this again.",
+                "pan": "To <strong>Pan</strong>, use the <strong>WASD</strong> keys or <strong>Drag</strong> while Holding the Right Mouse Button.",
+                "rotate": "To <strong>Rotate</strong>, <strong>Drag</strong> while Holding the Left Mouse Button.",
+                "zoom": "To <strong>Zoom</strong>, use the <strong>Mouse Wheel</strong>",
+                "topdown": "To Toggle <strong>Top-Down</strong> view use the <strong>O</strong> key.",
+                "locking": "<strong>Manually Panning</strong> will <strong>Unlock</strong> the camera. Press <strong>Spacebar</strong> to set the camera back to <strong>Auto Mode</strong>",
+                "movement": "To <strong>Move</strong> your token use the <strong>Arrow Keys</strong> or <strong>Drag & Drop</strong>. While dragging, use <strong>Mouse Wheel</strong> to <strong>Change Elevation</strong>.",
+                "elevation": "After changing elevation manually, you will <strong>Move only on that elevation</strong>, to <strong>re-enable snapping</strong> tap <strong>F</strong> while dragging.",
+                "rebind": "You can <strong>Rebind</strong> the keys in the settings."
+            }
         },
         "errors": {
             "filenotsupported": "File format not supported or missing",
@@ -24,13 +36,16 @@
             "gamecamera": "Toggle Game Camera",
             "syncNotification": "Level View for {{level}} Synced with all Players",
             "cameraToToken": "Focus Camera on Selected Token",
-            "automode": "Follow Mode"
+            "automode": "Follow Mode",
+            "controls": "Show Controls"
         },
         "keybindings":{
             "dialog": {
                 "title": "3D Canvas: Remove Core Keybindings",
                 "content": "For 3D Canvas controls to not overlap core controls, it's higly suggested to remove the core WASD Keybindings. You will still be able to move Tokens or other Entities with Arrow Keys or NumPad. Do you want to remove them?"
             },
+            "lockcamera": "Enable Camera Auto Mode (Game Camera Only)",
+            "gameCameraTopDown": "Toggle Top-Down Camera (Game Camera Only)",
             "rotate": "Tile Editor: Rotate",
             "translate": "Tile Editor: Translate",
             "toggleGizmo": "Tile Editor: Toggle Gizmo",

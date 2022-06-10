@@ -867,6 +867,20 @@ export class InteractionManager {
     
     }
 
+    async showIntro(frombutton = false){
+      if(game.settings.get("levels-3d-preview", "controlsShown") && !frombutton) return;
+      const dialogHtml = await renderTemplate("modules/levels-3d-preview/templates/gameCameraIntro.hbs",{})
+      Dialog.prompt({
+        title: game.i18n.localize(`levels3dpreview.controls.gameCameraIntro.title`),
+        content: dialogHtml,
+        rejectClose: false,
+        callback: () => {
+          game.settings.set("levels-3d-preview", "controlsShown", true)
+        },
+        close: () => {},
+      });
+    }
+
     async removeWASDBindings(){
 
       Dialog.confirm({

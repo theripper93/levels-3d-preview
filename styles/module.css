@@ -35,6 +35,10 @@
     transition-delay: 2s;
 }
 
+#clip-navigation #clip-navigation-btns{
+    text-align: center;
+}
+
 #clip-navigation:hover{
     opacity: 1;
     transition-delay: 0s;
