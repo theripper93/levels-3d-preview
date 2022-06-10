@@ -245,7 +245,7 @@ export class InteractionManager {
         }
       }
 
-      _onDrop(event) {
+      async _onDrop(event) {
         if(!game.Levels3DPreview._active) return;
         event.preventDefault();
     
@@ -269,7 +269,7 @@ export class InteractionManager {
             brMode: 2,
           }
         }
-        if(data.type === "Actor"){
+        if(data.type === "Actor" && canvas.activeLayer.options.objectClass.embeddedName === "Token"){
           Hooks.once("preCreateToken", (token)=>{
             token.data.update({elevation: Math.trunc(data.elevation*100)/100, flags: data.flags})
           })
@@ -278,9 +278,14 @@ export class InteractionManager {
         data.flags["levels-3d-preview"] = {
           model3d: data.img
         }
-        if(data.type === "Tile"){
+        if(data.type === "Tile" && canvas.activeLayer.options.objectClass.embeddedName === "Tile"){
+          const object3d = await this._parent.helpers.loadModel(data.img)
+          const modelBB = new THREE.Box3().setFromObject(object3d.model)
+          const widthFactor = modelBB.max.x - modelBB.min.x
+          const heightFactor = modelBB.max.y - modelBB.min.y
+          
           const useSnapped = Ruler3D.useSnapped();
-          const size = canvas.grid.size*(canvas.grid.size/data.tileSize);
+          const size = canvas.grid.size*(canvas.grid.size/data.tileSize)*Math.max(widthFactor, heightFactor);
           let snapped;
           if(useSnapped){
             snapped = canvas.grid.getSnappedPosition(data.x - size/2,data.y - size/2)
@@ -556,6 +561,7 @@ export class InteractionManager {
     _onClickLeft(event){
       if(ui.controls.isRuler || this.draggable) return;
       const entity = event.entity;
+      if(entity?.placeable?.data?.locked) return;
       if((entity?.tile && canvas.activeLayer.options.objectClass.name !== "Tile" && !entity?.isDoor) || !entity){
         if(this._downCameraPosition.distanceTo(this._upCameraPosition)<0.01 && game.settings.get("core","leftClickRelease")) canvas.activeLayer.releaseAll();
       }
@@ -584,6 +590,7 @@ export class InteractionManager {
     _onClickLeft2(event){
       const entity = event.entity;
       if(!entity) return;
+      if(entity?.placeable?.data?.locked) return;
       const intersect = event.intersect;
       entity._onClickLeft2(event)
     }

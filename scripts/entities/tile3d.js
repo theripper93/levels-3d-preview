@@ -101,6 +101,7 @@ export class Tile3D {
         this.tiltX = Math.toRadians(this.tiltX);
         this.tiltZ = this.tile.document.getFlag("levels-3d-preview", "tiltZ") ?? 0;
         this.tiltZ = Math.toRadians(this.tiltZ);
+        this.autoCenter = this.tile.document.getFlag("levels-3d-preview", "autoCenter") ?? false;
         this.textureMode = this.tile.document.getFlag("levels-3d-preview", "textureMode") ?? "stretch";
         this.textureRepeat = this.tile.document.getFlag("levels-3d-preview", "textureRepeat") ?? 1;
         this.wasFreeMode = this.tile.document.getFlag("levels-3d-preview", "wasFreeMode") ?? false;
@@ -212,7 +213,7 @@ export class Tile3D {
         this.mesh = container;
 
         container.add(object);
-        object.position.set(0,0,0);
+        //object.position.set(0,0,0);
         container.position.set(this.center.x,this.center.y,this.center.z);
         container.rotation.set(this.tiltX,-this.angle*this.rotSign,this.tiltZ);
         container.userData.hitbox = container;
@@ -347,6 +348,7 @@ export class Tile3D {
         const filePath = this.gtflPath;
         const extension = filePath.split(".").pop().toLowerCase();
         const model = await game.Levels3DPreview.helpers.loadModel(this.gtflPath);
+        game.Levels3DPreview.helpers.groundModel(model.model, this.autoCenter)
         if(model) return model;
         //make 1x1 cube
         const errText = game.i18n.localize("levels3dpreview.errors.filenotsupported") + "(" + extension +"): " + filePath + " Tile: " + this.tile.id

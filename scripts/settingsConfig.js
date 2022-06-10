@@ -38,7 +38,6 @@ class canvas3dConfig extends FormApplication{
 
 	async _updateObject(event, formData) {
     for(let [key, value] of Object.entries(formData)){
-      debugger
         await game.settings.set("levels-3d-preview", key, value);
     }
     game.settings.set("levels-3d-preview", "sceneReload", !game.settings.get("levels-3d-preview", "sceneReload"));

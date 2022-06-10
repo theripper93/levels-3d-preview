@@ -173,10 +173,21 @@ export class Helpers {
       : await this.loadTexture(path);
   }
 
-  groundModel(object){
+  groundModel(object, autocenter = false){
     const box = new THREE.Box3().setFromObject(object);
+    const width = box.max.x - box.min.x;
+    const height = box.max.z - box.min.z;
     const minY = box.min.y;
     object.position.y -= minY;
+    if(autocenter){
+      object.position.x -= box.min.x;
+      object.position.z -= box.min.z;
+      object.position.x -= width / 2;
+      object.position.z -= height / 2;
+    }
+    const group = new THREE.Group();
+    group.add(object);
+    return group;
     /*object.traverse((child) => {
       if (child.isMesh) {
         child.position.y -= minY;

@@ -587,6 +587,7 @@ Hooks.on("renderTokenConfig", (app,html)=>{
 })
 
 Hooks.on("renderTileConfig", (app,html)=>{
+    if(html.find(`a[data-tab="levels-3d-preview"]>`).length) return;
     const injected = injectConfig.inject(app,html,{
         "moduleId": "levels-3d-preview",
         "tab" : {
@@ -625,6 +626,11 @@ Hooks.on("renderTileConfig", (app,html)=>{
             type: "color",
             label: game.i18n.localize("levels3dpreview.flags.tint.label"),
             default: "#ffffff",
+        },
+        "autoCenter": {
+            type: "checkbox",
+            label: game.i18n.localize("levels3dpreview.flags.autoCenter.label"),
+            default: false,
         },
         "enableAnim": {
             type: "checkbox",
@@ -756,7 +762,7 @@ Hooks.on("renderTileConfig", (app,html)=>{
         }
     })
 
-    const advancedSettings = ["imageTexture", "textureMode", "textureRepeat","enableAnim","color","animSpeed","animIndex","paused","tiltX","tiltZ","yScale"];
+    const advancedSettings = ["autoCenter","imageTexture", "textureMode", "textureRepeat","enableAnim","color","animSpeed","animIndex","paused","tiltX","tiltZ","yScale"];
 
     injectAdvancedToggle(app,html,advancedSettings, injected);
 
