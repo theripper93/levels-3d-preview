@@ -27,7 +27,7 @@ Hooks.once('ready', async function() {
             return
         }
         if(!game.Levels3DPreview?.object3dSight || !game.Levels3DPreview?.fogExploration) return;
-        const splits = 2;
+        const splits = 8;
         const timeoutLimit = splits*64;
         const polygonPoints = [];
         const aMax = this.config.aMax

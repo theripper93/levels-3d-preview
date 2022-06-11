@@ -10,7 +10,7 @@ export class Exporter{
     async export(){
         const exportData = await this.renderDialog();
         if(!exportData) return;
-        let objects = exportData.all ? this._parent.scene : this._parent.scene.children.filter((o) => {
+        let objects = exportData.all ? this._parent.scene.children : this._parent.scene.children.filter((o) => {
             const documentType = o.userData?.entity3D?.embeddedName;
             if(exportData.background && o.userData?.isBackground) return true;
             if(!documentType) return false;
