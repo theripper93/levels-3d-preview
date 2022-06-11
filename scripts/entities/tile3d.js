@@ -507,7 +507,7 @@ export class Tile3D {
         this.mesh.visible = !this.tile.data.hidden;
         if(game.Levels3DPreview.mirrorLevelsVisibility && this.tile.data.overhead){
             const isLevelsVisible = _levels.floorContainer.spriteIndex[this.tile.id]?.parent ? true : false;
-            this.mesh.visible = this.tile.visible || isLevelsVisible;
+            this.mesh.visible = this.tile.occluded ? false : this.tile.visible || isLevelsVisible;
         }
     }
 
