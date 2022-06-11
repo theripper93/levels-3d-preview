@@ -98,7 +98,7 @@ export class Fog{
             if(canvas.scene.data.fogExploration) canvas.app.renderer.render(canvas.sight.revealed, {renderTexture: this.pixiRenderTexture, clear: false});
             canvas.app.renderer.render(canvas.sight.vision, {renderTexture: this.pixiRenderTexture, clear: false});
             const texProps = this._parent.renderer.properties.get(this.webglFogTexture);
-            texProps.__webglTexture = Object.values(this.pixiRenderTexture.baseTexture._glTextures)[0].texture
+            texProps.__webglTexture = Object.values(this.pixiRenderTexture.baseTexture._glTextures)[0]?.texture
             return this.webglFogTexture;
         }else{
             let texture = PIXI.RenderTexture.create({width: canvas.dimensions.width, height: canvas.dimensions.height, resolution: 0.1});
