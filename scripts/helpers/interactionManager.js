@@ -47,6 +47,10 @@ export class InteractionManager {
       }
     }
 
+    get activeLayerEntity(){
+      return canvas.activeLayer?.options?.objectClass?.embeddedName;
+    }
+
     generateSightCollisions(){
       const collisionObjects = [];
       const sightObjects = [];
@@ -155,9 +159,9 @@ export class InteractionManager {
         //object3d.updateFromTransform();
       }
 
-      setControlledGroup(object3d){
+      setControlledGroup(){
         this.clearControlledGroup();
-        this.controlledGroupSetPosition();
+        if(!this.controlledGroupSetPosition()) return;
         const controlledGroup = this._parent.controlledGroup;
         for(let placeable of canvas.activeLayer.controlled){
           const tile3d = this._parent.tiles[placeable.id]
@@ -189,6 +193,7 @@ export class InteractionManager {
       }
 
       controlledGroupSetPosition(){
+        if(!canvas?.activeLayer?.controlled?.length) return false;
         const controlledGroup = this._parent.controlledGroup;
         let maxX,maxY,maxZ,minX,minY,minZ = 0;
         
@@ -206,6 +211,7 @@ export class InteractionManager {
 
         const center = new THREE.Vector3((maxX+minX)/2,(maxY+minY)/2,(maxZ+minZ)/2);
         controlledGroup.position.copy(center);
+        return true;
 
       }
 
@@ -220,7 +226,7 @@ export class InteractionManager {
 
       isRulerDrag(event, intersectData){
         if(ui.controls.activeTool === "select") return false
-        if(!ui.controls.isRuler && !this.allowedRulerDrag.some(a => a=== canvas.activeLayer.options.objectClass.embeddedName) ) return false
+        if(!ui.controls.isRuler && !this.allowedRulerDrag.some(a => a=== this.activeLayerEntity) ) return false
         if(!this.mouseIntersection3DCollision({x:event.clientX, y: event.clientY})?.length) return false
         if(this.allowedRulerDrag.some(a => a=== intersectData?.object?.userData?.entity3D?.embeddedName)) return false
         return true;
@@ -273,7 +279,7 @@ export class InteractionManager {
             brMode: 2,
           }
         }
-        if(data.type === "Actor" && canvas.activeLayer.options.objectClass.embeddedName === "Token"){
+        if(data.type === "Actor" && this.activeLayerEntity === "Token"){
           Hooks.once("preCreateToken", (token)=>{
             token.data.update({elevation: Math.trunc(data.elevation*100)/100, flags: data.flags})
           })
@@ -283,7 +289,7 @@ export class InteractionManager {
           model3d: data.img,
           autoGround: true,
         }
-        if(data.type === "Tile" && canvas.activeLayer.options.objectClass.embeddedName === "Tile"){
+        if(data.type === "Tile" && this.activeLayerEntity === "Tile"){
           const object3d = await this._parent.helpers.loadModel(data.img)
           const modelBB = new THREE.Box3().setFromObject(object3d.model)
           const widthFactor = modelBB.max.x - modelBB.min.x
@@ -322,7 +328,7 @@ export class InteractionManager {
       const intersect = intersectData?.object;
       if(this.isRulerDrag(event, intersectData)) this.toggleControls(false);
       if(!intersect || event.ctrlKey) return;
-      if(intersect.userData?.entity3D?.embeddedName === canvas.activeLayer.options.objectClass.embeddedName)this.toggleControls(false);
+      if(intersect.userData?.entity3D?.embeddedName === this.activeLayerEntity && !(this._gizmoEnabled && this.activeLayerEntity === "Tile"))this.toggleControls(false);
       this.clicks++;
       event.entity = intersect.userData.entity3D
       event.intersect = intersect;
@@ -364,6 +370,10 @@ export class InteractionManager {
       return this._clicks;
     }
 
+    get hasCameraMoved(){
+      return this._downCameraPosition.distanceTo(this._upCameraPosition) > 0.1;
+    }
+
     _onMouseUp(event){
       if(event.which === 1) this._leftDown = false;
       if(event.which === 3) this._rightDown = false;
@@ -373,7 +383,7 @@ export class InteractionManager {
       event.intersect = this.eventData?.intersect;
       event.position3D = this.eventData?.position3D;
       setTimeout(() => {
-      if(this.prevEventData && this.prevEventData.entity !== this.eventData.entity) return this.clicks = 0;
+      if(this.prevEventData && this.prevEventData.entity !== this.eventData.entity || this.hasCameraMoved) return this.clicks = 0;
       if(this._triggerLeft2) this._onClickLeft2(event);
       else if(this._triggerLeft) this._onClickLeft(event);
       if(this._triggerRight2) this._onClickRight2(event);
@@ -457,10 +467,11 @@ export class InteractionManager {
     }
 
     _collisionFilter(object){
+      const _this = game.Levels3DPreview.interactionManager
       if(object.userData.ignoreHover) return false;
       if(!canvas.activeLayer) return true;
-      if(object.userData?.entity3D && canvas.activeLayer.options.objectClass.embeddedName !== object.userData?.entity3D?.embeddedName && object.userData?.entity3D?.embeddedName !== "Note" && object.userData?.entity3D?.embeddedName !== "Tile") return false;
-      if(object.userData?.entity3D && canvas.activeLayer.options.objectClass.embeddedName !== "Tile" && object.userData?.entity3D?.embeddedName === "Tile" && !object.userData?.entity3D?.collision) return false
+      if(object.userData?.entity3D && _this.activeLayerEntity !== object.userData?.entity3D?.embeddedName && object.userData?.entity3D?.embeddedName !== "Note" && object.userData?.entity3D?.embeddedName !== "Tile") return false;
+      if(object.userData?.entity3D && _this.activeLayerEntity !== "Tile" && object.userData?.entity3D?.embeddedName === "Tile" && !object.userData?.entity3D?.collision) return false
       if(!object.visible) return false;
       return true;
     }
@@ -530,7 +541,7 @@ export class InteractionManager {
           }
           updates.push(update);
         }
-        canvas.scene.updateEmbeddedDocuments(canvas.activeLayer.options.objectClass.embeddedName,updates);
+        canvas.scene.updateEmbeddedDocuments(this.activeLayerEntity,updates);
       }
 
     }
@@ -539,11 +550,12 @@ export class InteractionManager {
       if(this.isRulerDrag(event, intersectData)) return this._onEnableRuler(event);
       const entity = event.entity;
       if(!entity) return this.abortDrag();
+      if(this._gizmoEnabled && this.activeLayerEntity === "Tile") return this.abortDrag();
       let intersect = event.intersect;
       const placeable = entity.placeable;
-      if(placeable?.data?.locked) return this.abortDrag();
+      if(canvas.activeLayer.controlled.some(p => p?.data?.locked)) return this.abortDrag();
       if(!placeable?.isOwner && !game.user.isGM) return this.abortDrag();
-      if(!entity.draggable || entity.mesh.userData?.entity3D?.embeddedName !== canvas.activeLayer.options.objectClass.embeddedName) return this.abortDrag();
+      if(!entity.draggable || entity.mesh.userData?.entity3D?.embeddedName !== this.activeLayerEntity) return this.abortDrag();
       if(!placeable?._controlled && placeable) placeable.control({releaseOthers: true});
       if(entity.mesh.userData?.entity3D?.embeddedName == "Tile") {
         this.setControlledGroup()
@@ -625,9 +637,9 @@ export class InteractionManager {
       this.raycaster.setFromCamera(this.mouse, this.camera);
       let intersectTargets = []
       for(let child of this.scene.children.concat(this._parent.controlledGroup.children)){
-        if(canvas.activeLayer.options.objectClass.embeddedName !== child.userData?.entity3D?.embeddedName && child.userData?.entity3D?.embeddedName !== "Wall" && child.userData?.entity3D?.embeddedName !== "Tile"  && child.userData?.entity3D?.embeddedName !== "Note") continue;
+        if(this.activeLayerEntity !== child.userData?.entity3D?.embeddedName && child.userData?.entity3D?.embeddedName !== "Wall" && child.userData?.entity3D?.embeddedName !== "Tile"  && child.userData?.entity3D?.embeddedName !== "Note") continue;
         if(!child.visible) continue;
-        if(canvas.activeLayer.options.objectClass.embeddedName !== "Tile" && child.userData?.entity3D?.embeddedName === "Tile" && (!child.userData?.entity3D?.collision && !child.userData?.entity3D?.isDoor)) continue;
+        if(this.activeLayerEntity !== "Tile" && child.userData?.entity3D?.embeddedName === "Tile" && (!child.userData?.entity3D?.collision && !child.userData?.entity3D?.isDoor)) continue;
         if(child.userData?.hitbox && child.userData.interactive) intersectTargets.push(child.userData.hitbox);
       }
 

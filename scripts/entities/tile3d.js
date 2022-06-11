@@ -436,7 +436,7 @@ export class Tile3D {
             return controls.detach()
         }
         if(this.tile._controlled && !this.tile.data.locked) controls.attach(this._parent.controlledGroup);
-        if(!canvas.activeLayer.controlled.length) controls.detach();
+        if(!canvas.activeLayer?.controlled?.length) controls.detach();
     }
 
     updateFromTransform(){
