@@ -1002,7 +1002,7 @@ class Levels3DPreview {
       const targetLookat = this._animateCameraTarget.cameraLookat.clone();
       const currentLookat =
         this._animateCameraTarget.currentLookat ?? this.controls.target.clone();
-      const lerpLookat = currentLookat.lerp(targetLookat, 0.1);
+      const lerpLookat = currentLookat.lerp(targetLookat, (this._animateCameraTarget.speed ?? 0.04)+0.001);
       this._animateCameraTarget.currentLookat = lerpLookat.clone();
 
       this.controls.target.set(lerpLookat.x, lerpLookat.y, lerpLookat.z);
