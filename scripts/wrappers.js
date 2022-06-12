@@ -250,7 +250,7 @@ Hooks.once('ready', async function() {
 
     function handleArrowKeys(directions){
 
-        if(!directions.size) return
+        if(!directions.size || (!game.user.isGM && game.paused)) return
 
         const cPos = game.Levels3DPreview.camera.position
         const cTar = game.Levels3DPreview.controls.target

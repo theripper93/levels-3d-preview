@@ -9,7 +9,6 @@ export class GameCamera{
         this.controls = controls;
         this._parent = _parent;
         this.collisionPoint = 0;
-        this.enabled = game.settings.get("levels-3d-preview", "enableGameCamera");
         this._currentZoomDist = null;
         this.maxDistTarget = 1;
         this._setHeightTries = 0;
@@ -59,9 +58,21 @@ export class GameCamera{
     }
 
     init(){
-        if(!game.settings.get("levels-3d-preview", "enableGameCamera")) return this.setRegularCameraParams();
+        this._enabledRequirements = game.settings.get("levels-3d-preview", "enableGameCamera") && (canvas.scene.getFlag("levels-3d-preview", "enableGameCamera") ?? true) && (canvas.scene.getFlag("levels-3d-preview", "object3dSight") ?? false);
+        this.enabled = this._enabledRequirements
+        this.showWarning();
+        if(!this._enabledRequirements) return this.setRegularCameraParams();
+        this.setInitalParams()
         this.computeBounds();
         if(game.user.isGM && !game.settings.get("levels-3d-preview", "gameCameraDefaultGm")) this.toggle();
+    }
+
+    showWarning(){
+        if(!game.user.isGM || !game.settings.get("levels-3d-preview", "gameCameraWarnings")) return;
+        
+        if(game.settings.get("levels-3d-preview", "enableGameCamera") == true && (canvas.scene.getFlag("levels-3d-preview", "enableGameCamera") ?? true) == true && (canvas.scene.getFlag("levels-3d-preview", "object3dSight") ?? false) == false){
+            ui.notifications.warn(game.i18n.localize("levels3dpreview.errors.gamecameradisabled"));
+        }
     }
 
     computeBounds(){
@@ -93,7 +104,7 @@ export class GameCamera{
             maxPolarAngleTopDown : 0.1,
             clipping: game.settings.get("levels-3d-preview", "gameCameraClipping"),
         }
-
+        this.autoReLock = game.settings.get("levels-3d-preview", "gameCameraAutoLock");
         this.controls.minPolarAngle = this.CONFIG.minPolarAngle;
         this.controls.maxPolarAngle = this.CONFIG.maxPolarAngle;
         this.controls.minDistance = this.CONSTS.MINDIST;
@@ -137,8 +148,11 @@ export class GameCamera{
         this.controls.minPolarAngle = this.CONFIG.minPolarAngle;
         this.controls.maxPolarAngle = this.CONFIG.maxPolarAngle;
         this.controls.screenSpacePanning = false;
+        this._lastTarget = this._detectedTarget;
+        this._detectedTarget = this.detectTargetPosition();
+        if(this._lastTarget != this._detectedTarget && this.autoReLock) this.lock = true;
         if(this.lock) {
-            this.detectTargetPosition();
+            this.cameraLockTarget = this._detectedTarget?.hasClone ?? this._detectedTarget;
         }else{
             this.cameraLockTarget = null;
         }
@@ -160,7 +174,7 @@ export class GameCamera{
             this.controls.target.lerp(this.tYTarget,0.03)//.y = this.lerp(this.controls.target.y, this.tYTarget, 0.03);
         }
 
-        if(this.camera.near != this._nearTarget){
+        if(this._nearTarget && this.camera.near != this._nearTarget){
             this.camera.near += Math.max((this._nearTarget - this.camera.near)/20,Math.sign((this._nearTarget - this.camera.near))*0.01);
             if(Math.abs(this.camera.near - this._nearTarget) < 0.01){
                 this.camera.near = this._nearTarget;
@@ -168,51 +182,6 @@ export class GameCamera{
         }
     }
 
-    _update(delta){
-        if(!this.enabled) return;
-        this.controls.minPolarAngle = this.CONFIG.minPolarAngle;
-        this.controls.maxPolarAngle = this.CONFIG.maxPolarAngle;
-        if(this.lock) {
-            this.detectTargetPosition();
-        }else{
-            this.cameraLockTarget = null;
-        }
-        if(this.cameraLockTarget && this.controls.target.distanceTo(this.cameraLockTarget.head) > 0.1) {
-            this._parent.setCameraToControlled(this.cameraLockTarget)
-        }
-        this.controls.screenSpacePanning = false;
-        if(this.maxDistTarget && Math.abs(this.maxDistTarget - this.controls.maxDistance) < 0.01){
-            this.maxDistTarget = null;
-        }
-        if(this.maxDistTarget){
-            const sign = this.maxDistTarget > this.controls.maxDistance ? 1 : -1;
-            this.controls.maxDistance += sign * 0.05;
-
-        }
-        if(this.tYTarget && Math.abs(this.tYTarget - this.controls.target.y) < 0.2){
-            this.tYTarget = null;
-        }
-        if(this.tYTarget){
-            const sign = this.tYTarget > this.controls.target.y ? 1 : -1;
-            this.controls.target.y += sign * 0.03;
-        }
-
-        if(this.yTarget && Math.abs(this.yTarget - this.camera.position.y) < 0.002){
-            this.yTarget = null;
-        }
-        if(this.yTarget){
-            const sign = this.yTarget > this.camera.position.y ? 1 : -1;
-            const targetPosition = this.camera.position.clone().add(new THREE.Vector3(0, sign * 0.03, 0));
-            if(targetPosition.distanceTo(this.controls.target) < this.maxDistTarget) this.camera.position.y += sign * 0.03;
-        }
-
-        if(this.camera.near != this._nearTarget){
-            this.camera.near += Math.max((this._nearTarget - this.camera.near)/20,Math.sign((this._nearTarget - this.camera.near))*0.01);
-            if(Math.abs(this.camera.near - this._nearTarget) < 0.01){
-                this.camera.near = this._nearTarget;
-            }
-        }
-    }
 
     setHeight(){
         if(this.skipHeight){
@@ -234,24 +203,10 @@ export class GameCamera{
             this.yTarget = null;
             return;
         }
-        /*this.collisionPoint = collisionPoint;
-        const maxGroundToCamera = this.CONSTS.MAXDIST
-        const currentDist = this.currentZoomDist;
-        const maxFinalDist = this.collisionPoint + maxGroundToCamera + this.controls.target.y;
-        const finalDist = this.collisionPoint + currentDist + this.controls.target.y
-        const computedYTarget = Math.min(maxFinalDist, finalDist);
-        if(Math.abs(computedYTarget - this.camera.position.y) < 0.1){
-            this.yTarget = null;
-            this.tYTarget = null;
-            return;
-        }
-        this.yTarget = computedYTarget;*/
         const targetCam = this.camera.position.clone();
         targetCam.y = this.yTarget;
         const newMaxDist = Math.max(this.CONSTS.MAXDIST, targetCam.distanceTo(this.controls.target));
-        //if(Math.abs(this.maxDistTarget - newMaxDist) > 0.01){
-            this.maxDistTarget = newMaxDist;
-        //}
+        this.maxDistTarget = newMaxDist;
         if(this.yTarget && this.gCTargets.cameraPosition){
             this.gCTargets.cameraPosition.y = this.yTarget;
             this.yTarget = null;
@@ -289,7 +244,7 @@ export class GameCamera{
             tokenId = game.user?.character?.getActiveTokens()[0]?.id;
         }
         const token3D = this._parent.tokens[tokenId];
-        this.cameraLockTarget = token3D?.hasClone ?? token3D;
+        return token3D//token3D?.hasClone ?? token3D;
     }
 
     lerp(v1, v2, alpha) {

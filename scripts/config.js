@@ -63,6 +63,17 @@ Hooks.on("renderSceneConfig", (app,html)=>{
             "label": game.i18n.localize("levels3dpreview.flags.auto3d.label"),
             "default": false,
         },
+        "object3dSight": {
+            type: "checkbox",
+            label: game.i18n.localize("levels3dpreview.flags.object3dSight.label"),
+            default: false,
+        },
+        "enableGameCamera": {
+            type: "checkbox",
+            label: game.i18n.localize("levels3dpreview.flags.enableGameCamera.label"),
+            notes: game.i18n.localize("levels3dpreview.flags.enableGameCamera.notes"),
+            default: true,
+        },
         "enableFogOfWar": {
             type: "checkbox",
             label: game.i18n.localize("levels3dpreview.flags.enableFogOfWar.label"),
@@ -363,11 +374,6 @@ Hooks.on("renderSceneConfig", (app,html)=>{
             label: game.i18n.localize("levels3dpreview.flags.mirrorLevels.label"),
             default: false,
         },
-        "object3dSight": {
-            type: "checkbox",
-            label: game.i18n.localize("levels3dpreview.flags.object3dSight.label"),
-            default: false,
-        }
     }
 
     const injected = injectConfig.inject(app,html,data);
@@ -1227,6 +1233,19 @@ Hooks.on("init", () => {
             canvas.scene.updateEmbeddedDocuments(canvas.activeLayer.options.objectClass.embeddedName,updates);
         },
         onUp: () => {},
+    });
+
+    game.keybindings.register("levels-3d-preview", "toggleSelect", {
+        name: game.i18n.localize("levels3dpreview.keybindings.toggleSelect"),
+        editable: [
+          {key: "KeyF"},
+        ],
+        onDown: () => {
+            game.Levels3DPreview.interactionManager._groupSelect = true
+        },
+        onUp: () => {
+            game.Levels3DPreview.interactionManager._groupSelect = false
+        },
     });
 
 })

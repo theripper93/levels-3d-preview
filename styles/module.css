@@ -97,3 +97,10 @@
 #clip-navigation i.clip-navigation-enabled{
     color: var(--color-shadow-highlight);
 }
+
+#levels-3d-preview-select-box{
+    position: absolute;
+    z-index: 100;
+    background-color: rgba(0, 0, 0, 0);
+    border: 1px solid var(--color-border-highlight);
+}

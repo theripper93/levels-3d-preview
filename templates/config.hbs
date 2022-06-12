@@ -191,9 +191,21 @@
       </div>
 
       <div class="form-group">
+        <label>{{localize "levels3dpreview.settings.gameCameraAutoLock.name"}}</label>
+        <input type="checkbox" name="gameCameraAutoLock" data-dtype="Boolean" {{checked gameCameraAutoLock}} />
+        <p class="notes">{{localize "levels3dpreview.settings.gameCameraAutoLock.hint"}}</p>
+      </div>
+
+      <div class="form-group">
         <label>{{localize "levels3dpreview.settings.gameCameraDefaultGm.name"}}</label>
         <input type="checkbox" name="gameCameraDefaultGm" data-dtype="Boolean" {{checked gameCameraDefaultGm}} />
         <p class="notes">{{localize "levels3dpreview.settings.gameCameraDefaultGm.hint"}}</p>
+      </div>
+
+      <div class="form-group">
+        <label>{{localize "levels3dpreview.settings.gameCameraWarnings.name"}}</label>
+        <input type="checkbox" name="gameCameraWarnings" data-dtype="Boolean" {{checked gameCameraWarnings}} />
+        <p class="notes">{{localize "levels3dpreview.settings.gameCameraWarnings.hint"}}</p>
       </div>
       
     </div>

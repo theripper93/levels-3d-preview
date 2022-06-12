@@ -6,18 +6,22 @@
             "loading": "Loading 3D Canvas...",
             "gameCameraIntro": {
                 "title": "Welcome to 3D Canvas",
-                "intro": "Here are the basic controls. Press the <strong>?</strong> icon in the scene navigator controls (Top Left of the Chat Sidebar) to show this again.",
+                "movetitle": "Moving your Token",
+                "cameratitle": "Controlling the Camera",
+                "intro": "Here are the basic controls. Press the <strong><i class='fas fa-question'></i></strong> icon in the scene navigator controls (Top Left of the Chat Sidebar) to show this again.",
                 "pan": "To <strong>Pan</strong>, use the <strong>WASD</strong> keys or <strong>Drag</strong> while Holding the Right Mouse Button.",
                 "rotate": "To <strong>Rotate</strong>, <strong>Drag</strong> while Holding the Left Mouse Button.",
                 "zoom": "To <strong>Zoom</strong>, use the <strong>Mouse Wheel</strong>",
                 "topdown": "To Toggle <strong>Top-Down</strong> view use the <strong>O</strong> key.",
                 "locking": "<strong>Manually Panning</strong> will <strong>Unlock</strong> the camera. Press <strong>Spacebar</strong> to set the camera back to <strong>Auto Mode</strong>",
-                "movement": "To <strong>Move</strong> your token use the <strong>Arrow Keys</strong> or <strong>Drag & Drop</strong>. While dragging, use <strong>Mouse Wheel</strong> to <strong>Change Elevation</strong>.",
+                "movement": "To <strong>Move</strong> your token use the <strong>Arrow Keys</strong> or <strong>Drag & Drop</strong>.<br>While dragging, use <strong>Mouse Wheel</strong> to <strong>Change Elevation</strong>.",
                 "elevation": "After changing elevation manually, you will <strong>Move only on that elevation</strong>, to <strong>re-enable snapping</strong> tap <strong>F</strong> while dragging.",
-                "rebind": "You can <strong>Rebind</strong> the keys in the settings."
+                "rebind": "You can <strong>Rebind</strong> the keys in the settings.",
+                "gm": "As the <strong>GM</strong> you can toggle the Game Camera at any time with the <strong><i class='fas fa-location-arrow'></i></strong> button. (top left of the chat sidebar)"
             }
         },
         "errors": {
+            "gamecameradisabled": "3D Canvas: Disabling Game Camera - Game Camera is enabled but 'Use 3D Geometry for sight calculations' is disabled.",
             "filenotsupported": "File format not supported or missing",
             "toofarfromdoor": "Your Token is too far to open the door",
             "3dnotactive": "Cannot open canvas popout, the 3D mode is not active.",
@@ -49,6 +53,7 @@
             "rotate": "Tile Editor: Rotate",
             "translate": "Tile Editor: Translate",
             "toggleGizmo": "Tile Editor: Toggle Gizmo",
+            "toggleSelect": "Group Selection (Hold while dragging)",
             "resetView": "Reset Camera View",
             "topdownView": "Top-Down Camera View",
             "cameraToToken": "Focus Camera on Selected Token",
@@ -207,6 +212,10 @@
             },
             "object3dSight": {
                 "label": "Use 3D Geometry for sight calculations"
+            },
+            "enableGameCamera": {
+                "label": "Enable Game Camera",
+                "notes": "Enable the game camera for this Scene. The Game Camera Must be Enabled in the Game Settings for this to work and 'Use 3D Geometry for sight calculations' must be enabled."
             },
             "model3d" : {
                 "label": "3D Model"
@@ -625,6 +634,14 @@
                 "name": "GM Default On",
                 "hint": "Wheter GMs should have the Game Camera toggled on when first loading a scene."
             },
+            "gameCameraAutoLock": {
+                "name": "Auto Re-Lock",
+                "hint": "If the Game Camera is unlocked from it's target, automatically relock it if the target changes."
+            },
+            "gameCameraWarnings": {
+                "name": "Show Warnings",
+                "hint": "If enabled, show warning for Game Camera functionality."
+            },
             "configApp": {
                 "title": "3D Canvas Configuration",
                 "hint": "Configure Global 3D Canvas Settings.",
@@ -813,7 +830,9 @@
                 "scaleGap": "Gap",
                 "scaleScale": "Tile Scale",
                 "toggleMode": "Fill Mode",
-                "wheel": "Mouse Wheel to Increase/Decrease Values"
+                "wheel": "Mouse Wheel to Increase/Decrease Values",
+                "clone": "Before initiating a transform, hold CTRL to Clone",
+                "select": "Hold F and drag to select, Left drag to release previous objects, Right drag to add to selection"
             }
         },
         "tokenAnimations": {

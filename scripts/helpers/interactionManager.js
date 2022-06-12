@@ -1,6 +1,7 @@
 import * as THREE from "../lib/three.module.js";
 import {factor} from '../main.js';
 import { Ruler3D } from "../entities/ruler3d.js";
+import { GroupSelectHandler } from "./GroupSelectHandler.js";
 import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from '../lib/three-mesh-bvh.js';
 THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
 THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
@@ -105,6 +106,10 @@ export class InteractionManager {
         //add keydown event
 
       }
+
+    initGroupSelect(){
+      this.groupSelectHandler = new GroupSelectHandler(this._parent);
+    }
 
     initTransformControls(){
       const ts = this._parent.transformControls;
@@ -314,6 +319,7 @@ export class InteractionManager {
       }
 
     _onMouseDown(event){
+      if(this._groupSelect) return this.groupSelectHandler.startSelect(event);
       if(this.preventSelect) return;
       this._parent.stopCameraAnimation();
       this._downCameraPosition = this._parent.camera.position.clone();
@@ -375,6 +381,7 @@ export class InteractionManager {
     }
 
     _onMouseUp(event){
+      if(this._groupSelect) return this.groupSelectHandler.endSelect(event);
       if(event.which === 1) this._leftDown = false;
       if(event.which === 3) this._rightDown = false;
       if(!this._leftDown && !this._rightDown) this.toggleControls(true);
@@ -439,6 +446,8 @@ export class InteractionManager {
       if(game.user.hasPermission("SHOW_CURSOR")){
         this.broadcastCursorPosition(intersect?.point);
       }
+
+      if(this._groupSelect) this.groupSelectHandler.updateSelect(event);
 
     }
 
@@ -875,6 +884,8 @@ export class InteractionManager {
       const mods = v.modifiers.length = v.modifiers.join("+");
       controlsReference += `<p><strong>${game.i18n.localize(`levels3dpreview.tileEditor.controlsReference.${k}`)}</strong>: ${mods + (v.modifiers.length ? " + " : "") + v.key}</p>`
     }
+    controlsReference+=`<p>${game.i18n.localize(`levels3dpreview.tileEditor.controlsReference.clone`)}</p>`
+    controlsReference+=`<p>${game.i18n.localize(`levels3dpreview.tileEditor.controlsReference.select`)}</p>`
     
     //controlsReference += `<p>${game.i18n.localize(`levels3dpreview.tileEditor.controlsReference.wheel`)}</p>`
     
@@ -893,7 +904,7 @@ export class InteractionManager {
 
     async showIntro(frombutton = false){
       if(game.settings.get("levels-3d-preview", "controlsShown") && !frombutton) return;
-      const dialogHtml = await renderTemplate("modules/levels-3d-preview/templates/gameCameraIntro.hbs",{})
+      const dialogHtml = await renderTemplate("modules/levels-3d-preview/templates/gameCameraIntro.hbs",{isGM: game.user.isGM})
       Dialog.prompt({
         title: game.i18n.localize(`levels3dpreview.controls.gameCameraIntro.title`),
         content: dialogHtml,

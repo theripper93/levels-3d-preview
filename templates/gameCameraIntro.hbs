@@ -1,14 +1,18 @@
 <div>
     <p>{{{localize "levels3dpreview.controls.gameCameraIntro.intro"}}}</p>
-    <hr>
+    {{#if isGM}}
+        <hr>
+        <p style="background-color: #ff9a9a;">{{{localize "levels3dpreview.controls.gameCameraIntro.gm"}}}</p>
+        <hr>
+    {{/if}}
+    <h2>{{{localize "levels3dpreview.controls.gameCameraIntro.cameratitle"}}}</h2>
     <p>{{{localize "levels3dpreview.controls.gameCameraIntro.pan"}}}</p>
     <p>{{{localize "levels3dpreview.controls.gameCameraIntro.rotate"}}}</p>
     <p>{{{localize "levels3dpreview.controls.gameCameraIntro.zoom"}}}</p>
     <p>{{{localize "levels3dpreview.controls.gameCameraIntro.topdown"}}}</p>
     <p>{{{localize "levels3dpreview.controls.gameCameraIntro.locking"}}}</p>
-    <hr>
+    <h2>{{{localize "levels3dpreview.controls.gameCameraIntro.movetitle"}}}</h2>
     <p>{{{localize "levels3dpreview.controls.gameCameraIntro.movement"}}}</p>
     <p>{{{localize "levels3dpreview.controls.gameCameraIntro.elevation"}}}</p>
     <p>{{{localize "levels3dpreview.controls.gameCameraIntro.rebind"}}}</p>
-    <hr>
 </div>

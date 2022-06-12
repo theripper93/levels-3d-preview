@@ -505,6 +505,7 @@ class Levels3DPreview {
     this.GameCamera.init();
     this.lights.globalIllumination.setSunlightFromFlags(false);
     this.interactionManager._cacheKeybinds();
+    this.interactionManager.initGroupSelect();
     if(this.GameCamera.enabled) this.interactionManager.showIntro()
   }
 
