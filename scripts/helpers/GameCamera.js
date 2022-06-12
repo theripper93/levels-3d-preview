@@ -59,10 +59,9 @@ export class GameCamera{
     }
 
     init(){
-        if(!this.enabled) return;
+        if(!game.settings.get("levels-3d-preview", "enableGameCamera")) return this.setRegularCameraParams();
         this.computeBounds();
-        this.setInitalParams();
-        this.enabled = this.CONFIG.defaultGm;
+        if(game.user.isGM && !game.settings.get("levels-3d-preview", "gameCameraDefaultGm")) this.toggle();
     }
 
     computeBounds(){
@@ -93,7 +92,6 @@ export class GameCamera{
             minPolarAngleTopDown : 0.1,
             maxPolarAngleTopDown : 0.1,
             clipping: game.settings.get("levels-3d-preview", "gameCameraClipping"),
-            defaultGm: game.settings.get("levels-3d-preview", "gameCameraDefaultGm"),
         }
 
         this.controls.minPolarAngle = this.CONFIG.minPolarAngle;
@@ -115,7 +113,7 @@ export class GameCamera{
 
     toggle(){
         this.enabled = !this.enabled;
-        this.enabled ? this.init() : this.setRegularCameraParams();
+        this.enabled ? this.setInitalParams() : this.setRegularCameraParams();
     }
 
     onChange(){
