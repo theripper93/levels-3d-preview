@@ -686,9 +686,14 @@ class BasicParticleGeometry{
         this.textureCount = texture.split(",").length;
         this.colors = color.split(",").map(c=>new THREE.Color(c));
         this.colorCount = this.colors.length;
+        let maxYBound = 0;
+        for(let tile3d of Object.values(game.Levels3DPreview.tiles)){
+            const bbox = new THREE.Box3().setFromObject(tile3d.mesh)
+            if(bbox.max.y > maxYBound) maxYBound = bbox.max.y;
+        }
         this.boundingBox = new THREE.Vector3(
             canvas.scene.dimensions.sceneWidth/factor,
-            Math.min(canvas.scene.dimensions.sceneWidth/factor, canvas.scene.dimensions.sceneHeight/factor)/2,
+            Math.max(maxYBound, Math.min(canvas.scene.dimensions.sceneWidth/factor, canvas.scene.dimensions.sceneHeight/factor)/2),
             canvas.scene.dimensions.sceneHeight/factor
         );
         this.createGeometry();

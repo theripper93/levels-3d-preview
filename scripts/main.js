@@ -493,7 +493,7 @@ class Levels3DPreview {
     this.scene.add(dragplane);
     this.interactionManager.dragplane = dragplane;
     this.makeSkybox();
-    this.weather = new WeatherSystem(this);
+    //this.weather = new WeatherSystem(this);
     this.lights.globalIllumination = new GlobalIllumination(this);
     this.ruler.addMarkers();
     const useTurnMarker = game.settings.get("levels-3d-preview", "startMarker");
@@ -931,6 +931,10 @@ class Levels3DPreview {
       this.checkInFog();
       this.animateCamera(delta);
       this.centerHUD();
+      document.querySelectorAll("#levels3d-ruler-text.scrolling-text").forEach(e => {
+        const t3d = this.tokens[e.dataset.tokenid];
+        if(t3d) this.helpers.ruler3d.centerElement(e, t3d.head);
+      })
       this.allignChatBubbles();
       this.resizeCanvasToDisplaySize(this);
       this.weather?.update(delta);
@@ -1084,7 +1088,7 @@ class Levels3DPreview {
         cToken = canvas.tokens.placeables.find(t => t.isOwner);
       }
       if (!cToken) return;
-      cToken.control();
+      if(cToken.isOwner) cToken.control();
       this.ClipNavigation.setToClosest(cToken.data.elevation);
       token3D = this.tokens[cToken.id];
       if (!token3D) return;
@@ -1166,6 +1170,7 @@ class Levels3DPreview {
 
   _onReady(){
     this.ClipNavigation = new ClipNavigation().render(true);
+    this.weather = new WeatherSystem(this);
     canvas.sight.refresh();
     canvas.perception.schedule({
       lighting: { initialize: true /* calls updateSource on each light source */, refresh: true },

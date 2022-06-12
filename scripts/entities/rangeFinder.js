@@ -131,6 +131,7 @@ export class RangeFinder {
 }
 
 Hooks.on("hoverToken", (token, hover) => {
+  if(!game.Levels3DPreview._active) return;
     if(hover){
         new RangeFinder(token);
     }else{

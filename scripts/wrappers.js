@@ -5,6 +5,7 @@ Hooks.once('ready', async function() {
     libWrapper.register("levels-3d-preview", "CONFIG.Token.objectClass.prototype.refresh", reDraw, "WRAPPER")
     libWrapper.register("levels-3d-preview", "CONFIG.Token.objectClass.prototype.drawBars", drawBars, "WRAPPER")
     libWrapper.register("levels-3d-preview", "CONFIG.Token.objectClass.prototype.drawEffects", drawEffects, "WRAPPER");
+    libWrapper.register("levels-3d-preview", "ObjectHUD.prototype.createScrollingText", showBouncingText, "WRAPPER");
     libWrapper.register("levels-3d-preview", "CONFIG.Token.objectClass.prototype._onMovementFrame", Token3DSetPosition, "WRAPPER");
     libWrapper.register("levels-3d-preview", "TokenLayer.prototype.cycleTokens", cycleTokens, "WRAPPER");
     libWrapper.register("levels-3d-preview", "Canvas.prototype.animatePan", animatePan, "WRAPPER");
@@ -13,9 +14,31 @@ Hooks.once('ready', async function() {
     libWrapper.register("levels-3d-preview", "ClockwiseSweepPolygon.prototype._compute", _computePolygon, "WRAPPER");
     libWrapper.register("levels-3d-preview", "Scenes.prototype.preload", preload3D, "OVERRIDE");
     
+    
 
     if(game.system.id === "dnd5e") libWrapper.register("levels-3d-preview", "game.dnd5e.canvas.AbilityTemplate.prototype.drawPreview", drawPreview, "MIXED")
     
+    async function showBouncingText(wrapped, ...args) {
+        wrapped(...args);
+        if ( !game.Levels3DPreview?._active || game.settings.get("core", "scrollingStatusText") !== true || !this.visible ) return null;
+        const token3D = game.Levels3DPreview.tokens[this.object.id];
+        if(!token3D) return null;
+        const bouncingText = $(`<div id="levels3d-ruler-text" data-tokenid="${this.object.id}">${args[0]}</div>`);
+        $("body").append(bouncingText);
+        const textData = args[1];
+        const color = textData?.fill ? PIXI.utils.hex2string(textData.fill) : "white";
+        bouncingText.css({
+            "color": color,
+            "font-size": textData.fontSize+"px",
+        });
+        game.Levels3DPreview.helpers.ruler3d.centerElement(bouncingText, token3D.head);
+        bouncingText.addClass("scrolling-text")
+        bouncingText.css({
+            transform: `translateY(${textData?.direction == 1 ? "+" : "-"}100%)`
+        })
+        setTimeout(() => { bouncingText.remove() }, 2500);
+    }
+
     function _computePolygon(wrapped, ...args){
         
         wrapped(...args);

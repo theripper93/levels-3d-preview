@@ -14,11 +14,18 @@
     position: absolute;
     pointer-events: none;
     z-index: 1;
+    opacity: 1;
+    text-align: center;
+    transition: opacity 0.4s ease-in-out 1.3s, transform 1.4s ease-out;
 }
 
 #levels3d-ruler-text.rangefinder {
     font-size: 1.5rem;
     font-family: 'Font Awesome 5 Free';
+}
+
+#levels3d-ruler-text.scrolling-text {
+    opacity: 0;
 }
 
 #levels3d{
@@ -38,6 +45,7 @@
     color: var(--color-text-light-highlight);
     transition: opacity 0.5s ease-in-out , right 0.5s ease-in-out;
     transition-delay: 2s;
+    z-index: 100;
 }
 
 #clip-navigation #clip-navigation-btns{

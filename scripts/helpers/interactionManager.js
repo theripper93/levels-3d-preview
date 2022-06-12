@@ -553,10 +553,10 @@ export class InteractionManager {
       if(this._gizmoEnabled && this.activeLayerEntity === "Tile") return this.abortDrag();
       let intersect = event.intersect;
       const placeable = entity.placeable;
+      if(!placeable?._controlled && placeable) placeable.control({releaseOthers: true});
       if(canvas.activeLayer.controlled.some(p => p?.data?.locked)) return this.abortDrag();
       if(!placeable?.isOwner && !game.user.isGM) return this.abortDrag();
       if(!entity.draggable || entity.mesh.userData?.entity3D?.embeddedName !== this.activeLayerEntity) return this.abortDrag();
-      if(!placeable?._controlled && placeable) placeable.control({releaseOthers: true});
       if(entity.mesh.userData?.entity3D?.embeddedName == "Tile") {
         this.setControlledGroup()
         if(!entity.mesh?.userData?.isTransformControls){

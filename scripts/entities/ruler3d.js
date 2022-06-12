@@ -161,15 +161,30 @@ export class Ruler3D {
 
     static centerElement(element,position, ontop = false){
         //get distance between element and camera
+        const $element = $(element);
+        let cachedFontSize = $element.data("cached-size");
+        if(!cachedFontSize){
+            cachedFontSize = parseFloat(window.getComputedStyle($element[0], null).getPropertyValue('font-size'))
+            $element.data("cached-size", cachedFontSize);
+        }
+        
         const dist = game.Levels3DPreview.camera.position.distanceTo(position);
-        const scale = Math.max(0.3, 1.2/dist)/devicePixelRatio;
+        const scale = Math.max(0.5, 1.2/dist)/devicePixelRatio;
+        if($element[0].id == 'levels3d-ruler-text'){
+            $element.css({
+                "font-size": cachedFontSize*scale + "px"
+            })
+        }else{
+            $element.css({
+                transform: `scale(${scale})`
+            })
+        }
         const centerPosition = Ruler3D.position3dtoScreen(position);
-        const elementWidth = $(element).width();
-        const elementHeight = ontop ? $(element).height()*2 : $(element).height();
-        $(element).css({
+        const elementWidth = $element.width();
+        const elementHeight = ontop ? $element.height()*2 : $element.height();
+        $element.css({
             left: centerPosition.x -elementWidth/2 + "px",
             top: centerPosition.y -elementHeight/2 + "px",
-            transform: `scale(${scale})`,
         });
     }
 
