@@ -78,9 +78,9 @@ export class InteractionManager {
       return this.computeSightCollisionFrom3DPositions(origin, target, type, elongate);
     }
 
-    computeSightCollisionFrom3DPositions(origin,target, type, elongate){
+    computeSightCollisionFrom3DPositions(origin,target, type, elongate, useDistance = true){
       const direction = target.clone().sub(origin).normalize();
-      const distance = origin.distanceTo(target);
+      const distance = useDistance ? origin.distanceTo(target) : Infinity;
       this.sightRaycaster.set(origin, direction);
       if(!this._sightCollisions[type] && !this._sightCollisions["collision"])  this.forceSightCollisions();
       const collisions = this.sightRaycaster.intersectObjects(this._sightCollisions[type] ?? this._sightCollisions["collision"], true);
@@ -578,10 +578,10 @@ export class InteractionManager {
     _onClickLeft(event){
       if(ui.controls.isRuler || this.draggable) return;
       const entity = event.entity;
-      if(entity?.placeable?.data?.locked) return;
       if((entity?.tile && canvas.activeLayer.options.objectClass.name !== "Tile" && !entity?.isDoor) || !entity){
         if(this._downCameraPosition.distanceTo(this._upCameraPosition)<0.01 && game.settings.get("core","leftClickRelease")) canvas.activeLayer.releaseAll();
       }
+      if(entity?.placeable?.data?.locked) return;
       if(!entity) return
       const intersect = event.intersect;
       this.handleTriggerHappy(entity);

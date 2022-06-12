@@ -599,7 +599,7 @@ class OrbitControls extends EventDispatcher {
 			}
 
 			scope.update();
-
+			game.Levels3DPreview.GameCamera.yTarget = null;
 			game.Levels3DPreview.GameCamera.currentZoomDist = scope.object.position.y - (game.Levels3DPreview.controls.target.y + game.Levels3DPreview.GameCamera.collisionPoint)
 
 		}
