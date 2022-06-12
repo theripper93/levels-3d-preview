@@ -48,6 +48,7 @@ export class Fog{
         this._parent.composer.removePass( this.fogPass );
         this.fogPass = new ShaderPass( this.shader );
         this._parent.composer.addPass( this.fogPass );
+        //this.grid = new GridShaderPass(this._parent);
     }
 
     update(){
@@ -70,7 +71,9 @@ export class Fog{
             this.shader.uniforms.projectionMatrixInverse.value.copy(this._parent.camera.projectionMatrixInverse);
             this.shader.uniforms.worldMatrixInverse.value.copy(this._parent.camera.matrixWorld);
             this.shader.uniforms.tDepth.value = this.target.depthTexture;
+            this._parent.depthTexture = this.target.depthTexture;
         }
+        //this.grid.update();
     }
 
     async updateTexture(force = false){
