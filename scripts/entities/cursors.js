@@ -41,7 +41,7 @@ export class Cursors3D{
 
     updateCursorPosition(uId, cursor){
         const target = JSON.parse(cursor.target.x);
-        if(target.x === 0 && target.z === 0){
+        if(!target.x && !target.z){
             this._cursors[uId].visible = false;
             return;
         }
