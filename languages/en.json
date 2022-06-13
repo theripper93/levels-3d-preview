@@ -27,6 +27,7 @@
             "3dnotactive": "Cannot open canvas popout, the 3D mode is not active.",
             "canping": "User lacks permission to display pings on the map.",
             "canpingpan": "User lacks permission to send camera position.",
+            "overmaxelevation": "The attempted movement exceeds the maximum elevation of this scene.",
             "particleSystem": {
                 "type": "Particle system: type '%type%' not supported, the valid types are: ",
                 "fromto": "Particle system: Target and/or Source where not specified or are undefined.",
@@ -74,6 +75,10 @@
             "tiltY": "Tile Editor: Tilt Y"
         },
         "flags": {
+            "maxElevation": {
+                "label": "Max Elevation",
+                "notes": "Maximum allowed elevation for tokens on this scene."
+            },
             "doorType":{
                 "options": {
                     "none": "None",
@@ -215,7 +220,7 @@
             },
             "enableGameCamera": {
                 "label": "Enable Game Camera",
-                "notes": "Enable the game camera for this Scene. The Game Camera Must be Enabled in the Game Settings for this to work and 'Use 3D Geometry for sight calculations' must be enabled."
+                "notes": "Enable the game camera for this Scene. The Game Camera Must be Enabled globally in the 3D Canvas Settings for this to work."
             },
             "model3d" : {
                 "label": "3D Model"

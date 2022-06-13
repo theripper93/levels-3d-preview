@@ -29,14 +29,15 @@ export class GameCamera{
         origin.y += 10;
         const target = origin.clone();
         target.y = -1000000;
-        const collision = this._parent.interactionManager.computeSightCollisionFrom3DPositions(origin, target, "collision", false, false);
+        const collision = this._parent.interactionManager.computeSightCollisionFrom3DPositions(origin, target, "collision", false, false, true);
         let targetCollision = null;
         if(!this.lock){
-            targetCollision = this._parent.interactionManager.computeSightCollisionFrom3DPositions(origin, this.controls.target, "collision", false, false);
+            targetCollision = this._parent.interactionManager.computeSightCollisionFrom3DPositions(origin, this.controls.target, "collision", false, false, true);
         }
         return {
             cameraToGround: origin.y - 10 - (collision?.y ?? 0),
             collisionPoint: collision?.y ?? 0,
+            groundCollision: collision,
             targetCollision: targetCollision ?? null,
         }
     }
@@ -58,7 +59,7 @@ export class GameCamera{
     }
 
     init(){
-        this._enabledRequirements = game.settings.get("levels-3d-preview", "enableGameCamera") && (canvas.scene.getFlag("levels-3d-preview", "enableGameCamera") ?? true) && (canvas.scene.getFlag("levels-3d-preview", "object3dSight") ?? false);
+        this._enabledRequirements = game.settings.get("levels-3d-preview", "enableGameCamera") && (canvas.scene.getFlag("levels-3d-preview", "enableGameCamera") ?? true);
         this.enabled = this._enabledRequirements
         this.showWarning();
         if(!this._enabledRequirements) return this.setRegularCameraParams();
@@ -67,13 +68,7 @@ export class GameCamera{
         if(game.user.isGM && !game.settings.get("levels-3d-preview", "gameCameraDefaultGm")) this.toggle();
     }
 
-    showWarning(){
-        if(!game.user.isGM || !game.settings.get("levels-3d-preview", "gameCameraWarnings")) return;
-        
-        if(game.settings.get("levels-3d-preview", "enableGameCamera") == true && (canvas.scene.getFlag("levels-3d-preview", "enableGameCamera") ?? true) == true && (canvas.scene.getFlag("levels-3d-preview", "object3dSight") ?? false) == false){
-            ui.notifications.warn(game.i18n.localize("levels3dpreview.errors.gamecameradisabled"));
-        }
-    }
+    showWarning(){}
 
     computeBounds(){
         const dimensions = canvas.scene.dimensions;
@@ -104,6 +99,7 @@ export class GameCamera{
             maxPolarAngleTopDown : 0.1,
             clipping: game.settings.get("levels-3d-preview", "gameCameraClipping"),
         }
+        if(!this.CONFIG.clipping) this.camera.near = 0.1;
         this.autoReLock = game.settings.get("levels-3d-preview", "gameCameraAutoLock");
         this.controls.minPolarAngle = this.CONFIG.minPolarAngle;
         this.controls.maxPolarAngle = this.CONFIG.maxPolarAngle;
@@ -111,7 +107,7 @@ export class GameCamera{
         this.controls.maxDistance = this.CONSTS.MAXDIST;
         this.controls.screenSpacePanning = false;
         const squares = Math.max(canvas.scene.dimensions.sceneWidth, canvas.scene.dimensions.sceneHeight)/canvas.scene.dimensions.size;
-        this.CONSTS.MAXDIST = Math.sqrt(squares/100)+1;
+        this.CONSTS.MAXDIST = Math.sqrt(squares/100)*0.7+1;
     }
 
     setRegularCameraParams(){
@@ -188,13 +184,13 @@ export class GameCamera{
             this.skipHeight = false;
             return;
         }
-        const {cameraToGround, collisionPoint, targetCollision} = this.getY();
+        const {cameraToGround, collisionPoint, targetCollision, groundCollision} = this.getY();
         if(cameraToGround < this.CONSTS.MINDIST){
             this.yTarget = collisionPoint + this.CONSTS.MINDIST + this.currentZoomDist;
         }else if(cameraToGround > this.CONSTS.MAXDIST){
             this.yTarget = Math.min(collisionPoint + this.CONSTS.MAXDIST, collisionPoint + this.currentZoomDist)//collisionPoint - this.CONSTS.MAXDIST + this.currentZoomDist;
         }
-        if(!this.lock){
+        if(!this.lock && groundCollision){
             this.tYTarget = targetCollision;
         }else{
             this.tYTarget = null;

@@ -80,6 +80,12 @@ Hooks.on("renderSceneConfig", (app,html)=>{
             notes: game.i18n.localize("levels3dpreview.flags.enableFogOfWar.notes"),
             default: false,
         },
+        "maxElevation": {
+            type: "number",
+            label: game.i18n.localize("levels3dpreview.flags.maxElevation.label"),
+            notes: game.i18n.localize("levels3dpreview.flags.maxElevation.notes"),
+            default: 100000,
+        },
         "enableGrid": {
             type: "checkbox",
             label: game.i18n.localize("levels3dpreview.flags.enableGrid.label"),

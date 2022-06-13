@@ -1371,4 +1371,14 @@ $(document).on("keydown", (event) => {
   ts.setScaleSnap(undefined);
 })
 
+Hooks.on("preUpdateToken", (token,updates) => {
+  if(game.Levels3DPreview?._active && "elevation" in updates){
+    const maxElevation = canvas.scene.getFlag("levels-3d-preview", "maxElevation") ?? 100000;
+    if(updates.elevation > maxElevation) {
+      ui.notifications.error("levels3dpreview.errors.overmaxelevation", {localize: true});
+      return false;
+    }
+  }
+})
+
 //javascript:(function(){var script=document.createElement('script');script.onload=function(){var stats=new Stats();document.body.appendChild(stats.dom);requestAnimationFrame(function loop(){stats.update();requestAnimationFrame(loop)});};script.src='//mrdoob.github.io/stats.js/build/stats.min.js';document.head.appendChild(script);})()

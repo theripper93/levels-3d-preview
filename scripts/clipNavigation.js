@@ -18,7 +18,7 @@ export class ClipNavigation extends Application{
 
       getData() {
         const data = super.getData();
-        data.isGC = game.user.isGM && game.settings.get("levels-3d-preview", "enableGameCamera");
+        data.isGC = game.user.isGM && game.settings.get("levels-3d-preview", "enableGameCamera") && (canvas.scene.getFlag("levels-3d-preview", "enableGameCamera") ?? true);
         const levels = (canvas.scene.getFlag("levels","sceneLevels") ?? [])
         .filter((l) => l[1] !== undefined && l[0] !== undefined)
         .sort((a,b)=>{
