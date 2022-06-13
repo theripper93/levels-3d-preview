@@ -66,6 +66,11 @@ export class InteractionManager {
         if(wall.placeable.data.sight >= 10) sightObjects.push(wall.mesh);
         if(wall.placeable.data.move > 0) collisionObjects.push(wall.mesh);
       }
+      if(this._parent.board){
+        sightObjects.push(this._parent.board);
+        collisionObjects.push(this._parent.board);
+      }
+
       this._sightCollisions = {
         collision: collisionObjects,
         sight: sightObjects
@@ -769,9 +774,6 @@ export class InteractionManager {
     }
 
     get isCameraLocked(){
-      const cameraLock = canvas.scene.getFlag("levels-3d-preview", "lockCamera");
-      if(cameraLock === "all") return true;
-      if(cameraLock === "players") return !game.user.isGM;
       return false;
     }
 

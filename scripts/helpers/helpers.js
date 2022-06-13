@@ -10,9 +10,9 @@ export class Helpers {
     this.ruler3d = Ruler3D;
   }
 
-  async loadTexture(texturePath) {
+  async loadTexture(texturePath, options = {}) {
     if (!texturePath) return null;
-    if (this.textureCache[texturePath]) return this.textureCache[texturePath];
+    if (this.textureCache[texturePath] && !options.noCache) return this.textureCache[texturePath];
     const texture = await this.getTexture(texturePath);
     this.textureCache[texturePath] = texture;
     return texture;
@@ -126,8 +126,8 @@ export class Helpers {
     }
   }
 
-  async getPBRMat(texturePath) {
-    if (this.materialCache[texturePath]) return this.materialCache[texturePath];
+  async getPBRMat(texturePath, options = {}) {
+    if (this.materialCache[texturePath] && !options.noCache) return this.materialCache[texturePath];
     let path = texturePath;
     const folder = path.split("/").slice(0, -1).join("/");
     const extension = path.split(".").pop();
@@ -147,12 +147,12 @@ export class Helpers {
       return path + t + "." + extension;
     });
     const textures = {
-      map: await this.loadTexture(tPaths[0]),
-      roughnessMap: await this.loadTexture(tPaths[1]),
-      metalnessMap: await this.loadTexture(tPaths[2]),
-      aoMap: await this.loadTexture(tPaths[3]),
-      normalMap: await this.loadTexture(tPaths[4]),
-      emissiveMap: await this.loadTexture(tPaths[5]),
+      map: await this.loadTexture(tPaths[0],options),
+      roughnessMap: await this.loadTexture(tPaths[1],options),
+      metalnessMap: await this.loadTexture(tPaths[2],options),
+      aoMap: await this.loadTexture(tPaths[3],options),
+      normalMap: await this.loadTexture(tPaths[4],options),
+      emissiveMap: await this.loadTexture(tPaths[5],options),
     };
     for (let [k, v] of Object.entries(textures)) {
       if (!v.image) delete textures[k];
@@ -167,10 +167,10 @@ export class Helpers {
     return material;
   }
 
-  async autodetectTextureOrMaterial(path) {
+  async autodetectTextureOrMaterial(path, options = {}) {
     return this.isPBR(path)
-      ? await this.getPBRMat(path)
-      : await this.loadTexture(path);
+      ? await this.getPBRMat(path,options)
+      : await this.loadTexture(path,options);
   }
 
   groundModel(object, autoground = false,autocenter = false){

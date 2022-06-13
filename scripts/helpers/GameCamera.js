@@ -150,15 +150,18 @@ export class GameCamera{
         if(this.lock) {
             this.cameraLockTarget = this._detectedTarget?.hasClone ?? this._detectedTarget;
         }else{
+            /*const debugSphere = new THREE.Mesh(new THREE.SphereGeometry(0.01, 10, 10), new THREE.MeshBasicMaterial({color: 0x00ff00}));
+            debugSphere.position.copy(this.controls.target);
+            this._parent.scene.add(debugSphere);*/
             this.cameraLockTarget = null;
         }
         if(this.cameraLockTarget && this.controls.target.distanceTo(this.cameraLockTarget.head) > 0.1) {
             this._parent.setCameraToControlled(this.cameraLockTarget)
         }
 
-        if(this.areValClose(this.controls.maxDistance, this.maxDistTarget, 0.1)) this.maxDistTarget = null;
-        if(this.areValClose(this.camera.position.y, this.yTarget, 0.1)) this.yTarget = null;
-        if(this.areValClose(this.controls.target.y, this.tYTarget?.y, 0.1)) this.yTarget = null;
+        if(this.areValClose(this.controls.maxDistance, this.maxDistTarget, 0.01)) this.maxDistTarget = null;
+        if(this.areValClose(this.camera.position.y, this.yTarget, 0.01)) this.yTarget = null;
+        if(this.areValClose(this.controls.target.y, this.tYTarget?.y, 0.01)) this.yTarget = null;
 
         if(this.maxDistTarget){
             this.controls.maxDistance = this.lerp(this.controls.maxDistance, this.maxDistTarget, 0.03);
@@ -167,7 +170,7 @@ export class GameCamera{
             this.camera.position.y = this.lerp(this.camera.position.y, this.yTarget, 0.03);
         }
         if(this.tYTarget){
-            this.controls.target.lerp(this.tYTarget,0.03)//.y = this.lerp(this.controls.target.y, this.tYTarget, 0.03);
+            this.controls.target.lerp(this.tYTarget,0.03)///0.01)//.y = this.lerp(this.controls.target.y, this.tYTarget, 0.03);
         }
 
         if(this._nearTarget && this.camera.near != this._nearTarget){
@@ -187,7 +190,7 @@ export class GameCamera{
         const {cameraToGround, collisionPoint, targetCollision, groundCollision} = this.getY();
         if(cameraToGround < this.CONSTS.MINDIST){
             this.yTarget = collisionPoint + this.CONSTS.MINDIST + this.currentZoomDist;
-        }else if(cameraToGround > this.CONSTS.MAXDIST){
+        }else{// if(cameraToGround > this.CONSTS.MAXDIST){
             this.yTarget = Math.min(collisionPoint + this.CONSTS.MAXDIST, collisionPoint + this.currentZoomDist)//collisionPoint - this.CONSTS.MAXDIST + this.currentZoomDist;
         }
         if(!this.lock && groundCollision){

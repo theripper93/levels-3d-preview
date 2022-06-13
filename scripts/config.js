@@ -115,16 +115,6 @@ Hooks.on("renderSceneConfig", (app,html)=>{
             
             `
         },
-        "lockCamera": {
-            type: "select",
-            label: game.i18n.localize("levels3dpreview.flags.lockCamera.label"),
-            default: "off",
-            options: {
-                "off": game.i18n.localize("levels3dpreview.flags.lockCamera.options.off"),
-                "players": game.i18n.localize("levels3dpreview.flags.lockCamera.options.players"),
-                "all": game.i18n.localize("levels3dpreview.flags.lockCamera.options.all")
-            }
-        },
         "header2": {
             type: "custom",
             html: `<h3 class="form-header"><i class="fas fa-cloud-sun"></i> ${game.i18n.localize("levels3dpreview.settings.headers.environment.title")}</h3><p class="notes">${game.i18n.localize("levels3dpreview.settings.headers.environment.notes")}</p><div>`

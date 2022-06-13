@@ -364,12 +364,12 @@ export class Tile3D {
         let textureOrMat = null;
         let isPBR = null;
         if(!texture) return {textureOrMat, isPBR};
-        textureOrMat = await this._parent.helpers.autodetectTextureOrMaterial(texture)
+        textureOrMat = await this._parent.helpers.autodetectTextureOrMaterial(texture, {noCache: true});
         isPBR = this._parent.helpers.isPBR(texture)
         if(isPBR){
-            Object.values(textureOrMat).forEach(v => this.setTexture(v))
+            Object.values(textureOrMat).forEach(v => this.setTexture(v));
         }else{
-            this.setTexture(textureOrMat);
+            textureOrMat = this.setTexture(textureOrMat);
         }
         if(textureOrMat) return {textureOrMat, isPBR};
         return {textureOrMat, isPBR};
@@ -403,10 +403,11 @@ export class Tile3D {
     }
 
     setTexture(tex){
-        if(this.textureMode == "stretch" || !tex?.isTexture) return;
+        if(this.textureMode == "stretch" || !tex?.image) return;
         tex.wrapS = THREE.RepeatWrapping;
         tex.wrapT = THREE.RepeatWrapping;
         tex.repeat.set( this.textureRepeat, this.textureRepeat );
+        return;
     }
 
     initBoundingBox(depth){
