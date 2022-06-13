@@ -69,7 +69,7 @@ Hooks.once('ready', async function() {
             const id = this.config.source._polygon3DCache.cacheId;
             setTimeout(() => {
                 if(this.config.source._polygon3DCache?.cacheId === id && !this.config.source._polygon3DCache?.complete){
-                    this.config.source.object.updateSource();
+                    if(!canvas.loading)this.config.source.object.updateSource();
                 }
             }, timeoutLimit+16);
         }

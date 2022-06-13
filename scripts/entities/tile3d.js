@@ -349,7 +349,7 @@ export class Tile3D {
         const filePath = this.gtflPath;
         const extension = filePath.split(".").pop().toLowerCase();
         const model = await game.Levels3DPreview.helpers.loadModel(this.gtflPath);
-        game.Levels3DPreview.helpers.groundModel(model.model, this.autoGround ,this.autoCenter)
+        if(model) game.Levels3DPreview.helpers.groundModel(model.model, this.autoGround ,this.autoCenter)
         if(model) return model;
         //make 1x1 cube
         const errText = game.i18n.localize("levels3dpreview.errors.filenotsupported") + "(" + extension +"): " + filePath + " Tile: " + this.tile.id

@@ -230,6 +230,7 @@ class Levels3DPreview {
     this.loadingTokens = {};
     this.lights = {
       sceneLights: {},
+      _lightIndex: 0,
     };
     this.utils = {
       PIXI: PIXI,
@@ -831,6 +832,7 @@ class Levels3DPreview {
     this.walls = {};
     this.doors = {};
     this.lights.sceneLights = {};
+    this.lights._lightIndex = 0;
     this.tiles = {};
     this.notes = {};
     this.templates = {};
@@ -909,9 +911,11 @@ class Levels3DPreview {
         }
       });
       Object.values(this.tiles).forEach((tile) => {
-        tile.updateVisibility();
-        if (tile.mixer && !tile.paused) {
-          tile.mixer.update(delta);
+        if(tile){
+          tile.updateVisibility();
+          if (tile.mixer && !tile.paused) {
+            tile.mixer.update(delta);
+          }
         }
       });
       if (this.mirrorLevelsVisibility) {

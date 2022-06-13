@@ -28,12 +28,11 @@ export class Light3D {
             );
         }
         this.mesh = new THREE.Group();
+        const shadowRes = game.settings.get("levels-3d-preview", "shadowQuality")
         this.light3d.shadow.bias = -0.035;
-        this.light3d.shadow.camera.near = 0.0001;
-        this.light3d.shadow.camera.far = 100;
         this.light3d.shadow.camera.near = 0.001;
-        this.light3d.shadow.mapSize.width = 64;
-        this.light3d.shadow.mapSize.height = 64;
+        this.light3d.shadow.mapSize.width = 1024*shadowRes;
+        this.light3d.shadow.mapSize.height = 1024*shadowRes;
         this.refresh();
         if(!this.isToken) {
             this.mesh.add(this.light3d);
@@ -116,7 +115,10 @@ export class Light3D {
         if(this.dragHandle){
             this.dragHandle.position.set(0,0,0);
         }
-        this.light3d.castShadow = light.document.getFlag("levels-3d-preview", "castShadows")//(canvas.scene.getFlag("levels-3d-preview", "bakeLights") || light.document.getFlag("levels-3d-preview", "castShadows")) ?? false;
+        if(light.document.getFlag("levels-3d-preview", "castShadow")){
+            this.light3d.shadow.autoUpdate = true;
+            this.light3d.castShadow = true;
+        }
         let top = light.data.flags.levels?.rangeTop ?? 1;
         let bottom = light.data.flags.levels?.rangeBottom ?? 1;
         const z = (top+bottom)*canvas.scene.dimensions.size/canvas.scene.dimensions.distance/2;
@@ -137,6 +139,7 @@ export class Light3D {
         this.light3d.distance = radius;
         this.light3d.decay = decay;
         this.light3d.intensity = alpha;
+        this.light3d.shadow.camera.far = radius;
         if(this.angle != 360) {
             this.light3d.angle = Math.toRadians(this.angle)/2;
             const rotationy = -Math.toRadians(this.rotation);

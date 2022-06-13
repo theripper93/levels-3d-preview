@@ -126,14 +126,14 @@ export class ClipNavigation extends Application{
         const clippingPlane = new game.Levels3DPreview.THREE.Plane( new game.Levels3DPreview.THREE.Vector3( 0, -1, 0 ), 10000 );
         this._clipHeight = 10000;
         Object.values(game.Levels3DPreview.tiles).forEach(t => {
-            t.mesh.traverse((c)=>{
+            if(t?.mesh)t.mesh.traverse((c)=>{
               if(c.isMesh){
                 c.material.clippingPlanes = [clippingPlane]
               }
             })
         })
         Object.values(game.Levels3DPreview.walls).forEach(t => {
-          t.mesh.traverse((c)=>{
+          if(t?.mesh)t.mesh.traverse((c)=>{
             if(c.isMesh){
               c.material.clippingPlanes = [clippingPlane]
             }
