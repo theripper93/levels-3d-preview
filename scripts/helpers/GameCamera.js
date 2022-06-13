@@ -72,8 +72,8 @@ export class GameCamera{
 
     computeBounds(){
         const dimensions = canvas.scene.dimensions;
-        const minBounds = new THREE.Vector3((dimensions.paddingX/2)/factor,-100000,(dimensions.paddingY/2)/factor);
-        const maxBounds = new THREE.Vector3((dimensions.sceneWidth+dimensions.paddingX*1.5)/factor,100000,(dimensions.sceneHeight+dimensions.paddingY*1.5)/factor);
+        const minBounds = new THREE.Vector3((dimensions.paddingX)/factor,-100000,(dimensions.paddingY)/factor);
+        const maxBounds = new THREE.Vector3((dimensions.sceneWidth+dimensions.paddingX)/factor,100000,(dimensions.sceneHeight+dimensions.paddingY)/factor);
         const box = new THREE.Box3(minBounds, maxBounds);
         this._bounds = box;
     }
