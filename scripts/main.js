@@ -775,6 +775,7 @@ class Levels3DPreview {
     this.skybox = skybox;*/
     const loader = new THREE.CubeTextureLoader();
     const textureCube = loader.load(textureArray);
+    textureCube.encoding = THREE.sRGBEncoding;
     this.scene.background = textureCube;
     if (!exr) this.scene.environment = textureCube;
   }

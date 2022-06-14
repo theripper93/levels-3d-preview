@@ -194,6 +194,7 @@ export class GameCamera{
             this.yTarget = Math.min(collisionPoint + this.CONSTS.MAXDIST, collisionPoint + this.currentZoomDist)//collisionPoint - this.CONSTS.MAXDIST + this.currentZoomDist;
         }
         if(!this.lock && groundCollision){
+            targetCollision.y = Math.max(targetCollision.y, collisionPoint);
             this.tYTarget = targetCollision;
         }else{
             this.tYTarget = null;
