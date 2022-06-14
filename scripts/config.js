@@ -134,6 +134,15 @@ Hooks.on("renderSceneConfig", (app,html)=>{
             notes: game.i18n.localize("levels3dpreview.flags.exr.notes"),
             default: "modules/levels-3d-preview/assets/skybox/venice_sunrise_1k.exr"
         },
+        "exposure": {
+            type: "range",
+            label: game.i18n.localize("levels3dpreview.flags.exposure.label"),
+            notes: game.i18n.localize("levels3dpreview.flags.exposure.notes"),
+            default: 1,
+            min: 0.01,
+            max: 2,
+            step: 0.01,
+        },
         "renderTable": {
             "type": "checkbox",
             "label": game.i18n.localize("levels3dpreview.flags.renderTable.label"),
@@ -383,7 +392,7 @@ Hooks.on("renderSceneConfig", (app,html)=>{
     })
     html.find(`select[name="flags.levels-3d-preview.particlePreset"]`).trigger("change");
 
-    const advancedSettings = ["enableGrid","enableRuler","lockCamera","exr","renderBackground","enableFog","fogColor","fogDistance","sceneTint","timeSync","sunPosition","shadowBias","showSceneWalls","showSceneDoors","showSceneFloors","renderSceneLights"];
+    const advancedSettings = ["exposure","enableGrid","enableRuler","lockCamera","exr","renderBackground","enableFog","fogColor","fogDistance","sceneTint","timeSync","sunPosition","shadowBias","showSceneWalls","showSceneDoors","showSceneFloors","renderSceneLights"];
 
     injectAdvancedToggle(app,html,advancedSettings, injected);
 
@@ -621,7 +630,7 @@ Hooks.on("renderTileConfig", (app,html)=>{
             label: game.i18n.localize("levels3dpreview.flags.textureRepeat.label"),
             default: 1,
             min: 1,
-            max: 16,
+            max: 64,
             step: 1,
         },
         "color": {

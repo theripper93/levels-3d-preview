@@ -124,6 +124,10 @@
                 "placeholder": "EXR File",
                 "notes": "If no skybox is selected, the HDRI will be used as the background. if both skybox and HDRI are selected, the skybox will be used as the background and the HDRI for lighting and reflections."
             },
+            "exposure": {
+                "label": "Exposure",
+                "notes": "Exposure for the HDRI. 1 is the default, 2 is the brightest, and 0 is the darkest."
+            },
             "renderTable": {
                 "label": "Display Table",
                 "notes": "Render the table in the 3D view."

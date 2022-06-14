@@ -719,7 +719,13 @@ class Levels3DPreview {
     this.notes[note.id] = new Note3D(note);
   }
 
+  setExposure(){
+    const exposure = canvas.scene.getFlag("levels-3d-preview", "exposure") ?? 1;
+    this.renderer.toneMappingExposure = exposure;
+  }
+
   makeSkybox() {
+    this.setExposure();
     this.scene.background = new THREE.Color(
       canvas.scene.data.backgroundColor ?? 0xffffff
     );
@@ -731,7 +737,7 @@ class Levels3DPreview {
       100;
     const size = sceneSize < 80 ? 80 : sceneSize;
     this.renderer.outputEncoding = THREE.LinearEncoding;
-    this.renderer.toneMapping = THREE.NoToneMapping;
+    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     const rootImage =
       canvas.scene.getFlag("levels-3d-preview", "skybox") ??
       this.CONFIG.skybox.sky;
@@ -1329,6 +1335,7 @@ Hooks.on("updateScene", (scene,updates) => {
       break;
     }
   }
+  if("exposure" in flags) game.Levels3DPreview.setExposure();
   if("renderBackground" in flags && !("img" in updates)) game.Levels3DPreview.createBoard();
   if("renderTable" in flags || "tableTex" in flags) game.Levels3DPreview.createTable();
 

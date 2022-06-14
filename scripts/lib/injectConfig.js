@@ -61,8 +61,9 @@ var injectConfig = {
                         <label for="${k}">${v.label || ""}</label>
                         <div class="form-fields">
                             <input type="range" name="${flag}" value="${flagValue}" min="${v.min}" max="${v.max}" step="${v.step ?? 1}">
-                            <span class="range-value">${flagValue}</span>${notes}
+                            <span class="range-value">${flagValue}</span>
                         </div>
+                        ${notes}
                     </div>`;
                     break;
                 case "color":
