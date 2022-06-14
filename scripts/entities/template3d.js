@@ -81,6 +81,7 @@ export class Template3D {
         mesh.userData.entity3D = this
         mesh.userData.isHitbox = true
         this.dragHandle = mesh
+        if(this.placeable?.document) mesh.visible = this.placeable.owner
         this.mesh.add(mesh)
     }
 

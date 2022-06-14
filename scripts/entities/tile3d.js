@@ -369,7 +369,7 @@ export class Tile3D {
         if(isPBR){
             Object.values(textureOrMat).forEach(v => this.setTexture(v));
         }else{
-            textureOrMat = this.setTexture(textureOrMat);
+            this.setTexture(textureOrMat);
         }
         if(textureOrMat) return {textureOrMat, isPBR};
         return {textureOrMat, isPBR};
