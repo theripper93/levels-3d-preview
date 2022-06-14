@@ -630,7 +630,7 @@ Hooks.on("renderTileConfig", (app,html)=>{
             label: game.i18n.localize("levels3dpreview.flags.textureRepeat.label"),
             default: 1,
             min: 1,
-            max: 64,
+            max: 128,
             step: 1,
         },
         "color": {

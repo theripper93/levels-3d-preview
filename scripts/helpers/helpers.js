@@ -6,6 +6,7 @@ export class Helpers {
   constructor() {
     this.textureCache = {};
     this.materialCache = {};
+    this.modelCache = {};
     this.baseCache = {};
     this.ruler3d = Ruler3D;
   }
@@ -70,18 +71,9 @@ export class Helpers {
 
   preloadModel(modelPath) {
     return new Promise((resolve, reject) => {
-      const filePath = modelPath;
-      const extension = filePath.split(".").pop().toLowerCase();
-      try {
-        if (extension == "gltf" || extension == "glb" || extension.startsWith("[heroforge]")) {
-          game.Levels3DPreview.loader.load(filePath, resolve, undefined, reject);
-        }
-        if (extension == "fbx") {
-          game.Levels3DPreview.FBXLoader.load(filePath, resolve, undefined, reject);
-        }
-      } catch (e) {
-        reject(e);
-      }
+      this.loadModel(modelPath).then((data) => {
+        resolve(data);
+      })
     });
   }  
 
@@ -103,27 +95,69 @@ export class Helpers {
 
   async getModel(modelPath) {
     const filePath = modelPath;
+    if(this.modelCache[modelPath]) return this.getClone(modelPath);
     const extension = filePath.split(".").pop().toLowerCase();
+    let output;
     try {
       if (extension == "gltf" || extension == "glb" || extension.startsWith("[heroforge]")) {
         const object = await game.Levels3DPreview.loader.loadAsync(filePath);
-        return {
+        output = {
           object: object,
           scene: object.scene,
           model: object.scene,
+          isGltf: true,
         };
-      }
-      if (extension == "fbx") {
+      }else if (extension == "fbx") {
         const object = await game.Levels3DPreview.FBXLoader.loadAsync(filePath);
-        return {
+        output = {
           object: object,
           scene: object,
           model: object,
+          isGltf: false,
         };
+      }else{
+        output = null;
       }
-      return null;
     } catch (e) {
-      return null;
+      output = null;
+    }
+    this.modelCache[modelPath] = output;
+    return this.getClone(modelPath);
+  }
+
+  getClone(filePath){
+    const cached = this.modelCache[filePath];
+    const clonedModel = this.deepCloneRecursive(cached.model);
+    return {
+      object: cached.isGltf ? cached.object : clonedModel,
+      scene: clonedModel,
+      model: clonedModel,
+      isGltf: cached.isGltf,
+    }
+  }
+
+  deepCloneRecursive(object3d) {
+    const clone = object3d.isMesh ? this.cloneMesh(object3d) : object3d.clone(false);
+    object3d.children.forEach((child) => {
+      clone.add(this.deepCloneRecursive(child));
+    })
+    return clone;
+
+  }
+
+  cloneMesh(mesh){
+    const clone = mesh.clone(false);
+    clone.material = this.cloneMaterial(mesh.material);
+    return clone;
+  }
+
+  cloneMaterial(material) {
+    if(!material) return null;
+    if(material instanceof Array){
+      return material.map(m => this.cloneMaterial(m));
+    }else{
+      const materialClone = material.clone();
+      return materialClone;
     }
   }
 

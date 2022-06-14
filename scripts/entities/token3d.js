@@ -43,6 +43,7 @@ export class Token3D {
       this.solidBaseMode = this.token.document.getFlag("levels-3d-preview","solidBaseMode")
       this.baseColor =  this.token.document.getFlag("levels-3d-preview","baseColor") || game.settings.get("levels-3d-preview", "solidBaseColor")
       if(!this.solidBaseMode || this.solidBaseMode === "default") this.solidBaseMode = game.settings.get("levels-3d-preview", "solidBaseMode");
+      this.disableBase = this.token.document.getFlag("levels-3d-preview","disableBase")
       this.autoCenter = this.token.document.getFlag("levels-3d-preview","autoCenter") ?? true;
       this.rotationX = Math.toRadians(this.token.document.getFlag("levels-3d-preview","rotationX") ?? 0);
       this.rotationY = Math.toRadians(this.token.document.getFlag("levels-3d-preview","rotationY") ?? 0);
@@ -60,13 +61,11 @@ export class Token3D {
       this.enableAnim = this.token.document.getFlag("levels-3d-preview", "enableAnim") ?? true;
       this.animIndex = this.token.document.getFlag("levels-3d-preview", "animIndex") ?? 0;
       this.animSpeed = this.token.document.getFlag("levels-3d-preview", "animSpeed") ?? 1;
-      this.interactive = (this.token.document.getFlag("levels-3d-preview", "draggable") ?? true);
-      if(!this.interactive || this.token.document.getFlag("levels-3d-preview", "disableBase")) this.isBase = false;
+      this.interactive = true;
       this.draggable = true;
       this.color = this.token.document.getFlag("levels-3d-preview", "color") ?? "#ffffff";
       this.material = this.token.document.getFlag("levels-3d-preview", "material") ?? "";
       this.imageTexture = this.token.document.getFlag("levels-3d-preview", "imageTexture") ?? "";
-      this.alwaysVisible = this.token.document.getFlag("levels-3d-preview", "alwaysVisible") ?? false;
       this.collisionPlane = true;
       this.faceCameraOption = this.token.document.getFlag("levels-3d-preview", "faceCamera") ?? "0";
       this.stem = this.token.document.getFlag("levels-3d-preview", "stem") ?? false;
@@ -812,6 +811,8 @@ export class Token3D {
         this.border.remove(child);
       });
 
+      if(this.disableBase) return;
+
       this._setupBorderMaterials();
 
       this._parent.helpers.getBase().then(resp => {
@@ -890,86 +891,6 @@ export class Token3D {
         combat: mat3,
         targeted: mat4,
       }
-    }
-
-    olddrawBorder(){
-      this.border.children.forEach(child => {
-        this.border.remove(child);
-      });
-      const baseRadius = Math.max(this.token.w, this.token.h);
-      const slant = 0.005*(canvas.grid.size/100);
-      let width = (baseRadius*1.02)/this.factor;
-      width -= ((width*Math.SQRT2)/5)/2;
-      let height = (baseRadius*1.02)/this.factor;
-      height -= ((height*Math.SQRT2)/5)/2;
-      const depth = this.isBase ? this.baseDepth : 0.000001;
-      const cubesize = Math.max(width, height)/6;
-      let mesh,indicatorMesh,highlightMesh;
-      if(!this.isBase){
-      const geometry = new THREE.BoxGeometry(width, depth , height);
-      const material = new THREE.MeshStandardMaterial({
-        color: 0xffffff,
-        visible: false,
-        opacity: 1,
-        transparent: true,
-        map: this.selectedImage ? new THREE.TextureLoader().load(this.selectedImage) : null,
-      });
-      mesh = new THREE.Mesh(geometry, material);
-      mesh.position.set(0,0.001,0);
-      }else{
-        const geometry = new THREE.CylinderGeometry(width/2-slant, height/2, depth, 64);
-        const mat1 = new THREE.MeshStandardMaterial({
-          color: 0xffffff,
-          emissive: 0xffffff,
-          emissiveIntensity: 0.8,
-          roughness: 0.4,
-        });
-        const mat2 = new THREE.MeshStandardMaterial({
-          color: new THREE.Color(this.baseColor),//0x1c1c1c,
-          roughness: 0.4,
-          normalMap: this._parent.textures.indicator.normal,
-          normalScale: new THREE.Vector2(0.2,0.2),
-        });
-        const mat3 = mat1.clone();
-        //const mat4 = mat1.clone();
-        const mat4 = new THREE.MeshStandardMaterial({
-          emissiveIntensity: 0.8,
-        });
-        mat3.emissive = this.combatColor;
-        mat3.color = this.combatColor;
-        const userColor = new THREE.Color(game.user.color); 
-        //mat4.color = userColor;
-        const highlightGeometry = new THREE.TorusGeometry((width/2-slant)*0.85,(width/2-slant)*0.03, 8, 64)//new THREE.ExtrudeGeometry(arcShape, extrudeSettings);
-        highlightMesh = new THREE.Mesh(highlightGeometry, mat1);
-        highlightMesh.rotation.x = -Math.PI/2;
-        highlightMesh.rotation.z = Math.PI/2;
-        highlightMesh.position.set(0,depth+0.0001,0);
-        highlightMesh.scale.set(1,1,0.1);
-
-        mesh = new THREE.Mesh(geometry, [mat1, mat2, mat2]);
-        mesh.castShadow = true;
-        mesh.receiveShadow = true;
-        if(this.baseMode === "solidindicator"){
-          const indicatorGeometry = new THREE.BoxGeometry(cubesize, depth-0.00001 , cubesize);
-          indicatorMesh = new THREE.Mesh(indicatorGeometry, [mat2, mat1, mat2, mat2, mat1, mat2]);
-          indicatorMesh.position.set(0,depth/2,(width-slant*2)/2.2);
-          indicatorMesh.rotation.set(0,Math.PI/4,0);
-          indicatorMesh.castShadow = true;
-          indicatorMesh.receiveShadow = true;
-        }
-        mesh.position.set(0,depth/2,0);
-        this.materialsCache = {
-          base: mat2,
-          highlight: mat1,
-          combat: mat3,
-          targeted: mat4,
-        }
-      }
-      this.border.add(mesh);
-      this.addStem(Math.min(width,height));
-      if(indicatorMesh) this.border.add(indicatorMesh);
-      if(highlightMesh)this.border.add(highlightMesh);
-
     }
 
     addStem(){

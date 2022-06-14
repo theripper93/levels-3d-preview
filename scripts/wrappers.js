@@ -138,7 +138,8 @@ Hooks.once('ready', async function() {
         // Preload textures without expiring current ones
         promises.push(TextureLoader.loadSceneTextures(scene, {expireCache: false}));
         const models3D = scene.tokens.map(t=>t.getFlag("levels-3d-preview","model3d")).filter(m=>m)
-        for(let model of models3D) {
+        const tiles3D = scene.tiles.map(t=>t.getFlag("levels-3d-preview","model3d")).filter(m=>m)
+        for(let model of models3D.concat(tiles3D)) {
             promises.push(game.Levels3DPreview.helpers.preloadModel(model));
         }
         return Promise.all(promises);

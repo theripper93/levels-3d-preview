@@ -490,13 +490,13 @@ Hooks.once("ready", () => {
     })
   }
 
-  if(!game.settings.get("levels-3d-preview", "oneTimeMessages").sharedRenderer){
+  if(!game.settings.get("levels-3d-preview", "oneTimeMessages").sharedContext){
     Dialog.confirm({
       title: "3D Canvas: Enable Shared Context?",
       content: "Enabling the Shared Context will massively imporove FoW Performance BUT it will disable the 2D Canvas Popout. Do you want to enable it? You can always disable this setting later in the module settings under the Misc tab.",
       yes: async () => {
-        await game.settings.set("levels-3d-preview", "sharedContext", true);
         await setSetting("sharedContext");
+        await game.settings.set("levels-3d-preview", "sharedContext", true);
         window.location.reload();
       },
       no: () => {
