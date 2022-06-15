@@ -156,7 +156,6 @@ export class Token3D {
       if(!model) return;
       let base = model.children?.find(c => c.name === "base");
       if(!base) return;
-      debugger
       const groundOffset = object?.object?.asset?.extras?.heroForge?.groundOffset ?? 0;
       model.remove(base);
       model.children.forEach(c => {

@@ -736,7 +736,6 @@ class Levels3DPreview {
       Math.max(canvas.scene.dimensions.width, canvas.scene.dimensions.height) /
       100;
     const size = sceneSize < 80 ? 80 : sceneSize;
-    this.renderer.outputEncoding = THREE.LinearEncoding;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     const rootImage =
       canvas.scene.getFlag("levels-3d-preview", "skybox") ??
@@ -782,17 +781,11 @@ class Levels3DPreview {
 
   loadEXR(rootImage) {
     this.isEXR = true;
-    if(this.helpers.envCache[rootImage]){
-      this.scene.environment = this.helpers.envCache[rootImage].env;
-      if(this.scene.background instanceof THREE.Color) this.scene.background = this.helpers.envCache[rootImage].bg
-      this._envReady = true;
-      return;
-    }
     const pmremGenerator = new THREE.PMREMGenerator(this.renderer);
     pmremGenerator.compileEquirectangularShader();
     const _this = this;
     new EXRLoader()
-      //.setDataType(THREE.UnsignedByteType)
+      .setDataType(THREE.FloatType)
       .load(rootImage, function (texture) {
         let exrCubeRenderTarget = pmremGenerator.fromEquirectangular(texture);
         let newEnvMap = exrCubeRenderTarget
@@ -807,10 +800,6 @@ class Levels3DPreview {
           _this.scene.background = background;
         }
         _this._envReady = true;
-        _this.helpers.envCache[rootImage] = {
-          env: newEnvMap,
-          bg: background,
-        }
       });
   }
 
