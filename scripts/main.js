@@ -745,7 +745,10 @@ class Levels3DPreview {
       canvas.scene.getFlag("levels-3d-preview", "exr") ??
       this.CONFIG.skybox.exr;
     if (exr) this.loadEXR(exr);
-    if (!rootImage) return;
+    if (!rootImage) {
+      this._envReady = true;
+      return;
+    }
     const imagesSuffix = ["_ft", "_bk", "_up", "_dn", "_rt", "_lf"];
     let currSuffix;
     for (let suffix of imagesSuffix) {

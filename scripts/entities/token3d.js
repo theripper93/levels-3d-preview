@@ -156,7 +156,8 @@ export class Token3D {
       if(!model) return;
       let base = model.children?.find(c => c.name === "base");
       if(!base) return;
-      const groundOffset = object?.asset?.extras?.heroForge?.groundOffset ?? 0;
+      debugger
+      const groundOffset = object?.object?.asset?.extras?.heroForge?.groundOffset ?? 0;
       model.remove(base);
       model.children.forEach(c => {
         c.position.y += groundOffset;
@@ -164,14 +165,14 @@ export class Token3D {
     }
   
     async loadModel() {
-
       //Load Model
       const loaded = await this.getModel();
       const object = loaded.object;
       const scene = loaded.scene;
       const model = loaded.model;
       if(this.removeBase){
-        this.removeBaseAndReposition(object);
+        this.removeBaseAndReposition(loaded)
+        //this.removeBaseAndReposition(object);
       }
 
       await this.setMaterial(model);
