@@ -3,7 +3,10 @@
         "controls": {
             "preview3d": "Toggle 3D Mode",
             "miniCanvas": "Popout/Restore Canvas",
-            "loading": "Loading 3D Canvas...",
+            "loading": {
+                "load": "Loading 3D Canvas...",
+                "env": "Creating 3D Environment..."
+            },
             "gameCameraIntro": {
                 "title": "Welcome to 3D Canvas",
                 "movetitle": "Moving your Token",

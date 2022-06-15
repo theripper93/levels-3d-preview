@@ -8,6 +8,7 @@ export class Helpers {
     this.materialCache = {};
     this.modelCache = {};
     this.baseCache = {};
+    this.envCache = {};
     this.ruler3d = Ruler3D;
   }
 
@@ -15,7 +16,7 @@ export class Helpers {
     if (!texturePath) return null;
     if (this.textureCache[texturePath] && !options.noCache) return this.textureCache[texturePath];
     const texture = await this.getTexture(texturePath);
-    texture.encoding = THREE.sRGBEncoding;
+    texture.encoding = options.linear ? THREE.LinearEncoding : THREE.sRGBEncoding;
     this.textureCache[texturePath] = texture;
     return texture;
   }

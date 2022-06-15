@@ -140,7 +140,8 @@ export class Tile3D {
     }
 
     async init(){
-        const {textureOrMat, isPBR} = await this.getTextureOrMat(this.texture);
+        const pbr = this._parent.helpers.isPBR(this.texture)
+        const {textureOrMat, isPBR} = await this.getTextureOrMat(this.texture, {linear: !pbr});
         const texture = textureOrMat
         const geometry = new THREE.PlaneGeometry(this.width, this.height);
         const material = isPBR ? textureOrMat : new THREE.MeshStandardMaterial({
@@ -155,7 +156,6 @@ export class Tile3D {
             //depthWrite: false,
             alphaTest: 0.99,
         });
-        material.toneMapped = THREE.NoToneMapping;
         this.mesh = new THREE.Mesh(geometry, material);
         this.mesh.position.set(this.center.x,this.center.y,this.center.z);
         this.mesh.rotation.set(-Math.PI/2 + (this.mirrorY ? Math.PI : 0),this.mirrorX ? Math.PI : 0,-this.angle*this.rotSign);
@@ -359,12 +359,12 @@ export class Tile3D {
         return {scene: obj, model: obj, object: obj};
     }
 
-    async getTextureOrMat(texture){
+    async getTextureOrMat(texture, options = {}){
         if(!texture) texture = this.imageTexture
         let textureOrMat = null;
         let isPBR = null;
         if(!texture) return {textureOrMat, isPBR};
-        textureOrMat = await this._parent.helpers.autodetectTextureOrMaterial(texture, {noCache: true});
+        textureOrMat = await this._parent.helpers.autodetectTextureOrMaterial(texture, {noCache: true, ...options});
         isPBR = this._parent.helpers.isPBR(texture)
         if(isPBR){
             Object.values(textureOrMat).forEach(v => this.setTexture(v));

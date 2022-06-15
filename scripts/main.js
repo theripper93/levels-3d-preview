@@ -313,6 +313,7 @@ class Levels3DPreview {
     this.renderer.shadowMap.enabled = true;
     //this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.renderer.antialias = true;
+    this.renderer.outputEncoding = THREE.sRGBEncoding;
 
     this.resolutionMulti =
       game.settings.get("levels-3d-preview", "resolution") *
@@ -390,6 +391,7 @@ class Levels3DPreview {
 
   build3Dscene() {
     this._ready = false;
+    this._envReady = false;
     this._lightsOk = !canvas.scene.getFlag("levels-3d-preview", "bakeLights");
     this.clear3Dscene();
     this.scene = new THREE.Scene();
@@ -536,7 +538,7 @@ class Levels3DPreview {
     const height = canvas.scene.dimensions.sceneHeight / this.factor;
     const center = this.canvasCenter;
     const depth = 0.02;
-    const texture = await this.helpers.loadTexture(canvas.scene.data.img);
+    const texture = await this.helpers.loadTexture(canvas.scene.data.img, {linear: true});
     if (texture) {
       texture.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
       texture.minFilter = THREE.NearestMipMapLinearFilter;
@@ -547,7 +549,6 @@ class Levels3DPreview {
       roughness: 1,
       metalness: 1,
     });
-    material.toneMapped = false;
     const plane = new THREE.Mesh(geometry, material);
     plane.receiveShadow = true;
     plane.castShadow = true;
@@ -606,7 +607,6 @@ class Levels3DPreview {
           metalness: 1,
         })
       : textureMat;
-    material.toneMapped = false;
     const plane = new THREE.Mesh(geometry, material);
     plane.receiveShadow = true;
     plane.position.set(center.x, center.y - (depth / 2 + 0.011), center.z);
@@ -767,36 +767,48 @@ class Levels3DPreview {
         })
       );
     }
-    /*const skyboxGeometry = new THREE.BoxGeometry(size, size, size);
-    const skybox = new THREE.Mesh(skyboxGeometry, materialArray);
-    const center = this.canvasCenter;
-    skybox.position.set(center.x, center.y, center.z);
-    this.scene.add(skybox);
-    this.skybox = skybox;*/
     const loader = new THREE.CubeTextureLoader();
     const textureCube = loader.load(textureArray);
     textureCube.encoding = THREE.sRGBEncoding;
     this.scene.background = textureCube;
-    if (!exr) this.scene.environment = textureCube;
+    if (!exr) {
+      this.scene.environment = textureCube;
+      this._envReady = true;
+    }
   }
 
   loadEXR(rootImage) {
     this.isEXR = true;
+    if(this.helpers.envCache[rootImage]){
+      this.scene.environment = this.helpers.envCache[rootImage].env;
+      if(this.scene.background instanceof THREE.Color) this.scene.background = this.helpers.envCache[rootImage].bg
+      this._envReady = true;
+      return;
+    }
     const pmremGenerator = new THREE.PMREMGenerator(this.renderer);
     pmremGenerator.compileEquirectangularShader();
     const _this = this;
     new EXRLoader()
-      .setDataType(THREE.UnsignedByteType)
+      //.setDataType(THREE.UnsignedByteType)
       .load(rootImage, function (texture) {
         let exrCubeRenderTarget = pmremGenerator.fromEquirectangular(texture);
         let newEnvMap = exrCubeRenderTarget
           ? exrCubeRenderTarget.texture
           : null;
         _this.scene.environment = newEnvMap;
-        if(_this.scene.background instanceof THREE.Color) _this.scene.background = newEnvMap;
+        let background;
+        if(_this.scene.background instanceof THREE.Color) {
+          const rt = new THREE.WebGLCubeRenderTarget(Math.min(texture.image.width, _this.renderer.capabilities.maxTextureSize))
+          rt.fromEquirectangularTexture(_this.renderer, texture)
+          background = rt.texture
+          _this.scene.background = background;
+        }
+        _this._envReady = true;
+        _this.helpers.envCache[rootImage] = {
+          env: newEnvMap,
+          bg: background,
+        }
       });
-    this.renderer.outputEncoding = THREE.sRGBEncoding;
-    //this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
   }
 
   createFloor(points, z) {
@@ -1167,7 +1179,7 @@ class Levels3DPreview {
       tokenArray.filter((token) => token._loaded).length +
       tileArray.filter((tile) => tile._loaded).length;
     let progress = total === 0 ? 100 : Math.round((loaded / total) * 100);
-    if (total === loaded) {
+    if (total === loaded && this._envReady) {
       this._ready = true;
       this.loadingTokens = {};
       this.loadingTiles = {};
@@ -1175,7 +1187,7 @@ class Levels3DPreview {
       Hooks.callAll("3DCanvasSceneReady", game.Levels3DPreview);
     }
     SceneNavigation.displayProgressBar({
-      label: game.i18n.localize("levels3dpreview.controls.loading"),
+      label: total === loaded ? game.i18n.localize("levels3dpreview.controls.loading.env") : game.i18n.localize("levels3dpreview.controls.loading.load"),
       pct: progress,
     });
   }
