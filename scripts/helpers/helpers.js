@@ -1,6 +1,6 @@
 import * as THREE from "../lib/three.module.js";
 import {factor} from '../main.js';
-import { Ruler3D } from "../entities/ruler3d.js";
+import { Ruler3D } from "../entities/ruler3d.js"
 
 export class Helpers {
   constructor() {
@@ -122,6 +122,9 @@ export class Helpers {
     } catch (e) {
       output = null;
     }
+    let isSkinned = false;
+    output.model.traverse((child) => { if(child instanceof THREE.SkinnedMesh) isSkinned = true; });
+    if(isSkinned) return output;
     this.modelCache[modelPath] = output;
     return this.getClone(modelPath);
   }

@@ -164,6 +164,7 @@ export class Token3D {
     }
   
     async loadModel() {
+
       //Load Model
       const loaded = await this.getModel();
       const object = loaded.object;

@@ -390,6 +390,7 @@ class Levels3DPreview {
   }
 
   build3Dscene() {
+    $(".levels-3d-preview-loading-screen").fadeIn(300);
     this._ready = false;
     this._envReady = false;
     this._lightsOk = !canvas.scene.getFlag("levels-3d-preview", "bakeLights");
@@ -744,8 +745,8 @@ class Levels3DPreview {
       canvas.scene.getFlag("levels-3d-preview", "exr") ??
       this.CONFIG.skybox.exr;
     if (exr) this.loadEXR(exr);
+    if (!rootImage && !exr) this._envReady = true;
     if (!rootImage) {
-      this._envReady = true;
       return;
     }
     const imagesSuffix = ["_ft", "_bk", "_up", "_dn", "_rt", "_lf"];
@@ -794,7 +795,7 @@ class Levels3DPreview {
         _this.scene.environment = newEnvMap;
         let background;
         if(_this.scene.background instanceof THREE.Color) {
-          const rt = new THREE.WebGLCubeRenderTarget(Math.min(texture.image.width, _this.renderer.capabilities.maxTextureSize))
+          const rt = new THREE.WebGLCubeRenderTarget(Math.min(1 << 31 - Math.clz32(texture.image.width), _this.renderer.capabilities.maxTextureSize))
           rt.fromEquirectangularTexture(_this.renderer, texture)
           background = rt.texture
           _this.scene.background = background;
@@ -1188,10 +1189,11 @@ class Levels3DPreview {
     this.ClipNavigation = new ClipNavigation().render(true);
     this.weather = new WeatherSystem(this);
     canvas.sight.refresh();
+    $(".levels-3d-preview-loading-screen").fadeOut(200);
     canvas.perception.schedule({
       lighting: { initialize: true /* calls updateSource on each light source */, refresh: true },
       sight: { initialize: true /* calls updateSource on each token */, refresh: true /* you probably to refesh sight as well */, forceUpdateFog: true /* not sure if you need this */ },
-    });    
+    });
   }
 
   toggle(force) {
@@ -1229,6 +1231,7 @@ class Levels3DPreview {
   }
 
   close() {
+    $(".levels-3d-preview-loading-screen").hide();
     this._active = false;
     this.ClipNavigation?.close();
     $("#levels3d").remove();
@@ -1395,6 +1398,13 @@ Hooks.on("preUpdateToken", (token,updates) => {
       return false;
     }
   }
+})
+
+Hooks.on("ready", async () => {
+  const html = await renderTemplate("modules/levels-3d-preview/templates/gameCameraIntro.hbs",{isGM: game.user.isGM});
+  const div = $(`<div class="levels-3d-preview-loading-screen">${html}</div>`);
+  div.hide();
+  $("#ui-top").after(div);
 })
 
 //javascript:(function(){var script=document.createElement('script');script.onload=function(){var stats=new Stats();document.body.appendChild(stats.dom);requestAnimationFrame(function loop(){stats.update();requestAnimationFrame(loop)});};script.src='//mrdoob.github.io/stats.js/build/stats.min.js';document.head.appendChild(script);})()

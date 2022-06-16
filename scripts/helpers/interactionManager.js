@@ -84,7 +84,7 @@ export class InteractionManager {
       return this.computeSightCollisionFrom3DPositions(origin, target, type, elongate);
     }
 
-    computeSightCollisionFrom3DPositions(origin,target, type, elongate, useDistance = true, useClipping = false){
+    computeSightCollisionFrom3DPositions(origin,target, type, elongate, useDistance = true, useClipping = false, returnAll = false){
       const direction = target.clone().sub(origin).normalize();
       const distance = useDistance ? origin.distanceTo(target) : Infinity;
       this.sightRaycaster.firstHitOnly = !useClipping;
@@ -92,10 +92,11 @@ export class InteractionManager {
       if(!this._sightCollisions[type] && !this._sightCollisions["collision"])  this.forceSightCollisions();
       let collisions = this.sightRaycaster.intersectObjects(this._sightCollisions[type] ?? this._sightCollisions["collision"], true);
       if(!collisions.length) return false;
-      if(useClipping){
+      if(useClipping && !returnAll){
         collisions = collisions.filter(c => c.point.y < (game.Levels3DPreview.ClipNavigation._clipHeight ?? Infinity));
         if(!collisions.length) return false;
       }
+      if(returnAll) return collisions;
       const collision = collisions[0];
       if(collision.distance > distance) return false;
       if(elongate){

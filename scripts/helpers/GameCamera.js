@@ -23,10 +23,9 @@ export class GameCamera{
         this.controls.addEventListener('change', this.onChange.bind(this));
     }
 
-    getY(origin){
-        origin = origin ?? new THREE.Vector3(this.toFixedFloat(this.camera.position.x,2), this.toFixedFloat(this.camera.position.y,2),this.toFixedFloat(this.camera.position.z,2))//this.camera.position;
-        origin = origin.clone();
-        origin.y += 10;
+    getY(){
+        const origin = new THREE.Vector3(this.toFixedFloat(this.camera.position.x,2), this.toFixedFloat(this.camera.position.y,2),this.toFixedFloat(this.camera.position.z,2))//this.camera.position;
+        origin.y += 0.2;
         const target = origin.clone();
         target.y = -1000000;
         const collision = this._parent.interactionManager.computeSightCollisionFrom3DPositions(origin, target, "collision", false, false, true);
@@ -35,7 +34,7 @@ export class GameCamera{
             targetCollision = this._parent.interactionManager.computeSightCollisionFrom3DPositions(origin, this.controls.target, "collision", false, false, true);
         }
         return {
-            cameraToGround: origin.y - 10 - (collision?.y ?? 0),
+            cameraToGround: origin.y - 0.2 - (collision?.y ?? 0),
             collisionPoint: collision?.y ?? 0,
             groundCollision: collision,
             targetCollision: targetCollision ?? null,
@@ -150,27 +149,24 @@ export class GameCamera{
         if(this.lock) {
             this.cameraLockTarget = this._detectedTarget?.hasClone ?? this._detectedTarget;
         }else{
-            /*const debugSphere = new THREE.Mesh(new THREE.SphereGeometry(0.01, 10, 10), new THREE.MeshBasicMaterial({color: 0x00ff00}));
-            debugSphere.position.copy(this.controls.target);
-            this._parent.scene.add(debugSphere);*/
             this.cameraLockTarget = null;
         }
         if(this.cameraLockTarget && this.controls.target.distanceTo(this.cameraLockTarget.head) > 0.1) {
             this._parent.setCameraToControlled(this.cameraLockTarget)
         }
 
-        if(this.areValClose(this.controls.maxDistance, this.maxDistTarget, 0.01)) this.maxDistTarget = null;
-        if(this.areValClose(this.camera.position.y, this.yTarget, 0.01)) this.yTarget = null;
-        if(this.areValClose(this.controls.target.y, this.tYTarget?.y, 0.01)) this.yTarget = null;
+        if(this.areValClose(this.controls.maxDistance, this.maxDistTarget, 0.1)) this.maxDistTarget = null;
+        if(this.areValClose(this.camera.position.y, this.yTarget, 0.1)) this.yTarget = null;
+        if(this.areValClose(this.controls.target.y, this.tYTarget?.y, 0.1)) this.yTarget = null;
 
         if(this.maxDistTarget){
-            this.controls.maxDistance = this.lerp(this.controls.maxDistance, this.maxDistTarget, 0.03);
+            this.controls.maxDistance = this.lerp(this.controls.maxDistance, this.maxDistTarget, 0.5);
         }
         if(this.yTarget){
             this.camera.position.y = this.lerp(this.camera.position.y, this.yTarget, 0.03);
         }
         if(this.tYTarget){
-            this.controls.target.lerp(this.tYTarget,0.03)///0.01)//.y = this.lerp(this.controls.target.y, this.tYTarget, 0.03);
+            this.controls.target.lerp(this.tYTarget,0.03)
         }
 
         if(this._nearTarget && this.camera.near != this._nearTarget){
@@ -187,15 +183,22 @@ export class GameCamera{
             this.skipHeight = false;
             return;
         }
-        const {cameraToGround, collisionPoint, targetCollision, groundCollision} = this.getY();
+        this._lastTargetPoint = this.controls.target.clone();
+
+        const {cameraToGround, collisionPoint, groundCollision, targetCollision} = this.getY();
+        this._lastCameraPosition = this.camera.position.clone();
+
         if(cameraToGround < this.CONSTS.MINDIST){
             this.yTarget = collisionPoint + this.CONSTS.MINDIST + this.currentZoomDist;
         }else{// if(cameraToGround > this.CONSTS.MAXDIST){
             this.yTarget = Math.min(collisionPoint + this.CONSTS.MAXDIST, collisionPoint + this.currentZoomDist)//collisionPoint - this.CONSTS.MAXDIST + this.currentZoomDist;
         }
-        if(!this.lock && groundCollision){
+
+        if(!this.lock && groundCollision && targetCollision){
             targetCollision.y = Math.max(targetCollision.y, collisionPoint);
-            this.tYTarget = targetCollision;
+            const newyt = this.controls.target.clone()
+            newyt.y = targetCollision.y;
+            this.tYTarget = newyt//targetCollision;
         }else{
             this.tYTarget = null;
         }
@@ -236,7 +239,8 @@ export class GameCamera{
     detectTargetPosition(){
         let tokenId;
         if(game.combat?.started){
-            tokenId = game.combat.current?.tokenId
+            const tokenplaceable = canvas.tokens.get(game.combat.current?.tokenId)
+            tokenId = tokenplaceable?.visible || tokenplaceable?.isOwner ? tokenplaceable?.id : null;
         }else{
             tokenId = canvas.tokens.controlled[0]?.id;
         }
@@ -261,6 +265,10 @@ export class GameCamera{
 
     areValClose(v1, v2, n){
         return Math.abs(v1-v2) < n;
+    }
+
+    areEqual(v1, v2){
+        return Math.abs(v1-v2) < 0.1;//Number.EPSILON;
     }
 
 }
