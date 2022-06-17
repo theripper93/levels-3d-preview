@@ -21,7 +21,29 @@
                 "elevation": "After changing elevation manually, you will <strong>Move only on that elevation</strong>, to <strong>re-enable snapping</strong> tap <strong>F</strong> while dragging.",
                 "rebind": "You can <strong>Rebind</strong> the keys in the settings.",
                 "gm": "As the <strong>GM</strong> you can toggle the Game Camera at any time with the <strong><i class='fas fa-location-arrow'></i></strong> button. (top left of the chat sidebar)"
-            }
+            },
+            "loadingScreen": {
+                "navtools": "Scene Navigation tools (left of ",
+                "showcontrols": "Show Controls (Toggle)",
+                "togglecamera": "Toggle Game Camera",
+                "cameracontrols": "Camera Controls",
+                "tokencontrols": "Token Controls",
+                "pan": "Pan",
+                "rotate": "Rotate",
+                "zoom": "Zoom",
+                "topdown": "Top-Down",
+                "unlock": "Unlock",
+                "lockon": "Lock-On",
+                "move": "Move",
+                "elevation": "Fly",
+                "snapping": "Snap to Ground",
+                "rebind": "You can Rebind the keys in the settings.",
+                "holddrag": "Hold + Drag",
+                "toggle": "Toggle",
+                "manualpan": "Manual Pan",
+                "dragdrop": "Drag & Drop",
+                "tap": "Tap"
+           }
         },
         "errors": {
             "gamecameradisabled": "3D Canvas: Disabling Game Camera - Game Camera is enabled but 'Use 3D Geometry for sight calculations' is disabled.",

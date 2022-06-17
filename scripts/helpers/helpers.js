@@ -122,6 +122,7 @@ export class Helpers {
     } catch (e) {
       output = null;
     }
+    if(!output) return null;
     let isSkinned = false;
     output.model.traverse((child) => { if(child instanceof THREE.SkinnedMesh) isSkinned = true; });
     if(isSkinned) return output;

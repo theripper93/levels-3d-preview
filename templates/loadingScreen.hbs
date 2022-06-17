@@ -1,0 +1,71 @@
+<div class="tutorial-container">
+    <div id="levels-3d-preview-loading-bar" class="controls-container">
+        <div id="levels-3d-preview-loading-bar-inner"></div>
+        <i id="levels-3d-preview-loading-bar-text"></i>
+    </div>
+    <div class="controls-container">
+        <p>{{{localize "levels3dpreview.controls.loadingScreen.navtools"}}}<i class='fas fa-comments'></i>)</p>
+        <ul id="levels-3d-preview-important-controls">
+            <li><i class='fas fa-question control-highlighted'></i> : {{{localize "levels3dpreview.controls.loadingScreen.showcontrols"}}}</li>
+            {{#if isGM}}
+            <li><i class='fas fa-location-arrow control-highlighted'></i> : {{{localize "levels3dpreview.controls.loadingScreen.togglecamera"}}}</li>
+            {{/if}}
+        </ul>
+        <h1>{{{localize "levels3dpreview.controls.loadingScreen.cameracontrols"}}}</h1>
+        <ul id="levels-3d-preview-camera-controls">
+            <li><i class="control-highlighted">{{{localize "levels3dpreview.controls.loadingScreen.pan"}}}:</i>
+                <img src="modules/levels-3d-preview/assets/loadingScreen/WASD.png" alt="">
+                <i>/</i>
+                <img src="modules/levels-3d-preview/assets/loadingScreen/Mouse%20Right%20Click.png" alt="">
+                <i class="smallmousetext">{{{localize "levels3dpreview.controls.loadingScreen.holddrag"}}}</i>
+            </li>
+            <li><i class="control-highlighted">{{{localize "levels3dpreview.controls.loadingScreen.topdown"}}}:</i>
+                <img src="modules/levels-3d-preview/assets/loadingScreen/O%20Key.png" alt="">
+                <i class="smallmousetext">{{{localize "levels3dpreview.controls.loadingScreen.toggle"}}}</i>
+            </li>
+            <li><i class="control-highlighted">{{{localize "levels3dpreview.controls.loadingScreen.rotate"}}}:</i>
+                <img src="modules/levels-3d-preview/assets/loadingScreen/Mouse%20Left%20Click.png" alt="">
+                <i class="smallmousetext">{{{localize "levels3dpreview.controls.loadingScreen.holddrag"}}}</i>
+            </li>
+            <li><i class="control-highlighted">{{{localize "levels3dpreview.controls.loadingScreen.unlock"}}}:</i>
+                <i>{{{localize "levels3dpreview.controls.loadingScreen.manualpan"}}}</i>
+            </li>
+            <li><i class="control-highlighted">{{{localize "levels3dpreview.controls.loadingScreen.zoom"}}}:</i>
+                <img src="modules/levels-3d-preview/assets/loadingScreen/Mouse%20Scroll%20In.png" alt="">
+                <img src="modules/levels-3d-preview/assets/loadingScreen/Mouse%20Scroll%20Out.png" alt="">
+            </li>
+            <li><i class="control-highlighted">{{{localize "levels3dpreview.controls.loadingScreen.lockon"}}}:</i>
+                <img src="modules/levels-3d-preview/assets/loadingScreen/Spacebar.png" alt="">
+            </li>
+        </ul>
+        <h1>{{{localize "levels3dpreview.controls.loadingScreen.tokencontrols"}}}</h1>
+        <ul>
+            <li>
+                <i class="control-highlighted">{{{localize "levels3dpreview.controls.loadingScreen.move"}}}:</i>
+                <img src="modules/levels-3d-preview/assets/loadingScreen/Arrow%20Keys.png" alt="">
+                <i>/</i>
+                <img src="modules/levels-3d-preview/assets/loadingScreen/Mouse%20Left%20Click.png" alt="">
+                <i class="smallmousetext">{{{localize "levels3dpreview.controls.loadingScreen.dragdrop"}}}</i>
+            </li>
+            <li>
+                <i class="control-highlighted">{{{localize "levels3dpreview.controls.loadingScreen.elevation"}}}:</i>
+                <img src="modules/levels-3d-preview/assets/loadingScreen/Mouse%20Left%20Click.png" alt="">
+                <i class="smallmousetext">{{{localize "levels3dpreview.controls.loadingScreen.holddrag"}}}</i>
+                <i>+</i>
+                <img src="modules/levels-3d-preview/assets/loadingScreen/Mouse%20Scroll%20In.png" alt="">
+                <img src="modules/levels-3d-preview/assets/loadingScreen/Mouse%20Scroll%20Out.png" alt="">
+            </li>
+            <li>
+                <i class="control-highlighted">{{{localize "levels3dpreview.controls.loadingScreen.snapping"}}}:</i>
+                <img src="modules/levels-3d-preview/assets/loadingScreen/Mouse%20Left%20Click.png" alt="">
+                <i class="smallmousetext">{{{localize "levels3dpreview.controls.loadingScreen.holddrag"}}}</i>
+                <i>+</i>
+                <img src="modules/levels-3d-preview/assets/loadingScreen/F%20Key.png" alt="">
+                <i class="smallmousetext">{{{localize "levels3dpreview.controls.loadingScreen.tap"}}}</i>
+            </li>
+        </ul>
+    </div>
+    <div class="controls-container">
+        <p>{{{localize "levels3dpreview.controls.loadingScreen.rebind"}}}</p>
+    </div>
+</div>

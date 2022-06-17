@@ -1,0 +1,110 @@
+.levels-3d-preview-loading-screen{
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--primary-font);
+}
+
+.levels-3d-preview-loading-screen p{
+    text-align: center;
+    line-height: unset;
+    margin: 0.2em;
+}
+
+.levels-3d-preview-loading-screen li{
+    display: flex;
+    gap: 0.5em;
+    align-items: center;
+    padding: 0.5em 0rem;
+}
+
+.levels-3d-preview-loading-screen .smallmousetext{
+    max-width: 1.5rem;
+    text-align: center;
+    font-size: 0.6rem;
+    line-height: 0.5rem;
+}
+
+
+.levels-3d-preview-loading-screen img{
+    border: none;
+    height: 1.3rem;
+}
+
+.levels-3d-preview-loading-screen h1{
+    border: none;
+    font-weight: 500;
+    margin: 0;
+    margin-top: 0.5em
+}
+
+.levels-3d-preview-loading-screen .control-highlighted{
+    color: var(--primary-accent);
+    text-shadow: rgba(0, 0, 0, 0.266) 0 0 5px;
+    font-style: unset;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.levels-3d-preview-loading-screen #levels-3d-preview-important-controls, .levels-3d-preview-loading-screen #levels-3d-preview-camera-controls{
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+}
+
+.levels-3d-preview-loading-screen ul{
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.levels-3d-preview-loading-screen .tutorial-container{
+    display: flex;
+    flex-direction: column;
+}
+
+.levels-3d-preview-loading-screen .controls-container{
+    background: url(/../ui/denim075.png) repeat;
+    border-radius: 5px;
+    margin: 0.2em;
+    padding: 0.3em 0.5em;
+    box-shadow: 0px 0px 5px 1px black;
+    border: 1px solid rgba(255, 255, 255, 0.327);
+}
+
+.levels-3d-preview-loading-screen #levels-3d-preview-important-controls{
+    background-color: var(--warning-accent);
+    border-radius: 5px;
+    padding: 0px 5px;
+}
+
+.levels-3d-preview-loading-screen p{
+    line-height: 1.5rem;
+}
+
+.levels-3d-preview-loading-screen h2{
+    border: none;
+}
+
+#levels-3d-preview-loading-bar{
+    position: relative;
+    padding: 0;
+    overflow: hidden;
+}
+
+#levels-3d-preview-loading-bar #levels-3d-preview-loading-bar-inner{
+    position: absolute;
+    background-color: var(--primary-accent);
+    height: 100%;
+    width: 0%;
+    transition: width 0.5s ease-in-out;
+    opacity: 0.7;
+}
+
+#levels-3d-preview-loading-bar #levels-3d-preview-loading-bar-text{
+    position: relative;
+    z-index: 10;
+    margin-left: 0.2em;
+    text-shadow: rgba(0, 0, 0, 0.266) 0 0 5px;
+}
+

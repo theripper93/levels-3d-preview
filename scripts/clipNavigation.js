@@ -113,7 +113,9 @@ export class ClipNavigation extends Application{
             $(e.currentTarget).toggleClass("clip-navigation-enabled", game.Levels3DPreview.GameCamera.enabled)
           });
           html.on("click", "#clip-navigation-controls", (e)=>{
-            game.Levels3DPreview.interactionManager.showIntro(true)
+            if(!game.Levels3DPreview._ready) return;
+            $("#levels-3d-preview-loading-bar").hide();
+            $(".levels-3d-preview-loading-screen").fadeToggle(200);
           });
           
           if(!this._setOnLoad){

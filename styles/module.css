@@ -104,35 +104,3 @@
     background-color: rgba(0, 0, 0, 0);
     border: 1px solid var(--color-border-highlight);
 }
-
-.levels-3d-preview-loading-screen{
-    pointer-events: none;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--primary-font);
-}
-
-.levels-3d-preview-loading-screen .tutorial-container{
-    background: url(/../ui/denim075.png) repeat;
-    border-radius: 5px;
-    padding: 5px;
-}
-
-.levels-3d-preview-loading-screen .gm-information{
-    background-color: var(--warning-accent) !important;
-    border-radius: 5px;
-}
-
-.levels-3d-preview-loading-screen strong{
-    color: var(--primary-accent);
-    text-shadow: rgba(0, 0, 0, 0.266) 0 0 5px;
-}
-
-.levels-3d-preview-loading-screen p{
-    line-height: 1.5rem;
-}
-
-.levels-3d-preview-loading-screen h2{
-    border: none;
-}

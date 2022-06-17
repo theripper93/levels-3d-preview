@@ -510,7 +510,6 @@ class Levels3DPreview {
     this.lights.globalIllumination.setSunlightFromFlags(false);
     this.interactionManager._cacheKeybinds();
     this.interactionManager.initGroupSelect();
-    if(this.GameCamera.enabled) this.interactionManager.showIntro()
   }
 
   addToken(token) {
@@ -1179,17 +1178,38 @@ class Levels3DPreview {
       this._onReady();
       Hooks.callAll("3DCanvasSceneReady", game.Levels3DPreview);
     }
-    SceneNavigation.displayProgressBar({
-      label: total === loaded ? game.i18n.localize("levels3dpreview.controls.loading.env") : game.i18n.localize("levels3dpreview.controls.loading.load"),
-      pct: progress,
-    });
+    this.setProgressBar(total === loaded ? game.i18n.localize("levels3dpreview.controls.loading.env") : game.i18n.localize("levels3dpreview.controls.loading.load"), progress);
+  }
+
+  setProgressBar(label, progress){
+    $("#levels-3d-preview-loading-bar").show();
+    const progressBar = $("#levels-3d-preview-loading-bar-inner");
+    const labelText = $("#levels-3d-preview-loading-bar-text");
+    progressBar.css("width", `${progress}%`);
+    labelText.text(label);
   }
 
   _onReady(){
     this.ClipNavigation = new ClipNavigation().render(true);
     this.weather = new WeatherSystem(this);
     canvas.sight.refresh();
-    $(".levels-3d-preview-loading-screen").fadeOut(200);
+    if(game.settings.get("levels-3d-preview", "controlsShown") === "lmao"){
+      $(".levels-3d-preview-loading-screen").fadeOut(200, () => {
+        $("#levels-3d-preview-loading-bar-inner").css("width", `0%`)
+      });
+    }else{
+      debugger
+      const $qm = $("#clip-navigation-controls");
+      const $arrow = $('<i class="fas fa-arrow-right"></i>').css({
+        position: "absolute",
+        "z-index": "10000",
+        left: $qm.offset().left + $qm.width() + 10,
+        top: $qm.offset().top + $qm.height() / 2 - 10,
+      })
+      $("body").append($arrow);
+      game.settings.set("levels-3d-preview", "controlsShown", true)
+    }
+
     canvas.perception.schedule({
       lighting: { initialize: true /* calls updateSource on each light source */, refresh: true },
       sight: { initialize: true /* calls updateSource on each token */, refresh: true /* you probably to refesh sight as well */, forceUpdateFog: true /* not sure if you need this */ },
@@ -1401,7 +1421,7 @@ Hooks.on("preUpdateToken", (token,updates) => {
 })
 
 Hooks.on("ready", async () => {
-  const html = await renderTemplate("modules/levels-3d-preview/templates/gameCameraIntro.hbs",{isGM: game.user.isGM});
+  const html = await renderTemplate("modules/levels-3d-preview/templates/loadingScreen.hbs",{isGM: game.user.isGM});
   const div = $(`<div class="levels-3d-preview-loading-screen">${html}</div>`);
   div.hide();
   $("#ui-top").after(div);

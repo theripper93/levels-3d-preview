@@ -58,7 +58,8 @@
     "./scripts/lib/three-nebula.js"
   ],
   "styles": [
-      "./styles/module.css"
+      "./styles/module.css",
+      "./styles/loadingScreen.css"
   ],
   "packs": [
     {
