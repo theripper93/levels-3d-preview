@@ -7,21 +7,6 @@
                 "load": "Loading 3D Canvas...",
                 "env": "Creating 3D Environment..."
             },
-            "gameCameraIntro": {
-                "title": "Welcome to 3D Canvas",
-                "movetitle": "Moving your Token",
-                "cameratitle": "Controlling the Camera",
-                "intro": "Press the <strong><i class='fas fa-question'></i></strong> icon in the scene navigator controls (Top Left of the Chat Sidebar) to show this again.",
-                "pan": "To <strong>Pan</strong>, use the <strong>WASD</strong> keys or <strong>Drag</strong> while Holding the Right Mouse Button.",
-                "rotate": "To <strong>Rotate</strong>, <strong>Drag</strong> while Holding the Left Mouse Button.",
-                "zoom": "To <strong>Zoom</strong>, use the <strong>Mouse Wheel</strong>",
-                "topdown": "To Toggle <strong>Top-Down</strong> view use the <strong>O</strong> key.",
-                "locking": "<strong>Manually Panning</strong> will <strong>Unlock</strong> the camera. Press <strong>Spacebar</strong> to set the camera back to <strong>Auto Mode</strong>",
-                "movement": "To <strong>Move</strong> your token use the <strong>Arrow Keys</strong> or <strong>Drag & Drop</strong>.<br>While dragging, use <strong>Mouse Wheel</strong> to <strong>Change Elevation</strong>.",
-                "elevation": "After changing elevation manually, you will <strong>Move only on that elevation</strong>, to <strong>re-enable snapping</strong> tap <strong>F</strong> while dragging.",
-                "rebind": "You can <strong>Rebind</strong> the keys in the settings.",
-                "gm": "As the <strong>GM</strong> you can toggle the Game Camera at any time with the <strong><i class='fas fa-location-arrow'></i></strong> button. (top left of the chat sidebar)"
-            },
             "loadingScreen": {
                 "navtools": "Scene Navigation tools (left of ",
                 "showcontrols": "Show Controls (Toggle)",
