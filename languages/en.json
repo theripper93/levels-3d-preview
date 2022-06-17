@@ -32,7 +32,7 @@
                 "rotate": "Rotate",
                 "zoom": "Zoom",
                 "topdown": "Top-Down",
-                "unlock": "Unlock",
+                "unlock": "Un-lock",
                 "lockon": "Lock-On",
                 "move": "Move",
                 "elevation": "Fly",
@@ -40,9 +40,11 @@
                 "rebind": "You can Rebind the keys in the settings.",
                 "holddrag": "Hold + Drag",
                 "toggle": "Toggle",
-                "manualpan": "Manual Pan",
+                "manualpan": "Manually Pan",
                 "dragdrop": "Drag & Drop",
-                "tap": "Tap"
+                "tap": "Tap",
+                "scroll": "Scroll",
+                "loadingdone": "3D Canvas Ready! - Press <i class='fas fa-question control-highlighted'></i> to close this screen."
            }
         },
         "errors": {
@@ -67,7 +69,8 @@
             "syncNotification": "Level View for {{level}} Synced with all Players",
             "cameraToToken": "Focus Camera on Selected Token",
             "automode": "Follow Mode",
-            "controls": "Show Controls"
+            "controls": "Show Controls",
+            "lockon": "Toggle Lock-On"
         },
         "keybindings":{
             "dialog": {

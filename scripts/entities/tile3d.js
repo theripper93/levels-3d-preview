@@ -141,7 +141,7 @@ export class Tile3D {
 
     async init(){
         const pbr = this._parent.helpers.isPBR(this.texture)
-        const {textureOrMat, isPBR} = await this.getTextureOrMat(this.texture, {linear: !pbr});
+        const {textureOrMat, isPBR} = await this.getTextureOrMat(this.texture);
         const texture = textureOrMat
         const geometry = new THREE.PlaneGeometry(this.width, this.height);
         const material = isPBR ? textureOrMat : new THREE.MeshStandardMaterial({

@@ -124,6 +124,7 @@ export class GameCamera{
 
     onChange(){
         if(!this.enabled) return;
+        $("#clip-navigation-lock").toggleClass("clip-navigation-enabled", this.lock);
         this.setClipping();
         this.setHeight();
         this.keepInBounds();

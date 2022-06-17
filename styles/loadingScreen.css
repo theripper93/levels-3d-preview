@@ -76,6 +76,8 @@
     background-color: var(--warning-accent);
     border-radius: 5px;
     padding: 0px 5px;
+    margin-bottom: -0.5em;
+    margin-top: 0.5em;
 }
 
 .levels-3d-preview-loading-screen p{
@@ -108,3 +110,22 @@
     text-shadow: rgba(0, 0, 0, 0.266) 0 0 5px;
 }
 
+#clip-navigation-higlight-arrow{
+    position: absolute;
+    z-index: 10000;
+    font-size: 4rem;
+    pointer-events: none;
+    color: var(--primary-accent);
+    text-shadow: 0 0 8px var(--color-shadow-primary);
+    transform: translateX(-20%);
+    animation-name: higlight-arrow-anim;
+    animation-duration: 0.8s;
+    animation-iteration-count: infinite;
+    animation-direction: alternate;
+    animation-timing-function: ease-in-out;
+}
+
+@keyframes higlight-arrow-anim {
+    from {transform: translateX(-20%);}
+    to {transform: translateX(20%);}
+  }

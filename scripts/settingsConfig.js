@@ -278,7 +278,7 @@ Hooks.once('init', function() {
       default: true,
     });
 
-    game.settings.register("levels-3d-preview", "controlsShown", {
+    game.settings.register("levels-3d-preview", "loadingShown", {
       scope: "client",
       config: false,
       type: Boolean,

@@ -538,7 +538,7 @@ class Levels3DPreview {
     const height = canvas.scene.dimensions.sceneHeight / this.factor;
     const center = this.canvasCenter;
     const depth = 0.02;
-    const texture = await this.helpers.loadTexture(canvas.scene.data.img, {linear: true});
+    const texture = await this.helpers.loadTexture(canvas.scene.data.img, {linear: false});
     if (texture) {
       texture.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
       texture.minFilter = THREE.NearestMipMapLinearFilter;
@@ -1190,25 +1190,26 @@ class Levels3DPreview {
   }
 
   _onReady(){
-    this.ClipNavigation = new ClipNavigation().render(true);
-    this.weather = new WeatherSystem(this);
-    canvas.sight.refresh();
-    if(game.settings.get("levels-3d-preview", "controlsShown") === "lmao"){
+    if(game.settings.get("levels-3d-preview", "loadingShown")){
       $(".levels-3d-preview-loading-screen").fadeOut(200, () => {
         $("#levels-3d-preview-loading-bar-inner").css("width", `0%`)
       });
     }else{
-      debugger
-      const $qm = $("#clip-navigation-controls");
-      const $arrow = $('<i class="fas fa-arrow-right"></i>').css({
-        position: "absolute",
-        "z-index": "10000",
-        left: $qm.offset().left + $qm.width() + 10,
-        top: $qm.offset().top + $qm.height() / 2 - 10,
+      Hooks.once("renderClipNavigation", () => {
+        const $qm = $("#clip-navigation-controls");
+        $("#levels-3d-preview-loading-bar-text").html(game.i18n.localize("levels3dpreview.controls.loadingScreen.loadingdone"));
+        const $arrow = $('<i id="clip-navigation-higlight-arrow" class="fas fa-arrow-right"></i>').css({
+          right: window.innerWidth - $qm.offset().left + 20,
+          top: `calc(${$qm.offset().top + $qm.height() / 2}px - 2rem)`,
+        })
+        $("body").append($arrow);
       })
-      $("body").append($arrow);
-      game.settings.set("levels-3d-preview", "controlsShown", true)
+      game.settings.set("levels-3d-preview", "loadingShown", true)
     }
+
+    this.ClipNavigation = new ClipNavigation().render(true);
+    this.weather = new WeatherSystem(this);
+    canvas.sight.refresh();
 
     canvas.perception.schedule({
       lighting: { initialize: true /* calls updateSource on each light source */, refresh: true },

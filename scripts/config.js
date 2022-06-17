@@ -1054,7 +1054,8 @@ Hooks.on("init", () => {
         ],
         onDown: () => {
             if(!game.Levels3DPreview._active || !game.Levels3DPreview.hasFocus) return;
-            game.Levels3DPreview.GameCamera.lock = true
+            game.Levels3DPreview.GameCamera.lock = !game.Levels3DPreview.GameCamera.lock
+            $("#clip-navigation-lock").toggleClass("clip-navigation-enabled", game.Levels3DPreview.GameCamera.lock);
         },
     });
 

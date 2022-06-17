@@ -3,9 +3,12 @@
     <i class="fas fa-video" id="clip-navigation-camera" title="{{localize "levels3dpreview.clipNavigator.cameraToToken"}}"></i>
     <i class="fas fa-street-view{{#if autoMode}} clip-navigation-enabled{{/if}}" id="clip-navigation-automode" title="{{localize "levels3dpreview.clipNavigator.automode"}}"></i>
     {{#if isGC}}
-      <i class="fas fa-location-arrow" id="game-camera-toggle" title="{{localize "levels3dpreview.clipNavigator.gamecamera"}}"></i>
+      <i class="fas fa-lock" id="clip-navigation-lock" title="{{localize "levels3dpreview.clipNavigator.lockon"}}"></i>
     {{/if}}
     {{#if isGM}}
+      {{#if isGC}}
+        <i class="fas fa-location-arrow" id="game-camera-toggle" title="{{localize "levels3dpreview.clipNavigator.gamecamera"}}"></i>
+      {{/if}}
       <i class="fas fa-random" id="clip-navigation-sync" title="{{localize "levels3dpreview.clipNavigator.sync"}}"></i>
     {{/if}}
     <i class="fas fa-question" id="clip-navigation-controls" title="{{localize "levels3dpreview.clipNavigator.controls"}}"></i>

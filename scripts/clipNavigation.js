@@ -18,7 +18,8 @@ export class ClipNavigation extends Application{
 
       getData() {
         const data = super.getData();
-        data.isGC = game.user.isGM && game.settings.get("levels-3d-preview", "enableGameCamera") && (canvas.scene.getFlag("levels-3d-preview", "enableGameCamera") ?? true);
+        data.isGC = game.settings.get("levels-3d-preview", "enableGameCamera") && (canvas.scene.getFlag("levels-3d-preview", "enableGameCamera") ?? true);
+        data.isGM = game.user.isGM
         const levels = (canvas.scene.getFlag("levels","sceneLevels") ?? [])
         .filter((l) => l[1] !== undefined && l[0] !== undefined)
         .sort((a,b)=>{
@@ -53,7 +54,6 @@ export class ClipNavigation extends Application{
           max: this.higestLevel.top + 5,
           curr: this.currentRange ?? this.higestLevel.top + 5
         }
-        data.isGM = game.user.isGM
         this.max = data.range.max
         this.min = data.range.min
         this.levels = levels
@@ -115,8 +115,13 @@ export class ClipNavigation extends Application{
           html.on("click", "#clip-navigation-controls", (e)=>{
             if(!game.Levels3DPreview._ready) return;
             $("#levels-3d-preview-loading-bar").hide();
+            $("#clip-navigation-higlight-arrow").remove();
             $(".levels-3d-preview-loading-screen").fadeToggle(200);
           });
+          html.on("click", "#clip-navigation-lock", ()=>{
+            game.Levels3DPreview.GameCamera.lock = !game.Levels3DPreview.GameCamera.lock
+            $("#clip-navigation-lock").toggleClass("clip-navigation-enabled", game.Levels3DPreview.GameCamera.lock);
+          })
           
           if(!this._setOnLoad){
             this.setToClosest();
