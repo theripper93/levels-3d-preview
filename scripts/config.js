@@ -128,7 +128,7 @@ Hooks.on("renderSceneConfig", (app,html)=>{
         },
         "exr" : {
             type: "filepicker.folder",
-            fpTypes: [".exr"],
+            fpTypes: [".exr",".jpeg",".jpg",".png",".webp"],
             label: game.i18n.localize("levels3dpreview.flags.exr.label"),
             placeholder: game.i18n.localize("levels3dpreview.flags.exr.placeholder"),
             notes: game.i18n.localize("levels3dpreview.flags.exr.notes"),
@@ -683,10 +683,10 @@ Hooks.on("renderTileConfig", (app,html)=>{
             default: 0,
             step: "any",
         },
-        "yScale": {
+        "depth": {
             type: "number",
-            label: game.i18n.localize("levels3dpreview.flags.yScale.label"),
-            default: 1,
+            label: game.i18n.localize("levels3dpreview.flags.depth.label"),
+            default: 100,
             step: 0.000001,
         },
         "collision": {
@@ -726,9 +726,8 @@ Hooks.on("renderTileConfig", (app,html)=>{
         "fillType": {
             type: "select",
             label: game.i18n.localize("levels3dpreview.flags.fillType.label"),
-            default: "fit",
+            default: "stretch",
             options: {
-                "fit": game.i18n.localize("levels3dpreview.flags.fillType.options.fit"),
                 "stretch": game.i18n.localize("levels3dpreview.flags.fillType.options.stretch"),
                 "tile": game.i18n.localize("levels3dpreview.flags.fillType.options.tile"),
             }
@@ -738,6 +737,12 @@ Hooks.on("renderTileConfig", (app,html)=>{
             label: game.i18n.localize("levels3dpreview.flags.tileScale.label"),
             step: 0.00001,
             default: 1,
+        },
+        "yScale": {
+            type: "number",
+            label: game.i18n.localize("levels3dpreview.flags.yScale.label"),
+            default: 1,
+            step: 0.000001,
         },
         "gap": {
             type: "number",
@@ -778,12 +783,12 @@ Hooks.on("renderTileConfig", (app,html)=>{
         }
     })
 
-    const advancedSettings = ["autoCenter","imageTexture", "textureMode", "textureRepeat","enableAnim","color","animSpeed","animIndex","paused","tiltX","tiltZ","yScale"];
+    const advancedSettings = ["autoCenter","imageTexture", "textureMode", "textureRepeat","enableAnim","color","animSpeed","animIndex","paused","tiltX","tiltZ"];
 
     injectAdvancedToggle(app,html,advancedSettings, injected);
 
     html.find(`input[name="flags.levels-3d-preview.randomSeed"]`).prop("maxlength", 7);
-    const tilingFlags = ["tileScale", "gap", "randomRotation", "randomScale", "randomDepth", "randomPosition", "randomColor", "randomSeed"];
+    const tilingFlags = ["tileScale", "yScale","gap", "randomRotation", "randomScale", "randomDepth", "randomPosition", "randomColor", "randomSeed"];
     html.on("change", `select[name="flags.levels-3d-preview.fillType"]`, (e) => {
         const value = e.target.value;
         if (value === "tile") {

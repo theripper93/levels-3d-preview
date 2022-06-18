@@ -102,7 +102,7 @@
             "textureMode": {
                 "label": "Texture Mode",
                 "options": {
-                    "stretch": "Stretch",
+                    "stretch": "Single",
                     "repeat": "Repeat"
                 }
             },
@@ -135,7 +135,7 @@
             "exr" : {
                 "label": "HDRI",
                 "placeholder": "EXR File",
-                "notes": "If no skybox is selected, the HDRI will be used as the background. if both skybox and HDRI are selected, the skybox will be used as the background and the HDRI for lighting and reflections."
+                "notes": "Supports .EXR files or images in a 360° panorama format. If no skybox is selected, the HDRI will be used as the background. if both skybox and HDRI are selected, the skybox will be used as the background and the HDRI for lighting and reflections."
             },
             "exposure": {
                 "label": "Exposure",

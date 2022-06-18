@@ -309,19 +309,28 @@ export class InteractionManager {
           const object3d = await this._parent.helpers.loadModel(data.img)
           const modelBB = new THREE.Box3().setFromObject(object3d.model)
           const widthFactor = modelBB.max.x - modelBB.min.x
-          const heightFactor = modelBB.max.y - modelBB.min.y
-          
+          const heightFactor = modelBB.max.z - modelBB.min.z
+          let depth = modelBB.max.y - modelBB.min.y
+          let width = canvas.grid.size*(canvas.grid.size/data.tileSize)*widthFactor;
+          let height = canvas.grid.size*(canvas.grid.size/data.tileSize)*heightFactor;
+          /*const scaleDim = Math.max(width,height)%canvas.grid.size;
+
+          const scaleFactor = Math.max(width,height) > canvas.grid.size ? (Math.max(width,height)-scaleDim)/Math.max(width,height) : canvas.grid.size/Math.max(width,height)
+          depth*=scaleFactor
+          width*=scaleFactor
+          height*=scaleFactor*/
+
+          data.flags["levels-3d-preview"].depth = canvas.grid.size*(canvas.grid.size/data.tileSize)*depth
           const useSnapped = Ruler3D.useSnapped();
-          const size = canvas.grid.size*(canvas.grid.size/data.tileSize)*Math.max(widthFactor, heightFactor);
           let snapped;
           if(useSnapped){
-            snapped = canvas.grid.getSnappedPosition(data.x - size/2,data.y - size/2)
+            snapped = canvas.grid.getSnappedPosition(data.x - width/2,data.y - height/2)
           }
           canvas.scene.createEmbeddedDocuments("Tile", [{
-            x: snapped ? snapped.x : data.x - size/2,
-            y: snapped ? snapped.y : data.y - size/2,
-            width: size,
-            height: size,
+            x: snapped ? snapped.x : data.x - width/2,
+            y: snapped ? snapped.y : data.y - height/2,
+            width: width,
+            height: height,
             img: "modules/levels-3d-preview/assets/blank.webp",
             overhead: canvas.activeLayer.name !== "BackgroundLayer",
             flags: data.flags,

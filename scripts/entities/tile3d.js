@@ -84,9 +84,10 @@ export class Tile3D {
         this.animSpeed = this.tile.document.getFlag("levels-3d-preview", "animSpeed") ?? 1;
         this.color = this.tile.document.getFlag("levels-3d-preview", "color") ?? "#ffffff";
         this.imageTexture = this.tile.document.getFlag("levels-3d-preview", "imageTexture") ?? "";
-        this.fillType = this.tile.document.getFlag("levels-3d-preview", "fillType") ?? "fit";
+        this.fillType = this.tile.document.getFlag("levels-3d-preview", "fillType") ?? "stretch";
         this.scale= this.tile.document.getFlag("levels-3d-preview", "tileScale") ?? 1;
         this.yScale = this.tile.document.getFlag("levels-3d-preview", "yScale") ?? 1;
+        this.depth = this.tile.document.getFlag("levels-3d-preview", "depth")/factor;
         this.randomRotation = this.tile.document.getFlag("levels-3d-preview", "randomRotation") ?? false;
         this.randomScale = this.tile.document.getFlag("levels-3d-preview", "randomScale") ?? false;
         this.randomDepth = this.tile.document.getFlag("levels-3d-preview", "randomDepth") ?? false;
@@ -179,22 +180,45 @@ export class Tile3D {
         const mWidth = box.max.x - box.min.x;
         const mHeight = box.max.z - box.min.z;
         const mDepth = box.max.y - box.min.y;
-        if(stretch){
-            const yScale = this.width > this.height ? this.width/mDepth : this.height/mDepth;
-            const scaleFit = Math.max(this.width/mWidth, this.height/mHeight);
-            object.scale.set(this.width/mWidth,yScale*this.yScale,this.height/mHeight);
-        }else{
-            const largest = Math.max(mWidth, mHeight, mDepth);
-            let scale = 1;
-            if(largest === mWidth){
-                scale = this.width/mWidth;
-            }else if(largest === mHeight){
-                scale = this.height/mHeight;
+        //migration
+        if(!this.depth){
+            if(stretch){
+                let yScale = this.width > this.height ? this.width/mDepth : this.height/mDepth;
+                yScale*=this.yScale
+                const depth = mDepth*yScale
+                this.depth = Math.round(depth*factor)/factor;
+                this.tile.document.setFlag("levels-3d-preview", "depth", Math.round(depth*factor))
             }else{
-                scale = (Math.min(this.width, this.height))/mDepth;
+                const largest = Math.max(mWidth, mHeight, mDepth);
+                let scale = 1;
+                if(largest === mWidth){
+                    scale = this.width/mWidth;
+                }else if(largest === mHeight){
+                    scale = this.height/mHeight;
+                }else{
+                    scale = (Math.min(this.width, this.height))/mDepth;
+                }
+                const depth = mDepth*this.yScale*scale//*2
+                this.depth = Math.round(depth*factor)/factor;
+                const wDiff = (this.tile.data.width - Math.round(scale*mWidth*factor))/2
+                const hDiff = (this.tile.data.height - Math.round(scale*mHeight*factor))/2
+                this.tile.document.update({
+                    flags: {
+                        "levels-3d-preview": {
+                            "depth": Math.round(depth*factor),
+                            "fillType": "stretch"
+                        }
+                    },
+                    width: Math.round(scale*mWidth*factor),
+                    height: Math.round(scale*mHeight*factor),
+                    x: this.tile.data.x + wDiff,
+                    y: this.tile.data.y + hDiff
+                })
+                this.tile.document.setFlag("levels-3d-preview", "depth", )
             }
-            object.scale.set(scale,this.yScale*scale,scale);
         }
+        //end migration
+        object.scale.set(this.width/mWidth,this.depth/mDepth,this.height/mHeight);
 
         const color = new THREE.Color(this.color);
         this._processModel(object, textureOrMat, isPBR, color);
@@ -214,7 +238,6 @@ export class Tile3D {
         this.mesh = container;
 
         container.add(object);
-        //object.position.set(0,0,0);
         container.position.set(this.center.x,this.center.y,this.center.z);
         container.rotation.set(this.tiltX,-this.angle*this.rotSign,this.tiltZ);
         container.userData.hitbox = container;
@@ -422,8 +445,8 @@ export class Tile3D {
         }
         const c = new THREE.Color();
         c.set(CONFIG.Canvas.dispositionColors.CONTROLLED);
-        const cube = new THREE.Mesh(new THREE.BoxGeometry(this.tile.data.width/factor, box.max.y - box.min.y, this.tile.data.height/factor), new THREE.MeshBasicMaterial({color: c, wireframe: true}));
-        cube.position.set(0, (box.max.y - box.min.y) / 2, 0);
+        const cube = new THREE.Mesh(new THREE.BoxGeometry(this.tile.data.width/factor, this.depth, this.tile.data.height/factor), new THREE.MeshBasicMaterial({color: c, wireframe: true}));
+        cube.position.set(0, (this.depth) / 2, 0);
         if(this.isPlane) cube.rotation.set(-Math.PI/2,0,0);
         cube.geometry.computeBoundingBox();
         this.controlledBox = cube;
@@ -480,14 +503,17 @@ export class Tile3D {
         const scale = this.mesh.getWorldScale(new THREE.Vector3());
         const scaleX = scale.x;
         const scaleZ = scale.z;
+        const scaleY = scale.y;
         const newWidth = this.tile.data.width*scaleX;
         const newHeight = this.tile.data.height*scaleZ;
+        const newDepth = this.depth*factor*scaleY
         const x = (update.x ?? this.tile.data.x) - (newWidth-this.tile.data.width)/2;
         const z = (update.y ?? this.tile.data.y) - (newHeight-this.tile.data.height)/2;
         update.x = Math.round(x);
         update.y = Math.round(z);
         update.width = newWidth;
         update.height = newHeight;
+        update.flags["levels-3d-preview"].depth = Math.round(newDepth)
     }
 
     toggleBoundingBox(){

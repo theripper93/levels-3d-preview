@@ -785,9 +785,16 @@ class Levels3DPreview {
     const pmremGenerator = new THREE.PMREMGenerator(this.renderer);
     pmremGenerator.compileEquirectangularShader();
     const _this = this;
-    new EXRLoader()
+    if(rootImage.toLowerCase().endsWith(".exr")){
+      new EXRLoader()
       .setDataType(THREE.FloatType)
-      .load(rootImage, function (texture) {
+      .load(rootImage, onLoaded );
+    }else{
+      this.helpers.loadTexture(rootImage).then(onLoaded);
+      //new THREE.TextureLoader().load(rootImage, onLoaded);
+    }
+
+      function onLoaded(texture){
         let exrCubeRenderTarget = pmremGenerator.fromEquirectangular(texture);
         let newEnvMap = exrCubeRenderTarget
           ? exrCubeRenderTarget.texture
@@ -801,7 +808,7 @@ class Levels3DPreview {
           _this.scene.background = background;
         }
         _this._envReady = true;
-      });
+      }
   }
 
   createFloor(points, z) {
