@@ -102,7 +102,7 @@
             "textureMode": {
                 "label": "Texture Mode",
                 "options": {
-                    "stretch": "Single",
+                    "stretch": "Stretch",
                     "repeat": "Repeat"
                 }
             },
@@ -254,10 +254,12 @@
             "fillType": {
                 "label": "Fill Type",
                 "options": {
-                    "stretch": "Stretch",
-                    "fit": "Fit",
+                    "stretch": "Single",
                     "tile": "Repeat"
                 }
+            },
+            "depth":{
+                "label": "Depth"
             },
             "material": {
                 "label": "Material",
