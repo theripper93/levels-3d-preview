@@ -1031,10 +1031,10 @@ export class Token3D {
       this.proneHandler.originalPosition = this.model.position.clone();
       this.proneHandler.originalRotation = this.model.rotation.clone();
       this.proneHandler.originalScale = this.model.scale.clone();
-      const offsetY = 0;
       const box = new THREE.Box3().setFromObject(this.model)
       const center = box.getCenter(new THREE.Vector3());
       const dimensions = box.getSize(new THREE.Vector3());
+      const offsetY = this.gtflPath.includes("[HeroForge]") ? center.y/2 : 0;
 
       const targetRotation = this.model.rotation.clone();
 
@@ -1059,7 +1059,7 @@ export class Token3D {
       }else if(isHuman(dimensions)){
         targetRotation.x = -Math.PI/2;
         targetPosition.z += dimensions.y/2;
-        targetPosition.y += dimensions.z/2;
+        targetPosition.y += (dimensions.z/2);
       }
 
       targetPosition.y -= offsetY;
