@@ -50,6 +50,7 @@ Hooks.once('ready', async function() {
             return
         }
         if(!game.Levels3DPreview?.object3dSight || !game.Levels3DPreview?.fogExploration) return;
+
         const splits = 8;
         const timeoutLimit = splits*64;
         const polygonPoints = [];
@@ -81,11 +82,7 @@ Hooks.once('ready', async function() {
             const a = aMin + (aMax - aMin) * (i / nPoints);
             const x = origin.x + radius * Math.cos(a)
             const y = origin.y + radius * Math.sin(a)
-            let collision = raycasterCache[`${origin.x}${origin.y}${x}${y}${z}`]
-            if(collision === undefined){
-            collision = game.Levels3DPreview.interactionManager.computeSightCollision({x: origin.x, y: origin.y, z: z}, {x: x, y: y, z: z}, "sight", true);
-            raycasterCache[`${origin.x}${origin.y}${x}${y}${z}`] = collision;
-            }
+            const collision = game.Levels3DPreview.interactionManager.computeSightCollision({x: origin.x, y: origin.y, z: z}, {x: x, y: y, z: z}, "sight", true);
             if(collision){
                 polygonPoints.push(collision.x*factor, collision.z*factor);
             }else{
