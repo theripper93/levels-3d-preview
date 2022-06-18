@@ -3,7 +3,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--primary-font);
+    color: var(--color-text-light-0);
 }
 
 .levels-3d-preview-loading-screen p{
@@ -40,7 +40,7 @@
 }
 
 .levels-3d-preview-loading-screen .control-highlighted{
-    color: var(--primary-accent);
+    color: var(--color-text-hyperlink);
     text-shadow: rgba(0, 0, 0, 0.266) 0 0 5px;
     font-style: unset;
     font-weight: bold;
@@ -73,11 +73,13 @@
 }
 
 .levels-3d-preview-loading-screen #levels-3d-preview-important-controls{
-    background-color: var(--warning-accent);
+    background-color: var(--color-border-highlight-alt);
     border-radius: 5px;
     padding: 0px 5px;
     margin-bottom: -0.5em;
     margin-top: 0.5em;
+    text-shadow: 0 0 3px var(--color-border-dark-2);
+    filter: brightness(0.9);
 }
 
 .levels-3d-preview-loading-screen p{
@@ -96,7 +98,7 @@
 
 #levels-3d-preview-loading-bar #levels-3d-preview-loading-bar-inner{
     position: absolute;
-    background-color: var(--primary-accent);
+    background-color: var(--color-text-hyperlink);
     height: 100%;
     width: 0%;
     transition: width 0.5s ease-in-out;
@@ -107,7 +109,7 @@
     position: relative;
     z-index: 10;
     margin-left: 0.2em;
-    text-shadow: rgba(0, 0, 0, 0.266) 0 0 5px;
+    text-shadow: 0 0 3px var(--color-border-dark-2);
 }
 
 #clip-navigation-higlight-arrow{
@@ -115,8 +117,8 @@
     z-index: 10000;
     font-size: 4rem;
     pointer-events: none;
-    color: var(--primary-accent);
-    text-shadow: 0 0 8px var(--color-shadow-primary);
+    color: var(--color-text-hyperlink);
+    text-shadow: 0 0 8px var(--color-shadow-highlight);
     transform: translateX(-20%);
     animation-name: higlight-arrow-anim;
     animation-duration: 0.8s;

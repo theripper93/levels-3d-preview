@@ -64,6 +64,7 @@ Hooks.once('ready', async function() {
         const currentSplit = this.config.source._polygon3DCache?.currentSplit ?? 0;
         const splitStart = computeFull ? 0 : currentSplit*splitAngle;
         const splitEnd = computeFull ? nPoints : splitStart + splitAngle;
+        const raycasterCache = game.Levels3DPreview.raycasterCache;
 
         if(currentSplit === 0 && this.config.source._polygon3DCache?.cacheId){
             const id = this.config.source._polygon3DCache.cacheId;
@@ -80,8 +81,11 @@ Hooks.once('ready', async function() {
             const a = aMin + (aMax - aMin) * (i / nPoints);
             const x = origin.x + radius * Math.cos(a)
             const y = origin.y + radius * Math.sin(a)
-
-            const collision = game.Levels3DPreview.interactionManager.computeSightCollision({x: origin.x, y: origin.y, z: z}, {x: x, y: y, z: z}, "sight", true);
+            let collision = raycasterCache[`${origin.x}${origin.y}${x}${y}${z}`]
+            if(collision === undefined){
+            collision = game.Levels3DPreview.interactionManager.computeSightCollision({x: origin.x, y: origin.y, z: z}, {x: x, y: y, z: z}, "sight", true);
+            raycasterCache[`${origin.x}${origin.y}${x}${y}${z}`] = collision;
+            }
             if(collision){
                 polygonPoints.push(collision.x*factor, collision.z*factor);
             }else{

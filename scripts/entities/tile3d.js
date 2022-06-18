@@ -17,9 +17,9 @@ export class Tile3D {
         this.draggable = true;
         this.embeddedName = "Tile"
         this.bottom = tile.data.flags.levels?.rangeBottom ?? 0;
-        this.index = canvas.background.placeables.indexOf(this.tile) ?? canvas.foreground.placeables.indexOf(this.tile) ?? 0;
+        /*this.index = canvas.background.placeables.indexOf(this.tile) ?? canvas.foreground.placeables.indexOf(this.tile) ?? 0;
         this.zIndex = 0 + this.index;
-        this.bottom+=this.zIndex/1000;
+        this.bottom+=this.zIndex/1000;*/
         this.center2d = {
             x: this.tile.data.x + Math.abs(this.tile.data.width)/2,
             y: this.tile.data.y + Math.abs(this.tile.data.height)/2
