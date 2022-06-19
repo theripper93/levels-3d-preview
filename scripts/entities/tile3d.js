@@ -310,15 +310,17 @@ export class Tile3D {
             for(let z = 0; z < rows; z++){
                 for(let x = 0; x < cols; x++){
                     const { randomColor , randomRotation, randomDepth, randomScale, offsetx, offsetz } = randomData[i];
+                    const newScale = baseScale.clone().multiplyScalar(randomScale)
+                    newScale.y *= this.yScale*randomDepth;
+                    object.scale.copy(newScale);
                     child.getWorldPosition(dummy.position);
                     child.getWorldQuaternion(dummy.quaternion);
                     child.getWorldScale(dummy.scale);
-                    dummy.scale.copy(baseScale.clone().multiplyScalar(randomScale));
-                    dummy.scale.y *= this.yScale*randomDepth;
+                    object.scale.copy(baseScale);
                     if(this.randomPosition){
-                        dummy.position.set((dummy.position.x+offsetx),dummy.position.y*this.yScale,(dummy.position.z+offsetz));
+                        dummy.position.set((dummy.position.x+offsetx),dummy.position.y,(dummy.position.z+offsetz));
                     }else{
-                        dummy.position.set((dummy.position.x+x*gridX+offsetx),dummy.position.y*this.yScale,(dummy.position.z+z*gridZ+offsetz));
+                        dummy.position.set((dummy.position.x+x*gridX+offsetx),dummy.position.y,(dummy.position.z+z*gridZ+offsetz));
                     }
 
                     //dummy.scale.set(randomScale*child.scale.x*scaleFit,randomDepth*randomScale*child.scale.y*scaleFit*this.yScale,randomScale*child.scale.z*scaleFit);
@@ -442,7 +444,7 @@ export class Tile3D {
         const c = new THREE.Color();
         c.set(CONFIG.Canvas.dispositionColors.CONTROLLED);
         const cube = new THREE.Mesh(new THREE.BoxGeometry(this.tile.data.width/factor, this.fillType === "tile" ? depth : this.depth, this.tile.data.height/factor), new THREE.MeshBasicMaterial({color: c, wireframe: true}));
-        cube.position.set(0, (this.depth + (depth ?? 0)) / 2, 0);
+        cube.position.set(0, this.fillType === "tile" ? depth/2 : (this.depth) / 2, 0);
         if(this.isPlane) cube.rotation.set(-Math.PI/2,0,0);
         cube.geometry.computeBoundingBox();
         this.controlledBox = cube;
