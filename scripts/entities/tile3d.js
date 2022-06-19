@@ -252,7 +252,7 @@ export class Tile3D {
     async initInstanced(){
         const model = await this.getModel();
         const {textureOrMat, isPBR} = await this.getTextureOrMat();
-        const object = model.scene
+        const object =  game.Levels3DPreview.helpers.groundModel(model.scene, this.autoGround, this.autoCenter);//model.scene
         const box = new THREE.Box3().setFromObject(object);
         const gap = this.gap*canvas.grid.size/factor;
         const grid = (canvas.grid.size * this.scale)/factor+gap;
@@ -295,37 +295,34 @@ export class Tile3D {
         }
 
         this._processModel(object, textureOrMat, isPBR, color);
-
+        object.scale.set(scaleFit,scaleFit,scaleFit);
+        const baseScale = object.scale.clone();
         object.traverse((child) => {
             if (child.isMesh) {
- 
               //generate instanceed
-
             const instancedMesh = new THREE.InstancedMesh(
                 child.geometry,
                 child.material,
                 count
             );
-    
             instancedMesh.instanceMatrix.setUsage( THREE.DynamicDrawUsage );
-
-
-
-
-
             let i = 0;
-    
             for(let z = 0; z < rows; z++){
                 for(let x = 0; x < cols; x++){
                     const { randomColor , randomRotation, randomDepth, randomScale, offsetx, offsetz } = randomData[i];
-                    dummy.matrix.set(child.matrix);
+                    child.getWorldPosition(dummy.position);
+                    child.getWorldQuaternion(dummy.quaternion);
+                    child.getWorldScale(dummy.scale);
+                    dummy.scale.copy(baseScale.clone().multiplyScalar(randomScale));
+                    dummy.scale.y *= this.yScale*randomDepth;
                     if(this.randomPosition){
-                        dummy.position.set((child.position.x+offsetx),child.position.y*scaleFit*this.yScale,(child.position.z+offsetz));
+                        dummy.position.set((dummy.position.x+offsetx),dummy.position.y*this.yScale,(dummy.position.z+offsetz));
                     }else{
-                        dummy.position.set((child.position.x+x*gridX+offsetx),child.position.y*scaleFit*this.yScale,(child.position.z+z*gridZ+offsetz));
+                        dummy.position.set((dummy.position.x+x*gridX+offsetx),dummy.position.y*this.yScale,(dummy.position.z+z*gridZ+offsetz));
                     }
-                    dummy.scale.set(randomScale*child.scale.x*scaleFit,randomDepth*randomScale*child.scale.y*scaleFit*this.yScale,randomScale*child.scale.z*scaleFit);
-                    dummy.rotation.set(child.rotation.x,child.rotation.y+randomRotation,child.rotation.z);
+
+                    //dummy.scale.set(randomScale*child.scale.x*scaleFit,randomDepth*randomScale*child.scale.y*scaleFit*this.yScale,randomScale*child.scale.z*scaleFit);
+                    dummy.rotation.set(dummy.rotation.x,dummy.rotation.y+randomRotation,dummy.rotation.z);
                     dummy.updateMatrix();
                     if(this.randomColor){
                         const originalColor = child.material.color;
@@ -348,7 +345,6 @@ export class Tile3D {
 
             }
         });
-
         this.mesh = container;
         this.mesh.traverse((child) => {
             if (child.isMesh) {
@@ -357,13 +353,13 @@ export class Tile3D {
               child.geometry.computeBoundsTree();
             }
         })
-        container.position.set(this.center.x,this.center.y,this.center.z);
-        container.rotation.set(this.tiltX,-this.angle*this.rotSign,this.tiltZ);
-        container.userData.hitbox = container;
-        container.userData.interactive = true;
-        container.userData.entity3D = this;
+        this.mesh.position.set(this.center.x,this.center.y,this.center.z);
+        this.mesh.rotation.set(this.tiltX,-this.angle*this.rotSign,this.tiltZ);
+        this.mesh.userData.hitbox = this.mesh;
+        this.mesh.userData.interactive = true;
+        this.mesh.userData.entity3D = this;
         if(this._destroyed) return;
-        this._parent.scene.add(container);
+        this._parent.scene.add(this.mesh);
 
         this.initBoundingBox(mDepth*scaleFit);
     }
@@ -445,8 +441,8 @@ export class Tile3D {
         }
         const c = new THREE.Color();
         c.set(CONFIG.Canvas.dispositionColors.CONTROLLED);
-        const cube = new THREE.Mesh(new THREE.BoxGeometry(this.tile.data.width/factor, this.depth, this.tile.data.height/factor), new THREE.MeshBasicMaterial({color: c, wireframe: true}));
-        cube.position.set(0, (this.depth) / 2, 0);
+        const cube = new THREE.Mesh(new THREE.BoxGeometry(this.tile.data.width/factor, this.fillType === "tile" ? depth : this.depth, this.tile.data.height/factor), new THREE.MeshBasicMaterial({color: c, wireframe: true}));
+        cube.position.set(0, (this.depth + (depth ?? 0)) / 2, 0);
         if(this.isPlane) cube.rotation.set(-Math.PI/2,0,0);
         cube.geometry.computeBoundingBox();
         this.controlledBox = cube;

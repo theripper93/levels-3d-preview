@@ -70,9 +70,9 @@ export class GlobalIllumination {
     }
 
     setTarget(flags = true, animate = true){
-      const color = new THREE.Color(flags.color ?? canvas.scene.getFlag("levels-3d-preview", "sceneTint") ?? 0xffa95c);
+      const color = new THREE.Color(flags.color ?? canvas.scene.getFlag("levels-3d-preview", "sceneTint") ?? "white");
       const distance = -(flags.distance ?? canvas.scene.getFlag("levels-3d-preview", "sunDistance") ?? 10);
-      const time = flags.time ?? canvas.scene.getFlag("levels-3d-preview", "sunPosition") ?? 12;
+      const time = Math.clamped(flags.time ?? canvas.scene.getFlag("levels-3d-preview", "sunPosition") ?? 12, 0, 24);
       const exposure = flags.exposure ?? canvas.scene.getFlag("levels-3d-preview", "exposure") ?? 1;
       const sunTilt = flags.tilt ?? canvas.scene.getFlag("levels-3d-preview", "sunTilt") ?? 0;
       const intensity = exposure;

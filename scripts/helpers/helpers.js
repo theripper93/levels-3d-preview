@@ -404,23 +404,24 @@ export class Helpers {
 }
 
 
-export function toggleAdvancedSettings(app, html, settings){
+export function toggleAdvancedSettings(app, html, settings, other){
   for(let setting of settings){
     html.find(`[name="flags.levels-3d-preview.${setting}"]`).closest(".form-group").toggle();
   }
+  other.forEach(o => {
+    o.toggle();
+  })
   app.setPosition({height: "auto"});
 }
 
-export function injectAdvancedToggle(app, html, settings, injected){
+export function injectAdvancedToggle(app, html, settings, injected, other = []){
   const alwaysShowAdvanced = game.settings.get("levels-3d-preview", "showAdvanced");
   if(alwaysShowAdvanced) return;
-  const toggleAdvanced = $(`<div class="form-group"><a style="text-align: center; font-weight: bolder; text-decoration: underline;">${game.i18n.localize("levels3dpreview.settings.showAdvanced.show")}</a></div>`);
+  const toggleAdvanced = $(`<div class="form-group"><a style="color: var(--color-text-hyperlink); text-align: center; font-weight: bolder; text-decoration: underline;">${game.i18n.localize("levels3dpreview.settings.showAdvanced.show")}</a></div>`);
   (injected.find(".form-group").last().length ? injected.find(".form-group").last() : $(injected[injected.length-1])).after(toggleAdvanced);
   toggleAdvanced.click(() => {
-    toggleAdvancedSettings(app, html, settings)
+    toggleAdvancedSettings(app, html, settings, other);
     toggleAdvanced.find("a").text(toggleAdvanced.find("a").text() === game.i18n.localize("levels3dpreview.settings.showAdvanced.show") ? game.i18n.localize("levels3dpreview.settings.showAdvanced.hide") : game.i18n.localize("levels3dpreview.settings.showAdvanced.show"));
   });
-  for(let setting of settings){
-    html.find(`[name="flags.levels-3d-preview.${setting}"]`).closest(".form-group").toggle();
-  }
+  toggleAdvancedSettings(app, html, settings, other);
 }

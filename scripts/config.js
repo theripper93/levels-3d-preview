@@ -77,7 +77,7 @@ Hooks.on("renderSceneConfig", (app,html)=>{
         "enableFogOfWar": {
             type: "checkbox",
             label: game.i18n.localize("levels3dpreview.flags.enableFogOfWar.label"),
-            notes: game.i18n.localize("levels3dpreview.flags.enableFogOfWar.notes"),
+            //notes: game.i18n.localize("levels3dpreview.flags.enableFogOfWar.notes"),
             default: false,
         },
         "maxElevation": {
@@ -119,13 +119,6 @@ Hooks.on("renderSceneConfig", (app,html)=>{
             type: "custom",
             html: `<h3 class="form-header"><i class="fas fa-cloud-sun"></i> ${game.i18n.localize("levels3dpreview.settings.headers.environment.title")}</h3><p class="notes">${game.i18n.localize("levels3dpreview.settings.headers.environment.notes")}</p><div>`
         },
-        "skybox" : {
-            type: "filepicker",
-            label: game.i18n.localize("levels3dpreview.flags.skybox.label"),
-            placeholder: game.i18n.localize("levels3dpreview.flags.skybox.placeholder"),
-            notes: game.i18n.localize("levels3dpreview.flags.skybox.notes"),
-            default: "modules/levels-3d-preview/assets/skybox/humble/humble_bk.jpg"
-        },
         "exr" : {
             type: "filepicker.folder",
             fpTypes: [".exr",".jpeg",".jpg",".png",".webp"],
@@ -133,6 +126,13 @@ Hooks.on("renderSceneConfig", (app,html)=>{
             placeholder: game.i18n.localize("levels3dpreview.flags.exr.placeholder"),
             notes: game.i18n.localize("levels3dpreview.flags.exr.notes"),
             default: "modules/levels-3d-preview/assets/skybox/venice_sunrise_1k.exr"
+        },
+        "skybox" : {
+            type: "filepicker",
+            label: game.i18n.localize("levels3dpreview.flags.skybox.label"),
+            placeholder: game.i18n.localize("levels3dpreview.flags.skybox.placeholder"),
+            notes: game.i18n.localize("levels3dpreview.flags.skybox.notes"),
+            default: "modules/levels-3d-preview/assets/skybox/humble/humble_bk.jpg"
         },
         "renderTable": {
             "type": "checkbox",
@@ -173,7 +173,7 @@ Hooks.on("renderSceneConfig", (app,html)=>{
         "sceneTint": {
             type: "color",
             label: game.i18n.localize("levels3dpreview.flags.sceneTint.label"),
-            default: "#ffc494",
+            default: "#ffffff",
         },
         "timeSync": {
             type: "select",
@@ -193,18 +193,10 @@ Hooks.on("renderSceneConfig", (app,html)=>{
             min: 0,
             max: 24,
         },
-        /*"sunIntensity": {
-            type: "range",
-            label: game.i18n.localize("levels3dpreview.flags.sunIntensity.label"),
-            default: 0.7,
-            min: 0,
-            max: 2,
-            step: 0.01,
-        },*/
         "exposure": {
             type: "range",
             label: game.i18n.localize("levels3dpreview.flags.exposure.label"),
-            notes: game.i18n.localize("levels3dpreview.flags.exposure.notes"),
+            //notes: game.i18n.localize("levels3dpreview.flags.exposure.notes"),
             default: 1,
             min: 0.01,
             max: 2,
@@ -366,7 +358,7 @@ Hooks.on("renderSceneConfig", (app,html)=>{
         },
         "header5": {
             type: "custom",
-            html: `<h3 class="form-header"><i class="fas fa-eye"></i> ${game.i18n.localize("levels3dpreview.settings.headers.visibility.title")}</h3><p class="notes">${game.i18n.localize("levels3dpreview.settings.headers.visibility.notes")}</p><div>`
+            html: `<h3 class="form-header" id="levels3dpreview-visibility"><i class="fas fa-eye"></i> ${game.i18n.localize("levels3dpreview.settings.headers.visibility.title")}</h3><p class="notes">${game.i18n.localize("levels3dpreview.settings.headers.visibility.notes")}</p><div>`
         },
         "showSceneWalls": {
             type: "checkbox",
@@ -406,9 +398,9 @@ Hooks.on("renderSceneConfig", (app,html)=>{
     })
     html.find(`select[name="flags.levels-3d-preview.particlePreset"]`).trigger("change");
 
-    const advancedSettings = ["sunDistance", "sunTilt", "renderTable", "tableTex", "enableGameCamera", "maxElevation","enableGrid","enableRuler","lockCamera","renderBackground","enableFog","fogColor","fogDistance","sceneTint","timeSync","shadowBias","showSceneWalls","showSceneDoors","showSceneFloors","renderSceneLights"];
-
-    injectAdvancedToggle(app,html,advancedSettings, injected);
+    const advancedSettings = ["mirrorLevels","sunDistance", "sunTilt", "renderTable", "tableTex", "enableGameCamera", "maxElevation","enableGrid","enableRuler","lockCamera","renderBackground","enableFog","fogColor","fogDistance","sceneTint","timeSync","shadowBias","showSceneWalls","showSceneDoors","showSceneFloors","renderSceneLights"];
+    const other = [html.find("#levels3dpreview-visibility")];
+    injectAdvancedToggle(app,html,advancedSettings, injected, other);
 
     if(canvas.scene.id !== app.object.id) return;
     html.on("change", "input", (e)=>{
