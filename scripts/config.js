@@ -134,15 +134,6 @@ Hooks.on("renderSceneConfig", (app,html)=>{
             notes: game.i18n.localize("levels3dpreview.flags.exr.notes"),
             default: "modules/levels-3d-preview/assets/skybox/venice_sunrise_1k.exr"
         },
-        "exposure": {
-            type: "range",
-            label: game.i18n.localize("levels3dpreview.flags.exposure.label"),
-            notes: game.i18n.localize("levels3dpreview.flags.exposure.notes"),
-            default: 1,
-            min: 0.01,
-            max: 2,
-            step: 0.01,
-        },
         "renderTable": {
             "type": "checkbox",
             "label": game.i18n.localize("levels3dpreview.flags.renderTable.label"),
@@ -191,22 +182,45 @@ Hooks.on("renderSceneConfig", (app,html)=>{
             options: {
                 "off": game.i18n.localize("levels3dpreview.flags.timeSync.options.off"),
                 "time": game.i18n.localize("levels3dpreview.flags.timeSync.options.time"),
-                "darkness": game.i18n.localize("levels3dpreview.flags.timeSync.options.darkness")
+                "darkness": game.i18n.localize("levels3dpreview.flags.timeSync.options.darkness"),
+                "both": game.i18n.localize("levels3dpreview.flags.timeSync.options.both"),
             }
         },
         "sunPosition": {
             type: "range",
             label: game.i18n.localize("levels3dpreview.flags.sunPosition.label"),
-            default: 35,
+            default: 9,
             min: 0,
-            max: 180,
+            max: 24,
         },
-        "sunIntensity": {
+        /*"sunIntensity": {
             type: "range",
             label: game.i18n.localize("levels3dpreview.flags.sunIntensity.label"),
             default: 0.7,
             min: 0,
             max: 2,
+            step: 0.01,
+        },*/
+        "exposure": {
+            type: "range",
+            label: game.i18n.localize("levels3dpreview.flags.exposure.label"),
+            notes: game.i18n.localize("levels3dpreview.flags.exposure.notes"),
+            default: 1,
+            min: 0.01,
+            max: 2,
+            step: 0.01,
+        },
+        "sunDistance": {
+            type: "number",
+            label: game.i18n.localize("levels3dpreview.flags.sunDistance.label"),
+            default: 10,
+        },
+        "sunTilt": {
+            type: "range",
+            label: game.i18n.localize("levels3dpreview.flags.sunTilt.label"),
+            default: 0,
+            min: -1,
+            max: 1,
             step: 0.01,
         },
         "shadowBias": {
@@ -392,7 +406,7 @@ Hooks.on("renderSceneConfig", (app,html)=>{
     })
     html.find(`select[name="flags.levels-3d-preview.particlePreset"]`).trigger("change");
 
-    const advancedSettings = ["exposure","enableGrid","enableRuler","lockCamera","exr","renderBackground","enableFog","fogColor","fogDistance","sceneTint","timeSync","sunPosition","shadowBias","showSceneWalls","showSceneDoors","showSceneFloors","renderSceneLights"];
+    const advancedSettings = ["sunDistance", "sunTilt", "renderTable", "tableTex", "enableGameCamera", "maxElevation","enableGrid","enableRuler","lockCamera","renderBackground","enableFog","fogColor","fogDistance","sceneTint","timeSync","shadowBias","showSceneWalls","showSceneDoors","showSceneFloors","renderSceneLights"];
 
     injectAdvancedToggle(app,html,advancedSettings, injected);
 
@@ -400,16 +414,19 @@ Hooks.on("renderSceneConfig", (app,html)=>{
     html.on("change", "input", (e)=>{
         if(!game.Levels3DPreview._active) return;
         const sunPosition = html.find("input[name='flags.levels-3d-preview.sunPosition']")[0].value;
-        const sunDistance = 10;
-        const sunIntensity = html.find("input[name='flags.levels-3d-preview.sunIntensity']")[0].value;
+        const sunDistance = html.find("input[name='flags.levels-3d-preview.sunDistance']")[0].value;
         const sceneTint = html.find("input[name='flags.levels-3d-preview.sceneTint']")[0].value;
-        game.Levels3DPreview.lights.globalIllumination.sunlight = {
-            color: sceneTint,
-            angle: Math.toRadians(sunPosition),
-            distance: sunDistance,
-            intensity: sunIntensity,
-            animate: true,
-        }
+        const exposure = html.find("input[name='flags.levels-3d-preview.exposure']")[0].value;
+        const sunTilt = html.find("input[name='flags.levels-3d-preview.sunTilt']")[0].value;
+        game.Levels3DPreview.lights.globalIllumination.setTarget(
+            {
+                color: sceneTint,
+                time: sunPosition,
+                distance: sunDistance,
+                exposure: exposure,
+                tilt: sunTilt,
+            }
+        )
     })
     html.on("click", "#clear-3d-view", (e)=>{
         e.preventDefault();

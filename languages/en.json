@@ -180,11 +180,12 @@
                 "label": "Scene Tint"
             },
             "timeSync": {
-                "label": "Automatic Sun Position",
+                "label": "Automatic Lighting",
                 "options": {
                     "off": "Off",
-                    "time": "World Time",
-                    "darkness": "Scene Darkness"
+                    "time": "Sync position with World Time",
+                    "darkness": "Sync Exposure with Scene Darkness",
+                    "both": "Sync Both"
                 }
             },
             "lockCamera": {
@@ -196,10 +197,13 @@
                 }
             },
             "sunPosition": {
-                "label": "Sun Position"
+                "label": "Time of Day"
             },
             "sunDistance": {
                 "label": "Sun Distance"
+            },
+            "sunTilt": {
+                "label": "Sun Tilt"
             },
             "sunIntensity": {
                 "label": "Sun Intensity"

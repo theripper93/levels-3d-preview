@@ -378,11 +378,11 @@ class Levels3DPreview {
   }
 
   get canvasCenter() {
-    return {
-      x: canvas.dimensions.width / 2 / this.factor,
-      y: 0,
-      z: canvas.dimensions.height / 2 / this.factor,
-    };
+    return new THREE.Vector3(
+      canvas.dimensions.width / 2 / this.factor,
+      0,
+      canvas.dimensions.height / 2 / this.factor,
+    );
   }
 
   initPS() {
@@ -508,7 +508,6 @@ class Levels3DPreview {
       this._cameraSet = true;
     }
     this.GameCamera.init();
-    this.lights.globalIllumination.setSunlightFromFlags(false);
     this.interactionManager._cacheKeybinds();
     this.interactionManager.initGroupSelect();
   }
@@ -721,8 +720,11 @@ class Levels3DPreview {
   }
 
   setExposure(){
-    const exposure = canvas.scene.getFlag("levels-3d-preview", "exposure") ?? 1;
-    this.renderer.toneMappingExposure = exposure;
+    const timeSync = canvas.scene.getFlag("levels-3d-preview", "timeSync") ?? "off";
+    if(timeSync == "off" || timeSync == "time"){
+      const exposure = canvas.scene.getFlag("levels-3d-preview", "exposure") ?? 1;
+      this.renderer.toneMappingExposure = exposure;
+    }
   }
 
   makeSkybox() {
@@ -961,6 +963,7 @@ class Levels3DPreview {
       })
       this.allignChatBubbles();
       this.resizeCanvasToDisplaySize(this);
+      this.lights.globalIllumination.update(delta);
       this.weather?.update(delta);
       this.GameCamera.update(delta);
       this.controls.update();
