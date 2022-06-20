@@ -17,6 +17,7 @@ export class Tile3D {
         this.draggable = true;
         this.embeddedName = "Tile"
         this.bottom = tile.data.flags.levels?.rangeBottom ?? 0;
+        this.shaders = [];
         /*this.index = canvas.background.placeables.indexOf(this.tile) ?? canvas.foreground.placeables.indexOf(this.tile) ?? 0;
         this.zIndex = 0 + this.index;
         this.bottom+=this.zIndex/1000;*/
@@ -45,6 +46,7 @@ export class Tile3D {
         }else{
             await this.init();
         }
+        this.initShaders();
         this._loaded = true;
         this.elevation3d = this.mesh.position.y;
         this.updateControls();
@@ -83,6 +85,7 @@ export class Tile3D {
         this.animIndex = this.tile.document.getFlag("levels-3d-preview", "animIndex") ?? 0;
         this.animSpeed = this.tile.document.getFlag("levels-3d-preview", "animSpeed") ?? 1;
         this.color = this.tile.document.getFlag("levels-3d-preview", "color") ?? "#ffffff";
+        this.shader = this.tile.document.getFlag("levels-3d-preview", "shader") ?? "none";
         this.imageTexture = this.tile.document.getFlag("levels-3d-preview", "imageTexture") ?? "";
         this.fillType = this.tile.document.getFlag("levels-3d-preview", "fillType") ?? "stretch";
         this.scale= this.tile.document.getFlag("levels-3d-preview", "tileScale") ?? 1;
@@ -526,8 +529,9 @@ export class Tile3D {
         }
     }
 
-    updateVisibility(){
+    updateVisibility(time){
         if(!this.mesh) return;
+        this.updateShader(time);
         this.toggleBoundingBox();
         this.mesh.visible = !this.tile.data.hidden;
         if(game.Levels3DPreview.mirrorLevelsVisibility && this.tile.data.overhead){
@@ -581,7 +585,35 @@ export class Tile3D {
           updates.push(update)
         await canvas.scene.updateEmbeddedDocuments("Tile", updates)
         return true;
-      }
+    }
+
+    initShaders(){
+        if(this.shader == "none") return;
+        this.mesh.traverse(child => {
+            if(child.isMesh){
+                if(child.material instanceof Array){
+                    child.material.forEach(material => {
+                        this.applyShader(materia,child)
+                    })
+                }else{
+                    this.applyShader(child.material,child)
+                }
+            }
+        })
+    }
+
+    applyShader(material, object){
+        const shaderFn = tileShaders[this.shader];
+        shaderFn(this, material, object);
+    }
+
+    //
+
+    updateShader(delta){
+        this.shaders.forEach(shader => {
+            shader.uniforms.time.value = delta/1000;
+        })
+    }
 
     destroy(){
         this._destroyed = true;
@@ -753,3 +785,27 @@ Hooks.on("controlTile", (tile, controlled) => {
     if(!game.Levels3DPreview?._active || !game.user.isGM) return;
     Object.values(game.Levels3DPreview.tiles).forEach(tile3d => { tile3d.updateControls() })
 })
+
+const tileShaders = {
+    "wind": (_this, material, object) => {
+        const ySize = object.geometry.boundingBox.max.y;
+        const width = object.geometry.boundingBox.max.x - object.geometry.boundingBox.min.x;
+        material.onBeforeCompile = (shader,renderer) => {
+            _this.shaders.push(shader)
+            shader.vertexShader = shader.vertexShader.replace(
+                "#include <begin_vertex>",
+                `float currentY = position.y;
+                float ySize = ${ySize};
+                float windFactor = 0.0;
+                if (currentY > ySize/2.0) {
+                    windFactor = (currentY - ySize/2.0) / (ySize/2.0);
+                    windFactor = sin(time + position.x) * windFactor;
+                }
+                
+                vec3 transformed = vec3( position.x + windFactor*${width/3}, position.y, position.z );`
+                )
+            shader.vertexShader = "uniform float time;\n" + shader.vertexShader;
+            shader.uniforms.time = { value: 10.0 };
+        }
+    }
+}

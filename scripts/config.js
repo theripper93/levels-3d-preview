@@ -358,7 +358,7 @@ Hooks.on("renderSceneConfig", (app,html)=>{
         },
         "header5": {
             type: "custom",
-            html: `<h3 class="form-header" id="levels3dpreview-visibility"><i class="fas fa-eye"></i> ${game.i18n.localize("levels3dpreview.settings.headers.visibility.title")}</h3><p class="notes">${game.i18n.localize("levels3dpreview.settings.headers.visibility.notes")}</p><div>`
+            html: `<div id="levels3dpreview-visibility"><h3 class="form-header"><i class="fas fa-eye"></i> ${game.i18n.localize("levels3dpreview.settings.headers.visibility.title")}</h3><p class="notes">${game.i18n.localize("levels3dpreview.settings.headers.visibility.notes")}</p></div>`
         },
         "showSceneWalls": {
             type: "checkbox",
@@ -646,6 +646,15 @@ Hooks.on("renderTileConfig", (app,html)=>{
             type: "color",
             label: game.i18n.localize("levels3dpreview.flags.tint.label"),
             default: "#ffffff",
+        },
+        "shader": {
+            type: "select",
+            label: game.i18n.localize("levels3dpreview.flags.shader.label"),
+            default: "none",
+            options: {
+                "none": game.i18n.localize("levels3dpreview.flags.shader.options.none"),
+                "wind": game.i18n.localize("levels3dpreview.flags.shader.options.wind"),
+            }
         },
         "autoCenter": {
             type: "checkbox",

@@ -299,6 +299,13 @@
             "tint": {
                 "label": "Tint Color"
             },
+            "shader": {
+                "label": "Shader",
+                "options": {
+                    "none": "None",
+                    "wind": "Wind"
+                }
+            },
             "baseColor": {
                 "label": "Base Color"
             },

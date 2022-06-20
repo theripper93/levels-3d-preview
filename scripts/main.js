@@ -933,7 +933,7 @@ class Levels3DPreview {
       });
       Object.values(this.tiles).forEach((tile) => {
         if(tile){
-          tile.updateVisibility();
+          tile.updateVisibility(time);
           if (tile.mixer && !tile.paused) {
             tile.mixer.update(delta);
           }
