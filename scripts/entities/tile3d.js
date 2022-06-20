@@ -86,6 +86,12 @@ export class Tile3D {
         this.animSpeed = this.tile.document.getFlag("levels-3d-preview", "animSpeed") ?? 1;
         this.color = this.tile.document.getFlag("levels-3d-preview", "color") ?? "#ffffff";
         this.shader = this.tile.document.getFlag("levels-3d-preview", "shader") ?? "none";
+        this.shaderParams = {
+            intensity: this.tile.document.getFlag("levels-3d-preview", "shaderIntensity") ?? 0.1,
+            speed: this.tile.document.getFlag("levels-3d-preview", "shaderSpeed") ?? 0.1,
+            other: this.tile.document.getFlag("levels-3d-preview", "shaderOther") ?? 0.1,
+            alt: this.tile.document.getFlag("levels-3d-preview", "shaderAlt") ?? false,
+        }
         this.imageTexture = this.tile.document.getFlag("levels-3d-preview", "imageTexture") ?? "";
         this.fillType = this.tile.document.getFlag("levels-3d-preview", "fillType") ?? "stretch";
         this.scale= this.tile.document.getFlag("levels-3d-preview", "tileScale") ?? 1;
@@ -604,14 +610,14 @@ export class Tile3D {
 
     applyShader(material, object){
         const shaderFn = tileShaders[this.shader];
-        shaderFn(this, material, object);
+        shaderFn(this, material, object, this.shaderParams);
     }
 
     //
 
     updateShader(delta){
         this.shaders.forEach(shader => {
-            shader.uniforms.time.value = delta/1000;
+            shader.uniforms.time.value = delta/100;
         })
     }
 
@@ -787,25 +793,137 @@ Hooks.on("controlTile", (tile, controlled) => {
 })
 
 const tileShaders = {
-    "wind": (_this, material, object) => {
+    "wind": (_this, material, object, params) => {
+        const {intensity, speed, other, alt} = params;
         const ySize = object.geometry.boundingBox.max.y;
-        const width = object.geometry.boundingBox.max.x - object.geometry.boundingBox.min.x;
+        const mWidth = object.geometry.boundingBox.max.x - object.geometry.boundingBox.min.x;
+        const mHeight = object.geometry.boundingBox.max.z - object.geometry.boundingBox.min.z;
         material.onBeforeCompile = (shader,renderer) => {
             _this.shaders.push(shader)
             shader.vertexShader = shader.vertexShader.replace(
                 "#include <begin_vertex>",
                 `float currentY = position.y;
-                float ySize = ${ySize};
                 float windFactor = 0.0;
+                vec2 windOffset = vec2(0.0);
                 if (currentY > ySize/2.0) {
                     windFactor = (currentY - ySize/2.0) / (ySize/2.0);
-                    windFactor = sin(time + position.x) * windFactor;
+                    if(alt == 1.0) {
+                        windFactor = sin(time*speed + position.x + position.z) * windFactor;
+                    }else{
+                        windFactor = sin(time*speed) * windFactor;
+                    }
+                    windOffset = vec2(windFactor * mWidth * intensity * cos(other), windFactor * mHeight * intensity * sin(other));
                 }
                 
-                vec3 transformed = vec3( position.x + windFactor*${width/3}, position.y, position.z );`
+                vec3 transformed = vec3( position.x + windOffset.x, position.y, position.z + windOffset.y );`
                 )
-            shader.vertexShader = "uniform float time;\n" + shader.vertexShader;
-            shader.uniforms.time = { value: 10.0 };
+            shader.vertexShader = 
+            `uniform float time;
+            uniform float ySize;
+            uniform float mWidth;
+            uniform float mHeight;
+            uniform float intensity;
+            uniform float speed;
+            uniform float other;
+            uniform float alt;
+            `
+             + shader.vertexShader;
+            
+            shader.uniforms.time = { value: 0.0 };
+            shader.uniforms.ySize = { value: ySize };
+            shader.uniforms.mWidth = { value: mWidth };
+            shader.uniforms.mHeight = { value: mHeight };
+            shader.uniforms.intensity = { value: intensity };
+            shader.uniforms.speed = { value: speed };
+            shader.uniforms.other = { value: other*Math.PI*2-_this.angle*_this.rotSign };
+            shader.uniforms.alt = { value: alt ? 1.0 : 0.0 };
+        }
+        material.customProgramCacheKey = () => {
+            return `wind`
+        }
+    },
+    "lava": (_this, material, object, params) => {
+        const {intensity, speed, other, alt} = params;
+        const mWidth = object.geometry.boundingBox.max.x - object.geometry.boundingBox.min.x;
+        const mHeight = object.geometry.boundingBox.max.z - object.geometry.boundingBox.min.z;
+        material.onBeforeCompile = (shader,renderer) => {
+            _this.shaders.push(shader)
+            shader.vertexShader = shader.vertexShader.replace(
+                "#include <begin_vertex>",
+                `float currentY = position.y;
+                float direction = position.x + position.z;   
+                vec3 displaceOffset = vec3(mWidth * intensity * cos(other+direction) * sin(time*speed), intensity * sin(time*speed) * cos(direction) ,mHeight * intensity * sin(other+direction) * sin(time*speed));
+                vec3 transformed = vec3( position.x + displaceOffset.x, position.y + displaceOffset.y, position.z + displaceOffset.z );`
+                )
+            shader.vertexShader = 
+            `uniform float time;
+            uniform float mWidth;
+            uniform float mHeight;
+            uniform float intensity;
+            uniform float speed;
+            uniform float other;
+            uniform float alt;
+            `
+             + shader.vertexShader;
+            
+            shader.uniforms.time = { value: 0.0 };
+            shader.uniforms.mWidth = { value: mWidth/10 };
+            shader.uniforms.mHeight = { value: mHeight/10 };
+            shader.uniforms.intensity = { value: intensity };
+            shader.uniforms.speed = { value: speed };
+            shader.uniforms.other = { value: other*Math.PI*2-_this.angle*_this.rotSign };
+            shader.uniforms.alt = { value: alt ? 1.0 : 0.0 };
+        }
+        material.customProgramCacheKey = () => {
+            return `lava`
+        }
+    },
+    "water": (_this, material, object, params) => {
+        const {intensity, speed, other, alt} = params;
+        const mDepth = object.geometry.boundingBox.max.y - object.geometry.boundingBox.min.y;
+        const mWidth = object.geometry.boundingBox.max.x - object.geometry.boundingBox.min.x;
+        const mHeight = object.geometry.boundingBox.max.z - object.geometry.boundingBox.min.z;
+        //float posX = (position.x - mWidth) * ((speed)*2.0 + 1.0) ;
+        //float posZ = (position.z - mHeight) * ((speed)*2.0 + 1.0) ;
+        //float r = sqrt (posX*posX + posZ*posZ) * (time * other / 50.0);
+        //float yDisplace = (sin (r) / r) * 5.0 * intensity * mDepth;
+        material.onBeforeCompile = (shader,renderer) => {
+            _this.shaders.push(shader)
+            shader.vertexShader = shader.vertexShader.replace(
+                "#include <begin_vertex>",
+                `float yDisplace = 0.0;
+                if( position.y > mHeight/10.0 ) {
+                    float posX = position.x - mWidth ;
+                    float posZ = position.z - mHeight ;
+                    float timeSpeed = time * speed;
+                    float r = sqrt (posX*posX + posZ*posZ)*(intensity) + timeSpeed;
+                    yDisplace = (1.0 + sin(r) ) * other * mDepth;
+                }
+                vec3 transformed = vec3( position.x, position.y + yDisplace, position.z);`
+                )
+            shader.vertexShader = 
+            `uniform float time;
+            uniform float mDepth;
+            uniform float mWidth;
+            uniform float mHeight;
+            uniform float intensity;
+            uniform float speed;
+            uniform float other;
+            uniform float alt;
+            `
+             + shader.vertexShader;
+            
+            shader.uniforms.time = { value: 0.0 };
+            shader.uniforms.mDepth = { value: mDepth*10 };
+            shader.uniforms.mWidth = { value: mWidth };
+            shader.uniforms.mHeight = { value: mHeight };
+            shader.uniforms.intensity = { value: intensity*8.0 };
+            shader.uniforms.speed = { value: speed*0.8 };
+            shader.uniforms.other = { value: other*0.2 };
+            shader.uniforms.alt = { value: alt ? 1.0 : 0.0 };
+        }
+        material.customProgramCacheKey = () => {
+            return `water`
         }
     }
 }

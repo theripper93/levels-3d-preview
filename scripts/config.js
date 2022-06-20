@@ -647,15 +647,6 @@ Hooks.on("renderTileConfig", (app,html)=>{
             label: game.i18n.localize("levels3dpreview.flags.tint.label"),
             default: "#ffffff",
         },
-        "shader": {
-            type: "select",
-            label: game.i18n.localize("levels3dpreview.flags.shader.label"),
-            default: "none",
-            options: {
-                "none": game.i18n.localize("levels3dpreview.flags.shader.options.none"),
-                "wind": game.i18n.localize("levels3dpreview.flags.shader.options.wind"),
-            }
-        },
         "autoCenter": {
             type: "checkbox",
             label: game.i18n.localize("levels3dpreview.flags.autoCenter.label"),
@@ -737,10 +728,6 @@ Hooks.on("renderTileConfig", (app,html)=>{
                 2: game.i18n.localize("levels3dpreview.flags.doorState.options.locked"),
             }
         },
-        "header1": {
-            type: "custom",
-            html: `<h3 class="form-header"><i class="fas fa-th"></i> ${game.i18n.localize("levels3dpreview.flags.tiling.label")}</h3><div>`
-        },
         "fillType": {
             type: "select",
             label: game.i18n.localize("levels3dpreview.flags.fillType.label"),
@@ -798,6 +785,50 @@ Hooks.on("renderTileConfig", (app,html)=>{
             type: "text",
             label: game.i18n.localize("levels3dpreview.flags.randomSeed.label"),
             default: app.object.id.substring(0,7),
+        },
+        "header1": {
+            type: "custom",
+            html: `<h3 class="form-header"><i class="fas fa-magic"></i> ${game.i18n.localize("levels3dpreview.flags.shader.header")}</h3><div>`
+        },
+        "shader": {
+            type: "select",
+            label: game.i18n.localize("levels3dpreview.flags.shader.label"),
+            default: "none",
+            options: {
+                "none": game.i18n.localize("levels3dpreview.flags.shader.options.none"),
+                "wind": game.i18n.localize("levels3dpreview.flags.shader.options.wind"),
+                "lava": game.i18n.localize("levels3dpreview.flags.shader.options.lava"),
+                "water": game.i18n.localize("levels3dpreview.flags.shader.options.water"),
+            }
+        },
+        "shaderIntensity": {
+            type: "range",
+            label: game.i18n.localize("levels3dpreview.flags.shaderIntensity.label"),
+            default: 0.1,
+            step: 0.01,
+            min: 0,
+            max: 1,
+        },
+        "shaderSpeed": {
+            type: "range",
+            label: game.i18n.localize("levels3dpreview.flags.shaderSpeed.label"),
+            default: 0.1,
+            step: 0.01,
+            min: 0,
+            max: 1,
+        },
+        "shaderOther": {
+            type: "range",
+            label: game.i18n.localize("levels3dpreview.flags.shaderOther.label"),
+            default: 0.1,
+            step: 0.01,
+            min: 0,
+            max: 1,
+        },
+        "shaderAlt": {
+            type: "checkbox",
+            label: game.i18n.localize("levels3dpreview.flags.shaderAlt.label"),
+            default: false,
         }
     })
 
@@ -807,6 +838,7 @@ Hooks.on("renderTileConfig", (app,html)=>{
 
     html.find(`input[name="flags.levels-3d-preview.randomSeed"]`).prop("maxlength", 7);
     const tilingFlags = ["tileScale", "yScale","gap", "randomRotation", "randomScale", "randomDepth", "randomPosition", "randomColor", "randomSeed"];
+    const shaderFlags = ["shaderIntensity", "shaderSpeed", "shaderOther", "shaderAlt"];
     html.on("change", `select[name="flags.levels-3d-preview.fillType"]`, (e) => {
         const value = e.target.value;
         if (value === "tile") {
@@ -820,7 +852,21 @@ Hooks.on("renderTileConfig", (app,html)=>{
         }
         app.setPosition({height: "auto"});
     })
+    html.on("change", `select[name="flags.levels-3d-preview.shader"]`, (e) => {
+        const value = e.target.value;
+        if (value === "none") {
+            shaderFlags.forEach(flag => {
+                html.find(`input[name="flags.levels-3d-preview.${flag}"]`).closest(".form-group").hide();
+            })
+        } else {
+            shaderFlags.forEach(flag => {
+                html.find(`input[name="flags.levels-3d-preview.${flag}"]`).closest(".form-group").show();
+            })
+        }
+        app.setPosition({height: "auto"});
+    })
     html.find(`select[name="flags.levels-3d-preview.fillType"]`).trigger("change");
+    html.find(`select[name="flags.levels-3d-preview.shader"]`).trigger("change");
 })
 
 Hooks.on("renderWallConfig", (app,html)=>{

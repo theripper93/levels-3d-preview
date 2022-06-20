@@ -301,10 +301,25 @@
             },
             "shader": {
                 "label": "Shader",
+                "header": "Shaders",
                 "options": {
                     "none": "None",
-                    "wind": "Wind"
+                    "wind": "Wind",
+                    "lava": "Lava",
+                    "water": "Water"
                 }
+            },
+            "shaderIntensity": {
+                "label": "Shader Intensity"
+            },
+            "shaderSpeed": {
+                "label": "Shader Speed"
+            },
+            "shaderOther": {
+                "label": "Shader Other"
+            },
+            "shaderAlt": {
+                "label": "Use Alternative Mode"
             },
             "baseColor": {
                 "label": "Base Color"
