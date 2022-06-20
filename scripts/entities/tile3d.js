@@ -808,9 +808,9 @@ const tileShaders = {
                 if (currentY > ySize/2.0) {
                     windFactor = (currentY - ySize/2.0) / (ySize/2.0);
                     if(alt == 1.0) {
-                        windFactor = sin(time*speed + position.x + position.z) * windFactor;
+                        windFactor = (sin(time*speed + position.x + position.z) + intensity) * windFactor;
                     }else{
-                        windFactor = sin(time*speed) * windFactor;
+                        windFactor = (sin(time*speed) + intensity) * windFactor;
                     }
                     windOffset = vec2(windFactor * mWidth * intensity * cos(other), windFactor * mHeight * intensity * sin(other));
                 }
