@@ -589,7 +589,8 @@ export class Tile3D {
           this.processScale(update, tile)
           this.processRotation(update, tile)
           updates.push(update)
-        await canvas.scene.updateEmbeddedDocuments("Tile", updates)
+        const resp = await canvas.scene.updateEmbeddedDocuments("Tile", updates)
+        if(!resp) this._parent.interactionManager.setControlledGroup();
         return true;
     }
 
@@ -679,6 +680,7 @@ export class Tile3D {
                   originalEvent: e,
                 }
               }
+              this.tile._onClickLeft(event);
               this.tile._onClickLeft2(event);
         }
     }

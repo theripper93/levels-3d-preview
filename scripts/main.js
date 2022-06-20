@@ -424,6 +424,7 @@ class Levels3DPreview {
       this.camera,
       this.renderer.domElement
     );
+    this.transformControls.size = 1;
     this.controlledGroup = new THREE.Group();
     this.controlledGroup.userData = {
       entity3D: {
