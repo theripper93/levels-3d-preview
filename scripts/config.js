@@ -796,18 +796,10 @@ Hooks.on("renderTileConfig", (app,html)=>{
             default: "none",
             options: {
                 "none": game.i18n.localize("levels3dpreview.flags.shader.options.none"),
-                "wind": game.i18n.localize("levels3dpreview.flags.shader.options.wind"),
-                "lava": game.i18n.localize("levels3dpreview.flags.shader.options.lava"),
-                "water": game.i18n.localize("levels3dpreview.flags.shader.options.water"),
+                "wind": game.i18n.localize("levels3dpreview.flags.shader.options.wind.name"),
+                "lava": game.i18n.localize("levels3dpreview.flags.shader.options.lava.name"),
+                "water": game.i18n.localize("levels3dpreview.flags.shader.options.water.name"),
             }
-        },
-        "shaderIntensity": {
-            type: "range",
-            label: game.i18n.localize("levels3dpreview.flags.shaderIntensity.label"),
-            default: 0.1,
-            step: 0.01,
-            min: 0,
-            max: 1,
         },
         "shaderSpeed": {
             type: "range",
@@ -817,10 +809,26 @@ Hooks.on("renderTileConfig", (app,html)=>{
             min: 0,
             max: 1,
         },
+        "shaderIntensity": {
+            type: "range",
+            label: game.i18n.localize("levels3dpreview.flags.shaderIntensity.label"),
+            default: 0.1,
+            step: 0.01,
+            min: 0,
+            max: 1,
+        },
         "shaderOther": {
             type: "range",
             label: game.i18n.localize("levels3dpreview.flags.shaderOther.label"),
             default: 0.1,
+            step: 0.01,
+            min: 0,
+            max: 1,
+        },
+        "shaderOther2": {
+            type: "range",
+            label: game.i18n.localize("levels3dpreview.flags.shaderOther2.label"),
+            default: 0.5,
             step: 0.01,
             min: 0,
             max: 1,
@@ -838,7 +846,7 @@ Hooks.on("renderTileConfig", (app,html)=>{
 
     html.find(`input[name="flags.levels-3d-preview.randomSeed"]`).prop("maxlength", 7);
     const tilingFlags = ["tileScale", "yScale","gap", "randomRotation", "randomScale", "randomDepth", "randomPosition", "randomColor", "randomSeed"];
-    const shaderFlags = ["shaderIntensity", "shaderSpeed", "shaderOther", "shaderAlt"];
+    const shaderFlags = ["shaderIntensity", "shaderSpeed", "shaderOther","shaderOther2", "shaderAlt"];
     html.on("change", `select[name="flags.levels-3d-preview.fillType"]`, (e) => {
         const value = e.target.value;
         if (value === "tile") {
@@ -859,9 +867,17 @@ Hooks.on("renderTileConfig", (app,html)=>{
                 html.find(`input[name="flags.levels-3d-preview.${flag}"]`).closest(".form-group").hide();
             })
         } else {
-            shaderFlags.forEach(flag => {
+            for(let flag of shaderFlags) {
                 html.find(`input[name="flags.levels-3d-preview.${flag}"]`).closest(".form-group").show();
-            })
+                if(flag == "shaderSpeed") continue;
+                const labelLocalString = `levels3dpreview.flags.shader.options.${value}.${flag}`;
+                const localLabel = game.i18n.localize(labelLocalString);
+                if(localLabel === labelLocalString) {
+                    html.find(`input[name="flags.levels-3d-preview.${flag}"]`).closest(".form-group").hide();
+                    continue;
+                }
+                html.find(`input[name="flags.levels-3d-preview.${flag}"]`).closest(".form-group").find("label").text(localLabel);
+            }
         }
         app.setPosition({height: "auto"});
     })

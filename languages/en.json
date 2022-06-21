@@ -304,19 +304,38 @@
                 "header": "Shaders",
                 "options": {
                     "none": "None",
-                    "wind": "Wind",
-                    "lava": "Lava",
-                    "water": "Water"
+                    "wind": {
+                        "name": "Wind",
+                        "shaderIntensity" : "Wind Intensity",
+                        "shaderOther": "Wind Direction",
+                        "shaderOther2": "Affect Model (%)",
+                        "shaderAlt": "Convoluted Wind"
+                    },
+                    "lava": {
+                        "name": "Lava",
+                        "shaderIntensity" : "Shader Intensity",
+                        "shaderOther": "Shader Other",
+                        "shaderOther2": "Shader Other 2",
+                        "shaderAlt": "Shader Alt"
+                    },
+                    "water": {
+                        "name": "Water",
+                        "shaderIntensity" : "Wave Density",
+                        "shaderOther": "Wave Hight"
+                    }
                 }
             },
             "shaderIntensity": {
                 "label": "Shader Intensity"
             },
             "shaderSpeed": {
-                "label": "Shader Speed"
+                "label": "Speed"
             },
             "shaderOther": {
                 "label": "Shader Other"
+            },
+            "shaderOther2": {
+                "label": "Shader Other 2"
             },
             "shaderAlt": {
                 "label": "Use Alternative Mode"

@@ -326,7 +326,7 @@ class Levels3DPreview {
 
     let target
     if(this.renderer.capabilities.isWebGL2){
-      target = new THREE.WebGLMultisampleRenderTarget(window.innerWidth, window.innerHeight, {
+      target = new THREE.WebGLMultisampleRenderTarget(window.innerWidth*this.resolutionMulti, window.innerHeight*this.resolutionMulti, {
         format: THREE.RGBAFormat,
         encoding: THREE.sRGBEncoding,
       })
@@ -1329,7 +1329,12 @@ class Levels3DPreview {
   }
 
   setCursor(cursor) {
-    this.renderer.domElement.style.cursor = cursor;
+    if(this._sharedContext){
+      $("body")[0].style.cursor = cursor;
+    }else{
+      this.renderer.domElement.style.cursor = cursor;
+    }
+
   }
 }
 

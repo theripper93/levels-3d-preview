@@ -90,6 +90,7 @@ export class Tile3D {
             intensity: this.tile.document.getFlag("levels-3d-preview", "shaderIntensity") ?? 0.1,
             speed: this.tile.document.getFlag("levels-3d-preview", "shaderSpeed") ?? 0.1,
             other: this.tile.document.getFlag("levels-3d-preview", "shaderOther") ?? 0.1,
+            other2: this.tile.document.getFlag("levels-3d-preview", "shaderOther2") ?? 0.5,
             alt: this.tile.document.getFlag("levels-3d-preview", "shaderAlt") ?? false,
         }
         this.imageTexture = this.tile.document.getFlag("levels-3d-preview", "imageTexture") ?? "";
@@ -260,6 +261,7 @@ export class Tile3D {
 
     async initInstanced(){
         const model = await this.getModel();
+        this.isInstanced = true;
         const {textureOrMat, isPBR} = await this.getTextureOrMat();
         const object =  game.Levels3DPreview.helpers.groundModel(model.scene, this.autoGround, this.autoCenter);//model.scene
         const box = new THREE.Box3().setFromObject(object);
@@ -305,6 +307,8 @@ export class Tile3D {
 
         this._processModel(object, textureOrMat, isPBR, color);
         object.scale.set(scaleFit,scaleFit,scaleFit);
+        const instBoxSize = new THREE.Box3().setFromObject(object).getSize(new THREE.Vector3());
+        this.instancedBBSize = instBoxSize;
         const baseScale = object.scale.clone();
         object.traverse((child) => {
             if (child.isMesh) {
@@ -452,6 +456,11 @@ export class Tile3D {
         }
         const c = new THREE.Color();
         c.set(CONFIG.Canvas.dispositionColors.CONTROLLED);
+        this.bb = {
+            width: this.tile.data.width/factor,
+            depth: this.fillType === "tile" ? depth : this.depth,
+            height: this.tile.data.height/factor,
+        }
         const cube = new THREE.Mesh(new THREE.BoxGeometry(this.tile.data.width/factor, this.fillType === "tile" ? depth : this.depth, this.tile.data.height/factor), new THREE.MeshBasicMaterial({color: c, wireframe: true}));
         cube.position.set(0, this.fillType === "tile" ? depth/2 : (this.depth) / 2, 0);
         if(this.isPlane) cube.rotation.set(-Math.PI/2,0,0);
@@ -796,58 +805,68 @@ Hooks.on("controlTile", (tile, controlled) => {
 
 const tileShaders = {
     "wind": (_this, material, object, params) => {
-        const {intensity, speed, other, alt} = params;
-        const ySize = object.geometry.boundingBox.max.y;
-        const mWidth = object.geometry.boundingBox.max.x - object.geometry.boundingBox.min.x;
-        const mHeight = object.geometry.boundingBox.max.z - object.geometry.boundingBox.min.z;
+        const {intensity, speed, other,other2, alt} = params;
+        const {mDepth, mWidth, mHeight, yPos} = getSizesForShader(_this);
+        const localSize = _this.isInstanced ? new THREE.Vector3(mWidth*0.3, mDepth*0.3, mHeight*0.3) : new THREE.Vector3(0.2, 0.2, 0.2);
+
         material.onBeforeCompile = (shader,renderer) => {
             _this.shaders.push(shader)
             shader.vertexShader = shader.vertexShader.replace(
                 "#include <begin_vertex>",
-                `float currentY = position.y;
+                `float currentY = (modelMatrix * vec4( position, 1.0 )).y;
+                float lWidth = localSize.x;
+                float lHeight = localSize.z;
+                float currentYDelta = currentY - yPos;
                 float windFactor = 0.0;
                 vec2 windOffset = vec2(0.0);
-                if (currentY > ySize/2.0) {
-                    windFactor = (currentY - ySize/2.0) / (ySize/2.0);
+                float modelAffected = other2;
+                if (currentYDelta > mDepth*modelAffected) {
+                    windFactor = (currentYDelta - mDepth*modelAffected) / (mDepth*modelAffected);
                     if(alt == 1.0) {
                         windFactor = (sin(time*speed + position.x + position.z) + intensity) * windFactor;
                     }else{
                         windFactor = (sin(time*speed) + intensity) * windFactor;
                     }
-                    windOffset = vec2(windFactor * mWidth * intensity * cos(other), windFactor * mHeight * intensity * sin(other));
+                    windOffset = vec2(windFactor * intensity * cos(other) * lWidth, windFactor *  intensity * sin(other) * lHeight);
                 }
                 
                 vec3 transformed = vec3( position.x + windOffset.x, position.y, position.z + windOffset.y );`
                 )
             shader.vertexShader = 
             `uniform float time;
-            uniform float ySize;
+            uniform float mDepth;
+            uniform float yPos;
             uniform float mWidth;
             uniform float mHeight;
+            uniform vec3 localSize;
             uniform float intensity;
             uniform float speed;
             uniform float other;
+            uniform float other2;
             uniform float alt;
             `
              + shader.vertexShader;
             
             shader.uniforms.time = { value: 0.0 };
-            shader.uniforms.ySize = { value: ySize };
             shader.uniforms.mWidth = { value: mWidth };
             shader.uniforms.mHeight = { value: mHeight };
             shader.uniforms.intensity = { value: intensity };
             shader.uniforms.speed = { value: speed };
             shader.uniforms.other = { value: other*Math.PI*2-_this.angle*_this.rotSign };
+            shader.uniforms.other2 = { value: other2 };
             shader.uniforms.alt = { value: alt ? 1.0 : 0.0 };
+            shader.uniforms.yPos = { value: yPos };
+            shader.uniforms.mDepth = { value: mDepth };
+            shader.uniforms.localSize = { value: localSize };
+            
         }
         material.customProgramCacheKey = () => {
             return `wind`
         }
     },
     "lava": (_this, material, object, params) => {
-        const {intensity, speed, other, alt} = params;
-        const mWidth = object.geometry.boundingBox.max.x - object.geometry.boundingBox.min.x;
-        const mHeight = object.geometry.boundingBox.max.z - object.geometry.boundingBox.min.z;
+        const {intensity, speed, other,other2, alt} = params;
+        const {wYSize, mWidth, mHeight, yPos} = getSizesForShader(_this);
         material.onBeforeCompile = (shader,renderer) => {
             _this.shaders.push(shader)
             shader.vertexShader = shader.vertexShader.replace(
@@ -881,14 +900,10 @@ const tileShaders = {
         }
     },
     "water": (_this, material, object, params) => {
-        const {intensity, speed, other, alt} = params;
-        const mDepth = object.geometry.boundingBox.max.y - object.geometry.boundingBox.min.y;
+        const {intensity, speed, other,other2, alt} = params;
         const mWidth = object.geometry.boundingBox.max.x - object.geometry.boundingBox.min.x;
         const mHeight = object.geometry.boundingBox.max.z - object.geometry.boundingBox.min.z;
-        //float posX = (position.x - mWidth) * ((speed)*2.0 + 1.0) ;
-        //float posZ = (position.z - mHeight) * ((speed)*2.0 + 1.0) ;
-        //float r = sqrt (posX*posX + posZ*posZ) * (time * other / 50.0);
-        //float yDisplace = (sin (r) / r) * 5.0 * intensity * mDepth;
+        const mDepth = object.geometry.boundingBox.max.y - object.geometry.boundingBox.min.y;
         material.onBeforeCompile = (shader,renderer) => {
             _this.shaders.push(shader)
             shader.vertexShader = shader.vertexShader.replace(
@@ -926,6 +941,24 @@ const tileShaders = {
         }
         material.customProgramCacheKey = () => {
             return `water`
+        }
+    }
+}
+
+function getSizesForShader(_this){
+    if(_this.isInstanced){
+        return {
+            mDepth : _this.instancedBBSize.y,
+            mWidth : _this.instancedBBSize.x,
+            mHeight : _this.instancedBBSize.z,
+            yPos : _this.mesh.position.y - _this.instancedBBSize.y / 2
+        }
+    }else{
+        return {
+            mDepth : _this.bb.depth,
+            mWidth : _this.bb.width,
+            mHeight : _this.bb.height,
+            yPos : _this.mesh.position.y - _this.bb.depth / 2
         }
     }
 }
