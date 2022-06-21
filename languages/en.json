@@ -313,10 +313,9 @@
                     },
                     "lava": {
                         "name": "Lava",
-                        "shaderIntensity" : "Shader Intensity",
-                        "shaderOther": "Shader Other",
-                        "shaderOther2": "Shader Other 2",
-                        "shaderAlt": "Shader Alt"
+                        "shaderIntensity" : "Distortion Intensity",
+                        "shaderOther": "Distortion Angle",
+                        "shaderAlt": "Convoluted Distortion"
                     },
                     "water": {
                         "name": "Water",
