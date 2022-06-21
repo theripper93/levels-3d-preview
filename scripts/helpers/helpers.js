@@ -425,3 +425,20 @@ export function injectAdvancedToggle(app, html, settings, injected, other = []){
   });
   toggleAdvancedSettings(app, html, settings, other);
 }
+
+export function hideParams(app, html, element, flags, hide){
+  html.on("change", element, (e) => {
+    const value = e.target.value;
+    if (value === hide) {
+      flags.forEach(flag => {
+            html.find(`input[name="flags.levels-3d-preview.${flag}"]`).closest(".form-group").hide();
+        })
+    } else {
+      flags.forEach(flag => {
+            html.find(`input[name="flags.levels-3d-preview.${flag}"]`).closest(".form-group").show();
+        })
+    }
+    app.setPosition({height: "auto"});
+})
+html.find(element).trigger("change");
+}

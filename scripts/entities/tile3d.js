@@ -1,6 +1,8 @@
 import * as THREE from "../lib/three.module.js";
 import { MersenneTwister } from "../lib/mersenneTwister.js";
 import { noiseShaders } from "../shaders/noise.js";
+import { SimplexNoise } from "../lib/simplexNoise.js";
+import { Perlin } from "../lib/perlinNoise.js";
 import { Ruler3D } from "./ruler3d.js";
 import {factor} from '../main.js'; 
 import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from '../lib/three-mesh-bvh.js';
@@ -19,9 +21,6 @@ export class Tile3D {
         this.embeddedName = "Tile"
         this.bottom = tile.data.flags.levels?.rangeBottom ?? 0;
         this.shaders = [];
-        /*this.index = canvas.background.placeables.indexOf(this.tile) ?? canvas.foreground.placeables.indexOf(this.tile) ?? 0;
-        this.zIndex = 0 + this.index;
-        this.bottom+=this.zIndex/1000;*/
         this.center2d = {
             x: this.tile.data.x + Math.abs(this.tile.data.width)/2,
             y: this.tile.data.y + Math.abs(this.tile.data.height)/2
@@ -94,6 +93,8 @@ export class Tile3D {
             other2: this.tile.document.getFlag("levels-3d-preview", "shaderOther2") ?? 0.5,
             alt: this.tile.document.getFlag("levels-3d-preview", "shaderAlt") ?? false,
         }
+        this.noiseType = this.tile.document.getFlag("levels-3d-preview", "noiseType") ?? "none";
+        this.noiseScale = this.tile.document.getFlag("levels-3d-preview", "noiseScale") ?? 1;
         this.imageTexture = this.tile.document.getFlag("levels-3d-preview", "imageTexture") ?? "";
         this.fillType = this.tile.document.getFlag("levels-3d-preview", "fillType") ?? "stretch";
         this.scale= this.tile.document.getFlag("levels-3d-preview", "tileScale") ?? 1;
@@ -192,6 +193,9 @@ export class Tile3D {
         const mHeight = box.max.z - box.min.z;
         const mDepth = box.max.y - box.min.y;
         //migration
+
+        this.applyNoise(object);
+
         if(!this.depth){
             if(stretch){
                 let yScale = this.width > this.height ? this.width/mDepth : this.height/mDepth;
@@ -265,6 +269,7 @@ export class Tile3D {
         this.isInstanced = true;
         const {textureOrMat, isPBR} = await this.getTextureOrMat();
         const object =  game.Levels3DPreview.helpers.groundModel(model.scene, this.autoGround, this.autoCenter);//model.scene
+        this.applyNoise(object);
         const box = new THREE.Box3().setFromObject(object);
         const gap = this.gap*canvas.grid.size/factor;
         const grid = (canvas.grid.size * this.scale)/factor+gap;
@@ -624,11 +629,40 @@ export class Tile3D {
         shaderFn(this, material, object, this.shaderParams);
     }
 
-    //
-
     updateShader(delta){
         this.shaders.forEach(shader => {
             shader.uniforms.time.value = delta/100;
+        })
+    }
+
+    applyNoise(model){
+        if(this.noiseType === "none") return;
+        const simplex = new SimplexNoise(this.marsenne);
+        const perlin = new Perlin(this.marsenne);
+        let noiseFn = simplex.noise.bind(simplex);
+        switch(this.noiseType){
+            case "simplex":
+                noiseFn = simplex.noise.bind(simplex);
+                break;
+            case "perlin":
+                noiseFn = perlin.get.bind(perlin);
+                break;
+        }
+        model.traverse(c => {
+            if(c.isMesh){
+                c.geometry = c.geometry.clone();
+                const positionAttributes = c.geometry.getAttribute("position");
+                const count = positionAttributes.count;
+                for(let i=0; i < count; i++){
+                    let x = positionAttributes.getX(i);
+                    let y = positionAttributes.getY(i);
+                    let z = positionAttributes.getZ(i);
+                    y*= (noiseFn(x/this.noiseScale, z/this.noiseScale, y/this.noiseScale, x*y*z )+1.0001);
+                    positionAttributes.setY(i, y);
+                }
+                c.geometry.computeVertexNormals();
+                c.geometry.attributes.position.needsUpdate = true;
+            }
         })
     }
 
@@ -872,18 +906,18 @@ const tileShaders = {
             _this.shaders.push(shader)
             shader.vertexShader = shader.vertexShader.replace(
                 "#include <begin_vertex>",
-                `vec3 displaceOffset;
-                float currentY = (modelMatrix * vec4( position, 1.0 )).y;
-                float currentYDelta = currentY - yPos;
-                if( currentYDelta > mDepth/10.0 ) {
+                `vec3 displaceOffset = vec3(0.0);
+                if( position.y > 0.01 ) {
                     if( alt == 1.0 ) {
                         float direction = snoise(vec2(position.x , position.z));//position.x * position.z;   
-                        displaceOffset = vec3(mWidth * intensity * cos(other+direction) * sin(time*speed), mDepth * intensity * sin(time*speed) * direction ,mHeight * intensity * sin(other+direction) * sin(time*speed));
+                        displaceOffset = vec3(mWidth * intensity * cos(other+direction) * sin(time*speed), mDepth * intensity * (sin(time*speed) + 1.0) * direction * 0.5 ,mHeight * intensity * sin(other+direction) * sin(time*speed));
                     }else{
                         float direction = position.x * position.z;   
-                        displaceOffset = vec3(mWidth * intensity * cos(other+direction) * sin(time*speed), mDepth * intensity * sin(time*speed) * cos(direction) ,mHeight * intensity * sin(other+direction) * sin(time*speed));
+                        displaceOffset = vec3(mWidth * intensity * cos(other+direction) * sin(time*speed), mDepth * intensity * (sin(time*speed) + 1.0) * (cos(direction) + 1.0) * 0.25 ,mHeight * intensity * sin(other+direction) * sin(time*speed));
                     }
-                    
+                    if( position.y + displaceOffset.y <= 0.0 ) {
+                        displaceOffset.y = 0.0;
+                    }
                 }
                 vec3 transformed = vec3( position.x + displaceOffset.x, position.y + displaceOffset.y, position.z + displaceOffset.z );`
                 )
@@ -893,7 +927,6 @@ const tileShaders = {
             uniform float mWidth;
             uniform float mHeight;
             uniform float mDepth;
-            uniform float yPos;
             uniform float intensity;
             uniform float speed;
             uniform float other;
@@ -905,7 +938,6 @@ const tileShaders = {
             shader.uniforms.mWidth = { value: mWidth/10 };
             shader.uniforms.mHeight = { value: mHeight/10 };
             shader.uniforms.mDepth = { value: mDepth };
-            shader.uniforms.yPos = { value: yPos };
             shader.uniforms.intensity = { value: intensity };
             shader.uniforms.speed = { value: speed };
             shader.uniforms.other = { value: other*Math.PI*2-_this.angle*_this.rotSign };
@@ -917,20 +949,21 @@ const tileShaders = {
     },
     "water": (_this, material, object, params) => {
         const {intensity, speed, other,other2, alt} = params;
-        const mWidth = object.geometry.boundingBox.max.x - object.geometry.boundingBox.min.x;
-        const mHeight = object.geometry.boundingBox.max.z - object.geometry.boundingBox.min.z;
-        const mDepth = object.geometry.boundingBox.max.y - object.geometry.boundingBox.min.y;
+        const {mDepth, mWidth, mHeight, yPos} = getSizesForShader(_this);
         material.onBeforeCompile = (shader,renderer) => {
             _this.shaders.push(shader)
             shader.vertexShader = shader.vertexShader.replace(
                 "#include <begin_vertex>",
                 `float yDisplace = 0.0;
-                if( position.y > mHeight/10.0 ) {
+                if( position.y > 0.01 ) {
                     float posX = position.x - mWidth ;
                     float posZ = position.z - mHeight ;
                     float timeSpeed = time * speed;
                     float r = sqrt (posX*posX + posZ*posZ)*(intensity) + timeSpeed;
                     yDisplace = (1.0 + sin(r) ) * other * mDepth;
+                    if( position.y + yDisplace <= 0.0 ) {
+                        yDisplace = 0.0;
+                    }
                 }
                 vec3 transformed = vec3( position.x, position.y + yDisplace, position.z);`
                 )

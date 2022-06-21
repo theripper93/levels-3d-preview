@@ -39,7 +39,7 @@ export class Token3D {
       this.gtflPath = this.token.document.getFlag(
         "levels-3d-preview",
         "model3d"
-      );
+      ) ?? "";
       this.solidBaseMode = this.token.document.getFlag("levels-3d-preview","solidBaseMode")
       this.baseColor =  this.token.document.getFlag("levels-3d-preview","baseColor") || game.settings.get("levels-3d-preview", "solidBaseColor")
       if(!this.solidBaseMode || this.solidBaseMode === "default") this.solidBaseMode = game.settings.get("levels-3d-preview", "solidBaseMode");
@@ -1034,7 +1034,7 @@ export class Token3D {
       const box = new THREE.Box3().setFromObject(this.model)
       const center = box.getCenter(new THREE.Vector3());
       const dimensions = box.getSize(new THREE.Vector3());
-      const offsetY = this.gtflPath.includes("[HeroForge]") ? center.y/2 : 0;
+      const offsetY = this.gtflPath && this.gtflPath.includes("[HeroForge]") ? center.y/2 : 0;
 
       const targetRotation = this.model.rotation.clone();
 

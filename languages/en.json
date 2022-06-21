@@ -324,6 +324,18 @@
                     }
                 }
             },
+            "noise": {
+                "header": "Terrain",
+                "label": "Noise Type",
+                "options": {
+                    "none": "None",
+                    "simplex": "Simplex",
+                    "perlin": "Perlin"
+                }
+            },
+            "noiseScale": {
+                "label": "Noise Scale"
+            },
             "shaderIntensity": {
                 "label": "Shader Intensity"
             },

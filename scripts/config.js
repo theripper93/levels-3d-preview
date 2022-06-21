@@ -1,4 +1,4 @@
-import { toggleAdvancedSettings, injectAdvancedToggle } from './helpers/helpers.js';
+import { toggleAdvancedSettings, injectAdvancedToggle, hideParams } from './helpers/helpers.js';
 
 Hooks.on("getSceneControlButtons", (buttons)=>{
     buttons.find(b => b.name === "token")?.tools?.push(
@@ -728,6 +728,11 @@ Hooks.on("renderTileConfig", (app,html)=>{
                 2: game.i18n.localize("levels3dpreview.flags.doorState.options.locked"),
             }
         },
+        "randomSeed": {
+            type: "text",
+            label: game.i18n.localize("levels3dpreview.flags.randomSeed.label"),
+            default: app.object.id.substring(0,7),
+        },
         "fillType": {
             type: "select",
             label: game.i18n.localize("levels3dpreview.flags.fillType.label"),
@@ -781,11 +786,6 @@ Hooks.on("renderTileConfig", (app,html)=>{
             label: game.i18n.localize("levels3dpreview.flags.randomColor.label"),
             default: false,
         },
-        "randomSeed": {
-            type: "text",
-            label: game.i18n.localize("levels3dpreview.flags.randomSeed.label"),
-            default: app.object.id.substring(0,7),
-        },
         "header1": {
             type: "custom",
             html: `<h3 class="form-header"><i class="fas fa-magic"></i> ${game.i18n.localize("levels3dpreview.flags.shader.header")}</h3><div>`
@@ -837,29 +837,39 @@ Hooks.on("renderTileConfig", (app,html)=>{
             type: "checkbox",
             label: game.i18n.localize("levels3dpreview.flags.shaderAlt.label"),
             default: false,
+        },
+        "header2": {
+            type: "custom",
+            html: `<h3 class="form-header"><i class="fas fa-mountain"></i></i> ${game.i18n.localize("levels3dpreview.flags.noise.header")}</h3><div>`
+        },
+        "noiseType": {
+            type: "select",
+            label: game.i18n.localize("levels3dpreview.flags.noise.label"),
+            default: "none",
+            options: {
+                "none": game.i18n.localize("levels3dpreview.flags.noise.options.none"),
+                "simplex": game.i18n.localize("levels3dpreview.flags.noise.options.simplex"),
+                "perlin": game.i18n.localize("levels3dpreview.flags.noise.options.perlin"),
+            }
+        },
+        "noiseScale": {
+            type: "number",
+            label: game.i18n.localize("levels3dpreview.flags.noiseScale.label"),
+            default: 1,
         }
     })
 
-    const advancedSettings = ["autoCenter","imageTexture", "textureMode", "textureRepeat","enableAnim","color","animSpeed","animIndex","paused","tiltX","tiltZ"];
+    const advancedSettings = ["autoCenter","imageTexture", "textureMode", "textureRepeat","enableAnim","color","animSpeed","animIndex","paused","tiltX","tiltZ", "randomSeed"];
 
     injectAdvancedToggle(app,html,advancedSettings, injected);
 
     html.find(`input[name="flags.levels-3d-preview.randomSeed"]`).prop("maxlength", 7);
-    const tilingFlags = ["tileScale", "yScale","gap", "randomRotation", "randomScale", "randomDepth", "randomPosition", "randomColor", "randomSeed"];
+    const tilingFlags = ["tileScale", "yScale","gap", "randomRotation", "randomScale", "randomDepth", "randomPosition", "randomColor"];
     const shaderFlags = ["shaderIntensity", "shaderSpeed", "shaderOther","shaderOther2", "shaderAlt"];
-    html.on("change", `select[name="flags.levels-3d-preview.fillType"]`, (e) => {
-        const value = e.target.value;
-        if (value === "tile") {
-            tilingFlags.forEach(flag => {
-                html.find(`input[name="flags.levels-3d-preview.${flag}"]`).closest(".form-group").show();
-            })
-        } else {
-            tilingFlags.forEach(flag => {
-                html.find(`input[name="flags.levels-3d-preview.${flag}"]`).closest(".form-group").hide();
-            })
-        }
-        app.setPosition({height: "auto"});
-    })
+    const terrainFlags = ["noiseScale"];
+    hideParams(app, html, `select[name="flags.levels-3d-preview.fillType"]`, tilingFlags, "stretch");
+    hideParams(app, html, `select[name="flags.levels-3d-preview.noiseType"]`, terrainFlags, "none");
+
     html.on("change", `select[name="flags.levels-3d-preview.shader"]`, (e) => {
         const value = e.target.value;
         if (value === "none") {
@@ -881,7 +891,6 @@ Hooks.on("renderTileConfig", (app,html)=>{
         }
         app.setPosition({height: "auto"});
     })
-    html.find(`select[name="flags.levels-3d-preview.fillType"]`).trigger("change");
     html.find(`select[name="flags.levels-3d-preview.shader"]`).trigger("change");
 })
 
