@@ -311,8 +311,8 @@
                         "shaderOther2": "Affect Model (%)",
                         "shaderAlt": "Convoluted Wind"
                     },
-                    "lava": {
-                        "name": "Lava",
+                    "distortion": {
+                        "name": "Distortion",
                         "shaderIntensity" : "Distortion Intensity",
                         "shaderOther": "Distortion Angle",
                         "shaderAlt": "Convoluted Distortion"

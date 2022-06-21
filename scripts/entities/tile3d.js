@@ -1,5 +1,6 @@
 import * as THREE from "../lib/three.module.js";
 import { MersenneTwister } from "../lib/mersenneTwister.js";
+import { noiseShaders } from "../shaders/noise.js";
 import { Ruler3D } from "./ruler3d.js";
 import {factor} from '../main.js'; 
 import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from '../lib/three-mesh-bvh.js';
@@ -604,7 +605,7 @@ export class Tile3D {
     }
 
     initShaders(){
-        if(this.shader == "none") return;
+        if(!tileShaders[this.shader]) return;
         this.mesh.traverse(child => {
             if(child.isMesh){
                 if(child.material instanceof Array){
@@ -864,22 +865,35 @@ const tileShaders = {
             return `wind`
         }
     },
-    "lava": (_this, material, object, params) => {
+    "distortion": (_this, material, object, params) => {
         const {intensity, speed, other,other2, alt} = params;
-        const {wYSize, mWidth, mHeight, yPos} = getSizesForShader(_this);
+        const {mDepth, mWidth, mHeight, yPos} = getSizesForShader(_this);
         material.onBeforeCompile = (shader,renderer) => {
             _this.shaders.push(shader)
             shader.vertexShader = shader.vertexShader.replace(
                 "#include <begin_vertex>",
-                `float currentY = position.y;
-                float direction = position.x + position.z;   
-                vec3 displaceOffset = vec3(mWidth * intensity * cos(other+direction) * sin(time*speed), intensity * sin(time*speed) * cos(direction) ,mHeight * intensity * sin(other+direction) * sin(time*speed));
+                `vec3 displaceOffset;
+                float currentY = (modelMatrix * vec4( position, 1.0 )).y;
+                float currentYDelta = currentY - yPos;
+                if( currentYDelta > mDepth/10.0 ) {
+                    if( alt == 1.0 ) {
+                        float direction = snoise(vec2(position.x , position.z));//position.x * position.z;   
+                        displaceOffset = vec3(mWidth * intensity * cos(other+direction) * sin(time*speed), mDepth * intensity * sin(time*speed) * direction ,mHeight * intensity * sin(other+direction) * sin(time*speed));
+                    }else{
+                        float direction = position.x * position.z;   
+                        displaceOffset = vec3(mWidth * intensity * cos(other+direction) * sin(time*speed), mDepth * intensity * sin(time*speed) * cos(direction) ,mHeight * intensity * sin(other+direction) * sin(time*speed));
+                    }
+                    
+                }
                 vec3 transformed = vec3( position.x + displaceOffset.x, position.y + displaceOffset.y, position.z + displaceOffset.z );`
                 )
             shader.vertexShader = 
-            `uniform float time;
+            `${noiseShaders.snoise}
+            uniform float time;
             uniform float mWidth;
             uniform float mHeight;
+            uniform float mDepth;
+            uniform float yPos;
             uniform float intensity;
             uniform float speed;
             uniform float other;
@@ -890,13 +904,15 @@ const tileShaders = {
             shader.uniforms.time = { value: 0.0 };
             shader.uniforms.mWidth = { value: mWidth/10 };
             shader.uniforms.mHeight = { value: mHeight/10 };
+            shader.uniforms.mDepth = { value: mDepth };
+            shader.uniforms.yPos = { value: yPos };
             shader.uniforms.intensity = { value: intensity };
             shader.uniforms.speed = { value: speed };
             shader.uniforms.other = { value: other*Math.PI*2-_this.angle*_this.rotSign };
             shader.uniforms.alt = { value: alt ? 1.0 : 0.0 };
         }
         material.customProgramCacheKey = () => {
-            return `lava`
+            return `distortion`
         }
     },
     "water": (_this, material, object, params) => {

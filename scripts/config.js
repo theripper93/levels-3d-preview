@@ -797,7 +797,7 @@ Hooks.on("renderTileConfig", (app,html)=>{
             options: {
                 "none": game.i18n.localize("levels3dpreview.flags.shader.options.none"),
                 "wind": game.i18n.localize("levels3dpreview.flags.shader.options.wind.name"),
-                "lava": game.i18n.localize("levels3dpreview.flags.shader.options.lava.name"),
+                "distortion": game.i18n.localize("levels3dpreview.flags.shader.options.distortion.name"),
                 "water": game.i18n.localize("levels3dpreview.flags.shader.options.water.name"),
             }
         },
@@ -814,7 +814,7 @@ Hooks.on("renderTileConfig", (app,html)=>{
             label: game.i18n.localize("levels3dpreview.flags.shaderIntensity.label"),
             default: 0.1,
             step: 0.01,
-            min: 0,
+            min: 0.01,
             max: 1,
         },
         "shaderOther": {
@@ -822,7 +822,7 @@ Hooks.on("renderTileConfig", (app,html)=>{
             label: game.i18n.localize("levels3dpreview.flags.shaderOther.label"),
             default: 0.1,
             step: 0.01,
-            min: 0,
+            min: 0.01,
             max: 1,
         },
         "shaderOther2": {
@@ -830,7 +830,7 @@ Hooks.on("renderTileConfig", (app,html)=>{
             label: game.i18n.localize("levels3dpreview.flags.shaderOther2.label"),
             default: 0.5,
             step: 0.01,
-            min: 0,
+            min: 0.01,
             max: 1,
         },
         "shaderAlt": {
