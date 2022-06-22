@@ -7,7 +7,7 @@ import {Token3D} from "./entities/token3d.js";
 import { Ruler3D } from "./entities/ruler3d.js";
 import { Light3D } from "./entities/light3d.js";
 import { Wall3D } from "./entities/wall3d.js";
-import { Tile3D } from "./entities/tile3d.js";
+import { Tile3D, recomputeGravityDebounced } from "./entities/tile3d.js";
 import { Note3D } from "./entities/note3d.js";
 import { Grid3D } from "./entities/grid3d.js";
 import { RangeFinder } from "./entities/rangeFinder.js";
@@ -1218,7 +1218,8 @@ class Levels3DPreview {
       })
       game.settings.set("levels-3d-preview", "loadingShown", true)
     }
-
+    this.interactionManager.forceSightCollisions();
+    recomputeGravityDebounced();
     this.ClipNavigation = new ClipNavigation().render(true);
     this.weather = new WeatherSystem(this);
     canvas.sight.refresh();

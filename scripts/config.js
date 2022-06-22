@@ -742,6 +742,16 @@ Hooks.on("renderTileConfig", (app,html)=>{
                 "tile": game.i18n.localize("levels3dpreview.flags.fillType.options.tile"),
             }
         },
+        "enableGravity": {
+            type: "select",
+            label: game.i18n.localize("levels3dpreview.flags.enableGravity.label"),
+            default: "none",
+            options: {
+                "none": game.i18n.localize("levels3dpreview.flags.enableGravity.options.none"),
+                "gravity": game.i18n.localize("levels3dpreview.flags.enableGravity.options.gravity"),
+                "gravityRotation": game.i18n.localize("levels3dpreview.flags.enableGravity.options.gravityRotation"),
+            }
+        },
         "tileScale": {
             type: "number",
             label: game.i18n.localize("levels3dpreview.flags.tileScale.label"),
@@ -914,7 +924,7 @@ Hooks.on("renderTileConfig", (app,html)=>{
     injectAdvancedToggle(app,html,advancedSettings, injected);
 
     html.find(`input[name="flags.levels-3d-preview.randomSeed"]`).prop("maxlength", 7);
-    const tilingFlags = ["tileScale", "yScale","gap", "randomRotation", "randomScale", "randomDepth", "randomPosition", "randomColor"];
+    const tilingFlags = ["tileScale", "yScale","gap", "randomRotation", "randomScale", "randomDepth", "randomPosition", "randomColor", "enableGravity"];
     const shaderFlags = ["shaderIntensity", "shaderSpeed", "shaderOther","shaderOther2", "shaderAlt"];
     const terrainFlags = ["noiseScale", "noiseHeight", "noisePersistence", "noiseOctaves", "noiseLacunarity", "noiseExponent", "noiseFlattening"];
     hideParams(app, html, `select[name="flags.levels-3d-preview.fillType"]`, tilingFlags, "stretch");

@@ -50,6 +50,7 @@ export class Tile3D {
         this.elevation3d = this.mesh.position.y;
         this.setHidden();
         this.updateControls();
+        if(!this.isGravity) recomputeGravityDebounced();
         setTimeout(()=>{
             this.updateControls();
         }, 150)
@@ -85,6 +86,7 @@ export class Tile3D {
         this.animIndex = this.tile.document.getFlag("levels-3d-preview", "animIndex") ?? 0;
         this.animSpeed = this.tile.document.getFlag("levels-3d-preview", "animSpeed") ?? 1;
         this.color = this.tile.document.getFlag("levels-3d-preview", "color") ?? "#ffffff";
+        this.enableGravity = this.tile.document.getFlag("levels-3d-preview", "enableGravity") ?? "none";
         this.shader = this.tile.document.getFlag("levels-3d-preview", "shader") ?? "none";
         this.shaderParams = {
             intensity: this.tile.document.getFlag("levels-3d-preview", "shaderIntensity") ?? 0.1,
@@ -274,7 +276,9 @@ export class Tile3D {
     }
 
     async initInstanced(){
+        this.isGravity = this.enableGravity !== "none";
         const model = await this.getModel();
+        const raycaster = this._parent.interactionManager
         this.isInstanced = true;
         const {textureOrMat, isPBR} = await this.getTextureOrMat();
         const object =  game.Levels3DPreview.helpers.groundModel(model.scene, this.autoGround, this.autoCenter);//model.scene
@@ -350,9 +354,24 @@ export class Tile3D {
                     }else{
                         dummy.position.set((dummy.position.x+x*gridX+offsetx),dummy.position.y,(dummy.position.z+z*gridZ+offsetz));
                     }
-
+                    const realTarget = dummy.position.clone();
+                    realTarget.add(new THREE.Vector3(
+                        -this.width/2+gridX/2 + this.center.x,
+                        0 + this.center.y,
+                        -this.height/2+gridZ/2 + this.center.z
+                    ))
                     //dummy.scale.set(randomScale*child.scale.x*scaleFit,randomDepth*randomScale*child.scale.y*scaleFit*this.yScale,randomScale*child.scale.z*scaleFit);
                     dummy.rotation.set(dummy.rotation.x,dummy.rotation.y+randomRotation,dummy.rotation.z);
+                    if(this.enableGravity !== "none"){
+                        const rcTarget = realTarget.clone();
+                        rcTarget.y -= 10;
+                        const collision = raycaster.computeSightCollisionFrom3DPositions(realTarget,rcTarget, "collision", false, false, false, true)
+                        if(collision){
+                            dummy.position.y -= collision[0].distance;
+                            if(this.enableGravity === "gravityRotation") dummy.rotation.set(collision[0].face.normal.x,collision[0].face.normal.y,collision[0].face.normal.z);
+                        }
+                    }
+
                     dummy.updateMatrix();
                     if(this.randomColor){
                         const originalColor = child.material.color;
@@ -797,7 +816,20 @@ export class Tile3D {
     _onHoverOut(e) {
         //this.placeable._onHoverOut(e);
     }
+
 }
+
+function recomputeGravity(){
+    const _parent =  game.Levels3DPreview;
+    for(let tile3d of Object.values(_parent.tiles)){
+        const gravity = tile3d.isGravity
+        if(!gravity) continue;
+        tile3d?.destroy();
+        game.Levels3DPreview.createTile(tile3d.placeable);
+    }
+}
+
+export const recomputeGravityDebounced = debounce(recomputeGravity, 100);
 
 Hooks.on("updateTile", (tile, updates) => {
     if(game.Levels3DPreview?._active && tile.object && !isAnimOnly(updates)){

@@ -262,6 +262,14 @@
                     "tile": "Repeat"
                 }
             },
+            "enableGravity": {
+                "label": "Gravity",
+                "options": {
+                    "none": "Disabled",
+                    "gravity": "Gravity only",
+                    "gravityRotation": "Gravity + Surface Rotation"
+                }
+            },
             "depth":{
                 "label": "Depth"
             },
