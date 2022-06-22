@@ -48,6 +48,7 @@ export class Tile3D {
         this.initShaders();
         this._loaded = true;
         this.elevation3d = this.mesh.position.y;
+        this.setHidden();
         this.updateControls();
         setTimeout(()=>{
             this.updateControls();
@@ -558,11 +559,28 @@ export class Tile3D {
         }
     }
 
+    setHidden(){
+        if(!game.user.isGM) return;
+        const hidden = this.tile.data.hidden;
+        if(hidden){
+            this.mesh.traverse(child => {
+                if(child.isMesh){
+                    child.material.transparent = true;
+                    child.material.opacity *= 0.5;
+                    child.material.alphaTest = 0;
+                    child.material.depthWrite = false;
+                    child.material.format = THREE.RGBAFormat
+                    child.material.needsUpdate = true;
+                }
+            })
+        }
+    }
+
     updateVisibility(time){
         if(!this.mesh) return;
         this.updateShader(time);
         this.toggleBoundingBox();
-        this.mesh.visible = !this.tile.data.hidden;
+        this.mesh.visible = !this.tile.data.hidden || game.user.isGM;
         if(game.Levels3DPreview.mirrorLevelsVisibility && this.tile.data.overhead){
             const isLevelsVisible = _levels.floorContainer.spriteIndex[this.tile.id]?.parent ? true : false;
             this.mesh.visible = this.tile.occluded ? false : this.tile.visible || isLevelsVisible;
@@ -672,7 +690,11 @@ export class Tile3D {
                     positionAttributes.setY(i, y);
                 }
                 c.geometry.computeVertexNormals();
+                c.geometry.normalizeNormals();
+                c.geometry.computeTangents();
                 c.geometry.attributes.position.needsUpdate = true;
+                c.geometry.attributes.normal.needsUpdate = true;
+                c.geometry.attributes.tangent.needsUpdate = true;
             }
         })
     }
