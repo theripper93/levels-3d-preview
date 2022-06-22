@@ -1,8 +1,7 @@
 import * as THREE from "../lib/three.module.js";
 import { MersenneTwister } from "../lib/mersenneTwister.js";
 import { noiseShaders } from "../shaders/noise.js";
-import { SimplexNoise } from "../lib/simplexNoise.js";
-import { Perlin } from "../lib/perlinNoise.js";
+import { SimplexNoise, Perlin, FractionalBrownianMotion } from "../lib/noiseFunctions.js";
 import { Ruler3D } from "./ruler3d.js";
 import {factor} from '../main.js'; 
 import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from '../lib/three-mesh-bvh.js';
@@ -92,6 +91,15 @@ export class Tile3D {
             other: this.tile.document.getFlag("levels-3d-preview", "shaderOther") ?? 0.1,
             other2: this.tile.document.getFlag("levels-3d-preview", "shaderOther2") ?? 0.5,
             alt: this.tile.document.getFlag("levels-3d-preview", "shaderAlt") ?? false,
+        }
+        this.noiseParams = {
+            scale: this.tile.document.getFlag("levels-3d-preview", "noiseScale") ?? 1,
+            height: this.tile.document.getFlag("levels-3d-preview", "noiseHeight") ?? 1,
+            persistence: this.tile.document.getFlag("levels-3d-preview", "noisePersistence") ?? 0.5,
+            octaves: this.tile.document.getFlag("levels-3d-preview", "noiseOctaves") ?? 1, 
+            lacunarity: this.tile.document.getFlag("levels-3d-preview", "noiseLacunarity") ?? 2,
+            exponent: this.tile.document.getFlag("levels-3d-preview", "noiseExponent") ?? 1,
+            flattening: 1 - (this.tile.document.getFlag("levels-3d-preview", "noiseFlattening") ?? 0),
         }
         this.noiseType = this.tile.document.getFlag("levels-3d-preview", "noiseType") ?? "none";
         this.noiseScale = this.tile.document.getFlag("levels-3d-preview", "noiseScale") ?? 1;
@@ -648,6 +656,9 @@ export class Tile3D {
                 noiseFn = perlin.get.bind(perlin);
                 break;
         }
+        const getNoise = (x,y) => {
+            return FractionalBrownianMotion(x,y,noiseFn,this.noiseParams)
+        }
         model.traverse(c => {
             if(c.isMesh){
                 c.geometry = c.geometry.clone();
@@ -657,7 +668,7 @@ export class Tile3D {
                     let x = positionAttributes.getX(i);
                     let y = positionAttributes.getY(i);
                     let z = positionAttributes.getZ(i);
-                    y*= (noiseFn(x/this.noiseScale, z/this.noiseScale, y/this.noiseScale, x*y*z )+1.0001);
+                    y+= getNoise(x,z);
                     positionAttributes.setY(i, y);
                 }
                 c.geometry.computeVertexNormals();

@@ -856,7 +856,57 @@ Hooks.on("renderTileConfig", (app,html)=>{
             type: "number",
             label: game.i18n.localize("levels3dpreview.flags.noiseScale.label"),
             default: 1,
+        },
+        "noiseHeight": {
+            type: "range",
+            label: game.i18n.localize("levels3dpreview.flags.noiseHeight.label"),
+            default: 1,
+            step: 0.1,
+            min: 0.1,
+            max: 20,
+        },
+        "noisePersistence": {
+            type: "range",
+            label: game.i18n.localize("levels3dpreview.flags.noisePersistence.label"),
+            default: 0.5,
+            step: 0.1,
+            min: 0.1,
+            max: 1,
+        },
+        "noiseOctaves": {
+            type: "range",
+            label: game.i18n.localize("levels3dpreview.flags.noiseOctaves.label"),
+            default: 1,
+            step: 1,
+            min: 1,
+            max: 20,
+        },
+        "noiseLacunarity": {
+            type: "range",
+            label: game.i18n.localize("levels3dpreview.flags.noiseLacunarity.label"),
+            default: 1,
+            step: 0.1,
+            min: 0.1,
+            max: 4,
+        },
+        "noiseFlattening": {
+            type: "range",
+            label: game.i18n.localize("levels3dpreview.flags.noiseFlattening.label"),
+            default: 0,
+            step: 0.1,
+            min: 0,
+            max: 1,
+        },
+        "noiseExponent": {
+            type: "range",
+            label: game.i18n.localize("levels3dpreview.flags.noiseExponent.label"),
+            default: 2,
+            step: 0.1,
+            min: 0.1,
+            max: 10,
         }
+
+
     })
 
     const advancedSettings = ["autoCenter","imageTexture", "textureMode", "textureRepeat","enableAnim","color","animSpeed","animIndex","paused","tiltX","tiltZ", "randomSeed"];
@@ -866,7 +916,7 @@ Hooks.on("renderTileConfig", (app,html)=>{
     html.find(`input[name="flags.levels-3d-preview.randomSeed"]`).prop("maxlength", 7);
     const tilingFlags = ["tileScale", "yScale","gap", "randomRotation", "randomScale", "randomDepth", "randomPosition", "randomColor"];
     const shaderFlags = ["shaderIntensity", "shaderSpeed", "shaderOther","shaderOther2", "shaderAlt"];
-    const terrainFlags = ["noiseScale"];
+    const terrainFlags = ["noiseScale", "noiseHeight", "noisePersistence", "noiseOctaves", "noiseLacunarity", "noiseExponent", "noiseFlattening"];
     hideParams(app, html, `select[name="flags.levels-3d-preview.fillType"]`, tilingFlags, "stretch");
     hideParams(app, html, `select[name="flags.levels-3d-preview.noiseType"]`, terrainFlags, "none");
 

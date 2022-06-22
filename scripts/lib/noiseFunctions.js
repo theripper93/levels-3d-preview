@@ -10,7 +10,7 @@
  * You can pass in a random number generator object if you like.
  * It is assumed to have a random() method.
  */
- class SimplexNoise {
+ export class SimplexNoise {
 
 	constructor( r = Math ) {
 
@@ -441,4 +441,83 @@
 
 }
 
-export { SimplexNoise };
+export class Perlin{
+    constructor(r = Math){
+        this.r = r;
+        this.gradients = {};
+        this.memory = {};
+    }
+    rand_vect(){
+        let theta = this.r.random() * 2 * Math.PI;
+        return {x: Math.cos(theta), y: Math.sin(theta)};
+    }
+    dot_prod_grid(x, y, vx, vy){
+        let g_vect;
+        let d_vect = {x: x - vx, y: y - vy};
+        if (this.gradients[[vx,vy]]){
+            g_vect = this.gradients[[vx,vy]];
+        } else {
+            g_vect = this.rand_vect();
+            this.gradients[[vx, vy]] = g_vect;
+        }
+        return d_vect.x * g_vect.x + d_vect.y * g_vect.y;
+    }
+    smootherstep(x){
+        return 6*x**5 - 15*x**4 + 10*x**3;
+    }
+    interp(x, a, b){
+        return a + this.smootherstep(x) * (b-a);
+    }
+    get(x, y) {
+        if (this.memory.hasOwnProperty([x,y]))
+            return this.memory[[x,y]];
+        let xf = Math.floor(x);
+        let yf = Math.floor(y);
+        //interpolate
+        let tl = this.dot_prod_grid(x, y, xf,   yf);
+        let tr = this.dot_prod_grid(x, y, xf+1, yf);
+        let bl = this.dot_prod_grid(x, y, xf,   yf+1);
+        let br = this.dot_prod_grid(x, y, xf+1, yf+1);
+        let xt = this.interp(x-xf, tl, tr);
+        let xb = this.interp(x-xf, bl, br);
+        let v = this.interp(y-yf, xt, xb);
+        this.memory[[x,y]] = v;
+        return v;
+    }
+}
+
+export function FractionalBrownianMotion(x, y, noiseFn, params){
+	const xs = x / params.scale;
+	const ys = y / params.scale;
+	const G = 2.0 ** (-params.persistence);
+	let amplitude = 1.0;
+	let frequency = 1.0;
+	let normalization = 0;
+	let total = 0;
+	for (let i = 0; i < params.octaves; i++) {
+		const noiseValue = noiseFn(xs * frequency, ys * frequency) * 0.5 + 0.5;
+		total += noiseValue * amplitude;
+		normalization += amplitude;
+		amplitude *= G;
+		frequency *= params.lacunarity;
+	}
+	total /= normalization;
+	total = Math.pow(total, params.exponent);
+	return smoothClamp(total, params.flattening) * params.height;
+}
+
+function smoothClamp(x, num){
+	if(x < -num){
+		return lerp(x,-num, Math.abs(x+num));
+	}
+	if(x > num){
+		return lerp(x,num, Math.abs(x-num));
+	}
+
+	return x;
+
+}
+
+function lerp(a, b, t){
+	return a + (b-a) * t;
+}

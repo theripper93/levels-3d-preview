@@ -336,6 +336,24 @@
             "noiseScale": {
                 "label": "Noise Scale"
             },
+            "noiseHeight": {
+                "label": "Height"
+            },
+            "noisePersistence": {
+                "label": "Persistence"
+            },
+            "noiseOctaves": {
+                "label": "Octaves"
+            },
+            "noiseLacunarity": {
+                "label": "Lacunarity"
+            },
+            "noiseExponent": {
+                "label": "Exponent"
+            },
+            "noiseFlattening": {
+                "label": "Flattening"
+            },
             "shaderIntensity": {
                 "label": "Shader Intensity"
             },
