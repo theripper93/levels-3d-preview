@@ -917,6 +917,7 @@ class Levels3DPreview {
         canvas.app.renderer.reset()
         this.renderer.resetState();
       }
+      this.interactionManager._canMouseMove = true;
       this.interactionManager.dragObject();
       this.cursors.update();
       const delta = this.clock.getDelta();

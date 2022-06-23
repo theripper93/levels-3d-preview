@@ -256,6 +256,7 @@
                 "label": "Sides Tint"
             },
             "fillType": {
+                "header": "Tiling",
                 "label": "Fill Type",
                 "options": {
                     "stretch": "Single",
@@ -519,6 +520,7 @@
                 "label": "Block Movement"
             },
             "tsight": {
+                "header": "Vision",
                 "label": "Block Sight"
             },
             "enableCollision": {

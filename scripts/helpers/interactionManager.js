@@ -442,6 +442,8 @@ export class InteractionManager {
     }
 
     _onMouseMove(event){
+      if(!this._canMouseMove) return;
+      this._canMouseMove = false;
       this.mousemove.x = (event.clientX / window.innerWidth) * 2 - 1;
       this.mousemove.y = -(event.clientY / window.innerHeight) * 2 + 1;
       this.updateHoverObj();
@@ -468,7 +470,6 @@ export class InteractionManager {
       }
 
       if(this._groupSelect) this.groupSelectHandler.updateSelect(event);
-
     }
 
     _clippingFilter(i){

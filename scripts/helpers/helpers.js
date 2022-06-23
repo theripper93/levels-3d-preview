@@ -431,11 +431,11 @@ export function hideParams(app, html, element, flags, hide){
     const value = e.target.value;
     if (value === hide) {
       flags.forEach(flag => {
-            html.find(`input[name="flags.levels-3d-preview.${flag}"]`).closest(".form-group").hide();
+            html.find(`[name="flags.levels-3d-preview.${flag}"]`).closest(".form-group").hide();
         })
     } else {
       flags.forEach(flag => {
-            html.find(`input[name="flags.levels-3d-preview.${flag}"]`).closest(".form-group").show();
+            html.find(`[name="flags.levels-3d-preview.${flag}"]`).closest(".form-group").show();
         })
     }
     app.setPosition({height: "auto"});

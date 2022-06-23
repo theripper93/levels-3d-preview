@@ -625,15 +625,6 @@ Hooks.on("renderTileConfig", (app,html)=>{
             label: game.i18n.localize("levels3dpreview.flags.imageTexture.label"),
 
         },
-        "textureMode": {
-            type: "select",
-            label: game.i18n.localize("levels3dpreview.flags.textureMode.label"),
-            default: "stretch",
-            options: {
-                "stretch": game.i18n.localize("levels3dpreview.flags.textureMode.options.stretch"),
-                "repeat": game.i18n.localize("levels3dpreview.flags.textureMode.options.repeat"),
-            }
-        },
         "textureRepeat": {
             type: "range",
             label: game.i18n.localize("levels3dpreview.flags.textureRepeat.label"),
@@ -698,6 +689,15 @@ Hooks.on("renderTileConfig", (app,html)=>{
             default: 100,
             step: 0.000001,
         },
+        "randomSeed": {
+            type: "text",
+            label: game.i18n.localize("levels3dpreview.flags.randomSeed.label"),
+            default: app.object.id.substring(0,7),
+        },
+        "header4": {
+            type: "custom",
+            html: `<h3 class="form-header"><i class="fas fa-eye"></i> ${game.i18n.localize("levels3dpreview.flags.tsight.header")}</h3><div>`
+        },
         "collision": {
             type: "checkbox",
             label: game.i18n.localize("levels3dpreview.flags.tcollision.label"),
@@ -728,10 +728,9 @@ Hooks.on("renderTileConfig", (app,html)=>{
                 2: game.i18n.localize("levels3dpreview.flags.doorState.options.locked"),
             }
         },
-        "randomSeed": {
-            type: "text",
-            label: game.i18n.localize("levels3dpreview.flags.randomSeed.label"),
-            default: app.object.id.substring(0,7),
+        "header3": {
+            type: "custom",
+            html: `<h3 class="form-header"><i class="fas fa-th"></i> ${game.i18n.localize("levels3dpreview.flags.fillType.header")}</h3><div>`
         },
         "fillType": {
             type: "select",
@@ -919,7 +918,7 @@ Hooks.on("renderTileConfig", (app,html)=>{
 
     })
 
-    const advancedSettings = ["autoCenter","imageTexture", "textureMode", "textureRepeat","enableAnim","color","animSpeed","animIndex","paused","tiltX","tiltZ", "randomSeed"];
+    const advancedSettings = ["autoCenter","enableAnim","animSpeed","animIndex","paused","tiltX","tiltZ", "randomSeed", "autoGround", "depth"];
 
     injectAdvancedToggle(app,html,advancedSettings, injected);
 

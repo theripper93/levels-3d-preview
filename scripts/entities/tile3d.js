@@ -139,8 +139,8 @@ export class Tile3D {
         this.tiltZ = Math.toRadians(this.tiltZ);
         this.autoCenter = this.tile.document.getFlag("levels-3d-preview", "autoCenter") ?? false;
         this.autoGround = this.tile.document.getFlag("levels-3d-preview", "autoGround") ?? false;
-        this.textureMode = this.tile.document.getFlag("levels-3d-preview", "textureMode") ?? "stretch";
         this.textureRepeat = this.tile.document.getFlag("levels-3d-preview", "textureRepeat") ?? 1;
+        this.repeatTexture = this.textureRepeat > 1;
         this.wasFreeMode = this.tile.document.getFlag("levels-3d-preview", "wasFreeMode") ?? false;
         this.doorType = this.tile.document.getFlag("levels-3d-preview", "doorType") ?? 0;
         this.doorState = this.tile.document.getFlag("levels-3d-preview", "doorState") ?? 0;
@@ -289,6 +289,7 @@ export class Tile3D {
 
     async initInstanced(){
         this.isGravity = this.enableGravity !== "none";
+        if(this.isGravity) this._parent.interactionManager.forceSightCollisions();
         const model = await this.getModel();
         const raycaster = this._parent.interactionManager
         this.isInstanced = true;
@@ -366,28 +367,32 @@ export class Tile3D {
                     }else{
                         dummy.position.set((dummy.position.x+x*gridX+offsetx),dummy.position.y,(dummy.position.z+z*gridZ+offsetz));
                     }
-                    const realTarget = dummy.position.clone();
-                    realTarget.add(new THREE.Vector3(
-                        -this.width/2+gridX/2 + this.center.x,
-                        0 + this.center.y,
-                        -this.height/2+gridZ/2 + this.center.z
-                    ))
                     //dummy.scale.set(randomScale*child.scale.x*scaleFit,randomDepth*randomScale*child.scale.y*scaleFit*this.yScale,randomScale*child.scale.z*scaleFit);
                     dummy.rotation.set(dummy.rotation.x,dummy.rotation.y+randomRotation,dummy.rotation.z);
                     if(this.enableGravity !== "none"){
+                        const realTarget = dummy.position.clone();
+                        realTarget.add(new THREE.Vector3(
+                            -this.width/2+gridX/2 + this.center.x,
+                            0 + this.center.y,
+                            -this.height/2+gridZ/2 + this.center.z
+                        ))
+                        realTarget.y = this.center.y;
                         const rcTarget = realTarget.clone();
                         rcTarget.y -= 10;
                         const collision = raycaster.computeSightCollisionFrom3DPositions(realTarget,rcTarget, "collision", false, false, false, true)
                         if(collision){
                             dummy.position.y -= collision[0].distance;
-                            if(this.enableGravity === "gravityRotation") dummy.rotation.set(collision[0].face.normal.x,collision[0].face.normal.y,collision[0].face.normal.z);
+                            if(this.enableGravity === "gravityRotation") {
+                                dummy.rotation.set(collision[0].face.normal.x,collision[0].face.normal.y,collision[0].face.normal.z);
+                                dummy.rotateOnAxis(collision[0].face.normal, randomRotation);
+                            }
                         }
                     }
 
                     dummy.updateMatrix();
                     if(this.randomColor){
-                        const originalColor = child.material.color;
-                        const color = new THREE.Color(originalColor.r,originalColor.g,originalColor.b);
+                        //const color = child.material.color.clone();
+                        const color = new THREE.Color(this.color)
                         const hsl = color.getHSL({});
                         hsl.l/=randomColor;
                         color.setHSL(hsl.h,hsl.s,hsl.l);
@@ -483,7 +488,7 @@ export class Tile3D {
     }
 
     setTexture(tex){
-        if(this.textureMode == "stretch" || !tex?.image) return;
+        if(this.repeatTexture || !tex?.image) return;
         tex.wrapS = THREE.RepeatWrapping;
         tex.wrapT = THREE.RepeatWrapping;
         tex.repeat.set( this.textureRepeat, this.textureRepeat );
@@ -910,45 +915,39 @@ const tileShaders = {
         const {intensity, speed, other,other2, alt} = params;
         const {mDepth, mWidth, mHeight, yPos} = getSizesForShader(_this);
         const localSize = _this.isInstanced ? new THREE.Vector3(mWidth*0.3, mDepth*0.3, mHeight*0.3) : new THREE.Vector3(0.2, 0.2, 0.2);
+        
+        const beginFragment = `uniform float time;
+        uniform float mDepth;
+        uniform float yPos;
+        uniform float mWidth;
+        uniform float mHeight;
+        uniform vec3 localSize;
+        uniform float intensity;
+        uniform float speed;
+        uniform float other;
+        uniform float other2;
+        uniform float alt;
+        `
+        const transformFragment = `float currentY = (modelMatrix * vec4( position, 1.0 )).y;
+        float lWidth = localSize.x;
+        float lHeight = localSize.z;
+        float currentYDelta = currentY - yPos;
+        float windFactor = 0.0;
+        vec2 windOffset = vec2(0.0);
+        float modelAffected = other2;
+        if (currentYDelta > mDepth*modelAffected) {
+            windFactor = (currentYDelta - mDepth*modelAffected) / (mDepth*modelAffected);
+            if(alt == 1.0) {
+                windFactor = (sin(time*speed + position.x + position.z) + intensity) * windFactor;
+            }else{
+                windFactor = (sin(time*speed) + intensity) * windFactor;
+            }
+            windOffset = vec2(windFactor * intensity * cos(other) * lWidth, windFactor *  intensity * sin(other) * lHeight);
+        }
+        
+        vec3 transformed = vec3( position.x + windOffset.x, position.y, position.z + windOffset.y );`
 
-        material.onBeforeCompile = (shader,renderer) => {
-            _this.shaders.push(shader)
-            shader.vertexShader = shader.vertexShader.replace(
-                "#include <begin_vertex>",
-                `float currentY = (modelMatrix * vec4( position, 1.0 )).y;
-                float lWidth = localSize.x;
-                float lHeight = localSize.z;
-                float currentYDelta = currentY - yPos;
-                float windFactor = 0.0;
-                vec2 windOffset = vec2(0.0);
-                float modelAffected = other2;
-                if (currentYDelta > mDepth*modelAffected) {
-                    windFactor = (currentYDelta - mDepth*modelAffected) / (mDepth*modelAffected);
-                    if(alt == 1.0) {
-                        windFactor = (sin(time*speed + position.x + position.z) + intensity) * windFactor;
-                    }else{
-                        windFactor = (sin(time*speed) + intensity) * windFactor;
-                    }
-                    windOffset = vec2(windFactor * intensity * cos(other) * lWidth, windFactor *  intensity * sin(other) * lHeight);
-                }
-                
-                vec3 transformed = vec3( position.x + windOffset.x, position.y, position.z + windOffset.y );`
-                )
-            shader.vertexShader = 
-            `uniform float time;
-            uniform float mDepth;
-            uniform float yPos;
-            uniform float mWidth;
-            uniform float mHeight;
-            uniform vec3 localSize;
-            uniform float intensity;
-            uniform float speed;
-            uniform float other;
-            uniform float other2;
-            uniform float alt;
-            `
-             + shader.vertexShader;
-            
+        const setUniforms = (shader) => {
             shader.uniforms.time = { value: 0.0 };
             shader.uniforms.mWidth = { value: mWidth };
             shader.uniforms.mHeight = { value: mHeight };
@@ -960,8 +959,23 @@ const tileShaders = {
             shader.uniforms.yPos = { value: yPos };
             shader.uniforms.mDepth = { value: mDepth };
             shader.uniforms.localSize = { value: localSize };
-            
         }
+
+        const setupShader = (shader) => {
+            _this.shaders.push(shader);
+            shader.vertexShader = beginFragment + shader.vertexShader.replace(`#include <begin_vertex>`, transformFragment);
+            setUniforms(shader);
+        }
+
+        object.customDepthMaterial = new THREE.MeshDepthMaterial({
+            depthPacking: THREE.RGBADepthPacking,
+            onBeforeCompile: setupShader,
+            customProgramCacheKey: () => {
+                return `wind_depth`
+            }
+        })
+
+        material.onBeforeCompile = setupShader;
         material.customProgramCacheKey = () => {
             return `wind`
         }
@@ -969,38 +983,33 @@ const tileShaders = {
     "distortion": (_this, material, object, params) => {
         const {intensity, speed, other,other2, alt} = params;
         const {mDepth, mWidth, mHeight, yPos} = getSizesForShader(_this);
-        material.onBeforeCompile = (shader,renderer) => {
-            _this.shaders.push(shader)
-            shader.vertexShader = shader.vertexShader.replace(
-                "#include <begin_vertex>",
-                `vec3 displaceOffset = vec3(0.0);
-                if( position.y > 0.01 ) {
-                    if( alt == 1.0 ) {
-                        float direction = snoise(vec2(position.x , position.z));//position.x * position.z;   
-                        displaceOffset = vec3(mWidth * intensity * cos(other+direction) * sin(time*speed), mDepth * intensity * (sin(time*speed) + 1.0) * direction * 0.5 ,mHeight * intensity * sin(other+direction) * sin(time*speed));
-                    }else{
-                        float direction = position.x * position.z;   
-                        displaceOffset = vec3(mWidth * intensity * cos(other+direction) * sin(time*speed), mDepth * intensity * (sin(time*speed) + 1.0) * (cos(direction) + 1.0) * 0.25 ,mHeight * intensity * sin(other+direction) * sin(time*speed));
-                    }
-                    if( position.y + displaceOffset.y <= 0.0 ) {
-                        displaceOffset.y = 0.0;
-                    }
-                }
-                vec3 transformed = vec3( position.x + displaceOffset.x, position.y + displaceOffset.y, position.z + displaceOffset.z );`
-                )
-            shader.vertexShader = 
-            `${noiseShaders.snoise}
-            uniform float time;
-            uniform float mWidth;
-            uniform float mHeight;
-            uniform float mDepth;
-            uniform float intensity;
-            uniform float speed;
-            uniform float other;
-            uniform float alt;
-            `
-             + shader.vertexShader;
-            
+
+        const beginFragment = `${noiseShaders.snoise}
+        uniform float time;
+        uniform float mWidth;
+        uniform float mHeight;
+        uniform float mDepth;
+        uniform float intensity;
+        uniform float speed;
+        uniform float other;
+        uniform float alt;
+        `
+        const transformFragment = `vec3 displaceOffset = vec3(0.0);
+        if( position.y > 0.01 ) {
+            if( alt == 1.0 ) {
+                float direction = snoise(vec2(position.x , position.z));//position.x * position.z;   
+                displaceOffset = vec3(mWidth * intensity * cos(other+direction) * sin(time*speed), mDepth * intensity * (sin(time*speed) + 1.0) * direction * 0.5 ,mHeight * intensity * sin(other+direction) * sin(time*speed));
+            }else{
+                float direction = position.x * position.z;   
+                displaceOffset = vec3(mWidth * intensity * cos(other+direction) * sin(time*speed), mDepth * intensity * (sin(time*speed) + 1.0) * (cos(direction) + 1.0) * 0.25 ,mHeight * intensity * sin(other+direction) * sin(time*speed));
+            }
+            if( position.y + displaceOffset.y <= 0.0 ) {
+                displaceOffset.y = 0.0;
+            }
+        }
+        vec3 transformed = vec3( position.x + displaceOffset.x, position.y + displaceOffset.y, position.z + displaceOffset.z );`
+
+        const setUniforms = (shader) => {
             shader.uniforms.time = { value: 0.0 };
             shader.uniforms.mWidth = { value: mWidth/10 };
             shader.uniforms.mHeight = { value: mHeight/10 };
@@ -1010,6 +1019,22 @@ const tileShaders = {
             shader.uniforms.other = { value: other*Math.PI*2-_this.angle*_this.rotSign };
             shader.uniforms.alt = { value: alt ? 1.0 : 0.0 };
         }
+
+        const setupShader = (shader) => {
+            _this.shaders.push(shader);
+            shader.vertexShader = beginFragment + shader.vertexShader.replace(`#include <begin_vertex>`, transformFragment);
+            setUniforms(shader);
+        }
+
+        object.customDepthMaterial = new THREE.MeshDepthMaterial({
+            depthPacking: THREE.RGBADepthPacking,
+            onBeforeCompile: setupShader,
+            customProgramCacheKey: () => {
+                return `distortion_depth`
+            }
+        })
+
+        material.onBeforeCompile = setupShader
         material.customProgramCacheKey = () => {
             return `distortion`
         }
@@ -1017,35 +1042,30 @@ const tileShaders = {
     "water": (_this, material, object, params) => {
         const {intensity, speed, other,other2, alt} = params;
         const {mDepth, mWidth, mHeight, yPos} = getSizesForShader(_this);
-        material.onBeforeCompile = (shader,renderer) => {
-            _this.shaders.push(shader)
-            shader.vertexShader = shader.vertexShader.replace(
-                "#include <begin_vertex>",
-                `float yDisplace = 0.0;
-                if( position.y > 0.01 ) {
-                    float posX = position.x - mWidth ;
-                    float posZ = position.z - mHeight ;
-                    float timeSpeed = time * speed;
-                    float r = sqrt (posX*posX + posZ*posZ)*(intensity) + timeSpeed;
-                    yDisplace = (1.0 + sin(r) ) * other * mDepth;
-                    if( position.y + yDisplace <= 0.0 ) {
-                        yDisplace = 0.0;
-                    }
-                }
-                vec3 transformed = vec3( position.x, position.y + yDisplace, position.z);`
-                )
-            shader.vertexShader = 
-            `uniform float time;
-            uniform float mDepth;
-            uniform float mWidth;
-            uniform float mHeight;
-            uniform float intensity;
-            uniform float speed;
-            uniform float other;
-            uniform float alt;
-            `
-             + shader.vertexShader;
-            
+
+        const beginFragment = `uniform float time;
+        uniform float mDepth;
+        uniform float mWidth;
+        uniform float mHeight;
+        uniform float intensity;
+        uniform float speed;
+        uniform float other;
+        uniform float alt;
+        `
+        const transformFragment = `float yDisplace = 0.0;
+        if( position.y > 0.01 ) {
+            float posX = position.x - mWidth ;
+            float posZ = position.z - mHeight ;
+            float timeSpeed = time * speed;
+            float r = sqrt (posX*posX + posZ*posZ)*(intensity) + timeSpeed;
+            yDisplace = (1.0 + sin(r) ) * other * mDepth;
+            if( position.y + yDisplace <= 0.0 ) {
+                yDisplace = 0.0;
+            }
+        }
+        vec3 transformed = vec3( position.x, position.y + yDisplace, position.z);`
+
+        const setUniforms = (shader) => {
             shader.uniforms.time = { value: 0.0 };
             shader.uniforms.mDepth = { value: mDepth*10 };
             shader.uniforms.mWidth = { value: mWidth };
@@ -1055,6 +1075,22 @@ const tileShaders = {
             shader.uniforms.other = { value: other*0.2 };
             shader.uniforms.alt = { value: alt ? 1.0 : 0.0 };
         }
+
+        const setupShader = (shader) => {
+            _this.shaders.push(shader);
+            shader.vertexShader = beginFragment + shader.vertexShader.replace(`#include <begin_vertex>`, transformFragment);
+            setUniforms(shader);
+        }
+
+        object.customDepthMaterial = new THREE.MeshDepthMaterial({
+            depthPacking: THREE.RGBADepthPacking,
+            onBeforeCompile: setupShader,
+            customProgramCacheKey: () => {
+                return `water_depth`
+            }
+        })
+
+        material.onBeforeCompile = setupShader
         material.customProgramCacheKey = () => {
             return `water`
         }
