@@ -50,7 +50,7 @@ export class Tile3D {
         this.elevation3d = this.mesh.position.y;
         this.setHidden();
         this.updateControls();
-        if(!this.isGravity) recomputeGravityDebounced();
+        //if(!this.isGravity) recomputeGravityDebounced();
         setTimeout(()=>{
             this.updateControls();
         }, 150)
@@ -488,7 +488,7 @@ export class Tile3D {
     }
 
     setTexture(tex){
-        if(this.repeatTexture || !tex?.image) return;
+        if(!this.repeatTexture || !tex?.image) return;
         tex.wrapS = THREE.RepeatWrapping;
         tex.wrapT = THREE.RepeatWrapping;
         tex.repeat.set( this.textureRepeat, this.textureRepeat );
@@ -826,14 +826,24 @@ export class Tile3D {
 
 }
 
-function recomputeGravity(){
+export async function recomputeGravity(){
     const _parent =  game.Levels3DPreview;
-    for(let tile3d of Object.values(_parent.tiles)){
+    const tiles = Object.values(_parent.tiles).sort((a,b) => {
+        return a.bottom - b.bottom;
+    }).reverse();
+    for(let tile3d of tiles){
         const gravity = tile3d.isGravity
         if(!gravity) continue;
         tile3d?.destroy();
-        game.Levels3DPreview.createTile(tile3d.placeable);
     }
+    for(let tile3d of tiles){
+        const gravity = tile3d.isGravity
+        if(!gravity) continue;
+        const newTile = new Tile3D(tile3d.placeable, game.Levels3DPreview);
+        await newTile.load();
+        game.Levels3DPreview.tiles[tile3d.placeable.id] = newTile;
+    }
+    game.Levels3DPreview.interactionManager.setControlledGroup();
 }
 
 export const recomputeGravityDebounced = debounce(recomputeGravity, 100);
@@ -841,7 +851,11 @@ export const recomputeGravityDebounced = debounce(recomputeGravity, 100);
 Hooks.on("updateTile", (tile, updates) => {
     if(game.Levels3DPreview?._active && tile.object && !isAnimOnly(updates)){
         game.Levels3DPreview.tiles[tile.id]?.destroy();
-        game.Levels3DPreview.createTile(tile.object);
+        const newTile = new Tile3D(tile.object, game.Levels3DPreview);
+        newTile.load().then(() => {
+            game.Levels3DPreview.tiles[tile.id] = newTile;
+            recomputeGravityDebounced();
+        })
     }
 
     function isAnimOnly(updates){

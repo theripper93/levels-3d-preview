@@ -315,6 +315,7 @@ export class Token3D {
       }
 
       if(materialType === "texcol"){
+        debugger
         if(model.material){
           if(this.color) model.material.color = new THREE.Color(this.color);
           model.material.map = this.texture;

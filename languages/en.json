@@ -5,7 +5,8 @@
             "miniCanvas": "Popout/Restore Canvas",
             "loading": {
                 "load": "Loading 3D Canvas...",
-                "env": "Creating 3D Environment..."
+                "env": "Creating 3D Environment...",
+                "gravity": "Computing Gravity..."
             },
             "loadingScreen": {
                 "navtools": "Scene Navigation tools (left of ",

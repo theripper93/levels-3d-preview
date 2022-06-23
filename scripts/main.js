@@ -7,7 +7,7 @@ import {Token3D} from "./entities/token3d.js";
 import { Ruler3D } from "./entities/ruler3d.js";
 import { Light3D } from "./entities/light3d.js";
 import { Wall3D } from "./entities/wall3d.js";
-import { Tile3D, recomputeGravityDebounced } from "./entities/tile3d.js";
+import { Tile3D, recomputeGravityDebounced, recomputeGravity } from "./entities/tile3d.js";
 import { Note3D } from "./entities/note3d.js";
 import { Grid3D } from "./entities/grid3d.js";
 import { RangeFinder } from "./entities/rangeFinder.js";
@@ -1187,13 +1187,21 @@ class Levels3DPreview {
       tileArray.filter((tile) => tile._loaded).length;
     let progress = total === 0 ? 100 : Math.round((loaded / total) * 100);
     if (total === loaded && this._envReady) {
-      this._ready = true;
-      this.loadingTokens = {};
-      this.loadingTiles = {};
-      this._onReady();
-      Hooks.callAll("3DCanvasSceneReady", game.Levels3DPreview);
-    }
-    this.setProgressBar(total === loaded ? game.i18n.localize("levels3dpreview.controls.loading.env") : game.i18n.localize("levels3dpreview.controls.loading.load"), progress);
+      this.interactionManager.forceSightCollisions();
+      this.setProgressBar(game.i18n.localize("levels3dpreview.controls.loading.gravity") ,99);
+        recomputeGravity().then(() => {
+          setTimeout(() => {
+            this._ready = true;
+            this.loadingTokens = {};
+            this.loadingTiles = {};
+            this._onReady();
+            Hooks.callAll("3DCanvasSceneReady", game.Levels3DPreview);
+          },500)
+
+        });
+    }else{
+      this.setProgressBar(total === loaded ? game.i18n.localize("levels3dpreview.controls.loading.env") : game.i18n.localize("levels3dpreview.controls.loading.load"), progress);
+    } 
   }
 
   setProgressBar(label, progress){
@@ -1221,8 +1229,6 @@ class Levels3DPreview {
       })
       game.settings.set("levels-3d-preview", "loadingShown", true)
     }
-    this.interactionManager.forceSightCollisions();
-    recomputeGravityDebounced();
     this.ClipNavigation = new ClipNavigation().render(true);
     this.weather = new WeatherSystem(this);
     canvas.sight.refresh();
