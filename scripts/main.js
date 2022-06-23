@@ -322,6 +322,8 @@ class Levels3DPreview {
     this.renderer.setPixelRatio(this.resolutionMulti);
     this.renderer.alpha = true;
     this.renderer.setClearColor(0x999999, 1);
+    this.renderer.shadowMap.type = game.settings.get("levels-3d-preview", "softShadows") ? THREE.PCFSoftShadowMap : THREE.PCFShadowMap;
+    
     //composer
 
     let target

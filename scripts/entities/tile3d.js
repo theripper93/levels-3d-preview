@@ -66,6 +66,17 @@ export class Tile3D {
         }
         seed = parseInt(seed);
         this.marsenne = new MersenneTwister(seed);
+        this.simplex = new SimplexNoise(this.marsenne);
+        this.perlin = new Perlin(this.marsenne);
+        this.noiseFn = this.simplex.noise.bind(this.simplex);
+        switch(this.noiseType){
+            case "simplex":
+                this.noiseFn = this.simplex.noise.bind(this.simplex);
+                break;
+            case "perlin":
+                this.noiseFn = this.perlin.get.bind(this.perlin);
+                break;
+        }
     }
 
     get pseudoRandom(){
@@ -116,6 +127,7 @@ export class Tile3D {
         this.randomDepth = this.tile.document.getFlag("levels-3d-preview", "randomDepth") ?? false;
         this.randomPosition = this.tile.document.getFlag("levels-3d-preview", "randomPosition") ?? false;
         this.gap = this.tile.document.getFlag("levels-3d-preview", "gap") ?? 0;
+        if(this.gap < 0) this.gap = 0;
         this.randomSeed = this.tile.document.getFlag("levels-3d-preview", "randomSeed") || this.tile.id;
         this.randomSeed = this.randomSeed.substring(0,7);
         this.randomColor = this.tile.document.getFlag("levels-3d-preview", "randomColor") ?? false;
@@ -680,22 +692,12 @@ export class Tile3D {
         })
     }
 
+    getNoise(x,y){
+        return FractionalBrownianMotion(x,y,this.noiseFn,this.noiseParams)
+    }
+
     applyNoise(model){
         if(this.noiseType === "none") return;
-        const simplex = new SimplexNoise(this.marsenne);
-        const perlin = new Perlin(this.marsenne);
-        let noiseFn = simplex.noise.bind(simplex);
-        switch(this.noiseType){
-            case "simplex":
-                noiseFn = simplex.noise.bind(simplex);
-                break;
-            case "perlin":
-                noiseFn = perlin.get.bind(perlin);
-                break;
-        }
-        const getNoise = (x,y) => {
-            return FractionalBrownianMotion(x,y,noiseFn,this.noiseParams)
-        }
         model.traverse(c => {
             if(c.isMesh){
                 c.geometry = c.geometry.clone();
@@ -705,7 +707,7 @@ export class Tile3D {
                     let x = positionAttributes.getX(i);
                     let y = positionAttributes.getY(i);
                     let z = positionAttributes.getZ(i);
-                    y+= getNoise(x,z);
+                    y+= this.getNoise(x,z);
                     positionAttributes.setY(i, y);
                 }
                 c.geometry.computeVertexNormals();

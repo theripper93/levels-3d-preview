@@ -366,6 +366,18 @@ Hooks.once('init', function() {
       default: false,
     });
 
+    game.settings.register("levels-3d-preview", "softShadows", {
+      name: game.i18n.localize("levels3dpreview.settings.softShadows.name"),
+      hint: game.i18n.localize("levels3dpreview.settings.softShadows.hint"),
+      scope: "client",
+      config: true,
+      type: Boolean,
+      default: true,
+      onChange: (value) => {
+        game.Levels3DPreview.renderer.shadowMap.type = value ? game.Levels3DPreview.THREE.PCFSoftShadowMap : game.Levels3DPreview.THREE.PCFShadowMap;
+      }
+    });
+    
     game.settings.register("levels-3d-preview", "shadowQuality", {
       name: game.i18n.localize("levels3dpreview.settings.shadowQuality.name"),
       hint: game.i18n.localize("levels3dpreview.settings.shadowQuality.hint"),

@@ -878,6 +878,10 @@
                     "gamer": "Gamer"
                 }
             },
+            "softShadows":{
+                "name": "Soft Shadows",
+                "hint": "Enable soft shadows at the cost of some performance. Requires refresh."
+            },
             "resolution": {
                 "name": "Resolution",
                 "hint": "The resolution of the 3D canvas, this will affect performance.",
