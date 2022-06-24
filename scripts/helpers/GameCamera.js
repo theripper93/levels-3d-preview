@@ -132,9 +132,12 @@ export class GameCamera{
 
     keepInBounds(){
         if(!this.enabled || !this._bounds) return;
-        if(!this._bounds.containsPoint(this.camera.position) || !this._bounds.containsPoint(this.controls.target)){
-            this._bounds.clampPoint(this.camera.position, this.camera.position);
-            this._bounds.clampPoint(this.controls.target, this.controls.target);
+        if(!this._bounds.containsPoint(this.camera.position)){
+            const clampedPoint = new THREE.Vector3();
+            this._bounds.clampPoint(this.camera.position, clampedPoint);
+            const offset = this.camera.position.clone().sub(clampedPoint).multiplyScalar(-1);
+            this.camera.position.add(offset);
+            this.controls.target.add(offset);
         }
 
     }

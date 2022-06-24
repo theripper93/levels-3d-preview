@@ -446,16 +446,16 @@ export class Helpers {
       "Render Calls": infos.render.calls,
     }
 
-    let score = 18;
-    
+    let score = 20;
+    score -= (game.Levels3DPreview.weather?.effects?.length ?? 0)*3;
     score -= Math.round(result["Vertices"] / 1000000);
     score -= Math.round(result["Render Calls"] / 80);
     score = Math.max(score, 0);
     const color = new THREE.Color("red").lerpHSL(new THREE.Color("green"), score / 18).getHexString();
     const grades = ["F", "E", "D", "C", "B", "A"];
-    let grade = grades[Math.round(score / 6)];
-    if(score/6 > Math.round(score / 6)) grade += "+";
-    else if(score/6 < Math.round(score / 6)) grade += "-"
+    let grade = grades[Math.floor(score / 3)-1];
+    if(score/3 > Math.floor(score / 3)) grade += "+";
+    else if(score/3 < Math.floor(score / 3)) grade += "-"
     console.log(`%c3D Canvas | Scene Report`,'color: #f5a742; font-size: 1.8em;');
     console.log(`%cPerformance Grade | ${grade}`,`color: #${color}; font-size: 1.8em;`);
     return console.table(result);
