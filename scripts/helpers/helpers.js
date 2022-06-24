@@ -1,6 +1,7 @@
 import * as THREE from "../lib/three.module.js";
 import {factor} from '../main.js';
-import { Ruler3D } from "../entities/ruler3d.js"
+import { Ruler3D } from "../entities/ruler3d.js";
+import { mergeVertices } from "../lib/BufferGeometryUtils.js";
 
 export class Helpers {
   constructor() {
@@ -125,9 +126,27 @@ export class Helpers {
     if(!output) return null;
     let isSkinned = false;
     output.model.traverse((child) => { if(child instanceof THREE.SkinnedMesh) isSkinned = true; });
+    this.simplifyGeometry(output.model);
     if(isSkinned) return output;
     this.modelCache[modelPath] = output;
     return this.getClone(modelPath);
+  }
+
+  simplifyGeometry(model){
+    let originalVertices = 0;
+    let finalVertices = 0;
+
+    model.traverse((child) => {
+      if(child.isMesh){
+        const count = child.geometry.attributes.position.count;
+        originalVertices += count;
+        const newGeo = mergeVertices(child.geometry);
+        finalVertices += newGeo.attributes.position.count;
+        child.geometry = newGeo
+      }
+    })
+
+    console.log(`3D Canvas | Simplified Geometry Vertices: ${originalVertices} -> ${finalVertices}`);
   }
 
   getClone(filePath){
@@ -400,6 +419,46 @@ export class Helpers {
 
   syncClipNavigator(range){
     game.Levels3DPreview.ClipNavigation.set(range);
+  }
+
+  showSceneReport(){
+    const scene = game.Levels3DPreview.scene;
+    const infos = game.Levels3DPreview.renderer.info;
+    let totalVertices = 0;
+    let totalFaces = infos.render.triangles;
+    let totalMaterials = 0;
+    let totalMeshes = 0;
+
+    scene.traverse((object) => {
+      if (object instanceof THREE.Mesh) {
+        totalVertices += object.geometry.attributes.position.count;
+        totalMaterials += object.material instanceof Array ? object.material.length : 1;
+        totalMeshes++;
+      }
+    })
+
+    const result = {
+      "Vertices": totalVertices,
+      "Faces": totalFaces,
+      "Materials": totalMaterials,
+      "Meshes": totalMeshes,
+      "Textures": infos.memory.textures,
+      "Render Calls": infos.render.calls,
+    }
+
+    let score = 18;
+    
+    score -= Math.round(result["Vertices"] / 1000000);
+    score -= Math.round(result["Render Calls"] / 80);
+    score = Math.max(score, 0);
+    const color = new THREE.Color("red").lerpHSL(new THREE.Color("green"), score / 18).getHexString();
+    const grades = ["F", "E", "D", "C", "B", "A"];
+    let grade = grades[Math.round(score / 6)];
+    if(score/6 > Math.round(score / 6)) grade += "+";
+    else if(score/6 < Math.round(score / 6)) grade += "-"
+    console.log(`%c3D Canvas | Scene Report`,'color: #f5a742; font-size: 1.8em;');
+    console.log(`%cPerformance Grade | ${grade}`,`color: #${color}; font-size: 1.8em;`);
+    return console.table(result);
   }
 }
 

@@ -118,7 +118,7 @@ export class Token3D {
     async getModel(){
       if(!this.gtflPath){
         const texture = this.texture;
-        texture.encoding = THREE.LinearEncoding;
+        texture.encoding = THREE.sRGBEncoding;
         const geometry = new THREE.PlaneGeometry((texture.image?.width || texture.image?.videoWidth || 1)/1000, (texture.image?.height || texture.image?.videoHeight || 1)/1000);
         const material = new THREE.MeshBasicMaterial();
         const standupModel = new THREE.Mesh(geometry, material);
@@ -315,7 +315,6 @@ export class Token3D {
       }
 
       if(materialType === "texcol"){
-        debugger
         if(model.material){
           if(this.color) model.material.color = new THREE.Color(this.color);
           model.material.map = this.texture;

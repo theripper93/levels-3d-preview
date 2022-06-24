@@ -46,6 +46,7 @@ export class Tile3D {
             await this.init();
         }
         this.initShaders();
+        this.setShading();
         this._loaded = true;
         this.elevation3d = this.mesh.position.y;
         this.setHidden();
@@ -98,6 +99,7 @@ export class Tile3D {
         this.animSpeed = this.tile.document.getFlag("levels-3d-preview", "animSpeed") ?? 1;
         this.color = this.tile.document.getFlag("levels-3d-preview", "color") ?? "#ffffff";
         this.enableGravity = this.tile.document.getFlag("levels-3d-preview", "enableGravity") ?? "none";
+        this.shading = this.tile.document.getFlag("levels-3d-preview", "shading") ?? "default";
         this.shader = this.tile.document.getFlag("levels-3d-preview", "shader") ?? "none";
         this.shaderParams = {
             intensity: this.tile.document.getFlag("levels-3d-preview", "shaderIntensity") ?? 0.1,
@@ -495,6 +497,20 @@ export class Tile3D {
         return;
     }
 
+    setShading(){
+        if(this.shading == "default") return;
+        const flatShading = this.shading == "flat";
+        this.mesh.traverse((child) => {
+            if (child.isMesh) {
+                if(child.material instanceof Array){
+                    child.material.forEach(m => m.flatShading = flatShading);
+                }else{
+                    child.material.flatShading = flatShading;
+                }
+            }
+        })
+    }
+
     initBoundingBox(depth){
         let box;
         if(this.fillType === "tile"){
@@ -720,7 +736,6 @@ export class Tile3D {
                 c.geometry.computeTangents();
                 c.geometry.attributes.position.needsUpdate = true;
                 c.geometry.attributes.normal.needsUpdate = true;
-                c.geometry.attributes.tangent.needsUpdate = true;
             }
         })
     }
@@ -850,12 +865,22 @@ export const recomputeGravityDebounced = debounce(recomputeGravity, 100);
 
 Hooks.on("updateTile", (tile, updates) => {
     if(game.Levels3DPreview?._active && tile.object && !isAnimOnly(updates)){
+        const hasGravity = (tile.getFlag("levels-3d-preview", "enableGravity") ?? "none") !== "none";
+        const hadGravity = game.Levels3DPreview.tiles[tile.id]?.isGravity;
+        if(hasGravity && hadGravity) return recomputeGravityDebounced();
         game.Levels3DPreview.tiles[tile.id]?.destroy();
         const newTile = new Tile3D(tile.object, game.Levels3DPreview);
+        game.Levels3DPreview.tiles[tile.id] = newTile;
         newTile.load().then(() => {
-            game.Levels3DPreview.tiles[tile.id] = newTile;
-            recomputeGravityDebounced();
+            if("x" in updates || "y" in updates || hasFlag(updates)){
+                recomputeGravityDebounced();
+            }
         })
+
+        function hasFlag(updates){
+            if(updates?.flags?.levels?.rangeBottom !== undefined) return true;
+            if(updates?.flags?.levels?.rangeTop !== undefined) return true;
+        }
     }
 
     function isAnimOnly(updates){

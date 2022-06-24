@@ -309,6 +309,14 @@
             "tint": {
                 "label": "Tint Color"
             },
+            "shading": {
+                "label": "Shading",
+                "options": {
+                    "default": "Default",
+                    "flat": "Flat",
+                    "smooth": "Smooth"
+                }
+            },
             "shader": {
                 "label": "Shader",
                 "header": "Shaders",

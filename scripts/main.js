@@ -395,6 +395,7 @@ class Levels3DPreview {
   build3Dscene() {
     $(".levels-3d-preview-loading-screen").fadeIn(300);
     this._ready = false;
+    this._finalizingLoad = false;
     this._envReady = false;
     this._lightsOk = !canvas.scene.getFlag("levels-3d-preview", "bakeLights");
     this.clear3Dscene();
@@ -1187,18 +1188,21 @@ class Levels3DPreview {
       tileArray.filter((tile) => tile._loaded).length;
     let progress = total === 0 ? 100 : Math.round((loaded / total) * 100);
     if (total === loaded && this._envReady) {
-      this.interactionManager.forceSightCollisions();
-      this.setProgressBar(game.i18n.localize("levels3dpreview.controls.loading.gravity") ,99);
-        recomputeGravity().then(() => {
-          setTimeout(() => {
-            this._ready = true;
-            this.loadingTokens = {};
-            this.loadingTiles = {};
-            this._onReady();
-            Hooks.callAll("3DCanvasSceneReady", game.Levels3DPreview);
-          },500)
-
-        });
+      if(!this._finalizingLoad){
+        this._finalizingLoad = true;
+        this.setProgressBar(game.i18n.localize("levels3dpreview.controls.loading.gravity") ,99);
+        this.interactionManager.forceSightCollisions();
+          recomputeGravity().then(() => {
+            setTimeout(() => {
+              this._ready = true;
+              this.loadingTokens = {};
+              this.loadingTiles = {};
+              this._onReady();
+              Hooks.callAll("3DCanvasSceneReady", game.Levels3DPreview);
+            },500)
+  
+          });
+      }
     }else{
       this.setProgressBar(total === loaded ? game.i18n.localize("levels3dpreview.controls.loading.env") : game.i18n.localize("levels3dpreview.controls.loading.load"), progress);
     } 
@@ -1237,6 +1241,9 @@ class Levels3DPreview {
       lighting: { initialize: true /* calls updateSource on each light source */, refresh: true },
       sight: { initialize: true /* calls updateSource on each token */, refresh: true /* you probably to refesh sight as well */, forceUpdateFog: true /* not sure if you need this */ },
     });
+    setTimeout(() => {
+      this.helpers.showSceneReport();
+    }, 1000);
   }
 
   toggle(force) {

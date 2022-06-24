@@ -638,6 +638,16 @@ Hooks.on("renderTileConfig", (app,html)=>{
             label: game.i18n.localize("levels3dpreview.flags.tint.label"),
             default: "#ffffff",
         },
+        "shading": {
+            type: "select",
+            label: game.i18n.localize("levels3dpreview.flags.shading.label"),
+            default: "default",
+            options: {
+                "default": game.i18n.localize("levels3dpreview.flags.shading.options.default"),
+                "flat": game.i18n.localize("levels3dpreview.flags.shading.options.flat"),
+                "smooth": game.i18n.localize("levels3dpreview.flags.shading.options.smooth"),
+            }
+        },
         "autoCenter": {
             type: "checkbox",
             label: game.i18n.localize("levels3dpreview.flags.autoCenter.label"),
