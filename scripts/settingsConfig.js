@@ -156,7 +156,7 @@ Hooks.once('init', function() {
           "merge": game.i18n.localize("levels3dpreview.settings.solidBaseMode.options.merge"),
           "ontop": game.i18n.localize("levels3dpreview.settings.solidBaseMode.options.ontop"),
         },
-      default: "merge",
+      default: "ontop",
   });
 
   game.settings.register("levels-3d-preview", "solidBaseColor", {

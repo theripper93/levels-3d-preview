@@ -489,7 +489,12 @@ class Levels3DPreview {
       Math.max(canvas.scene.dimensions.width, canvas.dimensions.height) /
       this.factor;
 
-    if (enableFog) this.scene.fog = new THREE.Fog(fogColor, 1, fogDistance);
+    if (enableFog) {
+      this.scene.fog = new THREE.Fog(fogColor, 1, fogDistance);
+      this.camera.far = fogDistance;
+    }else{
+      this.camera.far = 100;
+    }
     //add raycasting plane
 
     const dragplane = new THREE.Mesh(
@@ -501,7 +506,7 @@ class Levels3DPreview {
     dragplane.rotation.x = -Math.PI / 2;
     this.scene.add(dragplane);
     this.interactionManager.dragplane = dragplane;
-    this.makeSkybox();
+    this.makeSkybox(enableFog);
     //this.weather = new WeatherSystem(this);
     this.lights.globalIllumination = new GlobalIllumination(this);
     this.ruler.addMarkers();
@@ -731,9 +736,9 @@ class Levels3DPreview {
     }
   }
 
-  makeSkybox() {
+  makeSkybox(enableFog) {
     this.setExposure();
-    this.scene.background = new THREE.Color(
+    this.scene.background = enableFog ? this.scene.fog.color : new THREE.Color(
       canvas.scene.data.backgroundColor ?? 0xffffff
     );
     this.scene.environment = null;
@@ -750,7 +755,7 @@ class Levels3DPreview {
     const exr =
       canvas.scene.getFlag("levels-3d-preview", "exr") ??
       this.CONFIG.skybox.exr;
-    if (exr) this.loadEXR(exr);
+    if (exr) this.loadEXR(exr, enableFog);
     if (!rootImage && !exr) this._envReady = true;
     if (!rootImage) {
       return;
@@ -779,14 +784,14 @@ class Levels3DPreview {
     const loader = new THREE.CubeTextureLoader();
     const textureCube = loader.load(textureArray);
     textureCube.encoding = THREE.sRGBEncoding;
-    this.scene.background = textureCube;
+    if(!enableFog) this.scene.background = textureCube;
     if (!exr) {
       this.scene.environment = textureCube;
       this._envReady = true;
     }
   }
 
-  loadEXR(rootImage) {
+  loadEXR(rootImage, enableFog) {
     this.isEXR = true;
     const pmremGenerator = new THREE.PMREMGenerator(this.renderer);
     pmremGenerator.compileEquirectangularShader();
@@ -807,7 +812,7 @@ class Levels3DPreview {
           : null;
         _this.scene.environment = newEnvMap;
         let background;
-        if(_this.scene.background instanceof THREE.Color) {
+        if(_this.scene.background instanceof THREE.Color && !enableFog) {
           const rt = new THREE.WebGLCubeRenderTarget(Math.min(1 << 31 - Math.clz32(texture.image.width), _this.renderer.capabilities.maxTextureSize))
           rt.fromEquirectangularTexture(_this.renderer, texture)
           background = rt.texture

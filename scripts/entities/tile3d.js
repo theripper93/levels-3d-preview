@@ -51,7 +51,6 @@ export class Tile3D {
         this.elevation3d = this.mesh.position.y;
         this.setHidden();
         this.updateControls();
-        //if(!this.isGravity) recomputeGravityDebounced();
         setTimeout(()=>{
             this.updateControls();
         }, 150)
@@ -164,14 +163,15 @@ export class Tile3D {
             lighting: { initialize: true /* calls updateSource on each light source */, refresh: true },
             sight: { initialize: true /* calls updateSource on each token */, refresh: true /* you probably to refesh sight as well */, forceUpdateFog: true /* not sure if you need this */ },
         });
-
         if(this.isOpen){
             this.mesh.traverse(child => {
                 if(child.isMesh){
                     child.material.transparent = true;
                     child.material.opacity = 0.4;
-                    child.material.format = THREE.RGBAFormat;
+                    child.material.alphaTest = 0;
                     child.material.depthWrite = false;
+                    child.material.format = THREE.RGBAFormat
+                    child.material.needsUpdate = true;
                 }
             })
         }
