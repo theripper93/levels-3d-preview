@@ -530,6 +530,13 @@ class Levels3DPreview {
     this.interactionManager.initGroupSelect();
   }
 
+  setBloom(){
+    if(!canvas.scene.getFlag("levels-3d-preview", "bloom")) return;
+    this.bloomPass.threshold = canvas.scene.getFlag("levels-3d-preview", "bloomThreshold") ?? 0;
+    this.bloomPass.strength = canvas.scene.getFlag("levels-3d-preview", "bloomStrength") ?? 0.4;
+    this.bloomPass.radius = canvas.scene.getFlag("levels-3d-preview", "bloomRadius") ?? 0.4;
+  }
+
   addToken(token) {
     if (!this._ready) {
       this.loadingTokens[token.id] = new Token3D(token, this);
@@ -1406,7 +1413,8 @@ Hooks.on("updateScene", (scene,updates) => {
     "mirrorLevels" in flags ||
     "gridAlpha" in updates ||
     "gridColor" in updates ||
-    "enableFogOfWar" in flags
+    "enableFogOfWar" in flags ||
+    "bloom" in flags
   ){
     game.Levels3DPreview.reload();
     return
@@ -1417,6 +1425,7 @@ Hooks.on("updateScene", (scene,updates) => {
       break;
     }
   }
+  game.Levels3DPreview.setBloom();
   if("exposure" in flags) game.Levels3DPreview.setExposure();
   if("renderBackground" in flags && !("img" in updates)) game.Levels3DPreview.createBoard();
   if("renderTable" in flags || "tableTex" in flags) game.Levels3DPreview.createTable();

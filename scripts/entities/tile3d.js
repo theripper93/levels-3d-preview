@@ -466,6 +466,7 @@ export class Tile3D {
         const setMaterial = (mat) => {
                 
                 if(this.color) mat.color.set(mat.color.multiply(color));
+                if(this.color && mat.emissiveMap) mat.emissive = color;
                 if(textureOrMat && !isPBR) mat.map = textureOrMat;
                 mat.needsUpdate = true;
         }
