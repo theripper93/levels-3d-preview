@@ -22,6 +22,7 @@ import { WeatherSystem } from "./helpers/weatherSystem.js";
 import { EXRLoader } from "./lib/EXRLoader.js";
 import { EffectComposer } from './lib/EffectComposer.js';
 import { RenderPass } from './lib/RenderPass.js';
+import { UnrealBloomPass } from "./lib/UnrealBloomPass.js";
 import { Fog } from "./helpers/Fog.js";
 import { Exporter } from "./helpers/exporter.js";
 import { turnStartMarker } from "./helpers/turnStartMarker.js";
@@ -405,8 +406,16 @@ class Levels3DPreview {
     );
     this.rangeFinderMode = game.settings.get("levels-3d-preview", "rangeFinder");
     this.composer.removePass(this.renderPass);
+    this.composer.removePass(this.bloomPass);
     this.renderPass = new RenderPass(this.scene, this.camera);
     this.composer.addPass(this.renderPass);
+    if(canvas.scene.getFlag("levels-3d-preview", "bloom")){
+      this.bloomPass = this.bloomPass ?? new UnrealBloomPass( new THREE.Vector2( window.innerWidth, window.innerHeight ), 1.5, 0.4, 0.85 );
+      this.bloomPass.threshold = canvas.scene.getFlag("levels-3d-preview", "bloomThreshold") ?? 0;
+      this.bloomPass.strength = canvas.scene.getFlag("levels-3d-preview", "bloomStrength") ?? 0.4;
+      this.bloomPass.radius = canvas.scene.getFlag("levels-3d-preview", "bloomRadius") ?? 0.4;
+      this.composer.addPass(this.bloomPass);
+    }
     if (this.fogExploration) {
       this.fogExploration.dispose();
       this.fogExploration = null;
@@ -817,8 +826,10 @@ class Levels3DPreview {
           rt.fromEquirectangularTexture(_this.renderer, texture)
           background = rt.texture
           _this.scene.background = background;
+          _this.scene.userData.envRt = rt;
         }
         _this._envReady = true;
+        pmremGenerator.dispose();
       }
   }
 
@@ -846,6 +857,9 @@ class Levels3DPreview {
   }
 
   clear3Dscene() {
+    this.scene.background?.dispose();
+    this.scene.environment?.dispose();
+    this.scene.userData.envRt?.dispose();
     this.scene.traverse((child) => {
       if (child.isMesh) {
         child.dispose?.();

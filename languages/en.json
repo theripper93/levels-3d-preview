@@ -128,6 +128,18 @@
             "auto3d":{
                 "label": "Enable 3D on Load"
             },
+            "bloom":{
+                "label": "Enable Bloom"
+            },
+            "bloomThreshold":{
+                "label": "Bloom Threshold"
+            },
+            "bloomStrength":{
+                "label": "Bloom Strength"
+            },
+            "bloomRadius":{
+                "label": "Bloom Radius"
+            },
             "skybox" : {
                 "label": "Skybox Image",
                 "placeholder": "Skybox Image",

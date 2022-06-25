@@ -134,6 +134,35 @@ Hooks.on("renderSceneConfig", (app,html)=>{
             notes: game.i18n.localize("levels3dpreview.flags.skybox.notes"),
             default: "modules/levels-3d-preview/assets/skybox/humble/humble_bk.jpg"
         },
+        "bloom": {
+            type: "checkbox",
+            label: game.i18n.localize("levels3dpreview.flags.bloom.label"),
+            default: false,
+        },
+        "bloomThreshold": {
+            type: "range",
+            label: game.i18n.localize("levels3dpreview.flags.bloomThreshold.label"),
+            min: 0,
+            max: 1,
+            step: 0.01,
+            default: 0,
+        },
+        "bloomStrength": {
+            type: "range",
+            label: game.i18n.localize("levels3dpreview.flags.bloomStrength.label"),
+            min: 0,
+            max: 1,
+            step: 0.01,
+            default: 0.4,
+        },
+        "bloomRadius": {
+            type: "range",
+            label: game.i18n.localize("levels3dpreview.flags.bloomRadius.label"),
+            min: 0,
+            max: 1,
+            step: 0.01,
+            default: 0.4,
+        },
         "renderTable": {
             "type": "checkbox",
             "label": game.i18n.localize("levels3dpreview.flags.renderTable.label"),
@@ -400,6 +429,8 @@ Hooks.on("renderSceneConfig", (app,html)=>{
 
     const advancedSettings = ["mirrorLevels","sunDistance", "sunTilt", "renderTable", "tableTex", "enableGameCamera", "maxElevation","enableGrid","enableRuler","lockCamera","renderBackground","enableFog","fogColor","fogDistance","sceneTint","timeSync","shadowBias","showSceneWalls","showSceneDoors","showSceneFloors","renderSceneLights"];
     const other = [html.find("#levels3dpreview-visibility")];
+    const bloomFlags = ["bloomThreshold","bloomStrength","bloomRadius"];
+    hideParams(app, html, `input[name="flags.levels-3d-preview.bloom"]`, bloomFlags, false);
     injectAdvancedToggle(app,html,advancedSettings, injected, other);
 
     if(canvas.scene.id !== app.object.id) return;

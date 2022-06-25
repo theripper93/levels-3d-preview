@@ -220,7 +220,9 @@ export class Helpers {
         v.wrapT = THREE.RepeatWrapping;
       }
     }
-    if(textures.emissiveMap) textures.emissive = new THREE.Color(1, 1, 1);
+    if(textures.emissiveMap) {
+      textures.emissive = new THREE.Color(1, 1, 1);
+    }
     const material = new THREE.MeshStandardMaterial({ ...textures });
     this.materialCache[texturePath] = material;
     return material;
@@ -487,7 +489,7 @@ export function injectAdvancedToggle(app, html, settings, injected, other = []){
 
 export function hideParams(app, html, element, flags, hide){
   html.on("change", element, (e) => {
-    const value = e.target.value;
+    const value = typeof hide == "boolean" ? e.target.checked : e.target.value;
     if (value === hide) {
       flags.forEach(flag => {
             html.find(`[name="flags.levels-3d-preview.${flag}"]`).closest(".form-group").hide();
