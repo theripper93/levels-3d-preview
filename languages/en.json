@@ -901,8 +901,9 @@
             },
             "shadowQuality":{
                 "name": "Shadow Quality",
-                "hint": "The resolution of the shadows.",
+                "hint": "The resolution of the shadows. Set to 'Disabled' to disable shadows.",
                 "options": {
+                    "none": "Disabled",
                     "low": "Low",
                     "medium": "Medium",
                     "high": "High",

@@ -115,7 +115,7 @@ export class Light3D {
         if(this.dragHandle){
             this.dragHandle.position.set(0,0,0);
         }
-        if(light.document.getFlag("levels-3d-preview", "castShadow")){
+        if(light.document.getFlag("levels-3d-preview", "castShadow") && game.settings.get("levels-3d-preview", "shadowQuality") > 0){
             this.light3d.shadow.autoUpdate = true;
             this.light3d.castShadow = true;
         }

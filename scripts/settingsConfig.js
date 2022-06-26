@@ -357,14 +357,14 @@ Hooks.once('init', function() {
       default: false,
     });
 
-    game.settings.register("levels-3d-preview", "disableLighting", {
+    /**game.settings.register("levels-3d-preview", "disableLighting", {
       name: game.i18n.localize("levels3dpreview.settings.disableLighting.name"),
       hint: game.i18n.localize("levels3dpreview.settings.disableLighting.hint"),
       scope: "client",
       config: true,
       type: Boolean,
       default: false,
-    });
+    });*/
 
     game.settings.register("levels-3d-preview", "softShadows", {
       name: game.i18n.localize("levels3dpreview.settings.softShadows.name"),
@@ -390,6 +390,7 @@ Hooks.once('init', function() {
           8: game.i18n.localize("levels3dpreview.settings.shadowQuality.options.high"),
           4: game.i18n.localize("levels3dpreview.settings.shadowQuality.options.medium"),
           2: game.i18n.localize("levels3dpreview.settings.shadowQuality.options.low"),
+          0: game.i18n.localize("levels3dpreview.settings.shadowQuality.options.none")
         },
       default: 4,
     });
