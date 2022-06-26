@@ -886,6 +886,15 @@
                 "name": "Enable Global Collision",
                 "hint": "Enable collision for all tokens on the board."
             },
+            "antialiasing": {
+                "name": "Anti-Aliasing",
+                "hint": "Enable Anti-Aliasing at the cost of some performance.",
+                "options": {
+                    "none": "Disabled",
+                    "fxaa": "FXAA",
+                    "smaa": "SMAA"
+                }
+            },
             "disableLighting":{
                 "name": "Disable Shadows",
                 "hint": "Disable Shadows for better performance."

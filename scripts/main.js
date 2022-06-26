@@ -31,6 +31,9 @@ import { Particle3D } from "./helpers/particleSystem.js";
 import { defaultTokenAnimations } from "./helpers/tokenAnimationHandler.js";
 import { ClipNavigation } from "./clipNavigation.js";
 import { presetMaterials, PresetMaterialHandler, populateScene } from "./helpers/presetMaterials.js";
+import { FXAAShader } from "./lib/FXAA.js";
+import { SMAAPass } from "./lib/SMAAPass.js";
+import { ShaderPass } from "./lib/ShaderPass.js";
 
 export const factor = 1000;
 
@@ -75,11 +78,6 @@ Hooks.on("canvasReady", async () => {
     }
   }while(!game.Levels3DPreview || !game.Levels3DPreview?._init)
 
-});
-
-Hooks.on("levelsUiChangeLevel", () => {
-  if (!game.user.isGM || $("#levels3d").length == 0) return;
-  //game.Levels3DPreview.build3Dscene();
 });
 
 export function sleep(ms) {
@@ -308,13 +306,10 @@ class Levels3DPreview {
     this.scene = new THREE.Scene();
     this.material = new THREE.MeshNormalMaterial();
 
-    this.renderer = this._sharedContext ? new THREE.WebGLRenderer({ antialias: true, context: canvas.app.renderer.context.gl }) : new THREE.WebGLRenderer({ antialias: true });
+    this.renderer = this._sharedContext ? new THREE.WebGLRenderer({ context: canvas.app.renderer.context.gl }) : new THREE.WebGLRenderer();
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.renderer.setAnimationLoop(this.animation.bind(this));
-    if(this._sharedContext) canvas.app.renderer.options.antialias = true;
     this.renderer.shadowMap.enabled = true;
-    //this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    this.renderer.antialias = true;
     this.renderer.outputEncoding = THREE.sRGBEncoding;
 
     this.resolutionMulti =
@@ -409,6 +404,7 @@ class Levels3DPreview {
     this.composer.removePass(this.bloomPass);
     this.renderPass = new RenderPass(this.scene, this.camera);
     this.composer.addPass(this.renderPass);
+    this.initAA();
     if(canvas.scene.getFlag("levels-3d-preview", "bloom")){
       this.bloomPass = this.bloomPass ?? new UnrealBloomPass( new THREE.Vector2( window.innerWidth, window.innerHeight ), 1.5, 0.4, 0.85 );
       this.bloomPass.threshold = canvas.scene.getFlag("levels-3d-preview", "bloomThreshold") ?? 0;
@@ -528,6 +524,35 @@ class Levels3DPreview {
     this.GameCamera.init();
     this.interactionManager._cacheKeybinds();
     this.interactionManager.initGroupSelect();
+  }
+
+  initAA(){
+
+    this.aaType = game.settings.get("levels-3d-preview", "antialiasing");
+
+    const antialiasing = {
+      fxaa : () => {
+        const aa = new ShaderPass(FXAAShader)
+        const pixelRatio = this.renderer.getPixelRatio();
+        aa.material.uniforms[ 'resolution' ].value.x = 1 / ( window.innerWidth * pixelRatio );
+        aa.material.uniforms[ 'resolution' ].value.y = 1 / ( window.innerHeight * pixelRatio );
+        return aa;
+      },
+      smaa: () => {
+        const pixelRatio = this.renderer.getPixelRatio();
+        const aa = new SMAAPass( window.innerWidth * pixelRatio, window.innerHeight * pixelRatio );
+        return aa;
+      }
+  }
+
+
+    this.composer.removePass(this.aaShader)
+    if(this.aaType == "none") return;
+    this.aaShader = antialiasing[this.aaType]();
+    this.composer.addPass(this.aaShader);
+
+
+
   }
 
   setBloom(){
@@ -864,9 +889,9 @@ class Levels3DPreview {
   }
 
   clear3Dscene() {
-    this.scene.background?.dispose();
-    this.scene.environment?.dispose();
-    this.scene.userData.envRt?.dispose();
+    this.scene.background?.dispose?.();
+    this.scene.environment?.dispose?.();
+    this.scene.userData.envRt?.dispose?.();
     this.scene.traverse((child) => {
       if (child.isMesh) {
         child.dispose?.();
@@ -899,6 +924,11 @@ class Levels3DPreview {
       this.composer.setSize(width, height, false);
       this.camera.aspect = width / height;
       this.camera.updateProjectionMatrix();
+      if(this.aaType == "fxaa"){
+        const pixelRatio = this.renderer.getPixelRatio();
+        this.aaShader.material.uniforms[ 'resolution' ].value.x = 1 / ( canvas.clientWidth * pixelRatio );
+        this.aaShader.material.uniforms[ 'resolution' ].value.y = 1 / ( canvas.clientHeight * pixelRatio );
+      }
     }
   }
 

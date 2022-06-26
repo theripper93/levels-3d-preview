@@ -393,6 +393,20 @@ Hooks.once('init', function() {
         },
       default: 4,
     });
+    
+    game.settings.register("levels-3d-preview", "antialiasing", {
+      name: game.i18n.localize("levels3dpreview.settings.antialiasing.name"),
+      hint: game.i18n.localize("levels3dpreview.settings.antialiasing.hint"),
+      scope: "client",
+      config: true,
+      type: String,
+      choices: {
+          "none": game.i18n.localize("levels3dpreview.settings.antialiasing.options.none"),
+          "fxaa": game.i18n.localize("levels3dpreview.settings.antialiasing.options.fxaa"),
+          "smaa": game.i18n.localize("levels3dpreview.settings.antialiasing.options.smaa"),
+        },
+      default: "fxaa",
+    });
 
     game.settings.register("levels-3d-preview", "resolution", {
       name: game.i18n.localize("levels3dpreview.settings.resolution.name"),
