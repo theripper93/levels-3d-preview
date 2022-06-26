@@ -19,6 +19,7 @@ export class Helpers {
     const texture = await this.getTexture(texturePath);
     texture.encoding = options.linear ? THREE.LinearEncoding : THREE.sRGBEncoding;
     this.textureCache[texturePath] = texture;
+    if(!options.noCache) THREE.Cache.remove(texturePath);
     return texture;
   }
 
@@ -129,6 +130,7 @@ export class Helpers {
     this.simplifyGeometry(output.model);
     if(isSkinned) return output;
     this.modelCache[modelPath] = output;
+    THREE.Cache.remove(filePath);
     return this.getClone(modelPath);
   }
 

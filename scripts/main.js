@@ -312,11 +312,12 @@ class Levels3DPreview {
     this.renderer.shadowMap.enabled = true;
     this.renderer.outputEncoding = THREE.sRGBEncoding;
 
-    this.resolutionMulti =
-      game.settings.get("levels-3d-preview", "resolution") *
-      window.devicePixelRatio;
+    const pixelRatio = game.settings.get("core", "disableResolutionScaling") ? 1 : window.devicePixelRatio
+
+    this.resolutionMulti = pixelRatio; //game.settings.get("levels-3d-preview", "resolution") *
+    
     this.renderer.setPixelRatio(this.resolutionMulti);
-    this.renderer.alpha = true;
+    this.renderer.alpha = false;
     this.renderer.setClearColor(0x999999, 1);
     this.renderer.shadowMap.type = game.settings.get("levels-3d-preview", "softShadows") ? THREE.PCFSoftShadowMap : THREE.PCFShadowMap;
     
@@ -324,7 +325,7 @@ class Levels3DPreview {
 
     let target
     if(this.renderer.capabilities.isWebGL2){
-      target = new THREE.WebGLMultisampleRenderTarget(window.innerWidth*this.resolutionMulti, window.innerHeight*this.resolutionMulti, {
+      target = new THREE.WebGLMultisampleRenderTarget(window.innerWidth, window.innerHeight, {
         format: THREE.RGBAFormat,
         encoding: THREE.sRGBEncoding,
       })
@@ -666,7 +667,6 @@ class Levels3DPreview {
   }
 
   createSceneLights() {
-    if (game.settings.get("levels-3d-preview", "disableLighting")) return;
     for (let light of canvas.lighting.placeables) {
       this.addLight(light);
     }

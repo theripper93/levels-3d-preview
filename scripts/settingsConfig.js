@@ -408,7 +408,7 @@ Hooks.once('init', function() {
       default: "fxaa",
     });
 
-    game.settings.register("levels-3d-preview", "resolution", {
+    /*game.settings.register("levels-3d-preview", "resolution", {
       name: game.i18n.localize("levels3dpreview.settings.resolution.name"),
       hint: game.i18n.localize("levels3dpreview.settings.resolution.hint"),
       scope: "client",
@@ -421,10 +421,13 @@ Hooks.once('init', function() {
         },
       default: 1,
       onChange: (value) => {
-        const resolutionMulti = value*window.devicePixelRatio;
-        game.Levels3DPreview.renderer.setPixelRatio(resolutionMulti);
+        const pixelRatio = game.settings.get("core", "disableResolutionScaling") ? 1 : window.devicePixelRatio
+        game.Levels3DPreview.resolutionMulti =
+          game.settings.get("levels-3d-preview", "resolution") *
+          pixelRatio;
+        game.Levels3DPreview.renderer.setPixelRatio(game.Levels3DPreview.resolutionMulti);
       }
-    });
+    });*/
 
     game.settings.register("levels-3d-preview", "debugMode", {
       name: game.i18n.localize("levels3dpreview.settings.debugMode.name"),

@@ -169,7 +169,7 @@ export class Ruler3D {
         }
         
         const dist = game.Levels3DPreview.camera.position.distanceTo(position);
-        const scale = Math.max(0.5, 1.2/dist)/devicePixelRatio;
+        const scale = Math.max(0.5, 1.2/dist)/this._parent.resolutionMulti;
         if($element[0].id == 'levels3d-ruler-text'){
             $element.css({
                 "font-size": cachedFontSize*scale + "px"

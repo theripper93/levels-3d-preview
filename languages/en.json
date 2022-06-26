@@ -860,7 +860,7 @@
             },
             "screenspacepanning": {
                 "name": "Enable Screen Space Panning",
-                "hint": "Enable screen space panning for the 3D view."
+                "hint": "Enable screen space panning for the 3D view (map controls style)."
             },
             "enabledamping": {
                 "name": "Enable Damping",
@@ -888,7 +888,7 @@
             },
             "antialiasing": {
                 "name": "Anti-Aliasing",
-                "hint": "Enable Anti-Aliasing at the cost of some performance.",
+                "hint": "Enable Anti-Aliasing at the cost of some performance. FXAA will have almost zero impact on performance. SMAA will give you better results but might be slightly more performance intensive.",
                 "options": {
                     "none": "Disabled",
                     "fxaa": "FXAA",
@@ -912,7 +912,7 @@
             },
             "softShadows":{
                 "name": "Soft Shadows",
-                "hint": "Enable soft shadows at the cost of some performance. Requires refresh."
+                "hint": "Enable soft shadows at a minor cost in performance. Requires refresh."
             },
             "resolution": {
                 "name": "Resolution",
