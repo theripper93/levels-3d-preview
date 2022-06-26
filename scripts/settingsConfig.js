@@ -285,14 +285,14 @@ Hooks.once('init', function() {
       default: false,
     });
 
-    game.settings.register("levels-3d-preview", "fogDebounce", {
+    /*game.settings.register("levels-3d-preview", "fogDebounce", {
       name: game.i18n.localize("levels3dpreview.settings.fogDebounce.name"),
       hint: game.i18n.localize("levels3dpreview.settings.fogDebounce.hint"),
       scope: "client",
       config: true,
       type: Boolean,
       default: true,
-    });
+    });*/
 
     game.settings.register("levels-3d-preview", "cameralockzero", {
       name: game.i18n.localize("levels3dpreview.settings.cameralockzero.name"),
