@@ -1,12 +1,14 @@
 import * as THREE from "../lib/three.module.js";
 import {factor} from '../main.js'; 
 import { Ruler3D } from "./ruler3d.js";
+import { SimplexNoise } from "../lib/noiseFunctions.js";
 
 export class Light3D {
     constructor(light,parent, isToken){
         this.light = light;
         this._parent = parent
         this.isToken = isToken;
+        this.animationFn = () => {};
         if(!this.isToken){
             this.embeddedName = this.light.document.documentName;
             this.draggable = true;
@@ -16,6 +18,7 @@ export class Light3D {
     }
 
     init(){
+        this.noise = new SimplexNoise();
         this.light3d = this.angle != 360 ? new THREE.SpotLight : new THREE.PointLight();
         if(this._parent.debugMode){
             this.debugSphere = new THREE.Mesh(
@@ -112,6 +115,11 @@ export class Light3D {
 
     refresh(){
         const light = this.light;
+        this.particleData = this.getParticleData();
+        this.animColors = {
+            color1: new THREE.Color(this.particleData.color),
+            color2: new THREE.Color(this.particleData.color2),
+        }
         if(this.dragHandle){
             this.dragHandle.position.set(0,0,0);
         }
@@ -140,6 +148,13 @@ export class Light3D {
         this.light3d.decay = decay;
         this.light3d.intensity = alpha;
         this.light3d.shadow.camera.far = radius;
+        this.light3d.shadow.camera.near = 0.02;
+        this.initialLightParams = {
+            color: color,
+            radius: radius,
+            decay: decay,
+            intensity: alpha,
+        }
         if(this.angle != 360) {
             this.light3d.angle = Math.toRadians(this.angle)/2;
             const rotationy = -Math.toRadians(this.rotation);
@@ -151,12 +166,16 @@ export class Light3D {
             this.light3d.target.updateMatrixWorld();
         }
         this.light3d.visible = !this.light.data.hidden
-        //this.light3d.shadow.needsUpdate = true;
+        this.animationFn = (lightAnimations[this.animationType] ?? lightAnimations.none).bind(this);
         if(this.light.document.getFlag("levels-3d-preview", "enableParticle")) this.initParticle();
         if(!this.debugSphere) return;
         this.debugSphere.geometry = new THREE.SphereGeometry(radius, 32, 32);
         this.debugSphere.position.set(position.x, position.y, position.z);
         this.debugSphere.material.color.set(color);
+    }
+
+    update(delta){
+        this.animationFn(delta);
     }
 
     destroy(){
@@ -168,7 +187,7 @@ export class Light3D {
     initParticle(){
         if(this.particleEffectId) Particle3D.stop(this.particleEffectId);
         if(this.light.data.hidden && !this.light.document.getFlag("levels-3d-preview", "enableParticleHidden")) return;
-        const particleData = this.getParticleData();
+        const particleData = this.particleData;
         this.particleEffect = new Particle3D("e");
         this.particleEffect.sprite(particleData.sprite)
             .scale(particleData.scale)
@@ -191,7 +210,7 @@ export class Light3D {
             sprite: this.light.document.getFlag("levels-3d-preview", "ParticleSprite") ?? "",
             scale: this.light.document.getFlag("levels-3d-preview", "ParticleScale") ?? 1,
             color: this.light.document.getFlag("levels-3d-preview", "ParticleColor") ?? "#ffffff",
-            color2: this.light.document.getFlag("levels-3d-preview", "ParticleColor2"),
+            color2: this.light.document.getFlag("levels-3d-preview", "ParticleColor2") ?? "#ffffff",
             force: this.light.document.getFlag("levels-3d-preview", "ParticleForce") ?? 0,
             gravity: this.light.document.getFlag("levels-3d-preview", "ParticleGravity") ?? 1,
             life: this.light.document.getFlag("levels-3d-preview", "ParticleLife") ?? 1000,
@@ -291,6 +310,18 @@ export class Light3D {
         return this.lightData.rotation ?? this.light.data.rotation;
     }
 
+    get animationIntensity(){
+        return this.lightData.animation.intensity/5
+    }
+
+    get animationSpeed(){
+        return this.lightData.animation.speed/5
+    }
+
+    get animationType(){
+        return this.lightData.animation.type
+    }
+
 }
 
 //Hooks
@@ -307,3 +338,28 @@ Hooks.on("createAmbientLight", (lightDocument) => {
 Hooks.on("deleteAmbientLight", (lightDocument) => {
     if(game.Levels3DPreview?._active) game.Levels3DPreview.lights.sceneLights[lightDocument.id]?.destroy();
 })
+
+const lightAnimations = {
+    "none": () => {},
+    "torch": function torch(time) {
+        const f = 0.0015;
+        const random = (0.5+(this.noise.noise(f*time*(this.animationSpeed), 0) + (this.animationIntensity)) * 0.25)
+        this.light3d.distance = this.initialLightParams.radius * random;
+        this.light3d.intensity = this.initialLightParams.intensity * random;
+    },
+    "pulse": function pulse(time) {
+        const modulation = ((1 + Math.sin((time/500)*this.animationSpeed)*0.5))
+        const modIntensity = modulation * this.animationIntensity + (1 - this.animationIntensity)/2
+        this.light3d.distance = this.initialLightParams.radius * modIntensity;
+    },
+    "chroma": function chroma(time) {
+        const baseColor = this.animColors.color1.clone();
+        if(this.animationIntensity > 1){
+            baseColor.lerpHSL(this.animColors.color2, (Math.sin(((time/500))*this.animationSpeed)+1)/2);
+        }else{
+            baseColor.lerp(this.animColors.color2, (Math.sin(((time/500))*this.animationSpeed)+1)/2);
+        }
+        
+        this.light3d.color = baseColor;
+    }
+}

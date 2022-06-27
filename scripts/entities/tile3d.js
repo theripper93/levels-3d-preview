@@ -383,7 +383,7 @@ export class Tile3D {
                         rcTarget.y -= 10;
                         const collision = raycaster.computeSightCollisionFrom3DPositions(realTarget,rcTarget, "collision", false, false, false, true)
                         if(collision){
-                            dummy.position.y -= collision[0].distance;
+                            dummy.position.y -= (collision[0].distance + 0.01);
                             if(this.enableGravity === "gravityRotation") {
                                 dummy.rotation.set(collision[0].face.normal.x,collision[0].face.normal.y,collision[0].face.normal.z);
                                 dummy.rotateOnAxis(collision[0].face.normal, randomRotation);

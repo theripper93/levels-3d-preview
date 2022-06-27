@@ -1007,6 +1007,7 @@ class Levels3DPreview {
       }
       Object.values(this.lights.sceneLights).forEach((light) => {
         light.updateHandle();
+        light.update(time);
       });
       Object.values(this.notes).forEach((note) => {
         note.updateVisibility();
