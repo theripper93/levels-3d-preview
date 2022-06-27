@@ -1336,6 +1336,7 @@ class Levels3DPreview {
     }
     this.build3Dscene();
     document.body.appendChild(this.renderer.domElement);
+    $("#hud").addClass("levels-3d-preview-hud");
     if(this._sharedContext){
       canvas.stage.renderable = false;
     }else{
@@ -1354,6 +1355,7 @@ class Levels3DPreview {
     $(".levels-3d-preview-loading-screen").hide();
     this._active = false;
     this.ClipNavigation?.close();
+    $("#hud").removeClass("levels-3d-preview-hud");
     $("#levels3d").remove();
     Object.values(ui.windows)
       ?.find((w) => w.id === "miniCanvas")

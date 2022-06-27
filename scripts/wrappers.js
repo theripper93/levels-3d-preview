@@ -1,7 +1,5 @@
 Hooks.once('ready', async function() {
     libWrapper.register("levels-3d-preview", "ClientKeybindings.prototype._handleMovement", _handleMovement, "MIXED");
-    libWrapper.register("levels-3d-preview", "TokenHUD.prototype.setPosition", TokenHUDsetPosition, "WRAPPER")
-    libWrapper.register("levels-3d-preview", "TileHUD.prototype.setPosition", TileHUDsetPosition, "WRAPPER")
     libWrapper.register("levels-3d-preview", "CONFIG.Token.objectClass.prototype.refresh", reDraw, "WRAPPER")
     libWrapper.register("levels-3d-preview", "CONFIG.Token.objectClass.prototype.drawBars", drawBars, "WRAPPER")
     libWrapper.register("levels-3d-preview", "CONFIG.Token.objectClass.prototype.drawEffects", drawEffects, "WRAPPER");
@@ -283,36 +281,6 @@ Hooks.once('ready', async function() {
         const nY = Math.round(-Math.cos(fAngle));
         return {x: nX, y: nY}
         
-    }
-
-    function TokenHUDsetPosition(wrapped,...args){
-        wrapped(...args);
-        if(game.Levels3DPreview?._active && game.Levels3DPreview.tokens[this.object.id]){
-            $("body").append(this.element);
-            $(this.element).css({
-                "transform-origin": "center",
-            });
-        }else{
-            $("#hud").append(this.element);
-            $(this.element).css({
-                "transform-origin": "top left",
-            });
-        }
-    }
-
-    function TileHUDsetPosition(wrapped,...args){
-        wrapped(...args);
-        if(game.Levels3DPreview?._active && game.Levels3DPreview.tiles[this.object.id]){
-            $("body").append(this.element);
-            $(this.element).css({
-                "transform-origin": "center",
-            });
-        }else{
-            $("#hud").append(this.element);
-            $(this.element).css({
-                "transform-origin": "top left",
-            });
-        }
     }
 
     function Token3DSetPosition(wrapped,...args){
