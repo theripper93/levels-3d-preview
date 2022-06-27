@@ -107,6 +107,19 @@ class Levels3DPreview {
     this.CONFIG = {
       entityClass: {
         RangeFinder,
+        Template3D,
+        Ruler3D,
+        Light3D,
+        Wall3D,
+        Token3D,
+        Note3D,
+        Grid3D,
+        Cursors3D,
+        Particle3D,
+        ParticleSystem,
+        turnStartMarker,
+        ParticleSystem,
+        Tile3D
       },
       autoPan: false,
       tokenAnimations: defaultTokenAnimations,

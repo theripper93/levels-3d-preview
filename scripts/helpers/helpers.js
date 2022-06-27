@@ -10,6 +10,7 @@ export class Helpers {
     this.modelCache = {};
     this.baseCache = {};
     this.envCache = {};
+    this._loading = {};
     this.ruler3d = Ruler3D;
   }
 
@@ -96,9 +97,21 @@ export class Helpers {
 
   }
 
+  wait(ms){
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve();
+      }, ms);
+    });
+  }
+
   async getModel(modelPath) {
     const filePath = modelPath;
+    while (this._loading[filePath]) {
+      await this.wait(100);
+    }
     if(this.modelCache[modelPath]) return this.getClone(modelPath);
+    this._loading[filePath] = true;
     const extension = filePath.split(".").pop().toLowerCase();
     let output;
     try {
@@ -124,13 +137,20 @@ export class Helpers {
     } catch (e) {
       output = null;
     }
-    if(!output) return null;
+    if(!output) {
+      this.modelCache[modelPath] = null;
+      return null
+    };
     let isSkinned = false;
     output.model.traverse((child) => { if(child instanceof THREE.SkinnedMesh) isSkinned = true; });
     this.simplifyGeometry(output.model);
-    if(isSkinned) return output;
+    if(isSkinned) {
+      delete this._loading[filePath];
+      return output;
+    }
     this.modelCache[modelPath] = output;
     THREE.Cache.remove(filePath);
+    delete this._loading[filePath];
     return this.getClone(modelPath);
   }
 
