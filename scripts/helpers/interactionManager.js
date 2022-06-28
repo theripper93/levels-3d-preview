@@ -57,8 +57,15 @@ export class InteractionManager {
       const sightObjects = [];
       for(let tile of Object.values(this._parent.tiles)){
         if(!tile.mesh?.visible) continue;
-        if(tile.collision) collisionObjects.push(tile.mesh);
-        if(tile.sight) sightObjects.push(tile.mesh);
+        if(tile.hasTags){
+          tile.mesh.traverse(o => {
+            if(o?.userData?.collision) collisionObjects.push(o);
+            if(o?.userData?.sight) sightObjects.push(o);
+          })
+        }else{
+          if(tile.collision) collisionObjects.push(tile.mesh);
+          if(tile.sight) sightObjects.push(tile.mesh);
+        }
       }
       for(let wall of Object.values(this._parent.walls)){
         if(wall.placeable.isDoor && wall.placeable.data.ds === CONST.WALL_DOOR_STATES.OPEN) continue;
