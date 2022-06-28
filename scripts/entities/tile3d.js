@@ -884,7 +884,16 @@ export class Tile3D {
     }
 
     _onClickRight(e){
+        const oT = e.originalTarget?.userData
         if(canvas.activeLayer.options.objectClass.embeddedName === "Token" && game.user.isGM){
+            if(oT?.isDoor){
+                const subDoorId = oT.doorId;
+                const ds = this.tile.document.getFlag("levels-3d-preview", `modelDoors.${subDoorId}`)?.ds ?? 0
+                const isLocked = ds == 2;
+            
+                if(isLocked) this.tile.document.setFlag("levels-3d-preview", `modelDoors.${subDoorId}.ds`, 0);
+                else this.tile.document.setFlag("levels-3d-preview", `modelDoors.${subDoorId}.ds`, 2);
+            }
             if(this.isDoor){
                 if(this.isLocked) this.tile.document.setFlag("levels-3d-preview", "doorState", 0);
                 else this.tile.document.setFlag("levels-3d-preview", "doorState", 2);
