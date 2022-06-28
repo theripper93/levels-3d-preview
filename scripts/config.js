@@ -664,6 +664,10 @@ Hooks.on("renderTileConfig", (app,html)=>{
             max: 128,
             step: 1,
         },
+        "displacementMap":{
+            type: "filepicker",
+            label: game.i18n.localize("levels3dpreview.flags.displacementMap.label"),
+        },
         "color": {
             type: "color",
             label: game.i18n.localize("levels3dpreview.flags.tint.label"),
@@ -959,7 +963,7 @@ Hooks.on("renderTileConfig", (app,html)=>{
 
     })
 
-    const advancedSettings = ["autoCenter","enableAnim","animSpeed","animIndex","paused","tiltX","tiltZ", "randomSeed", "autoGround", "depth"];
+    const advancedSettings = ["displacementMap","autoCenter","enableAnim","animSpeed","animIndex","paused","tiltX","tiltZ", "randomSeed", "autoGround", "depth"];
 
     injectAdvancedToggle(app,html,advancedSettings, injected);
 

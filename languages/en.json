@@ -262,6 +262,9 @@
             "imageTexture":{
                 "label": "Texture"
             },
+            "displacementMap": {
+                "label": "Heightmap"
+            },
             "wallSidesTexture": {
                 "label": "Sides Texture"
             },

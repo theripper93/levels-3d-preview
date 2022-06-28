@@ -332,7 +332,7 @@ export class InteractionManager {
           width*=scaleFactor
           height*=scaleFactor*/
 
-          data.flags["levels-3d-preview"].depth = canvas.grid.size*(canvas.grid.size/data.tileSize)*depth
+          data.flags["levels-3d-preview"].depth = depth ? canvas.grid.size*(canvas.grid.size/data.tileSize)*depth : 0.05
           const useSnapped = Ruler3D.useSnapped();
           let snapped;
           if(useSnapped){

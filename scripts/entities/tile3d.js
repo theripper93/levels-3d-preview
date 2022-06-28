@@ -122,6 +122,7 @@ export class Tile3D {
         this.noiseType = this.tile.document.getFlag("levels-3d-preview", "noiseType") ?? "none";
         this.noiseScale = this.tile.document.getFlag("levels-3d-preview", "noiseScale") ?? 1;
         this.imageTexture = this.tile.document.getFlag("levels-3d-preview", "imageTexture") ?? "";
+        this.displacementMap = this.tile.document.getFlag("levels-3d-preview", "displacementMap") ?? "";
         this.fillType = this.tile.document.getFlag("levels-3d-preview", "fillType") ?? "stretch";
         this.scale= this.tile.document.getFlag("levels-3d-preview", "tileScale") ?? 1;
         this.yScale = this.tile.document.getFlag("levels-3d-preview", "yScale") ?? 1;
@@ -266,14 +267,17 @@ export class Tile3D {
         const stretch = this.fillType === "stretch";
         const model = await this.getModel();
         const {textureOrMat, isPBR} = await this.getTextureOrMat();
+        if(this.displacementMap) {
+            const tex = await this._parent.helpers.loadTexture(this.displacementMap);
+            this.displacementMap = this.getDisplacementData(tex.image);
+            this.applyDisplacement(model.scene)
+        }
         const object = game.Levels3DPreview.helpers.groundModel(model.scene, this.autoGround, this.autoCenter);
         const box = new THREE.Box3().setFromObject(object);
         const mWidth = box.max.x - box.min.x;
         const mHeight = box.max.z - box.min.z;
-        const mDepth = box.max.y - box.min.y;
+        const mDepth = Math.max(box.max.y - box.min.y, 0.00001);
         //migration
-
-        this.applyNoise(object);
 
         if(!this.depth){
             if(stretch){
@@ -316,6 +320,7 @@ export class Tile3D {
 
         const color = new THREE.Color(this.color);
         this._processModel(object, textureOrMat, isPBR, color);
+        this.applyNoise(object);
 
         if(model.object.animations.length > 0 && this.enableAnim) {
             if(!model.object.animations[this.animIndex]) {
@@ -339,6 +344,9 @@ export class Tile3D {
         container.userData.entity3D = this;
         this.mesh.userData.draggable = true;
         if(this._destroyed) return;
+        container.traverse(child => {
+            if(child.geometry) child.geometry.computeBoundsTree();
+        })
         this._parent.scene.add(container);
         this.initBoundingBox();
     }
@@ -789,6 +797,37 @@ export class Tile3D {
         return FractionalBrownianMotion(x,y,this.noiseFn,this.noiseParams)
     }
 
+    applyDisplacement(model){
+        if(!this.displacementMap) return;
+        model.traverse(c => {
+            if(c.isMesh){
+                c.geometry = c.geometry.clone();
+                const positionAttributes = c.geometry.getAttribute("position");
+                const count = positionAttributes.count;
+                const maxX = c.geometry.boundingBox.max.x;
+                const minX = c.geometry.boundingBox.min.x;
+                const maxZ = c.geometry.boundingBox.max.z;
+                const minZ = c.geometry.boundingBox.min.z;
+                for(let i=0; i < count; i++){
+                        const x = positionAttributes.getX(i);
+                        const z = positionAttributes.getZ(i);
+                        const xPercent = (x - minX)/(maxX - minX);
+                        const zPercent = (z - minZ)/(maxZ - minZ);
+                        const displacement = 1 - this.getPixel(this.displacementMap, xPercent, zPercent).r/255;
+                        let y = positionAttributes.getY(i);
+                        if(y<=0) continue;
+                        y += displacement * this.noiseParams.height;
+                        positionAttributes.setY(i, y);
+                }
+                c.geometry.computeVertexNormals();
+                c.geometry.normalizeNormals();
+                c.geometry.computeTangents();
+                c.geometry.attributes.position.needsUpdate = true;
+                c.geometry.attributes.normal.needsUpdate = true;
+            }
+        })
+    }
+
     applyNoise(model){
         if(this.noiseType === "none") return;
         model.traverse(c => {
@@ -810,6 +849,29 @@ export class Tile3D {
                 c.geometry.attributes.normal.needsUpdate = true;
             }
         })
+    }
+
+    getDisplacementData( image ) {
+
+        var canvas = document.createElement( 'canvas' );
+        canvas.width = image.width;
+        canvas.height = image.height;
+    
+        var context = canvas.getContext( '2d' );
+        context.drawImage( image, 0, 0 );
+    
+        return context.getImageData( 0, 0, image.width, image.height );
+    
+    }
+
+    getPixel( imagedata, x, y ) {
+        x *= imagedata.width;
+        y *= imagedata.height;
+        x = parseInt( x );
+        y = parseInt( y );  
+        var position = ( x + imagedata.width * y ) * 4, data = imagedata.data;
+        return { r: data[ position ], g: data[ position + 1 ], b: data[ position + 2 ], a: data[ position + 3 ] };
+    
     }
 
     destroy(){
