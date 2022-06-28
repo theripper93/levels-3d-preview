@@ -1402,7 +1402,7 @@ class Levels3DPreview {
     game.Levels3DPreview.particleSystem.stop(...args);
   }
 
-  toggleDoor(tileId, sceneId, userId){
+  toggleDoor(tileId, sceneId, userId, subDoorId){
     const user = game.users.get(userId);
     if ( !user.can("WALL_DOORS")) return;
     if ( game.paused && !game.user.isGM ) return ui.notifications.warn("GAME.PausedWarning", {localize: true});
@@ -1410,11 +1410,20 @@ class Levels3DPreview {
     if(!scene) return;
     const tile = scene.tiles.get(tileId);
     if(!tile) return;
-    const ds = tile.getFlag("levels-3d-preview", "doorState") ?? 0
-    const isLocked = ds == 2;
+    if(subDoorId){
+      const ds = tile.getFlag("levels-3d-preview", `modelDoors.${subDoorId}`)?.ds ?? 0
+      const isLocked = ds == 2;
+  
+      if(isLocked) return AudioHelper.play({src: CONFIG.sounds.lock});
+      tile.setFlag("levels-3d-preview", `modelDoors.${subDoorId}.ds`, ds == 0 ? "1" : "0");
+    }else{
+      const ds = tile.getFlag("levels-3d-preview", "doorState") ?? 0
+      const isLocked = ds == 2;
+  
+      if(isLocked) return AudioHelper.play({src: CONFIG.sounds.lock});
+      tile.setFlag("levels-3d-preview", "doorState", ds == 0 ? "1" : "0");
+    }
 
-    if(isLocked) return AudioHelper.play({src: CONFIG.sounds.lock});
-    tile.setFlag("levels-3d-preview", "doorState", ds == 0 ? "1" : "0");
   }
 
   setCursor(cursor) {

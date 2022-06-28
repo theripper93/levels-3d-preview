@@ -59,8 +59,13 @@ export class InteractionManager {
         if(!tile.mesh?.visible) continue;
         if(tile.hasTags){
           tile.mesh.traverse(o => {
-            if(o?.userData?.collision) collisionObjects.push(o);
-            if(o?.userData?.sight) sightObjects.push(o);
+            const ud = o?.userData;
+            o.userData = {}
+            const clone = o.clone(false);
+            clone.userData = ud;
+            o.userData = ud;
+            if(o?.userData?.collision) collisionObjects.push(clone);
+            if(o?.userData?.sight) sightObjects.push(clone);
           })
         }else{
           if(tile.collision) collisionObjects.push(tile.mesh);
@@ -366,11 +371,13 @@ export class InteractionManager {
       event.entity = intersect.userData.entity3D
       event.intersect = intersect;
       event.position3D = intersectData.point;
+      event.originalTarget = intersectData?.originalObject;
       this.prevEventData = this.eventData ?? null;
       this.eventData = {
         entity: event.entity,
         position3D: event.position3D,
         intersect: event.intersect,
+        originalTarget: event.originalTarget,
       }
       if (this.clicks === 1) {
         setTimeout(() => {
@@ -416,6 +423,7 @@ export class InteractionManager {
       event.entity = this.eventData?.entity;
       event.intersect = this.eventData?.intersect;
       event.position3D = this.eventData?.position3D;
+      event.originalTarget = this.eventData?.originalTarget;
       setTimeout(() => {
       if(this.prevEventData && this.prevEventData.entity !== this.eventData.entity || this.hasCameraMoved) return this.clicks = 0;
       if(this._triggerLeft2) this._onClickLeft2(event);
@@ -688,6 +696,7 @@ export class InteractionManager {
       if(table) intersectTargets.push(table);
 
       const intersects = this.raycaster.intersectObjects(intersectTargets,true).filter(this._clippingFilter);
+      const originalObject = intersects.length > 0 ? intersects[0].object : null;
       if(!intersects.length) return null;
       for(let int of intersects){
         let actualObject
@@ -701,7 +710,8 @@ export class InteractionManager {
       if(intersect?.object?.parent === controlledGroup) intersect.object = controlledGroup
       return {
         object: intersect?.object,
-        point: intersect?.point
+        point: intersect?.point,
+        originalObject: originalObject,
       };
     }
   
