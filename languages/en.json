@@ -339,6 +339,7 @@
                     "none": "None",
                     "wind": {
                         "name": "Wind",
+                        "shaderSpeed": "Speed",
                         "shaderIntensity" : "Wind Intensity",
                         "shaderOther": "Wind Direction",
                         "shaderOther2": "Affect Model (%)",
@@ -346,14 +347,20 @@
                     },
                     "distortion": {
                         "name": "Distortion",
+                        "shaderSpeed": "Speed",
                         "shaderIntensity" : "Distortion Intensity",
                         "shaderOther": "Distortion Angle",
                         "shaderAlt": "Convoluted Distortion"
                     },
                     "water": {
                         "name": "Water",
+                        "shaderSpeed": "Speed",
                         "shaderIntensity" : "Wave Density",
                         "shaderOther": "Wave Hight"
+                    },
+                    "triplanar": {
+                        "name": "Triplanar Mapping",
+                        "shaderOther2": "Roughness Correction"
                     }
                 }
             },

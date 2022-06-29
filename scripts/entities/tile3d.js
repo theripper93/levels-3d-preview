@@ -1292,6 +1292,128 @@ const tileShaders = {
         material.customProgramCacheKey = () => {
             return `water`
         }
+    },
+    "triplanar": (_this, material, object, params) => {
+        material.onBeforeCompile = (shader) => {
+            shader.uniforms.scaler = { value: 0.1 * _this.textureRepeat };
+            shader.uniforms.gamma = { value: 1 };
+            shader.uniforms.roughnessAdjust = { value: 4*params.other2 };
+            shader.vertexShader = shader.vertexShader.replace(
+              '#define STANDARD',
+              `
+              #define STANDARD
+              varying vec3 wNormal;
+              varying vec3 vUvTri;
+              `
+            );
+            shader.vertexShader = shader.vertexShader.replace(
+              'void main() {',
+              `
+              void main() {
+                vec4 worldPosition2 = modelMatrix * vec4( position, 1.0 );
+                wNormal = normalize( mat3( modelMatrix[0].xyz, modelMatrix[1].xyz, modelMatrix[2].xyz ) * normal );
+                vUvTri = worldPosition2.xyz;
+              `
+            );
+          
+            shader.fragmentShader = 
+            `
+               uniform float scaler;
+               uniform float gamma;
+               uniform float roughnessAdjust;
+               varying vec3 vUvTri;
+               varying vec3 wNormal;
+               vec3 GetTriplanarWeights (vec3 normals) {
+                  vec3 triW = abs(normals);
+                  return triW / (triW.x + triW.y + triW.z);
+                }
+              struct TriplanarUV {
+                vec2 x, y, z;
+              };
+              TriplanarUV GetTriplanarUV (vec3 pos) {
+                  TriplanarUV  triUV;
+                  triUV.x = pos.zy;
+                  triUV.y = pos.xz;
+                  triUV.z = pos.xy;
+                  return triUV;
+                }
+               ` + shader.fragmentShader;
+            shader.fragmentShader = shader.fragmentShader.replace(
+              '#include <map_fragment>',
+              `
+              #ifdef USE_MAP
+                  vec3 xColor = texture2D(map, vUvTri.yz * scaler).rgb;
+                  vec3 yColor = texture2D(map, vUvTri.xz * scaler).rgb;
+                  vec3 zColor = texture2D(map, vUvTri.xy * scaler).rgb;
+                  vec3 triW = GetTriplanarWeights(wNormal);
+                  vec4 easedColor = vec4( xColor * triW.x + yColor * triW.y + zColor * triW.z, 1.0);
+                  vec4 gammaCorrectedColor = vec4( pow(abs(easedColor.x),gamma), pow(abs(easedColor.y),gamma), pow(abs(easedColor.z),gamma), 1.0);
+                  vec4 texelColor3 = mapTexelToLinear( gammaCorrectedColor );
+                  diffuseColor *= texelColor3;
+              #endif
+              `
+            );
+          
+            shader.fragmentShader = shader.fragmentShader.replace(
+              '#include <roughnessmap_fragment>',
+              `
+              float roughnessFactor = roughness;
+          
+              #ifdef USE_ROUGHNESSMAP
+      vec3 xColorR = texture2D(roughnessMap, vUvTri.yz * scaler).rgb;
+      vec3 yColorR = texture2D(roughnessMap, vUvTri.xz * scaler).rgb;
+      vec3 zColorR = texture2D(roughnessMap, vUvTri.xy * scaler).rgb;
+
+      vec3 triWR = GetTriplanarWeights(wNormal);
+      vec4 easedColorR = vec4( xColorR * triWR.x + yColorR * triWR.y + zColorR * triWR.z, 1.0);
+      vec4 gammaCorrectedColorR = vec4( pow(abs(easedColorR.x),gamma), pow(abs(easedColorR.y),gamma), pow(abs(easedColorR.z),gamma), 1.0);
+      vec4 texelColorR = mapTexelToLinear( gammaCorrectedColorR );
+      roughnessFactor *= texelColorR.g * roughnessAdjust;
+    #endif
+
+    `
+  );
+  shader.fragmentShader = shader.fragmentShader.replace(
+    '#include <normal_fragment_maps>',
+    `
+    #ifdef OBJECTSPACE_NORMALMAP
+        normal = texture2D( normalMap, vUv ).xyz * 2.0 - 1.0; // overrides both flatShading and attribute normals
+        #ifdef FLIP_SIDED
+            normal = - normal;
+        #endif
+        #ifdef DOUBLE_SIDED
+            normal = normal * ( float( gl_FrontFacing ) * 2.0 - 1.0 );
+        #endif
+        normal = normalize( normalMatrix * normal );
+    #elif defined( TANGENTSPACE_NORMALMAP )
+        TriplanarUV triUV = GetTriplanarUV(vUvTri);
+
+        vec3 tangentNormalX = texture2D(normalMap, triUV.x * scaler).xyz;
+        vec3 tangentNormalY = texture2D(normalMap, triUV.y * scaler).xyz;
+        vec3 tangentNormalZ = texture2D(normalMap, triUV.z * scaler).xyz;
+
+        vec3 worldNormalX = tangentNormalX.xyz;
+        vec3 worldNormalY = tangentNormalY.xyz;
+        vec3 worldNormalZ = tangentNormalZ;
+
+        vec3 triWN = GetTriplanarWeights(wNormal);
+        vec3 mapI = normalize(worldNormalX * triWN.x + worldNormalY * triWN.y + worldNormalZ * triWN.z);
+        vec3 mapN = vec3(mapI.x, mapI.y, mapI.z);
+        mapN.xy *= normalScale;
+        #ifdef USE_TANGENT
+            normal = normalize( vTBN * mapN );
+        #else
+            normal = perturbNormal2Arb( -vViewPosition, normal, mapN );
+        #endif
+    #elif defined( USE_BUMPMAP )
+        normal = perturbNormalArb( -vViewPosition, normal, dHdxy_fwd() );
+    #endif
+    `
+  )
+};       
+        material.customProgramCacheKey = () => {
+            return `triplanar`
+        }
     }
 }
 

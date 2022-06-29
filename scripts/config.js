@@ -853,6 +853,7 @@ Hooks.on("renderTileConfig", (app,html)=>{
                 "wind": game.i18n.localize("levels3dpreview.flags.shader.options.wind.name"),
                 "distortion": game.i18n.localize("levels3dpreview.flags.shader.options.distortion.name"),
                 "water": game.i18n.localize("levels3dpreview.flags.shader.options.water.name"),
+                "triplanar": game.i18n.localize("levels3dpreview.flags.shader.options.triplanar.name"),
             }
         },
         "shaderSpeed": {
@@ -983,7 +984,6 @@ Hooks.on("renderTileConfig", (app,html)=>{
         } else {
             for(let flag of shaderFlags) {
                 html.find(`input[name="flags.levels-3d-preview.${flag}"]`).closest(".form-group").show();
-                if(flag == "shaderSpeed") continue;
                 const labelLocalString = `levels3dpreview.flags.shader.options.${value}.${flag}`;
                 const localLabel = game.i18n.localize(labelLocalString);
                 if(localLabel === labelLocalString) {
