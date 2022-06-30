@@ -103,6 +103,7 @@ export class Tile3D {
         this.enableGravity = this.tile.document.getFlag("levels-3d-preview", "enableGravity") ?? "none";
         this.shading = this.tile.document.getFlag("levels-3d-preview", "shading") ?? "default";
         this.shader = this.tile.document.getFlag("levels-3d-preview", "shader") ?? "none";
+        this.flipY = this.tile.document.getFlag("levels-3d-preview", "flipY") ?? false;
         this.shaderParams = {
             intensity: this.tile.document.getFlag("levels-3d-preview", "shaderIntensity") ?? 0.1,
             speed: this.tile.document.getFlag("levels-3d-preview", "shaderSpeed") ?? 0.1,
@@ -354,6 +355,10 @@ export class Tile3D {
     async initInstanced(){
         this.isGravity = this.enableGravity !== "none";
         if(this.isGravity) this._parent.interactionManager.forceSightCollisions();
+        if(this.displacementMap) {
+            const tex = await this._parent.helpers.loadTexture(this.displacementMap);
+            this.displacementMap = this.getDisplacementData(tex.image);
+        }
         const model = await this.getModel();
         const raycaster = this._parent.interactionManager
         this.isInstanced = true;
@@ -368,7 +373,7 @@ export class Tile3D {
         const mDepth = box.max.y - box.min.y;
         const rows = Math.round((this.height+gap/2)/grid) || 1;
         const cols = Math.round((this.width+gap/2)/grid) || 1;
-        const count = (rows)*(cols);
+        let count = (rows)*(cols);
         this.count = count;
         const realWidth = grid*cols;
         const realHeight = grid*rows;
@@ -386,20 +391,38 @@ export class Tile3D {
         const maxX =this.width-mWidth*scaleFit*1.5;
         let randomData = [];
 
-        for(let i = 0; i < count; i++){
-            //Random Data
-            const randomX = this.randomPosition ? ((this.pseudoRandom-0.5)*maxX) : 0;
-            const randomZ = this.randomPosition ? ((this.pseudoRandom-0.5)*maxZ) : 0;
-            const offsetx = -gap/2+randomX//gap//(mWidth*scaleFit-gridX)/2;
-            const offsetz = -gap/2+randomZ//gap//(mHeight*scaleFit-gridZ)/2;
-            const randomColor = this.randomColor ? this.pseudoRandom : 0;
-            const randomRotation = this.randomRotation ? this.pseudoRandom*Math.PI*2 : 0;
-            const randomDepth = this.randomDepth ? this.pseudoRandom : 1;
-            const randomScale = this.randomScale ? this.pseudoRandom : 1;
-            ///////////////////////////////////////////////////////////
-            const randomFrag = { randomColor, randomRotation, randomDepth, randomScale, offsetx, offsetz };
-            randomData.push(randomFrag);
+        let finalCount = count;
+        for(let z = 0; z < rows; z++){
+            for(let x = 0; x < cols; x++){
+                const posx = x*gridX;
+                const posz = z*gridZ;
+                //Random Data
+                const randomX = this.randomPosition ? ((this.pseudoRandom-0.5)*maxX) : 0;
+                const randomZ = this.randomPosition ? ((this.pseudoRandom-0.5)*maxZ) : 0;
+                const offsetx = -gap/2+randomX//gap//(mWidth*scaleFit-gridX)/2;
+                const offsetz = -gap/2+randomZ//gap//(mHeight*scaleFit-gridZ)/2;
+                const finalX = this.randomPosition ? offsetx : posx+offsetx;
+                const finalZ = this.randomPosition ? offsetz : posz+offsetz;
+                const randomColor = this.randomColor ? this.pseudoRandom : 0;
+                const randomRotation = this.randomRotation ? this.pseudoRandom*Math.PI*2 : 0;
+                const randomDepth = this.randomDepth ? this.pseudoRandom : 1;
+                const randomScale = this.randomScale ? this.pseudoRandom : 1;
+                const displacementRandom = this.displacementMap ? this.pseudoRandom-0.5 : 0;
+                ///////////////////////////////////////////////////////////
+                const randomFrag = { randomColor, randomRotation, randomDepth, randomScale, offsetx, offsetz };
+                if(this.displacementMap){
+                    const keep = this.getPixel(this.displacementMap, finalX/realWidth, finalZ/realHeight).r/255 < displacementRandom;
+                    if(!keep) {
+                        finalCount--;
+                        randomData.push(null)
+                        continue;
+                    }
+                }
+                randomData.push(randomFrag);
+            }
         }
+
+        count = finalCount;
 
         this._processModel(object, textureOrMat, isPBR, color);
         object.scale.set(scaleFit,scaleFit,scaleFit);
@@ -416,8 +439,13 @@ export class Tile3D {
             );
             instancedMesh.instanceMatrix.setUsage( THREE.DynamicDrawUsage );
             let i = 0;
+            let j = 0;
             for(let z = 0; z < rows; z++){
                 for(let x = 0; x < cols; x++){
+                    if(!randomData[i]) {
+                        i++;
+                        continue;
+                    }
                     const { randomColor , randomRotation, randomDepth, randomScale, offsetx, offsetz } = randomData[i];
                     const newScale = baseScale.clone().multiplyScalar(randomScale)
                     newScale.y *= this.yScale*randomDepth;
@@ -460,10 +488,11 @@ export class Tile3D {
                         const hsl = color.getHSL({});
                         hsl.l/=randomColor;
                         color.setHSL(hsl.h,hsl.s,hsl.l);
-                        instancedMesh.setColorAt(i, color);
+                        instancedMesh.setColorAt(j, color);
                     }
-                    instancedMesh.setMatrixAt(i, dummy.matrix);
+                    instancedMesh.setMatrixAt(j, dummy.matrix);
                     i++;
+                    j++
                 }
             }
     
@@ -570,6 +599,9 @@ export class Tile3D {
     }
 
     setTexture(tex){
+        if(this.flipY && tex?.image){
+            tex.flipY = false;
+        }
         if(!this.repeatTexture || !tex?.image) return;
         tex.wrapS = THREE.RepeatWrapping;
         tex.wrapT = THREE.RepeatWrapping;
@@ -811,6 +843,7 @@ export class Tile3D {
                 for(let i=0; i < count; i++){
                         const x = positionAttributes.getX(i);
                         const z = positionAttributes.getZ(i);
+                        if(x===maxX || x===minX || z===maxZ || z===minZ) continue;
                         const xPercent = (x - minX)/(maxX - minX);
                         const zPercent = (z - minZ)/(maxZ - minZ);
                         const displacement = 1 - this.getPixel(this.displacementMap, xPercent, zPercent).r/255;
@@ -1414,7 +1447,54 @@ const tileShaders = {
         material.customProgramCacheKey = () => {
             return `triplanar`
         }
-    }
+    },
+    "grid": (_this, material, object, params) => {
+        const {intensity, speed, other,other2, alt} = params;
+        const {mDepth, mWidth, mHeight, yPos} = getSizesForShader(_this);
+
+        const beginVeryex = `
+        varying vec3 vWorldPosition;
+        `
+        const transformVertex = `
+        vWorldPosition = (modelMatrix * vec4( position, 1.0 )).xyz;
+        vec3 transformed = position;`
+
+        const beginFragment = `
+        varying vec3 vWorldPosition;
+        uniform float gridSize;
+        uniform vec3 gridColor;
+        uniform float gridAlpha;
+        uniform float normalCulling;
+        `
+
+        const fragment = `
+        #ifdef DITHERING
+            gl_FragColor.rgb = dithering( gl_FragColor.rgb );
+        #endif
+        if( abs(normal.y) > normalCulling && (mod(vWorldPosition.x, gridSize) < 0.0015 || mod(vWorldPosition.z, gridSize) < 0.0015)){
+            gl_FragColor.rgb = mix(gl_FragColor.rgb, gridColor, gridAlpha);
+        }
+        `
+
+        const setUniforms = (shader) => {
+            shader.uniforms.time = { value: 0.0 };
+            shader.uniforms.gridSize = { value: canvas.scene.dimensions.size/factor }
+            shader.uniforms.gridColor = { value: new THREE.Color(canvas.scene.data.gridColor) }
+            shader.uniforms.gridAlpha = { value: canvas.scene.data.gridAlpha }
+            shader.uniforms.normalCulling = { value: intensity-0.01 }
+        }
+        const setupShader = (shader) => {
+            _this.shaders.push(shader);
+            shader.vertexShader = beginVeryex + shader.vertexShader.replace(`#include <begin_vertex>`, transformVertex);
+            shader.fragmentShader = beginFragment + shader.fragmentShader.replace(`#include <dithering_fragment>`, fragment);
+            setUniforms(shader);
+        }
+
+        material.onBeforeCompile = setupShader
+        material.customProgramCacheKey = () => {
+            return `grid`
+        }
+    },
 }
 
 function getSizesForShader(_this){

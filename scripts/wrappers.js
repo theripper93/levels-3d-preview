@@ -41,7 +41,7 @@ Hooks.once('ready', async function() {
         
         wrapped(...args);
         if(!game.Levels3DPreview?._active){
-            const object3dSight = canvas.scene.getFlag("levels-3d-preview", "enableFogOfWar") ?? false;
+            const object3dSight = canvas.scene.getFlag("levels-3d-preview", "object3dSight") ?? false;
             if(object3dSight){
                 this.points = [0,0,0,0,0,0,0,0]
             }

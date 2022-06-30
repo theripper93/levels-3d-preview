@@ -120,6 +120,11 @@ export class Fog{
         this.target = null;
     }
 
+    destroy(){
+        this._parent.composer.removePass( this.fogPass );
+        this.dispose();
+    }
+
     getShader(texture, size, scenesize, sceneOrigin){
 
         //const texture = await new THREE.TextureLoader().loadAsync( "TheHacienda_free.jpg")

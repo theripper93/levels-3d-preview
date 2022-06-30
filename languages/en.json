@@ -110,6 +110,9 @@
             "textureRepeat": {
                 "label": "Texture Repeat"
             },
+            "flipY": {
+                "label": "Flip Y"
+            },
             "doorState": {
                 "options": {
                     "open": "Open",
@@ -361,6 +364,10 @@
                     "triplanar": {
                         "name": "Triplanar Mapping",
                         "shaderOther2": "Roughness Correction"
+                    },
+                    "grid": {
+                        "name": "Grid",
+                        "shaderIntensity": "Normal Culling"
                     }
                 }
             },

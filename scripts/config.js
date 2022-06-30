@@ -664,6 +664,11 @@ Hooks.on("renderTileConfig", (app,html)=>{
             max: 128,
             step: 1,
         },
+        "flipY": {
+            type: "checkbox",
+            label: game.i18n.localize("levels3dpreview.flags.flipY.label"),
+            default: false,
+        },
         "displacementMap":{
             type: "filepicker",
             label: game.i18n.localize("levels3dpreview.flags.displacementMap.label"),
@@ -854,6 +859,7 @@ Hooks.on("renderTileConfig", (app,html)=>{
                 "distortion": game.i18n.localize("levels3dpreview.flags.shader.options.distortion.name"),
                 "water": game.i18n.localize("levels3dpreview.flags.shader.options.water.name"),
                 "triplanar": game.i18n.localize("levels3dpreview.flags.shader.options.triplanar.name"),
+                "grid": game.i18n.localize("levels3dpreview.flags.shader.options.grid.name"),
             }
         },
         "shaderSpeed": {
