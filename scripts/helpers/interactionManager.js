@@ -623,7 +623,7 @@ export class InteractionManager {
     _onClickLeft(event){
       if(ui.controls.isRuler || this.draggable) return;
       const entity = event.entity;
-      if((entity?.tile && canvas.activeLayer.options.objectClass.name !== "Tile" && !entity?.isDoor) || !entity){
+      if((entity?.tile && canvas.activeLayer.options.objectClass.name !== "Tile" && !entity?.isDoor && !event?.originalTarget?.userData?.isDoor) || !entity){
         if(this._downCameraPosition.distanceTo(this._upCameraPosition)<0.01 && game.settings.get("core","leftClickRelease")) canvas.activeLayer.releaseAll();
       }
       if(entity?.placeable?.data?.locked) return;
