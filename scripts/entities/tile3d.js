@@ -1200,6 +1200,8 @@ const tileShaders = {
 
         object.customDepthMaterial = new THREE.MeshDepthMaterial({
             depthPacking: THREE.RGBADepthPacking,
+            alphaTest: material.alphaTest,
+            map: material.alphaTest ? material.map : null,
             onBeforeCompile: setupShader,
             customProgramCacheKey: () => {
                 return `wind_depth`
@@ -1259,6 +1261,8 @@ const tileShaders = {
 
         object.customDepthMaterial = new THREE.MeshDepthMaterial({
             depthPacking: THREE.RGBADepthPacking,
+            alphaTest: material.alphaTest,
+            map: material.alphaTest ? material.map : null,
             onBeforeCompile: setupShader,
             customProgramCacheKey: () => {
                 return `distortion_depth`
@@ -1315,6 +1319,8 @@ const tileShaders = {
 
         object.customDepthMaterial = new THREE.MeshDepthMaterial({
             depthPacking: THREE.RGBADepthPacking,
+            alphaTest: material.alphaTest,
+            map: material.alphaTest ? material.map : null,
             onBeforeCompile: setupShader,
             customProgramCacheKey: () => {
                 return `water_depth`
