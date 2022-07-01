@@ -337,8 +337,9 @@ export class Token3D {
         metalness: metalness,
         map: this.texture,//new THREE.TextureLoader().load(this.imageTexture) : null,
         //depthWrite: this.texture && !this.gtflPath ? false : true,
-        alphaTest: 0.99,
+        transparent: true,
       }
+      
       const material = materialType === "basic" ? new THREE.MeshBasicMaterial(matData) : new THREE.MeshStandardMaterial(matData);
       if(model.material){
         model.material = material;
@@ -987,7 +988,7 @@ export class Token3D {
       const base64 = canvas.app.renderer.extract.base64(container);
       const spriteMaterial = new THREE.SpriteMaterial({
         map: new THREE.TextureLoader().load(base64),
-        alphaTest: this._parent.fogExploration ? 0.8 : 0.001,
+        transparent: true
       });
       const sprite = new THREE.Sprite(spriteMaterial);
       sprite.center.set(0.5,0.5);
@@ -1011,7 +1012,7 @@ export class Token3D {
       const base64 = canvas.app.renderer.extract.base64(container);
       const spriteMaterial = new THREE.SpriteMaterial({
         map: await new THREE.TextureLoader().loadAsync(base64),
-        alphaTest: this._parent.fogExploration ? 0.8 : 0.001,
+        transparent: true
       });
       const sprite = new THREE.Sprite(spriteMaterial);
       sprite.center.set(0.5,0.5);

@@ -45,7 +45,7 @@ export class Note3D {
         const base64 = canvas.app.renderer.extract.base64(container);
         const spriteMaterial = new THREE.SpriteMaterial({
           map: new THREE.TextureLoader().load(base64),
-          alphaTest: this._parent.fogExploration ? 0.8 : 0.001,
+          transparent: true,
         });
         const sprite = new THREE.Sprite(spriteMaterial);
         sprite.center.set(0.5,0.5);

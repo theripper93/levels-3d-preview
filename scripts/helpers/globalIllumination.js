@@ -94,7 +94,8 @@ export class GlobalIllumination {
       const sunlight = this.global.sunlight;
       sunlight.color = color;
       sunlight.position.y = distance;
-      sunlight.intensity = intensity;
+      sunlight.intensity = distance !== 0 ? intensity : 0;
+      sunlight.castShadow = distance !== 0;
       this.global.debugSphere.color = color;
       this.global.debugSphere.position.y = distance;
       this.global.lightingGroup.rotation.setFromQuaternion(angle);
