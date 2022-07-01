@@ -935,9 +935,9 @@ export class Tile3D {
     }   
 
     _onClickLeft(e){
-        const oT = e.originalTarget?.userData
+        const oT = e.originalIntersect?.userData
         if(oT?.isDoor && canvas.activeLayer.options.objectClass.embeddedName === "Token" && !(oT?.isSecret && !game.user.isGM)){
-            if(this.isToFar(e.originalTarget)) ui.notifications.error(game.i18n.localize("levels3dpreview.errors.toofarfromdoor"));
+            if(this.isToFar(e.originalIntersect)) ui.notifications.error(game.i18n.localize("levels3dpreview.errors.toofarfromdoor"));
             else this._parent.socket.executeAsGM("toggleDoor", this.tile.id, canvas.scene.id, game.user.id, oT.doorId)
         }
 
@@ -979,7 +979,7 @@ export class Tile3D {
     }
 
     _onClickRight(e){
-        const oT = e.originalTarget?.userData
+        const oT = e.originalIntersect?.userData
         if(canvas.activeLayer.options.objectClass.embeddedName === "Token" && game.user.isGM){
             if(oT?.isDoor){
                 const subDoorId = oT.doorId;

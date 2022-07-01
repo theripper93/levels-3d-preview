@@ -23,7 +23,7 @@ import { EXRLoader } from "./lib/EXRLoader.js";
 import { EffectComposer } from './lib/EffectComposer.js';
 import { RenderPass } from './lib/RenderPass.js';
 import { UnrealBloomPass } from "./lib/UnrealBloomPass.js";
-import { Fog } from "./helpers/Fog.js";
+import { Fog, injectFoWShaders } from "./helpers/Fog.js";
 import { Exporter } from "./helpers/exporter.js";
 import { turnStartMarker } from "./helpers/turnStartMarker.js";
 import { ParticleSystem } from "./helpers/particleSystem.js";
@@ -36,6 +36,7 @@ import { SMAAPass } from "./lib/SMAAPass.js";
 import { ShaderPass } from "./lib/ShaderPass.js";
 
 export const factor = 1000;
+injectFoWShaders(THREE);
 
 globalThis.Particle3D = Particle3D;
 
@@ -86,6 +87,7 @@ export function sleep(ms) {
 
 class Levels3DPreview {
   constructor() {
+    this.materialProgramCache = {};
     THREE.Cache.enabled = true;
     this.THREE = THREE;
     this.populateScene = populateScene;
@@ -1042,7 +1044,7 @@ class Levels3DPreview {
       this.weather?.update(delta);
       this.GameCamera.update(delta);
       this.controls.update();
-      this.fogExploration?.update();
+      //this.fogExploration?.update();
       this.composer.render(time)
       if(this._sharedContext){
         canvas.app.renderer.reset()

@@ -99,6 +99,7 @@ export class InteractionManager {
     computeSightCollisionFrom3DPositions(origin,target, type, elongate, useDistance = true, useClipping = false, returnAll = false){
       const direction = target.clone().sub(origin).normalize();
       const distance = useDistance ? origin.distanceTo(target) : Infinity;
+      this.sightRaycaster.far = distance ?? Infinity;
       this.sightRaycaster.firstHitOnly = !useClipping;
       this.sightRaycaster.set(origin, direction);
       if(!this._sightCollisions[type] && !this._sightCollisions["collision"])  this.forceSightCollisions();
@@ -371,13 +372,13 @@ export class InteractionManager {
       event.entity = intersect.userData.entity3D
       event.intersect = intersect;
       event.position3D = intersectData.point;
-      event.originalTarget = intersectData?.originalObject;
+      event.originalIntersect = intersectData?.originalObject;
       this.prevEventData = this.eventData ?? null;
       this.eventData = {
         entity: event.entity,
         position3D: event.position3D,
         intersect: event.intersect,
-        originalTarget: event.originalTarget,
+        originalIntersect: event.originalIntersect,
       }
       if (this.clicks === 1) {
         setTimeout(() => {
@@ -423,7 +424,7 @@ export class InteractionManager {
       event.entity = this.eventData?.entity;
       event.intersect = this.eventData?.intersect;
       event.position3D = this.eventData?.position3D;
-      event.originalTarget = this.eventData?.originalTarget;
+      event.originalIntersect = this.eventData?.originalIntersect;
       setTimeout(() => {
       if(this.prevEventData && this.prevEventData.entity !== this.eventData.entity || this.hasCameraMoved) return this.clicks = 0;
       if(this._triggerLeft2) this._onClickLeft2(event);
@@ -623,7 +624,7 @@ export class InteractionManager {
     _onClickLeft(event){
       if(ui.controls.isRuler || this.draggable) return;
       const entity = event.entity;
-      if((entity?.tile && canvas.activeLayer.options.objectClass.name !== "Tile" && !entity?.isDoor && !event?.originalTarget?.userData?.isDoor) || !entity){
+      if((entity?.tile && canvas.activeLayer.options.objectClass.name !== "Tile" && !entity?.isDoor && !event?.originalIntersect?.userData?.isDoor) || !entity){
         if(this._downCameraPosition.distanceTo(this._upCameraPosition)<0.01 && game.settings.get("core","leftClickRelease")) canvas.activeLayer.releaseAll();
       }
       if(entity?.placeable?.data?.locked) return;

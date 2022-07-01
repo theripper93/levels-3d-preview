@@ -13054,7 +13054,11 @@ const UniformsLib = {
 		uv2Transform: { value: new Matrix3() },
 
 		alphaMap: { value: null },
-		alphaTest: { value: 0 }
+		alphaTest: { value: 0 },
+
+		fogTexture : { value: null },
+		sceneOrigin : { value: new Vector2() },
+		sceneDimensions : { value: new Vector2() },
 
 	},
 
@@ -26270,7 +26274,6 @@ function WebGLRenderer( parameters = {} ) {
 		} else {
 
 			parameters.uniforms = programCache.getUniforms( material );
-
 			material.onBuild( parameters, _this );
 
 			material.onBeforeCompile( parameters, _this );
@@ -26329,6 +26332,8 @@ function WebGLRenderer( parameters = {} ) {
 
 		materialProperties.currentProgram = program;
 		materialProperties.uniformsList = uniformsList;
+
+		game.Levels3DPreview.materialProgramCache[material.uuid] = materialProperties
 
 		return program;
 

@@ -60,14 +60,11 @@ export class GameCamera{
     init(){
         this._enabledRequirements = game.settings.get("levels-3d-preview", "enableGameCamera") && (canvas.scene.getFlag("levels-3d-preview", "enableGameCamera") ?? true);
         this.enabled = this._enabledRequirements
-        this.showWarning();
         if(!this._enabledRequirements) return this.setRegularCameraParams();
         this.setInitalParams()
         this.computeBounds();
         if(game.user.isGM && !game.settings.get("levels-3d-preview", "gameCameraDefaultGm")) this.toggle();
     }
-
-    showWarning(){}
 
     computeBounds(){
         const dimensions = canvas.scene.dimensions;
@@ -123,11 +120,14 @@ export class GameCamera{
     }
 
     onChange(){
-        if(!this.enabled) return;
-        $("#clip-navigation-lock").toggleClass("clip-navigation-enabled", this.lock);
-        this.setClipping();
-        this.setHeight();
-        this.keepInBounds();
+        if(!this.enabled) {
+            this.controls.target = this.camera.position.clone().add(this.camera.getWorldDirection(new THREE.Vector3()).multiplyScalar(3))
+        }else{
+            $("#clip-navigation-lock").toggleClass("clip-navigation-enabled", this.lock);
+            this.setClipping();
+            this.setHeight();
+            this.keepInBounds();
+        }
     }
 
     keepInBounds(){

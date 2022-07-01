@@ -54,7 +54,7 @@ Hooks.once('ready', async function() {
         const polygonPoints = [];
         const aMax = this.config.aMax
         const aMin = this.config.aMin
-        const radius = Math.max(this.config.radius, this.config.radius2);
+        const radius = this.config?.source?.fov?.radius ?? Math.max(this.config.radius, this.config.radius2);
         const nPoints = Math.ceil((this.config.angle*0.25)/splits) * splits;
         const origin = this.origin
         const factor = game.Levels3DPreview.factor
@@ -75,7 +75,7 @@ Hooks.once('ready', async function() {
         }
 
         const z = origin.b ?? 0;
-
+        const perfStart = Date.now();
         for (let i = splitStart, n = this.config.hasLimitedAngle ? splitEnd + 1 : splitEnd; i < n; i++){
             const a = aMin + (aMax - aMin) * (i / nPoints);
             const x = origin.x + radius * Math.cos(a)
@@ -87,6 +87,7 @@ Hooks.once('ready', async function() {
                 polygonPoints.push(x,y);
             }
         }
+        console.log(`compute polygon ${Date.now() - perfStart}ms`);
 
         if(currentSplit === splits - 1){
             const finalPoints = [];
