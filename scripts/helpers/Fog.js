@@ -89,9 +89,9 @@ export class Fog{
         this.fogTexture?.dispose();
         this.webglFogTexture?.dispose();
         Object.values(this._parent.materialProgramCache).forEach(m => {
-            m.uniforms.fogTexture = {value: this.fogTexture};
-            m.uniforms.sceneDimensions = {value: this.sceneDimensions};
-            m.uniforms.sceneOrigin = {value: this.sceneOrigin};
+            m.uniforms.fogTexture = {value: null};
+            m.uniforms.sceneDimensions = {value: new THREE.Vector2(0,0)};
+            m.uniforms.sceneOrigin = {value: new THREE.Vector2(0,0)};
         })
         this._parent.materialProgramCache = {};
     }
@@ -112,23 +112,21 @@ export function injectFoWShaders(THREELIB){
     ` 
 
     THREELIB.ShaderChunk.fog_vertex += `
-    #ifdef USE_INSTANCING
-        vWorldPositionFoW = (modelMatrix * (instanceMatrix * vec4( position , 1.0 ))).xyz;
-    #else
-        vWorldPositionFoW = (modelMatrix * vec4( position , 1.0 )).xyz;
-    #endif
+    if( sceneDimensions.x != 0.0){
+        #ifdef USE_INSTANCING
+            vWorldPositionFoW = (modelMatrix * (instanceMatrix * vec4( position , 1.0 ))).xyz;
+        #else
+            vWorldPositionFoW = (modelMatrix * vec4( position , 1.0 )).xyz;
+        #endif
+    }
     `
 
     THREELIB.ShaderChunk.fog_fragment += `
-    //#ifdef fogTexture
-
-        if( vWorldPositionFoW.x >= sceneOrigin.x && vWorldPositionFoW.x <= sceneOrigin.x + sceneDimensions.x && vWorldPositionFoW.z >= sceneOrigin.y && vWorldPositionFoW.z <= sceneOrigin.y + sceneDimensions.y ){
-            float sceneX = (vWorldPositionFoW.x)/sceneDimensions.x;
-            float sceneY = (vWorldPositionFoW.z)/sceneDimensions.y;
-            vec4 fogTexel = texture( fogTexture, vec2(sceneX, sceneY) );
-            gl_FragColor *= fogTexel;
-        }
-
-    //#endif
+    if( sceneDimensions.x != 0.0 && vWorldPositionFoW.x >= sceneOrigin.x && vWorldPositionFoW.x <= sceneOrigin.x + sceneDimensions.x && vWorldPositionFoW.z >= sceneOrigin.y && vWorldPositionFoW.z <= sceneOrigin.y + sceneDimensions.y ){
+        float sceneX = (vWorldPositionFoW.x)/sceneDimensions.x;
+        float sceneY = (vWorldPositionFoW.z)/sceneDimensions.y;
+        vec4 fogTexel = texture( fogTexture, vec2(sceneX, sceneY) );
+        gl_FragColor *= fogTexel;
+    }
     `
 }
