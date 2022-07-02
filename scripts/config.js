@@ -163,6 +163,35 @@ Hooks.on("renderSceneConfig", (app,html)=>{
             step: 0.01,
             default: 0.4,
         },
+        "filter": {
+            type: "select",
+            label: game.i18n.localize("levels3dpreview.flags.filter.label"),
+            default: "none",
+            options: {
+                "none": game.i18n.localize("levels3dpreview.flags.filter.options.none"),
+                "grayscale": game.i18n.localize("levels3dpreview.flags.filter.options.grayscale"),
+                "sepia": game.i18n.localize("levels3dpreview.flags.filter.options.sepia"),
+                "invert": game.i18n.localize("levels3dpreview.flags.filter.options.invert"),
+                "contrast": game.i18n.localize("levels3dpreview.flags.filter.options.contrast"),
+                "brightness": game.i18n.localize("levels3dpreview.flags.filter.options.brightness"),
+                "hue-rotate": game.i18n.localize("levels3dpreview.flags.filter.options.hue"),
+                "saturate": game.i18n.localize("levels3dpreview.flags.filter.options.saturation"),
+                "custom": game.i18n.localize("levels3dpreview.flags.filter.options.custom"),
+            }
+        },
+        "filterStrength": {
+            type: "range",
+            label: game.i18n.localize("levels3dpreview.flags.filterStrength.label"),
+            min: 0,
+            max: 2,
+            step: 0.01,
+            default: 1,
+        },
+        "filterCustom": {
+            type: "text",
+            label: game.i18n.localize("levels3dpreview.flags.filterCustom.label"),
+            default: "",
+        },
         "renderTable": {
             "type": "checkbox",
             "label": game.i18n.localize("levels3dpreview.flags.renderTable.label"),

@@ -1313,9 +1313,34 @@ class Levels3DPreview {
       lighting: { initialize: true /* calls updateSource on each light source */, refresh: true },
       sight: { initialize: true /* calls updateSource on each token */, refresh: true /* you probably to refesh sight as well */, forceUpdateFog: true /* not sure if you need this */ },
     });
+    this.setFilters(true)
     setTimeout(() => {
       this.helpers.showSceneReport();
     }, 1000);
+  }
+
+  setFilters(set){
+    if(set){
+      const filter = canvas.scene.getFlag("levels-3d-preview", "filter");
+      if(filter == "none") return;
+      const filterStrength = canvas.scene.getFlag("levels-3d-preview", "filterStrength");
+      const filterCustom = canvas.scene.getFlag("levels-3d-preview", "filterCustom");
+      let filterValue = "";
+      if(filter == "custom" && filterCustom){
+        filterValue = filterCustom;
+      }else{
+        filterValue = `${filter}(${filterStrength})`;
+      }
+      if(this._sharedContext){
+        $("#board").css("filter", filterValue);
+      }else{
+        $("#levels3d").css("filter", filterValue);
+      }
+
+    }else{
+      $("#board").css({ filter: "" });
+      $("#levels3d").css({ filter: "" });
+    }
   }
 
   toggle(force) {
@@ -1332,6 +1357,7 @@ class Levels3DPreview {
 
   open() {
     if (this._active) return;
+    this.setFilters(true);
     if(this._sharedContext){
       canvas.app.renderer.reset()
       this.renderer.resetState();
@@ -1355,6 +1381,7 @@ class Levels3DPreview {
 
   close() {
     $(".levels-3d-preview-loading-screen").hide();
+    this.setFilters(false);
     this._active = false;
     this.ClipNavigation?.close();
     $("#hud").removeClass("levels-3d-preview-hud");
