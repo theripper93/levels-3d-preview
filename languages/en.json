@@ -143,6 +143,27 @@
             "bloomRadius":{
                 "label": "Bloom Radius"
             },
+            "filter": {
+                "label": "Filter",
+                "options": {
+                    "none": "None",
+                    "grayscale": "Grayscale",
+                    "sepia": "Sepia",
+                    "invert": "Invert",
+                    "brightness": "Brightness",
+                    "contrast": "Contrast",
+                    "saturate": "Saturation",
+                    "hue": "Hue",
+                    "custom": "Custom"
+                }
+            },
+            "filterStrength": {
+                "label": "Filter Strength"
+            },
+            "filterCustom": {
+                "label": "Custom Filter",
+                "placeholder": "eg. brightness(0.5) contrast(1.5) saturate(0.5)"
+            },
             "skybox" : {
                 "label": "Skybox Image",
                 "placeholder": "Skybox Image",

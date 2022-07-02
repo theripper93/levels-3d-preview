@@ -175,7 +175,7 @@ Hooks.on("renderSceneConfig", (app,html)=>{
                 "contrast": game.i18n.localize("levels3dpreview.flags.filter.options.contrast"),
                 "brightness": game.i18n.localize("levels3dpreview.flags.filter.options.brightness"),
                 "hue-rotate": game.i18n.localize("levels3dpreview.flags.filter.options.hue"),
-                "saturate": game.i18n.localize("levels3dpreview.flags.filter.options.saturation"),
+                "saturate": game.i18n.localize("levels3dpreview.flags.filter.options.saturate"),
                 "custom": game.i18n.localize("levels3dpreview.flags.filter.options.custom"),
             }
         },
@@ -190,6 +190,7 @@ Hooks.on("renderSceneConfig", (app,html)=>{
         "filterCustom": {
             type: "text",
             label: game.i18n.localize("levels3dpreview.flags.filterCustom.label"),
+            placeholder: game.i18n.localize("levels3dpreview.flags.filterCustom.placeholder"),
             default: "",
         },
         "renderTable": {
@@ -459,7 +460,10 @@ Hooks.on("renderSceneConfig", (app,html)=>{
     const advancedSettings = ["mirrorLevels","sunDistance", "sunTilt", "renderTable", "tableTex", "enableGameCamera", "maxElevation","enableGrid","enableRuler","lockCamera","renderBackground","enableFog","fogColor","fogDistance","sceneTint","timeSync","shadowBias","showSceneWalls","showSceneDoors","showSceneFloors","renderSceneLights"];
     const other = [html.find("#levels3dpreview-visibility")];
     const bloomFlags = ["bloomThreshold","bloomStrength","bloomRadius"];
+    const filterFlags = ["filterStrength", "filterCustom"];
     hideParams(app, html, `input[name="flags.levels-3d-preview.bloom"]`, bloomFlags, false);
+    hideParams(app, html, `select[name="flags.levels-3d-preview.filter"]`, filterFlags, "none");
+    
     injectAdvancedToggle(app,html,advancedSettings, injected, other);
 
     if(canvas.scene.id !== app.object.id) return;

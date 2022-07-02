@@ -1320,15 +1320,15 @@ class Levels3DPreview {
   }
 
   setFilters(set){
-    if(set){
-      const filter = canvas.scene.getFlag("levels-3d-preview", "filter");
-      if(filter == "none") return;
-      const filterStrength = canvas.scene.getFlag("levels-3d-preview", "filterStrength");
+    const filter = canvas.scene.getFlag("levels-3d-preview", "filter") ?? "none";
+    if(set && filter != "none"){
+      let filterStrength = canvas.scene.getFlag("levels-3d-preview", "filterStrength");
       const filterCustom = canvas.scene.getFlag("levels-3d-preview", "filterCustom");
       let filterValue = "";
       if(filter == "custom" && filterCustom){
         filterValue = filterCustom;
       }else{
+        if(filter == "hue-rotate") filterStrength = `${filterStrength * 180}deg`;
         filterValue = `${filter}(${filterStrength})`;
       }
       if(this._sharedContext){
@@ -1508,6 +1508,9 @@ Hooks.on("updateScene", (scene,updates) => {
       game.Levels3DPreview.weather.reload();
       break;
     }
+  }
+  if("filter" in flags || "filterStrength" in flags || "filterCustom" in flags){
+    game.Levels3DPreview.setFilters(true);
   }
   game.Levels3DPreview.setBloom();
   if("exposure" in flags) game.Levels3DPreview.setExposure();
