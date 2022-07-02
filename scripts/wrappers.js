@@ -237,7 +237,9 @@ Hooks.once('ready', async function() {
                     point2d = game.Levels3DPreview.helpers.ruler3d.pos3DToCanvas(collision)
                     targetElevation = point2d.z.toFixed(2)
                 }
-                updates.push({
+                const movementCollision = game.Levels3DPreview.interactionManager.computeSightCollision(oldPos, newPos, "collision");
+                
+                if(!movementCollision) updates.push({
                     _id: token.id,
                     x: token.data.x + dx*canvas.grid.size,
                     y: token.data.y + dy*canvas.grid.size,

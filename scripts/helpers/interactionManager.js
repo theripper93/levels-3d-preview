@@ -192,6 +192,8 @@ export class InteractionManager {
         this.clearControlledGroup();
         if(!this.controlledGroupSetPosition()) return;
         const controlledGroup = this._parent.controlledGroup;
+        const controls = this._parent.transformControls;
+        if(this._gizmoEnabled) controls.attach(controlledGroup);
         for(let placeable of canvas.activeLayer.controlled){
           const tile3d = this._parent.tiles[placeable.id]
           if(!tile3d) continue;

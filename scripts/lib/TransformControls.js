@@ -425,6 +425,10 @@ class TransformControls extends Object3D {
 
 			// Apply scale
 
+			_tempVector2.x = Math.max( 0.001, _tempVector2.x );
+			_tempVector2.y = Math.max( 0.001, _tempVector2.y );
+			_tempVector2.z = Math.max( 0.001, _tempVector2.z );
+
 			object.scale.copy( this._scaleStart ).multiply( _tempVector2 );
 
 			if ( this.scaleSnap ) {

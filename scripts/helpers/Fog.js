@@ -111,14 +111,12 @@ export function injectFoWShaders(THREELIB){
     uniform sampler2D fogTexture;
     ` 
 
-    THREELIB.ShaderChunk.fog_vertex += `
-    if( sceneDimensions.x != 0.0){
-        #ifdef USE_INSTANCING
-            vWorldPositionFoW = (modelMatrix * (instanceMatrix * vec4( position , 1.0 ))).xyz;
-        #else
-            vWorldPositionFoW = (modelMatrix * vec4( position , 1.0 )).xyz;
-        #endif
-    }
+    THREELIB.ShaderChunk.begin_vertex += `
+    #ifdef USE_INSTANCING
+        vWorldPositionFoW = (modelMatrix * (instanceMatrix * vec4( position , 1.0 ))).xyz;
+    #else
+        vWorldPositionFoW = (modelMatrix * vec4( position , 1.0 )).xyz;
+    #endif
     `
 
     THREELIB.ShaderChunk.fog_fragment += `

@@ -112,6 +112,7 @@
     width: 100% !important;
     height: 100% !important;
     transform: scale(1) !important;
+    z-index: calc(var(--z-index-canvas) + 2);
 }
 
 .levels-3d-preview-hud .placeable-hud{

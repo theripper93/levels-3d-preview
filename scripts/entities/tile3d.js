@@ -795,7 +795,7 @@ export class Tile3D {
           this.processRotation(update, tile)
           updates.push(update)
         const resp = await canvas.scene.updateEmbeddedDocuments("Tile", updates)
-        if(!resp) this._parent.interactionManager.setControlledGroup();
+        if(!resp?.length) this._parent.interactionManager.setControlledGroup();
         return true;
     }
 
@@ -1176,7 +1176,9 @@ const tileShaders = {
             windOffset = vec2(windFactor * intensity * cos(other) * lWidth, windFactor *  intensity * sin(other) * lHeight);
         }
         
-        vec3 transformed = vec3( position.x + windOffset.x, position.y, position.z + windOffset.y );`
+        transformed = vec3( position.x + windOffset.x, position.y, position.z + windOffset.y );
+        
+        `
 
         const setUniforms = (shader) => {
             shader.uniforms.time = { value: 0.0 };
@@ -1194,7 +1196,7 @@ const tileShaders = {
 
         const setupShader = (shader) => {
             _this.shaders.push(shader);
-            shader.vertexShader = beginFragment + shader.vertexShader.replace(`#include <begin_vertex>`, transformFragment);
+            shader.vertexShader = beginFragment + shader.vertexShader.replace(`#include <begin_vertex>`, `#include <begin_vertex>\n` + transformFragment);
             setUniforms(shader);
         }
 
@@ -1255,7 +1257,7 @@ const tileShaders = {
 
         const setupShader = (shader) => {
             _this.shaders.push(shader);
-            shader.vertexShader = beginFragment + shader.vertexShader.replace(`#include <begin_vertex>`, transformFragment);
+            shader.vertexShader = beginFragment + shader.vertexShader.replace(`#include <begin_vertex>`, `#include <begin_vertex>\n` + transformFragment);
             setUniforms(shader);
         }
 
@@ -1313,7 +1315,7 @@ const tileShaders = {
 
         const setupShader = (shader) => {
             _this.shaders.push(shader);
-            shader.vertexShader = beginFragment + shader.vertexShader.replace(`#include <begin_vertex>`, transformFragment);
+            shader.vertexShader = beginFragment + shader.vertexShader.replace(`#include <begin_vertex>`, `#include <begin_vertex>\n` + transformFragment);
             setUniforms(shader);
         }
 
@@ -1458,15 +1460,7 @@ const tileShaders = {
         const {intensity, speed, other,other2, alt} = params;
         const {mDepth, mWidth, mHeight, yPos} = getSizesForShader(_this);
 
-        const beginVeryex = `
-        varying vec3 vWorldPosition;
-        `
-        const transformVertex = `
-        vWorldPosition = (modelMatrix * vec4( position, 1.0 )).xyz;
-        vec3 transformed = position;`
-
         const beginFragment = `
-        varying vec3 vWorldPosition;
         uniform float gridSize;
         uniform vec3 gridColor;
         uniform float gridAlpha;
@@ -1477,7 +1471,7 @@ const tileShaders = {
         #ifdef DITHERING
             gl_FragColor.rgb = dithering( gl_FragColor.rgb );
         #endif
-        if( abs(normal.y) > normalCulling && (mod(vWorldPosition.x, gridSize) < 0.0015 || mod(vWorldPosition.z, gridSize) < 0.0015)){
+        if( abs(normal.y) > normalCulling && (mod(vWorldPositionFoW.x, gridSize) < 0.0015 || mod(vWorldPositionFoW.z, gridSize) < 0.0015)){
             gl_FragColor.rgb = mix(gl_FragColor.rgb, gridColor, gridAlpha);
         }
         `
@@ -1491,7 +1485,6 @@ const tileShaders = {
         }
         const setupShader = (shader) => {
             _this.shaders.push(shader);
-            shader.vertexShader = beginVeryex + shader.vertexShader.replace(`#include <begin_vertex>`, transformVertex);
             shader.fragmentShader = beginFragment + shader.fragmentShader.replace(`#include <dithering_fragment>`, fragment);
             setUniforms(shader);
         }
