@@ -69,7 +69,7 @@ export class Template3D {
         return !(this.shape === "sphere" || this.shape === "cone")
     }
 
-    createHandle(){
+    _createHandle(){
         const texture = this.isLight ? this._parent.textures.lightOn : this._parent.textures.template
         const size = canvas.scene.dimensions.size*0.7/factor
         const geometry = new THREE.BoxGeometry(size, size, size)
@@ -80,6 +80,29 @@ export class Template3D {
         this.mesh.userData.entity3D = this
         mesh.userData.entity3D = this
         mesh.userData.isHitbox = true
+        this.dragHandle = mesh
+        if(this.placeable?.document) mesh.visible = this.placeable.owner
+        this.mesh.add(mesh)
+    }
+
+    createHandle(){
+        const texture = this.isLight ? this._parent.textures.lightOn : this._parent.textures.template
+        const size = (canvas.scene.dimensions.size*0.5/factor)/2
+        const geometry = new THREE.SphereGeometry(size, 16, 16)
+        const material = this.material//new THREE.MeshBasicMaterial({color: new THREE.Color("white"), transparent: true, depthWrite:false, opacity: 0.5})
+        const lightSphere = new THREE.Mesh(geometry, material)
+        const sprite = new THREE.Sprite(new THREE.SpriteMaterial({map: texture, transparent: true, depthWrite: false, opacity: 0.8}))
+        sprite.scale.set(size*1.5, size*1.5, size*1.5)
+        const mesh = new THREE.Group()
+        mesh.add(lightSphere)
+        mesh.add(sprite)
+        this.mesh.userData.hitbox = mesh
+        this.mesh.userData.interactive = true
+        this.mesh.userData.entity3D = this
+        mesh.userData.entity3D = this
+        mesh.userData.isHitbox = true
+        mesh.userData.sprite = sprite
+        mesh.userData.sphere = lightSphere
         this.dragHandle = mesh
         if(this.placeable?.document) mesh.visible = this.placeable.owner
         this.mesh.add(mesh)
@@ -322,6 +345,7 @@ export class Template3D {
               transparent: true,
               opacity: 0.3,
               side: THREE.DoubleSide,
+              depthWrite: false,
               emissive: this.fromData
                 ? this.template.data.fillColor
                 : game.user.color,

@@ -49,15 +49,22 @@ export class Light3D {
 
     createHandle(){
         const texture = this._parent.textures.lightOn
-        const size = canvas.scene.dimensions.size*0.7/factor
-        const geometry = new THREE.BoxGeometry(size, size, size)
-        const material = new THREE.MeshBasicMaterial({map: texture,})
-        const mesh = new THREE.Mesh(geometry, material)
+        const size = (canvas.scene.dimensions.size*0.5/factor)/2
+        const geometry = new THREE.SphereGeometry(size, 16, 16)
+        const material = new THREE.MeshBasicMaterial({color: new THREE.Color("white"), transparent: true, depthWrite:false, opacity: 0.5})
+        const lightSphere = new THREE.Mesh(geometry, material)
+        const sprite = new THREE.Sprite(new THREE.SpriteMaterial({map: texture, transparent: true, opacity: 0.8}))
+        sprite.scale.set(size*1.5, size*1.5, size*1.5)
+        const mesh = new THREE.Group()
+        mesh.add(lightSphere)
+        mesh.add(sprite)
         this.mesh.userData.hitbox = mesh
         this.mesh.userData.interactive = true
         this.mesh.userData.entity3D = this
         mesh.userData.entity3D = this
         mesh.userData.isHitbox = true
+        mesh.userData.sprite = sprite
+        mesh.userData.sphere = lightSphere
         this.dragHandle = mesh
         this.mesh.add(mesh)
     }
@@ -66,8 +73,9 @@ export class Light3D {
         if(!this.dragHandle) return;
         this.dragHandle.visible = canvas.lighting._active;
         if(!this.dragHandle.visible) return;
-        this.dragHandle.material.map = this.light.data.hidden ? this._parent.textures.lightOff : this._parent.textures.lightOn;
-        this.dragHandle.material.color.set(this.light.data.hidden ? '#ff0000' : '#ffffff');
+        this.dragHandle.userData.sprite.material.map = this.light.data.hidden ? this._parent.textures.lightOff : this._parent.textures.lightOn;
+        this.dragHandle.userData.sprite.material.color.set(this.light.data.hidden ? '#ff0000' : '#ffffff');
+        this.dragHandle.userData.sphere.material.color.set(this.color || "#ffffff")
     }
 
     updatePositionFrom3D(e){
