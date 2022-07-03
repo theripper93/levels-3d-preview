@@ -21,6 +21,7 @@ export class GameCamera{
             MINGROUND: 1,
         }
         this.controls.addEventListener('change', this.onChange.bind(this));
+        this.onChangeFreeCamera = debounce(this.onChangeFreeCamera.bind(this), 100);
     }
 
     getY(){
@@ -121,13 +122,24 @@ export class GameCamera{
 
     onChange(){
         if(!this.enabled) {
-            this.controls.target = this.camera.position.clone().add(this.camera.getWorldDirection(new THREE.Vector3()).multiplyScalar(3))
+            this.onChangeFreeCamera();
         }else{
             $("#clip-navigation-lock").toggleClass("clip-navigation-enabled", this.lock);
             this.setClipping();
             this.setHeight();
             this.keepInBounds();
         }
+    }
+
+    onChangeFreeCamera(){
+        const target = this.camera.position.clone().add(this.camera.getWorldDirection(new THREE.Vector3()).multiplyScalar(3))
+        const collision = this._parent.interactionManager.computeSightCollisionFrom3DPositions(this.camera.position, target, "collision");
+        if(collision){
+            this.controls.target = collision;
+        }else{
+            this.controls.target = target;
+        }
+
     }
 
     keepInBounds(){
