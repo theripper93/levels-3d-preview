@@ -527,30 +527,33 @@ export class Tile3D {
         const filePath = this.gtflPath;
         const extension = filePath.split(".").pop().toLowerCase();
         const model = await game.Levels3DPreview.helpers.loadModel(this.gtflPath);
-        if(model) game.Levels3DPreview.helpers.groundModel(model.model, this.autoGround ,this.autoCenter)
-        let hasTags = false;
-        model.model.traverse((child) => {
-            if(child?.userData?.sight !== undefined || child?.userData?.collision !== undefined || child?.userData?.isDoor !== undefined){
-                hasTags = true;
-            }
-        })
-        this.hasTags = hasTags;
-        if(this.hasTags){
+        if(model) {
+            game.Levels3DPreview.helpers.groundModel(model.model, this.autoGround ,this.autoCenter)
+            let hasTags = false;
             model.model.traverse((child) => {
-                if(child?.userData?.sight === undefined){
-                    child.userData.sight = this.sight;
+                if(child?.userData?.sight !== undefined || child?.userData?.collision !== undefined || child?.userData?.isDoor !== undefined){
+                    hasTags = true;
                 }
-                if(child?.userData?.collision === undefined){
-                    child.userData.collision = this.collision;
-                }
-            }) 
+            })
+            this.hasTags = hasTags;
+            if(this.hasTags){
+                model.model.traverse((child) => {
+                    if(child?.userData?.sight === undefined){
+                        child.userData.sight = this.sight;
+                    }
+                    if(child?.userData?.collision === undefined){
+                        child.userData.collision = this.collision;
+                    }
+                }) 
+            }
+            return model;
         }
-        if(model) return model;
         //make 1x1 cube
         const errText = game.i18n.localize("levels3dpreview.errors.filenotsupported") + "(" + extension +"): " + filePath + " Tile: " + this.tile.id
         console.error(errText);
         ui.notifications.error(errText);
         const obj = new THREE.Mesh(new THREE.BoxGeometry(1,1,1), new THREE.MeshStandardMaterial({color: 0xff0000}))
+        obj.geometry.computeBoundingBox();
         return {scene: obj, model: obj, object: obj};
     }
 
@@ -1242,7 +1245,7 @@ const tileShaders = {
                 displaceOffset.y = 0.0;
             }
         }
-        vec3 transformed = vec3( position.x + displaceOffset.x, position.y + displaceOffset.y, position.z + displaceOffset.z );`
+        transformed = vec3( position.x + displaceOffset.x, position.y + displaceOffset.y, position.z + displaceOffset.z );`
 
         const setUniforms = (shader) => {
             shader.uniforms.time = { value: 0.0 };
@@ -1300,7 +1303,7 @@ const tileShaders = {
                 yDisplace = 0.0;
             }
         }
-        vec3 transformed = vec3( position.x, position.y + yDisplace, position.z);`
+        transformed = vec3( position.x, position.y + yDisplace, position.z);`
 
         const setUniforms = (shader) => {
             shader.uniforms.time = { value: 0.0 };

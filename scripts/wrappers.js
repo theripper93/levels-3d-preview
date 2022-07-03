@@ -54,7 +54,7 @@ Hooks.once('ready', async function() {
         const polygonPoints = [];
         const aMax = this.config.aMax
         const aMin = this.config.aMin
-        const radius = this.config?.source?.fov?.radius ?? Math.max(this.config.radius, this.config.radius2);
+        const radius = Math.max(this.config.radius, this.config.radius2);
         const nPoints = Math.ceil((this.config.angle*0.25)/splits) * splits;
         const origin = this.origin
         const factor = game.Levels3DPreview.factor

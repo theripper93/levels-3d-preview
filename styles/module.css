@@ -106,7 +106,7 @@
     border: 1px solid var(--color-border-highlight);
 }
 
-.levels-3d-preview-hud{
+#hud.levels-3d-preview-hud{
     top: 0 !important;
     left: 0 !important;
     width: 100% !important;
