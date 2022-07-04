@@ -119,6 +119,7 @@ Hooks.once('ready', async function() {
             this.config.source._polygon3DCache.complete = false
         }
         this.points = this.config.source._polygon3DCache.points;
+        console.log(`compute polygon ${Date.now() - perfStart}ms`);
     }
 
 

@@ -1,4 +1,4 @@
-import { BufferAttribute, Vector3, Vector2, Plane, Line3, Triangle, Sphere, Box3, Matrix4, BackSide, DoubleSide, FrontSide, Object3D, BufferGeometry, Group, LineBasicMaterial, MeshBasicMaterial, Ray, Mesh, RGBAFormat, RGFormat, RedFormat, RGBAIntegerFormat, RGIntegerFormat, RedIntegerFormat, DataTexture, NearestFilter, IntType, UnsignedIntType, FloatType, UnsignedByteType, UnsignedShortType, ByteType, ShortType } from './three.module.js';
+import { BufferAttribute, Vector3, Vector2, Plane, Line3, Triangle, Sphere, Box3, Matrix4, BackSide, DoubleSide, FrontSide, Object3D, BufferGeometry, Group, LineBasicMaterial, MeshBasicMaterial, Ray, Mesh, RGBAFormat, RGBFormat, RGFormat, RedFormat, RGBAIntegerFormat, RGBIntegerFormat, RGIntegerFormat, RedIntegerFormat, DataTexture, NearestFilter, IntType, UnsignedIntType, FloatType, UnsignedByteType, UnsignedShortType, ByteType, ShortType } from './three.module.js';
 
 // Split strategy constants
 const CENTER = 0;
@@ -96,33 +96,6 @@ function unionBounds( a, b, target ) {
 		aVal = a[ d3 ];
 		bVal = b[ d3 ];
 		target[ d3 ] = aVal > bVal ? aVal : bVal;
-
-	}
-
-}
-
-// expands the given bounds by the provided triangle bounds
-function expandByTriangleBounds( startIndex, triangleBounds, bounds ) {
-
-	for ( let d = 0; d < 3; d ++ ) {
-
-		const tCenter = triangleBounds[ startIndex + 2 * d ];
-		const tHalf = triangleBounds[ startIndex + 2 * d + 1 ];
-
-		const tMin = tCenter - tHalf;
-		const tMax = tCenter + tHalf;
-
-		if ( tMin < bounds[ d ] ) {
-
-			bounds[ d ] = tMin;
-
-		}
-
-		if ( tMax > bounds[ d + 3 ] ) {
-
-			bounds[ d + 3 ] = tMax;
-
-		}
 
 	}
 
@@ -382,7 +355,6 @@ function partition( index, triangleBounds, offset, count, split ) {
 }
 
 const BIN_COUNT = 32;
-const binsSort = ( a, b ) => a.candidate - b.candidate;
 const sahBins = new Array( BIN_COUNT ).fill().map( () => {
 
 	return {
@@ -390,7 +362,6 @@ const sahBins = new Array( BIN_COUNT ).fill().map( () => {
 		count: 0,
 		bounds: new Float32Array( 6 ),
 		rightCacheBounds: new Float32Array( 6 ),
-		leftCacheBounds: new Float32Array( 6 ),
 		candidate: 0,
 
 	};
@@ -437,224 +408,126 @@ function getOptimalSplit( nodeBoundingData, centroidBoundingData, triangleBounds
 			const axisLength = axisRight - axisLeft;
 			const binWidth = axisLength / BIN_COUNT;
 
-			// If we have fewer triangles than we're planning to split then just check all
-			// the triangle positions because it will be faster.
-			if ( count < BIN_COUNT / 4 ) {
+			// reset the bins
+			for ( let i = 0; i < BIN_COUNT; i ++ ) {
 
-				// initialize the bin candidates
-				const truncatedBins = [ ...sahBins ];
-				truncatedBins.length = count;
+				const bin = sahBins[ i ];
+				bin.count = 0;
+				bin.candidate = axisLeft + binWidth + i * binWidth;
 
-				// set the candidates
-				let b = 0;
-				for ( let c = cStart; c < cEnd; c += 6, b ++ ) {
+				const bounds = bin.bounds;
+				for ( let d = 0; d < 3; d ++ ) {
 
-					const bin = truncatedBins[ b ];
-					bin.candidate = triangleBounds[ c + 2 * a ];
-					bin.count = 0;
-
-					const {
-						bounds,
-						leftCacheBounds,
-						rightCacheBounds,
-					} = bin;
-					for ( let d = 0; d < 3; d ++ ) {
-
-						rightCacheBounds[ d ] = Infinity;
-						rightCacheBounds[ d + 3 ] = - Infinity;
-
-						leftCacheBounds[ d ] = Infinity;
-						leftCacheBounds[ d + 3 ] = - Infinity;
-
-						bounds[ d ] = Infinity;
-						bounds[ d + 3 ] = - Infinity;
-
-					}
-
-					expandByTriangleBounds( c, triangleBounds, bounds );
+					bounds[ d ] = Infinity;
+					bounds[ d + 3 ] = - Infinity;
 
 				}
 
-				truncatedBins.sort( binsSort );
+			}
 
-				// remove redundant splits
-				let splitCount = count;
-				for ( let bi = 0; bi < splitCount; bi ++ ) {
+			// iterate over all center positions
+			for ( let c = cStart; c < cEnd; c += 6 ) {
 
-					const bin = truncatedBins[ bi ];
-					while ( bi + 1 < splitCount && truncatedBins[ bi + 1 ].candidate === bin.candidate ) {
+				const triCenter = triangleBounds[ c + 2 * a ];
+				const relativeCenter = triCenter - axisLeft;
 
-						truncatedBins.splice( bi + 1, 1 );
-						splitCount --;
+				// in the partition function if the centroid lies on the split plane then it is
+				// considered to be on the right side of the split
+				let binIndex = ~ ~ ( relativeCenter / binWidth );
+				if ( binIndex >= BIN_COUNT ) binIndex = BIN_COUNT - 1;
+
+				const bin = sahBins[ binIndex ];
+				bin.count ++;
+
+				const bounds = bin.bounds;
+				for ( let d = 0; d < 3; d ++ ) {
+
+					const tCenter = triangleBounds[ c + 2 * d ];
+					const tHalf = triangleBounds[ c + 2 * d + 1 ];
+
+					const tMin = tCenter - tHalf;
+					const tMax = tCenter + tHalf;
+
+					if ( tMin < bounds[ d ] ) {
+
+						bounds[ d ] = tMin;
 
 					}
 
-				}
+					if ( tMax > bounds[ d + 3 ] ) {
 
-				// find the appropriate bin for each triangle and expand the bounds.
-				for ( let c = cStart; c < cEnd; c += 6 ) {
-
-					const center = triangleBounds[ c + 2 * a ];
-					for ( let bi = 0; bi < splitCount; bi ++ ) {
-
-						const bin = truncatedBins[ bi ];
-						if ( center >= bin.candidate ) {
-
-							expandByTriangleBounds( c, triangleBounds, bin.rightCacheBounds );
-
-						} else {
-
-							expandByTriangleBounds( c, triangleBounds, bin.leftCacheBounds );
-							bin.count ++;
-
-						}
+						bounds[ d + 3 ] = tMax;
 
 					}
 
 				}
 
-				// expand all the bounds
-				for ( let bi = 0; bi < splitCount; bi ++ ) {
+			}
 
-					const bin = truncatedBins[ bi ];
-					const leftCount = bin.count;
-					const rightCount = count - bin.count;
+			// cache the unioned bounds from right to left so we don't have to regenerate them each time
+			const lastBin = sahBins[ BIN_COUNT - 1 ];
+			copyBounds( lastBin.bounds, lastBin.rightCacheBounds );
+			for ( let i = BIN_COUNT - 2; i >= 0; i -- ) {
 
-					// check the cost of this split
-					const leftBounds = bin.leftCacheBounds;
-					const rightBounds = bin.rightCacheBounds;
+				const bin = sahBins[ i ];
+				const nextBin = sahBins[ i + 1 ];
+				unionBounds( bin.bounds, nextBin.rightCacheBounds, bin.rightCacheBounds );
 
-					let leftProb = 0;
-					if ( leftCount !== 0 ) {
+			}
 
-						leftProb = computeSurfaceArea( leftBounds ) / rootSurfaceArea;
+			let leftCount = 0;
+			for ( let i = 0; i < BIN_COUNT - 1; i ++ ) {
 
-					}
+				const bin = sahBins[ i ];
+				const binCount = bin.count;
+				const bounds = bin.bounds;
 
-					let rightProb = 0;
-					if ( rightCount !== 0 ) {
+				const nextBin = sahBins[ i + 1 ];
+				const rightBounds = nextBin.rightCacheBounds;
 
-						rightProb = computeSurfaceArea( rightBounds ) / rootSurfaceArea;
+				// dont do anything with the bounds if the new bounds have no triangles
+				if ( binCount !== 0 ) {
 
-					}
+					if ( leftCount === 0 ) {
 
-					const cost = TRAVERSAL_COST + TRIANGLE_INTERSECT_COST * (
-						leftProb * leftCount + rightProb * rightCount
-					);
+						copyBounds( bounds, leftBounds );
 
-					if ( cost < bestCost ) {
+					} else {
 
-						axis = a;
-						bestCost = cost;
-						pos = bin.candidate;
-
-					}
-
-				}
-
-			} else {
-
-				// reset the bins
-				for ( let i = 0; i < BIN_COUNT; i ++ ) {
-
-					const bin = sahBins[ i ];
-					bin.count = 0;
-					bin.candidate = axisLeft + binWidth + i * binWidth;
-
-					const bounds = bin.bounds;
-					for ( let d = 0; d < 3; d ++ ) {
-
-						bounds[ d ] = Infinity;
-						bounds[ d + 3 ] = - Infinity;
+						unionBounds( bounds, leftBounds, leftBounds );
 
 					}
 
 				}
 
-				// iterate over all center positions
-				for ( let c = cStart; c < cEnd; c += 6 ) {
+				leftCount += binCount;
 
-					const triCenter = triangleBounds[ c + 2 * a ];
-					const relativeCenter = triCenter - axisLeft;
+				// check the cost of this split
+				let leftProb = 0;
+				let rightProb = 0;
 
-					// in the partition function if the centroid lies on the split plane then it is
-					// considered to be on the right side of the split
-					let binIndex = ~ ~ ( relativeCenter / binWidth );
-					if ( binIndex >= BIN_COUNT ) binIndex = BIN_COUNT - 1;
+				if ( leftCount !== 0 ) {
 
-					const bin = sahBins[ binIndex ];
-					bin.count ++;
-
-					expandByTriangleBounds( c, triangleBounds, bin.bounds );
+					leftProb = computeSurfaceArea( leftBounds ) / rootSurfaceArea;
 
 				}
 
-				// cache the unioned bounds from right to left so we don't have to regenerate them each time
-				const lastBin = sahBins[ BIN_COUNT - 1 ];
-				copyBounds( lastBin.bounds, lastBin.rightCacheBounds );
-				for ( let i = BIN_COUNT - 2; i >= 0; i -- ) {
+				const rightCount = count - leftCount;
+				if ( rightCount !== 0 ) {
 
-					const bin = sahBins[ i ];
-					const nextBin = sahBins[ i + 1 ];
-					unionBounds( bin.bounds, nextBin.rightCacheBounds, bin.rightCacheBounds );
+					rightProb = computeSurfaceArea( rightBounds ) / rootSurfaceArea;
 
 				}
 
-				let leftCount = 0;
-				for ( let i = 0; i < BIN_COUNT - 1; i ++ ) {
+				const cost = TRAVERSAL_COST + TRIANGLE_INTERSECT_COST * (
+					leftProb * leftCount + rightProb * rightCount
+				);
 
-					const bin = sahBins[ i ];
-					const binCount = bin.count;
-					const bounds = bin.bounds;
+				if ( cost < bestCost ) {
 
-					const nextBin = sahBins[ i + 1 ];
-					const rightBounds = nextBin.rightCacheBounds;
-
-					// dont do anything with the bounds if the new bounds have no triangles
-					if ( binCount !== 0 ) {
-
-						if ( leftCount === 0 ) {
-
-							copyBounds( bounds, leftBounds );
-
-						} else {
-
-							unionBounds( bounds, leftBounds, leftBounds );
-
-						}
-
-					}
-
-					leftCount += binCount;
-
-					// check the cost of this split
-					let leftProb = 0;
-					let rightProb = 0;
-
-					if ( leftCount !== 0 ) {
-
-						leftProb = computeSurfaceArea( leftBounds ) / rootSurfaceArea;
-
-					}
-
-					const rightCount = count - leftCount;
-					if ( rightCount !== 0 ) {
-
-						rightProb = computeSurfaceArea( rightBounds ) / rootSurfaceArea;
-
-					}
-
-					const cost = TRAVERSAL_COST + TRIANGLE_INTERSECT_COST * (
-						leftProb * leftCount + rightProb * rightCount
-					);
-
-					if ( cost < bestCost ) {
-
-						axis = a;
-						bestCost = cost;
-						pos = bin.candidate;
-
-					}
+					axis = a;
+					bestCost = cost;
+					pos = bin.candidate;
 
 				}
 
@@ -750,16 +623,6 @@ function computeTriangleBounds( geo, fullBounds ) {
 
 function buildTree( geo, options ) {
 
-	function triggerProgress( trianglesProcessed ) {
-
-		if ( onProgress ) {
-
-			onProgress( trianglesProcessed / totalTriangles );
-
-		}
-
-	}
-
 	// either recursively splits the given node, creating left and right subtrees for it, or makes it a leaf node,
 	// recording the offset and count of its triangles and writing them into the reordered geometry index.
 	function splitNode( node, offset, count, centroidBoundingData = null, depth = 0 ) {
@@ -779,7 +642,6 @@ function buildTree( geo, options ) {
 		// early out if we've met our capacity
 		if ( count <= maxLeafTris || depth >= maxDepth ) {
 
-			triggerProgress( offset );
 			node.offset = offset;
 			node.count = count;
 			return node;
@@ -790,7 +652,6 @@ function buildTree( geo, options ) {
 		const split = getOptimalSplit( node.boundingData, centroidBoundingData, triangleBounds, offset, count, strategy );
 		if ( split.axis === - 1 ) {
 
-			triggerProgress( offset );
 			node.offset = offset;
 			node.count = count;
 			return node;
@@ -802,7 +663,6 @@ function buildTree( geo, options ) {
 		// create the two new child nodes
 		if ( splitOffset === offset || splitOffset === offset + count ) {
 
-			triggerProgress( offset );
 			node.offset = offset;
 			node.count = count;
 
@@ -849,8 +709,6 @@ function buildTree( geo, options ) {
 	const verbose = options.verbose;
 	const maxLeafTris = options.maxLeafTris;
 	const strategy = options.strategy;
-	const onProgress = options.onProgress;
-	const totalTriangles = geo.index.count / 3;
 	let reachedMaxDepth = false;
 
 	const roots = [];
@@ -3128,12 +2986,11 @@ class MeshBVH {
 			verbose: true,
 			useSharedArrayBuffer: false,
 			setBoundingBox: true,
-			onProgress: null,
 
 			// undocumented options
 
 			// Whether to skip generating the tree. Used for deserialization.
-			[ SKIP_GENERATION ]: false,
+			[ SKIP_GENERATION ]: false
 
 		}, options );
 
@@ -3579,24 +3436,20 @@ class MeshBVH {
 			intersectsTriangles,
 		} = callbacks;
 
-		const indexAttr = this.geometry.index;
-		const positionAttr = this.geometry.attributes.position;
-
-		const otherIndexAttr = otherBvh.geometry.index;
-		const otherPositionAttr = otherBvh.geometry.attributes.position;
+		const geometry = otherBvh.geometry;
+		const indexAttr = geometry.index;
+		const positionAttr = geometry.attributes.position;
 
 		tempMatrix.copy( matrixToLocal ).invert();
-
 		const triangle = trianglePool.getPrimitive();
 		const triangle2 = trianglePool.getPrimitive();
-
 		if ( intersectsTriangles ) {
 
 			function iterateOverDoubleTriangles( offset1, count1, offset2, count2, depth1, index1, depth2, index2 ) {
 
 				for ( let i2 = offset2, l2 = offset2 + count2; i2 < l2; i2 ++ ) {
 
-					setTriangle( triangle2, i2 * 3, otherIndexAttr, otherPositionAttr );
+					setTriangle( triangle2, i2 * 3, indexAttr, positionAttr );
 					triangle2.a.applyMatrix4( matrixToLocal );
 					triangle2.b.applyMatrix4( matrixToLocal );
 					triangle2.c.applyMatrix4( matrixToLocal );
@@ -4834,7 +4687,7 @@ function countToStringFormat( count ) {
 
 		case 1: return 'R';
 		case 2: return 'RG';
-		case 3: return 'RGBA';
+		case 3: return 'RGB';
 		case 4: return 'RGBA';
 
 	}
@@ -4849,7 +4702,7 @@ function countToFormat( count ) {
 
 		case 1: return RedFormat;
 		case 2: return RGFormat;
-		case 3: return RGBAFormat;
+		case 3: return RGBFormat;
 		case 4: return RGBAFormat;
 
 	}
@@ -4862,7 +4715,7 @@ function countToIntFormat( count ) {
 
 		case 1: return RedIntegerFormat;
 		case 2: return RGIntegerFormat;
-		case 3: return RGBAIntegerFormat;
+		case 3: return RGBIntegerFormat;
 		case 4: return RGBAIntegerFormat;
 
 	}
@@ -4906,7 +4759,6 @@ class VertexAttributeTexture extends DataTexture {
 		const originalBufferCons = attr.array.constructor;
 		const byteCount = originalBufferCons.BYTES_PER_ELEMENT;
 		let targetType = this._forcedType;
-		let finalStride = itemSize;
 
 		// derive the type of texture this should be in the shader
 		if ( targetType === null ) {
@@ -5018,21 +4870,13 @@ class VertexAttributeTexture extends DataTexture {
 
 		}
 
-		// there will be a mismatch between format length and final length because
-		// RGBFormat and RGBIntegerFormat was removed
-		if ( finalStride === 3 && ( format === RGBAFormat || format === RGBAIntegerFormat ) ) {
-
-			finalStride = 4;
-
-		}
-
 		// copy the data over to the new texture array
 		const dimension = Math.ceil( Math.sqrt( count ) );
-		const length = finalStride * dimension * dimension;
+		const length = itemSize * dimension * dimension;
 		const dataArray = new targetBufferCons( length );
 		for ( let i = 0; i < count; i ++ ) {
 
-			const ii = finalStride * i;
+			const ii = itemSize * i;
 			dataArray[ ii ] = attr.getX( i ) / normalizeValue;
 
 			if ( itemSize >= 2 ) {
@@ -5044,12 +4888,6 @@ class VertexAttributeTexture extends DataTexture {
 			if ( itemSize >= 3 ) {
 
 				dataArray[ ii + 2 ] = attr.getZ( i ) / normalizeValue;
-
-				if ( finalStride === 4 ) {
-
-					dataArray[ ii + 3 ] = 1.0;
-
-				}
 
 			}
 
@@ -5129,7 +4967,7 @@ function bvhToTextures( bvh, boundsTexture, contentsTexture ) {
 	// the width so we can expand the row by two and still have a square texture
 	const nodeCount = root.byteLength / BYTES_PER_NODE;
 	const boundsDimension = 2 * Math.ceil( Math.sqrt( nodeCount / 2 ) );
-	const boundsArray = new Float32Array( 4 * boundsDimension * boundsDimension );
+	const boundsArray = new Float32Array( 3 * boundsDimension * boundsDimension );
 
 	const contentsDimension = Math.ceil( Math.sqrt( nodeCount ) );
 	const contentsArray = new Uint32Array( 2 * contentsDimension * contentsDimension );
@@ -5139,10 +4977,9 @@ function bvhToTextures( bvh, boundsTexture, contentsTexture ) {
 		const nodeIndex32 = i * BYTES_PER_NODE / 4;
 		const nodeIndex16 = nodeIndex32 * 2;
 		const boundsIndex = BOUNDING_DATA_INDEX( nodeIndex32 );
-		for ( let b = 0; b < 3; b ++ ) {
+		for ( let b = 0; b < 6; b ++ ) {
 
-			boundsArray[ 8 * i + 0 + b ] = float32Array[ boundsIndex + 0 + b ];
-			boundsArray[ 8 * i + 4 + b ] = float32Array[ boundsIndex + 3 + b ];
+			boundsArray[ 6 * i + b ] = float32Array[ boundsIndex + b ];
 
 		}
 
@@ -5170,9 +5007,9 @@ function bvhToTextures( bvh, boundsTexture, contentsTexture ) {
 	boundsTexture.image.data = boundsArray;
 	boundsTexture.image.width = boundsDimension;
 	boundsTexture.image.height = boundsDimension;
-	boundsTexture.format = RGBAFormat;
+	boundsTexture.format = RGBFormat;
 	boundsTexture.type = FloatType;
-	boundsTexture.internalFormat = 'RGBA32F';
+	boundsTexture.internalFormat = 'RGB32F';
 	boundsTexture.minFilter = NearestFilter;
 	boundsTexture.magFilter = NearestFilter;
 	boundsTexture.generateMipmaps = false;
@@ -5232,10 +5069,6 @@ class MeshBVHUniformStruct {
 const shaderStructs = /* glsl */`
 #ifndef TRI_INTERSECT_EPSILON
 #define TRI_INTERSECT_EPSILON 1e-5
-#endif
-
-#ifndef INFINITY
-#define INFINITY 1e20
 #endif
 
 struct BVH {
@@ -5321,7 +5154,10 @@ void ndcToCameraRay(
 
 }
 
-float intersectsBounds( vec3 rayOrigin, vec3 rayDirection, vec3 boundsMin, vec3 boundsMax ) {
+bool intersectsBounds(
+	vec3 rayOrigin, vec3 rayDirection, vec3 boundsMin, vec3 boundsMax,
+	out float dist
+) {
 
 	// https://www.reddit.com/r/opengl/comments/8ntzz5/fast_glsl_ray_box_intersection/
 	// https://tavianator.com/2011/ray_box.html
@@ -5344,9 +5180,9 @@ float intersectsBounds( vec3 rayOrigin, vec3 rayDirection, vec3 boundsMin, vec3 
 	float t1 = min( t.x, t.y );
 
 	// set distance to 0.0 if the ray starts inside the box
-	float dist = max( t0, 0.0 );
+	dist = max( t0, 0.0 );
 
-	return t1 >= dist ? dist : INFINITY;
+	return t1 >= max( t0, 0.0 );
 
 }
 
@@ -5427,14 +5263,6 @@ bool intersectTriangles(
 
 }
 
-float intersectsBVHNodeBounds( vec3 rayOrigin, vec3 rayDirection, BVH bvh, uint currNodeIndex ) {
-
-	vec3 boundsMin = texelFetch1D( bvh.bvhBounds, currNodeIndex * 2u + 0u ).xyz;
-	vec3 boundsMax = texelFetch1D( bvh.bvhBounds, currNodeIndex * 2u + 1u ).xyz;
-	return intersectsBounds( rayOrigin, rayDirection, boundsMin, boundsMax );
-
-}
-
 bool bvhIntersectFirstHit(
 	BVH bvh, vec3 rayOrigin, vec3 rayDirection,
 
@@ -5457,8 +5285,10 @@ bool bvhIntersectFirstHit(
 		ptr --;
 
 		// check if we intersect the current bounds
-		float boundsHitDistance = intersectsBVHNodeBounds( rayOrigin, rayDirection, bvh, currNodeIndex );
-		if ( boundsHitDistance == INFINITY || boundsHitDistance > triangleDistance ) {
+		float boundsHitDistance;
+		vec3 boundsMin = texelFetch1D( bvh.bvhBounds, currNodeIndex * 2u + 0u ).xyz;
+		vec3 boundsMax = texelFetch1D( bvh.bvhBounds, currNodeIndex * 2u + 1u ).xyz;
+		if ( ! intersectsBounds( rayOrigin, rayDirection, boundsMin, boundsMax, boundsHitDistance ) || boundsHitDistance > triangleDistance ) {
 
 			continue;
 
@@ -5507,4 +5337,3 @@ bool bvhIntersectFirstHit(
 `;
 
 export { AVERAGE, CENTER, CONTAINED, FloatVertexAttributeTexture, INTERSECTED, IntVertexAttributeTexture, MeshBVH, MeshBVHUniformStruct, MeshBVHVisualizer, NOT_INTERSECTED, SAH, UIntVertexAttributeTexture, VertexAttributeTexture, acceleratedRaycast, computeBoundsTree, disposeBoundsTree, estimateMemoryInBytes, getBVHExtremes, getJSONStructure, getTriangleHitPointInfo, shaderIntersectFunction, shaderStructs, validateBounds };
-//# sourceMappingURL=index.module.js.map
