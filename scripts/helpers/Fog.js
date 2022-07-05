@@ -7,6 +7,7 @@ export class Fog{
         this._parent = parent;
         this.needsUpdate = true;
         this.debouncedUpdate = !this._sharedContext ? debounce(this.updateTexture, 300) : this.updateTexture;
+        this.initPixiRT();
         this.initTexture();
         this.init();
     }
@@ -32,6 +33,15 @@ export class Fog{
           const texture = new THREE.Texture();
           forceTextureInitialization(texture);
           this.webglFogTexture = texture;
+    }
+
+    initPixiRT(){
+        const maxDimension = Math.max(canvas.dimensions.width, canvas.dimensions.height);
+        const maxResolution = this._parent.renderer.capabilities.maxTextureSize
+        const fogTexResolution = Math.min(maxResolution/maxDimension, 1)
+        this.pixiRenderTexture = PIXI.RenderTexture.create({width: canvas.dimensions.width, height: canvas.dimensions.height, resolution: this._sharedContext ? fogTexResolution : 0.1});
+        this.texWidth = canvas.dimensions.width;
+        this.texHeight = canvas.dimensions.height;
     }
 
     async init(){
@@ -61,26 +71,15 @@ export class Fog{
 
     generateTexture(){
         if(this._sharedContext){
-            this.pixiRenderTexture?.destroy(true)
-            const maxDimension = Math.max(canvas.dimensions.width, canvas.dimensions.height);
-            const maxResolution = this._parent.renderer.capabilities.maxTextureSize
-            const fogTexResolution = Math.min(maxResolution/maxDimension, 1)
-            this.pixiRenderTexture = PIXI.RenderTexture.create({width: canvas.dimensions.width, height: canvas.dimensions.height, resolution: fogTexResolution});
-            this.texWidth = canvas.dimensions.width;
-            this.texHeight = canvas.dimensions.height;
-            if(canvas.scene.data.fogExploration) canvas.app.renderer.render(canvas.sight.revealed, {renderTexture: this.pixiRenderTexture, clear: false});
-            canvas.app.renderer.render(canvas.sight.vision, {renderTexture: this.pixiRenderTexture, clear: false});
+            if(canvas.scene.data.fogExploration) canvas.app.renderer.render(canvas.sight.revealed, {renderTexture: this.pixiRenderTexture, clear: true});
+            canvas.app.renderer.render(canvas.sight.vision, {renderTexture: this.pixiRenderTexture, clear: !canvas.scene.data.fogExploration});
             const texProps = this._parent.renderer.properties.get(this.webglFogTexture);
             texProps.__webglTexture = Object.values(this.pixiRenderTexture.baseTexture._glTextures)[0]?.texture
             return this.webglFogTexture;
         }else{
-            let texture = PIXI.RenderTexture.create({width: canvas.dimensions.width, height: canvas.dimensions.height, resolution: 0.1});
-            this.texWidth = canvas.dimensions.width;
-            this.texHeight = canvas.dimensions.height;
-            if(canvas.scene.data.fogExploration) canvas.app.renderer.render(canvas.sight.revealed, {renderTexture: texture, clear: false});
-            canvas.app.renderer.render(canvas.sight.vision, {renderTexture: texture, clear: false});
-            const base64 = canvas.app.renderer.extract.base64(texture,"image/jpeg");
-            texture.destroy(true);
+            if(canvas.scene.data.fogExploration) canvas.app.renderer.render(canvas.sight.revealed, {renderTexture: this.pixiRenderTexture, clear: true});
+            canvas.app.renderer.render(canvas.sight.vision, {renderTexture: this.pixiRenderTexture, clear: !canvas.scene.data.fogExploration});
+            const base64 = canvas.app.renderer.extract.base64(this.pixiRenderTexture,"image/jpeg");
             return base64;
         }
     }
@@ -88,6 +87,7 @@ export class Fog{
     dispose(){
         this.fogTexture?.dispose();
         this.webglFogTexture?.dispose();
+        this.pixiRenderTexture?.destroy(true);
         Object.values(this._parent.materialProgramCache).forEach(m => {
             m.uniforms.fogTexture = {value: null};
             m.uniforms.sceneDimensions = {value: new THREE.Vector2(0,0)};

@@ -999,6 +999,7 @@ class Levels3DPreview {
           token.updateVisibility();
           token.updateProne(delta);
           token.rotateEffects(delta);
+          token.light?.update(time);
           if (token.mixer) {
             token.mixer.update(delta);
           }

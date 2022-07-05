@@ -75,7 +75,7 @@ Hooks.once('ready', async function() {
         }
 
         const z = origin.b ?? 0;
-        const perfStart = Date.now();
+        //const perfStart = Date.now();
         for (let i = splitStart, n = this.config.hasLimitedAngle ? splitEnd + 1 : splitEnd; i < n; i++){
             const a = aMin + (aMax - aMin) * (i / nPoints);
             const x = origin.x + radius * Math.cos(a)
@@ -119,7 +119,7 @@ Hooks.once('ready', async function() {
             this.config.source._polygon3DCache.complete = false
         }
         this.points = this.config.source._polygon3DCache.points;
-        console.log(`compute polygon ${Date.now() - perfStart}ms`);
+        //console.log(`compute polygon ${Date.now() - perfStart}ms`);
     }
 
 
