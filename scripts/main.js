@@ -407,6 +407,7 @@ class Levels3DPreview {
   build3Dscene() {
     $(".levels-3d-preview-loading-screen").fadeIn(300);
     this._ready = false;
+    this._isFirstFrame = true;
     this._finalizingLoad = false;
     this._envReady = false;
     this._lightsOk = !canvas.scene.getFlag("levels-3d-preview", "bakeLights");
@@ -434,7 +435,11 @@ class Levels3DPreview {
     }
     if (canvas.scene.data.tokenVision && canvas.scene.getFlag("levels-3d-preview", "enableFogOfWar"))
       this.fogExploration = new Fog(this);
-    this.composer.render();
+      try{
+        //this.composer.render();
+      }catch{
+
+      }
     this._active = true;
     this.particleSystem?.destroy();
     if (this.particleSystem) {
@@ -989,6 +994,13 @@ class Levels3DPreview {
         canvas.app.renderer.reset()
         this.renderer.resetState();
       }
+      if(this.fogExploration){
+        const shaderCount = Object.values(this.materialProgramCache).length;
+        if(shaderCount != this.fogExploration._shaderCount){
+          this.fogExploration._shaderCount = shaderCount;
+          this.fogExploration.updateShaders();
+        }
+      }
       this.interactionManager._canMouseMove = true;
       this.interactionManager.dragObject();
       this.cursors.update();
@@ -1308,12 +1320,12 @@ class Levels3DPreview {
     }
     this.ClipNavigation = new ClipNavigation().render(true);
     this.weather = new WeatherSystem(this);
-    canvas.sight.refresh();
 
     canvas.perception.schedule({
       lighting: { initialize: true /* calls updateSource on each light source */, refresh: true },
       sight: { initialize: true /* calls updateSource on each token */, refresh: true /* you probably to refesh sight as well */, forceUpdateFog: true /* not sure if you need this */ },
     });
+
     this.setFilters(true)
     setTimeout(() => {
       this.helpers.showSceneReport();

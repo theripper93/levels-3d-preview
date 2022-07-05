@@ -5,11 +5,11 @@ export class Fog{
 
     constructor(parent){
         this._parent = parent;
-        this.needsUpdate = true;
         this.debouncedUpdate = !this._sharedContext ? debounce(this.updateTexture, 300) : this.updateTexture;
         this.initPixiRT();
         this.initTexture();
         this.init();
+        this.needsUpdate = true;
     }
 
     get _sharedContext(){
@@ -61,12 +61,15 @@ export class Fog{
         this.fogTexture = this._sharedContext || isBlank ? base64 : await new THREE.TextureLoader().loadAsync( base64)
         this.fogTexture.minFilter = THREE.NearestFilter;
         this.fogTexture.flipY = false;
+        this.updateShaders();
+    }
+
+    updateShaders(){
         Object.values(this._parent.materialProgramCache).forEach(m => {
             m.uniforms.fogTexture = {value: this.fogTexture};
             m.uniforms.sceneDimensions = {value: this.sceneDimensions};
             m.uniforms.sceneOrigin = {value: this.sceneOrigin};
         })
-        //this.shader.uniforms.fogTexture.value = this.fogTexture;
     }
 
     generateTexture(){
