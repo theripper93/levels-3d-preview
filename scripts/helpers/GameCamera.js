@@ -21,7 +21,7 @@ export class GameCamera{
             MINGROUND: 1,
         }
         this.controls.addEventListener('change', this.onChange.bind(this));
-        this.onChangeFreeCamera = debounce(this.onChangeFreeCamera.bind(this), 100);
+        this.onChangeFreeCamera = debounce(this.onChangeFreeCamera.bind(this), 100)
     }
 
     getY(){

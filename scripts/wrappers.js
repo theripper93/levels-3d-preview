@@ -40,7 +40,7 @@ Hooks.once('ready', async function() {
     function _computePolygon(wrapped, ...args){
         
         wrapped(...args);
-        if(!game.Levels3DPreview?._active){
+        if(!game.Levels3DPreview?._ready || !game.Levels3DPreview?._active){
             const object3dSight = canvas.scene.getFlag("levels-3d-preview", "object3dSight") ?? false;
             if(object3dSight){
                 this.points = [0,0,0,0,0,0,0,0]

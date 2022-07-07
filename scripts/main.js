@@ -695,7 +695,7 @@ class Levels3DPreview {
   addLight(light) {
     this.lights.sceneLights[light.id]?.destroy();
     if (
-      canvas.scene.getFlag("levels-3d-preview", "renderSceneLights") === false
+      !(canvas.scene.getFlag("levels-3d-preview", "renderSceneLights") ?? true)
     )
       return;
     const light3d = new Light3D(light, this);
