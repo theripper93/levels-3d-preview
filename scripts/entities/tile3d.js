@@ -205,6 +205,7 @@ export class Tile3D {
         }
 
         this._parent.interactionManager?.generateSightCollisions();
+        this._parent.interactionManager?.buildCollisionGeos();
         canvas.perception.schedule({
             lighting: { initialize: true /* calls updateSource on each light source */, refresh: true },
             sight: { initialize: true /* calls updateSource on each token */, refresh: true /* you probably to refesh sight as well */, forceUpdateFog: true /* not sure if you need this */ },

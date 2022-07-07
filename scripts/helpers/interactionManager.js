@@ -780,9 +780,22 @@ export class InteractionManager {
       let collisionGeometries = collisionObjects;
       const cgIds = this._parent.controlledGroup.children.map(c => c.userData.entity3D.placeable.id);
       for(let tile of Object.values(this._parent.tiles)){
-        if(!tile.collision && draggableId) continue;
+        if(!tile.mesh.visible) continue;
         if(cgIds.includes(tile.placeable.id)) continue;
-        if(tile.mesh.visible)collisionGeometries.push(tile.mesh);
+        if(tile.hasTags){
+          tile.mesh.traverse(o => {
+            const ud = o?.userData;
+            o.userData = {}
+            const clone = o.clone(false);
+            clone.userData = ud;
+            o.userData = ud;
+            if(o?.userData?.collision) collisionGeometries.push(clone);
+          })
+        }else{
+          if(!tile.collision && draggableId) continue;
+          collisionGeometries.push(tile.mesh);
+        }
+
       }
       for(let wall of Object.values(this._parent.walls)){
         if(wall.placeable.isDoor && wall.placeable.data.ds === CONST.WALL_DOOR_STATES.OPEN && this.draggable) continue;
