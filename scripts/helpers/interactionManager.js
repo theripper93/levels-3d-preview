@@ -414,6 +414,7 @@ export class InteractionManager {
     }
 
     get hasCameraMoved(){
+      if(!this._downCameraPosition || !this._upCameraPosition) return false;
       return this._downCameraPosition.distanceTo(this._upCameraPosition) > 0.1;
     }
 

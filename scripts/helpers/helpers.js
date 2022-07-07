@@ -139,6 +139,7 @@ export class Helpers {
     }
     if(!output) {
       this.modelCache[modelPath] = null;
+      delete this._loading[filePath];
       return null
     };
     let isSkinned = false;

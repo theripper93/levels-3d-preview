@@ -59,6 +59,7 @@ export class Fog{
         const isBlank = game.user.isGM && (!canvas.tokens.controlled.length || !canvas.sight.sources.size)
         const base64 = isBlank ? this.blank : this.generateTexture();
         this.fogTexture = this._sharedContext || isBlank ? base64 : await new THREE.TextureLoader().loadAsync( base64)
+        if(!this.fogTexture) return;
         this.fogTexture.minFilter = THREE.NearestFilter;
         this.fogTexture.flipY = false;
         this.updateShaders();
