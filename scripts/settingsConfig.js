@@ -409,6 +409,15 @@ Hooks.once('init', function() {
       default: "fxaa",
     });
 
+    game.settings.register("levels-3d-preview", "webglWorkaround", {
+      name: game.i18n.localize("levels3dpreview.settings.webglWorkaround.name"),
+      hint: game.i18n.localize("levels3dpreview.settings.webglWorkaround.hint"),
+      scope: "client",
+      config: true,
+      type: Boolean,
+      default: true,
+    });
+
     /*game.settings.register("levels-3d-preview", "resolution", {
       name: game.i18n.localize("levels3dpreview.settings.resolution.name"),
       hint: game.i18n.localize("levels3dpreview.settings.resolution.hint"),

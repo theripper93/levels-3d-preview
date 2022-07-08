@@ -5,11 +5,14 @@ export class Fog{
 
     constructor(parent){
         this._parent = parent;
+        this._ready = false;
         this.debouncedUpdate = !this._sharedContext ? debounce(this.updateTexture, 300) : this.updateTexture;
-        this.initPixiRT();
         this.initTexture();
-        this.init();
-        this.needsUpdate = true;
+        this.initPixiRT();
+        this.init().then(() => {
+            this.needsUpdate = true;
+            this._ready = true;
+        })
     }
 
     get _sharedContext(){
@@ -36,12 +39,11 @@ export class Fog{
     }
 
     initPixiRT(){
+        const webglWorkaround = game.settings.get("levels-3d-preview", "webglWorkaround") ? 2 : 1;
         const maxDimension = Math.max(canvas.dimensions.width, canvas.dimensions.height);
-        const maxResolution = this._parent.renderer.capabilities.maxTextureSize
-        const fogTexResolution = Math.min(maxResolution/maxDimension, 1)
+        const maxResolution = this._parent.renderer.capabilities.maxTextureSize / webglWorkaround;
+        const fogTexResolution = Math.min(maxResolution/maxDimension, 1);
         this.pixiRenderTexture = PIXI.RenderTexture.create({width: canvas.dimensions.width, height: canvas.dimensions.height, resolution: this._sharedContext ? fogTexResolution : 0.1});
-        this.texWidth = canvas.dimensions.width;
-        this.texHeight = canvas.dimensions.height;
     }
 
     async init(){
@@ -66,6 +68,7 @@ export class Fog{
     }
 
     updateShaders(){
+        if(!this._ready) return;
         Object.values(this._parent.materialProgramCache).forEach(m => {
             m.uniforms.fogTexture = {value: this.fogTexture};
             m.uniforms.sceneDimensions = {value: this.sceneDimensions};
