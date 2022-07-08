@@ -2,6 +2,7 @@ import * as THREE from "../lib/three.module.js";
 import {factor} from '../main.js';
 import { Ruler3D } from "../entities/ruler3d.js";
 import { mergeVertices } from "../lib/BufferGeometryUtils.js";
+import { setPerformancePreset } from "./performancePresets.js";
 
 export class Helpers {
   constructor() {
@@ -12,6 +13,7 @@ export class Helpers {
     this.envCache = {};
     this._loading = {};
     this.ruler3d = Ruler3D;
+    this.setPerformancePreset = setPerformancePreset;
   }
 
   async loadTexture(texturePath, options = {}) {

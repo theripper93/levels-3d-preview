@@ -56,7 +56,8 @@
             "cameraToToken": "Focus Camera on Selected Token",
             "automode": "Follow Mode",
             "controls": "Show Controls",
-            "lockon": "Toggle Lock-On"
+            "lockon": "Toggle Lock-On",
+            "performance": "Set Performance Mode"
         },
         "keybindings":{
             "dialog": {
@@ -1007,6 +1008,18 @@
             "ok": "Dismiss",
             "dontshowagain": "Don't show again",
             "opencompendium": "Getting Started"
+        },
+        "performance": {
+            "verylow": "Very Low",
+            "low": "Low",
+            "medium": "Medium",
+            "high": "High",
+            "veryhigh": "Very High",
+            "dialog": {
+                "title": "3D Canvas: Performance Settings",
+                "content": "Chose your preferred Graphic Quality (the page will be refreshed):"
+            },
+            "notification": "3D Canvas: Setting performance mode to {performancemode}, the page will refresh in 5 seconds..."
         },
         "tileEditor": {
             "controlsReference": {

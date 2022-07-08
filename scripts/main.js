@@ -479,6 +479,13 @@ class Levels3DPreview {
     this.mirrorLevelsVisibility =
       canvas.scene.getFlag("levels-3d-preview", "mirrorLevels") ?? false;
     this.debugMode = game.settings.get("levels-3d-preview", "debugMode");
+    if(this.debugMode){
+      this.scene.overrideMaterial = new THREE.MeshBasicMaterial({
+        color: 0xffffff,
+        wireframe: true,
+        transparent: true,
+      });
+    }
     this.level = Infinity; //this.isLevels ? parseFloat($(_levels.UI?.element)?.find(".level-item.active").find(".level-bottom").val()) ?? Infinity : Infinity;
     if (isNaN(this.level)) this.level = Infinity;
     this.showSun = this.debugMode;

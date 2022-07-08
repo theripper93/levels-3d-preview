@@ -122,6 +122,9 @@ export class ClipNavigation extends Application{
             game.Levels3DPreview.GameCamera.lock = !game.Levels3DPreview.GameCamera.lock
             $("#clip-navigation-lock").toggleClass("clip-navigation-enabled", game.Levels3DPreview.GameCamera.lock);
           })
+          html.on("click", "#clip-navigation-performance", ()=>{
+            game.Levels3DPreview.helpers.setPerformancePreset();
+          })
           
           if(!this._setOnLoad){
             this.setToClosest();
