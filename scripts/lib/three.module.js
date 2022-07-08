@@ -18447,9 +18447,8 @@ function WebGLProgram( renderer, cacheKey, parameters, bindingStates ) {
 
 	// console.log( '*VERTEX*', vertexGlsl );
 	// console.log( '*FRAGMENT*', fragmentGlsl );
-
-	const glVertexShader = WebGLShader( gl, 35633, vertexGlsl );
-	const glFragmentShader = WebGLShader( gl, 35632, fragmentGlsl );
+	const glVertexShader = WebGLShader( gl, gl.VERTEX_SHADER, vertexGlsl );
+	const glFragmentShader = WebGLShader( gl, gl.FRAGMENT_SHADER, fragmentGlsl );
 
 	gl.attachShader( program, glVertexShader );
 	gl.attachShader( program, glFragmentShader );

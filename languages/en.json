@@ -933,9 +933,16 @@
                     "smaa": "SMAA"
                 }
             },
-            "webglWorkaround": {
-                "name": "WebGL Fix",
-                "hint": "Fixes webgl crashing on some GPUs/Drivers. This will lower FoW Resolution, when this issue happens, webgl will become unavaileble browser-wide. To restore webgl, disable and reenable hardware acceleration."
+            "fowQuality": {
+                "name": "Fog of War Quality",
+                "hint": "Set the resolution of the Fog of War.",
+                "options": {
+                    "native": "Native",
+                    "high": "High",
+                    "medium": "Medium",
+                    "low": "Low",
+                    "verylow": "Very Low"
+                }
             },
             "disableLighting":{
                 "name": "Disable Shadows",

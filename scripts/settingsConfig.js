@@ -409,13 +409,20 @@ Hooks.once('init', function() {
       default: "fxaa",
     });
 
-    game.settings.register("levels-3d-preview", "webglWorkaround", {
-      name: game.i18n.localize("levels3dpreview.settings.webglWorkaround.name"),
-      hint: game.i18n.localize("levels3dpreview.settings.webglWorkaround.hint"),
+    game.settings.register("levels-3d-preview", "fowQuality", {
+      name: game.i18n.localize("levels3dpreview.settings.fowQuality.name"),
+      hint: game.i18n.localize("levels3dpreview.settings.fowQuality.hint"),
       scope: "client",
       config: true,
-      type: Boolean,
-      default: true,
+      type: Number,
+      choices: {
+          1: game.i18n.localize("levels3dpreview.settings.fowQuality.options.native"),
+          0.75: game.i18n.localize("levels3dpreview.settings.fowQuality.options.high"),
+          0.5: game.i18n.localize("levels3dpreview.settings.fowQuality.options.medium"),
+          0.25: game.i18n.localize("levels3dpreview.settings.fowQuality.options.low"),
+          0.1: game.i18n.localize("levels3dpreview.settings.fowQuality.options.verylow")
+        },
+      default: 1,
     });
 
     /*game.settings.register("levels-3d-preview", "resolution", {
