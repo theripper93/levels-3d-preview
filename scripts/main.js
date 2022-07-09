@@ -1337,6 +1337,11 @@ class Levels3DPreview {
     setTimeout(() => {
       this.helpers.showSceneReport();
     }, 1000);
+
+    Object.values(this.tokens).forEach((t) => {
+      t.drawName();
+      t.drawBars();
+    })
   }
 
   setFilters(set){

@@ -41,7 +41,7 @@ export class Fog{
     initPixiRT(){
         const fowQuality = game.settings.get("levels-3d-preview", "fowQuality");
         const maxDimension = Math.max(canvas.dimensions.width, canvas.dimensions.height);
-        const maxResolution = this._parent.renderer.capabilities.maxTextureSize / fowQuality;
+        const maxResolution = this._parent.renderer.capabilities.maxTextureSize * fowQuality;
         const fogTexResolution = Math.min(maxResolution/maxDimension, 1) - 0.001;
         this.pixiRenderTexture = PIXI.RenderTexture.create({width: canvas.dimensions.width, height: canvas.dimensions.height, resolution: this._sharedContext ? fogTexResolution : 0.1});
     }

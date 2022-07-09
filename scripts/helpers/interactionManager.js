@@ -704,6 +704,7 @@ export class InteractionManager {
       if(!intersects.length) return null;
       for(let int of intersects){
         let actualObject
+        if(int.object.userData.ignoreIntersect) continue;
         if(!int.object.userData.entity3D) int.object.traverseAncestors(parent => {
           if(parent.userData.entity3D && !actualObject) actualObject = parent;
         });

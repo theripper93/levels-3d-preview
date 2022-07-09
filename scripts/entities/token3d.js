@@ -993,6 +993,8 @@ export class Token3D {
       const sprite = new THREE.Sprite(spriteMaterial);
       sprite.center.set(0.5,0.5);
       this.nameplate = sprite;
+      this.nameplate.userData.ignoreIntersect = true;
+      this.nameplate.userData.ignoreHover = true;
       const width = name.width/this.factor;
       const height = name.height/this.factor;
       this.nameplate.scale.set(width,height,1);
@@ -1001,8 +1003,8 @@ export class Token3D {
     }
 
     async drawBars(){
-      //this.mesh.remove(this.bars);
       if(!this.token?.hud?.bars || !this.token?.hud?.bars?.visible) return;
+      if(this.bars)this.mesh.remove(this.bars);
       const bar1 = this.token.hud.bars["bar1"].clone();
       const bar2 = this.token.hud.bars["bar2"].clone();
       const container = new PIXI.Container();
@@ -1018,6 +1020,8 @@ export class Token3D {
       sprite.center.set(0.5,0.5);
       this.mesh.remove(this.bars);
       this.bars = sprite;
+      this.bars.userData.ignoreIntersect = true;
+      this.bars.userData.ignoreHover = true;
       const width = container.width/this.factor;
       const height = container.height/this.factor;
       this.bars.scale.set(width,height,1);
