@@ -45,6 +45,24 @@ class canvas3dConfig extends FormApplication{
 
 }
 
+Hooks.once("canvasConfig", (canvasConfig) => {
+  game.settings.register("levels-3d-preview", "resolutionMultiplier", {
+    name: game.i18n.localize("levels3dpreview.settings.resolutionMultiplier.name"),
+    hint: game.i18n.localize("levels3dpreview.settings.resolutionMultiplier.hint"),
+    scope: "client",
+    config: true,
+    type: Number,
+    range: {
+      min: 0.25,
+      max: 2,
+      step: 0.05,
+    },
+    default: 1,
+  });
+
+  canvasConfig.resolution*=game.settings.get("levels-3d-preview", "resolutionMultiplier");
+})
+
 Hooks.once('init', function() {
 
   game.settings.register("levels-3d-preview", "sceneReload", {

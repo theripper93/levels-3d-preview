@@ -329,7 +329,7 @@ class Levels3DPreview {
 
     const pixelRatio = game.settings.get("core", "disableResolutionScaling") ? 1 : window.devicePixelRatio
 
-    this.resolutionMulti = pixelRatio; //game.settings.get("levels-3d-preview", "resolution") *
+    this.resolutionMulti = pixelRatio*game.settings.get("levels-3d-preview", "resolutionMultiplier"); //game.settings.get("levels-3d-preview", "resolution") *
     
     this.renderer.setPixelRatio(this.resolutionMulti);
     this.renderer.alpha = false;
@@ -1279,25 +1279,33 @@ class Levels3DPreview {
       tokenArray.filter((token) => token._loaded).length +
       tileArray.filter((tile) => tile._loaded).length;
     let progress = total === 0 ? 100 : Math.round((loaded / total) * 100);
+    if(!this._finalizingLoad){
+      if(total === loaded) this._progressText = game.i18n.localize("levels3dpreview.controls.loading.env");
+      else this._progressText = game.i18n.localize("levels3dpreview.controls.loading.load");
+    }
     if (total === loaded && this._envReady) {
       if(!this._finalizingLoad){
         this._finalizingLoad = true;
-        this.setProgressBar(game.i18n.localize("levels3dpreview.controls.loading.gravity") ,99);
+        this._progressText = game.i18n.localize("levels3dpreview.controls.loading.gravity");
         this.interactionManager.forceSightCollisions();
           recomputeGravity().then(() => {
             setTimeout(() => {
-              this._ready = true;
-              this.loadingTokens = {};
-              this.loadingTiles = {};
-              this._onReady();
-              Hooks.callAll("3DCanvasSceneReady", game.Levels3DPreview);
-            },500)
-  
+              this._progressText = game.i18n.localize("levels3dpreview.controls.loading.shaders");
+              setTimeout(() => {
+                this.renderer.compile(this.scene, this.camera);
+                this._ready = true;
+                this.loadingTokens = {};
+                this.loadingTiles = {};
+                this._onReady();
+                Hooks.callAll("3DCanvasSceneReady", game.Levels3DPreview);
+              }, 200);
+            },300)
+
           });
       }
-    }else{
-      this.setProgressBar(total === loaded ? game.i18n.localize("levels3dpreview.controls.loading.env") : game.i18n.localize("levels3dpreview.controls.loading.load"), progress);
-    } 
+    }
+    this.setProgressBar(this._progressText, progress);
+
   }
 
   setProgressBar(label, progress){

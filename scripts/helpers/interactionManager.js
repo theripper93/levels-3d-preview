@@ -298,59 +298,65 @@ export class InteractionManager {
         catch (err) {
           return false;
         }
-        const coord3d = this.screen3DtoCanvas2DWithCollision(event)
-        data.x = coord3d.x
-        data.y = coord3d.y
-        data.elevation = coord3d.z
-        data.flags = {
-          levels: {
-            rangeBottom: coord3d.z
-          },
-          betterroofs: {
-            brMode: 2,
+        try{
+          const coord3d = this.screen3DtoCanvas2DWithCollision(event)
+          data.x = coord3d.x
+          data.y = coord3d.y
+          data.elevation = coord3d.z
+          data.flags = {
+            levels: {
+              rangeBottom: coord3d.z
+            },
+            betterroofs: {
+              brMode: 2,
+            }
           }
-        }
-        if(data.type === "Actor" && this.activeLayerEntity === "Token"){
-          Hooks.once("preCreateToken", (token)=>{
-            token.data.update({elevation: Math.trunc(data.elevation*100)/100, flags: data.flags})
-          })
-          return canvas.tokens._onDropActorData(event, data);
-        }
-        data.flags["levels-3d-preview"] = {
-          model3d: data.img,
-          autoGround: true,
-        }
-        if(data.type === "Tile" && this.activeLayerEntity === "Tile"){
-          const object3d = await this._parent.helpers.loadModel(data.img)
-          const modelBB = new THREE.Box3().setFromObject(object3d.model)
-          const widthFactor = modelBB.max.x - modelBB.min.x
-          const heightFactor = modelBB.max.z - modelBB.min.z
-          let depth = modelBB.max.y - modelBB.min.y
-          let width = canvas.grid.size*(canvas.grid.size/data.tileSize)*widthFactor;
-          let height = canvas.grid.size*(canvas.grid.size/data.tileSize)*heightFactor;
-          /*const scaleDim = Math.max(width,height)%canvas.grid.size;
-
-          const scaleFactor = Math.max(width,height) > canvas.grid.size ? (Math.max(width,height)-scaleDim)/Math.max(width,height) : canvas.grid.size/Math.max(width,height)
-          depth*=scaleFactor
-          width*=scaleFactor
-          height*=scaleFactor*/
-
-          data.flags["levels-3d-preview"].depth = depth ? canvas.grid.size*(canvas.grid.size/data.tileSize)*depth : 0.05
-          const useSnapped = Ruler3D.useSnapped();
-          let snapped;
-          if(useSnapped){
-            snapped = canvas.grid.getSnappedPosition(data.x - width/2,data.y - height/2)
+          if(data.type === "Actor" && this.activeLayerEntity === "Token"){
+            Hooks.once("preCreateToken", (token)=>{
+              token.data.update({elevation: Math.trunc(data.elevation*100)/100, flags: data.flags})
+            })
+            return canvas.tokens._onDropActorData(event, data);
           }
-          canvas.scene.createEmbeddedDocuments("Tile", [{
-            x: snapped ? snapped.x : data.x - width/2,
-            y: snapped ? snapped.y : data.y - height/2,
-            width: width,
-            height: height,
-            img: "modules/levels-3d-preview/assets/blank.webp",
-            overhead: canvas.activeLayer.name !== "BackgroundLayer",
-            flags: data.flags,
-          }])
+          data.flags["levels-3d-preview"] = {
+            model3d: data.img,
+            autoGround: true,
+          }
+          if(data.type === "Tile" && this.activeLayerEntity === "Tile"){
+            const object3d = await this._parent.helpers.loadModel(data.img)
+            const modelBB = new THREE.Box3().setFromObject(object3d.model)
+            const widthFactor = modelBB.max.x - modelBB.min.x
+            const heightFactor = modelBB.max.z - modelBB.min.z
+            let depth = modelBB.max.y - modelBB.min.y
+            let width = canvas.grid.size*(canvas.grid.size/data.tileSize)*widthFactor;
+            let height = canvas.grid.size*(canvas.grid.size/data.tileSize)*heightFactor;
+            /*const scaleDim = Math.max(width,height)%canvas.grid.size;
+  
+            const scaleFactor = Math.max(width,height) > canvas.grid.size ? (Math.max(width,height)-scaleDim)/Math.max(width,height) : canvas.grid.size/Math.max(width,height)
+            depth*=scaleFactor
+            width*=scaleFactor
+            height*=scaleFactor*/
+  
+            data.flags["levels-3d-preview"].depth = depth ? canvas.grid.size*(canvas.grid.size/data.tileSize)*depth : 0.05
+            const useSnapped = Ruler3D.useSnapped();
+            let snapped;
+            if(useSnapped){
+              snapped = canvas.grid.getSnappedPosition(data.x - width/2,data.y - height/2)
+            }
+            canvas.scene.createEmbeddedDocuments("Tile", [{
+              x: snapped ? snapped.x : data.x - width/2,
+              y: snapped ? snapped.y : data.y - height/2,
+              width: width,
+              height: height,
+              img: "modules/levels-3d-preview/assets/blank.webp",
+              overhead: canvas.activeLayer.name !== "BackgroundLayer",
+              flags: data.flags,
+            }])
+          }
+        }catch(e){
+          console.error(e)
+          ui.notifications.error(game.i18n.localize("levels3dpreview.errors.notarget"))
         }
+        
       }
 
     _onMouseDown(event){

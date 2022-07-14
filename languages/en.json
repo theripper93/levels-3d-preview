@@ -6,7 +6,8 @@
             "loading": {
                 "load": "Loading 3D Canvas...",
                 "env": "Creating 3D Environment...",
-                "gravity": "Computing Gravity..."
+                "gravity": "Computing Gravity...",
+                "shaders": "Compiling Shaders..."
             },
             "loadingScreen": {
                 "navtools": "Scene Navigation tools (left of ",
@@ -46,7 +47,8 @@
                 "fromto": "Particle system: Target and/or Source where not specified or are undefined.",
                 "onend": "Particle system: .onEnd() - one or more arguments were not an instance of Particle3D."
             },
-            "critical": "3D Canvas: A Fatal Error was encountered in the Rendering Loop. Attempting to recover..."
+            "critical": "3D Canvas: A Fatal Error was encountered in the Rendering Loop. Attempting to recover...",
+            "notarget": "3D Canvas: No target found for drag and drop. Please ensure you have at least one 3D Object or the Background Enabled."
         },
         "clipNavigator": {
             "disabled": "Show All",
@@ -728,6 +730,10 @@
                     "combat": "Only in Combat",
                     "always": "Always"
                 }
+            },
+            "resolutionMultiplier": {
+                "name": "Resolution Multiplier",
+                "hint": "WARNING: Changing this setting will also affect the resolution of the 2D View. Requires Refresh."
             },
             "fogDebounce": {
                 "name": "Fog of War Update Throttling",
