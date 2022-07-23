@@ -940,7 +940,7 @@ export class Token3D {
 
     refreshBorder(){
       if(!this.border) return;
-      const isInactive = !this.token._controlled && !this.token._hover
+      const isInactive = !this.token.controlled && !this.token._hover
       const color = isInactive ? this.baseColor : this.token.border?._lineStyle?.color;
       const combatColor = this.combatColor;
       const isActiveCombatant = game.combat?.current?.tokenId === this.token.id && game.settings.get("levels-3d-preview", "highlightCombat");

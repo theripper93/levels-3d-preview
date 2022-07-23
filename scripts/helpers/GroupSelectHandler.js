@@ -89,9 +89,9 @@ export class GroupSelectHandler {
 
     updateCanvasSelection(){
         canvas.activeLayer.placeables.forEach(placeable => {
-            if(this._selectedIds[placeable.id] && !placeable._controlled){
+            if(this._selectedIds[placeable.id] && !placeable.controlled){
                 placeable.control({releaseOthers: false});
-            }else if(!this._selectedIds[placeable.id] && placeable._controlled && !this._prevSelected.includes(placeable.id)){
+            }else if(!this._selectedIds[placeable.id] && placeable.controlled && !this._prevSelected.includes(placeable.id)){
                 placeable.release();
             }
         })

@@ -5,13 +5,13 @@ import {factor} from '../main.js';
 export class Template3D {
     constructor(template, A,B){
         this.template = template;
-        if(this.template.document.t === "light"){
-            this.template.document.t = "circle"
+        if(this.template.t === "light"){
+            this.template.t = "circle"
             this.isLight = true
         }
         this.embeddedName = "MeasuredTemplate"
         this.placeable = template;
-        this.initialDirection = this.template.document.direction
+        this.initialDirection = this.template.document?.direction
         this.isFog = this.template?.document?.getFlag("levels-3d-preview", "isFog") ?? false
         this.draggable = true
         this.directionOffset = 0
@@ -49,7 +49,7 @@ export class Template3D {
         this.mesh.remove(this.templateMesh)
         this.material = this._getMaterial()
         this._getTexture()
-        this.A = this._origin ?? Ruler3D.posCanvasTo3d({x: this.template.document.x, y: this.template.document.y, z: this.template.document.flags?.levels?.elevation ?? 0})
+        this.A = this._origin ?? Ruler3D.posCanvasTo3d({x: this.template.document?.x, y: this.template.document?.y, z: this.template.document?.flags?.levels?.elevation ?? 0})
         this.B = this._destination
         this.pointsFromData()
         this.direction = Math.atan2(this.B.z - this.A.z, this.B.x - this.A.x)*180/Math.PI
@@ -110,9 +110,9 @@ export class Template3D {
 
     pointsFromData(){
         if(!this.fromData)return
-        this.A = Ruler3D.posCanvasTo3d({x: this.template.ray.A.x, y: this.template.ray.A.y, z: this.template.document.flags?.levels?.elevation ?? 0})
-        this.B = Ruler3D.posCanvasTo3d({x: this.template.ray.B.x, y: this.template.ray.B.y, z: this.template.document.flags?.levels?.elevation ?? 0})
-        if(this.shape !== "cylinder")this.B.y += Ruler3D.unitsToPixels(this.template.document.flags?.levels?.special ?? 0)
+        this.A = Ruler3D.posCanvasTo3d({x: this.template.ray.A.x, y: this.template.ray.A.y, z: this.template.document?.flags?.levels?.elevation ?? 0})
+        this.B = Ruler3D.posCanvasTo3d({x: this.template.ray.B.x, y: this.template.ray.B.y, z: this.template.document?.flags?.levels?.elevation ?? 0})
+        if(this.shape !== "cylinder")this.B.y += Ruler3D.unitsToPixels(this.template.document?.flags?.levels?.special ?? 0)
     }
     
     fromPreview(){
@@ -142,7 +142,7 @@ export class Template3D {
         const templateData = {
             angle: this.angle,
             distance: this.distance,
-            direction: this.isPreview ? this.template.document.direction : this.direction,
+            direction: this.isPreview ? this.template.document?.direction : this.direction,
             width: this.width,
             user: game.user.id,
             fillColor: game.user.color,
@@ -189,7 +189,7 @@ export class Template3D {
     }
 
     _getSphereGeometry(){
-        const radius = this._origin && this._destination ? this._origin.distanceTo(this._destination) : Ruler3D.unitsToPixels(this.template.document.distance)
+        const radius = this._origin && this._destination ? this._origin.distanceTo(this._destination) : Ruler3D.unitsToPixels(this.template.document?.distance)
         const geometry = new THREE.SphereGeometry(radius, 32, 32)
         const mesh = new THREE.Mesh(geometry, this.material)
         this.fogMesh = mesh
@@ -269,7 +269,7 @@ export class Template3D {
 
     _getOrigin(A){
         if(A) return A
-        return Ruler3D.posCanvasTo3d({x: this.template.document.x, y: this.template.document.y, z: this.template.document.flags?.levels?.elevation ?? 0})
+        return Ruler3D.posCanvasTo3d({x: this.template.document?.x, y: this.template.document?.y, z: this.template.document?.flags?.levels?.elevation ?? 0})
     }
 
     _getDestination(B){
@@ -313,7 +313,7 @@ export class Template3D {
     }
 
     _getBaseShape(){
-        return this.template.document.t
+        return this.template.document?.t ?? this.template.t
     }
 
     _getMaterial(){
@@ -333,21 +333,21 @@ export class Template3D {
           case "wireframe":
             return new THREE.MeshBasicMaterial({
               color: this.fromData
-                ? this.template.document.fillColor
+                ? this.template.document?.fillColor
                 : game.user.color,
               wireframe: true,
             });
           case "solid":
             return new THREE.MeshPhongMaterial({
               color: this.fromData
-                ? this.template.document.fillColor
+                ? this.template.document?.fillColor
                 : game.user.color,
               transparent: true,
               opacity: 0.3,
               side: THREE.DoubleSide,
               depthWrite: false,
               emissive: this.fromData
-                ? this.template.document.fillColor
+                ? this.template.document?.fillColor
                 : game.user.color,
               specular: 0xffffff,
               shininess: 1,
@@ -356,8 +356,8 @@ export class Template3D {
     }
 
     _getTexture(){
-        if(!this.template.data?.texture && !this.template.document.flags?.siftoolkit?.displayData?.texture) return
-        const texturePath = this.template.document.texture || this.template.document.flags?.siftoolkit?.displayData?.texture
+        if(!this.template.data?.texture && !this.template.document?.flags?.siftoolkit?.displayData?.texture) return
+        const texturePath = this.template.document?.texture || this.template.document?.flags?.siftoolkit?.displayData?.texture
         this._parent.helpers.loadTexture(texturePath).then(texture => {
             this.material.map = texture
             this.material.emissiveMap = texture
@@ -392,14 +392,14 @@ export class Template3D {
       const data = {
         x: dest.x,
         y: dest.y,
-        direction: ((this.isPreview ? this.initialDirection : this.template.document.direction) - this.directionOffset)%360,
+        direction: ((this.isPreview ? this.initialDirection : this.template.document?.direction) - this.directionOffset)%360,
         flags: {
             levels: {
                 elevation: dest.elevation
             }
         }
     }
-        this.isPreview ? this.template.document.update(data) : this.template.document.update(data)
+        this.isPreview ? this.template.document?.update(data) : this.template.document?.update(data)
         if(this.isPreview) Hooks.callAll(`template3dUpdatePreview`, this.template, data)
     }
 
@@ -458,16 +458,16 @@ export class Template3D {
 
     static drawPreview(template){
             const initialLayer = canvas.activeLayer;
-            template.ray = Ray.fromAngle(template.document.x,template.document.y,Math.toRadians(template.document.direction),template.document.distance*canvas.scene.dimensions.size/canvas.scene.dimensions.distance)
+            template.ray = Ray.fromAngle(template.document?.x,template.document?.y,Math.toRadians(template.document?.direction),template.document?.distance*canvas.scene.dimensions.size/canvas.scene.dimensions.distance)
             // Draw the template and switch to the template layer
             canvas.templates.activate();
             const template3d = new Template3D(template);
             template3d.initialLayer = initialLayer;
             template3d.draggable=true
             template3d.isPreview = true
-            template3d.angle = template.document.angle
-            template3d.distance = template.document.distance
-            template3d.direction = template.document.direction
+            template3d.angle = template.document?.angle
+            template3d.distance = template.document?.distance
+            template3d.direction = template.document?.direction
             template3d.arcDelta = Ruler3D.unitsToPixels(template3d.distance)
             game.Levels3DPreview.interactionManager.ruler.template = template3d
             game.Levels3DPreview.interactionManager.draggable = template3d.dragHandle;

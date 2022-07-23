@@ -26,7 +26,7 @@ export class Ruler3D {
         if(this.template?.isPreview) return;
         if(this.allowedRulerDrag.some(a => a=== this._object?.userData?.entity3D?.placeable?.document?.documentName)) return;
         this.template?.destroy();
-        const template = new Template3D({data:{t:ui.controls.activeTool}},this._origin,this._object.position);
+        const template = new Template3D({t:ui.controls.activeTool},this._origin,this._object.position);
         this.template = template;
     }
 

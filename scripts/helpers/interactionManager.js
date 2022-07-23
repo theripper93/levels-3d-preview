@@ -317,11 +317,11 @@ export class InteractionManager {
             return canvas.tokens._onDropActorData(event, data);
           }
           data.flags["levels-3d-preview"] = {
-            model3d: data.img,
+            model3d: data.texture.src,
             autoGround: true,
           }
           if(data.type === "Tile" && this.activeLayerEntity === "Tile"){
-            const object3d = await this._parent.helpers.loadModel(data.img)
+            const object3d = await this._parent.helpers.loadModel(data.texture.src)
             const modelBB = new THREE.Box3().setFromObject(object3d.model)
             const widthFactor = modelBB.max.x - modelBB.min.x
             const heightFactor = modelBB.max.z - modelBB.min.z
@@ -607,7 +607,7 @@ export class InteractionManager {
       if(this._gizmoEnabled && this.activeLayerEntity === "Tile") return this.abortDrag();
       let intersect = event.intersect;
       const placeable = entity.placeable;
-      if(!placeable?._controlled && placeable) placeable.control({releaseOthers: true});
+      if(!placeable?.controlled && placeable) placeable.control({releaseOthers: true});
       if(canvas.activeLayer.controlled.some(p => p?.data?.locked)) return this.abortDrag();
       if(!placeable?.isOwner && !game.user.isGM) return this.abortDrag();
       if(!entity.draggable || entity.mesh.userData?.entity3D?.embeddedName !== this.activeLayerEntity) return this.abortDrag();

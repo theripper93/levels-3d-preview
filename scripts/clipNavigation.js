@@ -250,7 +250,7 @@ Hooks.on("controlToken", (token,controlled)=>{
 
 Hooks.on("updateToken", (token,updates)=>{
   if(!game.Levels3DPreview?._active) return;
-  if("elevation" in updates && token.object?._controlled){
+  if("elevation" in updates && token.object?.controlled){
     game.Levels3DPreview.ClipNavigation.setToClosest()
   }
 })

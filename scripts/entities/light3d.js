@@ -349,7 +349,7 @@ Hooks.on("deleteAmbientLight", (lightDocument) => {
 
 const lightAnimations = {
     "none": () => {},
-    "torch": function torch(time) {
+    "flame": function torch(time) {
         const f = 0.0015;
         const random = (0.5+(this.noise.noise(f*time*(this.animationSpeed), 0) + (this.animationIntensity)) * 0.25)
         this.light3d.distance = this.initialLightParams.radius * random;

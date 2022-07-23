@@ -54,7 +54,7 @@ export class Tile3D {
         setTimeout(()=>{
             this.updateControls();
         }, 150)
-        if(this.tile._controlled) this._parent.interactionManager.setControlledGroup(this);
+        if(this.tile.controlled) this._parent.interactionManager.setControlledGroup(this);
         setTimeout(() => {
             this.setUpDoors()
             this.setupDoor()
@@ -658,7 +658,7 @@ export class Tile3D {
         if(!gizmoEnabled){
             return controls.detach()
         }
-        if(this.tile._controlled && !this.tile.document.locked) controls.attach(this._parent.controlledGroup);
+        if(this.tile.controlled && !this.tile.document.locked) controls.attach(this._parent.controlledGroup);
         if(!canvas.activeLayer?.controlled?.length) controls.detach();
     }
 
@@ -717,9 +717,9 @@ export class Tile3D {
 
     toggleBoundingBox(){
         if(!game.user.isGM) return;
-        const isTileControlled = this.tile._controlled;
-        if(this._controlled === isTileControlled) return;
-        this._controlled = isTileControlled;
+        const isTileControlled = this.tile.controlled;
+        if(this.controlled === isTileControlled) return;
+        this.controlled = isTileControlled;
         if(isTileControlled){
             this.mesh.add(this.controlledBox);
         }else{
