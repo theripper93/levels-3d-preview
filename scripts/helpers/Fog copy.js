@@ -99,7 +99,7 @@ export class Fog{
             this.pixiRenderTexture = PIXI.RenderTexture.create({width: canvas.dimensions.width, height: canvas.dimensions.height, resolution: fogTexResolution});
             this.texWidth = canvas.dimensions.width;
             this.texHeight = canvas.dimensions.height;
-            if(canvas.scene.data.fogExploration) canvas.app.renderer.render(canvas.sight.revealed, {renderTexture: this.pixiRenderTexture, clear: false});
+            if(canvas.scene.fogExploration) canvas.app.renderer.render(canvas.sight.revealed, {renderTexture: this.pixiRenderTexture, clear: false});
             canvas.app.renderer.render(canvas.sight.vision, {renderTexture: this.pixiRenderTexture, clear: false});
             const texProps = this._parent.renderer.properties.get(this.webglFogTexture);
             texProps.__webglTexture = Object.values(this.pixiRenderTexture.baseTexture._glTextures)[0]?.texture
@@ -108,7 +108,7 @@ export class Fog{
             let texture = PIXI.RenderTexture.create({width: canvas.dimensions.width, height: canvas.dimensions.height, resolution: 0.1});
             this.texWidth = canvas.dimensions.width;
             this.texHeight = canvas.dimensions.height;
-            if(canvas.scene.data.fogExploration) canvas.app.renderer.render(canvas.sight.revealed, {renderTexture: texture, clear: false});
+            if(canvas.scene.fogExploration) canvas.app.renderer.render(canvas.sight.revealed, {renderTexture: texture, clear: false});
             canvas.app.renderer.render(canvas.sight.vision, {renderTexture: texture, clear: false});
             const base64 = canvas.app.renderer.extract.base64(texture,"image/jpeg");
             texture.destroy(true);

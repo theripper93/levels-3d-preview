@@ -14,26 +14,26 @@ export class Tile3D {
         this.tile = tile;
         this.placeable = tile;
         this._parent = parent;
-        this.isOverhead = this.tile.data.overhead;
+        this.isOverhead = this.tile.document.overhead;
         this.isAnimated = false;
         this.draggable = true;
         this.embeddedName = "Tile"
-        this.bottom = tile.data.flags.levels?.rangeBottom ?? 0;
+        this.bottom = tile.document.elevation;
         this.shaders = [];
         this.center2d = {
-            x: this.tile.data.x + Math.abs(this.tile.data.width)/2,
-            y: this.tile.data.y + Math.abs(this.tile.data.height)/2
+            x: this.tile.document.x + Math.abs(this.tile.document.width)/2,
+            y: this.tile.document.y + Math.abs(this.tile.document.height)/2
         }
         this.center = Ruler3D.posCanvasTo3d({x: this.center2d.x,y: this.center2d.y,z: this.bottom});
-        this.texture = this.tile.data.img
-        this.opacity = this.tile.data.alpha
-        this.width = Math.abs(this.tile.data.width/factor);
-        this.height = Math.abs(this.tile.data.height/factor);
-        this.color = this.tile.data.tint ?? 0xffffff;
-        this.angle = Math.toRadians(this.tile.data.rotation);
-        this.mirrorX = this.tile.data.width < 0
-        this.mirrorY = this.tile.data.height < 0
-        this.rotSign = this.tile.data.width/Math.abs(this.tile.data.width)*this.tile.data.height/Math.abs(this.tile.data.height)
+        this.texture = this.tile.document.texture.src
+        this.opacity = this.tile.document.alpha
+        this.width = Math.abs(this.tile.document.width/factor);
+        this.height = Math.abs(this.tile.document.height/factor);
+        this.color = this.tile.document.tint ?? 0xffffff;
+        this.angle = Math.toRadians(this.tile.document.rotation);
+        this.mirrorX = this.tile.document.width < 0
+        this.mirrorY = this.tile.document.height < 0
+        this.rotSign = this.tile.document.width/Math.abs(this.tile.document.width)*this.tile.document.height/Math.abs(this.tile.document.height)
         this.getFlags();
         this.initRandom();
 
@@ -87,7 +87,7 @@ export class Tile3D {
     }
 
     get paused(){
-        return (this.tile.data.flags && this.tile.data.flags["levels-3d-preview"]?.paused) ?? false
+        return (this.tile.document.flags && this.tile.document.flags["levels-3d-preview"]?.paused) ?? false
     }
 
     get scene(){
@@ -243,7 +243,7 @@ export class Tile3D {
             color: this.color,
             transparent: !(texture instanceof THREE.VideoTexture),
             opacity: this.opacity,
-            visible: !this.tile.data.hidden,
+            visible: !this.tile.document.hidden,
             map: texture,
             side: THREE.DoubleSide,
             roughness : 1,
@@ -300,8 +300,8 @@ export class Tile3D {
                 }
                 const depth = mDepth*this.yScale*scale//*2
                 this.depth = Math.round(depth*factor)/factor;
-                const wDiff = (this.tile.data.width - Math.round(scale*mWidth*factor))/2
-                const hDiff = (this.tile.data.height - Math.round(scale*mHeight*factor))/2
+                const wDiff = (this.tile.document.width - Math.round(scale*mWidth*factor))/2
+                const hDiff = (this.tile.document.height - Math.round(scale*mHeight*factor))/2
                 this.tile.document.update({
                     flags: {
                         "levels-3d-preview": {
@@ -311,8 +311,8 @@ export class Tile3D {
                     },
                     width: Math.round(scale*mWidth*factor),
                     height: Math.round(scale*mHeight*factor),
-                    x: this.tile.data.x + wDiff,
-                    y: this.tile.data.y + hDiff
+                    x: this.tile.document.x + wDiff,
+                    y: this.tile.document.y + hDiff
                 })
                 this.tile.document.setFlag("levels-3d-preview", "depth", )
             }
@@ -640,11 +640,11 @@ export class Tile3D {
         const c = new THREE.Color();
         c.set(CONFIG.Canvas.dispositionColors.CONTROLLED);
         this.bb = {
-            width: this.tile.data.width/factor,
+            width: this.tile.document.width/factor,
             depth: this.fillType === "tile" ? depth : this.depth,
-            height: this.tile.data.height/factor,
+            height: this.tile.document.height/factor,
         }
-        const cube = new THREE.Mesh(new THREE.BoxGeometry(this.tile.data.width/factor, this.fillType === "tile" ? depth : this.depth, this.tile.data.height/factor), new THREE.MeshBasicMaterial({color: c, wireframe: true}));
+        const cube = new THREE.Mesh(new THREE.BoxGeometry(this.tile.document.width/factor, this.fillType === "tile" ? depth : this.depth, this.tile.document.height/factor), new THREE.MeshBasicMaterial({color: c, wireframe: true}));
         cube.position.set(0, this.fillType === "tile" ? depth/2 : (this.depth) / 2, 0);
         if(this.isPlane) cube.rotation.set(-Math.PI/2,0,0);
         cube.geometry.computeBoundingBox();
@@ -658,7 +658,7 @@ export class Tile3D {
         if(!gizmoEnabled){
             return controls.detach()
         }
-        if(this.tile._controlled && !this.tile.data.locked) controls.attach(this._parent.controlledGroup);
+        if(this.tile._controlled && !this.tile.document.locked) controls.attach(this._parent.controlledGroup);
         if(!canvas.activeLayer?.controlled?.length) controls.detach();
     }
 
@@ -703,11 +703,11 @@ export class Tile3D {
         const scaleX = scale.x;
         const scaleZ = scale.z;
         const scaleY = scale.y;
-        const newWidth = this.tile.data.width*scaleX;
-        const newHeight = this.tile.data.height*scaleZ;
+        const newWidth = this.tile.document.width*scaleX;
+        const newHeight = this.tile.document.height*scaleZ;
         const newDepth = this.depth*factor*scaleY
-        const x = (update.x ?? this.tile.data.x) - (newWidth-this.tile.data.width)/2;
-        const z = (update.y ?? this.tile.data.y) - (newHeight-this.tile.data.height)/2;
+        const x = (update.x ?? this.tile.document.x) - (newWidth-this.tile.document.width)/2;
+        const z = (update.y ?? this.tile.document.y) - (newHeight-this.tile.document.height)/2;
         update.x = Math.round(x);
         update.y = Math.round(z);
         update.width = newWidth;
@@ -729,7 +729,7 @@ export class Tile3D {
 
     setHidden(){
         if(!game.user.isGM) return;
-        const hidden = this.tile.data.hidden;
+        const hidden = this.tile.document.hidden;
         if(hidden){
             this.mesh.traverse(child => {
                 if(child.isMesh){
@@ -748,10 +748,9 @@ export class Tile3D {
         if(!this.mesh) return;
         this.updateShader(time);
         this.toggleBoundingBox();
-        this.mesh.visible = !this.tile.data.hidden || game.user.isGM;
-        if(game.Levels3DPreview.mirrorLevelsVisibility && this.tile.data.overhead){
-            const isLevelsVisible = _levels.floorContainer.spriteIndex[this.tile.id]?.parent ? true : false;
-            this.mesh.visible = this.tile.occluded ? false : this.tile.visible || isLevelsVisible;
+        this.mesh.visible = !this.tile.document.hidden || game.user.isGM;
+        if(game.Levels3DPreview.mirrorLevelsVisibility && this.tile.document.overhead){
+            this.mesh.visible = this.tile.occluded ? false : this.tile.visible;
         }
     }
 
@@ -761,12 +760,12 @@ export class Tile3D {
         const x3d = worldPosition.x;
         const y3d = worldPosition.y;
         const z3d = worldPosition.z;
-        const x = x3d * factor - this.tile.data.width/2;
-        const y = z3d * factor - this.tile.data.height/2;
+        const x = x3d * factor - this.tile.document.width/2;
+        const y = z3d * factor - this.tile.document.height/2;
         const z = ((y3d * factor * canvas.dimensions.distance)/(canvas.dimensions.size));
         const useSnapped = Ruler3D.useSnapped() && !transform;
         const snapped = canvas.grid.getSnappedPosition(x, y);
-        let {rangeTop, rangeBottom} = _levels.getFlagsForObject(this.tile);
+        let {rangeTop, rangeBottom} = CONFIG.Levels.helpers.getRangeForDocument(this.tile.document);
         if(!rangeBottom || rangeBottom == -Infinity) rangeBottom = 0;
         const dest = {
           x: useSnapped ? snapped.x : x,
@@ -774,18 +773,18 @@ export class Tile3D {
           elevation: z,
         }
         const deltas = {
-          x: dest.x - this.tile.data.x,
-          y: dest.y - this.tile.data.y,
+          x: dest.x - this.tile.document.x,
+          y: dest.y - this.tile.document.y,
           elevation: dest.elevation - rangeBottom,
         }
         let updates = [];
         let tile = this.tile
-        let tileFlags = _levels.getFlagsForObject(tile) || {};
+        let tileFlags = CONFIG.Levels.helpers.getRangeForDocument(tile.document) || {};
         if(!tileFlags.rangeBottom || tileFlags.rangeBottom == -Infinity) tileFlags.rangeBottom = 0;
           const update = {
             _id: tile.id,
-            x: tile.data.x + deltas.x,
-            y: tile.data.y + deltas.y,
+            x: tile.document.x + deltas.x,
+            y: tile.document.y + deltas.y,
             flags: {
                 "levels-3d-preview": {
                     wasFreeMode: this.wasFreeMode,
@@ -1483,8 +1482,8 @@ const tileShaders = {
         const setUniforms = (shader) => {
             shader.uniforms.time = { value: 0.0 };
             shader.uniforms.gridSize = { value: canvas.scene.dimensions.size/factor }
-            shader.uniforms.gridColor = { value: new THREE.Color(canvas.scene.data.gridColor) }
-            shader.uniforms.gridAlpha = { value: canvas.scene.data.gridAlpha }
+            shader.uniforms.gridColor = { value: new THREE.Color(canvas.scene.gridColor) }
+            shader.uniforms.gridAlpha = { value: canvas.scene.gridAlpha }
             shader.uniforms.normalCulling = { value: intensity-0.01 }
         }
         const setupShader = (shader) => {

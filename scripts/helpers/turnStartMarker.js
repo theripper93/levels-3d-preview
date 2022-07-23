@@ -23,9 +23,9 @@ export class turnStartMarker{
         if(!this.mesh) return;
         if(!this.token) return;
         const token = this.token;
-        const tokenPos = Ruler3D.posCanvasTo3d({x: token.center.x,y: token.center.y,z: token.data.elevation})
+        const tokenPos = Ruler3D.posCanvasTo3d({x: token.center.x,y: token.center.y,z: token.document.elevation})
         this.mesh.position.set(tokenPos.x,tokenPos.y,tokenPos.z)
-        const size = Math.min(token.data.width,token.data.height)
+        const size = Math.min(token.document.width,token.document.height)
         this.mesh.scale.set(size,size,0.5)
     }
 

@@ -416,7 +416,7 @@ class ProjectileEffect {
     }
     if (object instanceof Token) {
       this._missScale =
-        Math.max(object.data.width, object.data.height) * object.data.scale;
+        Math.max(object.document.width, object.document.height) * object.document.scale;
       const tokenPos =
         game.Levels3DPreview.tokens[object.id].mesh.position.clone();
       if (isTarget) {

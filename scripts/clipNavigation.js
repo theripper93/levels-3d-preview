@@ -170,7 +170,7 @@ export class ClipNavigation extends Application{
 
       setToClosest(value){
         if(!this.showRange) return;
-        if(!value && this.autoMode) value = (canvas.tokens.controlled[0] ?? _token)?.data.elevation
+        if(!value && this.autoMode) value = (canvas.tokens.controlled[0] ?? _token)?.document.elevation
         if(isNaN(value)) return;
         const input = $(this.element).find("#clip-navigation-range input")
         const closest = this.levels.reduce((a,b)=>{

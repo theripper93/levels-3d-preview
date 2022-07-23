@@ -414,7 +414,7 @@ class Levels3DPreview {
     this.clear3Dscene();
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(
-      canvas.scene.data.backgroundColor ?? 0xffffff
+      canvas.scene.backgroundColor ?? 0xffffff
     );
     this.rangeFinderMode = game.settings.get("levels-3d-preview", "rangeFinder");
     this.composer.removePass(this.renderPass);
@@ -433,7 +433,7 @@ class Levels3DPreview {
       this.fogExploration.destroy();
       this.fogExploration = null;
     }
-    if (canvas.scene.data.tokenVision && canvas.scene.getFlag("levels-3d-preview", "enableFogOfWar"))
+    if (canvas.scene.tokenVision && canvas.scene.getFlag("levels-3d-preview", "enableFogOfWar"))
       this.fogExploration = new Fog(this);
       try{
         //this.composer.render();
@@ -486,7 +486,7 @@ class Levels3DPreview {
         transparent: true,
       });
     }
-    this.level = Infinity; //this.isLevels ? parseFloat($(_levels.UI?.element)?.find(".level-item.active").find(".level-bottom").val()) ?? Infinity : Infinity;
+    this.level = Infinity; //this.isLevels ? parseFloat($(CONFIG.Levels.UI?.element)?.find(".level-item.active").find(".level-bottom").val()) ?? Infinity : Infinity;
     if (isNaN(this.level)) this.level = Infinity;
     this.showSun = this.debugMode;
     this.createTemplates();
@@ -616,7 +616,7 @@ class Levels3DPreview {
     const height = canvas.scene.dimensions.sceneHeight / this.factor;
     const center = this.canvasCenter;
     const depth = 0.02;
-    const texture = await this.helpers.loadTexture(canvas.scene.data.img, {linear: false});
+    const texture = await this.helpers.loadTexture(canvas.scene.background.src, {linear: false});
     if (texture) {
       texture.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
       texture.minFilter = THREE.NearestMipMapLinearFilter;
@@ -630,8 +630,8 @@ class Levels3DPreview {
     const plane = new THREE.Mesh(geometry, material);
     plane.receiveShadow = true;
     plane.castShadow = true;
-    const offsetX = -canvas.dimensions.shiftX / this.factor;
-    const offsetY = -canvas.dimensions.shiftY / this.factor;
+    const offsetX = -canvas.scene.background.offsetX / this.factor;
+    const offsetY = -canvas.scene.background.offsetY / this.factor;
     plane.position.set(
       center.x + offsetX,
       center.y - depth / 2 - 0.00001,
@@ -710,11 +710,9 @@ class Levels3DPreview {
   }
 
   createFloors() {
-    for (let tile of canvas.background.placeables.concat(
-      canvas.foreground.placeables
-    )) {
+    for (let tile of canvas.tiles.placeables) {
       if (this.isLevels) {
-        const bottom = tile.data.flags.levels?.rangeBottom ?? -Infinity;
+        const bottom = tile.document.flags.levels?.rangeBottom ?? -Infinity;
         if (bottom > this.level) continue;
       }
       this.createTile(tile);
@@ -753,7 +751,7 @@ class Levels3DPreview {
     for (let wall of canvas.walls.placeables) {
       if (this.isLevels) {
         const bottom =
-          wall.data.flags.wallHeight?.wallHeightBottom ?? -Infinity;
+          wall.document.flags.wallHeight?.wallHeightBottom ?? -Infinity;
         if (bottom > this.level) continue;
       }
       this.createWall(wall);
@@ -773,7 +771,7 @@ class Levels3DPreview {
     )
       return;
     this.walls[wall.id] = new Wall3D(wall, this);
-    if (wall.data.door) this.doors[wall.id] = this.walls[wall.id];
+    if (wall.document.door) this.doors[wall.id] = this.walls[wall.id];
   }
 
   createTemplates() {
@@ -807,7 +805,7 @@ class Levels3DPreview {
   makeSkybox(enableFog) {
     this.setExposure();
     this.scene.background = enableFog ? this.scene.fog.color : new THREE.Color(
-      canvas.scene.data.backgroundColor ?? 0xffffff
+      canvas.scene.backgroundColor ?? 0xffffff
     );
     this.scene.environment = null;
     this.isEXR = false;
@@ -1213,7 +1211,7 @@ class Levels3DPreview {
       }
       if (!cToken) return;
       if(cToken.isOwner) cToken.control();
-      this.ClipNavigation.setToClosest(cToken.data.elevation);
+      this.ClipNavigation.setToClosest(cToken.document.elevation);
       token3D = this.tokens[cToken.id];
       if (!token3D) return;
     }else{
@@ -1489,6 +1487,8 @@ class Levels3DPreview {
   }
 
   setCursor(cursor) {
+    this.renderer.domElement.style.cursor = cursor;
+    return
     if(this._sharedContext){
       $("body")[0].style.cursor = cursor;
     }else{
@@ -1528,8 +1528,7 @@ Hooks.on("updateScene", (scene,updates) => {
     "skybox" in flags ||
     "exr" in flags ||
     "mirrorLevels" in flags ||
-    "gridAlpha" in updates ||
-    "gridColor" in updates ||
+    "grid" in updates ||
     "enableFogOfWar" in flags ||
     "bloom" in flags
   ){

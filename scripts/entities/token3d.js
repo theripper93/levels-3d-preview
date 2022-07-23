@@ -53,7 +53,7 @@ export class Token3D {
       this.offsetY =
       this.token.document.getFlag("levels-3d-preview", "offsetY") ?? 0;
       //this.offsetY += this.solidBaseMode === "ontop" ? this.baseDepth*factor : 0;
-      this.rotateIndicator = game.settings.get("levels-3d-preview", "rotateIndicator")//!this.token.data.lockRotation;
+      this.rotateIndicator = game.settings.get("levels-3d-preview", "rotateIndicator")//!this.token.document.lockRotation;
       this.offsetZ =
       this.token.document.getFlag("levels-3d-preview", "offsetZ") ?? 0;
       this.scale =
@@ -76,10 +76,10 @@ export class Token3D {
     }
   
     async load() {
-      if(!this.gtflPath && !this.imageTexture) this.imageTexture = this.token.data.img;
+      if(!this.gtflPath && !this.imageTexture) this.imageTexture = this.token.document.texture.src;
       this.texture = await this._parent.helpers.loadTexture(this.imageTexture)//this.loadTexture();
       const token3d = this.gtflPath || this.imageTexture ? await this.loadModel() : this.draw();
-      if(this.token.data.light.bright !== 0 || this.token.data.light.dim) this.loadLight();
+      if(this.token.document.light.bright !== 0 || this.token.document.light.dim) this.loadLight();
       this._loaded = true;
       this.animationHandler.init();
       return token3d;
@@ -137,7 +137,7 @@ export class Token3D {
       const model = await game.Levels3DPreview.helpers.loadModel(this.gtflPath);
       if(model) return model;
       //make 1x1 cube
-      const errText = game.i18n.localize("levels3dpreview.errors.filenotsupported") + "(" + extension +"): " + filePath + " Token: " + this.token.data.name
+      const errText = game.i18n.localize("levels3dpreview.errors.filenotsupported") + "(" + extension +"): " + filePath + " Token: " + this.token.document.name
       console.error(errText);
       ui.notifications.error(errText);
       const geometry = new THREE.BoxGeometry(1,1,1);
@@ -383,7 +383,7 @@ export class Token3D {
       const w = token.w / f;
       const h = token.h / f;
       const d =
-        ((token.losHeight - token.data.elevation) *
+        ((token.losHeight - token.document.elevation) *
           canvas.scene.dimensions.size) /
         canvas.dimensions.distance /
         f;
@@ -405,7 +405,7 @@ export class Token3D {
   
     updatePositionFrom3D(e){
       this.skipMoveAnimation = true;
-        const useSnapped = canvas.scene.data.gridType && !e.shiftKey;
+        const useSnapped = canvas.scene.gridType && !e.shiftKey;
       const x3d = this.mesh.position.x;
       const y3d = this.mesh.position.y;
       const z3d = this.mesh.position.z;
@@ -424,14 +424,14 @@ export class Token3D {
         const geometryCollisions = game.Levels3DPreview?.object3dSight;
         let collides;
         if(geometryCollisions){
-          const tokenHeight = this.token.losHeight - this.token.data.elevation;
-          collides = _levels.testCollision({
+          const tokenHeight = this.token.losHeight - this.token.document.elevation;
+          collides = CONFIG.Levels.API.testCollision({
             x: this.token.center.x,
             y: this.token.center.y,
             z: this.token.losHeight,
           },{
-            x: dest.x+this.token.data.width*canvas.grid.size*0.5,
-            y: dest.y+this.token.data.height*canvas.grid.size*0.5,
+            x: dest.x+this.token.document.width*canvas.grid.size*0.5,
+            y: dest.y+this.token.document.height*canvas.grid.size*0.5,
             z: dest.elevation+tokenHeight,
           }, "collision")
         }else{
@@ -443,17 +443,17 @@ export class Token3D {
         }
       }
       const deltas = {
-        x: dest.x - this.token.data.x,
-        y: dest.y - this.token.data.y,
-        elevation: dest.elevation - this.token.data.elevation,
+        x: dest.x - this.token.document.x,
+        y: dest.y - this.token.document.y,
+        elevation: dest.elevation - this.token.document.elevation,
       }
       let updates = [];
       for(let token of canvas.tokens.controlled){
         updates.push({
           _id: token.id,
-          x: token.data.x + deltas.x,
-          y: token.data.y + deltas.y,
-          elevation: Math.round((token.data.elevation + deltas.elevation)*1000)/1000,
+          x: token.document.x + deltas.x,
+          y: token.document.y + deltas.y,
+          elevation: Math.round((token.document.elevation + deltas.elevation)*1000)/1000,
           flags: {
             "levels-3d-preview": {
               wasFreeMode: this.wasFreeMode
@@ -479,8 +479,8 @@ export class Token3D {
       const mesh = this.mesh;
       const token = this.token;
       const tokenCenter = {
-        x: (forcePosition?.x ?? token.data.x) + token.w / 2,
-        y: (forcePosition?.y ?? token.data.y) + token.h / 2,
+        x: (forcePosition?.x ?? token.document.x) + token.w / 2,
+        y: (forcePosition?.y ?? token.document.y) + token.h / 2,
       }
       if (!mesh) return;
       const f = this.factor;
@@ -489,16 +489,16 @@ export class Token3D {
       let y
       if(this.isModel){
         y =
-        ((token.data.elevation) * canvas.scene.dimensions.size) / canvas.dimensions.distance / f;
+        ((token.document.elevation) * canvas.scene.dimensions.size) / canvas.dimensions.distance / f;
       }else{
-        y = ((token.data.elevation + (token.losHeight - token.data.elevation) / 2) * canvas.scene.dimensions.size) / canvas.dimensions.distance / f;
+        y = ((token.document.elevation + (token.losHeight - token.document.elevation) / 2) * canvas.scene.dimensions.size) / canvas.dimensions.distance / f;
       }
       
       if(!lerp)mesh.position.set(x,y,z)
       else mesh.position.lerp(new THREE.Vector3(x, y, z), lerp);
       const rotations = {
         x: 0,
-        y: -Math.toRadians(token.data.rotation),
+        y: -Math.toRadians(token.document.rotation),
         z: 0,
       };
       let toLerp = rotations;
@@ -516,7 +516,7 @@ export class Token3D {
           - toLerp.z,
         );
       }
-      if(this.light && this.token.data.light.angle != 360){
+      if(this.light && this.token.document.light.angle != 360){
         const rotationy = rotations.y;
         const distance = 1
         const lx = Math.sin(rotationy) * distance + x;
@@ -547,8 +547,8 @@ export class Token3D {
       const mesh = this.mesh;
       const token = this.token;
       const tokenCenter = {
-        x: (forcePosition?.x ?? token.data.x) + token.w / 2,
-        y: (forcePosition?.y ?? token.data.y) + token.h / 2,
+        x: (forcePosition?.x ?? token.document.x) + token.w / 2,
+        y: (forcePosition?.y ?? token.document.y) + token.h / 2,
       }
       if (!mesh) return;
       const f = this.factor;
@@ -557,9 +557,9 @@ export class Token3D {
       let y
       if(this.isModel){
         y =
-        ((token.data.elevation) * canvas.scene.dimensions.size) / canvas.dimensions.distance / f;
+        ((token.document.elevation) * canvas.scene.dimensions.size) / canvas.dimensions.distance / f;
       }else{
-        y = ((token.data.elevation + (token.losHeight - token.data.elevation) / 2) * canvas.scene.dimensions.size) / canvas.dimensions.distance / f;
+        y = ((token.document.elevation + (token.losHeight - token.document.elevation) / 2) * canvas.scene.dimensions.size) / canvas.dimensions.distance / f;
       }
 
       this.setPositionFrom2D();
@@ -571,7 +571,7 @@ export class Token3D {
       }
       const rotations = {
         x: 0,
-        y: -Math.toRadians(token.data.rotation),
+        y: -Math.toRadians(token.document.rotation),
         z: 0,
       };
       let toLerp = rotations;
@@ -589,7 +589,7 @@ export class Token3D {
           - toLerp.z,
         );
       }
-      if(this.light && this.token.data.light.angle != 360){
+      if(this.light && this.token.document.light.angle != 360){
         const rotationy = rotations.y;
         const distance = 1
         const lx = Math.sin(rotationy) * distance + x;
@@ -685,7 +685,7 @@ export class Token3D {
     }
 
     updateHiden(){
-      if(!game.user.isGM && this.token.data.hidden) return;
+      if(!game.user.isGM && this.token.document.hidden) return;
       if(!this.originalMatData){
         this.originalMatData = {}
         this.model.traverse(child => {
@@ -700,9 +700,9 @@ export class Token3D {
           }
         })
       }
-      const hidden = this.token.data.hidden || this.hasClone;
+      const hidden = this.token.document.hidden || this.hasClone;
       if(this._hidden === hidden) return;
-      this._hidden = this.token.data.hidden || this.hasClone;
+      this._hidden = this.token.document.hidden || this.hasClone;
       this.model.traverse(child => {
         if(child.isMesh){
           if(hidden){
@@ -731,9 +731,9 @@ export class Token3D {
       if(!this.effectsContainer) return;
       this.updateHiden();
       const oldProne = this.isProne ? true : false;
-      this.isProne = this.token?.actor?.effects?.find(e => e.getFlag("core", "statusId") === CONFIG.Combat.defeatedStatusId) || this.isTokenProne ? true : false;
+      this.isProne = this.token?.actor?.effects.some(e => e.getFlag("core", "statusId") === CONFIG.specialStatusEffects.DEFEATED) || this.isTokenProne ? true : false;
       if(oldProne !== this.isProne) this.toggleProne();
-      const tokenEffects = this.token.data.effects;
+      const tokenEffects = this.token.document.effects;
       const actorEffects = this.token.actor?.temporaryEffects || [];
       const effects = tokenEffects.concat(actorEffects).map(e => e.data?.icon);
       if(effects.length === this.effectsContainer.children.length) return;
@@ -827,7 +827,7 @@ export class Token3D {
         const box = new THREE.Box3().setFromObject(base);
         const sphere = box.getBoundingSphere(new THREE.Sphere());
         const maxDimension = sphere.radius*2 //Math.max(box.max.x - box.min.x, box.max.y - box.min.y, box.max.z - box.min.z);
-        const maxComputed = (Math.max(this.token.data.width, this.token.data.height)*canvas.grid.size)/factor;
+        const maxComputed = (Math.max(this.token.document.width, this.token.document.height)*canvas.grid.size)/factor;
         const scale = (maxComputed*Math.SQRT2)/maxDimension;
         base.scale.multiplyScalar(scale*scaleFactor);
         base.position.set(0,0,0);
@@ -896,7 +896,7 @@ export class Token3D {
     }
 
     addStem(){
-      const baseRadius = (Math.SQRT2*((Math.max(this.token.data.width, this.token.data.height)*canvas.grid.size)/factor))/2
+      const baseRadius = (Math.SQRT2*((Math.max(this.token.document.width, this.token.document.height)*canvas.grid.size)/factor))/2
       if(!this.isBase || !this.stem) return;
       let w = (baseRadius*1.02);
       let h = (baseRadius*1.02);
@@ -1154,18 +1154,18 @@ export class Token3D {
       const hasPlayerOwner = this.token.actor?.hasPlayerOwner;
       if (!hasPlayerOwner) return 0xf2ff00;
       for (let [userId, permLevel] of Object.entries(
-        this.token.actor.data.permission
+        this.token.actor.ownership
       )) {
         if (permLevel < 3) continue;
         const user = game.users.get(userId);
         if (!user || user.isGM) continue;
-        return user.data.color;
+        return user.color;
       }
       return 0xf2ff00;
     }
 
     getDispColor(){
-      const disposition = this.token.data.disposition
+      const disposition = this.token.document.disposition
       let disp = "NEUTRAL"
       for(const [k,v] of Object.entries(CONST.TOKEN_DISPOSITIONS)){
           if(v === disposition){
@@ -1214,11 +1214,13 @@ export class Token3D {
     }
 
     _onHoverIn(e) {
+      if(this.hasClone) return;
       this.placeable._onHoverIn(e);
       this._parent.setCursor('pointer');
     }
 
     _onHoverOut(e) {
+      if(this.hasClone) return;
       this.placeable._onHoverOut(e);
       this._parent.setCursor('auto');
     }
@@ -1262,15 +1264,16 @@ export class Token3D {
     }
 
     get radius(){
-       return Math.min(this.token.data.width/factor, this.token.data.height/factor)/2.1
+       return Math.min(this.token.document.width/factor, this.token.document.height/factor)/2.1
     }
   }
 
 
   //HOOKS
 
-  Hooks.on("updateToken", (token, updates) => {
+  Hooks.on("updateToken", (tokenDocument, updates) => {
     if(!game.Levels3DPreview._active) return;
+    const token = tokenDocument.object;
     const wasFreeUpdated = updates?.flags && updates?.flags["levels-3d-preview"] && updates?.flags["levels-3d-preview"].wasFreeMode !== undefined;
     const animChanged = updates?.flags && updates?.flags["levels-3d-preview"] && updates?.flags["levels-3d-preview"].animIndex !== undefined;
     const onlyAnim = animChanged === true && Object.values(updates?.flags["levels-3d-preview"]).length === 1;
@@ -1282,7 +1285,7 @@ export class Token3D {
       "light" in updates ||
       "width" in updates ||
       "height" in updates ||
-      "img" in updates
+      "texture" in updates
       ){
       game.Levels3DPreview.tokens[token.id]?.refresh();
     }
@@ -1294,8 +1297,8 @@ export class Token3D {
         x: token3d.token.x,
         y: token3d.token.y
       }
-      const x = updates.x ?? token.data.x;
-      const y = updates.y ?? token.data.y;
+      const x = updates.x ?? token.document.x;
+      const y = updates.y ?? token.document.y;
       let dist = token3d.dragCanceled ? canvas.dimensions.size*2+1 : Math.sqrt(Math.pow(x - prevPos.x, 2) + Math.pow(y - prevPos.y, 2));
       dist = (updates.elevation !== undefined) && (dist === 0) ? canvas.dimensions.size*2+1 : dist;
       if(dist == 0 || dist < canvas.dimensions.size*2) return token3d.fallbackAnimation = true;
@@ -1310,7 +1313,7 @@ export class Token3D {
       setTimeout(async () => {
         token3d.isAnimating = true;
   
-        const elevation = updates.elevation ?? token.data.elevation;
+        const elevation = updates.elevation ?? token.document.elevation;
         while(token3d.isAnimating && !exitLerp && token3d.setPosition(larpFactor, {x,y,elevation})){
           await sleep(1000/60);
         };

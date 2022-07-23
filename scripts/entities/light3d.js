@@ -73,8 +73,8 @@ export class Light3D {
         if(!this.dragHandle) return;
         this.dragHandle.visible = canvas.lighting._active;
         if(!this.dragHandle.visible) return;
-        this.dragHandle.userData.sprite.material.map = this.light.data.hidden ? this._parent.textures.lightOff : this._parent.textures.lightOn;
-        this.dragHandle.userData.sprite.material.color.set(this.light.data.hidden ? '#ff0000' : '#ffffff');
+        this.dragHandle.userData.sprite.material.map = this.light.document.hidden ? this._parent.textures.lightOff : this._parent.textures.lightOn;
+        this.dragHandle.userData.sprite.material.color.set(this.light.document.hidden ? '#ff0000' : '#ffffff');
         this.dragHandle.userData.sphere.material.color.set(this.color || "#ffffff")
     }
 
@@ -88,24 +88,24 @@ export class Light3D {
         const y = z3d * factor;
         const z = Math.round(((y3d * factor * canvas.dimensions.distance)/(canvas.dimensions.size))*100)/100;
         const snapped = canvas.grid.getSnappedPosition(x, y);
-        const {rangeTop, rangeBottom} = _levels.getFlagsForObject(this.light);
+        const {rangeTop, rangeBottom} = CONFIG.Levels.helpers.getRangeForDocument(this.light.document);
         const dest = {
           x: useSnapped ? snapped.x : x,
           y: useSnapped ? snapped.y : y,
           elevation: z,
         }
         const deltas = {
-          x: dest.x - this.light.data.x,
-          y: dest.y - this.light.data.y,
+          x: dest.x - this.light.document.x,
+          y: dest.y - this.light.document.y,
           elevation: dest.elevation - rangeBottom,
         }
         let updates = [];
         for(let light of canvas.activeLayer.controlled.length ? canvas.activeLayer.controlled : [this.light]){
-        const lightFlags = _levels.getFlagsForObject(light);
+        const lightFlags = CONFIG.Levels.helpers.getRangeForDocument(light.document);
           updates.push({
             _id: light.id,
-            x: light.data.x + deltas.x,
-            y: light.data.y + deltas.y,
+            x: light.document.x + deltas.x,
+            y: light.document.y + deltas.y,
             flags: {
                 "levels-3d-preview": {
                     wasFreeMode: this.wasFreeMode,
@@ -135,8 +135,8 @@ export class Light3D {
             this.light3d.shadow.autoUpdate = true;
             this.light3d.castShadow = true;
         }
-        let top = light.data.flags.levels?.rangeTop ?? 1;
-        let bottom = light.data.flags.levels?.rangeBottom ?? 1;
+        let top = light.document.flags.levels?.rangeTop ?? 1;
+        let bottom = light.document.flags.levels?.rangeBottom ?? 1;
         const z = (top+bottom)*canvas.scene.dimensions.size/canvas.scene.dimensions.distance/2;
         this.z = (top+bottom)/2;
         const color = this.color || "#ffffff";
@@ -144,9 +144,9 @@ export class Light3D {
         const alpha = this.alpha*9;
         const decay = this.dim/(this.bright+10)*2;
         const position = {
-            x: light.data.x/factor,
+            x: light.document.x/factor,
             y: z/factor,
-            z: light.data.y/factor,
+            z: light.document.y/factor,
         }
         if(!this.isToken) {
             this.mesh.position.set(position.x, position.y, position.z);
@@ -173,7 +173,7 @@ export class Light3D {
             this.light3d.target.position.set(lx,ly,lz);
             this.light3d.target.updateMatrixWorld();
         }
-        this.light3d.visible = !this.light.data.hidden
+        this.light3d.visible = !this.light.document.hidden
         this.animationFn = (lightAnimations[this.animationType] ?? lightAnimations.none).bind(this);
         if(this.light.document.getFlag("levels-3d-preview", "enableParticle")) this.initParticle();
         if(!this.debugSphere) return;
@@ -194,7 +194,7 @@ export class Light3D {
 
     initParticle(){
         if(this.particleEffectId) Particle3D.stop(this.particleEffectId);
-        if(this.light.data.hidden && !this.light.document.getFlag("levels-3d-preview", "enableParticleHidden")) return;
+        if(this.light.document.hidden && !this.light.document.getFlag("levels-3d-preview", "enableParticleHidden")) return;
         const particleData = this.particleData;
         this.particleEffect = new Particle3D("e");
         this.particleEffect.sprite(particleData.sprite)
@@ -291,31 +291,31 @@ export class Light3D {
     }
 
     get lightData(){
-        return this.light.data.light ?? this.light.data.config
+        return this.light.document.light ?? this.light.document.config
     }
 
     get dim(){
-        return this.lightData.dim ?? this.light.data.dimLight;
+        return this.lightData.dim ?? this.light.document.dimLight;
     }
 
     get bright(){
-        return this.lightData.bright ?? this.light.data.brightLight;
+        return this.lightData.bright ?? this.light.document.brightLight;
     }
 
     get alpha(){
-        return this.lightData.alpha ?? this.light.data.lightAlpha;
+        return this.lightData.alpha ?? this.light.document.lightAlpha;
     }
 
     get color(){
-        return this.lightData.color ?? this.light.data.lightColor;
+        return this.lightData.color ?? this.light.document.lightColor;
     }
 
     get angle(){
-        return this.lightData.angle ?? this.light.data.lightAngle;
+        return this.lightData.angle ?? this.light.document.lightAngle;
     }
 
     get rotation(){
-        return this.lightData.rotation ?? this.light.data.rotation;
+        return this.lightData.rotation ?? this.light.document.rotation;
     }
 
     get animationIntensity(){

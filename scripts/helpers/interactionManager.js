@@ -73,10 +73,10 @@ export class InteractionManager {
         }
       }
       for(let wall of Object.values(this._parent.walls)){
-        if(wall.placeable.isDoor && wall.placeable.data.ds === CONST.WALL_DOOR_STATES.OPEN) continue;
+        if(wall.placeable.isDoor && wall.placeable.document.ds === CONST.WALL_DOOR_STATES.OPEN) continue;
         if(!wall.mesh?.visible) continue;
-        if(wall.placeable.data.sight >= 10) sightObjects.push(wall.mesh);
-        if(wall.placeable.data.move > 0) collisionObjects.push(wall.mesh);
+        if(wall.placeable.document.sight >= 10) sightObjects.push(wall.mesh);
+        if(wall.placeable.document.move > 0) collisionObjects.push(wall.mesh);
       }
       if(this._parent.board){
         sightObjects.push(this._parent.board);
@@ -289,7 +289,6 @@ export class InteractionManager {
       async _onDrop(event) {
         if(!game.Levels3DPreview._active) return;
         event.preventDefault();
-    
         // Try to extract the data
         let data;
         try {
@@ -313,7 +312,7 @@ export class InteractionManager {
           }
           if(data.type === "Actor" && this.activeLayerEntity === "Token"){
             Hooks.once("preCreateToken", (token)=>{
-              token.data.update({elevation: Math.trunc(data.elevation*100)/100, flags: data.flags})
+              token.updateSource({elevation: Math.trunc(data.elevation*100)/100, flags: data.flags})
             })
             return canvas.tokens._onDropActorData(event, data);
           }
@@ -562,8 +561,8 @@ export class InteractionManager {
         const multi = Math.sign(event.deltaY) < 0 ? 1.1 : 0.9;
         const gridS = -Math.sign(event.deltaY)*canvas.grid.size;
         for(let placeable of canvas.activeLayer.controlled){
-          const width = placeable.data.width;
-          const height = placeable.data.height;
+          const width = placeable.document.width;
+          const height = placeable.document.height;
           const gap = placeable.document.getFlag("levels-3d-preview", "gap") ?? 0;
           const tileScale = placeable.document.getFlag("levels-3d-preview", "tileScale") ?? 1;
           const isTiled = placeable.document.getFlag("levels-3d-preview", "fillType") === "tile";
@@ -577,8 +576,8 @@ export class InteractionManager {
             _id: placeable.id,
             width: this.scaleHeight ? width : newWidth,
             height: this.scaleWidth ? height : newHeight,
-            x: isTiled ? placeable.data.x : placeable.data.x - (newWidth - width)/2,
-            y: isTiled ? placeable.data.y : placeable.data.y - (newHeight - height)/2,
+            x: isTiled ? placeable.document.x : placeable.document.x - (newWidth - width)/2,
+            y: isTiled ? placeable.document.y : placeable.document.y - (newHeight - height)/2,
             flags: {
               "levels-3d-preview": {
                 gap: this.scaleGap ? gap+(gridS/factor)/5 : gap,
@@ -591,8 +590,8 @@ export class InteractionManager {
           if(!this.scale && !this.scaleHeight && !this.scaleWidth){
             update.width = width;
             update.height = height;
-            update.x = placeable.data.x;
-            update.y = placeable.data.y;
+            update.x = placeable.document.x;
+            update.y = placeable.document.y;
           }
           updates.push(update);
         }
@@ -700,7 +699,7 @@ export class InteractionManager {
 
       const board = this._parent.board;
       if(board) intersectTargets.push(board);
-      const buildPlane = this._parent.grid.secondaryGrid
+      const buildPlane = this._parent.grid?.secondaryGrid
       if(buildPlane) intersectTargets.push(buildPlane);
       const table = this._parent.table;
       if(table) intersectTargets.push(table);
@@ -805,13 +804,13 @@ export class InteractionManager {
 
       }
       for(let wall of Object.values(this._parent.walls)){
-        if(wall.placeable.isDoor && wall.placeable.data.ds === CONST.WALL_DOOR_STATES.OPEN && this.draggable) continue;
+        if(wall.placeable.isDoor && wall.placeable.document.ds === CONST.WALL_DOOR_STATES.OPEN && this.draggable) continue;
         if(!wall.mesh.visible) continue;
         collisionGeometries.push(wall.mesh);
       }
       const board = this._parent.board;
       if(board) collisionGeometries.push(board);
-      const buildPlane = this._parent.grid.secondaryGrid
+      const buildPlane = this._parent.grid?.secondaryGrid
       if(buildPlane) collisionGeometries.push(buildPlane);
       const table = this._parent.table;
       if(table) collisionGeometries.push(table);
@@ -904,9 +903,9 @@ export class InteractionManager {
       const entity3D = this.draggable.userData.entity3D;
       entity3D.dragCanceled = true;
       this.draggable = undefined;
-      if(entity3D.token)Hooks.call("updateToken", entity3D.token.document, {x: entity3D.token.data.x});
-      if(entity3D.template)Hooks.call("updateMeasuredTemplate", entity3D.template.document, {x: entity3D.template.data.x});
-      if(entity3D.tile) Hooks.call("updateTile", entity3D.tile.document, {x: entity3D.tile.data.x});
+      if(entity3D.token)Hooks.call("updateToken", entity3D.token.document, {x: entity3D.token.document.x});
+      if(entity3D.template)Hooks.call("updateMeasuredTemplate", entity3D.template.document, {x: entity3D.template.document.x});
+      if(entity3D.tile) Hooks.call("updateTile", entity3D.tile.document, {x: entity3D.tile.document.x});
       this.clicks = 0;
     }
 
@@ -1019,7 +1018,7 @@ Hooks.on("deleteWall", () => {
 Hooks.on("3DCanvasSceneReady", () => {
   if(game.Levels3DPreview?._active){
     game.Levels3DPreview?.interactionManager?.generateSightCollisions();
-    canvas.sight.refresh();
+    canvas.effects.visibility.refresh();
   }
 })
 

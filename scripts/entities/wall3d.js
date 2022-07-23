@@ -10,14 +10,14 @@ export class Wall3D {
         this.placeable = wall;
         this._parent = parent;
         this.top = wall.document.getFlag("wall-height","top") ?? canvas.scene.dimensions.distance*2;
-        this.externalWall = wall.data.flags.betterroofs?.externalWall ?? false;
+        this.externalWall = wall.document.flags.betterroofs?.externalWall ?? false;
         if(this.externalWall) this.top++;
         this.bottom = wall.document.getFlag("wall-height","bottom") ?? 0;
-        this.vec1 = Ruler3D.posCanvasTo3d({x: wall.data.c[0],y: wall.data.c[1], z: this.top});
-        this.vec2 = Ruler3D.posCanvasTo3d({x: wall.data.c[2],y: wall.data.c[3], z: this.bottom});
+        this.vec1 = Ruler3D.posCanvasTo3d({x: wall.document.c[0],y: wall.document.c[1], z: this.top});
+        this.vec2 = Ruler3D.posCanvasTo3d({x: wall.document.c[2],y: wall.document.c[3], z: this.bottom});
         this.center = Ruler3D.posCanvasTo3d({x: wall.center.x,y: wall.center.y,z: (this.top+this.bottom)/2});
-        this.p1 = new THREE.Vector2(wall.data.c[0],wall.data.c[1]);
-        this.p2 = new THREE.Vector2(wall.data.c[2],wall.data.c[3]);
+        this.p1 = new THREE.Vector2(wall.document.c[0],wall.document.c[1]);
+        this.p2 = new THREE.Vector2(wall.document.c[2],wall.document.c[3]);
         this.distance = this.p1.distanceTo(this.p2)/factor;
         this.angle = -Math.atan2(this.p2.y - this.p1.y, this.p2.x - this.p1.x)-Math.PI/2;
         this.stretchTex = wall.document.getFlag("levels-3d-preview","stretchTex");
@@ -28,12 +28,12 @@ export class Wall3D {
         this.texture = wall.document.getFlag("levels-3d-preview","wallTexture");
         this.sidesTexture = wall.document.getFlag("levels-3d-preview","wallSidesTexture");
         this.opacity = wall.document.getFlag("levels-3d-preview","wallOpacity") ?? 1;
-        if(this.wall.data.door && this.wall.data.ds === 1) this.opacity = this.opacity/2;
+        if(this.wall.document.door && this.wall.document.ds === 1) this.opacity = this.opacity/2;
         this.alwaysVisible = wall.document.getFlag("levels-3d-preview","alwaysVisible");
         this.tint = wall.document.getFlag("levels-3d-preview","wallTint");
         this.sideTint = wall.document.getFlag("levels-3d-preview","wallSidesTint");
-        this.color = this.texture ? this.tint ?? "#ffffff" : this.tint ?? wall.children[1]._fillStyle.color;
-        this.sidesColor = this.sidesTexture ? this.sideTint ?? "#ffffff" : this.sideTint ?? wall.children[1]._fillStyle.color;
+        this.color = this.texture ? this.tint ?? "#ffffff" : this.tint ?? wall._getWallColor();
+        this.sidesColor = this.sidesTexture ? this.sideTint ?? "#ffffff" : this.sideTint ?? wall._getWallColor();
         this.depth = wall.document.getFlag("levels-3d-preview","wallDepth")/factor || 0.03;
         this.distance += wall.document.getFlag("levels-3d-preview","joinWall") ? this.depth : 0;
         this.roughness = wall.document.getFlag("levels-3d-preview","roughness") ?? 1;
@@ -121,7 +121,7 @@ export class Wall3D {
     get isVisible(){
         if(!this.tint && !this.texture) return true;
         if(this.alwaysVisible) return true;
-        if(this.wall.data.sense === 0) return false;
+        if(this.wall.document.sense === 0) return false;
         return true;
     }
 
@@ -129,7 +129,7 @@ export class Wall3D {
         if(!this.mesh) return;
         this.mesh.visible = this.isVisible;
         if(game.Levels3DPreview.mirrorLevelsVisibility){
-            if(_levels.UI?.rangeEnabled){
+            if(CONFIG.Levels.UI?.rangeEnabled){
                 const isLevelsVisible = this.wall.visible;
                 this.mesh.visible = isLevelsVisible;
             }else{

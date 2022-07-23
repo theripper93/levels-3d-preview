@@ -1,110 +1,112 @@
 {
-  "name": "levels-3d-preview",
   "title": "3D Canvas",
+  "id": "levels-3d-preview",
   "description": "Bring your games to the 3rd dimension!",
   "version": "3.5.8",
-  "author": "theripper93",
   "authors": [
-      {
-          "name": "theripper93",
-          "email": "tsplab@gmail.com",
-          "url": "https://www.patreon.com/theripper93"
-      }
+    {
+      "name": "theripper93",
+      "email": "tsplab@gmail.com",
+      "url": "https://www.patreon.com/theripper93"
+    }
   ],
   "languages": [
-      {
-          "lang": "en",
-          "name": "English",
-          "path": "languages/en.json"
-      },
-      {
-        "lang": "ja",
-        "name": "日本語",
-        "path": "languages/ja.json"
-      }
+    {
+      "lang": "en",
+      "name": "English",
+      "path": "languages/en.json"
+    },
+    {
+      "lang": "ja",
+      "name": "日本語",
+      "path": "languages/ja.json"
+    }
   ],
   "esmodules": [
-    "./scripts/main.js",
-    "./scripts/clipNavigation.js",
-    "./scripts/globalIllumination.js",
-    "./scripts/lib/OrbitControls.js",
-    "./scripts/lib/ConvexGeometry.js",
-    "./scripts/lib/ConvexHull.js",
-    "./scripts/lib/GLTFLoader.js",
-    "./scripts/lib/mersenneTwister.js",
-    "./scripts/entities/token3d.js",
-    "./scripts/entities/ruler3d.js",
-    "./scripts/entities/light3d.js",
-    "./scripts/entities/wall3d.js",
-    "./scripts/entities/tile3d.js",
-    "./scripts/entities/cursors.js",
-    "./scripts/entities/rangeFinder.js",
-    "./scripts/lib/fflate.module.js",
-    "./scripts/lib/NURBSCurve.js",
-    "./scripts/lib/FBXLoader.js",
-    "./scripts/lib/NUBSUtils.js",
-    "./scripts/config.js",
-    "./scripts/helpers/globalIllumination.js",
-    "./scripts/helpers/interactionManager.js",
-    "./scripts/helpers/pixilayer.js",
-    "./scripts/helpers/helpers.js",
-    "./scripts/helpers/Fog.js",
-    "./scripts/settingsConfig.js"
-],
+    "scripts/main.js",
+    "scripts/clipNavigation.js",
+    "scripts/lib/OrbitControls.js",
+    "scripts/lib/GLTFLoader.js",
+    "scripts/lib/mersenneTwister.js",
+    "scripts/entities/token3d.js",
+    "scripts/entities/ruler3d.js",
+    "scripts/entities/light3d.js",
+    "scripts/entities/wall3d.js",
+    "scripts/entities/tile3d.js",
+    "scripts/entities/cursors.js",
+    "scripts/entities/rangeFinder.js",
+    "scripts/lib/fflate.module.js",
+    "scripts/lib/NURBSCurve.js",
+    "scripts/lib/FBXLoader.js",
+    "scripts/lib/NUBSUtils.js",
+    "scripts/config.js",
+    "scripts/helpers/globalIllumination.js",
+    "scripts/helpers/interactionManager.js",
+    "scripts/helpers/pixilayer.js",
+    "scripts/helpers/helpers.js",
+    "scripts/helpers/Fog.js",
+    "scripts/settingsConfig.js"
+  ],
   "scripts": [
-    "./scripts/wrappers.js",
-    "./scripts/lib/injectConfig.js",
-    "./scripts/minicanvas.js",
-    "./scripts/lib/three-nebula.js"
+    "scripts/wrappers.js",
+    "scripts/lib/injectConfig.js",
+    "scripts/minicanvas.js",
+    "scripts/lib/three-nebula.js"
   ],
   "styles": [
-      "./styles/module.css",
-      "./styles/loadingScreen.css"
+    "styles/module.css",
+    "styles/loadingScreen.css"
   ],
   "packs": [
     {
-        "name": "documentation",
-        "label": "3D Canvas Documentation",
-        "path": "packs/journals.db",
-        "type": "JournalEntry",
-        "module": "levels-3d-preview"
+      "name": "documentation",
+      "label": "3D Canvas Documentation",
+      "path": "packs/journals.db",
+      "type": "JournalEntry",
+      "private": false
     },
     {
       "name": "macros",
       "label": "3D Canvas Macros",
       "path": "packs/macros.db",
       "type": "Macro",
-      "module": "levels-3d-preview"
+      "private": false
     },
     {
       "name": "partmacros",
       "label": "3D Canvas Particle Effects",
       "path": "packs/partmacros.db",
       "type": "Macro",
-      "module": "levels-3d-preview"
+      "private": false
     }
-],
-  "minimumCoreVersion": "9",
-  "compatibleCoreVersion": "9",
-  "url": "",
-  "manifest": "",
-  "download": "",
-  "socket":true,
-  "dependencies": [
-    {
-        "name": "lib-wrapper"
-    },
-    {
-        "name": "levels"
-    },
-    {
-        "name": "betterroofs"
-    },
-    {
-        "name": "wall-height"
-    },
-    {
-      "name": "socketlib"
-    }
-  ]
+  ],
+  "socket": true,
+  "relationships": {
+    "requires": [
+      {
+        "id": "lib-wrapper",
+        "type": "module",
+        "compatibility": {}
+      },
+      {
+        "id": "levels",
+        "type": "module",
+        "compatibility": {}
+      },
+      {
+        "id": "wall-height",
+        "type": "module",
+        "compatibility": {}
+      },
+      {
+        "id": "socketlib",
+        "type": "module",
+        "compatibility": {}
+      }
+    ]
+  },
+  "compatibility": {
+    "minimum": "10",
+    "verified": "10"
+  }
 }

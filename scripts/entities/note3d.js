@@ -8,7 +8,7 @@ export class Note3D {
         this.embeddedName = note.document.documentName
         this.placeable = note;
         this.nameplate = new THREE.Object3D();
-        this.bottom = note.data.flags.levels?.rangeBottom ?? 0;
+        this.bottom = note.document.flags.levels?.rangeBottom ?? 0;
         this._parent = game.Levels3DPreview
         this.mesh = new THREE.Group();
         this.draw()
@@ -23,8 +23,8 @@ export class Note3D {
     }
 
     async draw(){
-        const texture = await this._parent.helpers.loadTexture(this.note.data.icon);
-        const size = this.note.data.iconSize/factor
+        const texture = await this._parent.helpers.loadTexture(this.note.document.icon);
+        const size = this.note.document.iconSize/factor
         const geometry = new THREE.BoxGeometry(size, size, size)
         const material = new THREE.MeshBasicMaterial({map: texture,})
         const mesh = new THREE.Mesh(geometry, material)
@@ -53,7 +53,7 @@ export class Note3D {
         const width = name.width/factor;
         const height = name.height/factor;
         this.nameplate.scale.set(width,height,1);
-        this.nameplate.position.set(0, (this.note.data.iconSize/factor)/2 + height/2 + 0.022, 0);
+        this.nameplate.position.set(0, (this.note.document.iconSize/factor)/2 + height/2 + 0.022, 0);
         this.mesh.add(this.nameplate);
       }
 

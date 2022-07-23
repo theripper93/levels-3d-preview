@@ -61,7 +61,7 @@ export class RangeFinder {
     const label = $(`<div id="levels3d-ruler-text" class="rangefinder"></div>`);
     if(this.options.style) label.css(this.options.style);
     $("body").append(label);
-    const text = this.options.text ?? `${distance}${canvas.scene.data.gridUnits}.`;
+    const text = this.options.text ?? `${distance}${canvas.scene.gridUnits}.`;
     label.text(text);
     Ruler3D.centerElement(label, midcurve);
     RFCurve.userData.label = label;
@@ -104,7 +104,7 @@ export class RangeFinder {
   }
 
   getColor(){
-      const disposition = this.token.data.disposition
+      const disposition = this.token.document.disposition
       let disp = "NEUTRAL"
       for(const [k,v] of Object.entries(CONST.TOKEN_DISPOSITIONS)){
           if(v === disposition){

@@ -19,8 +19,8 @@ export class Grid3D {
           canvas.scene.dimensions.size)
         ;
         const gridMode = game.settings.get("levels-3d-preview", "gridMode");
-        if(gridMode === "fast" && canvas.scene.data.gridType < 2){
-          const gridColor = canvas.scene.data.gridColor ?? 0x424242;
+        if(gridMode === "fast" && canvas.scene.grid.type < 2){
+          const gridColor = canvas.scene.grid.color ?? 0x424242;
           const gridHelper = new THREE.GridHelper(
             size,
             divisions,
@@ -30,7 +30,7 @@ export class Grid3D {
           gridHelper.colorGrid = gridColor;
           gridHelper.position.set(size/2, 0.01, size/2);
           gridHelper.material.transparent = true;
-          gridHelper.material.opacity = canvas.scene.data.gridAlpha;
+          gridHelper.material.opacity = canvas.scene.grid.alpha;
           gridHelper.userData.ignoreHover = true;
           this.grid = gridHelper;
           this.scene.add(gridHelper);
@@ -74,9 +74,9 @@ export class Grid3D {
     }
 
     updateGrid(){
-        if(!this.secondaryGrid || !_levels.UI?.rangeEnabled || !_levels.UI?.range || isNaN(_levels.UI?.range[0])) return this.setPosition();
-        this.secondaryGrid.visible = _levels.UI.rangeEnabled ? true : false;
-        this.secondaryGrid.position.y = ((_levels.UI.range[0]*canvas.grid.size)/canvas.scene.data.gridDistance)/factor-this.buildPlaneThickness/2;
+        if(!this.secondaryGrid || !CONFIG.Levels.UI?.rangeEnabled || !CONFIG.Levels.UI?.range || isNaN(CONFIG.Levels.UI?.range[0])) return this.setPosition();
+        this.secondaryGrid.visible = CONFIG.Levels.UI.rangeEnabled ? true : false;
+        this.secondaryGrid.position.y = ((CONFIG.Levels.UI.range[0]*canvas.grid.size)/canvas.scene.grid.distance)/factor-this.buildPlaneThickness/2;
         this.grid.position.y = this.secondaryGrid.position.y + 0.0001 + this.buildPlaneThickness/2;
       }
 

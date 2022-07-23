@@ -1,16 +1,19 @@
 Hooks.once('ready', async function() {
     libWrapper.register("levels-3d-preview", "ClientKeybindings.prototype._handleMovement", _handleMovement, "MIXED");
-    libWrapper.register("levels-3d-preview", "CONFIG.Token.objectClass.prototype.refresh", reDraw, "WRAPPER")
     libWrapper.register("levels-3d-preview", "CONFIG.Token.objectClass.prototype.drawBars", drawBars, "WRAPPER")
     libWrapper.register("levels-3d-preview", "CONFIG.Token.objectClass.prototype.drawEffects", drawEffects, "WRAPPER");
     libWrapper.register("levels-3d-preview", "ObjectHUD.prototype.createScrollingText", showBouncingText, "WRAPPER");
-    libWrapper.register("levels-3d-preview", "CONFIG.Token.objectClass.prototype._onMovementFrame", Token3DSetPosition, "WRAPPER");
     libWrapper.register("levels-3d-preview", "TokenLayer.prototype.cycleTokens", cycleTokens, "WRAPPER");
     libWrapper.register("levels-3d-preview", "Canvas.prototype.animatePan", animatePan, "WRAPPER");
-    libWrapper.register("levels-3d-preview", "SightLayer.prototype.commitFog", updateFog, "WRAPPER");
+    libWrapper.register("levels-3d-preview", "FogManager.prototype.save", updateFog, "WRAPPER");
     libWrapper.register("levels-3d-preview", "PlaceablesLayer.prototype.pasteObjects", pasteObjects, "WRAPPER");
     libWrapper.register("levels-3d-preview", "ClockwiseSweepPolygon.prototype._compute", _computePolygon, "WRAPPER");
     libWrapper.register("levels-3d-preview", "Scenes.prototype.preload", preload3D, "OVERRIDE");
+
+    Hooks.on("refreshToken", (token) => {
+        Token3DSetPosition.bind(token)();
+        reDraw.bind(token)();    
+    })
     
     
 
@@ -129,10 +132,10 @@ Hooks.once('ready', async function() {
         const promises = [];
     
         // Preload sounds
-        if ( scene.playlistSound?.data.path ) promises.push(AudioHelper.preloadSound(scene.playlistSound.data.path));
+        if ( scene.playlistSound?.document.path ) promises.push(AudioHelper.preloadSound(scene.playlistSound.document.path));
         else if ( scene.playlist?.playbackOrder.length ) {
           const first = scene.playlist.sounds.get(scene.playlist.playbackOrder[0]);
-          if ( first ) promises.push(AudioHelper.preloadSound(first.data.path))
+          if ( first ) promises.push(AudioHelper.preloadSound(first.document.path))
         }
     
         // Preload textures without expiring current ones
@@ -178,8 +181,7 @@ Hooks.once('ready', async function() {
         }else return wrapped(...args)
     }
 
-    function reDraw(wrapped,...args){
-        wrapped(...args)
+    function reDraw(){
         try{
         game.Levels3DPreview?._active && game.Levels3DPreview.tokens[this.id]?.reDraw()
         }catch(e){}
@@ -232,7 +234,7 @@ Hooks.once('ready', async function() {
                     z: -100000 ,
                 }
                 const collision = game.Levels3DPreview.interactionManager.computeSightCollision(newPos, collisionPos, "collision");
-                let targetElevation = token.data.elevation
+                let targetElevation = token.document.elevation
                 if(collision){
                     point2d = game.Levels3DPreview.helpers.ruler3d.pos3DToCanvas(collision)
                     targetElevation = point2d.z.toFixed(2)
@@ -241,8 +243,8 @@ Hooks.once('ready', async function() {
                 
                 if(!movementCollision) updates.push({
                     _id: token.id,
-                    x: token.data.x + dx*canvas.grid.size,
-                    y: token.data.y + dy*canvas.grid.size,
+                    x: token.document.x + dx*canvas.grid.size,
+                    y: token.document.y + dy*canvas.grid.size,
                     elevation: targetElevation,
                 })
             }
@@ -287,8 +289,7 @@ Hooks.once('ready', async function() {
         
     }
 
-    function Token3DSetPosition(wrapped,...args){
-        wrapped(...args);
+    function Token3DSetPosition(){
         if(game.Levels3DPreview?._active){
           const token3D = game.Levels3DPreview.tokens[this.id];
           if(token3D){

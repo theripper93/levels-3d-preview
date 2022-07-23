@@ -78,14 +78,14 @@ export class Fog{
 
     generateTexture(){
         if(this._sharedContext){
-            if(canvas.scene.data.fogExploration) canvas.app.renderer.render(canvas.sight.revealed, {renderTexture: this.pixiRenderTexture, clear: true});
-            canvas.app.renderer.render(canvas.sight.vision, {renderTexture: this.pixiRenderTexture, clear: !canvas.scene.data.fogExploration});
+            if(canvas.scene.fogExploration) canvas.app.renderer.render(canvas.sight.revealed, {renderTexture: this.pixiRenderTexture, clear: true});
+            canvas.app.renderer.render(canvas.sight.vision, {renderTexture: this.pixiRenderTexture, clear: !canvas.scene.fogExploration});
             const texProps = this._parent.renderer.properties.get(this.webglFogTexture);
             texProps.__webglTexture = Object.values(this.pixiRenderTexture.baseTexture._glTextures)[0]?.texture
             return this.webglFogTexture;
         }else{
-            if(canvas.scene.data.fogExploration) canvas.app.renderer.render(canvas.sight.revealed, {renderTexture: this.pixiRenderTexture, clear: true});
-            canvas.app.renderer.render(canvas.sight.vision, {renderTexture: this.pixiRenderTexture, clear: !canvas.scene.data.fogExploration});
+            if(canvas.scene.fogExploration) canvas.app.renderer.render(canvas.sight.revealed, {renderTexture: this.pixiRenderTexture, clear: true});
+            canvas.app.renderer.render(canvas.sight.vision, {renderTexture: this.pixiRenderTexture, clear: !canvas.scene.fogExploration});
             const base64 = canvas.app.renderer.extract.base64(this.pixiRenderTexture,"image/jpeg");
             return base64;
         }

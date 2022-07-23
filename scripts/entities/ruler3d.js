@@ -9,7 +9,7 @@ export class Ruler3D {
         const hsl = {}
         this.color.getHSL(hsl);
         this.lineColor = new THREE.Color().setHSL(hsl.h,hsl.s,hsl.l - 0.2);
-        this.textColor = new THREE.Color(canvas.scene.data.gridColor ?? 0x000000);
+        this.textColor = new THREE.Color(canvas.scene.gridColor ?? 0x000000);
         this.origin = new THREE.Vector3(0,0,0);
         this.target = new THREE.Vector3(0,0,0);
         this.sphereRadius = 0.008;
@@ -132,7 +132,7 @@ export class Ruler3D {
         this.baseSphere1.position.y = 0;
         this.baseSphere2.position.y = 0;
         //draw floating text
-        const text = `${distance} ${canvas.scene.data.gridUnits}.`;
+        const text = `${distance} ${canvas.scene.gridUnits}.`;
         this.textElement.text(text);
         //get mid point of ruler
         const midPoint = this.template?.isPreview ? midcurve : new THREE.Vector3(this._origin.x + (targetPos.x - this._origin.x)/2, this._origin.y + (targetPos.y - this._origin.y)/2, this._origin.z + (targetPos.z - this._origin.z)/2);
@@ -213,7 +213,7 @@ export class Ruler3D {
     }
 
     static useSnapped(){
-        const isGrid = canvas.scene.data.gridType ? true : false;
+        const isGrid = canvas.scene.gridType ? true : false;
         const isShift = keyboard.downKeys.has("ShiftLeft") || keyboard.downKeys.has("ShiftRight");
         if(!isGrid) return false;
         if(isGrid && !isShift) return true;
@@ -250,15 +250,15 @@ export class Ruler3D {
         const square = (canvas.scene.dimensions.size/factor)
         const halfSquare = square/2;
         const generatePoints = (token) => {
-            const tokenHeight = (token.token.losHeight-token.token.data.elevation)/canvas.scene.dimensions.distance;
+            const tokenHeight = (token.token.losHeight-token.token.document.elevation)/canvas.scene.dimensions.distance;
             const tokenPositions = [];
             const tokenStart = token.mesh.position.clone();
-            tokenStart.x += -token.token.data.width*halfSquare+halfSquare
+            tokenStart.x += -token.token.document.width*halfSquare+halfSquare
             tokenStart.y += halfSquare
-            tokenStart.z += -token.token.data.height*halfSquare+halfSquare
+            tokenStart.z += -token.token.document.height*halfSquare+halfSquare
 
-            for(let i = 0; i < token.token.data.width; i++){
-                for(let j = 0; j < token.token.data.height; j++){
+            for(let i = 0; i < token.token.document.width; i++){
+                for(let j = 0; j < token.token.document.height; j++){
                     for(let k = 0; k < tokenHeight; k++){
                         const position = new THREE.Vector3(
                             tokenStart.x + i*square,
