@@ -61,7 +61,7 @@ export class RangeFinder {
     const label = $(`<div id="levels3d-ruler-text" class="rangefinder"></div>`);
     if(this.options.style) label.css(this.options.style);
     $("body").append(label);
-    const text = this.options.text ?? `${distance}${canvas.scene.gridUnits}.`;
+    const text = this.options.text ?? `${distance}${canvas.scene.grid.units}.`;
     label.text(text);
     Ruler3D.centerElement(label, midcurve);
     RFCurve.userData.label = label;

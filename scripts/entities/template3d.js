@@ -376,7 +376,7 @@ export class Template3D {
 
     updatePositionFrom3D(e){
         this.skipMoveAnimation = true;
-        const useSnapped = canvas.scene.gridType && !e?.shiftKey;
+        const useSnapped = canvas.scene.grid.type && !e?.shiftKey;
       const x3d = this.mesh.position.x;
       const y3d = this.mesh.position.y;
       const z3d = this.mesh.position.z;
@@ -502,7 +502,9 @@ Hooks.on("updateMeasuredTemplate", (template) => {
   })
   
   Hooks.on("createMeasuredTemplate", (template) => {
-    if(game.Levels3DPreview?._active && template.object) game.Levels3DPreview.createTemplate(template.object);
+    Hooks.once("refreshMeasuredTemplate", () => {
+        if(game.Levels3DPreview?._active && template.object) game.Levels3DPreview.createTemplate(template.object);
+    })
   })
   
   Hooks.on("deleteMeasuredTemplate", (template) => {

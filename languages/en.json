@@ -585,6 +585,9 @@
                 "header": "Vision",
                 "label": "Block Sight"
             },
+            "tcameraCollision": {
+                "label": "Camera Collider"
+            },
             "enableCollision": {
                 "label": "Enable Collision",
                 "options": {

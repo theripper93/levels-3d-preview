@@ -55,6 +55,7 @@ export class InteractionManager {
     generateSightCollisions(){
       const collisionObjects = [];
       const sightObjects = [];
+      const cameraObjects = [];
       for(let tile of Object.values(this._parent.tiles)){
         if(!tile.mesh?.visible) continue;
         if(tile.hasTags){
@@ -66,10 +67,12 @@ export class InteractionManager {
             o.userData = ud;
             if(o?.userData?.collision) collisionObjects.push(clone);
             if(o?.userData?.sight) sightObjects.push(clone);
+            if(o?.userData?.cameraCollision) cameraObjects.push(clone);
           })
         }else{
           if(tile.collision) collisionObjects.push(tile.mesh);
           if(tile.sight) sightObjects.push(tile.mesh);
+          if(tile.cameraCollision) cameraObjects.push(tile.mesh);
         }
       }
       for(let wall of Object.values(this._parent.walls)){
@@ -85,7 +88,8 @@ export class InteractionManager {
 
       this._sightCollisions = {
         collision: collisionObjects,
-        sight: sightObjects
+        sight: sightObjects,
+        camera: cameraObjects
       }
       canvas.tokens.controlled.forEach(t => t.updateSource())
     }

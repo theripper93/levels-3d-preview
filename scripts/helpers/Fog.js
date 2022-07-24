@@ -40,9 +40,7 @@ export class Fog{
 
     initPixiRT(){
         const fowQuality = game.settings.get("levels-3d-preview", "fowQuality");
-        const maxDimension = Math.max(canvas.dimensions.width, canvas.dimensions.height);
-        const maxResolution = this._parent.renderer.capabilities.maxTextureSize * fowQuality;
-        const fogTexResolution = Math.min(maxResolution/maxDimension, 1) - 0.001;
+        const fogTexResolution = canvas.fog.resolution.resolution*fowQuality;
         this.pixiRenderTexture = PIXI.RenderTexture.create({width: canvas.dimensions.width, height: canvas.dimensions.height, resolution: this._sharedContext ? fogTexResolution : 0.1});
     }
 
@@ -77,10 +75,11 @@ export class Fog{
     }
 
     generateTexture(){
+        const originalTint = canvas.fog.sprite.tint;
         canvas.fog.sprite.tint = 0x808080;
         if(canvas.scene.fogExploration) canvas.app.renderer.render(canvas.fog.sprite, {renderTexture: this.pixiRenderTexture, clear: true});
         canvas.app.renderer.render(canvas.masks.vision.vision, {renderTexture: this.pixiRenderTexture, clear: !canvas.scene.fogExploration});
-        canvas.fog.sprite.tint = 0xffffff;
+        canvas.fog.sprite.tint = originalTint;
         if(this._sharedContext){
             const texProps = this._parent.renderer.properties.get(this.webglFogTexture);
             texProps.__webglTexture = Object.values(this.pixiRenderTexture.baseTexture._glTextures)[0]?.texture

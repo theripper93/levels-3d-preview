@@ -29,10 +29,15 @@ export class GameCamera{
         origin.y += 0.2;
         const target = origin.clone();
         target.y = -1000000;
-        const collision = this._parent.interactionManager.computeSightCollisionFrom3DPositions(origin, target, "collision", false, false, true);
+        //const gridCenter = canvas.grid.getCenter(origin.x*factor,origin.z*factor);
+
+        const collision = this._parent.interactionManager.computeSightCollisionFrom3DPositions(origin, target, "camera", false, false, true);
         let targetCollision = null;
         if(!this.lock){
-            targetCollision = this._parent.interactionManager.computeSightCollisionFrom3DPositions(origin, this.controls.target, "collision", false, false, true);
+            targetCollision = this._parent.interactionManager.computeSightCollisionFrom3DPositions(origin, this.controls.target, "camera", false, false, true);
+        }
+        if(collision){
+            collision.y = Math.ceil(collision.y/(canvas.grid.size/factor))*(canvas.grid.size/factor);
         }
         return {
             cameraToGround: origin.y - 0.2 - (collision?.y ?? 0),
@@ -69,8 +74,8 @@ export class GameCamera{
 
     computeBounds(){
         const dimensions = canvas.scene.dimensions;
-        const minBounds = new THREE.Vector3((dimensions.paddingX)/factor,-100000,(dimensions.paddingY)/factor);
-        const maxBounds = new THREE.Vector3((dimensions.sceneWidth+dimensions.paddingX)/factor,100000,(dimensions.sceneHeight+dimensions.paddingY)/factor);
+        const minBounds = new THREE.Vector3((dimensions.sceneX)/factor,-100000,(dimensions.sceneY)/factor);
+        const maxBounds = new THREE.Vector3((dimensions.sceneWidth+dimensions.sceneX)/factor,100000,(dimensions.sceneHeight+dimensions.sceneY)/factor);
         const box = new THREE.Box3(minBounds, maxBounds);
         this._bounds = box;
     }
@@ -133,7 +138,7 @@ export class GameCamera{
 
     onChangeFreeCamera(){
         const target = this.camera.position.clone().add(this.camera.getWorldDirection(new THREE.Vector3()).multiplyScalar(3))
-        const collision = this._parent.interactionManager.computeSightCollisionFrom3DPositions(this.camera.position, target, "collision");
+        const collision = this._parent.interactionManager.computeSightCollisionFrom3DPositions(this.camera.position, target, "camera");
         if(collision){
             this.controls.target = collision;
         }else{

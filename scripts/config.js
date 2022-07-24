@@ -791,6 +791,11 @@ Hooks.on("renderTileConfig", (app,html)=>{
             label: game.i18n.localize("levels3dpreview.flags.tsight.label"),
             default: true,
         },
+        "cameraCollision": {
+            type: "checkbox",
+            label: game.i18n.localize("levels3dpreview.flags.tcameraCollision.label"),
+            default: true,
+        },
         "doorType": {
             type: "select",
             label: game.i18n.localize("WALLS.Door"),

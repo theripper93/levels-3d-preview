@@ -405,7 +405,7 @@ export class Token3D {
   
     updatePositionFrom3D(e){
       this.skipMoveAnimation = true;
-        const useSnapped = canvas.scene.gridType && !e.shiftKey;
+        const useSnapped = canvas.scene.grid.type && !e.shiftKey;
       const x3d = this.mesh.position.x;
       const y3d = this.mesh.position.y;
       const z3d = this.mesh.position.z;

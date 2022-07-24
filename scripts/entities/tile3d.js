@@ -138,6 +138,7 @@ export class Tile3D {
         this.randomSeed = this.randomSeed.substring(0,7);
         this.randomColor = this.tile.document.getFlag("levels-3d-preview", "randomColor") ?? false;
         this.collision = this.tile.document.getFlag("levels-3d-preview", "collision") ?? true;
+        this.cameraCollision = this.tile.document.getFlag("levels-3d-preview", "cameraCollision") ?? true;
         this.sight = this.tile.document.getFlag("levels-3d-preview", "sight") ?? true;
         this.tiltX = this.tile.document.getFlag("levels-3d-preview", "tiltX") ?? 0;
         this.tiltX = Math.toRadians(this.tiltX);
@@ -532,7 +533,7 @@ export class Tile3D {
             game.Levels3DPreview.helpers.groundModel(model.model, this.autoGround ,this.autoCenter)
             let hasTags = false;
             model.model.traverse((child) => {
-                if(child?.userData?.sight !== undefined || child?.userData?.collision !== undefined || child?.userData?.isDoor !== undefined){
+                if(child?.userData?.sight !== undefined || child?.userData?.collision !== undefined || child?.userData?.cameraCollision !== undefined || child?.userData?.isDoor !== undefined){
                     hasTags = true;
                 }
             })
@@ -544,6 +545,9 @@ export class Tile3D {
                     }
                     if(child?.userData?.collision === undefined){
                         child.userData.collision = this.collision;
+                    }
+                    if(child?.userData?.cameraCollision === undefined){
+                        child.userData.cameraCollision = this.cameraCollision;
                     }
                 }) 
             }
@@ -1482,8 +1486,8 @@ const tileShaders = {
         const setUniforms = (shader) => {
             shader.uniforms.time = { value: 0.0 };
             shader.uniforms.gridSize = { value: canvas.scene.dimensions.size/factor }
-            shader.uniforms.gridColor = { value: new THREE.Color(canvas.scene.gridColor) }
-            shader.uniforms.gridAlpha = { value: canvas.scene.gridAlpha }
+            shader.uniforms.gridColor = { value: new THREE.Color(canvas.scene.grid.color) }
+            shader.uniforms.gridAlpha = { value: canvas.scene.grid.alpha }
             shader.uniforms.normalCulling = { value: intensity-0.01 }
         }
         const setupShader = (shader) => {

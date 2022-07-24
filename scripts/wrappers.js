@@ -50,13 +50,12 @@ Hooks.once('ready', async function() {
             return
         }
         if(!game.Levels3DPreview?.object3dSight || !game.Levels3DPreview?.fogExploration) return; 
-        debugger
         const splits = 8;
         const timeoutLimit = splits*64;
         const polygonPoints = [];
         const aMin = Math.normalizeRadians(Math.toRadians(this.config.rotation + 90 - this.config.angle / 2));
-        const aMax = aMin + Math.toRadians(this.config.angle);
-        const radius = 100//this.config.radius;
+        const aMax = aMin + (this.config.hasLimitedAngle ? Math.toRadians(this.config.angle) : Math.PI*2);
+        const radius = this.config.radius;
         const nPoints = Math.ceil((this.config.angle*0.25)/splits) * splits;
         const origin = this.origin
         const factor = game.Levels3DPreview.factor

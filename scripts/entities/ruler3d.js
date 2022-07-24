@@ -9,7 +9,7 @@ export class Ruler3D {
         const hsl = {}
         this.color.getHSL(hsl);
         this.lineColor = new THREE.Color().setHSL(hsl.h,hsl.s,hsl.l - 0.2);
-        this.textColor = new THREE.Color(canvas.scene.gridColor ?? 0x000000);
+        this.textColor = new THREE.Color(canvas.scene.grid.color ?? 0x000000);
         this.origin = new THREE.Vector3(0,0,0);
         this.target = new THREE.Vector3(0,0,0);
         this.sphereRadius = 0.008;
@@ -132,7 +132,7 @@ export class Ruler3D {
         this.baseSphere1.position.y = 0;
         this.baseSphere2.position.y = 0;
         //draw floating text
-        const text = `${distance} ${canvas.scene.gridUnits}.`;
+        const text = `${distance} ${canvas.scene.grid.units}.`;
         this.textElement.text(text);
         //get mid point of ruler
         const midPoint = this.template?.isPreview ? midcurve : new THREE.Vector3(this._origin.x + (targetPos.x - this._origin.x)/2, this._origin.y + (targetPos.y - this._origin.y)/2, this._origin.z + (targetPos.z - this._origin.z)/2);
@@ -213,7 +213,7 @@ export class Ruler3D {
     }
 
     static useSnapped(){
-        const isGrid = canvas.scene.gridType ? true : false;
+        const isGrid = canvas.scene.grid.type ? true : false;
         const isShift = keyboard.downKeys.has("ShiftLeft") || keyboard.downKeys.has("ShiftRight");
         if(!isGrid) return false;
         if(isGrid && !isShift) return true;
