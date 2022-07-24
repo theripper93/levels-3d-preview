@@ -41,7 +41,6 @@ Hooks.once('ready', async function() {
     }
 
     function _computePolygon(wrapped, ...args){
-        
         wrapped(...args);
         if(!game.Levels3DPreview?._ready || !game.Levels3DPreview?._active){
             const object3dSight = canvas.scene.getFlag("levels-3d-preview", "object3dSight") ?? false;
@@ -50,14 +49,14 @@ Hooks.once('ready', async function() {
             }
             return
         }
-        if(!game.Levels3DPreview?.object3dSight || !game.Levels3DPreview?.fogExploration) return;
-
+        if(!game.Levels3DPreview?.object3dSight || !game.Levels3DPreview?.fogExploration) return; 
+        debugger
         const splits = 8;
         const timeoutLimit = splits*64;
         const polygonPoints = [];
-        const aMax = this.config.aMax
-        const aMin = this.config.aMin
-        const radius = this.config.hasLimitedRadius ? this.config.radius : this.config.radius2//Math.max(this.config.radius, this.config.radius2);
+        const aMin = Math.normalizeRadians(Math.toRadians(this.config.rotation + 90 - this.config.angle / 2));
+        const aMax = aMin + Math.toRadians(this.config.angle);
+        const radius = 100//this.config.radius;
         const nPoints = Math.ceil((this.config.angle*0.25)/splits) * splits;
         const origin = this.origin
         const factor = game.Levels3DPreview.factor
@@ -66,7 +65,6 @@ Hooks.once('ready', async function() {
         const currentSplit = this.config.source._polygon3DCache?.currentSplit ?? 0;
         const splitStart = computeFull ? 0 : currentSplit*splitAngle;
         const splitEnd = computeFull ? nPoints : splitStart + splitAngle;
-        const raycasterCache = game.Levels3DPreview.raycasterCache;
 
         if(currentSplit === 0 && this.config.source._polygon3DCache?.cacheId){
             const id = this.config.source._polygon3DCache.cacheId;
@@ -77,8 +75,8 @@ Hooks.once('ready', async function() {
             }, timeoutLimit+16);
         }
 
-        const z = origin.b ?? 0;
-        //const perfStart = Date.now();
+        const z = this.config.source?.object?.b ?? 0;
+        const perfStart = Date.now();
         for (let i = splitStart, n = this.config.hasLimitedAngle ? splitEnd + 1 : splitEnd; i < n; i++){
             const a = aMin + (aMax - aMin) * (i / nPoints);
             const x = origin.x + radius * Math.cos(a)
@@ -122,7 +120,7 @@ Hooks.once('ready', async function() {
             this.config.source._polygon3DCache.complete = false
         }
         this.points = this.config.source._polygon3DCache.points;
-        //console.log(`compute polygon ${Date.now() - perfStart}ms`);
+        console.log(`compute polygon ${Date.now() - perfStart}ms`, nPoints);
     }
 
 

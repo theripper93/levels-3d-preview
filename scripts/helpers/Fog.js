@@ -51,14 +51,14 @@ export class Fog{
         const base64 = this.generateTexture();
         this.fogTexture = this._sharedContext ? base64 : await new THREE.TextureLoader().loadAsync( base64)
         this.sceneDimensions = [canvas.dimensions.width / factor, canvas.dimensions.height / factor];
-        this.sceneOrigin = [canvas.dimensions.paddingX / factor, canvas.dimensions.paddingY / factor];
+        this.sceneOrigin = [canvas.dimensions.sceneX / factor, canvas.dimensions.sceneY / factor];
     }
 
     async updateTexture(force = false){
         if(!this.needsUpdate && !force) return;
         this.needsUpdate = false;
         if(this.fogTexture && !this._sharedContext) this.fogTexture.dispose();
-        const isBlank = game.user.isGM && (!canvas.tokens.controlled.length || !canvas.sight.sources.size)
+        const isBlank = game.user.isGM && (!canvas.tokens.controlled.length || !canvas.effects.lightSources.size)
         const base64 = isBlank ? this.blank : this.generateTexture();
         this.fogTexture = this._sharedContext || isBlank ? base64 : await new THREE.TextureLoader().loadAsync( base64)
         if(!this.fogTexture) return;
@@ -77,15 +77,15 @@ export class Fog{
     }
 
     generateTexture(){
+        canvas.fog.sprite.tint = 0x808080;
+        if(canvas.scene.fogExploration) canvas.app.renderer.render(canvas.fog.sprite, {renderTexture: this.pixiRenderTexture, clear: true});
+        canvas.app.renderer.render(canvas.masks.vision.vision, {renderTexture: this.pixiRenderTexture, clear: !canvas.scene.fogExploration});
+        canvas.fog.sprite.tint = 0xffffff;
         if(this._sharedContext){
-            if(canvas.scene.fogExploration) canvas.app.renderer.render(canvas.sight.revealed, {renderTexture: this.pixiRenderTexture, clear: true});
-            canvas.app.renderer.render(canvas.sight.vision, {renderTexture: this.pixiRenderTexture, clear: !canvas.scene.fogExploration});
             const texProps = this._parent.renderer.properties.get(this.webglFogTexture);
             texProps.__webglTexture = Object.values(this.pixiRenderTexture.baseTexture._glTextures)[0]?.texture
             return this.webglFogTexture;
         }else{
-            if(canvas.scene.fogExploration) canvas.app.renderer.render(canvas.sight.revealed, {renderTexture: this.pixiRenderTexture, clear: true});
-            canvas.app.renderer.render(canvas.sight.vision, {renderTexture: this.pixiRenderTexture, clear: !canvas.scene.fogExploration});
             const base64 = canvas.app.renderer.extract.base64(this.pixiRenderTexture,"image/jpeg");
             return base64;
         }

@@ -71,7 +71,7 @@ export class Light3D {
 
     updateHandle(){
         if(!this.dragHandle) return;
-        this.dragHandle.visible = canvas.lighting._active;
+        this.dragHandle.visible = canvas.lighting.active;
         if(!this.dragHandle.visible) return;
         this.dragHandle.userData.sprite.material.map = this.light.document.hidden ? this._parent.textures.lightOff : this._parent.textures.lightOn;
         this.dragHandle.userData.sprite.material.color.set(this.light.document.hidden ? '#ff0000' : '#ffffff');

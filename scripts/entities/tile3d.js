@@ -18,7 +18,7 @@ export class Tile3D {
         this.isAnimated = false;
         this.draggable = true;
         this.embeddedName = "Tile"
-        this.bottom = tile.document.elevation;
+        this.bottom = tile.document.flags.levels.rangeBottom ?? 0;
         this.shaders = [];
         this.center2d = {
             x: this.tile.document.x + Math.abs(this.tile.document.width)/2,
