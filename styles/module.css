@@ -126,3 +126,9 @@
 #levels-3d-preview-shader-config .shader-tab-enabled{
     border-bottom: 1.5px solid var(--color-border-highlight);
 }
+
+#levels-3d-preview-shader-config .sheet-tabs.tabs{
+    flex-wrap: wrap;
+    column-gap: 2rem;
+    row-gap: 0.5rem;
+}

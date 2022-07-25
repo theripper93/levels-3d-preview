@@ -45,6 +45,7 @@ export class Token3D {
       if(!this.solidBaseMode || this.solidBaseMode === "default") this.solidBaseMode = game.settings.get("levels-3d-preview", "solidBaseMode");
       this.disableBase = this.token.document.getFlag("levels-3d-preview","disableBase")
       this.autoCenter = this.token.document.getFlag("levels-3d-preview","autoCenter") ?? true;
+      this.shaders = this.token.document.getFlag("levels-3d-preview", "shaders") ?? {};
       this.rotationX = Math.toRadians(this.token.document.getFlag("levels-3d-preview","rotationX") ?? 0);
       this.rotationY = Math.toRadians(this.token.document.getFlag("levels-3d-preview","rotationY") ?? 0);
       this.rotationZ = Math.toRadians(this.token.document.getFlag("levels-3d-preview","rotationZ") ?? 0);
@@ -81,6 +82,7 @@ export class Token3D {
       const token3d = this.gtflPath || this.imageTexture ? await this.loadModel() : this.draw();
       if(this.token.document.light.bright !== 0 || this.token.document.light.dim) this.loadLight();
       this._loaded = true;
+      this.initShaders();
       this.animationHandler.init();
       return token3d;
     }
@@ -227,6 +229,12 @@ export class Token3D {
       model.userData.draggable = true;
       model.userData.name = this.gtflPath;
       this.model = model;
+      const bbBox = new THREE.Box3().setFromObject( model ).getSize( new THREE.Vector3() );
+      this.bb = {
+        width: bbBox.x,
+        height: bbBox.z,
+        depth: bbBox.y,
+      }
       const pivot = new THREE.Group();
       pivot.add(model);
       //create hitbox
@@ -1227,12 +1235,17 @@ export class Token3D {
 
     destroy(){
       this._parent.scene.remove(this.mesh);
+      this._destroyed = true;
       delete this._parent.tokens[this.id]
     }
 
     refresh(){
       this.destroy();
       this._parent.addToken(this.token);
+    }
+
+    initShaders(){
+      this._parent.shaderHandler.applyShader(this.model, this, this.shaders);
     }
 
     get h(){

@@ -13,8 +13,7 @@ export class ShaderConfig extends FormApplication{
             title: game.i18n.localize("levels3dpreview.shaders.config.title"),
             id: `levels-3d-preview-shader-config`,
             template: `modules/levels-3d-preview/templates/ShaderConfig.hbs`,
-            resizable: true,
-            width: 500,
+            width: 330,
             closeOnSubmit: true,
             tabs: [{ navSelector: ".tabs", contentSelector: ".content"}],
             filepickers: []
@@ -30,6 +29,7 @@ export class ShaderConfig extends FormApplication{
             if(!shaderData[k]) shaderData[k] = {};
             finalData[k] = {
                 title: game.i18n.localize(`levels3dpreview.shaders.${k}.name`),
+                description: game.i18n.localize(`levels3dpreview.shaders.${k}.description`),
                 icon: game.Levels3DPreview.CONFIG.shaders.shaders[k].icon ?? "",
                 isEnabled: shaderData[k].enabled,
             };
@@ -37,20 +37,27 @@ export class ShaderConfig extends FormApplication{
                 isBoolean: true,
                 value: shaderData[k].enabled ?? false,
                 title: game.i18n.localize("levels3dpreview.shaders.config.enabled"),
+                isField: true,
             }
             for( const [k2,v2] of Object.entries(uniforms) ){
                 const uniData = {
+                    isField: true,
                     type: v2.type,
-                    isNumber: v2.type == "float",
+                    isNumber: v2.type == "float" && (v2.min == undefined || v2.max == undefined),
                     isColor: v2.type == "vec3",
                     isTexture: v2.type == "sampler2D",
                     isBoolean: v2.type == "bool",
+                    isSlider: v2.type == "float" && v2.min != undefined && v2.max != undefined,
+                    min: v2.min,
+                    max: v2.max,
+                    step: Math.min(((v2.min ?? 0) + (v2.max ?? 0)) / 100, 1),
                     value: shaderData[k][k2] ?? v2.default,
                     title: game.i18n.localize(`levels3dpreview.shaders.${k}.${k2}`)
                 }
                 finalData[k][k2] = uniData;
             }
         }
+        debugger
         return {shaders: finalData};
     }
 
@@ -58,6 +65,54 @@ export class ShaderConfig extends FormApplication{
         super.activateListeners(html);
         html.on("click", ".item", (e)=>{
             this.setPosition({height:"auto"})
+        })
+        html.on("click", "#apply", (e)=>{
+            e.preventDefault();
+            this._onSubmit(e, {preventClose: true, preventRender: true});
+        })
+        html.on("click", "#tomacro", (e)=>{
+            e.preventDefault();
+            Dialog.prompt({
+                title: game.i18n.localize("levels3dpreview.shaders.config.macro.title"),
+                content: "",
+                callback: (html) => {
+                    const macroName = html.find("input").val();
+                    const shaderData = JSON.stringify(foundry.utils.expandObject(this._getSubmitData()));
+                    const macroContent = `
+                    if(!canvas.activeLayer.controlled.length) return ui.notifications.error("No object selected, please select at least one object.");
+                    const updates = [];
+                    const shaderData = ${shaderData};
+                    canvas.activeLayer.controlled.forEach(obj => {
+                        updates.push({
+                            _id: obj.id,
+                            flags: {
+                                "levels-3d-preview": {
+                                    "shaders": shaderData
+                                }
+                            }
+                        });
+                    })
+                    canvas.scene.updateEmbeddedDocuments(canvas.activeLayer.options.objectClass.embeddedName, updates);
+                    `
+                    Macro.create({
+                        command: macroContent,
+                        img: "icons/svg/acid.svg",
+                        type: "script",
+                        name: macroName,
+                    })
+                    ui.notifications.notify(game.i18n.localize("levels3dpreview.shaders.config.macro.created").replace("%s", macroName));
+                },
+                render: (html) => {
+                    const input = `
+                    <div class="form-group" style="display: grid;grid-template-columns: 1fr 1fr;align-items: center;padding-bottom: 8px;">
+                        <label>${game.i18n.localize("levels3dpreview.shaders.config.macro.content")}</label>
+                        <input type="text" id="macro-name" value="Shader Macro" placeholder="">
+                    </div>
+                  `
+                    $(html[0]).append(input);
+                }
+            });
+            
         })
     }
 
@@ -98,13 +153,14 @@ export class ShaderHandler{
         commonParams.localSize = entity3D.isInstanced ? new THREE.Vector3(commonParams.mWidth*0.3, commonParams.mDepth*0.3, commonParams.mHeight*0.3) : new THREE.Vector3(0.2, 0.2, 0.2);
         Object3D.traverse(child => {
             if(child.isMesh){
-                this.buildShader(child, shaderParams, commonParams);
+                this.buildShader(child, shaderParams, commonParams, entity3D);
             }
         })
     }
 
-    buildShader(mesh, shaderParams, commonParams){
+    buildShader(mesh, shaderParams, commonParams, entity3D){
         const _onBeforeCompile = (shader) => {
+            shader.entity3D = entity3D;
             this.injectShaders(shader, commonParams);
             this.setUniforms(shader, shaderParams);
             this.shaders.push(shader);
@@ -170,22 +226,30 @@ export class ShaderHandler{
     }
 
     setUniforms(shader, shaderParams){
-        for(const [name, shaderData] of Object.entries(shaderParams)){
-            for(const [uniformName, value] of Object.entries(shaderData)){
+        for(const [name, shaderData] of Object.entries(this.shaderLib)){
+            if(name === "defaults") continue;
+            shader.uniforms[`${name + "_enabled"}`] = {value: shaderParams[name]?.enabled ? true : false};
+            for(const [uniformName, value] of Object.entries(shaderData.uniforms)){
+                const paramValue = shaderParams[name]?.[uniformName] ?? value.default;
                 const isColor = uniformName.toLowerCase().includes("color");
                 const isTexture = uniformName.toLowerCase().includes("texture");
-                let finalValue = value;
-                if(isColor) finalValue = new THREE.Color(value);
-                if(isTexture) finalValue = new THREE.TextureLoader().load(value);
+                const isAngle = uniformName.toLowerCase().includes("direction") || uniformName.toLowerCase().includes("angle");
+                let finalValue = paramValue;
+                if(isColor) finalValue = new THREE.Color(paramValue);
+                if(isTexture) finalValue = new THREE.TextureLoader().load(paramValue);
+                if(isAngle) finalValue = Math.toRadians(paramValue);
                 shader.uniforms[`${name + "_" + uniformName}`] = {value: finalValue};
             }
         }
     }
 
     updateShaders(delta){
-        this.shaders.forEach(shader => {
+        this.shaders = this.shaders.filter(shader => {
+            if(shader.entity3D._destroyed) return false;
             shader.uniforms.time.value = delta/100;
-        })
+            shader.uniforms.yPos.value = getYpos(shader.entity3D);
+            return true;
+        });
     }
 }
 
@@ -259,6 +323,8 @@ export const shaders = {
             "direction": {
                 type: "float",
                 default: 0,
+                min: 0,
+                max: 360,
             },
             "intensity": {
                 type: "float",
@@ -267,6 +333,8 @@ export const shaders = {
             "affect_model": {
                 type: "float",
                 default: 0.5,
+                min: 0.01,
+                max: 1,
             },
             "convoluted": {
                 type: "bool",
@@ -309,6 +377,8 @@ export const shaders = {
             "direction": {
                 type: "float",
                 default: 0,
+                min: 0,
+                max: 360,
             },
             "intensity": {
                 type: "float",
@@ -352,11 +422,17 @@ export const shaders = {
             },
             "direction": {
                 type: "float",
-                default: 0,
+                default: 45,
+                min: 0,
+                max: 360,
             },
-            "intensity": {
+            "wave_height": {
                 type: "float",
-                default: 0.1,
+                default: 0.3,
+            },
+            "wave_amplitude": {
+                type: "float",
+                default: 5,
             },
         },
         varying: {},
@@ -367,11 +443,11 @@ export const shaders = {
                 shaderCode: `
                 float yDisplace = 0.0;
                 if( transformed.y > 0.01 ) {
-                    float posX = transformed.x - mWidth ;
-                    float posZ = transformed.z - mHeight ;
+                    float posX = (transformed.x - mWidth)*cos(water_direction) ;
+                    float posZ = (transformed.z - mHeight)*sin(water_direction) ;
                     float timeSpeed = time * water_speed;
-                    float r = sqrt (posX*posX + posZ*posZ)*(water_intensity) + timeSpeed;
-                    yDisplace = (1.0 + sin(r) ) * water_direction * mDepth;
+                    float r = sqrt (posX*posX + posZ*posZ)*(water_wave_amplitude) + timeSpeed;
+                    yDisplace = (1.0 + sin(r)) * water_wave_height * mDepth;
                     if( transformed.y + yDisplace <= 0.0 ) {
                         yDisplace = 0.0;
                     }
@@ -380,6 +456,110 @@ export const shaders = {
             }
         ],
         fragmentShader: [],
+    },
+    "ocean": {
+        icon: `<i class="fas fa-fish"></i>`,
+        uniforms: {
+            "speed": {
+                type: "float",
+                default: 0.1,
+            },
+            "waveA_wavelength": {
+                type: "float",
+                default: 0.6,
+            },
+            "waveA_steepness": {
+                type: "float",
+                default: 0.3,
+            },
+            "waveA_direction": {
+                type: "float",
+                default: 90,
+                min: 0,
+                max: 360,
+            },
+            "waveB_wavelength": {
+                type: "float",
+                default: 0.3,
+            },
+            "waveB_steepness": {
+                type: "float",
+                default: 0.25,
+            },
+            "waveB_direction": {
+                type: "float",
+                default: 260,
+                min: 0,
+                max: 360,
+            },
+            "waveC_wavelength": {
+                type: "float",
+                default: 0.2,
+            },
+            "waveC_steepness": {
+                type: "float",
+                default: 0.35,
+            },
+            "waveC_direction": {
+                type: "float",
+                default: 180,
+                min: 0,
+                max: 360,
+            },
+            "foam": {
+                type: "bool",
+                default: true,
+            }
+        },
+        varying: {
+            "foam_factor": {
+                type: "float",
+                default: 0.0,
+            }
+        },
+        vertexShader: [
+            {
+                mode: SHADERS_CONSTS.APPEND,
+                injectionPoint: "#include <begin_vertex>",
+                shaderCode: `
+                vec4 _WaveA = vec4(1.0, ocean_waveA_direction, ocean_waveA_steepness, ocean_waveA_wavelength);
+                vec4 _WaveB = vec4(1.0, ocean_waveB_direction, ocean_waveA_steepness, ocean_waveB_wavelength);
+                vec4 _WaveC = vec4(1.0, ocean_waveC_direction, ocean_waveA_steepness, ocean_waveC_wavelength);
+                vec4 _WaveD = (_WaveA + _WaveB) * _WaveC;
+                vec4 _WaveE = (_WaveA + _WaveC) * _WaveB;
+                vec4 _WaveF = (_WaveC + _WaveB) * _WaveA;
+                vec3 gridPoint = transformed.xyz;
+                vec3 tangent = vec3(0.0);
+                vec3 binormal = vec3(0.0);
+                vec3 p = gridPoint;
+                p += GerstnerWave(_WaveA, gridPoint, tangent, binormal, ocean_speed) ;
+                p += GerstnerWave(_WaveB, gridPoint, tangent, binormal, ocean_speed) ;
+                p += GerstnerWave(_WaveC, gridPoint, tangent, binormal, ocean_speed) ;
+                p += GerstnerWave(_WaveD, gridPoint, tangent, binormal, ocean_speed) ;
+                p += GerstnerWave(_WaveE, gridPoint, tangent, binormal, ocean_speed) ;
+                p += GerstnerWave(_WaveF, gridPoint, tangent, binormal, ocean_speed) ;
+                vec3 ocean_normal = normalize(cross(tangent, binormal));
+                #if defined( transformedNormal )
+                    transformedNormal = ocean_normal;
+                #endif
+                if(ocean_foam){
+                    ocean_foam_factor = pow(ocean_normal.y, 4.0);
+                }
+                transformed = p;
+                `
+            }
+        ],
+        fragmentShader: [
+            {
+                mode: SHADERS_CONSTS.APPEND,
+                injectionPoint: "#include <dithering_fragment>",
+                shaderCode: `
+                if(ocean_foam){
+                    gl_FragColor.rgb = mix(gl_FragColor.rgb, vec3(1.0, 1.0, 1.0), ocean_foam_factor * 0.5);
+                }
+                `
+            }
+        ],
     },
     "grid": {
         icon: `<i class="fas fa-grid"></i>`,
@@ -541,13 +721,19 @@ export const shaders = {
     "textureScroll": {
         icon: `<i class="fas fa-angle-double-right"></i>`,
         uniforms: {
-            speed: {
+            speedX: {
+                type: "float",
+                default: 0.01
+            },
+            speedY: {
                 type: "float",
                 default: 0.01
             },
             direction: {
                 type: "float",
-                default: 0
+                default: 0,
+                min: 0,
+                max: 360,
             }
         },
         varying: {},
@@ -557,8 +743,8 @@ export const shaders = {
                 injectionPoint: "#include <begin_vertex>",
                 shaderCode: `
                 #ifdef USE_UV
-                vUv.x += time * textureScroll_speed * cos(textureScroll_direction);
-                vUv.y += time * textureScroll_speed * sin(textureScroll_direction);
+                vUv.x += time * textureScroll_speedX * cos(textureScroll_direction);
+                vUv.y += time * textureScroll_speedY * sin(textureScroll_direction);
                 #endif
                 `
             }
@@ -620,25 +806,141 @@ export const shaders = {
 
         ],
 
+    },
+    "lightning": {
+        icon: `<i class="fas fa-bolt"></i>`,
+        uniforms: {
+            speed: {
+                type: "float",
+                default: 0.1
+            },
+            intensity: {
+                type: "float",
+                default: 0.5
+            },
+            scale: {
+                type: "float",
+                default: 1
+            },
+            color: {
+                type: "vec3",
+                default: "#0037ff"
+            },
+            blendMode: {
+                type: "bool",
+                default: true
+            },
+        },
+        varying: {
+            vPosition: {
+                type: "vec3",
+                default: new THREE.Vector3(0, 0, 0),
+            },
+        },
+        vertexShader: [
+            {
+                mode: SHADERS_CONSTS.APPEND,
+                injectionPoint: "#include <begin_vertex>",
+                shaderCode: `
+                lightning_vPosition = vec3(position);
+                `
+            }
+        ],
+        fragmentShader: [
+            {
+                mode: SHADERS_CONSTS.APPEND,
+                injectionPoint: "#include <dithering_fragment>",
+                shaderCode: `
+                vec3 noiseVec = lightning_vPosition;            
+                
+                vec3 lightning_final_color = vec3( 0.0 );
+                for( int i = 0; i < 5; ++i ) {
+                    noiseVec = noiseVec.zyx * lightning_scale;
+                    float t = abs(2.0 / (fbm3D(noiseVec + vec3(0.0, (time * lightning_speed) / float(i + 4), 0.0)) * 120.0));
+                    lightning_final_color +=  t * vec3( float(i+1) * 0.1 +lightning_color.r, lightning_color.g, lightning_color.b );
+                }    
+                if(lightning_blendMode){
+                    gl_FragColor.rgb = mix(gl_FragColor.rgb, lightning_final_color, lightning_intensity);
+                }else{
+                    gl_FragColor.rgb += lightning_final_color * lightning_intensity;
+                }
+                `
+            }
+        ],
+    },
+    "idle": {
+        icon: `<i class="fas fa-walking"></i>`,
+        uniforms: {
+            "speed": {
+                type: "float",
+                default: 0.1,
+            },
+            "direction": {
+                type: "float",
+                default: 0,
+                min: 0,
+                max: 360,
+            },
+            "intensity": {
+                type: "float",
+                default: 0.3,
+            },
+            "affect_model": {
+                type: "float",
+                default: 0.7,
+                min: 0.01,
+                max: 1,
+            }
+        },
+        varying: {},
+        vertexShader: [
+            {
+                mode: SHADERS_CONSTS.APPEND,
+                injectionPoint: "#include <begin_vertex>",
+                shaderCode: `
+                float currentY = (modelMatrix * vec4( transformed, 1.0 )).y;
+                float currentYDelta = currentY - yPos;
+                float idleFactor = 0.0;
+                vec3 idleOffset = vec3(0.0);
+                float idle_intensity_final = idle_intensity / 100.0;
+                if (currentYDelta > mDepth*idle_affect_model) {
+                    idleFactor = (currentYDelta - mDepth*idle_affect_model) / (mDepth*idle_affect_model);
+                    idleFactor = (sin(time*idle_speed + transformed.x + transformed.z + transformed.y) + idle_intensity_final) * idleFactor;
+                    idleOffset = vec3(idleFactor * idle_intensity_final * cos(idle_direction) * localSize.x, idleFactor *  idle_intensity_final * cos(sin(idle_direction)) * localSize.y, idleFactor *  idle_intensity_final * sin(idle_direction) * localSize.z);
+                }
+                transformed = vec3( transformed.x + idleOffset.x, transformed.y + idleOffset.y, transformed.z + idleOffset.z );
+                `
+            }
+        ],
+        fragmentShader: [],
+    },
+}
+
+function getSizesForShader(entity3D){
+    if(entity3D.isInstanced){
+        return {
+            mDepth : entity3D.instancedBBSize.y,
+            mWidth : entity3D.instancedBBSize.x,
+            mHeight : entity3D.instancedBBSize.z,
+            yPos : entity3D.mesh.position.y - entity3D.instancedBBSize.y / 2,
+            textureRepeat : entity3D.textureRepeat ?? 1,
+        }
+    }else{
+        const model = entity3D.mesh;
+        return {
+            mDepth : entity3D.bb.depth,
+            mWidth : entity3D.bb.width,
+            mHeight : entity3D.bb.height,
+            yPos : (model.position.y - entity3D.bb.depth / 2),
+            textureRepeat : entity3D.textureRepeat ?? 1,
+        }
     }
 }
 
-function getSizesForShader(_this){
-    if(_this.isInstanced){
-        return {
-            mDepth : _this.instancedBBSize.y,
-            mWidth : _this.instancedBBSize.x,
-            mHeight : _this.instancedBBSize.z,
-            yPos : _this.mesh.position.y - _this.instancedBBSize.y / 2,
-            textureRepeat : _this.textureRepeat ?? 1,
-        }
+function getYpos(entity3D){
+    if(entity3D.isInstanced){
+        return entity3D.mesh.position.y - entity3D.instancedBBSize.y / 2;
     }else{
-        return {
-            mDepth : _this.bb.depth,
-            mWidth : _this.bb.width,
-            mHeight : _this.bb.height,
-            yPos : _this.mesh.position.y - _this.bb.depth / 2,
-            textureRepeat : _this.textureRepeat ?? 1,
-        }
+        return (entity3D.mesh.position.y - entity3D.bb.depth / 2);
     }
 }

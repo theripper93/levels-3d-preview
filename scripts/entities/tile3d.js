@@ -105,13 +105,6 @@ export class Tile3D {
         this.shader = this.tile.document.getFlag("levels-3d-preview", "shader") ?? "none";
         this.flipY = this.tile.document.getFlag("levels-3d-preview", "flipY") ?? false;
         this.shaders = this.tile.document.getFlag("levels-3d-preview", "shaders") ?? {};
-        this.shaderParams = {
-            intensity: this.tile.document.getFlag("levels-3d-preview", "shaderIntensity") ?? 0.1,
-            speed: this.tile.document.getFlag("levels-3d-preview", "shaderSpeed") ?? 0.1,
-            other: this.tile.document.getFlag("levels-3d-preview", "shaderOther") ?? 0.1,
-            other2: this.tile.document.getFlag("levels-3d-preview", "shaderOther2") ?? 0.5,
-            alt: this.tile.document.getFlag("levels-3d-preview", "shaderAlt") ?? false,
-        }
         this.noiseParams = {
             scale: this.tile.document.getFlag("levels-3d-preview", "noiseScale") ?? 1,
             height: this.tile.document.getFlag("levels-3d-preview", "noiseHeight") ?? 1,
@@ -752,7 +745,6 @@ export class Tile3D {
 
     updateVisibility(time){
         if(!this.mesh) return;
-        this.updateShader(time);
         this.toggleBoundingBox();
         this.mesh.visible = !this.tile.document.hidden || game.user.isGM;
         if(game.Levels3DPreview.mirrorLevelsVisibility && this.tile.document.overhead){
@@ -810,32 +802,6 @@ export class Tile3D {
 
     initShaders(){
         this._parent.shaderHandler.applyShader(this.mesh, this, this.shaders);
-        return;
-        if(!tileShaders[this.shader]) return;
-        this.mesh.traverse(child => {
-            if(child.isMesh){
-                if(child.material instanceof Array){
-                    child.material.forEach(material => {
-                        this.applyShader(materia,child)
-                    })
-                }else{
-                    this.applyShader(child.material,child)
-                }
-            }
-        })
-    }
-
-    applyShader(material, object){
-        return;
-        const shaderFn = tileShaders[this.shader];
-        shaderFn(this, material, object, this.shaderParams);
-    }
-
-    updateShader(delta){
-        return
-        this.shaders.forEach(shader => {
-            shader.uniforms.time.value = delta/100;
-        })
     }
 
     getNoise(x,y){

@@ -1089,22 +1089,31 @@
         "shaders": {
             "config": {
                 "title": "Shaders Configuration",
-                "save": "Save Shaders",
+                "save": "Save",
+                "apply": "Apply",
+                "macro-btn": "Macro",
                 "enabled": "Enabled?",
                 "label": "Shader Configuration",
                 "button": "Configure Shaders",
-                "notes": "Configure the visual effects to be used on this 3D Object."
+                "notes": "Configure the visual effects to be used on this 3D Object.",
+                "macro": {
+                    "title": "Create Shader Macro",
+                    "content": "Macro Name:",
+                    "created": "Macro '%s' created successfully!"
+                }
             },
             "wind": {
                 "name": "Wind",
+                "description": "Wind like effect to add some movement to your vegetation.",
                 "speed": "Speed",
                 "direction": "Direction",
                 "intensity": "Intensity",
-                "affect_model": "Affect Model (%)",
+                "affect_model": "Anchor (%)",
                 "convoluted": "Convoluted"
             },
             "distortion": {
                 "name": "Distortion",
+                "description": "Distortion effect perfect for a Lava pool or other viscous liquids.",
                 "speed": "Speed",
                 "direction": "Direction",
                 "intensity" : "Intensity",
@@ -1112,30 +1121,69 @@
             },
             "water": {
                 "name": "Water",
+                "description": "Simple, sine wave based, water effect. Effective and very cheap on performance.",
                 "speed": "Speed",
                 "direction": "Direction",
-                "intensity" : "Intensity"
+                "wave_amplitude" : "Wave Density",
+                "wave_height" : "Wave Height"
+            },
+            "ocean": {
+                "name": "Ocean",
+                "description": "Complex water simulation that uses multiple waves. Heavier on performance than the simple water shader.",
+                "speed": "Speed",
+                "waveA_wavelength": "Wave A Wavelength",
+                "waveA_steepness": "Wave A Steepness",
+                "waveA_direction": "Wave A Direction",
+                "waveB_wavelength": "Wave B Wavelength",
+                "waveB_steepness": "Wave B Steepness",
+                "waveB_direction": "Wave B Direction",
+                "waveC_wavelength": "Wave C Wavelength",
+                "waveC_steepness": "Wave C Steepness",
+                "waveC_direction": "Wave C Direction",
+                "foam": "Highlights"
             },
             "grid": {
                 "name": "Grid",
+                "description": "Project the scene grid on this 3D Object. Only square grids are supported. This shader will use the grid color and opacity set in the scene settings.",
                 "normalCulling": "Normal Culling"
             },
             "triplanar": {
                 "name": "Triplanar",
-                "roughnessAdjust": "Reflection Adjustment"
+                "description": "Advanced texture projection technique to correctly texture surfaces that would otherwise have stretched textures on steep angles.",
+                "roughnessAdjust": "Reflection Adj."
             },
             "textureScroll": {
                 "name": "Scroll",
-                "speed": "Speed",
+                "description": "Simple texture scrolling effect similar to the 'Parallaxia' module.",
+                "speedX": "Speed X",
+                "speedY": "Speed Y",
                 "direction": "Direction"
             },
             "fire": {
                 "name": "Fire",
+                "description": "Fire/Oil effect. The effect can be colorized and scaled to produce results that go way beyond fire.",
                 "speed": "Speed",
                 "intensity" : "Intensity",
                 "scale": "Scale",
                 "color": "Color",
                 "blendMode": "Mix Blending"
+            },
+            "lightning": {
+                "name": "Lightning",
+                "description": "Lightning like effect with moving electric arcs.",
+                "speed": "Speed",
+                "intensity" : "Intensity",
+                "scale": "Scale",
+                "color": "Color",
+                "blendMode": "Mix Blending"
+            },
+            "idle": {
+                "name": "Idle",
+                "description": "Simple displacement effect meant to be used on tokens to give them more life.",
+                "speed": "Speed",
+                "direction": "Direction",
+                "intensity": "Intensity",
+                "affect_model": "Anchor (%)"
             }
         }
     }
