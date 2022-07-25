@@ -34,6 +34,7 @@ import { presetMaterials, PresetMaterialHandler, populateScene } from "./helpers
 import { FXAAShader } from "./lib/FXAA.js";
 import { SMAAPass } from "./lib/SMAAPass.js";
 import { ShaderPass } from "./lib/ShaderPass.js";
+import { ShaderHandler, shaders } from "./shaders/ShaderLib.js";
 
 export const factor = 1000;
 injectFoWShaders(THREE);
@@ -122,6 +123,10 @@ class Levels3DPreview {
         turnStartMarker,
         ParticleSystem,
         Tile3D
+      },
+      shaders: {
+        ShaderHandler,
+        shaders
       },
       autoPan: false,
       tokenAnimations: defaultTokenAnimations,
@@ -299,6 +304,7 @@ class Levels3DPreview {
       `<div id="video-texture-container" style="position: absolute; top: 0; left: 0;display: none;"></div>`
     );
     this.videoTextureContinaer = $("#video-texture-container");
+    Hooks.callAll("levels3dpreviewInit", this);
     this.init3d();
   }
 
@@ -412,6 +418,7 @@ class Levels3DPreview {
     this._envReady = false;
     this._lightsOk = !canvas.scene.getFlag("levels-3d-preview", "bakeLights");
     this.clear3Dscene();
+    this.shaderHandler = new ShaderHandler(this);
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(
       canvas.scene.backgroundColor ?? 0xffffff
@@ -1006,6 +1013,7 @@ class Levels3DPreview {
           this.fogExploration.updateShaders();
         }
       }
+      this.shaderHandler.updateShaders(time);
       this.interactionManager._canMouseMove = true;
       this.interactionManager.dragObject();
       this.cursors.update();

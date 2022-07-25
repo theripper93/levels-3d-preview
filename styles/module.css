@@ -118,3 +118,11 @@
 .levels-3d-preview-hud .placeable-hud{
     transform-origin: center !important;
 }
+
+#levels-3d-preview-shader-config .shader-tab-enabled i{
+    color: var(--color-border-highlight);
+}
+
+#levels-3d-preview-shader-config .shader-tab-enabled{
+    border-bottom: 1.5px solid var(--color-border-highlight);
+}

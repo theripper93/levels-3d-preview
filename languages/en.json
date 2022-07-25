@@ -1085,6 +1085,58 @@
             "ms": "Milliseconds",
             "gu": "Grid Units",
             "gs": "Grid Squares"
+        },
+        "shaders": {
+            "config": {
+                "title": "Shaders Configuration",
+                "save": "Save Shaders",
+                "enabled": "Enabled?",
+                "label": "Shader Configuration",
+                "button": "Configure Shaders",
+                "notes": "Configure the visual effects to be used on this 3D Object."
+            },
+            "wind": {
+                "name": "Wind",
+                "speed": "Speed",
+                "direction": "Direction",
+                "intensity": "Intensity",
+                "affect_model": "Affect Model (%)",
+                "convoluted": "Convoluted"
+            },
+            "distortion": {
+                "name": "Distortion",
+                "speed": "Speed",
+                "direction": "Direction",
+                "intensity" : "Intensity",
+                "convoluted": "Convoluted"
+            },
+            "water": {
+                "name": "Water",
+                "speed": "Speed",
+                "direction": "Direction",
+                "intensity" : "Intensity"
+            },
+            "grid": {
+                "name": "Grid",
+                "normalCulling": "Normal Culling"
+            },
+            "triplanar": {
+                "name": "Triplanar",
+                "roughnessAdjust": "Reflection Adjustment"
+            },
+            "textureScroll": {
+                "name": "Scroll",
+                "speed": "Speed",
+                "direction": "Direction"
+            },
+            "fire": {
+                "name": "Fire",
+                "speed": "Speed",
+                "intensity" : "Intensity",
+                "scale": "Scale",
+                "color": "Color",
+                "blendMode": "Mix Blending"
+            }
         }
     }
 }

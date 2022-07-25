@@ -1,0 +1,45 @@
+<form class="flexcol" autocomplete="off">
+  <!-- Config Settings Configuration Tabs -->
+    <nav class="sheet-tabs tabs" data-group="sections">
+        {{#each shaders}}
+            <a class="item {{#if this.isEnabled}}shader-tab-enabled{{/if}}" data-tab="{{@key}}">{{{this.icon}}} {{this.title}}</a>
+        {{/each}}
+    </nav>
+
+
+    <section id="config-tabs" class="content">
+        <hr>
+
+        {{#each shaders}}
+            <div class="tab" data-tab="{{@key}}" data-group="sections">
+                {{#each this}}
+                    <div class="form-group">
+                    <label>{{this.title}}</label>
+                        <div class="form-fields">
+                    {{#if this.isNumber}}
+                        <input type="number" name="{{@../key}}.{{@key}}" step="any" data-dtype="Number" value="{{this.value}}"/>
+                    {{/if}}
+                    {{#if this.isBoolean}}
+                        <input type="checkbox" name="{{@../key}}.{{@key}}" data-dtype="Boolean" {{checked this.value}}/>
+                    {{/if}}
+                    {{#if this.isTexture}}
+                        {{filePicker target=(concat @../key "." @key) type="image"}}
+                    {{/if}}
+                    {{#if this.isColor}}
+                        {{colorPicker name=(concat @../key "." @key) value=this.value}}
+                    {{/if}}
+                        </div>
+                    </div>
+                {{/each}}
+            </div>
+        {{/each}}
+
+    </section>
+
+
+    <footer class="sheet-footer flexrow">
+        <button type="submit" name="submit">
+            <i class="fas fa-save"></i> {{localize "levels3dpreview.shaders.config.save"}}
+        </button>
+    </footer>
+</form>
