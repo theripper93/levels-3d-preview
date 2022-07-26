@@ -1342,10 +1342,16 @@ class Levels3DPreview {
     this.ClipNavigation = new ClipNavigation().render(true);
     this.weather = new WeatherSystem(this);
 
-    canvas.perception.schedule({
-      lighting: { initialize: true /* calls updateSource on each light source */, refresh: true },
-      sight: { initialize: true /* calls updateSource on each token */, refresh: true /* you probably to refesh sight as well */, forceUpdateFog: true /* not sure if you need this */ },
-    });
+    canvas.perception.update({
+      forceUpdateFog: true,
+      initializeLighting: true,
+      initializeSounds: true,
+      initializeVision: true,
+      refreshLighting: true,
+      refreshSounds: true,
+      refreshTiles: true,
+      refreshVision: true,
+    }, true);
 
     this.setFilters(true)
     setTimeout(() => {
