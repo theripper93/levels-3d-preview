@@ -129,6 +129,11 @@
 
 #levels-3d-preview-shader-config .sheet-tabs.tabs{
     flex-wrap: wrap;
+    justify-content: center;
     column-gap: 2rem;
     row-gap: 0.5rem;
 }
+
+/*#levels-3d-preview-shader-config{
+    max-width: 335px;
+}*/

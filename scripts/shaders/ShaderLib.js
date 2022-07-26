@@ -13,7 +13,7 @@ export class ShaderConfig extends FormApplication{
             title: game.i18n.localize("levels3dpreview.shaders.config.title"),
             id: `levels-3d-preview-shader-config`,
             template: `modules/levels-3d-preview/templates/ShaderConfig.hbs`,
-            width: 330,
+            width: 335,
             closeOnSubmit: true,
             tabs: [{ navSelector: ".tabs", contentSelector: ".content"}],
             filepickers: []
@@ -57,7 +57,6 @@ export class ShaderConfig extends FormApplication{
                 finalData[k][k2] = uniData;
             }
         }
-        debugger
         return {shaders: finalData};
     }
 
@@ -113,7 +112,17 @@ export class ShaderConfig extends FormApplication{
                 }
             });
             
-        })
+        })        
+    }
+
+    setPosition(...args) {
+        super.setPosition(...args);
+        if(!this.activatedInitialTab) {
+            this.activatedInitialTab = true;
+            const tabId = $(this.element).find(".shader-tab-enabled").first().data("tab");
+            if(tabId) this.activateTab(tabId);
+            this.setPosition({height: "auto"});
+        }
     }
 
     async _updateObject(event, formData) {
@@ -464,6 +473,10 @@ export const shaders = {
                 type: "float",
                 default: 0.1,
             },
+            "scale": {
+                type: "float",
+                default: 1,
+            },
             "waveA_wavelength": {
                 type: "float",
                 default: 0.6,
@@ -522,9 +535,9 @@ export const shaders = {
                 mode: SHADERS_CONSTS.APPEND,
                 injectionPoint: "#include <begin_vertex>",
                 shaderCode: `
-                vec4 _WaveA = vec4(1.0, ocean_waveA_direction, ocean_waveA_steepness, ocean_waveA_wavelength);
-                vec4 _WaveB = vec4(1.0, ocean_waveB_direction, ocean_waveA_steepness, ocean_waveB_wavelength);
-                vec4 _WaveC = vec4(1.0, ocean_waveC_direction, ocean_waveA_steepness, ocean_waveC_wavelength);
+                vec4 _WaveA = vec4(1.0, ocean_waveA_direction, ocean_waveA_steepness, ocean_waveA_wavelength * ocean_scale);
+                vec4 _WaveB = vec4(1.0, ocean_waveB_direction, ocean_waveA_steepness, ocean_waveB_wavelength * ocean_scale);
+                vec4 _WaveC = vec4(1.0, ocean_waveC_direction, ocean_waveA_steepness, ocean_waveC_wavelength * ocean_scale);
                 vec4 _WaveD = (_WaveA + _WaveB) * _WaveC;
                 vec4 _WaveE = (_WaveA + _WaveC) * _WaveB;
                 vec4 _WaveF = (_WaveC + _WaveB) * _WaveA;
@@ -539,6 +552,7 @@ export const shaders = {
                 p += GerstnerWave(_WaveE, gridPoint, tangent, binormal, ocean_speed) ;
                 p += GerstnerWave(_WaveF, gridPoint, tangent, binormal, ocean_speed) ;
                 vec3 ocean_normal = normalize(cross(tangent, binormal));
+                //vNormal = ocean_normal;
                 #if defined( transformedNormal )
                     transformedNormal = ocean_normal;
                 #endif
@@ -557,6 +571,7 @@ export const shaders = {
                 if(ocean_foam){
                     gl_FragColor.rgb = mix(gl_FragColor.rgb, vec3(1.0, 1.0, 1.0), ocean_foam_factor * 0.5);
                 }
+                //gl_FragColor.rgb = vNormal;
                 `
             }
         ],
@@ -786,7 +801,7 @@ export const shaders = {
                     vec3 c1 = fire_color*0.1;
                     vec3 c2 = fire_color*0.7;
                     vec3 c3 = fire_color*0.2;
-                    vec3 c4 = fire_color*vec3(1.0, 0.9, 0.0);
+                    vec3 c4 = fire_color*vec3(1.0, 0.9, 1.0);
                     vec3 c5 = vec3(0.1);
                     vec3 c6 = vec3(0.9);
                     vec2 p = vUv.xy * 8.0 * fire_scale;
@@ -796,9 +811,70 @@ export const shaders = {
                     vec3 c = mix(c1, c2, fbm(p + r)) + mix(c3, c4, r.x) - mix(c5, c6, r.y);
                     vec4 fire_finalColor = vec4(c * cos(1.57 * vUv.y / textureRepeat), 1.0);
                     if(fire_blendMode){
-                        gl_FragColor = mix(gl_FragColor, fire_finalColor, fire_intensity);
+                        gl_FragColor.rgb = mix(gl_FragColor.rgb, fire_finalColor.rgb, fire_intensity);
                     }else{
-                        gl_FragColor += fire_finalColor * fire_intensity;
+                        gl_FragColor.rgb += (fire_finalColor.rgb * fire_intensity);
+                    }
+                #endif
+                `
+            }
+
+        ],
+
+    },
+    "ice": {
+        icon: `<i class="fas fa-icicles"></i>`,
+        uniforms: {
+            speed: {
+                type: "float",
+                default: 0.1
+            },
+            intensity: {
+                type: "float",
+                default: 0.5
+            },
+            grain: {
+                type: "float",
+                default: 0.5
+            },
+            scale: {
+                type: "float",
+                default: 1
+            },
+            color: {
+                type: "vec3",
+                default: "#abe5e8"
+            },
+            blendMode: {
+                type: "bool",
+                default: false
+            },
+        },
+        varying: {},
+        vertexShader: [],
+        fragmentShader: [
+            {
+                mode: SHADERS_CONSTS.APPEND,
+                injectionPoint: "#include <dithering_fragment>",
+                shaderCode: `
+                #ifdef USE_UV
+                    vec3 c1 = ice_color*0.1;
+                    vec3 c2 = ice_color*0.7;
+                    vec3 c3 = ice_color*0.2;
+                    vec3 c4 = ice_color*vec3(1.0, 0.9, 1.0);
+                    vec3 c5 = vec3(0.1);
+                    vec3 c6 = vec3(0.9);
+                    vec2 p = vUv.xy * 8.0 * ice_scale * 3.0;
+                    float ice_time = time * ice_speed * 0.3;
+                    float final_ice_grain = ice_grain / textureRepeat * 1000.0;
+                    float q = fbm3D(vec3(p.xy - final_ice_grain * 0.1, vUv.x * vUv.y * final_ice_grain * 0.7));
+                    vec2 r = vec2(fbm(p + q + ice_time * 0.7 - p.x - p.y), fbm(p + q - ice_time * 0.4));
+                    vec3 c = mix(c1, c2, fbm(p + r)) + mix(c3, c4, r.x) - mix(c5, c6, r.y);
+                    vec4 ice_finalColor = vec4(c * cos(1.57 * vUv.y / textureRepeat), 1.0);
+                    if(ice_blendMode){
+                        gl_FragColor.rgb = mix(gl_FragColor.rgb, ice_finalColor.rgb, ice_intensity);
+                    }else{
+                        gl_FragColor.rgb += (ice_finalColor.rgb * ice_intensity);
                     }
                 #endif
                 `
