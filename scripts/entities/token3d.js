@@ -1376,11 +1376,35 @@ export class Token3D {
     let taMenuHtml = `<div class="control-icon" data-action="3d-animations">
     <i class="fas fa-magic" title="${game.i18n.localize(`levels3dpreview.tokenAnimations.title`)}" data-action="3d-animations"></i>
     <div class="status-effects" style="transform: translateY(${height}px);" >`
+    
+    const shaders = token3d.shaders;
+
+    for(const [shaderId, shader] of Object.entries(game.Levels3DPreview.shaderHandler.shaderLib)){
+      if(shaderId == "defaults") continue;
+      const $item = $(shader.icon)
+      $item.css({
+        "font-size": "20px",
+        "text-align": "center",
+        "line-height": "24px",
+      })
+      debugger
+      $item.toggleClass("active", shaders[shaderId]?.enabled ? true : false);
+      $item.addClass("effect-control")
+      $item.attr("data-shader-id", shaderId)
+      $item.attr("data-tooltip", game.i18n.localize(`levels3dpreview.shaders.${shaderId}.name`))
+      taMenuHtml+= $item[0].outerHTML
+    }
+
+    const itemsCount = (Object.values(game.Levels3DPreview.shaderHandler.shaderLib).length - 1)%4
+    for(let i=0; i<itemsCount; i++){
+      taMenuHtml+= `<hr>`
+    }
+    
     for(let anim of Object.values(tokenAnimations)){
       if(anim.icon.includes(".")){
-        taMenuHtml+= `<img class="effect-control" src="${anim.icon}" title="${anim.name}" data-anim-id="${anim.id}">`
+        taMenuHtml+= `<img class="effect-control" src="${anim.icon}" data-tooltip="${anim.name}" data-anim-id="${anim.id}">`
       }else{
-        taMenuHtml+= `<i class="${anim.icon ?? "fas fa-magic"} effect-control" title="${anim.name}" data-anim-id="${anim.id}"></i>`
+        taMenuHtml+= `<i class="${anim.icon ?? "fas fa-magic"} effect-control" data-tooltip="${anim.name}" data-anim-id="${anim.id}"></i>`
       }
           
     }
@@ -1390,7 +1414,7 @@ export class Token3D {
         const modelAnim = token3d.mixerAnimations[i];
         const name = modelAnim.name || "A";
         const firstLetter = name.charAt(0).toUpperCase();
-        taMenuHtml+= `<i class="effect-control${i === currentAnim ? " active" : ""}" style="line-height: 24px;" title="${modelAnim.name}" data-anim-index="${i}">${firstLetter}</i>`
+        taMenuHtml+= `<i class="effect-control${i === currentAnim ? " active" : ""}" style="line-height: 24px;" data-tooltip="${modelAnim.name}" data-anim-index="${i}">${firstLetter}</i>`
       }
     }
 
@@ -1407,7 +1431,11 @@ export class Token3D {
       const $effectControl = $(e.currentTarget);
       const animId = $effectControl.data("animId");
       const animIndex = $effectControl.data("animIndex");
-      if(animId){
+      const shaderId = $effectControl.data("shaderId");
+      if(shaderId){
+        hud.object.document.setFlag("levels-3d-preview", `shaders.${shaderId}.enabled`, !$effectControl.hasClass("active"));
+        $effectControl.toggleClass("active");
+      }else if(animId){
         game.Levels3DPreview.playTokenAnimation(hud.object.id, animId);
       }else{
         $taMenu.find(".effect-control").removeClass("active");

@@ -193,6 +193,8 @@ export class ShaderHandler{
     injectShaders(shader, commonParams){
         shader.vertexShader = noiseShaders.snoise + "\n" + shader.vertexShader;
         shader.fragmentShader = noiseShaders.snoise + "\n" + shader.fragmentShader;
+        shader.vertexShader = shader.vertexShader.replace("#include <fog_vertex>", "shader_vPosition = vec3(transformed);\nshader_vUv = ( uvTransform * vec3( uv, 1 ) ).xy;\n#include <fog_vertex>");
+        shader.vertexShader = shader.vertexShader.replace("#include <uv_pars_vertex>", "#include <uv_pars_vertex>\n #ifdef USE_UV\n#else\nuniform mat3 uvTransform;\n#endif");
         for(const [shaderId, shaderConfig] of Object.entries(this.shaderLib)){
             const {vertexShader, fragmentShader, uniforms, varying} = shaderConfig;
             let uniformsVarying = `uniform bool ${shaderId + "_enabled"};`;
@@ -318,7 +320,16 @@ export const shaders = {
                 }
             }
         },
-        varying: {},
+        varying: {
+            "shader_vPosition": {
+                type: "vec3",
+                value: new THREE.Vector3(0, 0, 0)
+            },
+            "shader_vUv": {
+                type: "vec2",
+                value: new THREE.Vector2(0, 0)
+            }
+        },
         vertexShader: [],
         fragmentShader: [],
     },
@@ -465,6 +476,61 @@ export const shaders = {
             }
         ],
         fragmentShader: [],
+    },
+    "oil": {
+        icon: `<i class="fas fa-tint"></i>`,
+        uniforms: {
+            speed: {
+                type: "float",
+                default: 0.1
+            },
+            intensity: {
+                type: "float",
+                default: 0.5
+            },
+            scale: {
+                type: "float",
+                default: 1
+            },
+            color: {
+                type: "vec3",
+                default: "#00ff00"
+            },
+            blendMode: {
+                type: "bool",
+                default: false
+            },
+        },
+        varying: {},
+        vertexShader: [],
+        fragmentShader: [
+            {
+                mode: SHADERS_CONSTS.APPEND,
+                injectionPoint: "#include <dithering_fragment>",
+                shaderCode: `
+                vec3 noiseSampler = shader_vPosition;
+                vec3 c1 = oil_color*0.1;
+                vec3 c2 = oil_color*0.7;
+                vec3 c3 = oil_color*0.2;
+                vec3 c4 = oil_color*vec3(1.0, 0.9, 1.0);
+                vec3 c5 = vec3(0.1);
+                vec3 c6 = vec3(0.9);
+                vec3 p = noiseSampler.xyz * 8.0 * oil_scale;
+                float oil_time = time * oil_speed;
+                float q = fbm3D(p - oil_time * 0.1);
+                vec2 r = vec2(fbm3D(p + q + oil_time * 0.7 - p.x - p.y - p.z), fbm3D(p + q - oil_time * 0.4));
+                vec3 c = mix(c1, c2, fbm3D(p + r.x + r.y)) + mix(c3, c4, r.x) - mix(c5, c6, r.y);
+                vec4 oil_finalColor = vec4(c * cos(1.57 * noiseSampler.y / textureRepeat), 1.0);
+                if(oil_blendMode){
+                    gl_FragColor.rgb = mix(gl_FragColor.rgb, oil_finalColor.rgb, oil_intensity);
+                }else{
+                    gl_FragColor.rgb += (oil_finalColor.rgb * oil_intensity);
+                }
+                `
+            }
+
+        ],
+
     },
     "ocean": {
         icon: `<i class="fas fa-fish"></i>`,
@@ -797,25 +863,27 @@ export const shaders = {
                 mode: SHADERS_CONSTS.APPEND,
                 injectionPoint: "#include <dithering_fragment>",
                 shaderCode: `
+                vec2 noiseSampler = shader_vUv;
                 #ifdef USE_UV
-                    vec3 c1 = fire_color*0.1;
-                    vec3 c2 = fire_color*0.7;
-                    vec3 c3 = fire_color*0.2;
-                    vec3 c4 = fire_color*vec3(1.0, 0.9, 1.0);
-                    vec3 c5 = vec3(0.1);
-                    vec3 c6 = vec3(0.9);
-                    vec2 p = vUv.xy * 8.0 * fire_scale;
-                    float fire_time = time * fire_speed;
-                    float q = fbm(p - fire_time * 0.1);
-                    vec2 r = vec2(fbm(p + q + fire_time * 0.7 - p.x - p.y), fbm(p + q - fire_time * 0.4));
-                    vec3 c = mix(c1, c2, fbm(p + r)) + mix(c3, c4, r.x) - mix(c5, c6, r.y);
-                    vec4 fire_finalColor = vec4(c * cos(1.57 * vUv.y / textureRepeat), 1.0);
-                    if(fire_blendMode){
-                        gl_FragColor.rgb = mix(gl_FragColor.rgb, fire_finalColor.rgb, fire_intensity);
-                    }else{
-                        gl_FragColor.rgb += (fire_finalColor.rgb * fire_intensity);
-                    }
+                    noiseSampler = vec2(vUv);
                 #endif
+                vec3 c1 = fire_color*0.1;
+                vec3 c2 = fire_color*0.7;
+                vec3 c3 = fire_color*0.2;
+                vec3 c4 = fire_color*vec3(1.0, 0.9, 1.0);
+                vec3 c5 = vec3(0.1);
+                vec3 c6 = vec3(0.9);
+                vec2 p = noiseSampler.xy * 8.0 * fire_scale * 2.0;
+                float fire_time = time * fire_speed;
+                float q = fbm(p - fire_time * 0.1);
+                vec2 r = vec2(fbm(p + q + fire_time * 0.7 - p.x - p.y), fbm(p + q - fire_time * 0.4));
+                vec3 c = mix(c1, c2, fbm(p + r)) + mix(c3, c4, r.x) - mix(c5, c6, r.y);
+                vec4 fire_finalColor = vec4(c * cos(1.57 * noiseSampler.y / textureRepeat), 1.0);
+                if(fire_blendMode){
+                    gl_FragColor.rgb = mix(gl_FragColor.rgb, fire_finalColor.rgb, fire_intensity);
+                }else{
+                    gl_FragColor.rgb += (fire_finalColor.rgb * fire_intensity);
+                }
                 `
             }
 
@@ -857,26 +925,28 @@ export const shaders = {
                 mode: SHADERS_CONSTS.APPEND,
                 injectionPoint: "#include <dithering_fragment>",
                 shaderCode: `
+                vec2 noiseSampler = shader_vUv;
                 #ifdef USE_UV
-                    vec3 c1 = ice_color*0.1;
-                    vec3 c2 = ice_color*0.7;
-                    vec3 c3 = ice_color*0.2;
-                    vec3 c4 = ice_color*vec3(1.0, 0.9, 1.0);
-                    vec3 c5 = vec3(0.1);
-                    vec3 c6 = vec3(0.9);
-                    vec2 p = vUv.xy * 8.0 * ice_scale * 3.0;
-                    float ice_time = time * ice_speed * 0.3;
-                    float final_ice_grain = ice_grain / textureRepeat * 1000.0;
-                    float q = fbm3D(vec3(p.xy - final_ice_grain * 0.1, vUv.x * vUv.y * final_ice_grain * 0.7));
-                    vec2 r = vec2(fbm(p + q + ice_time * 0.7 - p.x - p.y), fbm(p + q - ice_time * 0.4));
-                    vec3 c = mix(c1, c2, fbm(p + r)) + mix(c3, c4, r.x) - mix(c5, c6, r.y);
-                    vec4 ice_finalColor = vec4(c * cos(1.57 * vUv.y / textureRepeat), 1.0);
-                    if(ice_blendMode){
-                        gl_FragColor.rgb = mix(gl_FragColor.rgb, ice_finalColor.rgb, ice_intensity);
-                    }else{
-                        gl_FragColor.rgb += (ice_finalColor.rgb * ice_intensity);
-                    }
+                    noiseSampler = vec2(vUv);
                 #endif
+                vec3 c1 = ice_color*0.1;
+                vec3 c2 = ice_color*0.7;
+                vec3 c3 = ice_color*0.2;
+                vec3 c4 = ice_color*vec3(1.0, 0.9, 1.0);
+                vec3 c5 = vec3(0.1);
+                vec3 c6 = vec3(0.9);
+                vec2 p = noiseSampler.xy * 8.0 * ice_scale * 3.0;
+                float ice_time = time * ice_speed * 0.3;
+                float final_ice_grain = ice_grain / textureRepeat * 1000.0;
+                float q = fbm3D(vec3(p.xy - final_ice_grain * 0.1, noiseSampler.x * noiseSampler.y * final_ice_grain * 0.7));
+                vec2 r = vec2(fbm(p + q + ice_time * 0.7 - p.x - p.y), fbm(p + q - ice_time * 0.4));
+                vec3 c = mix(c1, c2, fbm(p + r)) + mix(c3, c4, r.x) - mix(c5, c6, r.y);
+                vec4 ice_finalColor = vec4(c * cos(1.57 * noiseSampler.y / textureRepeat), 1.0);
+                if(ice_blendMode){
+                    gl_FragColor.rgb = mix(gl_FragColor.rgb, ice_finalColor.rgb, ice_intensity);
+                }else{
+                    gl_FragColor.rgb += (ice_finalColor.rgb * ice_intensity);
+                    }
                 `
             }
 
@@ -907,31 +977,18 @@ export const shaders = {
                 default: true
             },
         },
-        varying: {
-            vPosition: {
-                type: "vec3",
-                default: new THREE.Vector3(0, 0, 0),
-            },
-        },
-        vertexShader: [
-            {
-                mode: SHADERS_CONSTS.APPEND,
-                injectionPoint: "#include <begin_vertex>",
-                shaderCode: `
-                lightning_vPosition = vec3(position);
-                `
-            }
-        ],
+        varying: {},
+        vertexShader: [],
         fragmentShader: [
             {
                 mode: SHADERS_CONSTS.APPEND,
                 injectionPoint: "#include <dithering_fragment>",
                 shaderCode: `
-                vec3 noiseVec = lightning_vPosition;            
+                vec3 noiseVec = shader_vPosition;          
                 
                 vec3 lightning_final_color = vec3( 0.0 );
                 for( int i = 0; i < 5; ++i ) {
-                    noiseVec = noiseVec.zyx * lightning_scale;
+                    noiseVec = noiseVec.zyx * lightning_scale * 2.0;
                     float t = abs(2.0 / (fbm3D(noiseVec + vec3(0.0, (time * lightning_speed) / float(i + 4), 0.0)) * 120.0));
                     lightning_final_color +=  t * vec3( float(i+1) * 0.1 +lightning_color.r, lightning_color.g, lightning_color.b );
                 }    
@@ -1020,3 +1077,48 @@ function getYpos(entity3D){
         return (entity3D.mesh.position.y - entity3D.bb.depth / 2);
     }
 }
+
+/*
+#define STANDARD
+varying vec3 vViewPosition;
+#ifdef USE_TRANSMISSION
+	varying vec3 vWorldPosition;
+#endif
+#include <common>
+#include <uv_pars_vertex>
+#include <uv2_pars_vertex>
+#include <displacementmap_pars_vertex>
+#include <color_pars_vertex>
+#include <fog_pars_vertex>
+#include <normal_pars_vertex>
+#include <morphtarget_pars_vertex>
+#include <skinning_pars_vertex>
+#include <shadowmap_pars_vertex>
+#include <logdepthbuf_pars_vertex>
+#include <clipping_planes_pars_vertex>
+void main() {
+	#include <uv_vertex>
+	#include <uv2_vertex>
+	#include <color_vertex>
+	#include <beginnormal_vertex>
+	#include <morphnormal_vertex>
+	#include <skinbase_vertex>
+	#include <skinnormal_vertex>
+	#include <defaultnormal_vertex>
+	#include <normal_vertex>
+	#include <begin_vertex>
+	#include <morphtarget_vertex>
+	#include <skinning_vertex>
+	#include <displacementmap_vertex>
+	#include <project_vertex>
+	#include <logdepthbuf_vertex>
+	#include <clipping_planes_vertex>
+	vViewPosition = - mvPosition.xyz;
+	#include <worldpos_vertex>
+	#include <shadowmap_vertex>
+	#include <fog_vertex>
+#ifdef USE_TRANSMISSION
+	vWorldPosition = worldPosition.xyz;
+#endif
+}
+*/

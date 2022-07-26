@@ -1127,6 +1127,15 @@
                 "wave_amplitude" : "Wave Density",
                 "wave_height" : "Wave Height"
             },
+            "oil": {
+                "name": "Oil",
+                "description": "Oil/Liquid Metal effect. The effect can be colorized and scaled, keep in mind that the color will be distorted by the effect.",
+                "speed": "Speed",
+                "intensity" : "Intensity",
+                "scale": "Scale",
+                "color": "Color",
+                "blendMode": "Mix Blending"
+            },
             "ocean": {
                 "name": "Ocean",
                 "description": "Complex water simulation that uses multiple waves. Heavier on performance than the simple water shader.",
@@ -1162,7 +1171,7 @@
             },
             "fire": {
                 "name": "Fire",
-                "description": "Fire/Oil effect. The effect can be colorized and scaled to produce results that go way beyond fire.",
+                "description": "Fire effect. The effect can be colorized and scaled to produce results that go way beyond fire.",
                 "speed": "Speed",
                 "intensity" : "Intensity",
                 "scale": "Scale",

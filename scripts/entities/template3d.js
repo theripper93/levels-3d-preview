@@ -13,6 +13,8 @@ export class Template3D {
         this.placeable = template;
         this.initialDirection = this.template.document?.direction
         this.isFog = this.template?.document?.getFlag("levels-3d-preview", "isFog") ?? false
+        this.shaders = this.template?.document?.getFlag("levels-3d-preview", "shaders") ?? {};
+        this.hasShaders = Object.values(this.shaders).some(v => v.enabled);
         this.draggable = true
         this.directionOffset = 0
         this._parent = game.Levels3DPreview
@@ -23,6 +25,13 @@ export class Template3D {
         this._origin = this._getOrigin(A)
         this._destination = this._getDestination(B)
         this.draw()
+        const box = new THREE.Box3().setFromObject(this.mesh).getSize(new THREE.Vector3())
+        this.bb = {
+            height: box.x,
+            width: box.z,
+            depth: box.y
+        }
+        this._parent.shaderHandler.applyShader(this.mesh, this, this.shaders);
         this.setPosition()
         this.scene.add(this.mesh)
         this._parent.templates[this.template.id] = this
@@ -317,7 +326,7 @@ export class Template3D {
     }
 
     _getMaterial(){
-        const templateStyle = this.template?.data?.texture ? "solid" : game.settings.get(
+        const templateStyle = this.template?.data?.texture || this.hasShaders ? "solid" : game.settings.get(
           "levels-3d-preview",
           "templateSyle"
         );
@@ -338,12 +347,12 @@ export class Template3D {
               wireframe: true,
             });
           case "solid":
+            let templateColor = this.fromData ? this.template.document?.fillColor : game.user.color
+            if(this.hasShaders) templateColor = 0xffffff
             return new THREE.MeshPhongMaterial({
-              color: this.fromData
-                ? this.template.document?.fillColor
-                : game.user.color,
+              color: templateColor,
               transparent: true,
-              opacity: 0.3,
+              opacity: this.hasShaders ? 0.7 : 0.3,
               side: THREE.DoubleSide,
               depthWrite: false,
               emissive: this.fromData

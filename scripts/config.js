@@ -1052,6 +1052,11 @@ Hooks.on("renderWallConfig", (app,html)=>{
 Hooks.on("renderMeasuredTemplateConfig", (app,html)=>{
     injectConfig.inject(app,html,{
         "moduleId": "levels-3d-preview",
+        "tab" : {
+            "name": "levels-3d-preview",
+            "label": "3D",
+            "icon": "fas fa-cube",
+        },
         "isFog": {
             type: "checkbox",
             label: game.i18n.localize("levels3dpreview.flags.isFog.label"),
@@ -1059,6 +1064,7 @@ Hooks.on("renderMeasuredTemplateConfig", (app,html)=>{
             default: false,
         },
     })
+    ShaderConfig.injectButton(app, html, html.find(`input[name="flags.levels-3d-preview.isFog"]`).closest(".form-group"));
 })
 
 Hooks.on("renderAmbientLightConfig", (app,html)=>{
