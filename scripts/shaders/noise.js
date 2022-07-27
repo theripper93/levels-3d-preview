@@ -153,7 +153,7 @@ export const noiseShaders = {
   ) {
       float steepness = wave.z;
       float wavelength = wave.w;
-      float k = 2.0 * 3.14 / wavelength;
+      float k = 2.0 * 3.14159265359 / wavelength;
     float c = sqrt(9.8 / k);
     vec2 d = normalize(wave.xy);
     float f = k * (dot(d, p.xz) - c * (time * o_speed * 0.1));

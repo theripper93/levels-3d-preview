@@ -333,6 +333,52 @@ export const shaders = {
         vertexShader: [],
         fragmentShader: [],
     },
+    "idle": {
+        icon: `<i class="fas fa-walking"></i>`,
+        uniforms: {
+            "speed": {
+                type: "float",
+                default: 0.1,
+            },
+            "direction": {
+                type: "float",
+                default: 0,
+                min: 0,
+                max: 360,
+            },
+            "intensity": {
+                type: "float",
+                default: 0.3,
+            },
+            "affect_model": {
+                type: "float",
+                default: 0.7,
+                min: 0.01,
+                max: 1,
+            }
+        },
+        varying: {},
+        vertexShader: [
+            {
+                mode: SHADERS_CONSTS.APPEND,
+                injectionPoint: "#include <begin_vertex>",
+                shaderCode: `
+                float currentY = (modelMatrix * vec4( transformed, 1.0 )).y;
+                float currentYDelta = currentY - yPos;
+                float idleFactor = 0.0;
+                vec3 idleOffset = vec3(0.0);
+                float idle_intensity_final = idle_intensity / 100.0;
+                if (currentYDelta > mDepth*idle_affect_model) {
+                    idleFactor = (currentYDelta - mDepth*idle_affect_model) / (mDepth*idle_affect_model);
+                    idleFactor = (sin(time*idle_speed + transformed.x + transformed.z + transformed.y) + idle_intensity_final) * idleFactor;
+                    idleOffset = vec3(idleFactor * idle_intensity_final * cos(idle_direction) * localSize.x, idleFactor *  idle_intensity_final * cos(sin(idle_direction)) * localSize.y, idleFactor *  idle_intensity_final * sin(idle_direction) * localSize.z);
+                }
+                transformed = vec3( transformed.x + idleOffset.x, transformed.y + idleOffset.y, transformed.z + idleOffset.z );
+                `
+            }
+        ],
+        fragmentShader: [],
+    },
     "wind": {
         icon: `<i class="fas fa-wind"></i>`,
         uniforms: {
@@ -477,61 +523,7 @@ export const shaders = {
         ],
         fragmentShader: [],
     },
-    "oil": {
-        icon: `<i class="fas fa-tint"></i>`,
-        uniforms: {
-            speed: {
-                type: "float",
-                default: 0.1
-            },
-            intensity: {
-                type: "float",
-                default: 0.5
-            },
-            scale: {
-                type: "float",
-                default: 1
-            },
-            color: {
-                type: "vec3",
-                default: "#00ff00"
-            },
-            blendMode: {
-                type: "bool",
-                default: false
-            },
-        },
-        varying: {},
-        vertexShader: [],
-        fragmentShader: [
-            {
-                mode: SHADERS_CONSTS.APPEND,
-                injectionPoint: "#include <dithering_fragment>",
-                shaderCode: `
-                vec3 noiseSampler = shader_vPosition;
-                vec3 c1 = oil_color*0.1;
-                vec3 c2 = oil_color*0.7;
-                vec3 c3 = oil_color*0.2;
-                vec3 c4 = oil_color*vec3(1.0, 0.9, 1.0);
-                vec3 c5 = vec3(0.1);
-                vec3 c6 = vec3(0.9);
-                vec3 p = noiseSampler.xyz * 8.0 * oil_scale;
-                float oil_time = time * oil_speed;
-                float q = fbm3D(p - oil_time * 0.1);
-                vec2 r = vec2(fbm3D(p + q + oil_time * 0.7 - p.x - p.y - p.z), fbm3D(p + q - oil_time * 0.4));
-                vec3 c = mix(c1, c2, fbm3D(p + r.x + r.y)) + mix(c3, c4, r.x) - mix(c5, c6, r.y);
-                vec4 oil_finalColor = vec4(c * cos(1.57 * noiseSampler.y / textureRepeat), 1.0);
-                if(oil_blendMode){
-                    gl_FragColor.rgb = mix(gl_FragColor.rgb, oil_finalColor.rgb, oil_intensity);
-                }else{
-                    gl_FragColor.rgb += (oil_finalColor.rgb * oil_intensity);
-                }
-                `
-            }
 
-        ],
-
-    },
     "ocean": {
         icon: `<i class="fas fa-fish"></i>`,
         uniforms: {
@@ -608,8 +600,8 @@ export const shaders = {
                 vec4 _WaveE = (_WaveA + _WaveC) * _WaveB;
                 vec4 _WaveF = (_WaveC + _WaveB) * _WaveA;
                 vec3 gridPoint = transformed.xyz;
-                vec3 tangent = vec3(0.0);
-                vec3 binormal = vec3(0.0);
+                vec3 tangent = vec3(1.0, 0.0, 0.0);
+                vec3 binormal = vec3(0.0, 0.0, 1.0);
                 vec3 p = gridPoint;
                 p += GerstnerWave(_WaveA, gridPoint, tangent, binormal, ocean_speed) ;
                 p += GerstnerWave(_WaveB, gridPoint, tangent, binormal, ocean_speed) ;
@@ -618,8 +610,9 @@ export const shaders = {
                 p += GerstnerWave(_WaveE, gridPoint, tangent, binormal, ocean_speed) ;
                 p += GerstnerWave(_WaveF, gridPoint, tangent, binormal, ocean_speed) ;
                 vec3 ocean_normal = normalize(cross(tangent, binormal));
-                //vNormal = ocean_normal;
+                //vNormal = vec3(0.0, -1.0, 0.0);//ocean_normal;
                 #if defined( transformedNormal )
+                    vNormal = ocean_normal;
                     transformedNormal = ocean_normal;
                 #endif
                 if(ocean_foam){
@@ -637,7 +630,6 @@ export const shaders = {
                 if(ocean_foam){
                     gl_FragColor.rgb = mix(gl_FragColor.rgb, vec3(1.0, 1.0, 1.0), ocean_foam_factor * 0.5);
                 }
-                //gl_FragColor.rgb = vNormal;
                 `
             }
         ],
@@ -1001,51 +993,60 @@ export const shaders = {
             }
         ],
     },
-    "idle": {
-        icon: `<i class="fas fa-walking"></i>`,
+    "oil": {
+        icon: `<i class="fas fa-tint"></i>`,
         uniforms: {
-            "speed": {
+            speed: {
                 type: "float",
-                default: 0.1,
+                default: 0.1
             },
-            "direction": {
+            intensity: {
                 type: "float",
-                default: 0,
-                min: 0,
-                max: 360,
+                default: 0.5
             },
-            "intensity": {
+            scale: {
                 type: "float",
-                default: 0.3,
+                default: 1
             },
-            "affect_model": {
-                type: "float",
-                default: 0.7,
-                min: 0.01,
-                max: 1,
-            }
+            color: {
+                type: "vec3",
+                default: "#00ff00"
+            },
+            blendMode: {
+                type: "bool",
+                default: false
+            },
         },
         varying: {},
-        vertexShader: [
+        vertexShader: [],
+        fragmentShader: [
             {
                 mode: SHADERS_CONSTS.APPEND,
-                injectionPoint: "#include <begin_vertex>",
+                injectionPoint: "#include <dithering_fragment>",
                 shaderCode: `
-                float currentY = (modelMatrix * vec4( transformed, 1.0 )).y;
-                float currentYDelta = currentY - yPos;
-                float idleFactor = 0.0;
-                vec3 idleOffset = vec3(0.0);
-                float idle_intensity_final = idle_intensity / 100.0;
-                if (currentYDelta > mDepth*idle_affect_model) {
-                    idleFactor = (currentYDelta - mDepth*idle_affect_model) / (mDepth*idle_affect_model);
-                    idleFactor = (sin(time*idle_speed + transformed.x + transformed.z + transformed.y) + idle_intensity_final) * idleFactor;
-                    idleOffset = vec3(idleFactor * idle_intensity_final * cos(idle_direction) * localSize.x, idleFactor *  idle_intensity_final * cos(sin(idle_direction)) * localSize.y, idleFactor *  idle_intensity_final * sin(idle_direction) * localSize.z);
+                vec3 noiseSampler = shader_vPosition;
+                vec3 c1 = oil_color*0.1;
+                vec3 c2 = oil_color*0.7;
+                vec3 c3 = oil_color*0.2;
+                vec3 c4 = oil_color*vec3(1.0, 0.9, 1.0);
+                vec3 c5 = vec3(0.1);
+                vec3 c6 = vec3(0.9);
+                vec3 p = noiseSampler.xyz * 8.0 * oil_scale;
+                float oil_time = time * oil_speed;
+                float q = fbm3D(p - oil_time * 0.1);
+                vec2 r = vec2(fbm3D(p + q + oil_time * 0.7 - p.x - p.y - p.z), fbm3D(p + q - oil_time * 0.4));
+                vec3 c = mix(c1, c2, fbm3D(p + r.x + r.y)) + mix(c3, c4, r.x) - mix(c5, c6, r.y);
+                vec4 oil_finalColor = vec4(c * cos(1.57 * noiseSampler.y / textureRepeat), 1.0);
+                if(oil_blendMode){
+                    gl_FragColor.rgb = mix(gl_FragColor.rgb, oil_finalColor.rgb, oil_intensity);
+                }else{
+                    gl_FragColor.rgb += (oil_finalColor.rgb * oil_intensity);
                 }
-                transformed = vec3( transformed.x + idleOffset.x, transformed.y + idleOffset.y, transformed.z + idleOffset.z );
                 `
             }
+
         ],
-        fragmentShader: [],
+
     },
 }
 

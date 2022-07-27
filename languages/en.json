@@ -1205,6 +1205,40 @@
                 "intensity": "Intensity",
                 "affect_model": "Anchor (%)"
             }
+        },
+        "tours": {
+            "dialog": {
+                "title": "Getting Started",
+                "content": "Do you want to start the 3D Canvas Getting Started Tour?"
+            },
+            "getting-started": {
+                "title": "Getting Started",
+                "description": "This tour will guide you through the very basics of 3D Canvas.",
+                "step-0": {
+                    "title": "Getting to the 3D View (1/2)",
+                    "content": "Activate the Token Controls."
+                },
+                "step-1": {
+                    "title": "Getting to the 3D View (2/2)",
+                    "content": "Click on the Cube button to Activate the 3D View."
+                },
+                "step-2": {
+                    "title": "Controls",
+                    "content": "The Loading Screen contains helpful information on the 3D Canvas Camera and Token Controls."
+                },
+                "step-3": {
+                    "title": "Navigation",
+                    "content": "The navigation bar contains various buttons to toggle specific aspects of the 3D View. You can hover over the buttons to see a description of what they do."
+                },
+                "step-4": {
+                    "title": "Game Camera",
+                    "content": "The Game Camera is enabled by default for GMs and Players. If you are a GM, you can switch to Free Camera with this button. You can change the Game Camera options in the module settings or disable it per scene."
+                },
+                "step-5": {
+                    "title": "Controls Reference",
+                    "content": "You can bring back up the controls reference any time by clicking this button."
+                }
+            }
         }
     }
 }
