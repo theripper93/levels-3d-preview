@@ -42,8 +42,8 @@ example localization file
 
 */
 
-class GenericTour{
-    constructor(tourId, selectors, {moduleId = "", localizationRoot = "", display = true, restricted = true, autoRegister = true, init = ()=>{}, requires = ()=>{ return true }}){
+export class GenericTour{
+    constructor(tourId, selectors, {moduleId = "", localizationRoot = "", display = true, restricted = true, autoRegister = true, init = ()=>{}, onComplete = ()=>{}, requires = ()=>{ return true }}){
         this.id = tourId;
         this.moduleId = moduleId;
         this.localizationRoot = localizationRoot;
@@ -63,6 +63,7 @@ class GenericTour{
         this._tour.tourId = this.id;
         this._tour.init = init.bind(this._tour);
         this._tour.requires = requires.bind(this._tour);
+        this._tour.onComplete = onComplete.bind(this._tour);
 
         if(autoRegister){
             this.register();
@@ -96,9 +97,15 @@ class TourEnhanced extends Tour{
             if(errorLocaleString != errorMessage) ui.notifications.error(errorMessage);
             return;
         }
-        this.init();
+        await this.init();
         await super.start(...args);
         Object.values(ui.windows).find(w => w instanceof ToursManagement)?.minimize();
+    }
+
+    async complete(...args){
+        await super.complete(...args);
+        this.onComplete();
+        Object.values(ui.windows).find(w => w instanceof ToursManagement)?.maximize();
     }
 
     exit(...args){
@@ -107,6 +114,12 @@ class TourEnhanced extends Tour{
     }
 
     async _renderStep(...args){
+        const step = this.currentStep;
+        if ( step.selector ) {
+          this.targetElement = $(step.selector)[0]//document.querySelector(step.selector);
+          if ( !this.targetElement ) console.warn(`Tour [${this.id}] target element "${step.selector}" was not found`);
+        }
+        this.targetElement?.scrollIntoView();
         await super._renderStep(...args);
         this.overlayElement.style.zIndex = "calc(var(--z-index-tooltip) - 3)";
         $(this.fadeElement).on("click", async ()=>{
@@ -114,8 +127,9 @@ class TourEnhanced extends Tour{
             const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
             const timeout = 5000;
             let currentWait = 0;
-            $(this.currentStep.selector).click();
+            $(this.currentStep.selector)[0]?.click()
             if(!nextStep) return this.next();
+            await wait(100);
             while(!$(nextStep.selector + ":visible").length && currentWait < timeout) {
                 await wait(50);
                 currentWait += 50;
@@ -123,4 +137,25 @@ class TourEnhanced extends Tour{
             this.next();
          });
     }
+
+    async progress(...args){
+        try{
+            await super.progress(...args);
+        }catch(e){
+            return this._renderStep();
+        }
+        
+    }
+
+}
+
+export function promptForTour(){
+    Dialog.confirm({
+        title: game.i18n.localize(`levels3dpreview.tours.dialog.title`),
+        content: game.i18n.localize(`levels3dpreview.tours.dialog.content`),
+        defaultYes: true,
+        yes: () => {
+            game.tours.get(`levels-3d-preview.getting-started`).start();
+        }, 
+    })
 }

@@ -511,7 +511,7 @@ export function toggleAdvancedSettings(app, html, settings, other){
 export function injectAdvancedToggle(app, html, settings, injected, other = []){
   const alwaysShowAdvanced = game.settings.get("levels-3d-preview", "showAdvanced");
   if(alwaysShowAdvanced) return;
-  const toggleAdvanced = $(`<div class="form-group"><a style="color: var(--color-text-hyperlink); text-align: center; font-weight: bolder; text-decoration: underline;">${game.i18n.localize("levels3dpreview.settings.showAdvanced.show")}</a></div>`);
+  const toggleAdvanced = $(`<div class="form-group"><a id="levels-3d-preview-advanced" style="color: var(--color-text-hyperlink); text-align: center; font-weight: bolder; text-decoration: underline;">${game.i18n.localize("levels3dpreview.settings.showAdvanced.show")}</a></div>`);
   (injected.find(".form-group").last().length ? injected.find(".form-group").last() : $(injected[injected.length-1])).after(toggleAdvanced);
   toggleAdvanced.click(() => {
     toggleAdvancedSettings(app, html, settings, other);

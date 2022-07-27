@@ -1,6 +1,7 @@
 import { toggleAdvancedSettings, injectAdvancedToggle, hideParams } from './helpers/helpers.js';
 import { ShaderConfig } from './shaders/ShaderLib.js';
-import { GettingStartedTour, promptForTour } from './tours/tours.js';
+import { RegisterTours } from './tours/tours.js';
+import { promptForTour } from './tours/toursHelpers.js';
 
 Hooks.on("getSceneControlButtons", (buttons)=>{
     buttons.find(b => b.name === "token")?.tools?.push(
@@ -1441,8 +1442,7 @@ Hooks.on("init", () => {
 
 //TOURS
 Hooks.on("ready", () => {
-    GettingStartedTour();
-    promptForTour();
+    RegisterTours();
 })
 
 

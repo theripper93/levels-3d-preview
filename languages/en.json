@@ -1238,6 +1238,92 @@
                     "title": "Controls Reference",
                     "content": "You can bring back up the controls reference any time by clicking this button."
                 }
+            },
+            "first-tile": {
+                "title": "Placing your first 3D Tile",
+                "description": "This tour will get you started on placing 3D Tiles.",
+                "requires": "You need to have the 3D View active and the 3D Canvas Mapmaking Pack installed to start this tour.",
+                "step-0": {
+                    "title": "Tiles Layer",
+                    "content": "Head to the Tiles Layer."
+                },
+                "step-1": {
+                    "title": "Controls",
+                    "content": "Click this button any time to get a controls reference for the Tile Editor as a Chat Message (GM only)."
+                },
+                "step-2": {
+                    "title": "File Browser",
+                    "content": "Open the File browser."
+                },
+                "step-3": {
+                    "title": "Navigate to the 3D Assets",
+                    "content": "Follow the steps to get to the 3D Canvas Mapmaking Pack Tiles folder."
+                },
+                "step-4": {
+                    "title": "Navigate to the 3D Assets",
+                    "content": "Follow the steps to get to the 3D Canvas Mapmaking Pack Tiles folder."
+                },
+                "step-5": {
+                    "title": "Navigate to the 3D Assets",
+                    "content": "Follow the steps to get to the 3D Canvas Mapmaking Pack Tiles folder."
+                },
+                "step-6": {
+                    "title": "Navigate to the 3D Assets",
+                    "content": "Follow the steps to get to the 3D Canvas Mapmaking Pack Tiles folder."
+                },
+                "step-7": {
+                    "title": "Navigate to the 3D Assets",
+                    "content": "Follow the steps to get to the 3D Canvas Mapmaking Pack Tiles folder."
+                },
+                "step-8": {
+                    "title": "Drag & Drop",
+                    "content": "Drag & Drop a 3D Model the same way you would do with a 2D Tile. Use the Controls Reference to manipulate the Tile as you prefer. The 3D Canvas Macro Compendium includes useful macros to manipulate tiles."
+                }
+            },
+            "scene-configuration": {
+                "title": "3D Scene Configuration",
+                "description": "This tour will guide you through the scene configuration options.",
+                "requires": "You need to have the 3D View active to see this tour.",
+                "step-0": {
+                    "title": "Head to the 3D Tab",
+                    "content": "The 3D Tab contains all the settings for the 3D Scene."
+                },
+                "step-1": {
+                    "title": "Enable for Players",
+                    "content": "If you don't have this setting enabled, your players will not be able to enter the 3D View."
+                },
+                "step-2": {
+                    "title": "Enable 3D on Load",
+                    "content": "With this setting enabled, thee scene will be automatically loaded in the 3D View when you activate it."
+                },
+                "step-3": {
+                    "title": "Sight",
+                    "content": "By default 3D Canvas will mirror visibility of the 2D View using it's walls (indipendently of their visible status) to calculate token vision. Enable this setting to ignore the 2D Vision and use the 3D Environment to calculate sight."
+                },
+                "step-4": {
+                    "title": "Fog of War",
+                    "content": "The fog of war is disabled by default in 3D Mode even if it's enabled in 2D. While FoW is disabled in 3D, Players will be able to see the entire environment but tokens will still be hidden based on vision. If you wish to use FoW it's strongly suggested that you have 'Shared Context' enabled in the 3D Canvas module settings."
+                },
+                "step-5": {
+                    "title": "Environment",
+                    "content": "The HDRI and the Skybox contribute to the scene lighting (think of it as global illumination). Changing the HDRI can drastically alter how a scene looks! Try to set the HDRI to some of the options included in the 3D Canvas Mapmaking Pack!"
+                },
+                "step-6": {
+                    "title": "Skybox",
+                    "content": "If you are using a high quality HDRI, it's suggested to leave this field empty. Try setting the HDRI field to one of the 'Beautiful Skies' included in the Mapmaking Pack and Remove the Skybox field to see the difference."
+                },
+                "step-7": {
+                    "title": "Lighting",
+                    "content": "This section allows you to adjust the global lighting of the scene. Try messing with the basic sliders!"
+                },
+                "step-8": {
+                    "title": "Weather",
+                    "content": "Here you can set a Weather/Particle Effect for the scene. Try to enable one and see how it can enhance your scene!"
+                },
+                "step-9": {
+                    "title": "Advanced",
+                    "content": "The Scene Configuration offers many more options, once you are familiar with the basic settings you can click here to show all the advanced options."
+                }
             }
         }
     }
