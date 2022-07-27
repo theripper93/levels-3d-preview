@@ -1099,7 +1099,9 @@
                 "macro": {
                     "title": "Create Shader Macro",
                     "content": "Macro Name:",
-                    "created": "Macro '%s' created successfully!"
+                    "created": "Macro '%s' created successfully!",
+                    "enabled": "Export enabled only",
+                    "players": "Allow Players"
                 }
             },
             "wind": {

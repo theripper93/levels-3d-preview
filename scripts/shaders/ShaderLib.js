@@ -75,8 +75,18 @@ export class ShaderConfig extends FormApplication{
                 title: game.i18n.localize("levels3dpreview.shaders.config.macro.title"),
                 content: "",
                 callback: (html) => {
-                    const macroName = html.find("input").val();
-                    const shaderData = JSON.stringify(foundry.utils.expandObject(this._getSubmitData()));
+                    const macroName = html.find("#macro-name").val();
+                    const macroEnabled = html.find("#macro-enabled").prop("checked");
+                    const macroPlayers = html.find("#macro-players").prop("checked");
+                    let macroData = foundry.utils.expandObject(this._getSubmitData());
+                    debugger;
+                    if(macroEnabled) {
+                        
+                        for( const [k,v] of Object.entries(macroData) ){
+                            if(!v.enabled) delete macroData[k];
+                        }
+                    }
+                    const shaderData = JSON.stringify(macroData);
                     const macroContent = `
                     if(!canvas.activeLayer.controlled.length) return ui.notifications.error("No object selected, please select at least one object.");
                     const updates = [];
@@ -98,6 +108,9 @@ export class ShaderConfig extends FormApplication{
                         img: "icons/svg/acid.svg",
                         type: "script",
                         name: macroName,
+                        ownership: {
+                            default: macroPlayers ? 2 : 0,
+                        },
                     })
                     ui.notifications.notify(game.i18n.localize("levels3dpreview.shaders.config.macro.created").replace("%s", macroName));
                 },
@@ -106,6 +119,14 @@ export class ShaderConfig extends FormApplication{
                     <div class="form-group" style="display: grid;grid-template-columns: 1fr 1fr;align-items: center;padding-bottom: 8px;">
                         <label>${game.i18n.localize("levels3dpreview.shaders.config.macro.content")}</label>
                         <input type="text" id="macro-name" value="Shader Macro" placeholder="">
+                    </div>
+                    <div class="form-group" style="display: grid;grid-template-columns: 1fr 1fr;align-items: center;padding-bottom: 8px;">
+                        <label>${game.i18n.localize("levels3dpreview.shaders.config.macro.enabled")}</label>
+                            <input style="justify-self: end;" type="checkbox" id="macro-enabled" checked>
+                    </div>
+                    <div class="form-group" style="display: grid;grid-template-columns: 1fr 1fr;align-items: center;padding-bottom: 8px;">
+                    <label>${game.i18n.localize("levels3dpreview.shaders.config.macro.players")}</label>
+                        <input style="justify-self: end;" type="checkbox" id="macro-players" checked>
                     </div>
                   `
                     $(html[0]).append(input);
