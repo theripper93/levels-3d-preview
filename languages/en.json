@@ -286,6 +286,22 @@
             "model3d" : {
                 "label": "3D Model"
             },
+            "dynaMesh" : {
+                "label": "Dynamic Mesh",
+                "options": {
+                    "default": "None (Use 3D Model)",
+                    "box": "Box",
+                    "sphere": "Sphere",
+                    "cylinder": "Cylinder",
+                    "cone": "Cone",
+                    "tube": "Tube",
+                    "capsule": "Capsule",
+                    "billboard": "Billboard"
+                }
+            },
+            "dynaMeshResolution" : {
+                "label": "Dynamic Mesh Resolution"
+            },
             "imageTexture":{
                 "label": "Texture"
             },
@@ -357,6 +373,15 @@
                     "default": "Default",
                     "flat": "Flat",
                     "smooth": "Smooth"
+                }
+            },
+            "sides": {
+                "label": "Side",
+                "options": {
+                    "default": "Default",
+                    "FrontSide": "Front Side",
+                    "BackSide": "Back Side",
+                    "DoubleSide": "Double Side"
                 }
             },
             "shader": {

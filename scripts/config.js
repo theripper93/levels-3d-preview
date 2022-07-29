@@ -691,6 +691,29 @@ Hooks.on("renderTileConfig", (app,html)=>{
             fpTypes: [".gltf", ".GLTF", ".glb", ".GLB", ".fbx", ".FBX"],
             label: game.i18n.localize("levels3dpreview.flags.model3d.label"),
         },
+        "dynaMesh": {
+            type: "select",
+            label: game.i18n.localize("levels3dpreview.flags.dynaMesh.label"),
+            default: "default",
+            options: {
+                "default": game.i18n.localize("levels3dpreview.flags.dynaMesh.options.default"),
+                "box": game.i18n.localize("levels3dpreview.flags.dynaMesh.options.box"),
+                "sphere": game.i18n.localize("levels3dpreview.flags.dynaMesh.options.sphere"),
+                "cylinder": game.i18n.localize("levels3dpreview.flags.dynaMesh.options.cylinder"),
+                "tube": game.i18n.localize("levels3dpreview.flags.dynaMesh.options.tube"),
+                "cone": game.i18n.localize("levels3dpreview.flags.dynaMesh.options.cone"),
+                "billboard": game.i18n.localize("levels3dpreview.flags.dynaMesh.options.billboard"),
+                "capsule": game.i18n.localize("levels3dpreview.flags.dynaMesh.options.capsule"),
+            }
+        },
+        "dynaMeshResolution": {
+            type: "range",
+            label: game.i18n.localize("levels3dpreview.flags.dynaMeshResolution.label"),
+            default: 1,
+            min: 0.1,
+            max: 10,
+            step: 0.1,
+        },
         "imageTexture":{
             type: "filepicker",
             label: game.i18n.localize("levels3dpreview.flags.imageTexture.label"),
@@ -726,6 +749,17 @@ Hooks.on("renderTileConfig", (app,html)=>{
                 "default": game.i18n.localize("levels3dpreview.flags.shading.options.default"),
                 "flat": game.i18n.localize("levels3dpreview.flags.shading.options.flat"),
                 "smooth": game.i18n.localize("levels3dpreview.flags.shading.options.smooth"),
+            }
+        },
+        "sides": {
+            type: "select",
+            label: game.i18n.localize("levels3dpreview.flags.sides.label"),
+            default: "default",
+            options: {
+                "default": game.i18n.localize("levels3dpreview.flags.sides.options.default"),
+                "FrontSide": game.i18n.localize("levels3dpreview.flags.sides.options.FrontSide"),
+                "BackSide": game.i18n.localize("levels3dpreview.flags.sides.options.BackSide"),
+                "DoubleSide": game.i18n.localize("levels3dpreview.flags.sides.options.DoubleSide"),
             }
         },
         "autoCenter": {
@@ -965,7 +999,7 @@ Hooks.on("renderTileConfig", (app,html)=>{
 
     })
 
-    const advancedSettings = ["displacementMap","autoCenter","enableAnim","animSpeed","animIndex","paused","tiltX","tiltZ", "randomSeed", "autoGround", "depth"];
+    const advancedSettings = ["sides", "flipY", "shading","displacementMap","autoCenter","enableAnim","animSpeed","animIndex","paused","tiltX","tiltZ", "randomSeed", "autoGround", "depth"];
 
     injectAdvancedToggle(app,html,advancedSettings, injected);
 

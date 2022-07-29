@@ -4,6 +4,7 @@ import { noiseShaders } from "../shaders/noise.js";
 import { SimplexNoise, Perlin, FractionalBrownianMotion } from "../lib/noiseFunctions.js";
 import { Ruler3D } from "./ruler3d.js";
 import {factor} from '../main.js'; 
+import { DynaMesh } from "../helpers/dynaMesh.js";
 import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from '../lib/three-mesh-bvh.js';
 THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
 THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
@@ -40,13 +41,14 @@ export class Tile3D {
     }
 
     async load(){
-        if(this.gtflPath){
+        if(this.gtflPath || this.dynaMesh != "default"){
             this.fillType === "stretch" || this.fillType === "fit" ? await this.initModel() : await this.initInstanced();
         }else{
             await this.init();
         }
         this.initShaders();
         this.setShading();
+        this.setSides();
         this._loaded = true;
         this.elevation3d = this.mesh.position.y;
         this.setHidden();
@@ -105,6 +107,9 @@ export class Tile3D {
         this.shader = this.tile.document.getFlag("levels-3d-preview", "shader") ?? "none";
         this.flipY = this.tile.document.getFlag("levels-3d-preview", "flipY") ?? false;
         this.shaders = this.tile.document.getFlag("levels-3d-preview", "shaders") ?? {};
+        this.dynaMesh = this.tile.document.getFlag("levels-3d-preview", "dynaMesh") ?? "default";
+        this.dynaMeshResolution = this.tile.document.getFlag("levels-3d-preview", "dynaMeshResolution") ?? 1;
+        this.sides = this.tile.document.getFlag("levels-3d-preview", "sides") ?? "default";
         this.noiseParams = {
             scale: this.tile.document.getFlag("levels-3d-preview", "noiseScale") ?? 1,
             height: this.tile.document.getFlag("levels-3d-preview", "noiseHeight") ?? 1,
@@ -532,6 +537,15 @@ export class Tile3D {
     }
 
     async getModel(){
+        if(this.dynaMesh != "default"){
+            const mesh = new DynaMesh(this.dynaMesh, { width: this.width, height: this.height, depth: this.depth, resolution: this.dynaMeshResolution }).create()
+            return {
+                scene: mesh,
+                object: mesh,
+                model: mesh,
+            }
+        }
+        
         const filePath = this.gtflPath;
         const extension = filePath.split(".").pop().toLowerCase();
         const model = await game.Levels3DPreview.helpers.loadModel(this.gtflPath);
@@ -573,7 +587,7 @@ export class Tile3D {
         let textureOrMat = null;
         let isPBR = null;
         if(!texture) return {textureOrMat, isPBR};
-        textureOrMat = await this._parent.helpers.autodetectTextureOrMaterial(texture, {noCache: true, ...options});
+        textureOrMat = await this._parent.helpers.autodetectTextureOrMaterial(texture, {noCache: true, doubleSided: this.doubleSided , ...options});
         isPBR = this._parent.helpers.isPBR(texture)
         if(isPBR){
             Object.values(textureOrMat).forEach(v => this.setTexture(v));
@@ -632,6 +646,19 @@ export class Tile3D {
                     child.material.forEach(m => m.flatShading = flatShading);
                 }else{
                     child.material.flatShading = flatShading;
+                }
+            }
+        })
+    }
+
+    setSides(){
+        if(this.sides == "default") return;
+        this.mesh.traverse((child) => {
+            if (child.isMesh) {
+                if(child.material instanceof Array){
+                    child.material.forEach(m => m.side = THREE[this.sides]);
+                }else{
+                    child.material.side = THREE[this.sides];
                 }
             }
         })

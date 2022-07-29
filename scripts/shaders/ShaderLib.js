@@ -126,7 +126,7 @@ export class ShaderConfig extends FormApplication{
                     </div>
                     <div class="form-group" style="display: grid;grid-template-columns: 1fr 1fr;align-items: center;padding-bottom: 8px;">
                     <label>${game.i18n.localize("levels3dpreview.shaders.config.macro.players")}</label>
-                        <input style="justify-self: end;" type="checkbox" id="macro-players" checked>
+                        <input style="justify-self: end;" type="checkbox" id="macro-players">
                     </div>
                   `
                     $(html[0]).append(input);
@@ -214,7 +214,7 @@ export class ShaderHandler{
     injectShaders(shader, commonParams){
         shader.vertexShader = noiseShaders.snoise + "\n" + shader.vertexShader;
         shader.fragmentShader = noiseShaders.snoise + "\n" + shader.fragmentShader;
-        shader.vertexShader = shader.vertexShader.replace("#include <fog_vertex>", "shader_vPosition = vec3(transformed);\nshader_vUv = ( uvTransform * vec3( uv, 1 ) ).xy;\n#include <fog_vertex>");
+        shader.vertexShader = shader.vertexShader.replace("#include <fog_vertex>", "shader_vPosition = vec3(transformed);\nshader_vUv = ( uvTransform * vec3( uv, 1 ) ).xy;\nshader_vNormal = normal;\n#include <fog_vertex>");
         shader.vertexShader = shader.vertexShader.replace("#include <uv_pars_vertex>", "#include <uv_pars_vertex>\n #ifdef USE_UV\n#else\nuniform mat3 uvTransform;\n#endif");
         for(const [shaderId, shaderConfig] of Object.entries(this.shaderLib)){
             const {vertexShader, fragmentShader, uniforms, varying} = shaderConfig;
@@ -349,6 +349,10 @@ export const shaders = {
             "shader_vUv": {
                 type: "vec2",
                 value: new THREE.Vector2(0, 0)
+            },
+            "shader_vNormal": {
+                type: "vec3",
+                value: new THREE.Vector3(0, 0, 0)
             }
         },
         vertexShader: [],
@@ -544,7 +548,6 @@ export const shaders = {
         ],
         fragmentShader: [],
     },
-
     "ocean": {
         icon: `<i class="fas fa-fish"></i>`,
         uniforms: {
@@ -661,7 +664,7 @@ export const shaders = {
             "normalCulling": {
                 type: "float",
                 default: 0.0,
-            },
+            }
         },
         varying: {},
         vertexShader: [],
@@ -670,7 +673,7 @@ export const shaders = {
                 mode: SHADERS_CONSTS.APPEND,
                 injectionPoint: "#include <dithering_fragment>",
                 shaderCode: `
-                if( abs(normal.y) > grid_normalCulling && (mod(vWorldPositionFoW.x, gridSize) < 0.0015 || mod(vWorldPositionFoW.z, gridSize) < 0.0015)){
+                if( abs(shader_vNormal.y) > grid_normalCulling && (mod(vWorldPositionFoW.x, gridSize) < 0.0015 || mod(vWorldPositionFoW.z, gridSize) < 0.0015)){
                     gl_FragColor.rgb = mix(gl_FragColor.rgb, gridColor, gridAlpha);
                 }
                 `

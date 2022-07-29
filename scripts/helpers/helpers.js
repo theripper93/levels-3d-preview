@@ -237,6 +237,7 @@ export class Helpers {
       aoMap: await this.loadTexture(tPaths[3],options),
       normalMap: await this.loadTexture(tPaths[4],options),
       emissiveMap: await this.loadTexture(tPaths[5],options),
+      side: options.doubleSided ? THREE.DoubleSide : THREE.FrontSide,
     };
     for (let [k, v] of Object.entries(textures)) {
       if (!v.image) delete textures[k];
