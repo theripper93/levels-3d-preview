@@ -26,9 +26,9 @@ export class DynaMesh{
         const mesh2 = new THREE.Mesh(geometry, material);
         const mesh3 = new THREE.Mesh(geometry, material);
 
-        mesh1.rotation.set(0, Math.PI/4, 0);
+        mesh1.rotation.set(0, Math.PI/3, 0);
         mesh2.rotation.set(0, 0, 0);
-        mesh3.rotation.set(0, -Math.PI/4, 0);
+        mesh3.rotation.set(0, -Math.PI/3, 0);
 
         const group = new THREE.Group();
         group.add(mesh1);

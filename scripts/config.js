@@ -123,7 +123,7 @@ Hooks.on("renderSceneConfig", (app,html)=>{
             html: `<h3 class="form-header"><i class="fas fa-cloud-sun"></i> ${game.i18n.localize("levels3dpreview.settings.headers.environment.title")}</h3><p class="notes">${game.i18n.localize("levels3dpreview.settings.headers.environment.notes")}</p><div>`
         },
         "exr" : {
-            type: "filepicker.folder",
+            type: "filepicker.any",
             fpTypes: [".exr",".jpeg",".jpg",".png",".webp"],
             label: game.i18n.localize("levels3dpreview.flags.exr.label"),
             placeholder: game.i18n.localize("levels3dpreview.flags.exr.placeholder"),
@@ -513,7 +513,7 @@ Hooks.on("renderTokenConfig", (app,html)=>{
             "icon": "fas fa-cube",
         },
         "model3d" : {
-            type: "filepicker.folder",
+            type: "filepicker.any",
             fpTypes: [".gltf", ".GLTF", ".glb", ".GLB", ".fbx", ".FBX"],
             label: game.i18n.localize("levels3dpreview.flags.model3d.label"),
         },
@@ -687,7 +687,7 @@ Hooks.on("renderTileConfig", (app,html)=>{
             "icon": "fas fa-cube",
         },
         "model3d" : {
-            type: "filepicker.folder",
+            type: "filepicker.any",
             fpTypes: [".gltf", ".GLTF", ".glb", ".GLB", ".fbx", ".FBX"],
             label: game.i18n.localize("levels3dpreview.flags.model3d.label"),
         },

@@ -1452,7 +1452,7 @@ class Levels3DPreview {
 
   open3DFilePicker() {
     const fp = new FilePicker({
-      type: "folder",
+      type: "any",
       tileSize: true,
     });
     fp.extensions = [".glb", ".GLB", ".gltf", ".GLTF", ".fbx", ".FBX"];

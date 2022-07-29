@@ -134,6 +134,11 @@
     row-gap: 0.5rem;
 }
 
+#levels-3d-preview-slow-shader{
+    cursor: help;
+    color: var(--color-level-warning);
+}
+
 /*#levels-3d-preview-shader-config{
     max-width: 335px;
 }*/

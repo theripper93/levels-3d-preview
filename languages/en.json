@@ -1121,6 +1121,7 @@
                 "label": "Shader Configuration",
                 "button": "Configure Shaders",
                 "notes": "Configure the visual effects to be used on this 3D Object.",
+                "slow": "WARNING: Using many instances of this shader may cause performance issues.",
                 "macro": {
                     "title": "Create Shader Macro",
                     "content": "Macro Name:",
@@ -1177,7 +1178,8 @@
                 "waveC_wavelength": "Wave C Wavelength",
                 "waveC_steepness": "Wave C Steepness",
                 "waveC_direction": "Wave C Direction",
-                "foam": "Highlights"
+                "foam": "Highlights",
+                "reflections": "Reflections"
             },
             "grid": {
                 "name": "Grid",

@@ -32,6 +32,7 @@ export class ShaderConfig extends FormApplication{
                 description: game.i18n.localize(`levels3dpreview.shaders.${k}.description`),
                 icon: game.Levels3DPreview.CONFIG.shaders.shaders[k].icon ?? "",
                 isEnabled: shaderData[k].enabled,
+                isSlow: v.fragmentShader && v.fragmentShader[0]?.shaderCode?.length > 300,
             };
             finalData[k]["enabled"] = {
                 isBoolean: true,
@@ -192,6 +193,11 @@ export class ShaderHandler{
         const _onBeforeCompile = (shader) => {
             shader.entity3D = entity3D;
             this.injectShaders(shader, commonParams);
+            shader.uniforms.mDepth = {value: commonParams.mDepth};
+            shader.uniforms.mWidth = {value: commonParams.mWidth};
+            shader.uniforms.mHeight = {value: commonParams.mHeight};
+            shader.uniforms.localSize = {value: commonParams.localSize};
+
             this.setUniforms(shader, shaderParams);
             this.shaders.push(shader);
         }
@@ -438,7 +444,7 @@ export const shaders = {
                 mode: SHADERS_CONSTS.APPEND,
                 injectionPoint: "#include <begin_vertex>",
                 shaderCode: `
-                float currentY = (modelMatrix * vec4( transformed, 1.0 )).y;
+                float currentY = vWorldPositionFoW.y;//(modelMatrix * vec4( transformed, 1.0 )).y;
                 float currentYDelta = currentY - yPos;
                 float windFactor = 0.0;
                 vec2 windOffset = vec2(0.0);
@@ -566,6 +572,8 @@ export const shaders = {
             "waveA_steepness": {
                 type: "float",
                 default: 0.3,
+                min: 0.01,
+                max: 1,
             },
             "waveA_direction": {
                 type: "float",
@@ -580,6 +588,8 @@ export const shaders = {
             "waveB_steepness": {
                 type: "float",
                 default: 0.25,
+                min: 0.01,
+                max: 1,
             },
             "waveB_direction": {
                 type: "float",
@@ -594,6 +604,8 @@ export const shaders = {
             "waveC_steepness": {
                 type: "float",
                 default: 0.35,
+                min: 0.01,
+                max: 1,
             },
             "waveC_direction": {
                 type: "float",
@@ -603,8 +615,12 @@ export const shaders = {
             },
             "foam": {
                 type: "bool",
-                default: true,
-            }
+                default: false,
+            },
+            /*"reflections": {
+                type: "bool",
+                default: false,
+            },*/
         },
         varying: {
             "foam_factor": {
@@ -634,11 +650,6 @@ export const shaders = {
                 p += GerstnerWave(_WaveE, gridPoint, tangent, binormal, ocean_speed) ;
                 p += GerstnerWave(_WaveF, gridPoint, tangent, binormal, ocean_speed) ;
                 vec3 ocean_normal = normalize(cross(tangent, binormal));
-                //vNormal = vec3(0.0, -1.0, 0.0);//ocean_normal;
-                #if defined( transformedNormal )
-                    vNormal = ocean_normal;
-                    transformedNormal = ocean_normal;
-                #endif
                 if(ocean_foam){
                     ocean_foam_factor = pow(ocean_normal.y, 4.0);
                 }
@@ -664,6 +675,8 @@ export const shaders = {
             "normalCulling": {
                 type: "float",
                 default: 0.0,
+                min: 0.01,
+                max: 0.99,
             }
         },
         varying: {},
@@ -857,7 +870,9 @@ export const shaders = {
             },
             intensity: {
                 type: "float",
-                default: 0.5
+                default: 0.5,
+                min: 0.01,
+                max: 2,
             },
             scale: {
                 type: "float",
@@ -915,7 +930,8 @@ export const shaders = {
             },
             intensity: {
                 type: "float",
-                default: 0.5
+                min: 0.01,
+                max: 2,
             },
             grain: {
                 type: "float",
@@ -978,7 +994,8 @@ export const shaders = {
             },
             intensity: {
                 type: "float",
-                default: 0.5
+                min: 0.01,
+                max: 2,
             },
             scale: {
                 type: "float",
@@ -1026,7 +1043,9 @@ export const shaders = {
             },
             intensity: {
                 type: "float",
-                default: 0.5
+                default: 0.5,
+                min: 0.01,
+                max: 2,
             },
             scale: {
                 type: "float",
@@ -1097,9 +1116,9 @@ function getSizesForShader(entity3D){
 
 function getYpos(entity3D){
     if(entity3D.isInstanced){
-        return entity3D.mesh.position.y - entity3D.instancedBBSize.y / 2;
+        return entity3D.mesh.position.y //- entity3D.instancedBBSize.y / 2;
     }else{
-        return (entity3D.mesh.position.y - entity3D.bb.depth / 2);
+        return (entity3D.mesh.position.y);
     }
 }
 

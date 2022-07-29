@@ -11,7 +11,7 @@
 
         {{#each shaders}}
             <div class="tab" data-tab="{{@key}}" data-group="sections">
-                <p class="notes">{{this.description}}</p>
+                <p class="notes">{{#if this.isSlow}}<i id="levels-3d-preview-slow-shader" data-tooltip="{{localize "levels3dpreview.shaders.config.slow"}}" class="fas fa-exclamation-triangle"></i> {{/if}}{{this.description}}</p>
                 {{#each this}}
                     {{#if this.isField}}
                         <div class="form-group">
