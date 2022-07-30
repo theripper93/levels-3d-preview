@@ -1,5 +1,5 @@
 export const noiseShaders = {
-    snoise: `    
+    snoise: `
     //
     // Description : Array and textureless GLSL 2D simplex noise function.
     //      Author : Ian McEwan, Ashima Arts.

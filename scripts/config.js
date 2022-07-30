@@ -736,6 +736,10 @@ Hooks.on("renderTileConfig", (app,html)=>{
             type: "filepicker",
             label: game.i18n.localize("levels3dpreview.flags.displacementMap.label"),
         },
+        "invertDisplacementMap": {
+            type: "checkbox",
+            label: game.i18n.localize("levels3dpreview.flags.invertDisplacementMap.label"),
+        },
         "color": {
             type: "color",
             label: game.i18n.localize("levels3dpreview.flags.tint.label"),

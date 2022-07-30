@@ -306,7 +306,10 @@
                 "label": "Texture"
             },
             "displacementMap": {
-                "label": "Heightmap"
+                "label": "Heightmap/Heatmap"
+            },
+            "invertDisplacementMap": {
+                "label": "Invert Heightmap/Heatmap"
             },
             "wallSidesTexture": {
                 "label": "Sides Texture"

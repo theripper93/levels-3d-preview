@@ -123,6 +123,7 @@ export class Tile3D {
         this.noiseScale = this.tile.document.getFlag("levels-3d-preview", "noiseScale") ?? 1;
         this.imageTexture = this.tile.document.getFlag("levels-3d-preview", "imageTexture") ?? "";
         this.displacementMap = this.tile.document.getFlag("levels-3d-preview", "displacementMap") ?? "";
+        this.invertDisplacementMap = this.tile.document.getFlag("levels-3d-preview", "invertDisplacementMap") ?? false;
         this.fillType = this.tile.document.getFlag("levels-3d-preview", "fillType") ?? "stretch";
         this.scale= this.tile.document.getFlag("levels-3d-preview", "tileScale") ?? 1;
         this.yScale = this.tile.document.getFlag("levels-3d-preview", "yScale") ?? 1;
@@ -450,6 +451,7 @@ export class Tile3D {
                 child.material,
                 count
             );
+            const positionsArray = new Float32Array(count);
             instancedMesh.instanceMatrix.setUsage( THREE.DynamicDrawUsage );
             let i = 0;
             let j = 0;
@@ -474,6 +476,7 @@ export class Tile3D {
                     }
                     //dummy.scale.set(randomScale*child.scale.x*scaleFit,randomDepth*randomScale*child.scale.y*scaleFit*this.yScale,randomScale*child.scale.z*scaleFit);
                     dummy.rotation.set(dummy.rotation.x,dummy.rotation.y+randomRotation,dummy.rotation.z);
+                    positionsArray[j] = -999999999999999;
                     if(this.enableGravity !== "none"){
                         const realTarget = dummy.position.clone();
                         realTarget.add(new THREE.Vector3(
@@ -485,7 +488,9 @@ export class Tile3D {
                         const rcTarget = realTarget.clone();
                         rcTarget.y -= 10;
                         const collision = raycaster.computeSightCollisionFrom3DPositions(realTarget,rcTarget, "collision", false, false, false, true)
+                        
                         if(collision){
+                            positionsArray[j] = collision[0].point.y;
                             dummy.position.y -= (collision[0].distance + 0.01);
                             if(this.enableGravity === "gravityRotation") {
                                 dummy.rotation.set(collision[0].face.normal.x,collision[0].face.normal.y,collision[0].face.normal.z);
@@ -508,7 +513,7 @@ export class Tile3D {
                     j++
                 }
             }
-    
+            instancedMesh.geometry.addAttribute('shader_instance_position', new THREE.InstancedBufferAttribute(positionsArray, 1, false));
             instancedMesh.instanceMatrix.needsUpdate = true;
             if(this.randomColor) instancedMesh.instanceColor.needsUpdate = true;
             instancedMesh.position.set(-this.width/2+gridX/2,0,-this.height/2+gridZ/2);
@@ -921,7 +926,12 @@ export class Tile3D {
         x = parseInt( x );
         y = parseInt( y );  
         var position = ( x + imagedata.width * y ) * 4, data = imagedata.data;
-        return { r: data[ position ], g: data[ position + 1 ], b: data[ position + 2 ], a: data[ position + 3 ] };
+        if(this.invertDisplacementMap){
+            return { r: 255 - data[ position ], g: 255 - data[ position + 1 ], b: 255 - data[ position + 2 ], a: 255 - data[ position + 3 ] };
+        }else{
+            return { r: data[ position ], g: data[ position + 1 ], b: data[ position + 2 ], a: data[ position + 3 ] };
+        }
+        
     
     }
 

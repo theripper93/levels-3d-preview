@@ -218,6 +218,7 @@ export class ShaderHandler{
     }
 
     injectShaders(shader, commonParams){
+        shader.vertexShader = "attribute float shader_instance_position;\n" + shader.vertexShader;
         shader.vertexShader = noiseShaders.snoise + "\n" + shader.vertexShader;
         shader.fragmentShader = noiseShaders.snoise + "\n" + shader.fragmentShader;
         shader.vertexShader = shader.vertexShader.replace("#include <fog_vertex>", "shader_vPosition = vec3(transformed);\nshader_vUv = ( uvTransform * vec3( uv, 1 ) ).xy;\nshader_vNormal = normal;\n#include <fog_vertex>");
@@ -425,7 +426,7 @@ export const shaders = {
             },
             "intensity": {
                 type: "float",
-                default: 0.1,
+                default: 0.5,
             },
             "affect_model": {
                 type: "float",
@@ -445,7 +446,13 @@ export const shaders = {
                 injectionPoint: "#include <begin_vertex>",
                 shaderCode: `
                 float currentY = vWorldPositionFoW.y;//(modelMatrix * vec4( transformed, 1.0 )).y;
-                float currentYDelta = currentY - yPos;
+                float useY = yPos;
+                #ifdef USE_INSTANCING
+                    if(shader_instance_position > -999999999999999.0) {
+                        useY = shader_instance_position;
+                    }
+                #endif
+                float currentYDelta = currentY - useY;
                 float windFactor = 0.0;
                 vec2 windOffset = vec2(0.0);
                 if (currentYDelta > mDepth*wind_affect_model) {
@@ -453,7 +460,7 @@ export const shaders = {
                     if(wind_convoluted) {
                         windFactor = (sin(time*wind_speed + transformed.x + transformed.z) + wind_intensity) * windFactor;
                     }else{
-                        windFactor = (sin(time*wind_speed) + wind_intensity) * windFactor;
+                        windFactor = (sin(time*(wind_speed)) + wind_intensity) * windFactor;
                     }
                     windOffset = vec2(windFactor * wind_intensity * cos(wind_direction) * localSize.x, windFactor *  wind_intensity * sin(wind_direction) * localSize.z);
                 }
@@ -756,7 +763,7 @@ export const shaders = {
                 vec4 easedColor = vec4( xColor * triW.x + yColor * triW.y + zColor * triW.z, 1.0);
                 vec4 gammaCorrectedColor = vec4( pow(abs(easedColor.x),1.0), pow(abs(easedColor.y),1.0), pow(abs(easedColor.z),1.0), 1.0);
                 vec4 texelColor3 = mapTexelToLinear( gammaCorrectedColor );
-                diffuseColor *= texelColor3;
+                diffuseColor = texelColor3;
                 #endif
                 `
             },
@@ -1114,12 +1121,10 @@ function getSizesForShader(entity3D){
     }
 }
 
+let yPosV3 = new THREE.Vector3();
+
 function getYpos(entity3D){
-    if(entity3D.isInstanced){
-        return entity3D.mesh.position.y //- entity3D.instancedBBSize.y / 2;
-    }else{
-        return (entity3D.mesh.position.y);
-    }
+    return entity3D.mesh.getWorldPosition(yPosV3).y;
 }
 
 /*
