@@ -119,7 +119,7 @@
     transform-origin: center !important;
 }
 
-#levels-3d-preview-shader-config .shader-tab-enabled i{
+#levels-3d-preview-shader-config .shader-tab-enabled i, .autosave.active{
     color: var(--color-border-highlight);
 }
 

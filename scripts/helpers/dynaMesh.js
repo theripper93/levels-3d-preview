@@ -17,6 +17,9 @@ export class DynaMesh{
     create(){
         const geometry = this._constructGeometry();
         const mesh = this.type == "billboard" ? this._createBillboardMesh(geometry) : new THREE.Mesh(geometry, this._material);
+        mesh.traverse((child) => {
+            if(child.isMesh) child.geometry.computeBoundsTree();
+        });
         return mesh;
     }
 

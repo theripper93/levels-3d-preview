@@ -6,6 +6,7 @@ export class ShaderConfig extends FormApplication{
     constructor(document) {
         super();
         this.document = document;
+        this.autoSave = game.settings.get("levels-3d-preview", "shaderAutoSave");
     }
 
     static get defaultOptions() {
@@ -61,8 +62,24 @@ export class ShaderConfig extends FormApplication{
         return {shaders: finalData};
     }
 
+    _getHeaderButtons(...args) {
+        const buttons = super._getHeaderButtons(...args);
+        buttons.unshift({
+            label: game.i18n.localize("levels3dpreview.shaders.config.autosave"),
+            class: `autosave`,
+            icon: "far fa-save",
+            onclick: (e) => {
+                this.autoSave = !this.autoSave;
+                game.settings.set("levels-3d-preview", "shaderAutoSave", this.autoSave);
+                $(e.currentTarget).toggleClass("active");
+            },
+        });
+        return buttons;
+    }
+
     async activateListeners(html) {
         super.activateListeners(html);
+        html[0].closest("#levels-3d-preview-shader-config").querySelector(".autosave").classList.toggle("active", this.autoSave);
         html.on("click", ".item", (e)=>{
             this.setPosition({height:"auto"})
         })
@@ -134,8 +151,14 @@ export class ShaderConfig extends FormApplication{
                 }
             });
             
+        })
+        html.on("change", (e)=>{
+            if(this.autoSave)
+            this.debouncedSubmit(e, {preventClose: true, preventRender: true});
         })        
     }
+
+    debouncedSubmit = debounce(this._onSubmit.bind(this), 400);
 
     setPosition(...args) {
         super.setPosition(...args);
@@ -346,7 +369,25 @@ export const shaders = {
                 value: () => {
                     return canvas.scene.grid.size/factor;
                 }
-            }
+            },
+            gridType: {
+                type: "float",
+                value: () => {
+                    return canvas.scene.grid.type;
+                }
+            },
+            gridMinX: {
+                type: "float",
+                value: () => {
+                    return canvas.grid.grid._bounds.minX/factor;
+                }
+            },
+            gridMinY: {
+                type: "float",
+                value: () => {
+                    return canvas.grid.grid._bounds.minY/factor;
+                }
+            },
         },
         varying: {
             "shader_vPosition": {
@@ -437,9 +478,24 @@ export const shaders = {
             "convoluted": {
                 type: "bool",
                 default: false,
+            },
+            "ground_blend": {
+                type: "float",
+                default: 0,
+                min: 0,
+                max: 1,
+            },
+            "ground_color": {
+                type: "vec3",
+                default: "#ffffff"
             }
         },
-        varying: {},
+        varying: {
+            "ground_blend_percent": {
+                type: "float",
+                value: 0
+            }
+        },
         vertexShader: [
             {
                 mode: SHADERS_CONSTS.APPEND,
@@ -453,6 +509,7 @@ export const shaders = {
                     }
                 #endif
                 float currentYDelta = currentY - useY;
+                wind_ground_blend_percent = max(0.0, currentYDelta / mDepth);
                 float windFactor = 0.0;
                 vec2 windOffset = vec2(0.0);
                 if (currentYDelta > mDepth*wind_affect_model) {
@@ -469,7 +526,18 @@ export const shaders = {
                 `
             }
         ],
-        fragmentShader: [],
+        fragmentShader: [
+            {
+                mode: SHADERS_CONSTS.APPEND,
+                injectionPoint: "#include <dithering_fragment>",
+                shaderCode: `
+                if(wind_ground_blend_percent < wind_ground_blend && wind_ground_blend > 0.0) {
+                    float ground_blend_factor = 1.0 - wind_ground_blend_percent / wind_ground_blend;
+                    gl_FragColor.rgb = mix(gl_FragColor.rgb, wind_ground_color, ground_blend_factor);
+                }
+                `
+            }
+        ],
     },
     "distortion": {
         icon: `<i class="fas fa-wave-square"></i>`,
@@ -693,147 +761,44 @@ export const shaders = {
                 mode: SHADERS_CONSTS.APPEND,
                 injectionPoint: "#include <dithering_fragment>",
                 shaderCode: `
-                if( abs(shader_vNormal.y) > grid_normalCulling && (mod(vWorldPositionFoW.x, gridSize) < 0.0015 || mod(vWorldPositionFoW.z, gridSize) < 0.0015)){
-                    gl_FragColor.rgb = mix(gl_FragColor.rgb, gridColor, gridAlpha);
+                if(abs(shader_vNormal.y) > grid_normalCulling){
+                    if(gridType == 1.0){
+                        if( (mod(vWorldPositionFoW.x, gridSize) < 0.0015 || mod(vWorldPositionFoW.z, gridSize) < 0.0015)){
+                            gl_FragColor.rgb = mix(gl_FragColor.rgb, gridColor, gridAlpha);
+                        }
+                    }else{
+                        vec2 s = gridType > 3.0 ? vec2(1.7320508, 1) : vec2(1, 1.7320508);
+                        
+                        vec2 gridOffset = vec2(gridMinX ,gridMinY);
+                        
+                        vec2 misteryAdjustment = vec2(0.0, 0.0);
+
+                        if(gridType == 2.0){
+                            misteryAdjustment = vec2(0.96 * 0.5*gridSize/1.7320508, gridSize * 1.02);
+                        }else if(gridType == 3.0){
+                            misteryAdjustment = vec2(1.02 * 1.7320508 * gridSize, gridSize * 1.02);
+                        }else if(gridType == 4.0){
+                            misteryAdjustment = vec2(gridSize * 1.02, 0.96 * 0.5*gridSize/1.7320508);
+                        }else if(gridType == 5.0){
+                            misteryAdjustment = vec2(gridSize * 1.02, 1.02 * 1.7320508 * gridSize);
+                        }
+                        
+                        vec2 u = vec2(vWorldPositionFoW.x, vWorldPositionFoW.z) + gridOffset + misteryAdjustment;
+    
+                        vec2 p = u*(1.0/(gridSize)) + s.yx;
+                        vec4 hC = gridType > 3.0 ? floor(vec4(p, p - vec2(1, .5))/s.xyxy) + 0.5 : floor(vec4(p, p - vec2(.5, 1))/s.xyxy) + 0.5;
+                        vec4 h = vec4(p - hC.xy*s, p - (hC.zw + .5)*s);
+                        vec4 hex = dot(h.xy, h.xy) < dot(h.zw, h.zw) ? vec4(h.xy, hC.xy) : vec4(h.zw, hC.zw + 0.5);
+                        
+                        p = abs(hex.xy);
+                        float eDist = gridType > 3.0 ? max(dot(p, s*0.5), p.y) : max(dot(p, s*0.5), p.x);
+                    
+                        gl_FragColor.rgb = mix(gl_FragColor.rgb, gridColor , smoothstep(0.0, 0.0, eDist - 0.5 + 0.01) * gridAlpha);     
+                    }
                 }
                 `
             }
         ],
-    },
-    "triplanar": {
-        icon: `<i class="fas fa-cube"></i>`,
-        uniforms: {
-            roughnessAdjust: {
-                type: "float",
-                default: 8,
-            },
-        },
-        varying: {
-            wNormal: {
-                type: "vec3",
-                default: new THREE.Vector3(0, 0, 0),
-            },
-            vUvTri: {
-                type: "vec3",
-                default: new THREE.Vector3(0, 0, 0),
-            }
-        },
-        vertexShader: [
-            {
-                mode: SHADERS_CONSTS.APPEND,
-                injectionPoint: "void main() {",
-                shaderCode: `
-                vec4 worldPosition2 = modelMatrix * vec4( position, 1.0 );
-                triplanar_wNormal = normalize( mat3( modelMatrix[0].xyz, modelMatrix[1].xyz, modelMatrix[2].xyz ) * normal );
-                triplanar_vUvTri = worldPosition2.xyz;
-                `
-            },
-        ],
-        fragmentShader: [
-            {
-                mode: SHADERS_CONSTS.PREPEND,
-                injectionPoint: "void main() {",
-                noConditional: true,
-                shaderCode: `
-                vec3 GetTriplanarWeights (vec3 normals) {
-                    vec3 triW = abs(normals);
-                    return triW / (triW.x + triW.y + triW.z);
-                  }
-                struct TriplanarUV {
-                  vec2 x, y, z;
-                };
-                TriplanarUV GetTriplanarUV (vec3 pos) {
-                    TriplanarUV  triUV;
-                    triUV.x = pos.zy;
-                    triUV.y = pos.xz;
-                    triUV.z = pos.xy;
-                    return triUV;
-                }
-                `
-            },
-            {
-                mode: SHADERS_CONSTS.APPEND,
-                injectionPoint: "#include <map_fragment>",
-                shaderCode: `
-                #ifdef USE_MAP
-                vec3 xColor = texture2D(map, triplanar_vUvTri.yz * textureRepeat * 0.1).rgb;
-                vec3 yColor = texture2D(map, triplanar_vUvTri.xz * textureRepeat * 0.1).rgb;
-                vec3 zColor = texture2D(map, triplanar_vUvTri.xy * textureRepeat * 0.1).rgb;
-                vec3 triW = GetTriplanarWeights(triplanar_wNormal);
-                vec4 easedColor = vec4( xColor * triW.x + yColor * triW.y + zColor * triW.z, 1.0);
-                vec4 gammaCorrectedColor = vec4( pow(abs(easedColor.x),1.0), pow(abs(easedColor.y),1.0), pow(abs(easedColor.z),1.0), 1.0);
-                vec4 texelColor3 = mapTexelToLinear( gammaCorrectedColor );
-                diffuseColor = texelColor3;
-                #endif
-                `
-            },
-            {
-                mode: SHADERS_CONSTS.APPEND,
-                injectionPoint: "#include <roughnessmap_fragment>",
-                shaderCode: `
-                #ifdef USE_ROUGHNESSMAP
-                    vec3 xColorR = texture2D(roughnessMap, triplanar_vUvTri.yz * textureRepeat * 0.1).rgb;
-                    vec3 yColorR = texture2D(roughnessMap, triplanar_vUvTri.xz * textureRepeat * 0.1).rgb;
-                    vec3 zColorR = texture2D(roughnessMap, triplanar_vUvTri.xy * textureRepeat * 0.1).rgb;
-
-                    vec3 triWR = GetTriplanarWeights(triplanar_wNormal);
-                    vec4 easedColorR = vec4( xColorR * triWR.x + yColorR * triWR.y + zColorR * triWR.z, 1.0);
-                    vec4 gammaCorrectedColorR = vec4( pow(abs(easedColorR.x),1.0), pow(abs(easedColorR.y),1.0), pow(abs(easedColorR.z),1.0), 1.0);
-                    vec4 texelColorR = mapTexelToLinear( gammaCorrectedColorR );
-                    roughnessFactor *= texelColorR.g * triplanar_roughnessAdjust;
-                #endif
-                `
-            },
-            {
-                mode: SHADERS_CONSTS.REPLACE,
-                injectionPoint: "#include <normal_fragment_maps>",
-                noConditional: true,
-                shaderCode: `
-                #ifdef OBJECTSPACE_NORMALMAP
-                    normal = texture2D( normalMap, vUv ).xyz * 2.0 - 1.0; // overrides both flatShading and attribute normals
-                    #ifdef FLIP_SIDED
-                        normal = - normal;
-                    #endif
-                    #ifdef DOUBLE_SIDED
-                        normal = normal * ( float( gl_FrontFacing ) * 2.0 - 1.0 );
-                    #endif
-                    normal = normalize( normalMatrix * normal );
-                #elif defined( TANGENTSPACE_NORMALMAP )
-                if(triplanar_enabled){
-                    TriplanarUV triUV = GetTriplanarUV(triplanar_vUvTri);
-
-                    vec3 tangentNormalX = texture2D(normalMap, triUV.x * textureRepeat * 0.1).xyz;
-                    vec3 tangentNormalY = texture2D(normalMap, triUV.y * textureRepeat * 0.1).xyz;
-                    vec3 tangentNormalZ = texture2D(normalMap, triUV.z * textureRepeat * 0.1).xyz;
-
-                    vec3 worldNormalX = tangentNormalX.xyz;
-                    vec3 worldNormalY = tangentNormalY.xyz;
-                    vec3 worldNormalZ = tangentNormalZ;
-
-                    vec3 triWN = GetTriplanarWeights(triplanar_wNormal);
-                    vec3 mapI = normalize(worldNormalX * triWN.x + worldNormalY * triWN.y + worldNormalZ * triWN.z);
-                    vec3 mapN = vec3(mapI.x, mapI.y, mapI.z);
-                    mapN.xy *= normalScale;
-                    #ifdef USE_TANGENT
-                        normal = normalize( vTBN * mapN );
-                    #else
-                        normal = perturbNormal2Arb( -vViewPosition, normal, mapN, faceDirection  );
-                    #endif
-                }else{
-                    vec3 mapN = texture2D( normalMap, vUv ).xyz * 2.0 - 1.0;
-                    mapN.xy *= normalScale;
-                    #ifdef USE_TANGENT
-                        normal = normalize( vTBN * mapN );
-                    #else
-                        normal = perturbNormal2Arb( - vViewPosition, normal, mapN, faceDirection );
-                    #endif
-                }
-                #elif defined( USE_BUMPMAP )
-                    normal = perturbNormalArb( -vViewPosition, normal, dHdxy_fwd() );
-                #endif
-    `
-            }
-        ]
     },
     "textureScroll": {
         icon: `<i class="fas fa-angle-double-right"></i>`,
@@ -862,6 +827,47 @@ export const shaders = {
                 #ifdef USE_UV
                 vUv.x += time * textureScroll_speedX * cos(textureScroll_direction);
                 vUv.y += time * textureScroll_speedY * sin(textureScroll_direction);
+                #endif
+                `
+            }
+        ],
+        fragmentShader: []
+    },
+    "textureRotate": {
+        icon: `<i class="fas fa-sync-alt"></i>`,
+        uniforms: {
+            speed: {
+                type: "float",
+                default: 0.1
+            },
+            centerx: {
+                type: "float",
+                default: 0.5,
+                min: 0,
+                max: 1,
+            },
+            centery: {
+                type: "float",
+                default: 0.5,
+                min: 0,
+                max: 1,
+            },
+        },
+        varying: {},
+        vertexShader: [
+            {
+                mode: SHADERS_CONSTS.APPEND,
+                injectionPoint: "#include <begin_vertex>",
+                shaderCode: `
+                #ifdef USE_UV
+                vec2 textureRotate_center_uv = vec2(textureRotate_centerx + 0.0001, textureRotate_centery + 0.0001);
+                vec2 textureRotate_center = textureRotate_center_uv * textureRepeat;
+                float textureRotate_r = distance(vUv, textureRotate_center);
+                vec2 textureRotate_vUv = (vUv - textureRotate_center) / textureRotate_center_uv;
+                float textureRotate_angle = atan(textureRotate_vUv.y, textureRotate_vUv.x);
+                textureRotate_angle = textureRotate_angle + time * 0.1 * textureRotate_speed;
+                vec2 textureRotate_newUv = vec2(cos(textureRotate_angle), sin(textureRotate_angle)) * textureRotate_r;
+                vUv = (textureRotate_newUv) + textureRotate_center;
                 #endif
                 `
             }
@@ -1098,6 +1104,193 @@ export const shaders = {
         ],
 
     },
+    "colorwarp": {
+        icon: `<i class="fas fa-palette"></i>`,
+        uniforms: {
+            speed: {
+                type: "float",
+                default: 0.1
+            },
+            glow: {
+                type: "float",
+                default: 1,
+                min: 0,
+                max: 2,
+            },
+            hue_angle: {
+                type: "float",
+                default: 0,
+                min: 0,
+                max: 360,
+            },
+            flicker: {
+                type: "bool",
+                default: false
+            },
+            animate_range: {
+                type: "float",
+                default: 0.5,
+                min: 0,
+                max: 1,
+            },
+        },
+        varying: {},
+        vertexShader: [],
+        fragmentShader: [
+            {
+                mode: SHADERS_CONSTS.APPEND,
+                injectionPoint: "#include <dithering_fragment>",
+                shaderCode: `
+                float colorwarp_time_fac = 1.0;
+                float noise = colorwarp_flicker ? noise(vec2(time*0.05, time*0.05)) : 1.0;
+                colorwarp_time_fac = (sin(time * colorwarp_speed * noise) + 1.0) * 0.5;
+                if(colorwarp_glow > 0.0){
+                    gl_FragColor.rgb = gl_FragColor.rgb * (1.0 + (colorwarp_glow * (1.0 - colorwarp_animate_range)) + (colorwarp_glow * colorwarp_animate_range) * colorwarp_time_fac);
+                }
+                if(colorwarp_hue_angle > 0.0){
+                    gl_FragColor.rgb = hueShift(gl_FragColor.rgb, ((colorwarp_hue_angle * (1.0 - colorwarp_animate_range)) + (colorwarp_hue_angle * colorwarp_animate_range) * colorwarp_time_fac));
+                }
+                `
+            }
+
+        ],
+    },
+    "triplanar": {
+        icon: `<i class="fas fa-cube"></i>`,
+        uniforms: {
+            roughnessAdjust: {
+                type: "float",
+                default: 8,
+            },
+        },
+        varying: {
+            wNormal: {
+                type: "vec3",
+                default: new THREE.Vector3(0, 0, 0),
+            },
+            vUvTri: {
+                type: "vec3",
+                default: new THREE.Vector3(0, 0, 0),
+            }
+        },
+        vertexShader: [
+            {
+                mode: SHADERS_CONSTS.APPEND,
+                injectionPoint: "void main() {",
+                shaderCode: `
+                vec4 worldPosition2 = modelMatrix * vec4( position, 1.0 );
+                triplanar_wNormal = normalize( mat3( modelMatrix[0].xyz, modelMatrix[1].xyz, modelMatrix[2].xyz ) * normal );
+                triplanar_vUvTri = worldPosition2.xyz;
+                `
+            },
+        ],
+        fragmentShader: [
+            {
+                mode: SHADERS_CONSTS.PREPEND,
+                injectionPoint: "void main() {",
+                noConditional: true,
+                shaderCode: `
+                vec3 GetTriplanarWeights (vec3 normals) {
+                    vec3 triW = abs(normals);
+                    return triW / (triW.x + triW.y + triW.z);
+                  }
+                struct TriplanarUV {
+                  vec2 x, y, z;
+                };
+                TriplanarUV GetTriplanarUV (vec3 pos) {
+                    TriplanarUV  triUV;
+                    triUV.x = pos.zy;
+                    triUV.y = pos.xz;
+                    triUV.z = pos.xy;
+                    return triUV;
+                }
+                `
+            },
+            {
+                mode: SHADERS_CONSTS.APPEND,
+                injectionPoint: "#include <map_fragment>",
+                shaderCode: `
+                #ifdef USE_MAP
+                vec3 xColor = texture2D(map, triplanar_vUvTri.yz * textureRepeat * 0.1).rgb;
+                vec3 yColor = texture2D(map, triplanar_vUvTri.xz * textureRepeat * 0.1).rgb;
+                vec3 zColor = texture2D(map, triplanar_vUvTri.xy * textureRepeat * 0.1).rgb;
+                vec3 triW = GetTriplanarWeights(triplanar_wNormal);
+                vec4 easedColor = vec4( xColor * triW.x + yColor * triW.y + zColor * triW.z, 1.0);
+                vec4 gammaCorrectedColor = vec4( pow(abs(easedColor.x),1.0), pow(abs(easedColor.y),1.0), pow(abs(easedColor.z),1.0), 1.0);
+                vec4 texelColor3 = mapTexelToLinear( gammaCorrectedColor );
+                diffuseColor = texelColor3;
+                #endif
+                `
+            },
+            {
+                mode: SHADERS_CONSTS.APPEND,
+                injectionPoint: "#include <roughnessmap_fragment>",
+                shaderCode: `
+                #ifdef USE_ROUGHNESSMAP
+                    vec3 xColorR = texture2D(roughnessMap, triplanar_vUvTri.yz * textureRepeat * 0.1).rgb;
+                    vec3 yColorR = texture2D(roughnessMap, triplanar_vUvTri.xz * textureRepeat * 0.1).rgb;
+                    vec3 zColorR = texture2D(roughnessMap, triplanar_vUvTri.xy * textureRepeat * 0.1).rgb;
+
+                    vec3 triWR = GetTriplanarWeights(triplanar_wNormal);
+                    vec4 easedColorR = vec4( xColorR * triWR.x + yColorR * triWR.y + zColorR * triWR.z, 1.0);
+                    vec4 gammaCorrectedColorR = vec4( pow(abs(easedColorR.x),1.0), pow(abs(easedColorR.y),1.0), pow(abs(easedColorR.z),1.0), 1.0);
+                    vec4 texelColorR = mapTexelToLinear( gammaCorrectedColorR );
+                    roughnessFactor *= texelColorR.g * triplanar_roughnessAdjust;
+                #endif
+                `
+            },
+            {
+                mode: SHADERS_CONSTS.REPLACE,
+                injectionPoint: "#include <normal_fragment_maps>",
+                noConditional: true,
+                shaderCode: `
+                #ifdef OBJECTSPACE_NORMALMAP
+                    normal = texture2D( normalMap, vUv ).xyz * 2.0 - 1.0; // overrides both flatShading and attribute normals
+                    #ifdef FLIP_SIDED
+                        normal = - normal;
+                    #endif
+                    #ifdef DOUBLE_SIDED
+                        normal = normal * ( float( gl_FrontFacing ) * 2.0 - 1.0 );
+                    #endif
+                    normal = normalize( normalMatrix * normal );
+                #elif defined( TANGENTSPACE_NORMALMAP )
+                if(triplanar_enabled){
+                    TriplanarUV triUV = GetTriplanarUV(triplanar_vUvTri);
+
+                    vec3 tangentNormalX = texture2D(normalMap, triUV.x * textureRepeat * 0.1).xyz;
+                    vec3 tangentNormalY = texture2D(normalMap, triUV.y * textureRepeat * 0.1).xyz;
+                    vec3 tangentNormalZ = texture2D(normalMap, triUV.z * textureRepeat * 0.1).xyz;
+
+                    vec3 worldNormalX = tangentNormalX.xyz;
+                    vec3 worldNormalY = tangentNormalY.xyz;
+                    vec3 worldNormalZ = tangentNormalZ;
+
+                    vec3 triWN = GetTriplanarWeights(triplanar_wNormal);
+                    vec3 mapI = normalize(worldNormalX * triWN.x + worldNormalY * triWN.y + worldNormalZ * triWN.z);
+                    vec3 mapN = vec3(mapI.x, mapI.y, mapI.z);
+                    mapN.xy *= normalScale;
+                    #ifdef USE_TANGENT
+                        normal = normalize( vTBN * mapN );
+                    #else
+                        normal = perturbNormal2Arb( -vViewPosition, normal, mapN, faceDirection  );
+                    #endif
+                }else{
+                    vec3 mapN = texture2D( normalMap, vUv ).xyz * 2.0 - 1.0;
+                    mapN.xy *= normalScale;
+                    #ifdef USE_TANGENT
+                        normal = normalize( vTBN * mapN );
+                    #else
+                        normal = perturbNormal2Arb( - vViewPosition, normal, mapN, faceDirection );
+                    #endif
+                }
+                #elif defined( USE_BUMPMAP )
+                    normal = perturbNormalArb( -vViewPosition, normal, dHdxy_fwd() );
+                #endif
+    `
+            }
+        ]
+    },
+
 }
 
 function getSizesForShader(entity3D){
@@ -1171,3 +1364,51 @@ void main() {
 #endif
 }
 */
+
+
+/*
+#define FLAT_TOP_HEXAGON
+
+// Helper vector. If you're doing anything that involves regular triangles or hexagons, the
+// 30-60-90 triangle will be involved in some way, which has sides of 1, sqrt(3) and 2.
+#ifdef FLAT_TOP_HEXAGON
+const vec2 s = vec2(1.7320508, 1);
+#else
+const vec2 s = vec2(1, 1.7320508);
+#endif
+
+
+float hex(in vec2 p)
+{    
+    p = abs(p);
+    
+    #ifdef FLAT_TOP_HEXAGON
+    return max(dot(p, s*.5), p.y); // Hexagon.
+    #else
+    return max(dot(p, s*.5), p.x); // Hexagon.
+    #endif    
+}
+
+vec4 getHex(vec2 p)
+{        
+    #ifdef FLAT_TOP_HEXAGON
+    vec4 hC = floor(vec4(p, p - vec2(1, .5))/s.xyxy) + .5;
+    #else
+    vec4 hC = floor(vec4(p, p - vec2(.5, 1))/s.xyxy) + .5;
+    #endif
+    
+
+    vec4 h = vec4(p - hC.xy*s, p - (hC.zw + .5)*s);
+
+    return dot(h.xy, h.xy) < dot(h.zw, h.zw) 
+        ? vec4(h.xy, hC.xy) 
+        : vec4(h.zw, hC.zw + .5);
+}
+
+void mainImage(out vec4 fragColor, in vec2 fragCoord)
+{
+
+}
+*/
+
+

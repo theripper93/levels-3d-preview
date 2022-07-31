@@ -387,42 +387,6 @@
                     "DoubleSide": "Double Side"
                 }
             },
-            "shader": {
-                "label": "Shader",
-                "header": "Shaders",
-                "options": {
-                    "none": "None",
-                    "wind": {
-                        "name": "Wind",
-                        "shaderSpeed": "Speed",
-                        "shaderIntensity" : "Wind Intensity",
-                        "shaderOther": "Wind Direction",
-                        "shaderOther2": "Affect Model (%)",
-                        "shaderAlt": "Convoluted Wind"
-                    },
-                    "distortion": {
-                        "name": "Distortion",
-                        "shaderSpeed": "Speed",
-                        "shaderIntensity" : "Distortion Intensity",
-                        "shaderOther": "Distortion Angle",
-                        "shaderAlt": "Convoluted Distortion"
-                    },
-                    "water": {
-                        "name": "Water",
-                        "shaderSpeed": "Speed",
-                        "shaderIntensity" : "Wave Density",
-                        "shaderOther": "Wave Hight"
-                    },
-                    "triplanar": {
-                        "name": "Triplanar Mapping",
-                        "shaderOther2": "Roughness Correction"
-                    },
-                    "grid": {
-                        "name": "Grid",
-                        "shaderIntensity": "Normal Culling"
-                    }
-                }
-            },
             "noise": {
                 "header": "Terrain",
                 "label": "Noise Type",
@@ -587,6 +551,9 @@
             },
             "tiling": {
                 "label": "Tiling Options"
+            },
+            "shader": {
+                "header": "Shaders"
             },
             "wallOpacity": {
                 "label": "Opacity"
@@ -1118,6 +1085,7 @@
             "config": {
                 "title": "Shaders Configuration",
                 "save": "Save",
+                "autosave": "Autosave",
                 "apply": "Apply",
                 "macro-btn": "Macro",
                 "enabled": "Enabled?",
@@ -1140,7 +1108,9 @@
                 "direction": "Direction",
                 "intensity": "Intensity",
                 "affect_model": "Anchor (%)",
-                "convoluted": "Convoluted"
+                "convoluted": "Convoluted",
+                "ground_blend": "Ground Blending",
+                "ground_color": "Ground Color"
             },
             "distortion": {
                 "name": "Distortion",
@@ -1236,6 +1206,22 @@
                 "direction": "Direction",
                 "intensity": "Intensity",
                 "affect_model": "Anchor (%)"
+            },
+            "colorwarp": {
+                "name": "Colorwarp",
+                "description": "Color distortion effects, multiple can be set at the same time. Glow works best with the Bloom effect enabled in the scene configuration.",
+                "speed": "Speed",
+                "glow" : "Glow",
+                "hue_angle": "Hue Shift",
+                "flicker" : "Flicker",
+                "animate_range" : "Animation Range"
+            },
+            "textureRotate": {
+                "name": "Rotate",
+                "description": "Texture rotation effect, requires a texture and some texture repetition to work.",
+                "speed": "Speed",
+                "centerx": "X Anchor",
+                "centery": "Y Anchor"
             }
         },
         "tours": {

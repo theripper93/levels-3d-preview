@@ -135,6 +135,13 @@ Hooks.once('init', function() {
     default: false,
   });
 
+  game.settings.register("levels-3d-preview", "shaderAutoSave", {
+    scope: "world",
+    config: false,
+    type: Boolean,
+    default: true,
+  });
+
   game.settings.registerMenu("levels-3d-preview", "configMenu", {
     label: game.i18n.localize("levels3dpreview.settings.configApp.hint"),
     icon: "fas fa-cogs",
