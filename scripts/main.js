@@ -342,6 +342,8 @@ class Levels3DPreview {
     this.renderer.setClearColor(0x999999, 1);
     this.renderer.shadowMap.type = game.settings.get("levels-3d-preview", "softShadows") ? THREE.PCFSoftShadowMap : THREE.PCFShadowMap;
     
+    //this.renderer.debug.checkShaderErrors = false;
+
     //composer
 
     let target
@@ -641,7 +643,7 @@ class Levels3DPreview {
     const offsetY = -canvas.scene.background.offsetY / this.factor;
     plane.position.set(
       center.x + offsetX,
-      center.y - depth / 2 - 0.00001,
+      center.y - depth / 2 - 0.00001 + Ruler3D.unitsToPixels(canvas.primary.background.elevation),
       center.z + offsetY
     );
     //plane.rotation.x = -Math.PI / 2;
@@ -695,7 +697,7 @@ class Levels3DPreview {
       : textureMat;
     const plane = new THREE.Mesh(geometry, material);
     plane.receiveShadow = true;
-    plane.position.set(center.x, center.y - (depth / 2 + 0.011), center.z);
+    plane.position.set(center.x, center.y - (depth / 2 + 0.011) + Ruler3D.unitsToPixels(canvas.primary.background.elevation), center.z);
     plane.rotation.x = -Math.PI / 2;
     this.table = plane;
     this.scene.add(plane);
@@ -1100,9 +1102,9 @@ class Levels3DPreview {
 
   _onCameraChange() {
     const centerPosition = this.controls.target.clone();
-    centerPosition.y = 0;
+    centerPosition.y = Ruler3D.unitsToPixels(canvas.primary.background.elevation);
     const groundPosition = this.camera.position.clone();
-    groundPosition.y = 0;
+    groundPosition.y = Ruler3D.unitsToPixels(canvas.primary.background.elevation);
     const d = centerPosition.distanceTo(groundPosition);
 
     const origin = new THREE.Vector2(this.controls.target.y, 0);

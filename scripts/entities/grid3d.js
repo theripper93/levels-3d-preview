@@ -60,7 +60,7 @@ export class Grid3D {
           new THREE.MeshBasicMaterial({ map: texture, transparent:true })
         );
         plane.rotateX(-Math.PI / 2);
-        plane.position.set((canvas.grid.width/factor)/2 + canvas.grid.grid._localBounds.minX/factor, 0.01, (canvas.grid.height/factor)/2 + canvas.grid.grid._localBounds.minY/factor);
+        plane.position.set((canvas.grid.width/factor)/2 + canvas.grid.grid._localBounds.minX/factor, 0.01 + Ruler3D.unitsToPixels(canvas.primary.background.elevation), (canvas.grid.height/factor)/2 + canvas.grid.grid._localBounds.minY/factor);
         this.grid = plane;
         this.scene.add(plane);
     }

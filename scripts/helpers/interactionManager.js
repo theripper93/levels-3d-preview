@@ -549,8 +549,8 @@ export class InteractionManager {
         if(event.shiftKey) elevationDiff = canvas.scene.dimensions.distance/5;
         if(event.ctrlKey) elevationDiff = canvas.scene.dimensions.distance/50;
         entity3D.elevation3d += -delta*this.elevationTick*elevationDiff;
-        if(game.settings.get("levels-3d-preview", "preventNegative") && entity3D.elevation3d < 0){
-          entity3D.elevation3d = 0;
+        if(game.settings.get("levels-3d-preview", "preventNegative") && entity3D.elevation3d < Ruler3D.unitsToPixels(canvas.primary.background.elevation)){
+          entity3D.elevation3d = Ruler3D.unitsToPixels(canvas.primary.background.elevation);
         }
       }
       const isSpecialKey = this.tiltX || this.tiltZ || this.scaleWidth || this.scaleHeight || this.scaleGap || this.scaleScale || this.scale;

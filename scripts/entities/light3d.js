@@ -173,7 +173,12 @@ export class Light3D {
             this.light3d.target.position.set(lx,ly,lz);
             this.light3d.target.updateMatrixWorld();
         }
-        this.light3d.visible = !this.light.document.hidden
+        //this.light3d.visible = !this.light.document.hidden && radius != 0;
+        if(this.light.document.hidden || radius == 0){
+            this.light3d.distance = 0;
+            this.light3d.decay = 9999999;
+            this.light3d.intensity = 0;
+        }
         this.animationFn = (lightAnimations[this.animationType] ?? lightAnimations.none).bind(this);
         if(this.light.document.getFlag("levels-3d-preview", "enableParticle")) this.initParticle();
         if(!this.debugSphere) return;
@@ -207,7 +212,7 @@ export class Light3D {
             .duration(Infinity)
             .mass(particleData.mass)
             .alpha(particleData.alphaStart, particleData.alphaEnd)
-            .emitterSize(Math.max(this.dim, this.bright)/canvas.scene.dimensions.distance)
+            .emitterSize((Math.max(this.dim, this.bright) + 0.1)/canvas.scene.dimensions.distance)
             .push(particleData.push.dx, particleData.push.dy, particleData.push.dz)
             .to({x: this.light.center.x, y: this.light.center.y, z: this.z})
         this.particleEffectId = this.particleEffect.start(false);

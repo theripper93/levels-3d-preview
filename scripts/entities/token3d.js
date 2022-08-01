@@ -80,7 +80,8 @@ export class Token3D {
       if(!this.gtflPath && !this.imageTexture) this.imageTexture = this.token.document.texture.src;
       this.texture = await this._parent.helpers.loadTexture(this.imageTexture)//this.loadTexture();
       const token3d = this.gtflPath || this.imageTexture ? await this.loadModel() : this.draw();
-      if(this.token.document.light.bright !== 0 || this.token.document.light.dim) this.loadLight();
+      this.loadLight();
+      //if(this.token.document.light.bright !== 0 || this.token.document.light.dim) this.loadLight();
       this._loaded = true;
       this.initShaders();
       this.animationHandler.init();
