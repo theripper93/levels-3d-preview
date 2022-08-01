@@ -230,7 +230,7 @@ Hooks.once('ready', async function() {
                     y: newPos.y,
                     z: -100000 ,
                 }
-                const collision = game.Levels3DPreview.interactionManager.computeSightCollision(newPos, collisionPos, "collision");
+                const collision = token.document.getFlag("levels-3d-preview", "wasFreeMode") ? null : game.Levels3DPreview.interactionManager.computeSightCollision(newPos, collisionPos, "collision");
                 let targetElevation = token.document.elevation
                 if(collision){
                     point2d = game.Levels3DPreview.helpers.ruler3d.pos3DToCanvas(collision)

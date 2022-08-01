@@ -6,9 +6,12 @@ export class Fog{
     constructor(parent){
         this._parent = parent;
         this._ready = false;
+        this._overlay = null;
+        this.overlayRepeat = new THREE.Vector2(1,1);
         this.debouncedUpdate = !this._sharedContext ? debounce(this.updateTexture, 300) : this.updateTexture;
         this.initTexture();
         this.initPixiRT();
+        this.initOverlay();
         this.init().then(() => {
             this.needsUpdate = true;
             this._ready = true;
@@ -44,6 +47,18 @@ export class Fog{
         this.pixiRenderTexture = PIXI.RenderTexture.create({width: canvas.dimensions.width, height: canvas.dimensions.height, resolution: this._sharedContext ? fogTexResolution : 0.1});
     }
 
+    async initOverlay(){
+        if(!canvas.scene.fogOverlay) return;
+        const overlay = await game.Levels3DPreview.helpers.loadTexture(canvas.scene.fogOverlay);
+        overlay.flipY = false;
+        overlay.wrapS = THREE.RepeatWrapping;
+        overlay.wrapT = THREE.RepeatWrapping;
+        const width = canvas.scene.dimensions.sceneWidth / (overlay.image?.width || overlay.image?.videoWidth || 1);
+        const height = canvas.scene.dimensions.sceneHeight / (overlay.image?.height || overlay.image?.videoHeight || 1);
+        this.overlayRepeat = new THREE.Vector2(width, height);
+        this._overlay = overlay;
+    }
+
     async init(){
         this.blank = await new THREE.TextureLoader().loadAsync("modules/levels-3d-preview/assets/blankTex.jpg");
         const base64 = this.generateTexture();
@@ -69,6 +84,9 @@ export class Fog{
         if(!this._ready) return;
         Object.values(this._parent.materialProgramCache).forEach(m => {
             m.uniforms.fogTexture = {value: this.fogTexture};
+            m.uniforms.fogOverlay = {value: this._overlay};
+            m.uniforms.useOverlay = {value: !!this._overlay};
+            m.uniforms.overlayRepeat = {value: this.overlayRepeat};
             m.uniforms.sceneDimensions = {value: this.sceneDimensions};
             m.uniforms.sceneOrigin = {value: this.sceneOrigin};
         })
@@ -114,7 +132,10 @@ export function injectFoWShaders(THREELIB){
     varying vec3 vWorldPositionFoW;
     uniform vec2 sceneDimensions;
     uniform vec2 sceneOrigin;
+    uniform vec2 overlayRepeat;
     uniform sampler2D fogTexture;
+    uniform sampler2D fogOverlay;
+    uniform bool useOverlay;
     ` 
 
     THREELIB.ShaderChunk.begin_vertex += `
@@ -130,7 +151,12 @@ export function injectFoWShaders(THREELIB){
         float sceneX = (vWorldPositionFoW.x)/sceneDimensions.x;
         float sceneY = (vWorldPositionFoW.z)/sceneDimensions.y;
         vec4 fogTexel = texture( fogTexture, vec2(sceneX, sceneY) );
-        gl_FragColor *= fogTexel;
+        if(useOverlay && fogTexel.r == 0.0){
+            vec4 overlayTexel = texture( fogOverlay, vec2(sceneX * overlayRepeat.x, sceneY * overlayRepeat.y) );
+            gl_FragColor = mix(gl_FragColor, overlayTexel, 1.0 - fogTexel.r);
+        }else{
+            gl_FragColor *= fogTexel;
+        }
     }
     `
 }

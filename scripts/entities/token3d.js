@@ -80,8 +80,7 @@ export class Token3D {
       if(!this.gtflPath && !this.imageTexture) this.imageTexture = this.token.document.texture.src;
       this.texture = await this._parent.helpers.loadTexture(this.imageTexture)//this.loadTexture();
       const token3d = this.gtflPath || this.imageTexture ? await this.loadModel() : this.draw();
-      this.loadLight();
-      //if(this.token.document.light.bright !== 0 || this.token.document.light.dim) this.loadLight();
+      if(this.token.document.light.bright !== 0 || this.token.document.light.dim) this.loadLight();
       this._loaded = true;
       this.initShaders();
       this.animationHandler.init();
@@ -346,7 +345,8 @@ export class Token3D {
         metalness: metalness,
         map: this.texture,//new THREE.TextureLoader().load(this.imageTexture) : null,
         //depthWrite: this.texture && !this.gtflPath ? false : true,
-        transparent: true,
+        //transparent: true,
+        alphaTest: 0.99,
       }
       
       const material = materialType === "basic" ? new THREE.MeshBasicMaterial(matData) : new THREE.MeshStandardMaterial(matData);
@@ -1388,7 +1388,6 @@ export class Token3D {
         "text-align": "center",
         "line-height": "24px",
       })
-      debugger
       $item.toggleClass("active", shaders[shaderId]?.enabled ? true : false);
       $item.addClass("effect-control")
       $item.attr("data-shader-id", shaderId)

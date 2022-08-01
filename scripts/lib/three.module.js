@@ -13058,6 +13058,9 @@ const UniformsLib = {
 		alphaTest: { value: 0 },
 
 		fogTexture : { value: null },
+		fogOverlay : { value: null },
+		overlayRepeat : { value: new Vector2( 1, 1 ) },
+		useOverlay : { value: false },
 		sceneOrigin : { value: new Vector2() },
 		sceneDimensions : { value: new Vector2() },
 

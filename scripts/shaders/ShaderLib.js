@@ -97,7 +97,6 @@ export class ShaderConfig extends FormApplication{
                     const macroEnabled = html.find("#macro-enabled").prop("checked");
                     const macroPlayers = html.find("#macro-players").prop("checked");
                     let macroData = foundry.utils.expandObject(this._getSubmitData());
-                    debugger;
                     if(macroEnabled) {
                         
                         for( const [k,v] of Object.entries(macroData) ){
@@ -752,16 +751,46 @@ export const shaders = {
                 default: 0.0,
                 min: 0.01,
                 max: 0.99,
+            },
+            "heightCulling": {
+                type: "float",
+                default: 1,
+                min: 0,
+                max: 1,
+            },
+        },
+        varying: {
+            "height_percent": {
+                type: "float",
             }
         },
-        varying: {},
-        vertexShader: [],
+        vertexShader: [
+            {
+                mode: SHADERS_CONSTS.APPEND,
+                injectionPoint: "#include <begin_vertex>",
+                shaderCode: `
+                if(grid_heightCulling < 1.0){
+                    float gird_currentY = vWorldPositionFoW.y;
+                    float gird_useY = yPos;
+                    #ifdef USE_INSTANCING
+                        if(shader_instance_position > -999999999999999.0) {
+                            gird_useY = shader_instance_position;
+                        }
+                    #endif
+                    float gird_currentYDelta = gird_currentY - gird_useY;
+                    grid_height_percent = clamp(gird_currentYDelta / mDepth, 0.0, 1.0);
+                }else{
+                    grid_height_percent = 0.0;
+                }
+                `
+            }
+        ],
         fragmentShader: [
             {
                 mode: SHADERS_CONSTS.APPEND,
                 injectionPoint: "#include <dithering_fragment>",
                 shaderCode: `
-                if(abs(shader_vNormal.y) > grid_normalCulling){
+                if(grid_height_percent <= grid_heightCulling && abs(shader_vNormal.y) > grid_normalCulling){
                     if(gridType == 1.0){
                         if( (mod(vWorldPositionFoW.x, gridSize) < 0.0015 || mod(vWorldPositionFoW.z, gridSize) < 0.0015)){
                             gl_FragColor.rgb = mix(gl_FragColor.rgb, gridColor, gridAlpha);

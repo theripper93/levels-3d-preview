@@ -254,7 +254,7 @@ export class Tile3D {
         const geometry = new THREE.PlaneGeometry(this.width, this.height);
         const material = isPBR ? textureOrMat : new THREE.MeshStandardMaterial({
             color: this.color,
-            transparent: !(texture instanceof THREE.VideoTexture),
+            transparent: this.opacity < 1,
             opacity: this.opacity,
             visible: !this.tile.document.hidden,
             map: texture,
@@ -262,7 +262,7 @@ export class Tile3D {
             roughness : 1,
             metalness : 1,
             //depthWrite: false,
-            alphaTest: texture instanceof THREE.VideoTexture ? 0.99 : 0,
+            alphaTest: 0.99,
         });
         this.mesh = new THREE.Mesh(geometry, material);
         this.mesh.position.set(this.center.x,this.center.y,this.center.z);

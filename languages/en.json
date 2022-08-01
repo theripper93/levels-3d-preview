@@ -35,6 +35,7 @@
            }
         },
         "errors": {
+            "initfailed": "3D Canvas: Initialization failed. This can be a caching issue, try CTRL+F5 to refresh the page. Make also sure you have an Active scene. Alternativelly 3D Canvas or one of it's dependencies might be out of date or corrupted. Make sure the modules are up to date and try a reinstall if everything else fails.",
             "gamecameradisabled": "3D Canvas: Disabling Game Camera - Game Camera is enabled but 'Use 3D Geometry for sight calculations' is disabled.",
             "filenotsupported": "File format not supported or missing",
             "toofarfromdoor": "Your Token is too far to open the door",
@@ -1157,7 +1158,8 @@
             "grid": {
                 "name": "Grid",
                 "description": "Project the scene grid on this 3D Object. Only square grids are supported. This shader will use the grid color and opacity set in the scene settings.",
-                "normalCulling": "Normal Culling"
+                "normalCulling": "Normal Culling",
+                "heightCulling": "Height Culling"
             },
             "triplanar": {
                 "name": "Triplanar",

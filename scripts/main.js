@@ -42,7 +42,12 @@ injectFoWShaders(THREE);
 globalThis.Particle3D = Particle3D;
 
 Hooks.once("ready", () => {
-  game.Levels3DPreview = new Levels3DPreview();
+  try{
+    game.Levels3DPreview = new Levels3DPreview();
+  }catch(e){
+    ui.notifications.error(game.i18n.localize("levels3dpreview.errors.initfailed"))
+    console.error(game.i18n.localize("levels3dpreview.errors.initfailed"), e);
+  }
   Hooks.callAll("3DCanvasInit", game.Levels3DPreview);
   game.Levels3DPreview.cacheModels();
   if(!game.settings.get("levels-3d-preview", "removeKeybindingsPrompt")) game.Levels3DPreview.interactionManager.removeWASDBindings()

@@ -8,6 +8,9 @@ export class Template3D {
         if(this.template.t === "light"){
             this.template.t = "circle"
             this.isLight = true
+        }else if(this.template.t === "tile"){
+            this.template.t = "rect";
+            this.isTile = true
         }
         this.embeddedName = "MeasuredTemplate"
         this.placeable = template;
@@ -145,6 +148,34 @@ export class Template3D {
                 }
             }
             canvas.scene.createEmbeddedDocuments("AmbientLight",[lightData])
+            return this.destroy();
+        }
+
+        if(this.isTile){
+
+            const elevation = parseFloat((origin2d.z).toFixed(2))
+            const tileData = {
+                width: (this.B.x - this.A.x)*factor,
+                height: (this.B.z - this.A.z)*factor,
+                texture: {
+                    img: "modules/levels-3d-preview/assets/blank.webp",
+                },
+                overhead: true,
+                x: origin2d.x,
+                y: origin2d.y,
+                flags: {
+                    "levels-3d-preview": {
+                        dynaMesh: "box",
+                        autoGround: true,
+                        depth: (this.B.y - this.A.y)*factor,
+                    },
+                    levels: {
+                        rangeBottom: elevation,
+                        rangeTop: elevation,
+                    }
+                }
+            }
+            canvas.scene.createEmbeddedDocuments("Tile",[tileData])
             return this.destroy();
         }
 
