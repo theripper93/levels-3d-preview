@@ -628,7 +628,7 @@ class Levels3DPreview {
       texture.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
       texture.minFilter = THREE.NearestMipMapLinearFilter;
     }
-    const geometry = new THREE.BoxGeometry(width, height, depth);
+    const geometry = new THREE.BoxGeometry(width, depth, height);
     const material = new THREE.MeshStandardMaterial({
       map: texture,
       roughness: 1,
@@ -644,12 +644,13 @@ class Levels3DPreview {
       center.y - depth / 2 - 0.00001,
       center.z + offsetY
     );
-    plane.rotation.x = -Math.PI / 2;
+    //plane.rotation.x = -Math.PI / 2;
     this.board = plane;
     plane.userData.isBackground = true;
+    if(canvas.scene.grid.type > 0) this.shaderHandler.applyShader(this.board, {bb: {depth: height,width: width, height: depth}, mesh: this.board}, {grid: {enabled: true}});
     this.scene.add(plane);
   }
-
+  
   async createTable() {
     this.scene.remove(this.table);
     if (
@@ -1018,7 +1019,6 @@ class Levels3DPreview {
       this.interactionManager.dragObject();
       this.cursors.update();
       const delta = this.clock.getDelta();
-      this.grid?.updateGrid();
       Object.values(this.tokens).forEach((token) => {
         if(token){
           token.updateVisibility();
@@ -1531,6 +1531,7 @@ Hooks.on("updateScene", (scene,updates) => {
     canvas.draw();
     return 
   }
+  game.Levels3DPreview.grid.setVisibility();
   if(//do reload
     "enableGrid" in flags ||
     "enableFog" in flags ||

@@ -89,11 +89,6 @@ Hooks.on("renderSceneConfig", (app,html)=>{
             notes: game.i18n.localize("levels3dpreview.flags.maxElevation.notes"),
             default: 100000,
         },
-        "enableGrid": {
-            type: "checkbox",
-            label: game.i18n.localize("levels3dpreview.flags.enableGrid.label"),
-            default: true,
-        },
         "enableRuler": {
             type: "checkbox",
             label: game.i18n.localize("levels3dpreview.flags.enableRuler.label"),
@@ -460,7 +455,7 @@ Hooks.on("renderSceneConfig", (app,html)=>{
     })
     html.find(`select[name="flags.levels-3d-preview.particlePreset"]`).trigger("change");
 
-    const advancedSettings = ["mirrorLevels","sunDistance", "sunTilt", "renderTable", "tableTex", "enableGameCamera", "maxElevation","enableGrid","enableRuler","lockCamera","renderBackground","enableFog","fogColor","fogDistance","sceneTint","timeSync","shadowBias","showSceneWalls","showSceneDoors","showSceneFloors","renderSceneLights"];
+    const advancedSettings = ["mirrorLevels","sunDistance", "sunTilt", "renderTable", "tableTex", "enableGameCamera", "maxElevation","enableRuler","lockCamera","renderBackground","enableFog","fogColor","fogDistance","sceneTint","timeSync","shadowBias","showSceneWalls","showSceneDoors","showSceneFloors","renderSceneLights"];
     const other = [html.find("#levels3dpreview-visibility")];
     const bloomFlags = ["bloomThreshold","bloomStrength","bloomRadius"];
     const filterFlags = ["filterStrength", "filterCustom"];

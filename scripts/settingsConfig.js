@@ -16,7 +16,7 @@ class canvas3dConfig extends FormApplication{
 	async getData(options) {
         const data = {}
         const settingsKeys = [
-          "gameCameraWarnings","gameCameraAutoLock","gameCameraDefaultGm","gameCameraClipping", "gameCameraMinAngle", "gameCameraMaxAngle", "enableGameCamera", "rangeFinder", "sharedContext", "rotateIndicator","navigatorAuto", "showAdvanced", "canpingpan", "canping","baseStyle","solidBaseMode","solidBaseColor","highlightCombat","startMarker","hideTarget","templateSyle","gridMode","autoPan","standupFace","preventNegative","miniCanvas","debugMode","cameralockzero"
+          "gameCameraWarnings","gameCameraAutoLock","gameCameraDefaultGm","gameCameraClipping", "gameCameraMinAngle", "gameCameraMaxAngle", "enableGameCamera", "rangeFinder", "sharedContext", "rotateIndicator","navigatorAuto", "showAdvanced", "canpingpan", "canping","baseStyle","solidBaseMode","solidBaseColor","highlightCombat","startMarker","hideTarget","templateSyle","autoPan","standupFace","preventNegative","miniCanvas","debugMode","cameralockzero"
         ];
         for (let key of settingsKeys) {
             data[key] = game.settings.get("levels-3d-preview", key);
@@ -247,19 +247,6 @@ Hooks.once('init', function() {
           "solid": game.i18n.localize("levels3dpreview.settings.templateSyle.options.solid"),
         },
       default: "wireframe",
-    });
-
-    game.settings.register("levels-3d-preview", "gridMode", {
-      name: game.i18n.localize("levels3dpreview.settings.gridMode.name"),
-      hint: game.i18n.localize("levels3dpreview.settings.gridMode.hint"),
-      scope: "world",
-      config: false,
-      type: String,
-      choices: {
-          "fast": game.i18n.localize("levels3dpreview.settings.gridMode.options.fast"),
-          "mirror": game.i18n.localize("levels3dpreview.settings.gridMode.options.mirror"),
-        },
-      default: "fast",
     });
 
     game.settings.register("levels-3d-preview", "autoPan", {

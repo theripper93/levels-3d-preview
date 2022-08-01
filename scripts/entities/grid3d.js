@@ -4,7 +4,6 @@ import {factor} from '../main.js';
 
 export class Grid3D {
     constructor(){
-        if(!canvas.scene.getFlag("levels-3d-preview", "enableGrid")) return;
         this.buildPlaneThickness = 0.1;
         this.init();
     }
@@ -18,27 +17,28 @@ export class Grid3D {
         (Math.max(canvas.scene.dimensions.width, canvas.dimensions.height) /
           canvas.scene.dimensions.size)
         ;
-        const gridMode = game.settings.get("levels-3d-preview", "gridMode");
-        if(gridMode === "fast" && canvas.scene.grid.type < 2){
-          const gridColor = canvas.scene.grid.color ?? 0x424242;
-          const gridHelper = new THREE.GridHelper(
-            size,
-            divisions,
-            gridColor,
-            gridColor
-          );
-          gridHelper.colorGrid = gridColor;
-          gridHelper.position.set(size/2, 0.01, size/2);
-          gridHelper.material.transparent = true;
-          gridHelper.material.opacity = canvas.scene.grid.alpha;
-          gridHelper.userData.ignoreHover = true;
-          this.grid = gridHelper;
-          this.scene.add(gridHelper);
-        }else{
-          await this.createGrid();
-        }
+        const gridColor = canvas.scene.grid.color ?? 0x424242;
+        const gridHelper = new THREE.GridHelper(
+          size,
+          divisions,
+          gridColor,
+          gridColor
+        );
+        gridHelper.colorGrid = gridColor;
+        gridHelper.position.set(size/2, 0.0, size/2);
+        gridHelper.material.transparent = true;
+        gridHelper.material.opacity = canvas.scene.grid.alpha;
+        gridHelper.userData.ignoreHover = true;
+        this.grid = gridHelper;
+        this.setVisibility();
+        this.scene.add(gridHelper);
         this.createBuildPlane();
         this.setPosition();
+    }
+
+    setVisibility(){
+      if(!this.grid) return;
+      this.grid.visible = !(canvas.scene.getFlag("levels-3d-preview", "renderBackground") ?? true);
     }
 
     createBuildPlane(){
