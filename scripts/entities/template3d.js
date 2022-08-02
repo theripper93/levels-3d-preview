@@ -153,21 +153,30 @@ export class Template3D {
 
         if(this.isTile){
 
-            const elevation = parseFloat((origin2d.z).toFixed(2))
+            let elevation = parseFloat((origin2d.z).toFixed(2))
+            const width = (this.B.x - this.A.x)*factor;
+            const height = (this.B.z - this.A.z)*factor;
+            const depth = (this.B.y - this.A.y)*factor;
+            let x = origin2d.x;
+            let y = origin2d.y;
+            if(width < 0) x += width;
+            if(height < 0) y += height;
+            if(depth < 0) elevation += Ruler3D.pixelsToUnits(depth)/factor;
+
             const tileData = {
-                width: (this.B.x - this.A.x)*factor,
-                height: (this.B.z - this.A.z)*factor,
+                width: width,
+                height: height,
                 texture: {
                     img: "modules/levels-3d-preview/assets/blank.webp",
                 },
                 overhead: true,
-                x: origin2d.x,
-                y: origin2d.y,
+                x: x,
+                y: y,
                 flags: {
                     "levels-3d-preview": {
                         dynaMesh: "box",
                         autoGround: true,
-                        depth: (this.B.y - this.A.y)*factor,
+                        depth: Math.abs(depth),
                     },
                     levels: {
                         rangeBottom: elevation,

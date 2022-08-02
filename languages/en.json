@@ -287,6 +287,9 @@
             "model3d" : {
                 "label": "3D Model"
             },
+            "rotation": {
+                "label": "Rotation"
+            },
             "dynaMesh" : {
                 "label": "Dynamic Mesh",
                 "options": {
@@ -296,7 +299,7 @@
                     "cylinder": "Cylinder",
                     "cone": "Cone",
                     "tube": "Tube",
-                    "capsule": "Capsule",
+                    "dome": "Dome",
                     "billboard": "Billboard"
                 }
             },

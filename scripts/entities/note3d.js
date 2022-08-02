@@ -10,8 +10,11 @@ export class Note3D {
         this.nameplate = new THREE.Object3D();
         this.bottom = note.document.flags.levels?.rangeBottom ?? 0;
         this._parent = game.Levels3DPreview
+        this.draggable = true;
         this.mesh = new THREE.Group();
-        this.draw()
+        this.model3d = this.placeable.document.getFlag("levels-3d-preview", "model3d");
+        this.rotation = this.placeable.document.getFlag("levels-3d-preview", "rotation") ?? 0;
+        this.model3d ? this.drawModel() : this.draw()
         this._drawTooltip()
         this.setPosition()
         this.scene.add(this.mesh)
@@ -23,10 +26,10 @@ export class Note3D {
     }
 
     async draw(){
-        const texture = await this._parent.helpers.loadTexture(this.note.document.icon);
+        const texture = await this._parent.helpers.loadTexture(this.note.document.texture?.src);
         const size = this.note.document.iconSize/factor
         const geometry = new THREE.BoxGeometry(size, size, size)
-        const material = new THREE.MeshBasicMaterial({map: texture,})
+        const material = new THREE.MeshBasicMaterial({map: texture, color: this.note.document.texture?.tint})
         const mesh = new THREE.Mesh(geometry, material)
         this.mesh.userData.hitbox = mesh
         this.mesh.userData.interactive = true
@@ -35,6 +38,35 @@ export class Note3D {
         mesh.userData.isHitbox = true
         this.mesh.add(mesh)
     }
+
+    async drawModel(){
+      const model = await this._parent.helpers.loadModel(this.model3d);
+      if(!model) {
+        const errText = game.i18n.localize("levels3dpreview.errors.filenotsupported")
+        console.error(errText);
+        ui.notifications.error(errText);
+        return this.draw();
+      }
+      const size = this.note.document.iconSize/factor
+      const box = new THREE.Box3(new THREE.Vector3(0,0,0), new THREE.Vector3(size,size,size));
+      const mesh = this._parent.helpers.fitToBox(model.scene, box);
+      mesh.rotation.y += Math.toRadians(this.rotation);
+      const color = this.note.document.texture?.tint;
+      if(color){
+        mesh.traverse(node => {
+          if(node.isMesh){
+            node.material.color.multiply(new THREE.Color(color));
+          }
+        }
+        )
+      }
+      this.mesh.userData.hitbox = mesh
+      this.mesh.userData.interactive = true
+      this.mesh.userData.entity3D = this
+      mesh.userData.entity3D = this
+      mesh.userData.isHitbox = true
+      this.mesh.add(mesh)
+  }
 
     _drawTooltip(){
         if(this.nameplate) this.mesh.remove(this.nameplate);
@@ -65,6 +97,49 @@ export class Note3D {
         })
         this.mesh.position.set(position.x, position.y, position.z)
     }
+
+    updatePositionFrom3D(e){
+      this.skipMoveAnimation = true;
+      const useSnapped = Ruler3D.useSnapped();
+      const x3d = this.mesh.position.x;
+      const y3d = this.mesh.position.y;
+      const z3d = this.mesh.position.z;
+      const x = x3d * factor;
+      const y = z3d * factor;
+      const z = Math.round(((y3d * factor * canvas.dimensions.distance)/(canvas.dimensions.size))*100)/100;
+      const snapped = canvas.grid.getSnappedPosition(x, y);
+      const {rangeTop, rangeBottom} = CONFIG.Levels.helpers.getRangeForDocument(this.placeable.document);
+      const dest = {
+        x: useSnapped ? snapped.x : x,
+        y: useSnapped ? snapped.y : y,
+        elevation: z,
+      }
+      const deltas = {
+        x: dest.x - this.placeable.document.x,
+        y: dest.y - this.placeable.document.y,
+        elevation: dest.elevation - rangeBottom,
+      }
+      let updates = [];
+      for(let placeable of canvas.activeLayer.controlled.length ? canvas.activeLayer.controlled : [this.placeable]){
+      const placeableFlags = CONFIG.Levels.helpers.getRangeForDocument(placeable.document);
+        updates.push({
+          _id: placeable.id,
+          x: placeable.document.x + deltas.x,
+          y: placeable.document.y + deltas.y,
+          flags: {
+              "levels-3d-preview": {
+                  wasFreeMode: this.wasFreeMode,
+              },
+              levels: {
+                  rangeBottom: Math.round((placeableFlags.rangeBottom + deltas.elevation)*1000)/1000,
+                  rangeTop: Math.round((placeableFlags.rangeBottom + deltas.elevation)*1000)/1000
+              }
+          },
+        })
+      }
+      canvas.scene.updateEmbeddedDocuments("Note", updates)
+      return true;
+  }
 
     updateVisibility(){
         this.mesh.visible = this.placeable.visible

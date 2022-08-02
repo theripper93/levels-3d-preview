@@ -108,13 +108,15 @@ export class DynaMesh{
         return geometry;
     }
 
-    _constructcapsule(){
-        const geometry = new THREE.CylinderGeometry(
-            this._avgWidthHeight,
-            this.depth,
-            Math.ceil((this._avgAll/this._gridUnit)*this.resolution),
-            Math.ceil((this._avgAll/this._gridUnit)*this.resolution),
-            false
+    _constructdome(){
+        const geometry = new THREE.SphereGeometry(
+            this._avgAll,
+            Math.ceil((this._avgWidthHeight/this._gridUnit)*this.resolution),
+            Math.ceil((this.depth/this._gridUnit)*this.resolution),
+            0,
+            Math.PI * 2,
+            0,
+            Math.PI / 2
         );
         return geometry;
     }

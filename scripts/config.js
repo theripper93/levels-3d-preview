@@ -694,11 +694,11 @@ Hooks.on("renderTileConfig", (app,html)=>{
                 "default": game.i18n.localize("levels3dpreview.flags.dynaMesh.options.default"),
                 "box": game.i18n.localize("levels3dpreview.flags.dynaMesh.options.box"),
                 "sphere": game.i18n.localize("levels3dpreview.flags.dynaMesh.options.sphere"),
+                "dome": game.i18n.localize("levels3dpreview.flags.dynaMesh.options.dome"),
                 "cylinder": game.i18n.localize("levels3dpreview.flags.dynaMesh.options.cylinder"),
                 "tube": game.i18n.localize("levels3dpreview.flags.dynaMesh.options.tube"),
                 "cone": game.i18n.localize("levels3dpreview.flags.dynaMesh.options.cone"),
                 "billboard": game.i18n.localize("levels3dpreview.flags.dynaMesh.options.billboard"),
-                "capsule": game.i18n.localize("levels3dpreview.flags.dynaMesh.options.capsule"),
             }
         },
         "dynaMeshResolution": {
@@ -1009,6 +1009,7 @@ Hooks.on("renderTileConfig", (app,html)=>{
     hideParams(app, html, `select[name="flags.levels-3d-preview.noiseType"]`, terrainFlags, "none");
 
     ShaderConfig.injectButton(app, html, html.find(`#shader-config`));
+    app.setPosition({height: "auto"});
 })
 
 Hooks.on("renderWallConfig", (app,html)=>{
@@ -1100,6 +1101,26 @@ Hooks.on("renderMeasuredTemplateConfig", (app,html)=>{
         },
     })
     ShaderConfig.injectButton(app, html, html.find(`input[name="flags.levels-3d-preview.isFog"]`).closest(".form-group"));
+})
+
+Hooks.on("renderNoteConfig", (app,html)=>{
+    injectConfig.inject(app,html,{
+        "moduleId": "levels-3d-preview",
+        "inject": 'input[name="icon.custom"]',
+        "model3d" : {
+            type: "filepicker.any",
+            fpTypes: [".gltf", ".GLTF", ".glb", ".GLB", ".fbx", ".FBX"],
+            label: game.i18n.localize("levels3dpreview.flags.model3d.label"),
+        },
+        "rotation": {
+            type: "range",
+            label: game.i18n.localize("levels3dpreview.flags.rotation.label"),
+            default: 0,
+            min: 0,
+            max: 360,
+            step: 1,
+        }
+    })
 })
 
 Hooks.on("renderAmbientLightConfig", (app,html)=>{

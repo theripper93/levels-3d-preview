@@ -96,9 +96,13 @@ var injectConfig = {
         injectHtml = $(injectHtml);
         injectHtml.on("click", ".file-picker", this.fpTypes,_bindFilePicker);
         injectHtml.on("change", `input[type="color"]`, _colorChange);
+        html.on("click", ".tabs .item", (e)=>{
+            app._activeTab = $(e.currentTarget).data("tab");
+        });
         if(data.tab){
             const injectTab = createTab(data.tab.name, data.tab.label, data.tab.icon).append(injectHtml);
             injectPoint.after(injectTab);
+            if(app._activeTab) html.find(`.item[data-tab="${app._activeTab}"]`)[0]?.click();
             app?.setPosition({"height" : "auto", "width" : data.tab ? app.options.width + tabSize : "auto"});
             return injectHtml;
         }
@@ -111,7 +115,7 @@ var injectConfig = {
             /*let tabs = html.find(".sheet-tabs").last();
             if(!tabs.length) tabs = html.find(`nav[data-group="main"]`);*/
             const tabs = html.find(".sheet-tabs").first().find(".item").last();
-            const tab = `<a class="item" data-tab="${name}"><i class="${icon}"></i> ${label}</a>`
+            const tab = `<a class="item" data-tab="${name}"><i class="${icon}"></i> ${label}</a>`;
             tabs.after(tab);
             const tabContainer = `<div class="tab" data-tab="${name}"></div>`
             return $(tabContainer);

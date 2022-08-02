@@ -265,7 +265,7 @@ export class InteractionManager {
         if(this.activeLayerEntity === "Tile" && ui.controls.activeTool != "tile") return false
         if(!ui.controls.isRuler && !this.allowedRulerDrag.some(a => a=== this.activeLayerEntity) ) return false
         if(!this.mouseIntersection3DCollision({x:event.clientX, y: event.clientY})?.length) return false
-        if(this.allowedRulerDrag.some(a => a=== intersectData?.object?.userData?.entity3D?.embeddedName)) return false
+        if(this.allowedRulerDrag.some(a => a=== intersectData?.object?.userData?.entity3D?.embeddedName) && ui.controls.activeTool != "tile") return false
         return true;
       }
 
@@ -312,9 +312,6 @@ export class InteractionManager {
             levels: {
               rangeBottom: coord3d.z
             },
-            betterroofs: {
-              brMode: 2,
-            }
           }
           if(data.type === "Actor" && this.activeLayerEntity === "Token"){
             Hooks.once("preCreateToken", (token)=>{
@@ -322,6 +319,15 @@ export class InteractionManager {
             })
             return canvas.tokens._onDropActorData(event, data);
           }
+
+          if((data.type === "JournalEntry" || data.type === "JournalEntryPage") && this.activeLayerEntity === "Note"){
+            const noteDocument = await fromUuid(data.uuid)
+            const entryId = data.type === "JournalEntryPage" ? noteDocument.parent.id : noteDocument.id;
+            const pageId = data.type === "JournalEntryPage" ? noteDocument.id : null;
+            canvas.scene.createEmbeddedDocuments("Note", [{...data, entryId, pageId}])
+            return;
+          }
+
           data.flags["levels-3d-preview"] = {
             model3d: data.texture.src,
             autoGround: true,
@@ -334,12 +340,6 @@ export class InteractionManager {
             let depth = modelBB.max.y - modelBB.min.y
             let width = canvas.grid.size*(canvas.grid.size/data.tileSize)*widthFactor;
             let height = canvas.grid.size*(canvas.grid.size/data.tileSize)*heightFactor;
-            /*const scaleDim = Math.max(width,height)%canvas.grid.size;
-  
-            const scaleFactor = Math.max(width,height) > canvas.grid.size ? (Math.max(width,height)-scaleDim)/Math.max(width,height) : canvas.grid.size/Math.max(width,height)
-            depth*=scaleFactor
-            width*=scaleFactor
-            height*=scaleFactor*/
   
             data.flags["levels-3d-preview"].depth = depth ? canvas.grid.size*(canvas.grid.size/data.tileSize)*depth : 0.05
             const useSnapped = Ruler3D.useSnapped();

@@ -277,12 +277,19 @@ export class Helpers {
     const group = new THREE.Group();
     group.add(object);
     return group;
-    /*object.traverse((child) => {
-      if (child.isMesh) {
-        child.position.y -= minY;
-      }
-    })*/
-    return object;
+  }
+
+  fitToBox(mesh, box, options = {}){
+    const boxSize = box.getSize(new THREE.Vector3());
+    const boxCenter = box.getCenter(new THREE.Vector3());
+    const meshSize = new THREE.Box3().setFromObject(mesh).getSize( new THREE.Vector3() );
+    const meshCenter = new THREE.Box3().setFromObject(mesh).getCenter( new THREE.Vector3() );
+    const scale = Math.min(boxSize.x / meshSize.x, boxSize.y / meshSize.y, boxSize.z / meshSize.z);
+    const position = new THREE.Vector3().subVectors(meshCenter, boxCenter);
+    mesh.position.copy(position);
+    mesh.scale.set(scale, scale, scale);
+    mesh.position.add(boxCenter);
+    return mesh;
   }
   
   is3DModel(filename){

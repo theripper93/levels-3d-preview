@@ -119,7 +119,7 @@ export class Light3D {
         }
         canvas.scene.updateEmbeddedDocuments("AmbientLight", updates)
         return true;
-      }
+    }
 
     refresh(){
         const light = this.light;
