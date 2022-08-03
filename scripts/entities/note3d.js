@@ -108,7 +108,8 @@ export class Note3D {
       const y = z3d * factor;
       const z = Math.round(((y3d * factor * canvas.dimensions.distance)/(canvas.dimensions.size))*100)/100;
       const snapped = canvas.grid.getSnappedPosition(x, y);
-      const {rangeTop, rangeBottom} = CONFIG.Levels.helpers.getRangeForDocument(this.placeable.document);
+      let {rangeTop, rangeBottom} = CONFIG.Levels.helpers.getRangeForDocument(this.placeable.document);
+      if(rangeBottom === -Infinity) rangeBottom = 0;
       const dest = {
         x: useSnapped ? snapped.x : x,
         y: useSnapped ? snapped.y : y,
@@ -122,6 +123,7 @@ export class Note3D {
       let updates = [];
       for(let placeable of canvas.activeLayer.controlled.length ? canvas.activeLayer.controlled : [this.placeable]){
       const placeableFlags = CONFIG.Levels.helpers.getRangeForDocument(placeable.document);
+      if(placeableFlags.rangeBottom === -Infinity) placeableFlags.rangeBottom = 0;
         updates.push({
           _id: placeable.id,
           x: placeable.document.x + deltas.x,
