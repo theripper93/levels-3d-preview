@@ -109,6 +109,7 @@ export class Tile3D {
         this.shaders = this.tile.document.getFlag("levels-3d-preview", "shaders") ?? {};
         this.dynaMesh = this.tile.document.getFlag("levels-3d-preview", "dynaMesh") ?? "default";
         this.dynaMeshResolution = this.tile.document.getFlag("levels-3d-preview", "dynaMeshResolution") ?? 1;
+        this.sightMeshComplexity = this.tile.document.getFlag("levels-3d-preview", "sightMeshComplexity") ?? 1;
         this.sides = this.tile.document.getFlag("levels-3d-preview", "sides") ?? "default";
         this.noiseParams = {
             scale: this.tile.document.getFlag("levels-3d-preview", "noiseScale") ?? 1,
@@ -184,6 +185,13 @@ export class Tile3D {
                 }
             }
         })
+        if(this.sightMesh){
+            this.sightMesh.traverse((child) => {
+                if(child.isMesh && child?.userData?.isDoor && child?.userData?.doorId){
+                    doors[child?.userData?.doorId].userData.sightMesh = child;
+                }
+            })
+        }
         this._doors = doors;
         this.setDoorsMaterials();
     }
@@ -202,6 +210,11 @@ export class Tile3D {
                 door.material[k] = v;
                 door.userData.sight = isOpen ? false : this.sight;
                 door.userData.collision = isOpen ? false : this.collision;
+                const sightMesh = door.userData.sightMesh;
+                if(sightMesh){
+                    sightMesh.userData.sight = door.userData.sight;
+                    sightMesh.userData.collision = door.userData.collision;
+                }
             }
         }
 
@@ -350,7 +363,9 @@ export class Tile3D {
 
         const container = new THREE.Group();
         this.mesh = container;
-
+        this.sightMesh = this._parent.helpers.getSightMesh(object, this.sightMeshComplexity);
+        this.sightMesh.visible = false;
+        container.add(this.sightMesh);
         container.add(object);
         container.position.set(this.center.x,this.center.y,this.center.z);
         container.rotation.set(this.tiltX,-this.angle*this.rotSign,this.tiltZ);
@@ -791,6 +806,7 @@ export class Tile3D {
         if(!this.mesh) return;
         this.toggleBoundingBox();
         this.mesh.visible = !this.tile.document.hidden || game.user.isGM;
+        if(this.sightMesh) this.sightMesh.visible = this._parent.ClipNavigation.wireframe;
         if(game.Levels3DPreview.mirrorLevelsVisibility && this.tile.document.overhead){
             this.mesh.visible = this.tile.occluded ? false : this.tile.visible;
         }

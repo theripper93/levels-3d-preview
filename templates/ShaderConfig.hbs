@@ -28,6 +28,7 @@
                                 {{/if}}
                                 {{#if this.isTexture}}
                                     {{filePicker target=(concat @../key "." @key) type="image"}}
+                                    <input type="text" class="image" name="{{@../key}}.{{@key}}" value="{{this.value}}">
                                 {{/if}}
                                 {{#if this.isColor}}
                                     {{colorPicker name=(concat @../key "." @key) value=this.value}}

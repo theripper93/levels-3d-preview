@@ -58,8 +58,9 @@ export class InteractionManager {
       const cameraObjects = [];
       for(let tile of Object.values(this._parent.tiles)){
         if(!tile.mesh?.visible) continue;
+        const mesh = tile.sightMesh ?? tile.mesh;
         if(tile.hasTags){
-          tile.mesh.traverse(o => {
+          mesh.traverse(o => {
             const ud = o?.userData;
             o.userData = {}
             const clone = o.clone(false);
@@ -70,9 +71,9 @@ export class InteractionManager {
             if(o?.userData?.cameraCollision) cameraObjects.push(clone);
           })
         }else{
-          if(tile.collision) collisionObjects.push(tile.mesh);
-          if(tile.sight) sightObjects.push(tile.mesh);
-          if(tile.cameraCollision) cameraObjects.push(tile.mesh);
+          if(tile.collision) collisionObjects.push(mesh);
+          if(tile.sight) sightObjects.push(mesh);
+          if(tile.cameraCollision) cameraObjects.push(mesh);
         }
       }
       for(let wall of Object.values(this._parent.walls)){
@@ -365,7 +366,7 @@ export class InteractionManager {
       }
 
     _onMouseDown(event){
-      if(this._groupSelect) return this.groupSelectHandler.startSelect(event);
+      if(this._groupSelect && this.activeLayerEntity != "MeasuredTemplate") return this.groupSelectHandler.startSelect(event);
       if(this.preventSelect) return;
       this._parent.stopCameraAnimation();
       this._downCameraPosition = this._parent.camera.position.clone();

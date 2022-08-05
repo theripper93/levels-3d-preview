@@ -297,7 +297,17 @@ export class ShaderHandler{
                 const isAngle = uniformName.toLowerCase().includes("direction") || uniformName.toLowerCase().includes("angle");
                 let finalValue = paramValue;
                 if(isColor) finalValue = new THREE.Color(paramValue);
-                if(isTexture) finalValue = new THREE.TextureLoader().load(paramValue);
+                if(isTexture) {
+                    finalValue = null;
+                    game.Levels3DPreview.helpers.loadTexture(paramValue).then(texture => {
+                        if(texture){
+                            finalValue = texture;
+                            finalValue.wrapS = THREE.RepeatWrapping;
+                            finalValue.wrapT = THREE.RepeatWrapping;
+                            shader.uniforms[`${name + "_" + uniformName}`] = {value: finalValue};
+                        }
+                    })
+                }
                 if(isAngle) finalValue = Math.toRadians(paramValue);
                 shader.uniforms[`${name + "_" + uniformName}`] = {value: finalValue};
             }
@@ -1319,6 +1329,72 @@ export const shaders = {
             }
         ]
     },
+    "overlay": {
+        icon: '<i class="fas fa-images"></i>',
+        uniforms: {
+            "textureDiffuse": {
+                type: "sampler2D",
+                default: null
+            },
+            "color": {
+                type: "vec3",
+                default: "#ffffff"
+            },
+            "strength": {
+                type: "float",
+                default: 1,
+                max: 1,
+                min: 0
+            },
+            "repeat": {
+                type: "float",
+                default: 1,
+            },
+            "black_alpha": {
+                type: "bool",
+                default: false,
+            },
+            "add_blend": {
+                type: "bool",
+                default: false,
+            },
+            "mult_blend": {
+                type: "bool",
+                default: false,
+            }
+        },
+        varying: {},
+        vertexShader: [],
+        fragmentShader: [
+            {
+                mode: SHADERS_CONSTS.APPEND,
+                injectionPoint: "#include <dithering_fragment>",
+                shaderCode: `
+                #ifdef USE_UV
+                vec2 overlay_vUv = vec2(vUv.x, vUv.y) * (overlay_repeat);
+                vec4 overlayTexture = texture( overlay_textureDiffuse, overlay_vUv );
+                if(overlay_black_alpha && overlayTexture.rgb == vec3(0.0)){}
+                else{
+                    float black_alpha = overlay_black_alpha ? (overlayTexture.r + overlayTexture.g + overlayTexture.b) / 3.0 : 1.0;
+                    if(black_alpha > 0.1) black_alpha *= 3.0;
+                    black_alpha = clamp(black_alpha, 0.0, 1.0);
+                    if(overlay_add_blend){
+                        overlayTexture.rgb *= overlay_color;
+                        gl_FragColor += overlayTexture*overlay_strength*black_alpha; //mix( gl_FragColor, overlayTexture, overlay_strength );
+                    }else if(overlay_mult_blend){
+                        overlayTexture.rgb *= overlay_color;
+                        gl_FragColor *= overlayTexture*overlay_strength*black_alpha;
+                    }else{
+                        overlayTexture.rgb *= overlay_color;
+                        gl_FragColor = mix( gl_FragColor, overlayTexture, overlay_strength*black_alpha );
+                    }
+
+                }
+                #endif
+                `
+            }
+        ]
+    }
 
 }
 

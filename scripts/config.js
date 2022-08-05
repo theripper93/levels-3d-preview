@@ -836,6 +836,14 @@ Hooks.on("renderTileConfig", (app,html)=>{
             label: game.i18n.localize("levels3dpreview.flags.tcameraCollision.label"),
             default: true,
         },
+        "sightMeshComplexity": {
+            type: "range",
+            label: game.i18n.localize("levels3dpreview.flags.sightMeshComplexity.label"),
+            default: 1,
+            min: 0.1,
+            max: 1,
+            step: 0.1,
+        },
         "doorType": {
             type: "select",
             label: game.i18n.localize("WALLS.Door"),
@@ -998,7 +1006,7 @@ Hooks.on("renderTileConfig", (app,html)=>{
 
     })
 
-    const advancedSettings = ["invertDisplacementMap","sides", "flipY", "shading","displacementMap","autoCenter","enableAnim","animSpeed","animIndex","paused","tiltX","tiltZ", "randomSeed", "autoGround", "depth"];
+    const advancedSettings = ["sightMeshComplexity","invertDisplacementMap","sides", "flipY", "shading","displacementMap","autoCenter","enableAnim","animSpeed","animIndex","paused","tiltX","tiltZ", "randomSeed", "autoGround", "depth"];
 
     injectAdvancedToggle(app,html,advancedSettings, injected);
 

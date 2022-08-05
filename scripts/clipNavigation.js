@@ -2,6 +2,7 @@ export class ClipNavigation extends Application{
     constructor() {
         super()
         this.autoMode = game.settings.get("levels-3d-preview", "clipNavigatorFollowClient")
+        this.wireframe = false;
         this.init();
       }
     
@@ -111,6 +112,10 @@ export class ClipNavigation extends Application{
           html.on("click", "#game-camera-toggle", (e)=>{
             game.Levels3DPreview.GameCamera.toggle()
             $(e.currentTarget).toggleClass("clip-navigation-enabled", game.Levels3DPreview.GameCamera.enabled)
+          });
+          html.on("click", "#clip-navigation-wireframe", (e)=>{
+            this.wireframe = !this.wireframe
+            $(e.currentTarget).toggleClass("clip-navigation-enabled", this.wireframe)
           });
           html.on("click", "#clip-navigation-controls", (e)=>{
             if(!game.Levels3DPreview._ready) return;

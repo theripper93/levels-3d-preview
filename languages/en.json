@@ -60,7 +60,8 @@
             "automode": "Follow Mode",
             "controls": "Show Controls",
             "lockon": "Toggle Lock-On",
-            "performance": "Set Performance Mode"
+            "performance": "Set Performance Mode",
+            "wireframe": "Toggle Colliders"
         },
         "keybindings":{
             "dialog": {
@@ -586,6 +587,9 @@
             },
             "tcameraCollision": {
                 "label": "Camera Collider"
+            },
+            "sightMeshComplexity": {
+                "label": "Collider Resolution"
             },
             "enableCollision": {
                 "label": "Enable Collision",
@@ -1227,6 +1231,17 @@
                 "speed": "Speed",
                 "centerx": "X Anchor",
                 "centery": "Y Anchor"
+            },
+            "overlay": {
+                "name": "Overlay",
+                "description": "Texture Overlay. Requires a texture to be set. Use 'Multiply Blending' for textures with white background, 'Black Blending' for textures with black background.",
+                "textureDiffuse": "Texture",
+                "color": "Color",
+                "strength": "Strength",
+                "repeat": "Repeat",
+                "black_alpha": "Black Blending",
+                "add_blend": "Additive Blending",
+                "mult_blend": "Multiply Blending"
             }
         },
         "tours": {

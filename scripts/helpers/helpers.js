@@ -4,6 +4,11 @@ import { Ruler3D } from "../entities/ruler3d.js";
 import { mergeVertices } from "../lib/BufferGeometryUtils.js";
 import { setPerformancePreset } from "./performancePresets.js";
 
+const sightMeshMaterial = new THREE.MeshBasicMaterial({
+    color: 0xffffff,
+    wireframe: true,
+});
+
 export class Helpers {
   constructor() {
     this.textureCache = {};
@@ -157,7 +162,7 @@ export class Helpers {
     return this.getClone(modelPath);
   }
 
-  simplifyGeometry(model){
+  simplifyGeometry(model, tol = 1e-4){
     let originalVertices = 0;
     let finalVertices = 0;
 
@@ -165,13 +170,30 @@ export class Helpers {
       if(child.isMesh){
         const count = child.geometry.attributes.position.count;
         originalVertices += count;
-        const newGeo = mergeVertices(child.geometry);
+        const newGeo = mergeVertices(child.geometry, tol);
         finalVertices += newGeo.attributes.position.count;
         child.geometry = newGeo
       }
     })
 
     console.log(`3D Canvas | Simplified Geometry Vertices: ${originalVertices} -> ${finalVertices}`);
+  }
+
+  getSightMesh(mesh, complexity = 1) {
+    const sightMesh = this.deepCloneRecursive(mesh);
+    let originalVerts = 0;
+    let finalVerts = 0;
+    sightMesh.traverse((child) => {
+      if(child.isMesh){
+        originalVerts += child.geometry.attributes.position.count;
+        child.geometry = mergeVertices(child.geometry, 0.1 * (1 / complexity));
+        child.material = sightMeshMaterial;
+        child.geometry.computeBoundsTree();
+        finalVerts += child.geometry.attributes.position.count;
+      }
+    })
+    console.log(`3D Canvas | Created Sight Mesh: ${originalVerts} -> ${finalVerts}`);
+    return sightMesh;
   }
 
   getClone(filePath){

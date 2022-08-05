@@ -82,9 +82,9 @@ Hooks.once('ready', async function() {
             const y = origin.y + radius * Math.sin(a)
             const collision = game.Levels3DPreview.interactionManager.computeSightCollision({x: origin.x, y: origin.y, z: z}, {x: x, y: y, z: z}, "sight", true);
             if(collision){
-                polygonPoints.push(collision.x*factor, collision.z*factor);
+                polygonPoints.push(Math.round(collision.x*factor), Math.round(collision.z*factor));
             }else{
-                polygonPoints.push(x,y);
+                polygonPoints.push(Math.round(x),Math.round(y));
             }
         }
 
