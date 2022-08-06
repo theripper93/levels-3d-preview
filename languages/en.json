@@ -1218,7 +1218,7 @@
                 "affect_model": "Anchor (%)"
             },
             "colorwarp": {
-                "name": "Colorwarp",
+                "name": "Color",
                 "description": "Color distortion effects, multiple can be set at the same time. Glow works best with the Bloom effect enabled in the scene configuration.",
                 "speed": "Speed",
                 "glow" : "Glow",
@@ -1243,6 +1243,14 @@
                 "black_alpha": "Black Blending",
                 "add_blend": "Additive Blending",
                 "mult_blend": "Multiply Blending"
+            },
+            "sound": {
+                "name": "Sound",
+                "description": "Requires a sound to be playing. For performance only the first sound playing will be used if multiple.",
+                "intensity": "Intensity",
+                "glow": "Glow",
+                "chroma": "Chroma",
+                "flat_bottom": "Flat Bottom"
             }
         },
         "tours": {

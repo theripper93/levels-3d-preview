@@ -127,11 +127,11 @@ class Levels3DPreview {
         ParticleSystem,
         turnStartMarker,
         ParticleSystem,
-        Tile3D
+        Tile3D,
       },
       shaders: {
         ShaderHandler,
-        shaders
+        shaders,
       },
       autoPan: false,
       tokenAnimations: defaultTokenAnimations,
@@ -144,7 +144,9 @@ class Levels3DPreview {
         {
           id: "roundDoubleRing",
           path: "modules/levels-3d-preview/assets/tokenBases/roundDoubleRing.glb",
-          name: game.i18n.localize(`levels3dpreview.baseStyles.roundDoubleRing`),
+          name: game.i18n.localize(
+            `levels3dpreview.baseStyles.roundDoubleRing`
+          ),
           scale: 0.8,
         },
         {
@@ -175,7 +177,9 @@ class Levels3DPreview {
         {
           id: "jb2around1Indicator",
           path: "modules/levels-3d-preview/assets/tokenBases/JB2A/jb2around1Indicator.glb",
-          name: game.i18n.localize(`levels3dpreview.baseStyles.jb2around1Indicator`),
+          name: game.i18n.localize(
+            `levels3dpreview.baseStyles.jb2around1Indicator`
+          ),
           scale: 0.9,
         },
         {
@@ -187,7 +191,9 @@ class Levels3DPreview {
         {
           id: "jb2around2Indicator",
           path: "modules/levels-3d-preview/assets/tokenBases/JB2A/jb2around2Indicator.glb",
-          name: game.i18n.localize(`levels3dpreview.baseStyles.jb2around2Indicator`),
+          name: game.i18n.localize(
+            `levels3dpreview.baseStyles.jb2around2Indicator`
+          ),
           scale: 0.9,
         },
         {
@@ -199,7 +205,9 @@ class Levels3DPreview {
         {
           id: "jb2ahex1Indicator",
           path: "modules/levels-3d-preview/assets/tokenBases/JB2A/jb2ahex1Indicator.glb",
-          name: game.i18n.localize(`levels3dpreview.baseStyles.jb2ahex1Indicator`),
+          name: game.i18n.localize(
+            `levels3dpreview.baseStyles.jb2ahex1Indicator`
+          ),
           scale: 1.2,
         },
         {
@@ -211,7 +219,9 @@ class Levels3DPreview {
         {
           id: "jb2ahex2Indicator",
           path: "modules/levels-3d-preview/assets/tokenBases/JB2A/jb2ahex2Indicator.glb",
-          name: game.i18n.localize(`levels3dpreview.baseStyles.jb2ahex2Indicator`),
+          name: game.i18n.localize(
+            `levels3dpreview.baseStyles.jb2ahex2Indicator`
+          ),
           scale: 1.2,
         },
         {
@@ -223,7 +233,9 @@ class Levels3DPreview {
         {
           id: "jb2asquare1Indicator",
           path: "modules/levels-3d-preview/assets/tokenBases/JB2A/jb2asquare1Indicator.glb",
-          name: game.i18n.localize(`levels3dpreview.baseStyles.jb2asquare1Indicator`),
+          name: game.i18n.localize(
+            `levels3dpreview.baseStyles.jb2asquare1Indicator`
+          ),
           scale: 0.9,
         },
         {
@@ -235,7 +247,9 @@ class Levels3DPreview {
         {
           id: "jb2asquare2Indicator",
           path: "modules/levels-3d-preview/assets/tokenBases/JB2A/jb2asquare2Indicator.glb",
-          name: game.i18n.localize(`levels3dpreview.baseStyles.jb2asquare2Indicator`),
+          name: game.i18n.localize(
+            `levels3dpreview.baseStyles.jb2asquare2Indicator`
+          ),
           scale: 0.9,
         },
         {
@@ -244,7 +258,7 @@ class Levels3DPreview {
           name: game.i18n.localize(`levels3dpreview.baseStyles.jb2asquare2`),
           scale: 0.9,
         },
-      ]
+      ],
     };
     for (let [k, v] of Object.entries(this.CONFIG.tokenAnimations)) {
       v.name = game.i18n.localize(`levels3dpreview.tokenAnimations.${k}`);
@@ -313,12 +327,15 @@ class Levels3DPreview {
     this.init3d();
   }
 
-  get hasFocus(){
-    return document.activeElement.classList.contains("vtt")
+  get hasFocus() {
+    return document.activeElement.classList.contains("vtt");
   }
 
   init3d() {
-    this._sharedContext = game.settings.get("levels-3d-preview", "sharedContext")
+    this._sharedContext = game.settings.get(
+      "levels-3d-preview",
+      "sharedContext"
+    );
     this.camera = new THREE.PerspectiveCamera(
       60,
       window.innerWidth / window.innerHeight,
@@ -332,32 +349,47 @@ class Levels3DPreview {
     this.scene = new THREE.Scene();
     this.material = new THREE.MeshNormalMaterial();
 
-    this.renderer = this._sharedContext ? new THREE.WebGLRenderer({ context: canvas.app.renderer.context.gl }) : new THREE.WebGLRenderer();
+    this.renderer = this._sharedContext
+      ? new THREE.WebGLRenderer({ context: canvas.app.renderer.context.gl })
+      : new THREE.WebGLRenderer();
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.renderer.setAnimationLoop(this.animation.bind(this));
     this.renderer.shadowMap.enabled = true;
     this.renderer.outputEncoding = THREE.sRGBEncoding;
 
-    const pixelRatio = game.settings.get("core", "disableResolutionScaling") ? 1 : window.devicePixelRatio
+    const pixelRatio = game.settings.get("core", "disableResolutionScaling")
+      ? 1
+      : window.devicePixelRatio;
 
-    this.resolutionMulti = pixelRatio*game.settings.get("levels-3d-preview", "resolutionMultiplier"); //game.settings.get("levels-3d-preview", "resolution") *
-    
+    this.resolutionMulti =
+      pixelRatio *
+      game.settings.get("levels-3d-preview", "resolutionMultiplier"); //game.settings.get("levels-3d-preview", "resolution") *
+
     this.renderer.setPixelRatio(this.resolutionMulti);
     this.renderer.alpha = false;
     this.renderer.setClearColor(0x999999, 1);
-    this.renderer.shadowMap.type = game.settings.get("levels-3d-preview", "softShadows") ? THREE.PCFSoftShadowMap : THREE.PCFShadowMap;
-    
+    this.renderer.shadowMap.type = game.settings.get(
+      "levels-3d-preview",
+      "softShadows"
+    )
+      ? THREE.PCFSoftShadowMap
+      : THREE.PCFShadowMap;
+
     //this.renderer.debug.checkShaderErrors = false;
 
     //composer
 
-    let target
-    if(this.renderer.capabilities.isWebGL2){
-      target = new THREE.WebGLMultisampleRenderTarget(window.innerWidth, window.innerHeight, {
-        format: THREE.RGBAFormat,
-        encoding: THREE.sRGBEncoding,
-      })
-      target.samples = 8
+    let target;
+    if (this.renderer.capabilities.isWebGL2) {
+      target = new THREE.WebGLMultisampleRenderTarget(
+        window.innerWidth,
+        window.innerHeight,
+        {
+          format: THREE.RGBAFormat,
+          encoding: THREE.sRGBEncoding,
+        }
+      );
+      target.samples = 8;
     }
 
     this.composer = new EffectComposer(this.renderer, target);
@@ -375,16 +407,15 @@ class Levels3DPreview {
     this.interactionManager.activateListeners();
     this.cursors = new Cursors3D(this);
 
-
     this.GameCamera = new GameCamera(this.camera, this.controls, this);
     //clipping
     this.renderer.localClippingEnabled = true;
-
-
   }
 
   async cacheModels() {
-    this.presetMaterialHandler = new PresetMaterialHandler(this.CONFIG.presetMaterials);
+    this.presetMaterialHandler = new PresetMaterialHandler(
+      this.CONFIG.presetMaterials
+    );
     this.models.target = await (
       await this.helpers.loadModel(
         "modules/levels-3d-preview/assets/targetIndicator.fbx"
@@ -395,11 +426,16 @@ class Levels3DPreview {
       await this.helpers.loadModel(
         "modules/levels-3d-preview/assets/effect.glb"
       )
-    ).model
+    ).model;
     const box3 = new THREE.Box3().setFromObject(this.models.effect);
     //scale model to make it 1x1x1
     this.models.effect.scale.multiplyScalar(
-      1 / Math.max(box3.max.x - box3.min.x, box3.max.y - box3.min.y, box3.max.z - box3.min.z)
+      1 /
+        Math.max(
+          box3.max.x - box3.min.x,
+          box3.max.y - box3.min.y,
+          box3.max.z - box3.min.z
+        )
     );
     this._init = true;
   }
@@ -408,7 +444,7 @@ class Levels3DPreview {
     return new THREE.Vector3(
       canvas.dimensions.width / 2 / this.factor,
       0,
-      canvas.dimensions.height / 2 / this.factor,
+      canvas.dimensions.height / 2 / this.factor
     );
   }
 
@@ -430,30 +466,44 @@ class Levels3DPreview {
     this.scene.background = new THREE.Color(
       canvas.scene.backgroundColor ?? 0xffffff
     );
-    this.rangeFinderMode = game.settings.get("levels-3d-preview", "rangeFinder");
+    this.rangeFinderMode = game.settings.get(
+      "levels-3d-preview",
+      "rangeFinder"
+    );
     this.composer.removePass(this.renderPass);
     this.composer.removePass(this.bloomPass);
     this.renderPass = new RenderPass(this.scene, this.camera);
     this.composer.addPass(this.renderPass);
     this.initAA();
-    if(canvas.scene.getFlag("levels-3d-preview", "bloom")){
-      this.bloomPass = this.bloomPass ?? new UnrealBloomPass( new THREE.Vector2( window.innerWidth, window.innerHeight ), 1.5, 0.4, 0.85 );
-      this.bloomPass.threshold = canvas.scene.getFlag("levels-3d-preview", "bloomThreshold") ?? 0;
-      this.bloomPass.strength = canvas.scene.getFlag("levels-3d-preview", "bloomStrength") ?? 0.4;
-      this.bloomPass.radius = canvas.scene.getFlag("levels-3d-preview", "bloomRadius") ?? 0.4;
+    if (canvas.scene.getFlag("levels-3d-preview", "bloom")) {
+      this.bloomPass =
+        this.bloomPass ??
+        new UnrealBloomPass(
+          new THREE.Vector2(window.innerWidth, window.innerHeight),
+          1.5,
+          0.4,
+          0.85
+        );
+      this.bloomPass.threshold =
+        canvas.scene.getFlag("levels-3d-preview", "bloomThreshold") ?? 0;
+      this.bloomPass.strength =
+        canvas.scene.getFlag("levels-3d-preview", "bloomStrength") ?? 0.4;
+      this.bloomPass.radius =
+        canvas.scene.getFlag("levels-3d-preview", "bloomRadius") ?? 0.4;
       this.composer.addPass(this.bloomPass);
     }
     if (this.fogExploration) {
       this.fogExploration.destroy();
       this.fogExploration = null;
     }
-    if (canvas.scene.tokenVision && canvas.scene.getFlag("levels-3d-preview", "enableFogOfWar"))
+    if (
+      canvas.scene.tokenVision &&
+      canvas.scene.getFlag("levels-3d-preview", "enableFogOfWar")
+    )
       this.fogExploration = new Fog(this);
-      try{
-        //this.composer.render();
-      }catch{
-
-      }
+    try {
+      //this.composer.render();
+    } catch {}
     this._active = true;
     this.particleSystem?.destroy();
     if (this.particleSystem) {
@@ -471,7 +521,7 @@ class Levels3DPreview {
     this.controlledGroup = new THREE.Group();
     this.controlledGroup.userData = {
       entity3D: {
-        updatePositionFrom3D : () => {
+        updatePositionFrom3D: () => {
           game.Levels3DPreview.interactionManager._onTransformEnd();
         },
         mesh: this.controlledGroup,
@@ -479,12 +529,28 @@ class Levels3DPreview {
         isTransformControls: true,
         draggable: true,
         embeddedName: "Tile",
-        _onClickLeft: (e) => { return this.controlledGroup.children[0]?.userData.entity3D._onClickLeft(e) },
-        _onClickRight: (e) => { return this.controlledGroup.children[0]?.userData.entity3D._onClickRight(e) },
-        _onClickLeft2: (e) => { return this.controlledGroup.children[0]?.userData.entity3D._onClickLeft2(e) },
-        _onClickRight2: (e) => { return this.controlledGroup.children[0]?.userData.entity3D._onClickRight2(e) },
-      }
-    }
+        _onClickLeft: (e) => {
+          return this.controlledGroup.children[0]?.userData.entity3D._onClickLeft(
+            e
+          );
+        },
+        _onClickRight: (e) => {
+          return this.controlledGroup.children[0]?.userData.entity3D._onClickRight(
+            e
+          );
+        },
+        _onClickLeft2: (e) => {
+          return this.controlledGroup.children[0]?.userData.entity3D._onClickLeft2(
+            e
+          );
+        },
+        _onClickRight2: (e) => {
+          return this.controlledGroup.children[0]?.userData.entity3D._onClickRight2(
+            e
+          );
+        },
+      },
+    };
     this.scene.add(this.controlledGroup);
     this.scene.add(this.transformControls);
     this.interactionManager.initTransformControls();
@@ -493,7 +559,7 @@ class Levels3DPreview {
     this.mirrorLevelsVisibility =
       canvas.scene.getFlag("levels-3d-preview", "mirrorLevels") ?? false;
     this.debugMode = game.settings.get("levels-3d-preview", "debugMode");
-    if(this.debugMode){
+    if (this.debugMode) {
       this.scene.overrideMaterial = new THREE.MeshBasicMaterial({
         color: 0xffffff,
         wireframe: true,
@@ -539,7 +605,7 @@ class Levels3DPreview {
     if (enableFog) {
       this.scene.fog = new THREE.Fog(fogColor, 1, fogDistance);
       this.camera.far = fogDistance;
-    }else{
+    } else {
       this.camera.far = 100;
     }
     //add raycasting plane
@@ -568,40 +634,43 @@ class Levels3DPreview {
     this.interactionManager.initGroupSelect();
   }
 
-  initAA(){
-
+  initAA() {
     this.aaType = game.settings.get("levels-3d-preview", "antialiasing");
 
     const antialiasing = {
-      fxaa : () => {
-        const aa = new ShaderPass(FXAAShader)
+      fxaa: () => {
+        const aa = new ShaderPass(FXAAShader);
         const pixelRatio = this.renderer.getPixelRatio();
-        aa.material.uniforms[ 'resolution' ].value.x = 1 / ( window.innerWidth * pixelRatio );
-        aa.material.uniforms[ 'resolution' ].value.y = 1 / ( window.innerHeight * pixelRatio );
+        aa.material.uniforms["resolution"].value.x =
+          1 / (window.innerWidth * pixelRatio);
+        aa.material.uniforms["resolution"].value.y =
+          1 / (window.innerHeight * pixelRatio);
         return aa;
       },
       smaa: () => {
         const pixelRatio = this.renderer.getPixelRatio();
-        const aa = new SMAAPass( window.innerWidth * pixelRatio, window.innerHeight * pixelRatio );
+        const aa = new SMAAPass(
+          window.innerWidth * pixelRatio,
+          window.innerHeight * pixelRatio
+        );
         return aa;
-      }
-  }
+      },
+    };
 
-
-    this.composer.removePass(this.aaShader)
-    if(this.aaType == "none") return;
+    this.composer.removePass(this.aaShader);
+    if (this.aaType == "none") return;
     this.aaShader = antialiasing[this.aaType]();
     this.composer.addPass(this.aaShader);
-
-
-
   }
 
-  setBloom(){
-    if(!canvas.scene.getFlag("levels-3d-preview", "bloom")) return;
-    this.bloomPass.threshold = canvas.scene.getFlag("levels-3d-preview", "bloomThreshold") ?? 0;
-    this.bloomPass.strength = canvas.scene.getFlag("levels-3d-preview", "bloomStrength") ?? 0.4;
-    this.bloomPass.radius = canvas.scene.getFlag("levels-3d-preview", "bloomRadius") ?? 0.4;
+  setBloom() {
+    if (!canvas.scene.getFlag("levels-3d-preview", "bloom")) return;
+    this.bloomPass.threshold =
+      canvas.scene.getFlag("levels-3d-preview", "bloomThreshold") ?? 0;
+    this.bloomPass.strength =
+      canvas.scene.getFlag("levels-3d-preview", "bloomStrength") ?? 0.4;
+    this.bloomPass.radius =
+      canvas.scene.getFlag("levels-3d-preview", "bloomRadius") ?? 0.4;
   }
 
   addToken(token) {
@@ -630,7 +699,10 @@ class Levels3DPreview {
     const height = canvas.scene.dimensions.sceneHeight / this.factor;
     const center = this.canvasCenter;
     const depth = 0.02;
-    const texture = await this.helpers.loadTexture(canvas.scene.background.src, {linear: false});
+    const texture = await this.helpers.loadTexture(
+      canvas.scene.background.src,
+      { linear: false }
+    );
     if (texture) {
       texture.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
       texture.minFilter = THREE.NearestMipMapLinearFilter;
@@ -648,16 +720,27 @@ class Levels3DPreview {
     const offsetY = -canvas.scene.background.offsetY / this.factor;
     plane.position.set(
       center.x + offsetX,
-      center.y - depth / 2 - 0.00001 + Ruler3D.unitsToPixels(canvas.primary.background.elevation),
+      center.y -
+        depth / 2 -
+        0.00001 +
+        Ruler3D.unitsToPixels(canvas.primary.background.elevation),
       center.z + offsetY
     );
     //plane.rotation.x = -Math.PI / 2;
     this.board = plane;
     plane.userData.isBackground = true;
-    if(canvas.scene.grid.type > 0) this.shaderHandler.applyShader(this.board, {bb: {depth: height,width: width, height: depth}, mesh: this.board}, {grid: {enabled: true}});
+    if (canvas.scene.grid.type > 0)
+      this.shaderHandler.applyShader(
+        this.board,
+        {
+          bb: { depth: height, width: width, height: depth },
+          mesh: this.board,
+        },
+        { grid: { enabled: true } }
+      );
     this.scene.add(plane);
   }
-  
+
   async createTable() {
     this.scene.remove(this.table);
     if (
@@ -702,7 +785,13 @@ class Levels3DPreview {
       : textureMat;
     const plane = new THREE.Mesh(geometry, material);
     plane.receiveShadow = true;
-    plane.position.set(center.x, center.y - (depth / 2 + 0.011) + Ruler3D.unitsToPixels(canvas.primary.background.elevation), center.z);
+    plane.position.set(
+      center.x,
+      center.y -
+        (depth / 2 + 0.011) +
+        Ruler3D.unitsToPixels(canvas.primary.background.elevation),
+      center.z
+    );
     plane.rotation.x = -Math.PI / 2;
     this.table = plane;
     this.scene.add(plane);
@@ -809,19 +898,21 @@ class Levels3DPreview {
     this.notes[note.id] = new Note3D(note);
   }
 
-  setExposure(){
-    const timeSync = canvas.scene.getFlag("levels-3d-preview", "timeSync") ?? "off";
-    if(timeSync == "off" || timeSync == "time"){
-      const exposure = canvas.scene.getFlag("levels-3d-preview", "exposure") ?? 1;
+  setExposure() {
+    const timeSync =
+      canvas.scene.getFlag("levels-3d-preview", "timeSync") ?? "off";
+    if (timeSync == "off" || timeSync == "time") {
+      const exposure =
+        canvas.scene.getFlag("levels-3d-preview", "exposure") ?? 1;
       this.renderer.toneMappingExposure = exposure;
     }
   }
 
   makeSkybox(enableFog) {
     this.setExposure();
-    this.scene.background = enableFog ? this.scene.fog.color : new THREE.Color(
-      canvas.scene.backgroundColor ?? 0xffffff
-    );
+    this.scene.background = enableFog
+      ? this.scene.fog.color
+      : new THREE.Color(canvas.scene.backgroundColor ?? 0xffffff);
     this.scene.environment = null;
     this.isEXR = false;
     this.scene.remove(this.skybox);
@@ -865,7 +956,7 @@ class Levels3DPreview {
     const loader = new THREE.CubeTextureLoader();
     const textureCube = loader.load(textureArray);
     textureCube.encoding = THREE.sRGBEncoding;
-    if(!enableFog) this.scene.background = textureCube;
+    if (!enableFog) this.scene.background = textureCube;
     if (!exr) {
       this.scene.environment = textureCube;
       this._envReady = true;
@@ -877,32 +968,33 @@ class Levels3DPreview {
     const pmremGenerator = new THREE.PMREMGenerator(this.renderer);
     pmremGenerator.compileEquirectangularShader();
     const _this = this;
-    if(rootImage.toLowerCase().endsWith(".exr")){
-      new EXRLoader()
-      .setDataType(THREE.FloatType)
-      .load(rootImage, onLoaded );
-    }else{
+    if (rootImage.toLowerCase().endsWith(".exr")) {
+      new EXRLoader().setDataType(THREE.FloatType).load(rootImage, onLoaded);
+    } else {
       this.helpers.loadTexture(rootImage).then(onLoaded);
       //new THREE.TextureLoader().load(rootImage, onLoaded);
     }
 
-      function onLoaded(texture){
-        let exrCubeRenderTarget = pmremGenerator.fromEquirectangular(texture);
-        let newEnvMap = exrCubeRenderTarget
-          ? exrCubeRenderTarget.texture
-          : null;
-        _this.scene.environment = newEnvMap;
-        let background;
-        if(_this.scene.background instanceof THREE.Color && !enableFog) {
-          const rt = new THREE.WebGLCubeRenderTarget(Math.min(1 << 31 - Math.clz32(texture.image.width), _this.renderer.capabilities.maxTextureSize))
-          rt.fromEquirectangularTexture(_this.renderer, texture)
-          background = rt.texture
-          _this.scene.background = background;
-          _this.scene.userData.envRt = rt;
-        }
-        _this._envReady = true;
-        pmremGenerator.dispose();
+    function onLoaded(texture) {
+      let exrCubeRenderTarget = pmremGenerator.fromEquirectangular(texture);
+      let newEnvMap = exrCubeRenderTarget ? exrCubeRenderTarget.texture : null;
+      _this.scene.environment = newEnvMap;
+      let background;
+      if (_this.scene.background instanceof THREE.Color && !enableFog) {
+        const rt = new THREE.WebGLCubeRenderTarget(
+          Math.min(
+            1 << (31 - Math.clz32(texture.image.width)),
+            _this.renderer.capabilities.maxTextureSize
+          )
+        );
+        rt.fromEquirectangularTexture(_this.renderer, texture);
+        background = rt.texture;
+        _this.scene.background = background;
+        _this.scene.userData.envRt = rt;
       }
+      _this._envReady = true;
+      pmremGenerator.dispose();
+    }
   }
 
   createFloor(points, z) {
@@ -964,10 +1056,12 @@ class Levels3DPreview {
       this.composer.setSize(width, height, false);
       this.camera.aspect = width / height;
       this.camera.updateProjectionMatrix();
-      if(this.aaType == "fxaa"){
+      if (this.aaType == "fxaa") {
         const pixelRatio = this.renderer.getPixelRatio();
-        this.aaShader.material.uniforms[ 'resolution' ].value.x = 1 / ( canvas.clientWidth * pixelRatio );
-        this.aaShader.material.uniforms[ 'resolution' ].value.y = 1 / ( canvas.clientHeight * pixelRatio );
+        this.aaShader.material.uniforms["resolution"].value.x =
+          1 / (canvas.clientWidth * pixelRatio);
+        this.aaShader.material.uniforms["resolution"].value.y =
+          1 / (canvas.clientHeight * pixelRatio);
       }
     }
   }
@@ -1006,40 +1100,84 @@ class Levels3DPreview {
     });
   }
 
+  setAnaliserNode(){
+    const sound = Array.from(game.audio.playing.values())[0];
+    if(sound && sound == this._sound && this._analyser){
+      this._analyser.node.getByteFrequencyData(this._analyser.data)
+      let bass = 0, mid = 0, treble = 0;
+      for(let i = 0; i < this._analyser.data.length; i++){
+        if(i < 20){
+          bass += this._analyser.data[i];
+        }else if(i < 40){
+          mid += this._analyser.data[i];
+        }else{
+          treble += this._analyser.data[i];
+        }
+      }
+      bass /= 20;
+      mid /= 20;
+      treble /= this._analyser.data.length - 40;
+      return new THREE.Vector3(1 + bass/255,1 + mid/255,1 + treble/255);
+    }
+    this._sound = sound;
+    if(!sound) return;
+    const {container: { sourceNode },context, id, } = sound;
+    const analyserNode = new AnalyserNode(context, { fftSize: 256 });
+    sourceNode.connect(analyserNode);
+    this._analyser = {
+      node: analyserNode,
+      data: new Uint8Array(analyserNode.frequencyBinCount),
+    }
+  }
+
+  getSoundFrequency() {
+    const AN = this.setAnaliserNode() ?? new THREE.Vector3(0, 0, 0);
+    console.log(AN)
+    return this.setAnaliserNode() ?? new THREE.Vector3(1, 1, 1);
+  }
+
   animation(time) {
     try {
       if (!this._active) return;
       if (!this._ready) return this._onProgress();
-      if(this._sharedContext){
-        canvas.app.renderer.reset()
+      if (this._sharedContext) {
+        canvas.app.renderer.reset();
         this.renderer.resetState();
       }
-      if(this.fogExploration){
+      if (this.fogExploration) {
         const shaderCount = Object.values(this.materialProgramCache).length;
-        if(shaderCount != this.fogExploration._shaderCount){
+        if (shaderCount != this.fogExploration._shaderCount) {
           this.fogExploration._shaderCount = shaderCount;
           this.fogExploration.updateShaders();
         }
       }
       const tokensArray = Object.values(this.tokens);
       const length = Math.max(tokensArray.length, 100);
-      const tokenPositionsArray = [new THREE.Vector4(0,0,0,tokensArray.length)];
+      const tokenPositionsArray = [
+        new THREE.Vector4(0, 0, 0, tokensArray.length),
+      ];
       const emptyVec = new THREE.Vector4();
       for (let i = 1; i < length; i++) {
-        const pos = tokensArray[i-1]?.mesh?.position;
-        if(!pos){
+        const pos = tokensArray[i - 1]?.mesh?.position;
+        if (!pos) {
           tokenPositionsArray[i] = emptyVec;
           continue;
         }
-        tokenPositionsArray[i] = new THREE.Vector4(pos.x,pos.y,pos.z,tokensArray[i-1]._shaderSize);
+        tokenPositionsArray[i] = new THREE.Vector4(
+          pos.x,
+          pos.y,
+          pos.z,
+          tokensArray[i - 1]._shaderSize
+        );
       }
-      this.shaderHandler.updateShaders(time, tokenPositionsArray);
+      const sound = this.getSoundFrequency();
+      this.shaderHandler.updateShaders(time, tokenPositionsArray, sound);
       this.interactionManager._canMouseMove = true;
       this.interactionManager.dragObject();
       this.cursors.update();
       const delta = this.clock.getDelta();
       tokensArray.forEach((token) => {
-        if(token){
+        if (token) {
           token.updateVisibility();
           token.updateProne(delta);
           token.rotateEffects(delta);
@@ -1053,7 +1191,7 @@ class Levels3DPreview {
         }
       });
       Object.values(this.tiles).forEach((tile) => {
-        if(tile){
+        if (tile) {
           tile.updateVisibility(time);
           if (tile.mixer && !tile.paused) {
             tile.mixer.update(delta);
@@ -1074,15 +1212,17 @@ class Levels3DPreview {
       });
       this.rangeFinders.forEach((rangeFinder) => {
         rangeFinder.updateText();
-      })
+      });
       this.particleSystem.update(delta);
       this.checkInFog();
       this.animateCamera(delta);
       this.centerHUD();
-      document.querySelectorAll("#levels3d-ruler-text.scrolling-text").forEach(e => {
-        const t3d = this.tokens[e.dataset.tokenid];
-        if(t3d) this.helpers.ruler3d.centerElement(e, t3d.head);
-      })
+      document
+        .querySelectorAll("#levels3d-ruler-text.scrolling-text")
+        .forEach((e) => {
+          const t3d = this.tokens[e.dataset.tokenid];
+          if (t3d) this.helpers.ruler3d.centerElement(e, t3d.head);
+        });
       this.allignChatBubbles();
       this.resizeCanvasToDisplaySize(this);
       this.lights.globalIllumination.update(delta);
@@ -1090,17 +1230,19 @@ class Levels3DPreview {
       this.GameCamera.update(delta);
       this.controls.update();
       //this.fogExploration?.update();
-      this.composer.render(time)
-      if(this._sharedContext){
-        canvas.app.renderer.reset()
+      this.composer.render(time);
+      if (this._sharedContext) {
+        canvas.app.renderer.reset();
         this.renderer.resetState();
       }
     } catch (error) {
       this._errCount++;
       console.error("3D Canvas: An Error Occured in the Rendering Loop", error);
-      if(this._errCount > 200){
+      if (this._errCount > 200) {
         this._errCount = 0;
-        ui.notifications.error(game.i18n.localize("levels3dpreview.errors.critical"));
+        ui.notifications.error(
+          game.i18n.localize("levels3dpreview.errors.critical")
+        );
         this.reload();
       }
     }
@@ -1119,9 +1261,13 @@ class Levels3DPreview {
 
   _onCameraChange() {
     const centerPosition = this.controls.target.clone();
-    centerPosition.y = Ruler3D.unitsToPixels(canvas.primary.background.elevation);
+    centerPosition.y = Ruler3D.unitsToPixels(
+      canvas.primary.background.elevation
+    );
     const groundPosition = this.camera.position.clone();
-    groundPosition.y = Ruler3D.unitsToPixels(canvas.primary.background.elevation);
+    groundPosition.y = Ruler3D.unitsToPixels(
+      canvas.primary.background.elevation
+    );
     const d = centerPosition.distanceTo(groundPosition);
 
     const origin = new THREE.Vector2(this.controls.target.y, 0);
@@ -1143,25 +1289,28 @@ class Levels3DPreview {
   }
 
   animateCamera(delta) {
-
     if (this._animateCameraTarget.cameraPosition !== undefined) {
       const targetPos = this._animateCameraTarget.cameraPosition.clone();
-      this.camera.position.lerp(targetPos,this._animateCameraTarget.speed ?? 0.04);
-      if(this.camera.position.distanceTo(targetPos) < 0.001){
+      this.camera.position.lerp(
+        targetPos,
+        this._animateCameraTarget.speed ?? 0.04
+      );
+      if (this.camera.position.distanceTo(targetPos) < 0.001) {
         this._animateCameraTarget.cameraPosition = undefined;
       }
     }
-    if(this._animateCameraTarget.cameraLookat !== undefined){
+    if (this._animateCameraTarget.cameraLookat !== undefined) {
       const targetLookat = this._animateCameraTarget.cameraLookat.clone();
       const currentLookat =
         this._animateCameraTarget.currentLookat ?? this.controls.target.clone();
-      const lerpLookat = currentLookat.lerp(targetLookat, (this._animateCameraTarget.speed ?? 0.04)+0.001);
+      const lerpLookat = currentLookat.lerp(
+        targetLookat,
+        (this._animateCameraTarget.speed ?? 0.04) + 0.001
+      );
       this._animateCameraTarget.currentLookat = lerpLookat.clone();
 
       this.controls.target.set(lerpLookat.x, lerpLookat.y, lerpLookat.z);
-      if (
-        lerpLookat.distanceTo(targetLookat) < 0.00001
-      ) {
+      if (lerpLookat.distanceTo(targetLookat) < 0.00001) {
         this.controls.target.set(
           targetLookat.x,
           targetLookat.y,
@@ -1182,10 +1331,9 @@ class Levels3DPreview {
   }
 
   resetCamera(topdown = false) {
-
     const center = this.canvasCenter;
     this.controls.reset();
-    if(!this.GameCamera.enabled){
+    if (!this.GameCamera.enabled) {
       this.controls.maxDistance = 20;
       this.controls.minDistance = 0.1;
       this.controls.screenSpacePanning = game.settings.get(
@@ -1230,30 +1378,29 @@ class Levels3DPreview {
   }
 
   setCameraToControlled(token) {
-    let cToken,token3D
-    if(!(token instanceof Token3D) && !token?.userData?.original){
+    let cToken, token3D;
+    if (!(token instanceof Token3D) && !token?.userData?.original) {
       cToken = token ?? canvas.tokens.controlled[0];
-      if(!cToken && !game.user.isGM){
-        cToken = canvas.tokens.placeables.find(t => t.isOwner);
+      if (!cToken && !game.user.isGM) {
+        cToken = canvas.tokens.placeables.find((t) => t.isOwner);
       }
       if (!cToken) return;
-      if(cToken.isOwner) cToken.control();
+      if (cToken.isOwner) cToken.control();
       this.ClipNavigation.setToClosest(cToken.document.elevation);
       token3D = this.tokens[cToken.id];
       if (!token3D) return;
-    }else{
+    } else {
       token3D = token;
       cToken = token3D.token;
     }
 
+    let oldCameraData;
 
-    let oldCameraData
-
-    if(this._animateCameraTarget.cameraLookat){
+    if (this._animateCameraTarget.cameraLookat) {
       oldCameraData = {
         cameraPosition: this.camera.position.clone(),
         cameraLookat: this.controls.target.clone(),
-      }
+      };
       this.camera.position.copy(this._animateCameraTarget.cameraPosition);
       this.controls.target.copy(this._animateCameraTarget.cameraLookat);
       this.camera.lookAt(this._animateCameraTarget.cameraLookat);
@@ -1263,20 +1410,22 @@ class Levels3DPreview {
     this._animateCameraTarget.cameraLookat = targetLookat;
 
     const cameraPosition = this.camera.position.clone();
-    const diff = this.controls.target.clone().sub(targetLookat.clone())
+    const diff = this.controls.target.clone().sub(targetLookat.clone());
     let targetPosition = cameraPosition.sub(diff);
 
     const headPoint = token3D.head;
-    let collision
-    if(!this.GameCamera.enabled){
-      collision =
-      this.interactionManager.computeSightCollisionFrom3DPositions(
+    let collision;
+    if (!this.GameCamera.enabled) {
+      collision = this.interactionManager.computeSightCollisionFrom3DPositions(
         headPoint,
         targetPosition
       );
     }
 
-    if (collision && targetPosition.y < (this.ClipNavigation._clipHeight ?? Infinity)) {
+    if (
+      collision &&
+      targetPosition.y < (this.ClipNavigation._clipHeight ?? Infinity)
+    ) {
       const collisionPoint = new THREE.Vector3(
         collision.x,
         collision.y,
@@ -1288,12 +1437,11 @@ class Levels3DPreview {
 
     this._animateCameraTarget.cameraPosition = targetPosition;
 
-    if(oldCameraData){
+    if (oldCameraData) {
       this.camera.position.copy(oldCameraData.cameraPosition);
       this.controls.target.copy(oldCameraData.cameraLookat);
       this.camera.lookAt(oldCameraData.cameraLookat);
     }
-
   }
 
   _onProgress() {
@@ -1304,36 +1452,44 @@ class Levels3DPreview {
       tokenArray.filter((token) => token._loaded).length +
       tileArray.filter((tile) => tile._loaded).length;
     let progress = total === 0 ? 100 : Math.round((loaded / total) * 100);
-    if(!this._finalizingLoad){
-      if(total === loaded) this._progressText = game.i18n.localize("levels3dpreview.controls.loading.env");
-      else this._progressText = game.i18n.localize("levels3dpreview.controls.loading.load");
+    if (!this._finalizingLoad) {
+      if (total === loaded)
+        this._progressText = game.i18n.localize(
+          "levels3dpreview.controls.loading.env"
+        );
+      else
+        this._progressText = game.i18n.localize(
+          "levels3dpreview.controls.loading.load"
+        );
     }
     if (total === loaded && this._envReady) {
-      if(!this._finalizingLoad){
+      if (!this._finalizingLoad) {
         this._finalizingLoad = true;
-        this._progressText = game.i18n.localize("levels3dpreview.controls.loading.gravity");
+        this._progressText = game.i18n.localize(
+          "levels3dpreview.controls.loading.gravity"
+        );
         this.interactionManager.forceSightCollisions();
-          recomputeGravity().then(() => {
+        recomputeGravity().then(() => {
+          setTimeout(() => {
+            this._progressText = game.i18n.localize(
+              "levels3dpreview.controls.loading.shaders"
+            );
             setTimeout(() => {
-              this._progressText = game.i18n.localize("levels3dpreview.controls.loading.shaders");
-              setTimeout(() => {
-                this.renderer.compile(this.scene, this.camera);
-                this._ready = true;
-                this.loadingTokens = {};
-                this.loadingTiles = {};
-                this._onReady();
-                Hooks.callAll("3DCanvasSceneReady", game.Levels3DPreview);
-              }, 200);
-            },300)
-
-          });
+              this.renderer.compile(this.scene, this.camera);
+              this._ready = true;
+              this.loadingTokens = {};
+              this.loadingTiles = {};
+              this._onReady();
+              Hooks.callAll("3DCanvasSceneReady", game.Levels3DPreview);
+            }, 200);
+          }, 300);
+        });
       }
     }
     this.setProgressBar(this._progressText, progress);
-
   }
 
-  setProgressBar(label, progress){
+  setProgressBar(label, progress) {
     $("#levels-3d-preview-loading-bar").show();
     const progressBar = $("#levels-3d-preview-loading-bar-inner");
     const labelText = $("#levels-3d-preview-loading-bar-text");
@@ -1341,38 +1497,47 @@ class Levels3DPreview {
     labelText.text(label);
   }
 
-  _onReady(){
-    if(game.settings.get("levels-3d-preview", "loadingShown")){
+  _onReady() {
+    if (game.settings.get("levels-3d-preview", "loadingShown")) {
       $(".levels-3d-preview-loading-screen").fadeOut(200, () => {
-        $("#levels-3d-preview-loading-bar-inner").css("width", `0%`)
+        $("#levels-3d-preview-loading-bar-inner").css("width", `0%`);
       });
-    }else{
+    } else {
       Hooks.once("renderClipNavigation", () => {
         const $qm = $("#clip-navigation-controls");
-        $("#levels-3d-preview-loading-bar-text").html(game.i18n.localize("levels3dpreview.controls.loadingScreen.loadingdone"));
-        const $arrow = $('<i id="clip-navigation-higlight-arrow" class="fas fa-arrow-right"></i>').css({
+        $("#levels-3d-preview-loading-bar-text").html(
+          game.i18n.localize(
+            "levels3dpreview.controls.loadingScreen.loadingdone"
+          )
+        );
+        const $arrow = $(
+          '<i id="clip-navigation-higlight-arrow" class="fas fa-arrow-right"></i>'
+        ).css({
           right: window.innerWidth - $qm.offset().left + 20,
           top: `calc(${$qm.offset().top + $qm.height() / 2}px - 2rem)`,
-        })
+        });
         $("body").append($arrow);
-      })
-      game.settings.set("levels-3d-preview", "loadingShown", true)
+      });
+      game.settings.set("levels-3d-preview", "loadingShown", true);
     }
     this.ClipNavigation = new ClipNavigation().render(true);
     this.weather = new WeatherSystem(this);
 
-    canvas.perception.update({
-      forceUpdateFog: true,
-      initializeLighting: true,
-      initializeSounds: true,
-      initializeVision: true,
-      refreshLighting: true,
-      refreshSounds: true,
-      refreshTiles: true,
-      refreshVision: true,
-    }, true);
+    canvas.perception.update(
+      {
+        forceUpdateFog: true,
+        initializeLighting: true,
+        initializeSounds: true,
+        initializeVision: true,
+        refreshLighting: true,
+        refreshSounds: true,
+        refreshTiles: true,
+        refreshVision: true,
+      },
+      true
+    );
 
-    this.setFilters(true)
+    this.setFilters(true);
     setTimeout(() => {
       this.helpers.showSceneReport();
     }, 1000);
@@ -1380,28 +1545,35 @@ class Levels3DPreview {
     Object.values(this.tokens).forEach((t) => {
       t.drawName();
       t.drawBars();
-    })
+    });
   }
 
-  setFilters(set){
-    const filter = canvas.scene.getFlag("levels-3d-preview", "filter") ?? "none";
-    if(set && filter != "none"){
-      let filterStrength = canvas.scene.getFlag("levels-3d-preview", "filterStrength");
-      const filterCustom = canvas.scene.getFlag("levels-3d-preview", "filterCustom");
+  setFilters(set) {
+    const filter =
+      canvas.scene.getFlag("levels-3d-preview", "filter") ?? "none";
+    if (set && filter != "none") {
+      let filterStrength = canvas.scene.getFlag(
+        "levels-3d-preview",
+        "filterStrength"
+      );
+      const filterCustom = canvas.scene.getFlag(
+        "levels-3d-preview",
+        "filterCustom"
+      );
       let filterValue = "";
-      if(filter == "custom" && filterCustom){
+      if (filter == "custom" && filterCustom) {
         filterValue = filterCustom;
-      }else{
-        if(filter == "hue-rotate") filterStrength = `${filterStrength * 180}deg`;
+      } else {
+        if (filter == "hue-rotate")
+          filterStrength = `${filterStrength * 180}deg`;
         filterValue = `${filter}(${filterStrength})`;
       }
-      if(this._sharedContext){
+      if (this._sharedContext) {
         $("#board").css("filter", filterValue);
-      }else{
+      } else {
         $("#levels3d").css("filter", filterValue);
       }
-
-    }else{
+    } else {
       $("#board").css({ filter: "" });
       $("#levels3d").css({ filter: "" });
     }
@@ -1422,16 +1594,16 @@ class Levels3DPreview {
   open() {
     if (this._active) return;
     this.setFilters(true);
-    if(this._sharedContext){
-      canvas.app.renderer.reset()
+    if (this._sharedContext) {
+      canvas.app.renderer.reset();
       this.renderer.resetState();
     }
     this.build3Dscene();
     document.body.appendChild(this.renderer.domElement);
     $("#hud").addClass("levels-3d-preview-hud");
-    if(this._sharedContext){
+    if (this._sharedContext) {
       canvas.stage.renderable = false;
-    }else{
+    } else {
       document.body.appendChild(this.renderer.domElement);
       if (game.settings.get("levels-3d-preview", "miniCanvas"))
         new miniCanvas().render(true);
@@ -1440,7 +1612,6 @@ class Levels3DPreview {
         canvas.stage.renderable = false;
       }
     }
-
   }
 
   close() {
@@ -1456,8 +1627,8 @@ class Levels3DPreview {
     $("#board").show();
     canvas.stage.renderable = true;
     this.clear3Dscene();
-    if(this._sharedContext){
-      canvas.app.renderer.reset()
+    if (this._sharedContext) {
+      canvas.app.renderer.reset();
       this.renderer.resetState();
     }
   }
@@ -1495,39 +1666,43 @@ class Levels3DPreview {
     game.Levels3DPreview.particleSystem.stop(...args);
   }
 
-  toggleDoor(tileId, sceneId, userId, subDoorId){
+  toggleDoor(tileId, sceneId, userId, subDoorId) {
     const user = game.users.get(userId);
-    if ( !user.can("WALL_DOORS")) return;
-    if ( game.paused && !game.user.isGM ) return ui.notifications.warn("GAME.PausedWarning", {localize: true});
+    if (!user.can("WALL_DOORS")) return;
+    if (game.paused && !game.user.isGM)
+      return ui.notifications.warn("GAME.PausedWarning", { localize: true });
     const scene = game.scenes.get(sceneId);
-    if(!scene) return;
+    if (!scene) return;
     const tile = scene.tiles.get(tileId);
-    if(!tile) return;
-    if(subDoorId){
-      const ds = tile.getFlag("levels-3d-preview", `modelDoors.${subDoorId}`)?.ds ?? 0
+    if (!tile) return;
+    if (subDoorId) {
+      const ds =
+        tile.getFlag("levels-3d-preview", `modelDoors.${subDoorId}`)?.ds ?? 0;
       const isLocked = ds == 2;
-  
-      if(isLocked) return AudioHelper.play({src: CONFIG.sounds.lock});
-      tile.setFlag("levels-3d-preview", `modelDoors.${subDoorId}.ds`, ds == 0 ? "1" : "0");
-    }else{
-      const ds = tile.getFlag("levels-3d-preview", "doorState") ?? 0
+
+      if (isLocked) return AudioHelper.play({ src: CONFIG.sounds.lock });
+      tile.setFlag(
+        "levels-3d-preview",
+        `modelDoors.${subDoorId}.ds`,
+        ds == 0 ? "1" : "0"
+      );
+    } else {
+      const ds = tile.getFlag("levels-3d-preview", "doorState") ?? 0;
       const isLocked = ds == 2;
-  
-      if(isLocked) return AudioHelper.play({src: CONFIG.sounds.lock});
+
+      if (isLocked) return AudioHelper.play({ src: CONFIG.sounds.lock });
       tile.setFlag("levels-3d-preview", "doorState", ds == 0 ? "1" : "0");
     }
-
   }
 
   setCursor(cursor) {
     this.renderer.domElement.style.cursor = cursor;
-    return
-    if(this._sharedContext){
+    return;
+    if (this._sharedContext) {
       $("body")[0].style.cursor = cursor;
-    }else{
+    } else {
       this.renderer.domElement.style.cursor = cursor;
     }
-
   }
 }
 

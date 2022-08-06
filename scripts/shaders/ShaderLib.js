@@ -314,12 +314,13 @@ export class ShaderHandler{
         }
     }
 
-    updateShaders(delta, tokens){
+    updateShaders(delta, tokens, sound){
         this.shaders = this.shaders.filter(shader => {
             if(shader.entity3D._destroyed) return false;
             shader.uniforms.time.value = delta/100;
             shader.uniforms.yPos.value = getYpos(shader.entity3D);
             shader.uniforms.tokens.value = tokens;
+            shader.uniforms.sound.value = sound;
             return true;
         });
     }
@@ -341,6 +342,10 @@ export const shaders = {
             tokens:{
                 type: "vec4[100]",
                 value: new Float32Array(100*4),
+            },
+            sound: {
+                type: "vec3",
+                value: new THREE.Vector3(1,1,1)
             },
             mDepth: {
                 type: "float",
@@ -1424,7 +1429,63 @@ export const shaders = {
                 `
             }
         ]
-    }
+    },
+    "sound": {
+        icon: `<i class="fas fa-music"></i>`,
+        uniforms: {
+            "intensity": {
+                type: "float",
+                default: 1,
+            },
+            "glow": {
+                type: "bool",
+                default: false,
+            },
+            "chroma": {
+                type: "bool",
+                default: false,
+            },
+            "flat_bottom": {
+                type: "bool",
+                default: false,
+            }
+        },
+        varying: {
+            "ground_blend_percent": {
+                type: "float",
+                value: 0
+            }
+        },
+        vertexShader: [
+            {
+                mode: SHADERS_CONSTS.APPEND,
+                injectionPoint: "#include <begin_vertex>",
+                shaderCode: `
+                vec3 original_transformed = transformed.xyz;
+                transformed.xyz *= sound*sound_intensity;
+                if(sound_flat_bottom){
+                    float delta_y = transformed.y - original_transformed.y;
+                    transformed.y += abs(delta_y);
+                }
+                `
+            }
+        ],
+        fragmentShader: [
+            {
+                mode: SHADERS_CONSTS.APPEND,
+                injectionPoint: "#include <dithering_fragment>",
+                shaderCode: `
+                if(sound_glow){
+                    gl_FragColor.rgb *= sound*sound_intensity;
+                }
+                if(sound_chroma){
+                    float chromaAngle = ((sound.x + sound.y + sound.z)/3.0) * 6.28;
+                    gl_FragColor.rgb = hueShift(gl_FragColor.rgb, chromaAngle);
+                }
+                `
+            }
+        ],
+    },
 
 }
 
