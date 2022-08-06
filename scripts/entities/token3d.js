@@ -14,6 +14,7 @@ export class Token3D {
       this.type = "Token";
       this.embeddedName = "Token";
       this.placeable = tokenDocument;
+      this._shaderSize = Math.max(this.token.document.width, this.token.document.height);
       this.isOwner = this.token.isOwner;
       this._parent = parent;
       this.isBase = game.settings.get("levels-3d-preview", "baseStyle") !== "image";

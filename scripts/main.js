@@ -1021,12 +1021,24 @@ class Levels3DPreview {
           this.fogExploration.updateShaders();
         }
       }
-      this.shaderHandler.updateShaders(time);
+      const tokensArray = Object.values(this.tokens);
+      const length = Math.max(tokensArray.length, 100);
+      const tokenPositionsArray = [new THREE.Vector4(0,0,0,tokensArray.length)];
+      const emptyVec = new THREE.Vector4();
+      for (let i = 1; i < length; i++) {
+        const pos = tokensArray[i-1]?.mesh?.position;
+        if(!pos){
+          tokenPositionsArray[i] = emptyVec;
+          continue;
+        }
+        tokenPositionsArray[i] = new THREE.Vector4(pos.x,pos.y,pos.z,tokensArray[i-1]._shaderSize);
+      }
+      this.shaderHandler.updateShaders(time, tokenPositionsArray);
       this.interactionManager._canMouseMove = true;
       this.interactionManager.dragObject();
       this.cursors.update();
       const delta = this.clock.getDelta();
-      Object.values(this.tokens).forEach((token) => {
+      tokensArray.forEach((token) => {
         if(token){
           token.updateVisibility();
           token.updateProne(delta);

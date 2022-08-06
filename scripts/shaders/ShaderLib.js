@@ -314,11 +314,12 @@ export class ShaderHandler{
         }
     }
 
-    updateShaders(delta){
+    updateShaders(delta, tokens){
         this.shaders = this.shaders.filter(shader => {
             if(shader.entity3D._destroyed) return false;
             shader.uniforms.time.value = delta/100;
             shader.uniforms.yPos.value = getYpos(shader.entity3D);
+            shader.uniforms.tokens.value = tokens;
             return true;
         });
     }
@@ -336,6 +337,10 @@ export const shaders = {
             time: {
                 type: "float",
                 value: 0
+            },
+            tokens:{
+                type: "vec4[100]",
+                value: new Float32Array(100*4),
             },
             mDepth: {
                 type: "float",
@@ -488,6 +493,10 @@ export const shaders = {
                 type: "bool",
                 default: false,
             },
+            "reactive": {
+                type: "bool",
+                default: false,
+            },
             "ground_blend": {
                 type: "float",
                 default: 0,
@@ -512,7 +521,9 @@ export const shaders = {
                 shaderCode: `
                 float currentY = vWorldPositionFoW.y;//(modelMatrix * vec4( transformed, 1.0 )).y;
                 float useY = yPos;
+                mat4 current_matrix = modelMatrix;
                 #ifdef USE_INSTANCING
+                    current_matrix = instanceMatrix;
                     if(shader_instance_position > -999999999999999.0) {
                         useY = shader_instance_position;
                     }
@@ -521,6 +532,25 @@ export const shaders = {
                 wind_ground_blend_percent = max(0.0, currentYDelta / mDepth);
                 float windFactor = 0.0;
                 vec2 windOffset = vec2(0.0);
+
+
+                if(wind_reactive && wind_ground_blend_percent > 0.1){
+                    int token_array_size = int(tokens[0].w + 1.0);
+
+                    for(int i = 1; i < token_array_size; i++) {
+                        float distance = distance(vWorldPositionFoW.xyz, tokens[i].xyz);
+                        vec4 diff = vec4(vWorldPositionFoW.xyz - tokens[i].xyz, 0.0);
+                        diff.y = 0.0;
+                        diff = diff * current_matrix;
+                        vec3 dir = normalize(diff.xyz);
+                        float maxDist = tokens[i].w * gridSize * 1.1;
+                        if(distance < maxDist) {
+                            windOffset += dir.xz * (maxDist / distance) * gridSize * 10.0 * wind_ground_blend_percent;//(1.0 - distance / mDepth) * tokens[i].w;
+                        }
+                    }
+                }
+
+
                 if (currentYDelta > mDepth*wind_affect_model) {
                     windFactor = (currentYDelta - mDepth*wind_affect_model) / (mDepth*wind_affect_model);
                     if(wind_convoluted) {
@@ -528,7 +558,7 @@ export const shaders = {
                     }else{
                         windFactor = (sin(time*(wind_speed)) + wind_intensity) * windFactor;
                     }
-                    windOffset = vec2(windFactor * wind_intensity * cos(wind_direction) * localSize.x, windFactor *  wind_intensity * sin(wind_direction) * localSize.z);
+                    windOffset += vec2(windFactor * wind_intensity * cos(wind_direction) * localSize.x, windFactor *  wind_intensity * sin(wind_direction) * localSize.z);
                 }
                 
                 transformed = vec3( transformed.x + windOffset.x, transformed.y, transformed.z + windOffset.y );
@@ -1386,7 +1416,7 @@ export const shaders = {
                         gl_FragColor *= overlayTexture*overlay_strength*black_alpha;
                     }else{
                         overlayTexture.rgb *= overlay_color;
-                        gl_FragColor = mix( gl_FragColor, overlayTexture, overlay_strength*black_alpha );
+                        gl_FragColor = mix( gl_FragColor, overlayTexture, overlay_strength*black_alpha*overlayTexture.a );
                     }
 
                 }

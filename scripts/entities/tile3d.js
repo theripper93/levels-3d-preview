@@ -528,7 +528,7 @@ export class Tile3D {
                     j++
                 }
             }
-            instancedMesh.geometry.addAttribute('shader_instance_position', new THREE.InstancedBufferAttribute(positionsArray, 1, false));
+            instancedMesh.geometry.setAttribute('shader_instance_position', new THREE.InstancedBufferAttribute(positionsArray, 1, false));
             instancedMesh.instanceMatrix.needsUpdate = true;
             if(this.randomColor) instancedMesh.instanceColor.needsUpdate = true;
             instancedMesh.position.set(-this.width/2+gridX/2,0,-this.height/2+gridZ/2);
