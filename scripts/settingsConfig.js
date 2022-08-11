@@ -16,7 +16,7 @@ class canvas3dConfig extends FormApplication{
 	async getData(options) {
         const data = {}
         const settingsKeys = [
-          "gameCameraWarnings","gameCameraAutoLock","gameCameraDefaultGm","gameCameraClipping", "gameCameraMinAngle", "gameCameraMaxAngle", "enableGameCamera", "rangeFinder", "sharedContext", "rotateIndicator","navigatorAuto", "showAdvanced", "canpingpan", "canping","baseStyle","solidBaseMode","solidBaseColor","highlightCombat","startMarker","hideTarget","templateSyle","autoPan","standupFace","preventNegative","miniCanvas","debugMode","cameralockzero"
+          "outline","gameCameraWarnings","gameCameraAutoLock","gameCameraDefaultGm","gameCameraClipping", "gameCameraMinAngle", "gameCameraMaxAngle", "enableGameCamera", "rangeFinder", "sharedContext", "rotateIndicator","navigatorAuto", "showAdvanced", "canpingpan", "canping","baseStyle","solidBaseMode","solidBaseColor","highlightCombat","startMarker","hideTarget","templateSyle","autoPan","standupFace","preventNegative","miniCanvas","debugMode","cameralockzero"
         ];
         for (let key of settingsKeys) {
             data[key] = game.settings.get("levels-3d-preview", key);
@@ -158,6 +158,13 @@ Hooks.once('init', function() {
       type: String,
       default: "sharpIndicator",
   });
+
+  game.settings.register("levels-3d-preview", "outline", {
+      scope: "world",
+      config: false,
+      type: Boolean,
+      default: true,
+  })
 
   game.settings.register("levels-3d-preview", "navigatorAuto", {
     scope: "world",

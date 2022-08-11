@@ -174,6 +174,13 @@ class TransformControls extends Object3D {
 		this.domElement.addEventListener( 'pointermove', this._onPointerHover );
 		this.domElement.addEventListener( 'pointerup', this._onPointerUp );
 
+		this.userData.ignoreHover = true;
+		this.traverse( function ( child ) {
+
+			child.userData.ignoreHover = true;
+
+		} );
+
 	}
 
 	// updateMatrixWorld  updates key transformation variables

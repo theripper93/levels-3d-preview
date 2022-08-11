@@ -34952,7 +34952,6 @@ ShadowMaterial.prototype.isShadowMaterial = true;
 class MeshStandardMaterial extends Material {
 
 	constructor( parameters ) {
-
 		super();
 
 		this.defines = { 'STANDARD': '' };

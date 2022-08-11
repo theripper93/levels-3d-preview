@@ -933,6 +933,10 @@
                 "name": "Prevent Negative Elevation",
                 "hint": "Prevents token movement to go below the game board"
             },
+            "outline": {
+                "name": "Outline",
+                "hint": "Outline canvas objects on hover and selection. Disable for better performance."
+            },
             "globalCollision": {
                 "name": "Enable Global Collision",
                 "hint": "Enable collision for all tokens on the board."
@@ -1250,7 +1254,8 @@
                 "intensity": "Intensity",
                 "glow": "Glow",
                 "chroma": "Chroma",
-                "flat_bottom": "Flat Bottom"
+                "flat_bottom": "Flat Bottom",
+                "croma_offset_angle": "Chroma Offset"
             }
         },
         "tours": {

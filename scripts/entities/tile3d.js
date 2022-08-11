@@ -774,7 +774,7 @@ export class Tile3D {
     }
 
     toggleBoundingBox(){
-        if(!game.user.isGM) return;
+        if(!game.user.isGM || this._parent.outline._enabled) return;
         const isTileControlled = this.tile.controlled;
         if(this.controlled === isTileControlled) return;
         this.controlled = isTileControlled;
@@ -1060,11 +1060,15 @@ export class Tile3D {
     }
 
     _onHoverIn(e) {
-        //this.placeable._onHoverIn(e);
+        if(canvas.activeLayer.options.objectClass.embeddedName !== "Tile") return;
+        this.placeable._onHoverIn(e);
+        this._parent.setCursor('pointer');
       }
   
     _onHoverOut(e) {
-        //this.placeable._onHoverOut(e);
+        if(canvas.activeLayer.options.objectClass.embeddedName !== "Tile") return;
+        this.placeable._onHoverOut(e);
+        this._parent.setCursor('auto');
     }
 
 }

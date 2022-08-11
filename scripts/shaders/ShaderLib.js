@@ -1445,9 +1445,15 @@ export const shaders = {
                 type: "bool",
                 default: false,
             },
+            "croma_offset_angle": {
+                type: "float",
+                default: 0,
+                min:0,
+                max:360,
+            },
             "flat_bottom": {
                 type: "bool",
-                default: false,
+                default: true,
             }
         },
         varying: {
@@ -1475,12 +1481,13 @@ export const shaders = {
                 mode: SHADERS_CONSTS.APPEND,
                 injectionPoint: "#include <dithering_fragment>",
                 shaderCode: `
-                if(sound_glow){
-                    gl_FragColor.rgb *= sound*sound_intensity;
-                }
+                float sound_fac = ((sound.x + sound.y + sound.z - 3.0)/3.0);
                 if(sound_chroma){
-                    float chromaAngle = ((sound.x + sound.y + sound.z)/3.0) * 6.28;
+                    float chromaAngle = mod(sound_fac * 6.28 + sound_croma_offset_angle, 6.28);
                     gl_FragColor.rgb = hueShift(gl_FragColor.rgb, chromaAngle);
+                }
+                if(sound_glow){
+                    gl_FragColor.rgb *= (1.0 + sound_fac);
                 }
                 `
             }

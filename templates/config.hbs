@@ -21,6 +21,12 @@
       </div>
 
       <div class="form-group">
+        <label>{{localize "levels3dpreview.settings.outline.name"}}</label>
+        <input type="checkbox" name="outline" data-dtype="Boolean" {{checked outline}} />
+        <p class="notes">{{localize "levels3dpreview.settings.outline.hint"}}</p>
+      </div>
+
+      <div class="form-group">
         <label>{{localize "levels3dpreview.settings.templateSyle.name"}}</label>
         <select name="templateSyle" data-dtype="String">
           {{#select templateSyle}}

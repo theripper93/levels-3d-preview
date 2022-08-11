@@ -34,6 +34,7 @@ import { presetMaterials, PresetMaterialHandler, populateScene } from "./helpers
 import { FXAAShader } from "./lib/FXAA.js";
 import { SMAAPass } from "./lib/SMAAPass.js";
 import { ShaderPass } from "./lib/ShaderPass.js";
+import { OutlineHandler } from "./helpers/OutlineHandler.js";
 import { ShaderHandler, shaders } from "./shaders/ShaderLib.js";
 
 export const factor = 1000;
@@ -312,6 +313,7 @@ class Levels3DPreview {
     this.tokenAnimationQueue = [];
     this._cameraSet = false;
     this.helpers = new Helpers();
+    OutlineHandler.setHooks();
     this.socket.register("socketCamera", this.helpers.socketCamera);
     this.socket.register("syncClipNavigator", this.helpers.syncClipNavigator);
     this.socket.register(
@@ -474,6 +476,7 @@ class Levels3DPreview {
     this.composer.removePass(this.bloomPass);
     this.renderPass = new RenderPass(this.scene, this.camera);
     this.composer.addPass(this.renderPass);
+    this.outline = new OutlineHandler(this);
     this.initAA();
     if (canvas.scene.getFlag("levels-3d-preview", "bloom")) {
       this.bloomPass =
@@ -1100,40 +1103,35 @@ class Levels3DPreview {
     });
   }
 
-  setAnaliserNode(){
+  getSoundFrequency() {
     const sound = Array.from(game.audio.playing.values())[0];
     if(sound && sound == this._sound && this._analyser){
       this._analyser.node.getByteFrequencyData(this._analyser.data)
-      let bass = 0, mid = 0, treble = 0;
-      for(let i = 0; i < this._analyser.data.length; i++){
+      let bass = 0, mid = 0;
+      const length = this._analyser.data.length;
+      for(let i = 0; i < length; i++){
         if(i < 20){
           bass += this._analyser.data[i];
         }else if(i < 40){
           mid += this._analyser.data[i];
-        }else{
-          treble += this._analyser.data[i];
         }
       }
       bass /= 20;
       mid /= 20;
-      treble /= this._analyser.data.length - 40;
-      return new THREE.Vector3(1 + bass/255,1 + mid/255,1 + treble/255);
+      //return new THREE.Vector3(1 + mid/255,1 + bass/255,1 + mid/255);
+      return new THREE.Vector3(1 + bass/255,1 + mid/255,1 + bass/255);
+      //return new THREE.Vector3(1 + bass/255,1 + mid/255,1 + treble/255);
     }
     this._sound = sound;
-    if(!sound) return;
+    if(!sound) return new THREE.Vector3(1, 1, 1);
     const {container: { sourceNode },context, id, } = sound;
-    const analyserNode = new AnalyserNode(context, { fftSize: 256 });
+    const analyserNode = new AnalyserNode(context, { fftSize: 4096 });
     sourceNode.connect(analyserNode);
     this._analyser = {
       node: analyserNode,
-      data: new Uint8Array(analyserNode.frequencyBinCount),
+      data: new Uint8Array(40),
     }
-  }
-
-  getSoundFrequency() {
-    const AN = this.setAnaliserNode() ?? new THREE.Vector3(0, 0, 0);
-    console.log(AN)
-    return this.setAnaliserNode() ?? new THREE.Vector3(1, 1, 1);
+    return new THREE.Vector3(1, 1, 1);
   }
 
   animation(time) {
