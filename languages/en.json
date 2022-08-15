@@ -569,6 +569,9 @@
             "metalness": {
                 "label": "Reflectivity"
             },
+            "transparency": {
+                "label": "Opacity"
+            },
             "wallDepth": {
                 "label": "Wall Depth"
             },
@@ -748,6 +751,10 @@
             "sharedContext": {
                 "name": "Shared Context",
                 "hint": "If Enabled, Fog of War performance will be drastically improved but you will not be able to use the Mini Canvas."
+            },
+            "preapplyShaders": {
+                "name": "Pre-Load Shaders",
+                "hint": "If Enabled, the shaders will be applied before the render loop starts. This will prevent stutters when activating shaders for the first time, but might cause a minor impact on performance and/or load times."
             },
             "showAdvanced": {
                 "show": "Show Advanced Settings",
@@ -976,6 +983,10 @@
                     "ultra": "Ultra",
                     "gamer": "Gamer"
                 }
+            },
+            "enableShaders": {
+                "name": "Enable Shaders",
+                "hint": "Enable shader special effects. Some of the effects can be performance intensive depending on the hardware and the amount. Disable for better performance."
             },
             "softShadows":{
                 "name": "Soft Shadows",

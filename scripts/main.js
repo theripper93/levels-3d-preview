@@ -36,6 +36,7 @@ import { SMAAPass } from "./lib/SMAAPass.js";
 import { ShaderPass } from "./lib/ShaderPass.js";
 import { OutlineHandler } from "./helpers/OutlineHandler.js";
 import { ShaderHandler, shaders } from "./shaders/ShaderLib.js";
+import { DecalGeometry } from "./lib/DecalGeometry.js";
 
 export const factor = 1000;
 injectFoWShaders(THREE);
@@ -129,6 +130,9 @@ class Levels3DPreview {
         turnStartMarker,
         ParticleSystem,
         Tile3D,
+      },
+      THREEUTILS: {
+        DecalGeometry,
       },
       shaders: {
         ShaderHandler,

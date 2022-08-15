@@ -16,7 +16,7 @@ class canvas3dConfig extends FormApplication{
 	async getData(options) {
         const data = {}
         const settingsKeys = [
-          "outline","gameCameraWarnings","gameCameraAutoLock","gameCameraDefaultGm","gameCameraClipping", "gameCameraMinAngle", "gameCameraMaxAngle", "enableGameCamera", "rangeFinder", "sharedContext", "rotateIndicator","navigatorAuto", "showAdvanced", "canpingpan", "canping","baseStyle","solidBaseMode","solidBaseColor","highlightCombat","startMarker","hideTarget","templateSyle","autoPan","standupFace","preventNegative","miniCanvas","debugMode","cameralockzero"
+          "outline","gameCameraWarnings","gameCameraAutoLock","gameCameraDefaultGm","gameCameraClipping", "gameCameraMinAngle", "gameCameraMaxAngle", "enableGameCamera", "rangeFinder", "preapplyShaders", "sharedContext", "rotateIndicator","navigatorAuto", "showAdvanced", "canpingpan", "canping","baseStyle","solidBaseMode","solidBaseColor","highlightCombat","startMarker","hideTarget","templateSyle","autoPan","standupFace","preventNegative","miniCanvas","debugMode","cameralockzero"
         ];
         for (let key of settingsKeys) {
             data[key] = game.settings.get("levels-3d-preview", key);
@@ -234,6 +234,13 @@ Hooks.once('init', function() {
       default: false,
     });
 
+    game.settings.register("levels-3d-preview", "preapplyShaders", {
+      scope: "world",
+      config: false,
+      type: Boolean,
+      default: true,
+    });
+
     game.settings.register("levels-3d-preview", "rotateIndicator", {
       name: game.i18n.localize("levels3dpreview.settings.rotateIndicator.name"),
       hint: game.i18n.localize("levels3dpreview.settings.rotateIndicator.hint"),
@@ -384,6 +391,15 @@ Hooks.once('init', function() {
       type: Boolean,
       default: false,
     });*/
+
+    game.settings.register("levels-3d-preview", "enableShaders", {
+      name: game.i18n.localize("levels3dpreview.settings.enableShaders.name"),
+      hint: game.i18n.localize("levels3dpreview.settings.enableShaders.hint"),
+      scope: "client",
+      config: true,
+      type: Boolean,
+      default: true,
+    });
 
     game.settings.register("levels-3d-preview", "softShadows", {
       name: game.i18n.localize("levels3dpreview.settings.softShadows.name"),

@@ -49,6 +49,7 @@ export class Tile3D {
         this.initShaders();
         this.setShading();
         this.setSides();
+        this.setMRT();
         this._loaded = true;
         this.elevation3d = this.mesh.position.y;
         this.setHidden();
@@ -110,6 +111,9 @@ export class Tile3D {
         this.dynaMesh = this.tile.document.getFlag("levels-3d-preview", "dynaMesh") ?? "default";
         this.dynaMeshResolution = this.tile.document.getFlag("levels-3d-preview", "dynaMeshResolution") ?? 1;
         this.sightMeshComplexity = this.tile.document.getFlag("levels-3d-preview", "sightMeshComplexity") ?? 1;
+        this.roughness = this.tile.document.getFlag("levels-3d-preview", "roughness") ?? -0.01;
+        this.metalness = this.tile.document.getFlag("levels-3d-preview", "metalness") ?? -0.01;
+        this.transparency = this.tile.document.getFlag("levels-3d-preview", "transparency") ?? -0.01;
         this.sides = this.tile.document.getFlag("levels-3d-preview", "sides") ?? "default";
         this.noiseParams = {
             scale: this.tile.document.getFlag("levels-3d-preview", "noiseScale") ?? 1,
@@ -365,6 +369,12 @@ export class Tile3D {
         this.mesh = container;
         this.sightMesh = this._parent.helpers.getSightMesh(object, this.sightMeshComplexity);
         this.sightMesh.visible = false;
+        this.sightMesh.userData.noShaders = true;
+        this.sightMesh.traverse(child => {
+            if(child.isMesh){
+                child.userData.noShaders = true;
+            }
+        } )
         container.add(this.sightMesh);
         container.add(object);
         container.position.set(this.center.x,this.center.y,this.center.z);
@@ -679,6 +689,19 @@ export class Tile3D {
                     child.material.forEach(m => m.side = THREE[this.sides]);
                 }else{
                     child.material.side = THREE[this.sides];
+                }
+            }
+        })
+    }
+
+    setMRT(){
+        this.mesh.traverse((child) => {
+            if (child.isMesh && !(child.material instanceof Array)) {
+                if(this.metalness >= 0) child.material.metalness = this.metalness;
+                if(this.roughness >= 0) child.material.roughness = this.roughness;
+                if(this.transparency >= 0) {
+                    child.material.transparent = true;
+                    child.material.opacity = this.transparency;
                 }
             }
         })

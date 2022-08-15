@@ -740,6 +740,30 @@ Hooks.on("renderTileConfig", (app,html)=>{
             label: game.i18n.localize("levels3dpreview.flags.tint.label"),
             default: "#ffffff",
         },
+        "roughness": {
+            type: "range",
+            label: game.i18n.localize("levels3dpreview.flags.roughness.label"),
+            default: -0.01,
+            min: -0.01,
+            max: 1,
+            step: 0.01,
+        },
+        "metalness": {
+            type: "range",
+            label: game.i18n.localize("levels3dpreview.flags.metalness.label"),
+            default: -0.01,
+            min: -0.01,
+            max: 1,
+            step: 0.01,
+        },
+        "transparency": {
+            type: "range",
+            label: game.i18n.localize("levels3dpreview.flags.transparency.label"),
+            default: -0.01,
+            min: -0.01,
+            max: 1,
+            step: 0.01,
+        },
         "shading": {
             type: "select",
             label: game.i18n.localize("levels3dpreview.flags.shading.label"),
@@ -1006,7 +1030,7 @@ Hooks.on("renderTileConfig", (app,html)=>{
 
     })
 
-    const advancedSettings = ["sightMeshComplexity","invertDisplacementMap","sides", "flipY", "shading","displacementMap","autoCenter","enableAnim","animSpeed","animIndex","paused","tiltX","tiltZ", "randomSeed", "autoGround", "depth"];
+    const advancedSettings = ["dynaMeshResolution", "roughness","metalness", "transparency", "sightMeshComplexity","invertDisplacementMap","sides", "flipY", "shading","displacementMap","autoCenter","enableAnim","animSpeed","animIndex","paused","tiltX","tiltZ", "randomSeed", "autoGround", "depth"];
 
     injectAdvancedToggle(app,html,advancedSettings, injected);
 

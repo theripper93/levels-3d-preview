@@ -200,12 +200,15 @@ export class ShaderHandler{
     }
 
     applyShader(Object3D, entity3D, shaderParams){
+        const enableShaders = game.settings.get("levels-3d-preview", "enableShaders");
+        if(!enableShaders) return;
+        const preapplyShaders = game.settings.get("levels-3d-preview", "preapplyShaders");
         const hasShaders = Object.values(shaderParams).some(v => v.enabled);
-        if(!hasShaders) return;
+        if(!hasShaders && !preapplyShaders) return;
         const commonParams = getSizesForShader(entity3D);
         commonParams.localSize = entity3D.isInstanced ? new THREE.Vector3(commonParams.mWidth*0.3, commonParams.mDepth*0.3, commonParams.mHeight*0.3) : new THREE.Vector3(0.2, 0.2, 0.2);
         Object3D.traverse(child => {
-            if(child.isMesh){
+            if(child.isMesh && !child.userData?.noShaders){
                 this.buildShader(child, shaderParams, commonParams, entity3D);
             }
         })

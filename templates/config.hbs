@@ -247,6 +247,12 @@
       </div>
 
       <div class="form-group">
+        <label>{{localize "levels3dpreview.settings.preapplyShaders.name"}}</label>
+        <input type="checkbox" name="preapplyShaders" data-dtype="Boolean" {{checked preapplyShaders}} />
+        <p class="notes">{{localize "levels3dpreview.settings.preapplyShaders.hint"}}</p>
+      </div>
+
+      <div class="form-group">
         <label>{{localize "levels3dpreview.settings.debugMode.name"}}</label>
         <input type="checkbox" name="debugMode" data-dtype="Boolean" {{checked debugMode}} />
         <p class="notes">{{localize "levels3dpreview.settings.debugMode.hint"}}</p>
