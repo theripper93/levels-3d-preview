@@ -42,7 +42,6 @@ Hooks.once('ready', async function() {
 
     function _computePolygon(wrapped, ...args){
         wrapped(...args);
-        if(!this.points.length) debugger
         if(!game.Levels3DPreview?._ready || !game.Levels3DPreview?._active){
             const object3dSight = canvas.scene.getFlag("levels-3d-preview", "object3dSight") ?? false;
             if(object3dSight){
@@ -50,7 +49,7 @@ Hooks.once('ready', async function() {
             }
             return
         }
-        if(!game.Levels3DPreview?.object3dSight || !game.Levels3DPreview?.fogExploration) return; 
+        if(!game.Levels3DPreview?.object3dSight || !game.Levels3DPreview?.fogExploration || this.config.source.object instanceof Scene) return; 
         const splits = 8;
         const timeoutLimit = splits*64;
         const polygonPoints = [];
@@ -66,14 +65,14 @@ Hooks.once('ready', async function() {
         const splitStart = computeFull ? 0 : currentSplit*splitAngle;
         const splitEnd = computeFull ? nPoints : splitStart + splitAngle;
 
-        if(currentSplit === 0 && this.config.source._polygon3DCache?.cacheId){
+        /*if(currentSplit === 0 && this.config.source._polygon3DCache?.cacheId){
             const id = this.config.source._polygon3DCache.cacheId;
             setTimeout(() => {
                 if(this.config.source._polygon3DCache?.cacheId === id && !this.config.source._polygon3DCache?.complete){
                     //if(!canvas.loading)this.config.source.object.updateSource();
                 }
             }, timeoutLimit+16);
-        }
+        }*/
 
         const z = this.config.source?.object?.b ?? 0;
         const perfStart = Date.now();

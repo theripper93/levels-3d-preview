@@ -151,7 +151,7 @@ Hooks.on("updateWorldTime", () => {
 });
 
 Hooks.on("preUpdateScene", (scene, updates) => {
-  if(!game.user.isGM || !game.Levels3DPreview._active || scene.id != canvas.scene.id || !("darkness" in updates)) return;
+  if(!game.user.isGM || !game.Levels3DPreview?._active || scene.id != canvas.scene.id || !("darkness" in updates)) return;
   const timeSync = canvas.scene.getFlag("levels-3d-preview", "timeSync") ?? "off";
   if(timeSync == "off" || timeSync == "time") return;
   const lightness = 1- updates.darkness;

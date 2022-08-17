@@ -155,8 +155,17 @@ export function injectFoWShaders(THREELIB){
             vec4 overlayTexel = texture( fogOverlay, vec2(sceneX * overlayRepeat.x, sceneY * overlayRepeat.y) );
             gl_FragColor = mix(gl_FragColor, overlayTexel, 1.0 - fogTexel.r);
         }else{
-            gl_FragColor *= fogTexel;
+            gl_FragColor = mix( vec4(0.0), gl_FragColor, fogTexel.r );
         }
     }
     `
 }
+
+/*
+        if(useOverlay && fogTexel.r == 0.0){
+            vec4 overlayTexel = texture( fogOverlay, vec2(sceneX * overlayRepeat.x, sceneY * overlayRepeat.y) );
+            gl_FragColor = mix(gl_FragColor, overlayTexel, 1.0 - fogTexel.r);
+        }else{
+            gl_FragColor *= fogTexel;
+        }
+*/
