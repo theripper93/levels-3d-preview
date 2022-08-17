@@ -114,12 +114,6 @@ class TourEnhanced extends Tour{
     }
 
     async _renderStep(...args){
-        const step = this.currentStep;
-        if ( step.selector ) {
-          this.targetElement = $(step.selector)[0]//document.querySelector(step.selector);
-          if ( !this.targetElement ) console.warn(`Tour [${this.id}] target element "${step.selector}" was not found`);
-        }
-        this.targetElement?.scrollIntoView();
         await super._renderStep(...args);
         this.overlayElement.style.zIndex = "calc(var(--z-index-tooltip) - 3)";
         $(this.fadeElement).on("click", async ()=>{
@@ -138,13 +132,8 @@ class TourEnhanced extends Tour{
          });
     }
 
-    async progress(...args){
-        try{
-            await super.progress(...args);
-        }catch(e){
-            return this._renderStep();
-        }
-        
+    _getTargetElement(selector){
+        return $(selector)[0];
     }
 
 }

@@ -49,7 +49,7 @@ Hooks.once('ready', async function() {
             }
             return
         }
-        if(!game.Levels3DPreview?.object3dSight || !game.Levels3DPreview?.fogExploration || this.config.source.object instanceof Scene) return; 
+        if(!game.Levels3DPreview?.object3dSight || !game.Levels3DPreview?.fogExploration || this.config.source.object instanceof Scene || this.config.type === "universal") return; 
         const splits = 8;
         const timeoutLimit = splits*64;
         const polygonPoints = [];

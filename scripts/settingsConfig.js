@@ -143,7 +143,9 @@ Hooks.once('init', function() {
   });
 
   game.settings.registerMenu("levels-3d-preview", "configMenu", {
-    label: game.i18n.localize("levels3dpreview.settings.configApp.hint"),
+    name: game.i18n.localize("levels3dpreview.settings.configApp.name"),
+    label: game.i18n.localize("levels3dpreview.settings.configApp.label"),
+    hint: game.i18n.localize("levels3dpreview.settings.configApp.hint"),
     icon: "fas fa-cogs",
     scope: "world",
     restricted: true,

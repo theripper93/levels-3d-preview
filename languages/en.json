@@ -831,7 +831,9 @@
             },
             "configApp": {
                 "title": "3D Canvas Configuration",
-                "hint": "Configure Global 3D Canvas Settings.",
+                "name": "Global Settings",
+                "label": "Configure Global 3D Canvas Settings",
+                "hint": "Configure Global 3D Canvas Settings. These settings will be applied to all clients. All other settings below this one will be client specific.",
                 "save": "Save Settings",
                 "tabs": {
                     "canvas": "Canvas",
