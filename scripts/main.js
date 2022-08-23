@@ -343,7 +343,7 @@ class Levels3DPreview {
       "sharedContext"
     );
     this.camera = new THREE.PerspectiveCamera(
-      60,
+      50,
       window.innerWidth / window.innerHeight,
       0.01,
       100

@@ -2,7 +2,7 @@ Hooks.once('ready', async function() {
     libWrapper.register("levels-3d-preview", "ClientKeybindings.prototype._handleMovement", _handleMovement, "MIXED");
     libWrapper.register("levels-3d-preview", "CONFIG.Token.objectClass.prototype.drawBars", drawBars, "WRAPPER")
     libWrapper.register("levels-3d-preview", "CONFIG.Token.objectClass.prototype.drawEffects", drawEffects, "WRAPPER");
-    libWrapper.register("levels-3d-preview", "ObjectHUD.prototype.createScrollingText", showBouncingText, "WRAPPER");
+    libWrapper.register("levels-3d-preview", "InterfaceCanvasGroup.prototype.createScrollingText", showBouncingText, "WRAPPER");
     libWrapper.register("levels-3d-preview", "TokenLayer.prototype.cycleTokens", cycleTokens, "WRAPPER");
     libWrapper.register("levels-3d-preview", "Canvas.prototype.animatePan", animatePan, "WRAPPER");
     libWrapper.register("levels-3d-preview", "FogManager.prototype.save", updateFog, "WRAPPER");
@@ -22,11 +22,12 @@ Hooks.once('ready', async function() {
     async function showBouncingText(wrapped, ...args) {
         wrapped(...args);
         if ( !game.Levels3DPreview?._active || game.settings.get("core", "scrollingStatusText") !== true || !this.visible ) return null;
-        const token3D = game.Levels3DPreview.tokens[this.object.id];
+        const tokenId = canvas.tokens.placeables.find(t => t.center.x == args[0].x && t.center.y == args[0].y)?.id;
+        const token3D = game.Levels3DPreview.tokens[tokenId];
         if(!token3D) return null;
-        const bouncingText = $(`<div id="levels3d-ruler-text" data-tokenid="${this.object.id}">${args[0]}</div>`);
+        const bouncingText = $(`<div id="levels3d-ruler-text" data-tokenid="${tokenId}">${args[1]}</div>`);
         $("body").append(bouncingText);
-        const textData = args[1];
+        const textData = args[2];
         const color = textData?.fill ? PIXI.utils.hex2string(textData.fill) : "white";
         bouncingText.css({
             "color": color,

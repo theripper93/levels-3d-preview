@@ -158,7 +158,7 @@ Hooks.once('init', function() {
       scope: "world",
       config: false,
       type: String,
-      default: "sharpIndicator",
+      default: "roundDoubleRing",
   });
 
   game.settings.register("levels-3d-preview", "outline", {
