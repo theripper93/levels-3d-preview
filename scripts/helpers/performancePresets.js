@@ -26,10 +26,9 @@ async function applyPreset(id, preset){
     ui.notifications.notify(`${game.i18n.localize(`levels3dpreview.performance.notification`).replace("{performancemode}", game.i18n.localize(`levels3dpreview.performance.${id}`))}`);
     setTimeout(async () => {
         for(let [k,v] of Object.entries(preset)){
-            if(k == "disableResolutionScaling" || k == "icon") continue;
+            if(k == "icon") continue;
             await game.settings.set("levels-3d-preview", k, v);
         }
-        await game.settings.set("core", "disableResolutionScaling", preset.disableResolutionScaling);
         window.location.reload();
     }, 5000);
 }

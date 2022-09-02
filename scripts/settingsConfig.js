@@ -462,27 +462,6 @@ Hooks.once('init', function() {
       default: 1,
     });
 
-    /*game.settings.register("levels-3d-preview", "resolution", {
-      name: game.i18n.localize("levels3dpreview.settings.resolution.name"),
-      hint: game.i18n.localize("levels3dpreview.settings.resolution.hint"),
-      scope: "client",
-      config: true,
-      type: Number,
-      choices: {
-          1: game.i18n.localize("levels3dpreview.settings.resolution.options.full"),
-          0.5: game.i18n.localize("levels3dpreview.settings.resolution.options.half"),
-          0.25: game.i18n.localize("levels3dpreview.settings.resolution.options.quarter"),
-        },
-      default: 1,
-      onChange: (value) => {
-        const pixelRatio = game.settings.get("core", "disableResolutionScaling") ? 1 : window.devicePixelRatio
-        game.Levels3DPreview.resolutionMulti =
-          game.settings.get("levels-3d-preview", "resolution") *
-          pixelRatio;
-        game.Levels3DPreview.renderer.setPixelRatio(game.Levels3DPreview.resolutionMulti);
-      }
-    });*/
-
     game.settings.register("levels-3d-preview", "debugMode", {
       name: game.i18n.localize("levels3dpreview.settings.debugMode.name"),
       hint: game.i18n.localize("levels3dpreview.settings.debugMode.hint"),

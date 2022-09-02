@@ -363,9 +363,7 @@ class Levels3DPreview {
     this.renderer.shadowMap.enabled = true;
     this.renderer.outputEncoding = THREE.sRGBEncoding;
 
-    const pixelRatio = game.settings.get("core", "disableResolutionScaling")
-      ? 1
-      : window.devicePixelRatio;
+    const pixelRatio = window.devicePixelRatio;
 
     this.resolutionMulti =
       pixelRatio *

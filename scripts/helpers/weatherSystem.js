@@ -183,7 +183,7 @@ class BasicDirectionalEffect {
     async init(){
         this.detectAnimFn(this.options.direction)
         this.object = new THREE.Group();
-        this.object.position.set(canvas.scene.dimensions.paddingX/factor,0,canvas.scene.dimensions.paddingY/factor);
+        this.object.position.set(canvas.scene.dimensions.sceneX/factor,0,canvas.scene.dimensions.sceneY/factor);
         this.object.userData.ignoreHover = true;
         this.textures = await this._loadTextures();
         this.material = this._getMaterial();
