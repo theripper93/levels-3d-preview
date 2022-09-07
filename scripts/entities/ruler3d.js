@@ -9,7 +9,6 @@ export class Ruler3D {
         const hsl = {}
         this.color.getHSL(hsl);
         this.lineColor = new THREE.Color().setHSL(hsl.h,hsl.s,hsl.l - 0.2);
-        this.textColor = new THREE.Color(canvas.scene.grid.color ?? 0x000000);
         this.origin = new THREE.Vector3(0,0,0);
         this.target = new THREE.Vector3(0,0,0);
         this.sphereRadius = 0.008;
