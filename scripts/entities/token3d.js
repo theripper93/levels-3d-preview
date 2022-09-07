@@ -129,6 +129,7 @@ export class Token3D {
         const object = new THREE.Group();
         object.add(standupModel);
         this.standUp=true;
+        this.standUpMesh = object;
         return {
           object: object,
           scene: object,
@@ -745,7 +746,7 @@ export class Token3D {
       if(oldProne !== this.isProne) this.toggleProne();
       const tokenEffects = this.token.document.effects;
       const actorEffects = this.token.actor?.temporaryEffects || [];
-      const effects = tokenEffects.concat(actorEffects).map(e => e.data?.icon);
+      const effects = tokenEffects.concat(actorEffects).map(e => e.icon);
       if(effects.length === this.effectsContainer.children.length) return;
       const toRemove = this.effectsContainer.children.filter(child => !effects.includes(child.userData.effect));
       toRemove.forEach(child => {
@@ -990,33 +991,34 @@ export class Token3D {
 
     }
 
-    drawName(){
-      if(this.nameplate) this.mesh.remove(this.nameplate);
+    async drawName(){
       const name = this.token._drawNameplate();
+      name.width*= 2;
+      name.height*= 2;
       const container = new PIXI.Container();
       container.addChild(name);
       const base64 = canvas.app.renderer.extract.base64(container);
       const spriteMaterial = new THREE.SpriteMaterial({
-        map: new THREE.TextureLoader().load(base64),
-        transparent: true
+        map: await new THREE.TextureLoader().loadAsync(base64),
+        transparent: true,
       });
       const sprite = new THREE.Sprite(spriteMaterial);
       sprite.center.set(0.5,0.5);
+      this.mesh.remove(this.nameplate)
       this.nameplate = sprite;
       this.nameplate.userData.ignoreIntersect = true;
       this.nameplate.userData.ignoreHover = true;
-      const width = name.width/this.factor;
-      const height = name.height/this.factor;
+      const width = 0.5*name.width/this.factor;
+      const height = 0.5*name.height/this.factor;
       this.nameplate.scale.set(width,height,1);
       this.nameplate.position.set(0, this.d + height/2 + 0.042, 0);
       this.mesh.add(this.nameplate);
     }
 
     async drawBars(){
-      if(!this.token?.hud?.bars || !this.token?.hud?.bars?.visible) return;
-      if(this.bars)this.mesh.remove(this.bars);
-      const bar1 = this.token.hud.bars["bar1"].clone();
-      const bar2 = this.token.hud.bars["bar2"].clone();
+      if(!this.token?.bars || !this.token?.bars?.visible) return;
+      const bar1 = this.token.bars["bar1"].clone();
+      const bar2 = this.token.bars["bar2"].clone();
       const container = new PIXI.Container();
       container.addChild(bar1);
       container.addChild(bar2);
@@ -1156,8 +1158,8 @@ export class Token3D {
     updateVisibility(){
       if(!this._loaded || !this.mesh || !this.nameplate) return;
       this.mesh.visible = this.alwaysVisible || this.token.visible;
-      this.nameplate.visible = this.token.hud?.nameplate?.visible;
-      if(this.bars)this.bars.visible = this.token?.hud?.bars?.visible;
+      this.nameplate.visible = this.token.nameplate?.visible;
+      if(this.bars)this.bars.visible = this.token?.bars?.visible;
     }
   
     getColor() {
