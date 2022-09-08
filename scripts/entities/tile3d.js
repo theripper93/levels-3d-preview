@@ -911,7 +911,7 @@ export class Tile3D {
                         const displacement = 1 - this.getPixel(this.displacementMap, xPercent, zPercent).r/255;
                         let y = positionAttributes.getY(i);
                         if(y<=0) continue;
-                        y += displacement * this.noiseParams.height;
+                        y*=displacement;// += displacement * this.noiseParams.height;
                         positionAttributes.setY(i, y);
                 }
                 c.geometry.computeVertexNormals();
