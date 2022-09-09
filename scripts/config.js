@@ -674,12 +674,17 @@ Hooks.on("renderTokenConfig", (app,html)=>{
 
 Hooks.on("renderTileConfig", (app,html)=>{
     if(html.find(`a[data-tab="levels-3d-preview"]>`).length) return;
+    const meshStats = game.Levels3DPreview.tiles[app.object.id]?.getMeshStats();
     const injected = injectConfig.inject(app,html,{
         "moduleId": "levels-3d-preview",
         "tab" : {
             "name": "levels-3d-preview",
             "label": "3D",
             "icon": "fas fa-cube",
+        },
+        "meshstats": {
+            type: "custom",
+            html: meshStats ? `<p style="text-align: center; color: ${meshStats.status}">${game.i18n.localize("levels3dpreview.flags.meshStats").replace("%v%", meshStats.vertices).replace("%t%", meshStats.faces).replace("%m%", meshStats.meshes)}</p><hr>` : ""
         },
         "model3d" : {
             type: "filepicker.any",

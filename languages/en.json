@@ -94,6 +94,7 @@
             "tiltY": "Tile Editor: Tilt Y"
         },
         "flags": {
+            "meshStats": "Vertices: %v% | Triangles: %t% | Meshes: %m%",
             "maxElevation": {
                 "label": "Max Elevation",
                 "notes": "Maximum allowed elevation for tokens on this scene."

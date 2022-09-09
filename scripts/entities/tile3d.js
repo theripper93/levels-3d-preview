@@ -19,7 +19,7 @@ export class Tile3D {
         this.isAnimated = false;
         this.draggable = true;
         this.embeddedName = "Tile"
-        this.bottom = tile.document.elevation ?? 0;
+        this.bottom = tile.document.flags?.levels?.rangeBottom ?? canvas.primary.background.elevation;
         this.shaders = [];
         this.center2d = {
             x: this.tile.document.x + Math.abs(this.tile.document.width)/2,
@@ -1092,6 +1092,27 @@ export class Tile3D {
         if(canvas.activeLayer.options.objectClass.embeddedName !== "Tile") return;
         this.placeable._onHoverOut(e);
         this._parent.setCursor('auto');
+    }
+
+    getMeshStats(){
+        let vertices = 0;
+        let faces = 0;
+        let meshes = -1;
+        let status = "green";
+        this.mesh.traverse((child) => {
+            if (child.isMesh) {
+                meshes++;
+                vertices += child.geometry.attributes.position.count;
+                faces += child.geometry.index.count/3;
+            }
+        })
+
+        if(vertices > 100000) status = "yellow";
+        if(meshes > 10) status = "yellow";
+        if(vertices > 1000000) status = "red";
+        if(meshes > 50) status = "red";
+
+        return {vertices, faces, meshes, status};
     }
 
 }
