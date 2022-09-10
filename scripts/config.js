@@ -1044,7 +1044,7 @@ Hooks.on("renderTileConfig", (app,html)=>{
 
     })
 
-    const advancedSettings = ["dynaMeshResolution", "roughness","metalness", "transparency", "sightMeshComplexity","invertDisplacementMap","sides", "flipY", "shading","displacementMap","autoCenter","enableAnim","animSpeed","animIndex","paused","tiltX","tiltZ", "randomSeed", "autoGround", "depth"];
+    const advancedSettings = ["displacementIntensity", "dynaMeshResolution", "roughness","metalness", "transparency", "sightMeshComplexity","invertDisplacementMap","sides", "flipY", "shading","displacementMap","autoCenter","enableAnim","animSpeed","animIndex","paused","tiltX","tiltZ", "randomSeed", "autoGround", "depth"];
 
     injectAdvancedToggle(app,html,advancedSettings, injected);
 
