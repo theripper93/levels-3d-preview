@@ -129,6 +129,7 @@ export class Tile3D {
         this.imageTexture = this.tile.document.getFlag("levels-3d-preview", "imageTexture") ?? "";
         this.displacementMap = this.tile.document.getFlag("levels-3d-preview", "displacementMap") ?? "";
         this.invertDisplacementMap = this.tile.document.getFlag("levels-3d-preview", "invertDisplacementMap") ?? false;
+        this.displacementIntensity = this.tile.document.getFlag("levels-3d-preview", "displacementIntensity") ?? 1;
         this.fillType = this.tile.document.getFlag("levels-3d-preview", "fillType") ?? "stretch";
         this.scale= this.tile.document.getFlag("levels-3d-preview", "tileScale") ?? 1;
         this.yScale = this.tile.document.getFlag("levels-3d-preview", "yScale") ?? 1;
@@ -902,16 +903,19 @@ export class Tile3D {
                 const minX = c.geometry.boundingBox.min.x;
                 const maxZ = c.geometry.boundingBox.max.z;
                 const minZ = c.geometry.boundingBox.min.z;
+                const minY = c.geometry.boundingBox.min.y;
                 for(let i=0; i < count; i++){
                         const x = positionAttributes.getX(i);
                         const z = positionAttributes.getZ(i);
-                        if(x===maxX || x===minX || z===maxZ || z===minZ) continue;
+                        //if(x===maxX || x===minX || z===maxZ || z===minZ) continue;
                         const xPercent = (x - minX)/(maxX - minX);
                         const zPercent = (z - minZ)/(maxZ - minZ);
                         const displacement = 1 - this.getPixel(this.displacementMap, xPercent, zPercent).r/255;
                         let y = positionAttributes.getY(i);
-                        if(y<=0) continue;
-                        y*=displacement;// += displacement * this.noiseParams.height;
+                        if(y<=minY) continue;
+                        if(minY<0) y-= minY;
+                        y*=displacement*this.displacementIntensity;// += displacement * this.noiseParams.height;
+                        if(minY<0) y+= minY;
                         positionAttributes.setY(i, y);
                 }
                 c.geometry.computeVertexNormals();
@@ -947,15 +951,16 @@ export class Tile3D {
     }
 
     getDisplacementData( image ) {
-
+        if(game.Levels3DPreview._heightmapCache[image.src]) return game.Levels3DPreview._heightmapCache[image.src];
         var canvas = document.createElement( 'canvas' );
         canvas.width = image.width;
         canvas.height = image.height;
     
         var context = canvas.getContext( '2d' );
         context.drawImage( image, 0, 0 );
-    
-        return context.getImageData( 0, 0, image.width, image.height );
+        const imagedata = context.getImageData( 0, 0, image.width, image.height );
+        game.Levels3DPreview._heightmapCache[image.src] = imagedata;
+        return imagedata;
     
     }
 

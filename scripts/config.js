@@ -674,7 +674,11 @@ Hooks.on("renderTokenConfig", (app,html)=>{
 
 Hooks.on("renderTileConfig", (app,html)=>{
     if(html.find(`a[data-tab="levels-3d-preview"]>`).length) return;
-    const meshStats = game.Levels3DPreview.tiles[app.object.id]?.getMeshStats();
+    let meshStats
+    try {
+        meshStats = game.Levels3DPreview.tiles[app.object.id]?.getMeshStats();
+    } catch (e) {}
+    
     const injected = injectConfig.inject(app,html,{
         "moduleId": "levels-3d-preview",
         "tab" : {
@@ -739,6 +743,11 @@ Hooks.on("renderTileConfig", (app,html)=>{
         "invertDisplacementMap": {
             type: "checkbox",
             label: game.i18n.localize("levels3dpreview.flags.invertDisplacementMap.label"),
+        },
+        "displacementIntensity": {
+            type: "number",
+            label: game.i18n.localize("levels3dpreview.flags.displacementIntensity.label"),
+            default: 1,
         },
         "color": {
             type: "color",

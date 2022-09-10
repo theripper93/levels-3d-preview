@@ -3,6 +3,9 @@ import {factor} from '../main.js';
 import { Ruler3D } from "../entities/ruler3d.js";
 import { mergeVertices } from "../lib/BufferGeometryUtils.js";
 import { setPerformancePreset } from "./performancePresets.js";
+import { SimplifyModifier } from "../lib/Simplify.js";
+
+const simplify = new SimplifyModifier();
 
 const sightMeshMaterial = new THREE.MeshBasicMaterial({
     color: 0xffffff,
@@ -181,12 +184,21 @@ export class Helpers {
 
   getSightMesh(mesh, complexity = 1) {
     const sightMesh = this.deepCloneRecursive(mesh);
+    if(complexity == 1) {
+      sightMesh.traverse((child) => {
+        if(child.isMesh){
+          child.material = sightMeshMaterial;
+        }
+      });
+      return sightMesh;
+    }
     let originalVerts = 0;
     let finalVerts = 0;
     sightMesh.traverse((child) => {
       if(child.isMesh){
         originalVerts += child.geometry.attributes.position.count;
-        child.geometry = mergeVertices(child.geometry, 0.1 * (1 / complexity));
+        //child.geometry = mergeVertices(child.geometry, 0.1 * (1 / complexity));
+        child.geometry = simplify.modify(child.geometry, Math.floor(child.geometry.attributes.position.count*(1-complexity)));
         child.material = sightMeshMaterial;
         child.geometry.computeBoundsTree();
         finalVerts += child.geometry.attributes.position.count;

@@ -101,6 +101,7 @@ class Levels3DPreview {
     this.populateScene = populateScene;
     this._errCount = 0;
     this.raycasterCache = {};
+    this._heightmapCache = {};
     this.socket = socketlib.registerModule("levels-3d-preview");
     this.socket.register("Particle3D", this.particleSocket);
     this.socket.register("Particle3DStop", this.Particle3DStop);
