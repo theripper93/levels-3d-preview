@@ -951,7 +951,8 @@ export class Tile3D {
     }
 
     getDisplacementData( image ) {
-        if(game.Levels3DPreview._heightmapCache[image.src]) return game.Levels3DPreview._heightmapCache[image.src];
+        if(!image) return false;
+        if(game.Levels3DPreview._heightmapCache[image?.src]) return game.Levels3DPreview._heightmapCache[image.src];
         var canvas = document.createElement( 'canvas' );
         canvas.width = image.width;
         canvas.height = image.height;

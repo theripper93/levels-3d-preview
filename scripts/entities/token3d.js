@@ -1059,7 +1059,10 @@ export class Token3D {
 
       targetPosition.y = targetPosition.y - box.min.y;
 
-      if(isBird(dimensions, center)){
+      if(isFlat(this.standUp)){
+        targetRotation.x = -Math.PI/2;
+        targetPosition.y = targetPosition.y - dimensions.y/2 + 0.02;
+      }else if(isBird(dimensions, center)){
         targetRotation.z = -Math.PI;
         targetPosition.y += dimensions.y + center.y;
       }else if(isCrab(dimensions)){
@@ -1070,9 +1073,6 @@ export class Token3D {
         targetPosition.x -= dimensions.y/2;
         targetPosition.y += dimensions.x/2;
 
-      }else if(isFlat(this.standUp)){
-        targetRotation.x = -Math.PI/2;
-        targetPosition.y = targetPosition.y - dimensions.y/2 + 0.02;
       }else if(isHuman(dimensions)){
         targetRotation.x = -Math.PI/2;
         targetPosition.z += dimensions.y/2;
