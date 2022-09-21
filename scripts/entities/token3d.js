@@ -347,8 +347,8 @@ export class Token3D {
         metalness: metalness,
         map: this.texture,//new THREE.TextureLoader().load(this.imageTexture) : null,
         //depthWrite: this.texture && !this.gtflPath ? false : true,
-        //transparent: true,
-        alphaTest: 0.99,
+        transparent: this._parent._fullTransparency,
+        alphaTest: this._parent._fullTransparency ? 0: 0.99,
       }
       
       const material = materialType === "basic" ? new THREE.MeshBasicMaterial(matData) : new THREE.MeshStandardMaterial(matData);

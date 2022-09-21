@@ -102,6 +102,7 @@ class Levels3DPreview {
     this._errCount = 0;
     this.raycasterCache = {};
     this._heightmapCache = {};
+    this._fullTransparency = game.settings.get("levels-3d-preview", "fullTransparency");
     this.socket = socketlib.registerModule("levels-3d-preview");
     this.socket.register("Particle3D", this.particleSocket);
     this.socket.register("Particle3DStop", this.Particle3DStop);
@@ -460,6 +461,7 @@ class Levels3DPreview {
 
   build3Dscene() {
     $(".levels-3d-preview-loading-screen").fadeIn(300);
+    this._fullTransparency = game.settings.get("levels-3d-preview", "fullTransparency");
     this._ready = false;
     this._isFirstFrame = true;
     this._finalizingLoad = false;

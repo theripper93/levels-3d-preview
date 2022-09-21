@@ -41,20 +41,26 @@ const performancePresets = {
         antialiasing: "none",
         fowQuality: 0.1,
         disableResolutionScaling: true,
+        enableShaders: false,
+        enableEffects: false,
     },
     "low": {
         softShadows: false,
-        shadowQuality: 2,
+        shadowQuality: 0,
         antialiasing: "none",
         fowQuality: 0.25,
         disableResolutionScaling: true,
+        enableShaders: true,
+        enableEffects: true,
     },
     "medium": {
         softShadows: false,
-        shadowQuality: 4,
+        shadowQuality: 2,
         antialiasing: "fxaa",
         fowQuality: 0.5,
         disableResolutionScaling: false,
+        enableShaders: true,
+        enableEffects: true,
     },
     "high": {
         softShadows: true,
@@ -62,6 +68,8 @@ const performancePresets = {
         antialiasing: "smaa",
         fowQuality: 0.75,
         disableResolutionScaling: false,
+        enableShaders: true,
+        enableEffects: true,
     },
     "veryhigh": {
         softShadows: true,
@@ -69,5 +77,7 @@ const performancePresets = {
         antialiasing: "smaa",
         fowQuality: 1,
         disableResolutionScaling: false,
+        enableShaders: true,
+        enableEffects: true,
     }
 }

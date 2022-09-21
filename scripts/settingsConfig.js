@@ -16,7 +16,7 @@ class canvas3dConfig extends FormApplication{
 	async getData(options) {
         const data = {}
         const settingsKeys = [
-          "outline","gameCameraWarnings","gameCameraAutoLock","gameCameraDefaultGm","gameCameraClipping", "gameCameraMinAngle", "gameCameraMaxAngle", "enableGameCamera", "rangeFinder", "preapplyShaders", "sharedContext", "rotateIndicator","navigatorAuto", "showAdvanced", "canpingpan", "canping","baseStyle","solidBaseMode","solidBaseColor","highlightCombat","startMarker","hideTarget","templateSyle","autoPan","standupFace","preventNegative","miniCanvas","debugMode","cameralockzero"
+          "fullTransparency","outline","gameCameraWarnings","gameCameraAutoLock","gameCameraDefaultGm","gameCameraClipping", "gameCameraMinAngle", "gameCameraMaxAngle", "enableGameCamera", "rangeFinder", "preapplyShaders", "sharedContext", "rotateIndicator","navigatorAuto", "showAdvanced", "canpingpan", "canping","baseStyle","solidBaseMode","solidBaseColor","highlightCombat","startMarker","hideTarget","templateSyle","autoPan","standupFace","preventNegative","miniCanvas","debugMode","cameralockzero"
         ];
         for (let key of settingsKeys) {
             data[key] = game.settings.get("levels-3d-preview", key);
@@ -160,12 +160,19 @@ Hooks.once('init', function() {
       type: String,
       default: "roundDoubleRing",
   });
-
+  
   game.settings.register("levels-3d-preview", "outline", {
       scope: "world",
       config: false,
       type: Boolean,
       default: true,
+  })
+
+  game.settings.register("levels-3d-preview", "fullTransparency", {
+    scope: "world",
+    config: false,
+    type: Boolean,
+    default: false,
   })
 
   game.settings.register("levels-3d-preview", "navigatorAuto", {
@@ -297,6 +304,16 @@ Hooks.once('init', function() {
       onChange: value => { game.Levels3DPreview.controls.screenSpacePanning = value }
     });
 
+    game.settings.register("levels-3d-preview", "altCameraControls", {
+      name: game.i18n.localize("levels3dpreview.settings.altCameraControls.name"),
+      hint: game.i18n.localize("levels3dpreview.settings.altCameraControls.hint"),
+      scope: "client",
+      config: true,
+      type: Boolean,
+      default: false,
+      onChange: value => { game.Levels3DPreview.GameCamera.setControlPreset() }
+    });
+
     game.settings.register("levels-3d-preview", "enabledamping", {
       name: game.i18n.localize("levels3dpreview.settings.enabledamping.name"),
       hint: game.i18n.localize("levels3dpreview.settings.enabledamping.hint"),
@@ -397,6 +414,15 @@ Hooks.once('init', function() {
     game.settings.register("levels-3d-preview", "enableShaders", {
       name: game.i18n.localize("levels3dpreview.settings.enableShaders.name"),
       hint: game.i18n.localize("levels3dpreview.settings.enableShaders.hint"),
+      scope: "client",
+      config: true,
+      type: Boolean,
+      default: true,
+    });
+
+    game.settings.register("levels-3d-preview", "enableEffects", {
+      name: game.i18n.localize("levels3dpreview.settings.enableEffects.name"),
+      hint: game.i18n.localize("levels3dpreview.settings.enableEffects.hint"),
       scope: "client",
       config: true,
       type: Boolean,

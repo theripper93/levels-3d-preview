@@ -22,6 +22,7 @@ export class GameCamera{
         }
         this.controls.addEventListener('change', this.onChange.bind(this));
         this.onChangeFreeCamera = debounce(this.onChangeFreeCamera.bind(this), 100)
+        this.setControlPreset();
     }
 
     getY(){
@@ -290,6 +291,22 @@ export class GameCamera{
 
     areEqual(v1, v2){
         return Math.abs(v1-v2) < 0.1;//Number.EPSILON;
+    }
+
+    setControlPreset(){
+        if(game.settings.get("levels-3d-preview", "altCameraControls")){
+            this.controls.mouseButtons = {
+                LEFT: undefined,
+                MIDDLE: THREE.MOUSE.ROTATE,
+                RIGHT: THREE.MOUSE.PAN
+            }
+        }else{
+            this.controls.mouseButtons = {
+                LEFT: THREE.MOUSE.ROTATE,
+                MIDDLE: THREE.MOUSE.DOLLY,
+                RIGHT: THREE.MOUSE.PAN
+            }
+        }
     }
 
 }

@@ -11,6 +11,7 @@ export class WeatherSystem {
 
     init(){
         this.effects = [];
+        if(!game.settings.get("levels-3d-preview", "enableEffects")) return;
         this.initWeather(canvas.scene.getFlag("levels-3d-preview", "particlePreset"));
         this.initWeather(canvas.scene.getFlag("levels-3d-preview", "particlePreset2"));
         const customPresets = canvas.scene.getFlag("levels-3d-preview", "particlePresetCustom");

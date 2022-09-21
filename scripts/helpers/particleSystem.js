@@ -67,6 +67,7 @@ export class ParticleSystem {
   }
 
   async effect(from, to, params) {
+    if(!game.settings.get("levels-3d-preview", "enableEffects")) return;
     to = to instanceof Array ? to : [to];
     if(!from) from = [null];
     from = from instanceof Array ? from : [from];

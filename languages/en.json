@@ -926,6 +926,10 @@
                 "name": "Enable Screen Space Panning",
                 "hint": "Enable screen space panning for the 3D view (map controls style)."
             },
+            "altCameraControls": {
+                "name": "Alternative Camera Controls",
+                "hint": "When enabled, Left click will not rotate the camera. Rotation will be on Middle Mouse button instead."
+            },
             "enabledamping": {
                 "name": "Enable Damping",
                 "hint": "Enable damping for the camera. Disable this option if you experience motion sickness. (Shift+R in 3D view to reset the camera and apply this change)."
@@ -949,6 +953,10 @@
             "outline": {
                 "name": "Outline",
                 "hint": "Outline canvas objects on hover and selection. Disable for better performance."
+            },
+            "fullTransparency": {
+                "name": "True Transparency",
+                "hint": "To avoid visual artifacts, 3D Canvas uses alpha clipping to handle transparency, this can result in jagged edges. If you use very few transparent textures, or you have no overlapping transparency you can enable this setting to make transparent textures look better. Use at your own risk, may cause visual glitches."
             },
             "globalCollision": {
                 "name": "Enable Global Collision",
@@ -993,6 +1001,10 @@
             "enableShaders": {
                 "name": "Enable Shaders",
                 "hint": "Enable shader special effects. Some of the effects can be performance intensive depending on the hardware and the amount. Disable for better performance."
+            },
+            "enableEffects": {
+                "name": "Enable Effects",
+                "hint": "Enable weather and particle effects. Some of the effects can be performance intensive depending on the hardware and the amount. Disable for better performance."
             },
             "softShadows":{
                 "name": "Soft Shadows",

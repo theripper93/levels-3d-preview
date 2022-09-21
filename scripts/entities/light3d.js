@@ -198,6 +198,7 @@ export class Light3D {
     }
 
     initParticle(){
+        if(!game.settings.get("levels-3d-preview", "enableEffects")) return;
         if(this.particleEffectId) Particle3D.stop(this.particleEffectId);
         if(this.light.document.hidden && !this.light.document.getFlag("levels-3d-preview", "enableParticleHidden")) return;
         const particleData = this.particleData;
