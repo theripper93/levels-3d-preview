@@ -251,7 +251,7 @@ Hooks.once('init', function() {
       scope: "world",
       config: false,
       type: Boolean,
-      default: true,
+      default: false,
     });
 
     game.settings.register("levels-3d-preview", "rotateIndicator", {
