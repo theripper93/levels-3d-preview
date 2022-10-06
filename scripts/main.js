@@ -444,7 +444,7 @@ class Levels3DPreview {
         )
     );
     //load targeting reticule
-    const tex = await this.helpers.loadTexture("modules/levels-3d-preview/assets/reticule.png")
+    const tex = await this.helpers.loadTexture("modules/levels-3d-preview/assets/animatedreticule.webm")
     const reticule = new THREE.Sprite(
       new THREE.SpriteMaterial({
         map: tex,
