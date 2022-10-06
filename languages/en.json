@@ -1064,7 +1064,18 @@
                 "title": "3D Canvas: Performance Settings",
                 "content": "Chose your preferred Graphic Quality (the page will be refreshed):"
             },
-            "notification": "3D Canvas: Setting performance mode to {performancemode}, the page will refresh in 5 seconds..."
+            "buttonTooltip": {
+                "verylow": "Recommended for Older Integrated GPUs",
+                "low": "Recommended for Older Dedicated GPUs or Modern Integrated GPUs",
+                "medium": "Recommended for Modern Dedicated GPUs",
+                "high": "Recommended for High-End Dedicated GPUs",
+                "veryhigh": "Recommended for High-End Dedicated GPUs"
+            },
+            "settings": {
+                "header": "Graphics Settings",
+                "presetHint": "Choose a visual quality preset to automatically set the settings below. You can always change them individually afterwards. Hover buttons for hardware recommendations."
+            },
+            "notification": "3D Canvas: Performance Mode set to {performancemode}."
         },
         "tileEditor": {
             "controlsReference": {

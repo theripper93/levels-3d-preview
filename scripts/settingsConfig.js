@@ -63,6 +63,10 @@ Hooks.once("canvasConfig", (canvasConfig) => {
   canvasConfig.resolution*=game.settings.get("levels-3d-preview", "resolutionMultiplier");
 })
 
+Hooks.on("renderSettingsConfig", (app, html, data) => {
+  game.Levels3DPreview.helpers.injectPresetButtons(html);
+});
+
 Hooks.once('init', function() {
 
   game.settings.register("levels-3d-preview", "sceneReload", {

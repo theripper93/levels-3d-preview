@@ -2,7 +2,7 @@ import * as THREE from "../lib/three.module.js";
 import {factor} from '../main.js';
 import { Ruler3D } from "../entities/ruler3d.js";
 import { mergeVertices } from "../lib/BufferGeometryUtils.js";
-import { setPerformancePreset } from "./performancePresets.js";
+import { setPerformancePreset, injectPresetButtons } from "./performancePresets.js";
 import { SimplifyModifier } from "../lib/Simplify.js";
 
 const simplify = new SimplifyModifier();
@@ -22,6 +22,7 @@ export class Helpers {
     this._loading = {};
     this.ruler3d = Ruler3D;
     this.setPerformancePreset = setPerformancePreset;
+    this.injectPresetButtons = injectPresetButtons;
   }
 
   async loadTexture(texturePath, options = {}) {
