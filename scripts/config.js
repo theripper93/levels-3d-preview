@@ -1309,17 +1309,6 @@ Hooks.on("init", () => {
         },
     });
 
-    game.keybindings.register("levels-3d-preview", "topdownView", {
-        name: game.i18n.localize("levels3dpreview.keybindings.topdownView"),
-        editable: [
-          {key: "KeyT", modifiers: [ SHIFT ]}
-        ],
-        onDown: () => {
-            if(!game.Levels3DPreview._active || !game.Levels3DPreview.hasFocus) return;
-            game.Levels3DPreview.resetCamera(true)
-        },
-    });
-
     game.keybindings.register("levels-3d-preview", "cameraToToken", {
         name: game.i18n.localize("levels3dpreview.keybindings.cameraToToken"),
         editable: [
@@ -1350,7 +1339,11 @@ Hooks.on("init", () => {
         ],
         onDown: () => {
             if(!game.Levels3DPreview._active || !game.Levels3DPreview.hasFocus) return;
-            game.Levels3DPreview.GameCamera.toggleTopDown()
+            if(game.Levels3DPreview.GameCamera.enabled){
+                game.Levels3DPreview.GameCamera.toggleTopDown()
+            }else{
+                game.Levels3DPreview.resetCamera(true)
+            }            
         },
     });
 

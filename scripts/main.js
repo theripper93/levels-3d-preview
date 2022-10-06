@@ -443,6 +443,21 @@ class Levels3DPreview {
           box3.max.z - box3.min.z
         )
     );
+    //load targeting reticule
+    const tex = await this.helpers.loadTexture("modules/levels-3d-preview/assets/reticule.png")
+    const reticule = new THREE.Sprite(
+      new THREE.SpriteMaterial({
+        map: tex,
+        alphaClip: 0.9,
+        color: game.user.color,
+        depthWrite: false,
+        depthTest: false,
+      })
+    );
+    //set reticule to be always in front of camera
+    reticule.renderOrder = 1e20;
+
+    this.models.reticule = reticule;
     this._init = true;
   }
 
@@ -1179,6 +1194,7 @@ class Levels3DPreview {
       this.interactionManager.dragObject();
       this.cursors.update();
       const delta = this.clock.getDelta();
+      this.models.reticule.material.rotation += delta*0.05;
       tokensArray.forEach((token) => {
         if (token) {
           token.updateVisibility();

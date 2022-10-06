@@ -19,6 +19,7 @@ export class Token3D {
       this._parent = parent;
       this.isBase = game.settings.get("levels-3d-preview", "baseStyle") !== "image";
       this.baseMode = game.settings.get("levels-3d-preview", "baseStyle");
+      this.reticule = parent.models.reticule.clone();
       this.color = this.getColor();
       this.factor = factor;
       this.dispositionColor = this.getDispColor();
@@ -75,6 +76,7 @@ export class Token3D {
       this.wasFreeMode = this.token.document.getFlag("levels-3d-preview", "wasFreeMode") ?? false;
       this.removeBase = this.token.document.getFlag("levels-3d-preview", "removeBase") ?? true;
       if(this.faceCameraOption !== "0") this.standupFace = this.faceCameraOption == "1" ? true : false;
+      this.enableReticule = game.settings.get("levels-3d-preview", "enableReticule");
     }
   
     async load() {
@@ -631,6 +633,7 @@ export class Token3D {
       this.drawTargets();
       this.drawEffects();
       this.refreshBorder();
+      this.setReticule();
     }
 
     updateAnimation(){
@@ -655,6 +658,7 @@ export class Token3D {
 
     drawTargets(){
       //remove old targets
+      this.reticule.visible = this.token.isTargeted;
       if(!this.targetContainer) return;
       this.updateTargetTexture();
       if(this.isBase && game.settings.get("levels-3d-preview", "hideTarget")) return;
@@ -666,6 +670,7 @@ export class Token3D {
       let positionOffset = this.targetSize;
       const targetModel = this._parent.models.target;
       for(let target of Array.from(this.token.targeted)){
+        if(target.id === game.user.id && this.enableReticule) continue;
         const color = target.color;
         const position = {
           x: 0,
@@ -680,6 +685,13 @@ export class Token3D {
         positionOffset += this.targetSize*2.5;
       }
 
+    }
+
+    setReticule(){
+      this.enableReticule ? this.mesh.add(this.reticule) : this.mesh.remove(this.reticule);
+      this.reticule.scale.set(this.w, this.d, this.h);
+      this.reticule.scale.multiplyScalar(1.2);
+      this.reticule.position.y = this.d/2;
     }
 
     get isTokenProne(){
@@ -930,7 +942,8 @@ export class Token3D {
 
     updateTargetTexture(){
       if(!this.isBase) return;
-      const colors = Array.from(this.token.targeted).map(t => t.color);
+      const targeted = this.enableReticule ? Array.from(this.token.targeted).filter(t => t.id !== game.user.id) : Array.from(this.token.targeted);
+      const colors = targeted.map(t => t.color);
       const colorstring = colors.join("");
       if(!colors.length) return;
       let text
