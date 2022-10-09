@@ -1,0 +1,34 @@
+<form action="">
+    <div class="action-buttons form-group">
+        <div class="form-fields">
+            <button><i class="fas fa-expand-arrows-alt"></i></button>
+            <button><i class="fas fa-mountain"></i></button>
+            <input type="number" value="0" step="any">
+        </div>
+        <div class="form-fields">
+            
+        <input id="zoom-level" type="range" value="0.5" min="0.15" max="1" step="0.1">
+        </div>
+        <div class="form-fields">
+            <label>Width</label>
+            <input type="number" value="{{width}}" step="1" name="width">
+            <label>Height</label>
+            <input type="number" value="{{height}}" step="1" name="height">
+        </div>
+    </div>
+    <div class="main-interface">
+        <div class="grid-container">
+            {{#each cells}}
+                <div class="grid-row">
+                    {{#each this}}
+                        <div class="grid-cell"  data-elevation="{{elevation}}">
+                            <input disabled name="cells[{{@../index}}][{{@index}}].elevation" value="{{elevation}}">
+                            <input style="display:none" name="cells[{{@../index}}][{{@index}}].materialId" value="{{materialId}}">
+                        </div>
+                    {{/each}}
+                </div>
+            {{/each}}
+        </div>
+        <div class="material-list"></div>
+    </div>
+</form>

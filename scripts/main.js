@@ -38,10 +38,14 @@ import { OutlineHandler } from "./helpers/OutlineHandler.js";
 import { ShaderHandler, shaders } from "./shaders/ShaderLib.js";
 import { DecalGeometry } from "./lib/DecalGeometry.js";
 
+import { MapGen } from "./mapgen.js";
+
 export const factor = 1000;
 injectFoWShaders(THREE);
 
 globalThis.Particle3D = Particle3D;
+
+globalThis.MapGen = MapGen;
 
 Hooks.once("ready", () => {
   try{

@@ -1,0 +1,68 @@
+:root{
+    --mapgen-cellsize: 50px;
+}
+
+#mapgen form{
+    display: flex;
+    position: relative;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+}
+
+#mapgen .action-buttons{
+    background-color: red;
+    height: 3rem;
+}
+
+#mapgen .main-interface{
+    background-color: blue;
+    display: flex;
+    flex-direction: row;
+    position: relative;
+    max-height: calc(100% - 3rem);
+}
+
+#mapgen .grid-container{
+    background-color: green;
+    height: 100%;
+    width: 70%;
+    overflow: scroll;
+}
+
+#mapgen .material-list{
+    background-color: yellow;
+    height: 100%;
+    width: 30%;
+}
+
+#mapgen .grid-cell{
+    background-color: white;
+    height: var(--mapgen-cellsize);
+    width: var(--mapgen-cellsize);
+    border: 2px solid var(--color-border-dark);
+    display: flex;
+    position: relative;
+    transition: all 0.2s ease-in-out;
+}
+
+#mapgen .grid-cell:hover{
+    filter: brightness(1.5);
+}
+
+#mapgen .grid-cell.selected{
+    border: 4px solid var(--color-shadow-primary);
+}
+
+#mapgen .grid-cell input{
+    max-width: 100%;
+    text-align: center;
+    font-size: calc( var(--mapgen-cellsize) * 0.7 );
+    transition: all 0.2s ease-in-out;
+    pointer-events: none;
+}
+
+#mapgen .grid-row{
+    display: flex;
+    flex-direction: row;
+}
