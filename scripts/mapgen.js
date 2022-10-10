@@ -134,13 +134,34 @@ export class MapGen extends FormApplication{
                 }
             }
             const depth = (maxHeight - minHeight) * canvas.scene.dimensions.size;
-            const height = columns * canvas.scene.dimensions.size;
-            const width = rows * canvas.scene.dimensions.size;
+            const w = canvas.scene.dimensions.size;
+            const h = 2 * canvas.scene.dimensions.size / Math.sqrt(3);
+            let height = columns * canvas.scene.dimensions.size;
+            let width = rows * canvas.scene.dimensions.size;
+            if(canvas.scene.grid.type > 3){
+                width = rows * h * 3/4 + h * 1/4;
+                height = columns * w + w/2;
+
+            }else if(canvas.scene.grid.type > 1){
+                width = rows * w + w/2;
+                height = columns * h * 3/4 + h * 1/4;
+            }
+            let x = canvas.scene.dimensions.sceneX;
+            let y = canvas.scene.dimensions.sceneY;
+            switch(canvas.scene.grid.type){
+                case 2:
+                    x += w/2;
+                case 3:
+                    break;
+                case 4:
+                    y += w/2;
+            }
+
             this.document.update({
                 width,
                 height,
-                x: canvas.scene.dimensions.sceneX,
-                y: canvas.scene.dimensions.sceneY,
+                x,
+                y,
                 flags: {
                     "levels": {rangeBottom: -canvas.scene.dimensions.distance},
                     "levels-3d-preview": {depth: depth},

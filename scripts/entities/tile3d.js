@@ -1169,6 +1169,7 @@ export class Tile3D {
     }
 
     async computeMapGen(){
+        if(canvas.scene.grid.type > 1) return await this.computeMapGenHex();
         const mapgen = this.mapgen;
         const materials = {};
         const bevel = parseFloat(mapgen.bevel);
@@ -1253,6 +1254,127 @@ export class Tile3D {
         mesh.add(bb);
         const object = new THREE.Group();
         mesh.position.set(-rows/2, 0, -cols/2 + 1);
+        object.add(mesh);
+        return {scene: object, model: object, object: object};
+
+
+    }
+
+    async computeMapGenHex(){
+        const mapgen = this.mapgen;
+        const materials = {};
+        const bevel = parseFloat(mapgen.bevel);
+        const mesh = new THREE.Group();
+        for(let matData of mapgen.materials){
+            if(!matData.materialId) continue;
+            const mat = await this.getMapGenMat(matData);
+            materials[matData.materialId] = mat;
+        }
+        const h = 2;
+        const w = Math.sqrt(3);
+        const flatTop = canvas.scene.grid.type > 3;
+        const shape = new THREE.Shape();
+        if(flatTop){
+            shape.moveTo( 0, w/2 );
+            shape.lineTo( h/4, 0 );
+            shape.lineTo( h*3/4, 0 );
+            shape.lineTo( h, w/2 );
+            shape.lineTo( h*3/4, w );
+            shape.lineTo( h/4, w );
+
+        }else{
+            shape.moveTo( 0,h/4 );
+            shape.lineTo( w/2, 0 );
+            shape.lineTo( w, h/4 );
+            shape.lineTo( w, h*3/4 );
+            shape.lineTo( w/2, h );
+            shape.lineTo( 0, h*3/4 );
+        }
+
+
+        
+        const extrudeSettings = {
+            steps: 2,
+            depth: 1 - bevel*2,
+            bevelEnabled: true,
+            bevelThickness: bevel,
+            bevelSize: bevel,
+            bevelOffset: -bevel,
+            bevelSegments: 1
+        };
+
+        const baseGeometry = new THREE.ExtrudeGeometry( shape, extrudeSettings );
+        baseGeometry.rotateX(-Math.PI/2);
+        baseGeometry.translate(0,+bevel,0);
+
+        const cellsByMaterial = {};
+        Object.keys(materials).forEach((key) => cellsByMaterial[key] = []);
+        const rows = mapgen.rows;
+        const cols = mapgen.columns;
+        const dummy = new THREE.Object3D();
+        let minElevation = 0;
+        let maxElevation = 0;
+        for(let r=0; r<rows; r++){
+            for(let c=0; c<cols; c++){
+                const cell = mapgen.cells[r][c];
+                cell.col = c;
+                cell.row = r;
+                if(parseFloat(cell.elevation) <= 0) continue;
+                if(!cellsByMaterial[cell.materialId]) continue
+                cellsByMaterial[cell.materialId].push(cell);
+                if(parseFloat(cell.elevation) < minElevation) minElevation = parseFloat(cell.elevation);
+                if(parseFloat(cell.elevation) > maxElevation) maxElevation = parseFloat(cell.elevation);
+            }
+        }
+
+        for(const [matId, cells] of Object.entries(cellsByMaterial)){
+            const mat = materials[matId];
+            if(!mat) continue;
+            const cellCount = cells.length;
+            const cellSizeArray = new Float32Array(cellCount);
+            const instancedMesh = new THREE.InstancedMesh(
+                baseGeometry.clone(),
+                mat,
+                cellCount
+            );
+            instancedMesh.instanceMatrix.setUsage( THREE.DynamicDrawUsage );
+            for(let i=0; i<cellCount; i++){
+                const cell = cells[i];
+                let x,y;
+                if(flatTop){
+                    x = cell.col * h * 3/4;
+                    y = cell.row * w + (cell.col % 2) * w/2;
+                }else{
+                    x = cell.col * w;
+                    y = cell.row * h * 3/4;
+                    const isOdd = cell.row % 2;
+                    if(isOdd) x += w/2;
+                }
+                dummy.position.set(x, 0, y);
+                dummy.scale.set(1, parseFloat(cell.elevation), 1);
+                dummy.updateMatrix();
+                instancedMesh.setMatrixAt(i, dummy.matrix);
+                cellSizeArray[i] = parseFloat(cell.elevation);
+            }
+            instancedMesh.geometry.setAttribute('shader_cell_size', new THREE.InstancedBufferAttribute(cellSizeArray, 1, false));
+            mesh.add(instancedMesh);
+        }
+        const depth = maxElevation - minElevation;
+        const bbW = flatTop ? rows * h * 3/4 + h * 1/4 : rows * w + w/2;
+        const bbH = flatTop ? cols * w + w/2 : cols * h * 3/4 + h * 1/4; 
+        const bb = new THREE.Mesh(new THREE.BoxGeometry(bbW, depth, bbH), new THREE.MeshBasicMaterial({wireframe: true, color: 0x000000}));
+        bb.visible = false;
+        if(flatTop){
+            bb.position.set(bbW/2, +depth/2, bbH/2 - w);
+        }else{
+            bb.position.set(bbW/2, +depth/2, bbH/2 - h);
+        }
+        bb.userData.collision = false;
+        bb.userData.cameraCollision = false;
+        bb.userData.sight = false;
+        mesh.add(bb);
+        const object = new THREE.Group();
+        mesh.position.set(-bbW/2 + (flatTop ? 0 : 0), 0, -bbH/2 + (flatTop ? w : h));
         object.add(mesh);
         return {scene: object, model: object, object: object};
 
