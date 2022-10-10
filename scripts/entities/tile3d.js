@@ -99,6 +99,7 @@ export class Tile3D {
 
     getFlags(){
         this.gtflPath = this.tile.document.getFlag("levels-3d-preview", "model3d");
+        this.mapgen = this.tile.document.getFlag("levels-3d-preview", "mapgen");
         this.enableAnim = this.tile.document.getFlag("levels-3d-preview", "enableAnim") ?? true;
         this.animIndex = this.tile.document.getFlag("levels-3d-preview", "animIndex") ?? 0;
         this.animSpeed = this.tile.document.getFlag("levels-3d-preview", "animSpeed") ?? 1;
@@ -568,7 +569,8 @@ export class Tile3D {
     }
 
     async getModel(){
-        if(this.dynaMesh != "default"){
+        const isMapgen = this.dynaMesh === "mapGen" && this.mapgen;
+        if(this.dynaMesh != "default" && !isMapgen){
             const mesh = new DynaMesh(this.dynaMesh, { width: this.width, height: this.height, depth: this.depth, resolution: this.dynaMeshResolution }).create()
             return {
                 scene: mesh,
@@ -579,7 +581,7 @@ export class Tile3D {
         
         const filePath = this.gtflPath;
         const extension = filePath.split(".").pop().toLowerCase();
-        const model = await game.Levels3DPreview.helpers.loadModel(this.gtflPath);
+        const model = isMapgen ? await this.computeMapGen() : await game.Levels3DPreview.helpers.loadModel(this.gtflPath);
         if(model) {
             game.Levels3DPreview.helpers.groundModel(model.model, this.autoGround ,this.autoCenter)
             let hasTags = false;
@@ -1119,6 +1121,119 @@ export class Tile3D {
         if(meshes > 50) status = "red";
 
         return {vertices, faces, meshes, status};
+    }
+
+    async getMapGenMat(matData){
+        let textureOrMat = null;
+        let isPBR = null;
+        if(!matData.texture.src) return {textureOrMat, isPBR};
+        textureOrMat = await this._parent.helpers.autodetectTextureOrMaterial(matData.texture.src, {noCache: true});
+        isPBR = this._parent.helpers.isPBR(matData.texture.src)
+        let mat;
+        if(isPBR) mat = textureOrMat;
+        else mat = new THREE.MeshStandardMaterial({map: textureOrMat});
+        if(isPBR){
+            Object.values(textureOrMat).forEach(v => this.setMapGenTexture(v,matData));
+        }else{
+            this.setMapGenTexture(textureOrMat,matData);
+        }
+        mat.color = new THREE.Color(matData.texture.tint || 0xffffff);
+        return mat
+    }
+
+    setMapGenTexture(tex, matData){
+        if(!matData.texture.repeat || matData.texture.repeat == 1) return;
+        tex.wrapS = THREE.RepeatWrapping;
+        tex.wrapT = THREE.RepeatWrapping;
+        tex.repeat.set( matData.texture.repeat, matData.texture.repeat );
+        return;
+    }
+
+    async computeMapGen(){
+        const mapgen = this.mapgen;
+        const materials = {};
+        const bevel = parseFloat(mapgen.bevel);
+        const mesh = new THREE.Group();
+        for(let matData of mapgen.materials){
+            const mat = await this.getMapGenMat(matData);
+            materials[matData.materialId] = mat;
+        }
+        const shape = new THREE.Shape();
+        shape.moveTo( 0,0 );
+        shape.lineTo( 0, 1 );
+        shape.lineTo( 1, 1 );
+        shape.lineTo( 1, 0 );
+        shape.lineTo( 0, 0 );
+        
+        const extrudeSettings = {
+            steps: 2,
+            depth: 1 - bevel*2,
+            bevelEnabled: true,
+            bevelThickness: bevel,
+            bevelSize: bevel,
+            bevelOffset: -bevel,
+            bevelSegments: 1
+        };
+
+        const baseGeometry = new THREE.ExtrudeGeometry( shape, extrudeSettings );
+        baseGeometry.rotateX(-Math.PI/2);
+        baseGeometry.translate(0,+bevel,0);
+
+        const cellsByMaterial = {};
+        Object.keys(materials).forEach((key) => cellsByMaterial[key] = []);
+        const rows = mapgen.rows;
+        const cols = mapgen.columns;
+        const dummy = new THREE.Object3D();
+        let minElevation = 0;
+        let maxElevation = 0;
+        for(let r=0; r<rows; r++){
+            for(let c=0; c<cols; c++){
+                const cell = mapgen.cells[r][c];
+                cell.col = c;
+                cell.row = r;
+                if(parseFloat(cell.elevation) <= 0) continue;
+                if(!cellsByMaterial[cell.materialId]) continue
+                cellsByMaterial[cell.materialId].push(cell);
+                if(parseFloat(cell.elevation) < minElevation) minElevation = parseFloat(cell.elevation);
+                if(parseFloat(cell.elevation) > maxElevation) maxElevation = parseFloat(cell.elevation);
+            }
+        }
+
+        for(const [matId, cells] of Object.entries(cellsByMaterial)){
+            const mat = materials[matId];
+            if(!mat) continue;
+            const cellCount = cells.length;
+            const instancedMesh = new THREE.InstancedMesh(
+                baseGeometry,
+                mat,
+                cellCount
+            );
+            instancedMesh.instanceMatrix.setUsage( THREE.DynamicDrawUsage );
+            for(let i=0; i<cellCount; i++){
+                const cell = cells[i];
+                const x = cell.col * 1;
+                const y = cell.row * 1;
+                dummy.position.set(x, 0, y);
+                dummy.scale.set(1, parseFloat(cell.elevation), 1);
+                dummy.updateMatrix();
+                instancedMesh.setMatrixAt(i, dummy.matrix);
+            }
+            mesh.add(instancedMesh);
+        }
+        const depth = maxElevation - minElevation;
+        const bb = new THREE.Mesh(new THREE.BoxGeometry(rows, depth, cols), new THREE.MeshBasicMaterial({wireframe: true, color: 0x000000}));
+        bb.visible = false;
+        bb.position.set(rows/2, +depth/2, cols/2 - 1);
+        bb.userData.collision = false;
+        bb.userData.cameraCollision = false;
+        bb.userData.sight = false;
+        mesh.add(bb);
+        const object = new THREE.Group();
+        mesh.position.set(-rows/2, 0, -cols/2 + 1);
+        object.add(mesh);
+        return {scene: object, model: object, object: object};
+
+
     }
 
 }

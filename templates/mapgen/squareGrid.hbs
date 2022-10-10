@@ -1,34 +1,90 @@
 <form action="">
     <div class="action-buttons form-group">
         <div class="form-fields">
-            <button><i class="fas fa-expand-arrows-alt"></i></button>
-            <button><i class="fas fa-mountain"></i></button>
-            <input type="number" value="0" step="any">
+            <button id="fit-to-scene"><i class="fas fa-expand-arrows-alt"></i></button>
+            <button id="select-all"><i class="fas fa-object-group"></i></button>
+            <button id="deselect-all"><i class="fas fa-ban"></i></button>
+            <input type="number" id="elevation" name="elevation" value="{{elevation}}" step="any">
+            <button id="set-elevation"><i class="fas fa-mountain"></i></button>
+            <label>Bevel</label>
+            <input type="number" name="bevel" value="{{bevel}}" step="any">
         </div>
         <div class="form-fields">
-            
-        <input id="zoom-level" type="range" value="0.5" min="0.15" max="1" step="0.1">
+            <label>Zoom</label>
+            <input id="zoom-level" type="range" value="{{zoomLevel}}" min="0.1" max="1" step="0.01">
         </div>
         <div class="form-fields">
-            <label>Width</label>
-            <input type="number" value="{{width}}" step="1" name="width">
-            <label>Height</label>
-            <input type="number" value="{{height}}" step="1" name="height">
+            <label>Rows</label>
+            <input type="number" value="{{rows}}" step="1" name="rows">
+            <label>Columns</label>
+            <input type="number" value="{{columns}}" step="1" name="columns">
         </div>
     </div>
     <div class="main-interface">
         <div class="grid-container">
             {{#each cells}}
-                <div class="grid-row">
-                    {{#each this}}
-                        <div class="grid-cell"  data-elevation="{{elevation}}">
-                            <input disabled name="cells[{{@../index}}][{{@index}}].elevation" value="{{elevation}}">
-                            <input style="display:none" name="cells[{{@../index}}][{{@index}}].materialId" value="{{materialId}}">
-                        </div>
-                    {{/each}}
+            <div class="grid-row">
+                {{#each this}}
+                <div class="grid-cell{{#if selected}} selected{{/if}}" data-elevation="{{elevation}}" style="background-color: {{cellColor}};">
+                    <input class="elevation" name="cells.{{@../index}}.{{@index}}.elevation" value="{{elevation}}">
+                    <input class="material-id" style="display:none" name="cells.{{@../index}}.{{@index}}.materialId"
+                        value="{{materialId}}">
+                    <input type="checkbox" style="display:none" name="cells.{{@../index}}.{{@index}}.selected" {{#if selected}}checked{{/if}}>
                 </div>
+                {{/each}}
+            </div>
             {{/each}}
         </div>
-        <div class="material-list"></div>
+        <div class="material-panel">
+            <button id="add-material"><i class="fas fa-plus"></i></button>
+            <ol class="material-list">
+                {{#each materials}}
+                <li class="material-item" data-material-id="{{materialId}}" data-material-index="{{@index}}">
+                    <hr>
+                    <div class="form-group">
+                        <label>Name</label>
+                        <input type="text" name="materials.{{@index}}.materialId" value="{{materialId}}">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Cell Color</label>
+                        <div class="form-fields">
+                            {{colorPicker name=(concat "materials." @index ".cellColor") value=cellColor default="#ffffff"}}
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="materials.{{@index}}.texture.src">Texture</label>
+                        <div class="form-fields">
+                            <input class="image" type="text" name="materials.{{@index}}.texture.src"
+                                placeholder="path/image.png" value="{{texture.src}}">
+                            {{filePicker type="image" target=(concat "materials." @index ".texture.src")}}
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Tint</label>
+                        <div class="form-fields">
+                            {{colorPicker name=(concat "materials." @index ".texture.tint") value=texture.tint
+                            default="#ffffff"}}
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Repeat</label>
+                        <div class="form-fields">
+                            {{rangePicker name=(concat "materials." @index ".texture.repeat") value=texture.repeat min=0 max=128
+                            step=1}}
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <button id="apply-material"><i class="fas fa-check"></i></button>
+                        <button id="select-all-material"><i class="fas fa-object-group"></i></button>
+                        <button id="delete-material"><i class="fas fa-trash"></i></button>
+                    </div>
+                </li>
+                {{/each}}
+            </ol>
+        </div>
     </div>
 </form>

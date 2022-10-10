@@ -11,12 +11,10 @@
 }
 
 #mapgen .action-buttons{
-    background-color: red;
     height: 3rem;
 }
 
 #mapgen .main-interface{
-    background-color: blue;
     display: flex;
     flex-direction: row;
     position: relative;
@@ -24,26 +22,32 @@
 }
 
 #mapgen .grid-container{
-    background-color: green;
     height: 100%;
     width: 70%;
     overflow: scroll;
 }
 
-#mapgen .material-list{
-    background-color: yellow;
+#mapgen .material-panel{
     height: 100%;
     width: 30%;
+    overflow-y: scroll;
+    overflow-x: hidden;
+}
+
+#mapgen .material-panel ol{
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
 }
 
 #mapgen .grid-cell{
-    background-color: white;
     height: var(--mapgen-cellsize);
     width: var(--mapgen-cellsize);
     border: 2px solid var(--color-border-dark);
     display: flex;
     position: relative;
     transition: all 0.2s ease-in-out;
+    background-color: white;
 }
 
 #mapgen .grid-cell:hover{
@@ -60,6 +64,10 @@
     font-size: calc( var(--mapgen-cellsize) * 0.7 );
     transition: all 0.2s ease-in-out;
     pointer-events: none;
+    background-color: transparent;
+    border: none;
+    padding: 0;
+    margin: 0;
 }
 
 #mapgen .grid-row{

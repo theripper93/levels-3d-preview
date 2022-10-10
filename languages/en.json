@@ -302,7 +302,8 @@
                     "cone": "Cone",
                     "tube": "Tube",
                     "dome": "Dome",
-                    "billboard": "Billboard"
+                    "billboard": "Billboard",
+                    "mapGen": "Map Generator"
                 }
             },
             "dynaMeshResolution" : {
