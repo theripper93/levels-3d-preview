@@ -63,6 +63,30 @@
             "performance": "Set Performance Mode",
             "wireframe": "Toggle Colliders"
         },
+        "mapgen": {
+            "title": "Map Generator",
+            "tooltips": {
+                "fit-to-scene": "Autosize and Position Tile",
+                "select-all": "Select All",
+                "deselect-all": "Deselect All",
+                "set-elevation": "Set Height for Selected Cells",
+                "add-material": "Add Material",
+                "apply-material": "Apply Material to Selected Cells",
+                "select-material": "Select Cells with this Material",
+                "delete-material": "Delete Material"
+            },
+            "material": {
+                "name": "Name",
+                "cellColor": "Cell Color",
+                "tint": "Tint Color",
+                "texture": "Texture",
+                "repeat": "Repeat"
+            },
+            "bevel": "Bevel",
+            "zoom": "Zoom",
+            "rows": "Rows",
+            "columns": "Columns"
+        },
         "keybindings":{
             "dialog": {
                 "title": "3D Canvas: Remove Core Keybindings",

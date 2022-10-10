@@ -1138,6 +1138,16 @@ export class Tile3D {
             this.setMapGenTexture(textureOrMat,matData);
         }
         mat.color = new THREE.Color(matData.texture.tint || 0xffffff);
+        mat.onBeforeCompile = (shader) => {
+            shader.vertexShader = "attribute float shader_cell_size;\n" + shader.vertexShader;
+            shader.vertexShader = shader.vertexShader.replace("#include <begin_vertex>",
+            `#include <begin_vertex>
+            #ifdef USE_UV
+            if(normal.y < 0.5){
+                vUv.y = vUv.y*shader_cell_size;
+            }
+            #endif`);
+        };
         return mat
     }
 
@@ -1203,6 +1213,7 @@ export class Tile3D {
             const mat = materials[matId];
             if(!mat) continue;
             const cellCount = cells.length;
+            const cellSizeArray = new Float32Array(cellCount);
             const instancedMesh = new THREE.InstancedMesh(
                 baseGeometry,
                 mat,
@@ -1217,7 +1228,10 @@ export class Tile3D {
                 dummy.scale.set(1, parseFloat(cell.elevation), 1);
                 dummy.updateMatrix();
                 instancedMesh.setMatrixAt(i, dummy.matrix);
+                cellSizeArray[i] = parseFloat(cell.elevation);
+                console.log(cellSizeArray[i])
             }
+            instancedMesh.geometry.setAttribute('shader_cell_size', new THREE.InstancedBufferAttribute(cellSizeArray, 1, false));
             mesh.add(instancedMesh);
         }
         const depth = maxElevation - minElevation;

@@ -11,14 +11,14 @@
 }
 
 #mapgen .action-buttons{
-    height: 3rem;
+    height: var(--form-field-height);
 }
 
 #mapgen .main-interface{
     display: flex;
     flex-direction: row;
     position: relative;
-    max-height: calc(100% - 3rem);
+    max-height: calc(100% - var(--form-field-height));
 }
 
 #mapgen .grid-container{
@@ -32,6 +32,7 @@
     width: 30%;
     overflow-y: scroll;
     overflow-x: hidden;
+    padding-left: 0.5rem;
 }
 
 #mapgen .material-panel ol{
