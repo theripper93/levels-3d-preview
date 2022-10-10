@@ -1143,13 +1143,20 @@ export class Tile3D {
         mat.customProgramCacheKey = () => { return "mapgen_shader"};
         mat.onBeforeCompile = (shader) => {
             shader.uniforms.bevelSize = { value: bevelSize };
-            shader.vertexShader = "attribute float shader_cell_size;\nuniform float bevelSize;\n" + shader.vertexShader;
+            shader.vertexShader = "attribute float shader_cell_size;\nuniform float bevelSize;\nattribute float shader_random_rotation;\n" + shader.vertexShader;
             shader.vertexShader = shader.vertexShader.replace("#include <begin_vertex>",
             `#include <begin_vertex>
             #ifdef USE_UV
             if(normal.y < 0.5){
                 vUv.y = vUv.y*shader_cell_size;
             }
+            //rotate UVs
+            float angle = shader_random_rotation;
+            float s = sin(angle);
+            float c = cos(angle);
+            vec2 c_uv = vUv;
+            vUv.x = c_uv.x * c - c_uv.y * s;
+            vUv.y = c_uv.x * s + c_uv.y * c;
             #endif
             if(transformed.y < 1.0 && transformed.y > 0.5){
                 transformed.y = transformed.y + (bevelSize - bevelSize/shader_cell_size);
@@ -1225,6 +1232,8 @@ export class Tile3D {
             if(!mat) continue;
             const cellCount = cells.length;
             const cellSizeArray = new Float32Array(cellCount);
+            const matData = mapgen.materials.find(m => m.materialId === matId);
+            const randomRotationArray = new Float32Array(cellCount);
             const instancedMesh = new THREE.InstancedMesh(
                 baseGeometry.clone(),
                 mat,
@@ -1240,8 +1249,10 @@ export class Tile3D {
                 dummy.updateMatrix();
                 instancedMesh.setMatrixAt(i, dummy.matrix);
                 cellSizeArray[i] = parseFloat(cell.elevation);
+                randomRotationArray[i] = matData.texture.rotate ? Math.random() * Math.PI * 2 : 0;
             }
             instancedMesh.geometry.setAttribute('shader_cell_size', new THREE.InstancedBufferAttribute(cellSizeArray, 1, false));
+            instancedMesh.geometry.setAttribute('shader_random_rotation', new THREE.InstancedBufferAttribute(randomRotationArray, 1, false));
             mesh.add(instancedMesh);
         }
         const depth = maxElevation - minElevation;
@@ -1333,6 +1344,8 @@ export class Tile3D {
             if(!mat) continue;
             const cellCount = cells.length;
             const cellSizeArray = new Float32Array(cellCount);
+            const matData = mapgen.materials.find(m => m.materialId === matId);
+            const randomRotationArray = new Float32Array(cellCount);
             const instancedMesh = new THREE.InstancedMesh(
                 baseGeometry.clone(),
                 mat,
@@ -1356,8 +1369,10 @@ export class Tile3D {
                 dummy.updateMatrix();
                 instancedMesh.setMatrixAt(i, dummy.matrix);
                 cellSizeArray[i] = parseFloat(cell.elevation);
+                randomRotationArray[i] = matData.texture.rotate ? Math.random() * Math.PI * 2 : 0;
             }
             instancedMesh.geometry.setAttribute('shader_cell_size', new THREE.InstancedBufferAttribute(cellSizeArray, 1, false));
+            instancedMesh.geometry.setAttribute('shader_random_rotation', new THREE.InstancedBufferAttribute(randomRotationArray, 1, false));
             mesh.add(instancedMesh);
         }
         const depth = maxElevation - minElevation;

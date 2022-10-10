@@ -82,7 +82,8 @@
                 "cellColor": "Cell Color",
                 "tint": "Tint Color",
                 "texture": "Texture",
-                "repeat": "Repeat"
+                "repeat": "Repeat",
+                "rotate": "Randomize"
             },
             "bevel": "Bevel",
             "zoom": "Zoom",
