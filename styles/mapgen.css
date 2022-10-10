@@ -19,6 +19,7 @@
     flex-direction: row;
     position: relative;
     max-height: calc(100% - var(--form-field-height));
+    min-height: calc(100% - var(--form-field-height));
 }
 
 #mapgen .grid-container{

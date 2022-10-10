@@ -20,6 +20,10 @@ export class MapGen extends FormApplication{
         });
     }
 
+    get title(){
+        return game.i18n.localize("levels3dpreview.mapgen.title") + `${canvas.scene.grid.distance} ${canvas.scene.grid.units}`;
+    }
+
     getData() {
         const flag = this.document.getFlag("levels-3d-preview", "mapgen");
         if(!flag) return this.generateDefaultData();
@@ -88,6 +92,23 @@ export class MapGen extends FormApplication{
         html.on("click", "#deselect-all", (event) => {
             this.selected.each((index, element) => {
                 this.toggleCell(element, false);
+            });
+        });
+        html.on("click", "#select-all", (event) => {
+            this.element.find(`.grid-cell`).each((index, element) => {
+                this.toggleCell(element, true);
+            });
+        });
+        html.on("click", "#select-elevation", (event) => {
+            const elevation = this.element.find("#elevation").val();
+            this.element.find(`.grid-cell`).each((index, element) => {
+                const cellElevation = $(element).find(".elevation").val();
+                if(elevation == cellElevation) this.toggleCell(element, true);
+            });
+        });
+        html.on("click", "#invert", (event) => {
+            this.element.find(`.grid-cell`).each((index, element) => {
+                this.toggleCell(element, !element.classList.contains("selected"));
             });
         });
         html.on("click", "#apply-material", (event) => {

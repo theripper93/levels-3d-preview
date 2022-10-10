@@ -1251,6 +1251,7 @@ export class Tile3D {
         bb.userData.collision = false;
         bb.userData.cameraCollision = false;
         bb.userData.sight = false;
+        bb.userData.ignoreHover = true;
         mesh.add(bb);
         const object = new THREE.Group();
         mesh.position.set(-rows/2, 0, -cols/2 + 1);
@@ -1372,6 +1373,7 @@ export class Tile3D {
         bb.userData.collision = false;
         bb.userData.cameraCollision = false;
         bb.userData.sight = false;
+        bb.userData.ignoreHover = true;
         mesh.add(bb);
         const object = new THREE.Group();
         mesh.position.set(-bbW/2 + (flatTop ? 0 : 0), 0, -bbH/2 + (flatTop ? w : h));

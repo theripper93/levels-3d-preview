@@ -64,7 +64,7 @@
             "wireframe": "Toggle Colliders"
         },
         "mapgen": {
-            "title": "Map Generator",
+            "title": "Map Generator - Cell height of 1 equals ",
             "tooltips": {
                 "fit-to-scene": "Autosize and Position Tile",
                 "select-all": "Select All",
@@ -73,7 +73,9 @@
                 "add-material": "Add Material",
                 "apply-material": "Apply Material to Selected Cells",
                 "select-material": "Select Cells with this Material",
-                "delete-material": "Delete Material"
+                "select-elevation": "Select Cells with this Height",
+                "delete-material": "Delete Material",
+                "invert": "Invert Selection"
             },
             "material": {
                 "name": "Name",

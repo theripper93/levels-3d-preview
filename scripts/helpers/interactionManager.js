@@ -30,7 +30,7 @@ export class InteractionManager {
         this.controls.enableRotate = !this.isCameraLocked
         this.forceSightCollisions = this.generateSightCollisions.bind(this);
         this.generateSightCollisions = debounce(this.generateSightCollisions.bind(this), 100);
-        this.updateHoverObj = debounce(this.updateHoverObj.bind(this), 100);
+        //this.updateHoverObj = debounce(this.updateHoverObj.bind(this), 100);
     }
 
     get scene(){
@@ -522,10 +522,11 @@ export class InteractionManager {
     getHoverObject(){
       if(!this._hoverobj || !this._hoverobj.length) this._hoverobj = this._parent.scene.children.filter(this._collisionFilter);
       this.raycaster.setFromCamera(this.mousemove, this.camera);
-      const intersects = this.raycaster.intersectObjects(this._hoverobj, true).filter(this._clippingFilter);
+      let intersects = this.raycaster.intersectObjects(this._hoverobj, true).filter(this._clippingFilter);
+      if(intersects.length) intersects = intersects.filter(i => !i.object?.userData?.ignoreHover);
       if(!intersects.length) return null;
       let parentInt
-      if(!intersects[0].object.userData.entity3D && !intersects[0].object.userData.ignoreHover) intersects[0].object.traverseAncestors(parent => {
+      if(!intersects[0].object.userData.entity3D) intersects[0].object.traverseAncestors(parent => {
         if(parent.userData.entity3D && !parentInt) parentInt = parent;
       });
       return {
