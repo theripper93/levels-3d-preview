@@ -218,6 +218,7 @@ export class ShaderHandler{
         const _onBeforeCompile = (shader) => {
             shader.entity3D = entity3D;
             this.injectShaders(shader, commonParams);
+            shader.uniforms.bevelSize = {value: mesh.material?.userData?.bevelSize || -9999};
             shader.uniforms.mDepth = {value: commonParams.mDepth};
             shader.uniforms.mWidth = {value: commonParams.mWidth};
             shader.uniforms.mHeight = {value: commonParams.mHeight};
@@ -243,11 +244,27 @@ export class ShaderHandler{
     }
 
     injectShaders(shader, commonParams){
-        shader.vertexShader = "attribute float shader_instance_position;\n" + shader.vertexShader;
+        shader.vertexShader = "attribute float shader_instance_position;\nattribute float shader_cell_size;\nuniform float bevelSize;\n" + shader.vertexShader;
         shader.vertexShader = noiseShaders.snoise + "\n" + shader.vertexShader;
         shader.fragmentShader = noiseShaders.snoise + "\n" + shader.fragmentShader;
         shader.vertexShader = shader.vertexShader.replace("#include <fog_vertex>", "shader_vPosition = vec3(transformed);\nshader_vUv = ( uvTransform * vec3( uv, 1 ) ).xy;\nshader_vNormal = normal;\n#include <fog_vertex>");
         shader.vertexShader = shader.vertexShader.replace("#include <uv_pars_vertex>", "#include <uv_pars_vertex>\n #ifdef USE_UV\n#else\nuniform mat3 uvTransform;\n#endif");
+        shader.vertexShader = shader.vertexShader.replace("#include <begin_vertex>",
+        `#include <begin_vertex>
+        if(bevelSize != -9999.0){
+        #ifdef USE_UV
+        if(normal.y < 0.5){
+            vUv.y = vUv.y*shader_cell_size;
+        }
+        #endif
+        if(transformed.y < 1.0 && transformed.y > 0.5){
+            transformed.y = transformed.y + (bevelSize - bevelSize/shader_cell_size);
+        }
+        if(transformed.y < 0.5 && transformed.y > 0.0){
+            transformed.y = transformed.y - (bevelSize - bevelSize/shader_cell_size);
+        }
+        }
+        `);
         for(const [shaderId, shaderConfig] of Object.entries(this.shaderLib)){
             const {vertexShader, fragmentShader, uniforms, varying} = shaderConfig;
             let uniformsVarying = `uniform bool ${shaderId + "_enabled"};`;

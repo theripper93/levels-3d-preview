@@ -1,6 +1,7 @@
 import { toggleAdvancedSettings, injectAdvancedToggle, hideParams } from './helpers/helpers.js';
 import { ShaderConfig } from './shaders/ShaderLib.js';
 import { RegisterTours } from './tours/tours.js';
+import { MapGen } from './mapgen.js';
 import { promptForTour } from './tours/toursHelpers.js';
 
 Hooks.on("getSceneControlButtons", (buttons)=>{
@@ -1056,6 +1057,25 @@ Hooks.on("renderTileConfig", (app,html)=>{
     hideParams(app, html, `select[name="flags.levels-3d-preview.noiseType"]`, terrainFlags, "none");
 
     ShaderConfig.injectButton(app, html, html.find(`#shader-config`));
+
+    const mapGenBtn = $(`<button type="button" title="Configure Map Generator">
+    <i class="fas fa-cog" style="margin: 0;"></i>
+    </button>`);
+
+    const dMLabel = html.find(`label[for="dynaMesh"]`);
+    const dMSelect = html.find(`select[name="flags.levels-3d-preview.dynaMesh"]`);
+    const dMFF = $(`<div class="form-fields"></div>`);
+    dMFF.append(dMSelect);
+    dMFF.append(mapGenBtn);
+    dMLabel.after(dMFF);
+    dMSelect.on("change", (e) => {
+        mapGenBtn.toggle(dMSelect.val() === "mapGen");
+    });
+    dMSelect.trigger("change");
+    mapGenBtn.on("click", (e) => {
+        new MapGen(app.object).render(true);
+    });
+
     app.setPosition({height: "auto"});
 })
 

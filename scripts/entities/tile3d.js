@@ -1124,6 +1124,7 @@ export class Tile3D {
     }
 
     async getMapGenMat(matData){
+        const bevelSize = parseFloat(this.mapgen.bevel);
         let textureOrMat = null;
         let isPBR = null;
         if(!matData.texture.src) return {textureOrMat, isPBR};
@@ -1138,24 +1139,32 @@ export class Tile3D {
             this.setMapGenTexture(textureOrMat,matData);
         }
         mat.color = new THREE.Color(matData.texture.tint || 0xffffff);
+        mat.userData.bevelSize = bevelSize;
+        mat.customProgramCacheKey = () => { return "mapgen_shader"};
         mat.onBeforeCompile = (shader) => {
-            shader.vertexShader = "attribute float shader_cell_size;\n" + shader.vertexShader;
+            shader.uniforms.bevelSize = { value: bevelSize };
+            shader.vertexShader = "attribute float shader_cell_size;\nuniform float bevelSize;\n" + shader.vertexShader;
             shader.vertexShader = shader.vertexShader.replace("#include <begin_vertex>",
             `#include <begin_vertex>
             #ifdef USE_UV
             if(normal.y < 0.5){
                 vUv.y = vUv.y*shader_cell_size;
             }
-            #endif`);
+            #endif
+            if(transformed.y < 1.0 && transformed.y > 0.5){
+                transformed.y = transformed.y + (bevelSize - bevelSize/shader_cell_size);
+            }
+            if(transformed.y < 0.5 && transformed.y > 0.0){
+                transformed.y = transformed.y - (bevelSize - bevelSize/shader_cell_size);
+            }
+            `);
         };
         return mat
     }
 
     setMapGenTexture(tex, matData){
-        if(!matData.texture.repeat || matData.texture.repeat == 1) return;
-        tex.wrapS = THREE.RepeatWrapping;
-        tex.wrapT = THREE.RepeatWrapping;
-        tex.repeat.set( matData.texture.repeat, matData.texture.repeat );
+        if(tex?.wrapS == undefined) return
+        tex.repeat.set( parseFloat(matData.texture.repeat), parseFloat(matData.texture.repeat) );
         return;
     }
 
@@ -1165,6 +1174,7 @@ export class Tile3D {
         const bevel = parseFloat(mapgen.bevel);
         const mesh = new THREE.Group();
         for(let matData of mapgen.materials){
+            if(!matData.materialId) continue;
             const mat = await this.getMapGenMat(matData);
             materials[matData.materialId] = mat;
         }
@@ -1215,7 +1225,7 @@ export class Tile3D {
             const cellCount = cells.length;
             const cellSizeArray = new Float32Array(cellCount);
             const instancedMesh = new THREE.InstancedMesh(
-                baseGeometry,
+                baseGeometry.clone(),
                 mat,
                 cellCount
             );
@@ -1229,7 +1239,6 @@ export class Tile3D {
                 dummy.updateMatrix();
                 instancedMesh.setMatrixAt(i, dummy.matrix);
                 cellSizeArray[i] = parseFloat(cell.elevation);
-                console.log(cellSizeArray[i])
             }
             instancedMesh.geometry.setAttribute('shader_cell_size', new THREE.InstancedBufferAttribute(cellSizeArray, 1, false));
             mesh.add(instancedMesh);

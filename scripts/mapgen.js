@@ -2,7 +2,6 @@ export class MapGen extends FormApplication{
     constructor(document) {
         super();
         this.document = document;
-        this.document = canvas.tiles.placeables[0].document;
     }
 
     static get defaultOptions() {
