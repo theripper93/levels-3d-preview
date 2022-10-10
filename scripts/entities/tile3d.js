@@ -89,6 +89,10 @@ export class Tile3D {
         return this.marsenne.random() + 0.5;
     }
 
+    get rawPseudoRandom(){
+        return this.marsenne.random();
+    }
+
     get paused(){
         return (this.tile.document.flags && this.tile.document.flags["levels-3d-preview"]?.paused) ?? false
     }
@@ -1249,7 +1253,7 @@ export class Tile3D {
                 dummy.updateMatrix();
                 instancedMesh.setMatrixAt(i, dummy.matrix);
                 cellSizeArray[i] = parseFloat(cell.elevation);
-                randomRotationArray[i] = matData.texture.rotate ? Math.random() * Math.PI * 2 : 0;
+                randomRotationArray[i] = matData.texture.rotate ? this.rawPseudoRandom * Math.PI * 2 : 0;
             }
             instancedMesh.geometry.setAttribute('shader_cell_size', new THREE.InstancedBufferAttribute(cellSizeArray, 1, false));
             instancedMesh.geometry.setAttribute('shader_random_rotation', new THREE.InstancedBufferAttribute(randomRotationArray, 1, false));
@@ -1369,7 +1373,7 @@ export class Tile3D {
                 dummy.updateMatrix();
                 instancedMesh.setMatrixAt(i, dummy.matrix);
                 cellSizeArray[i] = parseFloat(cell.elevation);
-                randomRotationArray[i] = matData.texture.rotate ? Math.random() * Math.PI * 2 : 0;
+                randomRotationArray[i] = matData.texture.rotate ? this.rawPseudoRandom * Math.PI * 2 : 0;
             }
             instancedMesh.geometry.setAttribute('shader_cell_size', new THREE.InstancedBufferAttribute(cellSizeArray, 1, false));
             instancedMesh.geometry.setAttribute('shader_random_rotation', new THREE.InstancedBufferAttribute(randomRotationArray, 1, false));
