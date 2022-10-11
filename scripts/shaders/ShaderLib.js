@@ -245,7 +245,7 @@ export class ShaderHandler{
     }
 
     injectShaders(shader, commonParams){
-        shader.vertexShader = "attribute float shader_instance_position;\nuniform float tex_repeat;\nattribute float shader_cell_size;\nuniform float bevelSize;\n" + shader.vertexShader;
+        shader.vertexShader = "attribute float shader_instance_position;\nattribute float shader_random_rotation;\nuniform float tex_repeat;\nattribute float shader_cell_size;\nuniform float bevelSize;\n" + shader.vertexShader;
         shader.vertexShader = noiseShaders.snoise + "\n" + shader.vertexShader;
         shader.fragmentShader = noiseShaders.snoise + "\n" + shader.fragmentShader;
         shader.vertexShader = shader.vertexShader.replace("#include <fog_vertex>", "shader_vPosition = vec3(transformed);\nshader_vUv = ( uvTransform * vec3( uv, 1 ) ).xy;\nshader_vNormal = normal;\n#include <fog_vertex>");
