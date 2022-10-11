@@ -1131,13 +1131,15 @@ export class Tile3D {
         const bevelSize = parseFloat(this.mapgen.bevel);
         let textureOrMat = null;
         let isPBR = null;
-        if(!matData.texture.src) return {textureOrMat, isPBR};
+        if(!matData.texture.src) return null;
         textureOrMat = await this._parent.helpers.autodetectTextureOrMaterial(matData.texture.src);
         isPBR = this._parent.helpers.isPBR(matData.texture.src)
         let mat;
+
+        if(!textureOrMat) return null;
         if(isPBR) mat = textureOrMat.clone();
         else mat = new THREE.MeshStandardMaterial({map: textureOrMat});
-
+        
         mat.color = new THREE.Color(matData.texture.tint || 0xffffff);
         mat.userData.bevelSize = bevelSize;
         mat.userData.tex_repeat = matData.texture.repeat ?? 1;
@@ -1179,9 +1181,9 @@ export class Tile3D {
         const bevel = parseFloat(mapgen.bevel);
         const mesh = new THREE.Group();
         for(let matData of mapgen.materials){
-            if(!matData.materialId) continue;
+            if(!matData.materialId || !matData?.texture?.src) continue;
             const mat = await this.getMapGenMat(matData);
-            materials[matData.materialId] = mat;
+            if(mat) materials[matData.materialId] = mat;
         }
         const shape = new THREE.Shape();
         shape.moveTo( 0,0 );
@@ -1276,9 +1278,9 @@ export class Tile3D {
         const bevel = parseFloat(mapgen.bevel);
         const mesh = new THREE.Group();
         for(let matData of mapgen.materials){
-            if(!matData.materialId) continue;
+            if(!matData.materialId || !matData?.texture?.src) continue;
             const mat = await this.getMapGenMat(matData);
-            materials[matData.materialId] = mat;
+            if(mat) materials[matData.materialId] = mat;
         }
         const h = 2;
         const w = Math.sqrt(3);
