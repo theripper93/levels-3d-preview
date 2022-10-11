@@ -1,7 +1,87 @@
+let ROT = null;
+
 export class MapGen extends FormApplication{
     constructor(document) {
         super();
         this.document = document;
+    }
+
+    async generate(gen){
+        if(!ROT) ROT = await import('./generators/ROT/index.js');
+        Dialog.confirm({
+            title: game.i18n.localize("levels3dpreview.mapgen.generator.title"),
+            content: game.i18n.localize("levels3dpreview.mapgen.generator.content"),
+            yes: async () => {
+                const genFn = this._getGenerator(gen);
+                this.setCells(this._getMaps(genFn, 1));
+            },
+            no: () => {
+              
+            },
+          })
+    }
+
+    _getGenerator(gen){
+        switch (gen) {
+            case "rogue":
+                return this._generateRogue;
+            case "cellular-caves":
+                return this._generateCellular;
+        }
+        return this._generateRogue;
+    }
+
+    _getMaps(genFn, count = 1){
+        let maps = [];
+        for(let i = 0; i < count; i++){
+            let map = null;
+            while(!map){
+                try{
+                    const m = genFn(this.getData().columns, this.getData().rows);
+                    map = m;
+                }catch(e){
+                    console.warn("Failed to generate, retrying...");
+                }
+            }
+            maps.push(map);
+        }
+        return maps;
+    }
+
+    _generateRogue(w,h){
+        const cell = new ROT.Map.Rogue(w,h, {connected : true});
+        cell.create();
+        return cell.map
+    }
+
+    _generateCellular(w,h){
+        const cell = new ROT.Map.Cellular(w,h, {connected : true});
+        cell.randomize(0.5);
+        for(let i=0; i<5; i++){
+            cell.create();
+        }
+        cell.connect();
+        return cell._map
+    }
+
+    async setCells(_maps){
+        const flag = this.document.getFlag("levels-3d-preview", "mapgen");
+        const rows = flag.rows;
+        const columns = flag.columns;
+        const matId1 = flag.materials[0]?.materialId;
+        const matId2 = flag.materials[1]?.materialId;
+        for(let i=0; i<rows; i++){
+            for(let j=0; j<columns; j++){
+                for(let m=0; m<_maps.length; m++){
+                    if(m == 0)flag.cells[i][j].elevation = _maps[m][i][j] ? 3 : 1;
+                    else if(flag.cells[i][j].elevation == 3+m) flag.cells[i][j].elevation += _maps[m][i][j];
+                    if(flag.cells[i][j].elevation == 1 && matId1) flag.cells[i][j].materialId = matId1;
+                    else if(flag.cells[i][j].elevation > 1 && matId2) flag.cells[i][j].materialId = matId2;
+                }
+            }
+        }
+        await this.document.setFlag("levels-3d-preview", "mapgen", flag);
+        this.saveGridAndRefresh();
     }
 
     static get defaultOptions() {
@@ -111,6 +191,11 @@ export class MapGen extends FormApplication{
                 this.toggleCell(element, !element.classList.contains("selected"));
             });
         });
+        html.on("click", "#clear-material", (event) => {
+            this.selected.each((index, element) => {
+                $(element).find("input.material-id").val("");
+            });
+        });
         html.on("click", "#apply-material", (event) => {
             const materialEl = $(event.target).closest(".material-item");
             const materialId = materialEl.data("material-id");
@@ -135,6 +220,10 @@ export class MapGen extends FormApplication{
             flag.materials.splice(materialIndex, 1);
             await this.document.setFlag("levels-3d-preview", "mapgen", flag);
             this.saveGridAndRefresh();
+        });
+        html.on("click", "#toggle-material", (event) => {
+            const checkbox = $(event.target).closest(".material-item").find("#collapsed-toggle");
+            checkbox.prop("checked", !checkbox.prop("checked"));
         });
         html.on("click", "#select-all-material", (event) => {
             const materialId = $(event.target).closest(".material-item").data("material-id");
@@ -279,5 +368,27 @@ export class MapGen extends FormApplication{
     saveGridAndRefresh(){
         this._saveGridDisplay();
         this.render(true);
+    }
+
+    _getHeaderButtons() {
+        const buttons = super._getHeaderButtons();
+        buttons.unshift({
+            label: "levels3dpreview.mapgen.generator.dungeon",
+            class: "generate-dungeon",
+            icon: "fas fa-dungeon",
+            onclick: (event) => {
+                this.generate("rogue");
+            },
+        },
+        {
+            label: "levels3dpreview.mapgen.generator.cave",
+            class: "generate-caves",
+            icon: "fas fa-icicles",
+            onclick: (event) => {
+                this.generate("cellular-caves");
+            },
+        },
+        );
+        return buttons;
     }
 }
