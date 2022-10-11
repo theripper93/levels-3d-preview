@@ -177,7 +177,7 @@ export class InteractionManager {
         if(this.isCtrl){
           const tilesToCreate = [];
           for(let tile of canvas.activeLayer.controlled){
-            tilesToCreate.push(tile.document.data);
+            tilesToCreate.push(tile.document.toObject());
           }
           canvas.scene.createEmbeddedDocuments("Tile", tilesToCreate);
         }
@@ -623,7 +623,7 @@ export class InteractionManager {
       let intersect = event.intersect;
       const placeable = entity.placeable;
       if(!placeable?.controlled && placeable) placeable.control({releaseOthers: true});
-      if(canvas.activeLayer.controlled.some(p => p?.data?.locked)) return this.abortDrag();
+      if(canvas.activeLayer.controlled.some(p => p?.document?.locked)) return this.abortDrag();
       if(!placeable?.isOwner && !game.user.isGM) return this.abortDrag();
       if(!entity.draggable || entity.mesh.userData?.entity3D?.embeddedName !== this.activeLayerEntity) return this.abortDrag();
       if(entity.mesh.userData?.entity3D?.embeddedName == "Tile") {
@@ -650,7 +650,7 @@ export class InteractionManager {
       if((entity?.tile && canvas.activeLayer.options.objectClass.name !== "Tile" && !entity?.isDoor && !event?.originalIntersect?.userData?.isDoor) || !entity){
         if(this._downCameraPosition.distanceTo(this._upCameraPosition)<0.01 && game.settings.get("core","leftClickRelease")) canvas.activeLayer.releaseAll();
       }
-      if(entity?.placeable?.data?.locked) return;
+      if(entity?.placeable?.document?.locked) return;
       if(!entity) return
       const intersect = event.intersect;
       this.handleTriggerHappy(entity);
@@ -676,7 +676,7 @@ export class InteractionManager {
     _onClickLeft2(event){
       const entity = event.entity;
       if(!entity) return;
-      if(entity?.placeable?.data?.locked) return;
+      if(entity?.placeable?.document?.locked) return;
       const intersect = event.intersect;
       entity._onClickLeft2(event)
     }
@@ -718,8 +718,7 @@ export class InteractionManager {
       if(buildPlane) intersectTargets.push(buildPlane);
       const table = this._parent.table;
       if(table) intersectTargets.push(table);
-
-      const intersects = this.raycaster.intersectObjects(intersectTargets,true).filter(this._clippingFilter);
+      const intersects = this.raycaster.intersectObjects(intersectTargets,true).filter(this._clippingFilter).filter(i => !i?.object?.userData?.noIntersect);
       const originalObject = intersects.length > 0 ? intersects[0].object : null;
       if(!intersects.length) return null;
       for(let int of intersects){

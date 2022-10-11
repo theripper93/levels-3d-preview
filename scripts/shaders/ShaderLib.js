@@ -219,6 +219,7 @@ export class ShaderHandler{
             shader.entity3D = entity3D;
             this.injectShaders(shader, commonParams);
             shader.uniforms.bevelSize = {value: mesh.material?.userData?.bevelSize || -9999};
+            shader.uniforms.tex_repeat = { value: mesh.material?.userData?.tex_repeat || 1 };
             shader.uniforms.mDepth = {value: commonParams.mDepth};
             shader.uniforms.mWidth = {value: commonParams.mWidth};
             shader.uniforms.mHeight = {value: commonParams.mHeight};
@@ -244,13 +245,16 @@ export class ShaderHandler{
     }
 
     injectShaders(shader, commonParams){
-        shader.vertexShader = "attribute float shader_instance_position;\nattribute float shader_cell_size;\nuniform float bevelSize;\n" + shader.vertexShader;
+        shader.vertexShader = "attribute float shader_instance_position;\nuniform float tex_repeat;\nattribute float shader_cell_size;\nuniform float bevelSize;\n" + shader.vertexShader;
         shader.vertexShader = noiseShaders.snoise + "\n" + shader.vertexShader;
         shader.fragmentShader = noiseShaders.snoise + "\n" + shader.fragmentShader;
         shader.vertexShader = shader.vertexShader.replace("#include <fog_vertex>", "shader_vPosition = vec3(transformed);\nshader_vUv = ( uvTransform * vec3( uv, 1 ) ).xy;\nshader_vNormal = normal;\n#include <fog_vertex>");
         shader.vertexShader = shader.vertexShader.replace("#include <uv_pars_vertex>", "#include <uv_pars_vertex>\n #ifdef USE_UV\n#else\nuniform mat3 uvTransform;\n#endif");
         shader.vertexShader = shader.vertexShader.replace("#include <begin_vertex>",
         `#include <begin_vertex>
+        #ifdef USE_UV
+        vUv *= tex_repeat;
+        #endif
         if(bevelSize != -9999.0){
         #ifdef USE_UV
         if(normal.y < 0.5){

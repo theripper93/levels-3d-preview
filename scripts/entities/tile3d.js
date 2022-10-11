@@ -1132,25 +1132,24 @@ export class Tile3D {
         let textureOrMat = null;
         let isPBR = null;
         if(!matData.texture.src) return {textureOrMat, isPBR};
-        textureOrMat = await this._parent.helpers.autodetectTextureOrMaterial(matData.texture.src, {noCache: true});
+        textureOrMat = await this._parent.helpers.autodetectTextureOrMaterial(matData.texture.src);
         isPBR = this._parent.helpers.isPBR(matData.texture.src)
         let mat;
-        if(isPBR) mat = textureOrMat;
+        if(isPBR) mat = textureOrMat.clone();
         else mat = new THREE.MeshStandardMaterial({map: textureOrMat});
-        if(isPBR){
-            Object.values(textureOrMat).forEach(v => this.setMapGenTexture(v,matData));
-        }else{
-            this.setMapGenTexture(textureOrMat,matData);
-        }
+
         mat.color = new THREE.Color(matData.texture.tint || 0xffffff);
         mat.userData.bevelSize = bevelSize;
+        mat.userData.tex_repeat = matData.texture.repeat ?? 1;
         mat.customProgramCacheKey = () => { return "mapgen_shader"};
         mat.onBeforeCompile = (shader) => {
             shader.uniforms.bevelSize = { value: bevelSize };
-            shader.vertexShader = "attribute float shader_cell_size;\nuniform float bevelSize;\nattribute float shader_random_rotation;\n" + shader.vertexShader;
+            shader.uniforms.tex_repeat = { value: matData.texture.repeat ?? 1 };
+            shader.vertexShader = "attribute float shader_cell_size;\nuniform float tex_repeat;\nuniform float bevelSize;\nattribute float shader_random_rotation;\n" + shader.vertexShader;
             shader.vertexShader = shader.vertexShader.replace("#include <begin_vertex>",
             `#include <begin_vertex>
             #ifdef USE_UV
+            vUv *= tex_repeat;
             if(normal.y < 0.5){
                 vUv.y = vUv.y*shader_cell_size;
             }
@@ -1171,12 +1170,6 @@ export class Tile3D {
             `);
         };
         return mat
-    }
-
-    setMapGenTexture(tex, matData){
-        if(tex?.wrapS == undefined) return
-        tex.repeat.set( parseFloat(matData.texture.repeat), parseFloat(matData.texture.repeat) );
-        return;
     }
 
     async computeMapGen(){
@@ -1267,6 +1260,7 @@ export class Tile3D {
         bb.userData.cameraCollision = false;
         bb.userData.sight = false;
         bb.userData.ignoreHover = true;
+        bb.userData.noIntersect = true;
         mesh.add(bb);
         const object = new THREE.Group();
         mesh.position.set(-rows/2, 0, -cols/2 + 1);
@@ -1393,6 +1387,7 @@ export class Tile3D {
         bb.userData.cameraCollision = false;
         bb.userData.sight = false;
         bb.userData.ignoreHover = true;
+        bb.userData.noIntersect = true;
         mesh.add(bb);
         const object = new THREE.Group();
         mesh.position.set(-bbW/2 + (flatTop ? 0 : 0), 0, -bbH/2 + (flatTop ? w : h));
