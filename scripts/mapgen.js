@@ -1,5 +1,7 @@
 let ROT = null;
 
+import { SimplexNoise, Perlin, FractionalBrownianMotion } from "./lib/noiseFunctions.js";
+
 export class MapGen extends FormApplication{
     constructor(document) {
         super();
@@ -10,10 +12,12 @@ export class MapGen extends FormApplication{
         if(!ROT) ROT = await import('./generators/ROT/index.js');
         Dialog.confirm({
             title: game.i18n.localize("levels3dpreview.mapgen.generator.title"),
-            content: game.i18n.localize("levels3dpreview.mapgen.generator.content"),
-            yes: async () => {
-                const genFn = this._getGenerator(gen);
-                this.setCells(this._getMaps(genFn, 1));
+            content: game.i18n.localize("levels3dpreview.mapgen.generator.content") + `<hr><span>${game.i18n.localize("levels3dpreview.mapgen.generator.height")}: <input type="number" id="mapgen-count" value="${this.cellHeight ?? 3}" min="1"/></span><hr>`,
+            yes: async (html) => {
+                const count = parseFloat(html.find("#mapgen-count").val());
+                this.cellHeight = count;
+                const genFn = this._getGenerator(gen).bind(this);
+                this.setCells(this._getMaps(genFn, 1, count), gen == "landscape", count);
             },
             no: () => {
               
@@ -24,20 +28,22 @@ export class MapGen extends FormApplication{
     _getGenerator(gen){
         switch (gen) {
             case "rogue":
-                return this._generateRogue;
+                return this._generateRogue.bind(this);
             case "cellular-caves":
-                return this._generateCellular;
+                return this._generateCellular.bind(this);
+            case "landscape":
+                return this._generateLandscape.bind(this);
         }
         return this._generateRogue;
     }
 
-    _getMaps(genFn, count = 1){
+    _getMaps(genFn, count = 1, cHeight){
         let maps = [];
         for(let i = 0; i < count; i++){
             let map = null;
             while(!map){
                 try{
-                    const m = genFn(this.getData().columns, this.getData().rows);
+                    const m = genFn(this.getData().columns, this.getData().rows, cHeight);
                     map = m;
                 }catch(e){
                     console.warn("Failed to generate, retrying...");
@@ -64,24 +70,64 @@ export class MapGen extends FormApplication{
         return cell._map
     }
 
-    async setCells(_maps){
+    _generateLandscape(w,h, maxH){
+        const simplex = new SimplexNoise();
+        const map = [];
+        for(let i=0; i<h; i++){
+            map.push([]);
+            for(let j=0; j<w; j++){
+                const n = FractionalBrownianMotion(i/10, j/10, simplex.noise.bind(simplex), this.fbmParams);
+                const height = Math.ceil((n + 0.000001) * maxH);
+                map[i][j] = height;
+            }
+        }
+        return map;
+    }
+
+    get fbmParams(){
+        return {
+            scale: this.document.getFlag("levels-3d-preview", "noiseScale") ?? 1,
+            height: this.document.getFlag("levels-3d-preview", "noiseHeight") ?? 1,
+            persistence: this.document.getFlag("levels-3d-preview", "noisePersistence") ?? 0.5,
+            octaves: this.document.getFlag("levels-3d-preview", "noiseOctaves") ?? 1, 
+            lacunarity: this.document.getFlag("levels-3d-preview", "noiseLacunarity") ?? 2,
+            exponent: (this.document.getFlag("levels-3d-preview", "noiseExponent") ?? 1) * 2,
+            flattening: 1 - (this.document.getFlag("levels-3d-preview", "noiseFlattening") ?? 0),
+    }
+    }
+
+    async setCells(_maps, setValue = false, cHeight = 3){
         const flag = this.document.getFlag("levels-3d-preview", "mapgen");
         const rows = flag.rows;
         const columns = flag.columns;
-        const matId1 = flag.materials[0]?.materialId;
-        const matId2 = flag.materials[1]?.materialId;
+        const materialMap = this.mapMaterials(flag.materials, cHeight);
         for(let i=0; i<rows; i++){
             for(let j=0; j<columns; j++){
                 for(let m=0; m<_maps.length; m++){
-                    if(m == 0)flag.cells[i][j].elevation = _maps[m][i][j] ? 3 : 1;
-                    else if(flag.cells[i][j].elevation == 3+m) flag.cells[i][j].elevation += _maps[m][i][j];
-                    if(flag.cells[i][j].elevation == 1 && matId1) flag.cells[i][j].materialId = matId1;
-                    else if(flag.cells[i][j].elevation > 1 && matId2) flag.cells[i][j].materialId = matId2;
+                    if(!setValue){
+                        if(m == 0)flag.cells[i][j].elevation = _maps[m][i][j] ? cHeight : 1;
+                        else if(flag.cells[i][j].elevation == 3+m) flag.cells[i][j].elevation += _maps[m][i][j];
+                    }else{
+                        flag.cells[i][j].elevation = _maps[m][i][j];
+                    }
+                    flag.cells[i][j].materialId = materialMap[flag.cells[i][j].elevation];
                 }
             }
         }
         await this.document.setFlag("levels-3d-preview", "mapgen", flag);
         this.saveGridAndRefresh();
+    }
+
+    mapMaterials(materials, cHeight){
+        const matCount = materials.length - 1;
+        const map = [];
+        map[0] = null;
+        map[1] = materials[0]?.materialId ?? "";
+        for(let i=2; i<=cHeight; i++){
+            map[i] = materials[Math.ceil((i-1) * (matCount/cHeight))]?.materialId ?? "";
+        }
+        map[cHeight] = materials[matCount]?.materialId;
+        return map;
     }
 
     static get defaultOptions() {
@@ -386,6 +432,14 @@ export class MapGen extends FormApplication{
             icon: "fas fa-icicles",
             onclick: (event) => {
                 this.generate("cellular-caves");
+            },
+        },
+        {
+            label: "levels3dpreview.mapgen.generator.landscape",
+            class: "generate-landscape",
+            icon: "fas fa-mountain",
+            onclick: (event) => {
+                this.generate("landscape");
             },
         },
         );

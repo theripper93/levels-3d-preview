@@ -1319,7 +1319,7 @@ Hooks.on("renderAmbientLightConfig", (app,html)=>{
 
 Hooks.on("updateTile", (tile, updates) => {
     const mapGenForm = Object.values(ui.windows).find(w => w instanceof MapGen);
-    if (mapGenForm && mapGenForm.document === tile) mapGenForm.render(true);
+    if (mapGenForm && mapGenForm.document === tile) mapGenForm.saveGridAndRefresh();
 })
 
 //KEYBINDINGS

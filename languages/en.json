@@ -81,9 +81,11 @@
             },
             "generator": {
                 "title": "Generate Map",
-                "content": "Are you sure you want to generate a new map? This will overwrite all the currently set elevations and cannot be undone!.\nThe first Material slot will be used as the ground material, the second slot as the wall material.",
-                "cave": "Generate Cave",
-                "dungeon": "Generate Dungeon"
+                "content": "Are you sure you want to generate a new map? This will overwrite all the currently set elevations and cannot be undone!.\nThe first Material slot will be used as the ground material, the rest will be automatically mapped based on cell height.",
+                "height": "Max Height",
+                "cave": "Cave",
+                "dungeon": "Dungeon",
+                "landscape": "Landscape"
             },
             "material": {
                 "name": "Name",
