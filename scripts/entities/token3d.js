@@ -33,6 +33,7 @@ export class Token3D {
       this._loaded = false;
       this.getFlags();
       this._baseColor = new THREE.Color(this.baseColor);
+      this.forceDrawBars = this.drawBars;
       this.drawBars = debounce(this.drawBars, 100);
       this.animationHandler = new TokenAnimationHandler(this);
     }
