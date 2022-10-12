@@ -15,11 +15,11 @@
                 id="select-elevation"><i class="fas fa-expand-alt"></i></button>
         </div>
         <div class="form-fields">
-            <input type="number" id="elevation" name="elevation" value="{{elevation}}" step="any">
+            <input type="number" id="elevation" name="elevation" value="{{elevation}}" step="any" min="0">
             <button data-tooltip="{{localize "levels3dpreview.mapgen.tooltips.set-elevation"}}" id="set-elevation"><i
                     class="fas fa-mountain"></i></button>
             <label>{{localize "levels3dpreview.mapgen.bevel"}}</label>
-            <input type="number" name="bevel" value="{{bevel}}" step="any">
+            <input type="number" name="bevel" value="{{bevel}}" step="any" min="0" max="0.5">
         </div>
         <div class="form-fields">
             <label>{{localize "levels3dpreview.mapgen.zoom"}}</label>
@@ -55,7 +55,7 @@
                 <li class="material-item" data-material-id="{{materialId}}" data-material-index="{{@index}}">
                     <div class="form-group">
                         <label {{#if collapsed}}style="display: none;" {{/if}}>{{localize "levels3dpreview.mapgen.material.name"}}</label>
-                        <input {{#if collapsed}}style="pointer-events: none; background-color: {{cellColor}};" {{/if}} type="text" name="materials.{{@index}}.materialId" value="{{materialId}}" style="background-color: {{cellColor}};">
+                        <input {{#if collapsed}}style="pointer-events: none; background-color: {{cellColor}}; text-align: center;" {{/if}} type="text" name="materials.{{@index}}.materialId" value="{{materialId}}">
                         <div {{#if collapsed}}style="display: none;" {{/if}} class="hide-color-input">{{colorPicker name=(concat "materials." @index ".cellColor")
                             value=cellColor default="#ffffff"}}</div>
                     </div>

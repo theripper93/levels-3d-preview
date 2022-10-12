@@ -12,14 +12,15 @@
 
 #mapgen .action-buttons{
     height: var(--form-field-height);
+    margin-bottom: 8px;
 }
 
 #mapgen .main-interface{
     display: flex;
     flex-direction: row;
     position: relative;
-    max-height: calc(100% - var(--form-field-height));
-    min-height: calc(100% - var(--form-field-height));
+    max-height: calc(100% - var(--form-field-height) - 8px);
+    min-height: calc(100% - var(--form-field-height) - 8px);
 }
 
 #mapgen .grid-container{

@@ -1316,6 +1316,12 @@ Hooks.on("renderAmbientLightConfig", (app,html)=>{
     })
 })
 
+
+Hooks.on("updateTile", (tile, updates) => {
+    const mapGenForm = Object.values(ui.windows).find(w => w instanceof MapGen);
+    if (mapGenForm && mapGenForm.document === tile) mapGenForm.render(true);
+})
+
 //KEYBINDINGS
 Hooks.on("init", () => {
     const {SHIFT, CONTROL, ALT} = KeyboardManager.MODIFIER_KEYS;
