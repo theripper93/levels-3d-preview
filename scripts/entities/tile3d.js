@@ -1109,10 +1109,10 @@ export class Tile3D {
     getMeshStats(){
         let vertices = 0;
         let faces = 0;
-        let meshes = -1;
+        let meshes = 0;
         let status = "green";
         this.mesh.traverse((child) => {
-            if (child.isMesh) {
+            if (child.isMesh && !child.userData.noShaders) {
                 meshes++;
                 vertices += child.geometry.attributes.position.count;
                 faces += child.geometry.index.count/3;
@@ -1228,8 +1228,8 @@ export class Tile3D {
 
         for(const [matId, cells] of Object.entries(cellsByMaterial)){
             const mat = materials[matId];
-            if(!mat) continue;
             const cellCount = cells.length;
+            if(!mat || !cellCount) continue;
             const cellSizeArray = new Float32Array(cellCount);
             const matData = mapgen.materials.find(m => m.materialId === matId);
             const randomRotationArray = new Float32Array(cellCount);
@@ -1263,6 +1263,7 @@ export class Tile3D {
         bb.userData.sight = false;
         bb.userData.ignoreHover = true;
         bb.userData.noIntersect = true;
+        bb.userData.noShaders = true;
         mesh.add(bb);
         const object = new THREE.Group();
         mesh.position.set(-rows/2, 0, -cols/2 + 1);
@@ -1341,8 +1342,8 @@ export class Tile3D {
 
         for(const [matId, cells] of Object.entries(cellsByMaterial)){
             const mat = materials[matId];
-            if(!mat) continue;
             const cellCount = cells.length;
+            if(!mat || !cellCount) continue;
             const cellSizeArray = new Float32Array(cellCount);
             const matData = mapgen.materials.find(m => m.materialId === matId);
             const randomRotationArray = new Float32Array(cellCount);
@@ -1390,6 +1391,7 @@ export class Tile3D {
         bb.userData.sight = false;
         bb.userData.ignoreHover = true;
         bb.userData.noIntersect = true;
+        bb.userData.noShaders = true;
         mesh.add(bb);
         const object = new THREE.Group();
         mesh.position.set(-bbW/2 + (flatTop ? 0 : 0), 0, -bbH/2 + (flatTop ? w : h));
