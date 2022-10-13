@@ -17,7 +17,7 @@ export class MapGen extends FormApplication{
                 const count = parseFloat(html.find("#mapgen-count").val());
                 this.cellHeight = count;
                 const genFn = this._getGenerator(gen).bind(this);
-                this.setCells(this._getMaps(genFn, 1, count), gen == "landscape", count);
+                this.setCells(this._getMaps(genFn, 1, count, gen), gen !== "rogue" && gen !== "cellular-caves", count);
             },
             no: () => {
               
@@ -31,19 +31,19 @@ export class MapGen extends FormApplication{
                 return this._generateRogue.bind(this);
             case "cellular-caves":
                 return this._generateCellular.bind(this);
-            case "landscape":
+            default:
                 return this._generateLandscape.bind(this);
         }
-        return this._generateRogue;
+        return this._generateLandscape.bind(this);
     }
 
-    _getMaps(genFn, count = 1, cHeight){
+    _getMaps(genFn, count = 1, cHeight, gen){
         let maps = [];
         for(let i = 0; i < count; i++){
             let map = null;
             while(!map){
                 try{
-                    const m = genFn(this.getData().columns, this.getData().rows, cHeight);
+                    const m = genFn(this.getData().columns, this.getData().rows, cHeight, gen);
                     map = m;
                 }catch(e){
                     console.warn("Failed to generate, retrying...");
@@ -70,18 +70,70 @@ export class MapGen extends FormApplication{
         return cell._map
     }
 
-    _generateLandscape(w,h, maxH){
+    _generateLandscape(w,h, maxH, type){
         const simplex = new SimplexNoise();
+        const params = this._getParams(type);
         const map = [];
         for(let i=0; i<h; i++){
             map.push([]);
             for(let j=0; j<w; j++){
-                const n = FractionalBrownianMotion(i/10, j/10, simplex.noise.bind(simplex), this.fbmParams);
+                const n = FractionalBrownianMotion(i/10, j/10, simplex.noise.bind(simplex), params);
                 const height = Math.ceil((n + 0.000001) * maxH);
                 map[i][j] = height;
             }
         }
         return map;
+    }
+
+    _getParams(type){
+        switch (type) {
+            case "shore": return {
+                scale: 5,
+                height: 1,
+                persistence: 0.5,
+                octaves: 1, 
+                lacunarity: 1,
+                exponent: 2,
+                flattening: 1,
+            }
+            case "mountain": return {
+                scale: 1,
+                height: 1,
+                persistence: 0.5,
+                octaves: 1, 
+                lacunarity: 1,
+                exponent: 3,
+                flattening: 1,
+            }
+            case "hills": return {
+                scale: 2,
+                height: 1,
+                persistence: 0.5,
+                octaves: 1, 
+                lacunarity: 1,
+                exponent: 7,
+                flattening: 2,
+            }
+            case "plateau": return {
+                scale: 5,
+                height: 1,
+                persistence: 1,
+                octaves: 3, 
+                lacunarity: 2,
+                exponent: 4,
+                flattening: 2,
+            }
+            case "island": return {
+                scale: 7,
+                height: 1,
+                persistence: 1,
+                octaves: 1, 
+                lacunarity: 8,
+                exponent: 1,
+                flattening: 1,
+            }
+            default: return this.fbmParams;
+        }
     }
 
     get fbmParams(){
@@ -93,7 +145,7 @@ export class MapGen extends FormApplication{
             lacunarity: this.document.getFlag("levels-3d-preview", "noiseLacunarity") ?? 2,
             exponent: (this.document.getFlag("levels-3d-preview", "noiseExponent") ?? 1) * 2,
             flattening: 1 - (this.document.getFlag("levels-3d-preview", "noiseFlattening") ?? 0),
-    }
+        }
     }
 
     async setCells(_maps, setValue = false, cHeight = 3){
@@ -190,6 +242,7 @@ export class MapGen extends FormApplication{
 
     activateListeners(html) {
         super.activateListeners(html);
+
         this._restoreGridDisplay();
         html.on("change", "#zoom-level", (event) => {
             const zoomLevel = event.target.value;
@@ -418,31 +471,118 @@ export class MapGen extends FormApplication{
 
     _getHeaderButtons() {
         const buttons = super._getHeaderButtons();
-        buttons.unshift({
-            label: "levels3dpreview.mapgen.generator.dungeon",
-            class: "generate-dungeon",
-            icon: "fas fa-dungeon",
-            onclick: (event) => {
-                this.generate("rogue");
-            },
+        buttons.unshift(
+        {
+            label: "levels3dpreview.mapgen.generator.generate",
+            class: "generate-dd",
+            icon: "fas fa-dice-d20",
+            onclick: (event) => {},
         },
         {
-            label: "levels3dpreview.mapgen.generator.cave",
-            class: "generate-caves",
-            icon: "fas fa-icicles",
-            onclick: (event) => {
-                this.generate("cellular-caves");
-            },
-        },
-        {
-            label: "levels3dpreview.mapgen.generator.landscape",
-            class: "generate-landscape",
-            icon: "fas fa-mountain",
-            onclick: (event) => {
-                this.generate("landscape");
-            },
+            label: "levels3dpreview.mapgen.generator.theme",
+            class: "generate-theme",
+            icon: "fas fa-palette",
+            onclick: (event) => {},
         },
         );
         return buttons;
     }
+
+    async _render(...args) {
+        await super._render(...args);
+        if(this._contextEnabled) return;
+        new ContextMenu($("#mapgen"), ".generate-dd", [{
+            name: "levels3dpreview.mapgen.generator.dungeon",
+            class: "generate-dungeon",
+            icon: '<i class="fas fa-dungeon"></i>',
+            callback: (event) => {
+                this.generate("rogue");
+            },
+        },
+        {
+            name: "levels3dpreview.mapgen.generator.cave",
+            class: "generate-caves",
+            icon: '<i class="fas fa-icicles"></i>',
+            callback: (event) => {
+                this.generate("cellular-caves");
+            },
+        },
+        {
+            name: "levels3dpreview.mapgen.generator.shore",
+            class: "generate-shore",
+            icon: '<i class="fas fa-water"></i>',
+            callback: (event) => {
+                this.generate("shore");
+            },
+        },
+        {
+            name: "levels3dpreview.mapgen.generator.hills",
+            class: "generate-hills",
+            icon: '<i class="fas fa-mountain"></i>',
+            callback: (event) => {
+                this.generate("hills");
+            },
+        },
+        {
+            name: "levels3dpreview.mapgen.generator.mountains",
+            class: "generate-mountain",
+            icon: '<i class="fas fa-mountain"></i>',
+            callback: (event) => {
+                this.generate("mountain");
+            },
+        },
+        {
+            name: "levels3dpreview.mapgen.generator.island",
+            class: "generate-island",
+            icon: '<i class="fas fa-umbrella-beach"></i>',
+            callback: (event) => {
+                this.generate("island");
+            },
+        },
+        {
+            name: "levels3dpreview.mapgen.generator.plateau",
+            class: "generate-plateau",
+            icon: '<i class="fas fa-landmark"></i>',
+            callback: (event) => {
+                this.generate("plateau");
+            },
+        },
+        {
+            name: "levels3dpreview.mapgen.generator.landscape",
+            class: "generate-landscape",
+            icon: '<i class="fas fa-mountain"></i>',
+            callback: (event) => {
+                this.generate("landscape");
+            },
+        },], {eventName: "click"});
+
+        new ContextMenu($("#mapgen"), ".generate-theme", [{
+            name: "levels3dpreview.mapgen.generator.dungeon",
+            class: "generate-dungeon",
+            icon: '<i class="fas fa-dungeon"></i>',
+            callback: (event) => {
+                this.generate("rogue");
+            },
+        },
+        {
+            name: "levels3dpreview.mapgen.generator.cave",
+            class: "generate-caves",
+            icon: '<i class="fas fa-icicles"></i>',
+            callback: (event) => {
+                this.generate("cellular-caves");
+            },
+        },
+        {
+            name: "levels3dpreview.mapgen.generator.landscape",
+            class: "generate-landscape",
+            icon: '<i class="fas fa-mountain"></i>',
+            callback: (event) => {
+                this.generate("landscape");
+        },
+        },], {eventName: "click"});
+
+        this._contextEnabled = true;
+    }
+
+    
 }

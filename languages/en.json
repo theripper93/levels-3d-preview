@@ -85,7 +85,15 @@
                 "height": "Max Height",
                 "cave": "Cave",
                 "dungeon": "Dungeon",
-                "landscape": "Landscape"
+                "landscape": "Custom",
+                "generate": "Generate",
+                "theme": "Theme",
+                "shore": "Shore",
+                "hills": "Hills",
+                "mountains": "Mountains",
+                "plateau": "Plateau",
+                "valley": "Valley",
+                "island": "Island"
             },
             "material": {
                 "name": "Name",

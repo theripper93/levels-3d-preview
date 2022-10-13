@@ -94,3 +94,14 @@
 #mapgen .hide-color-input input{
     width: calc(100% - 5px);
 }
+
+#mapgen-context{
+    background-color: black;
+    color: wheat;
+    display: flex;
+flex-direction: column; 
+}
+
+#mapgen:not(.minimized) .window-header{
+    overflow: visible;
+}
