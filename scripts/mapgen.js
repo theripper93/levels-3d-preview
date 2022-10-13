@@ -8,8 +8,14 @@ export class MapGen extends FormApplication{
         this.document = document;
     }
 
-    async generate(gen){
+    async generate(gen, event){
         if(!ROT) ROT = await import('./generators/ROT/index.js');
+        if(game.keyboard.downKeys.has("ShiftLeft") || game.keyboard.downKeys.has("ShiftRight")){
+            const genFn = this._getGenerator(gen).bind(this);
+            const count = this.cellHeight ?? 3;
+            this.setCells(this._getMaps(genFn, 1, count, gen), gen !== "rogue" && gen !== "cellular-caves", count);
+            return
+        }
         Dialog.confirm({
             title: game.i18n.localize("levels3dpreview.mapgen.generator.title"),
             content: game.i18n.localize("levels3dpreview.mapgen.generator.content") + `<hr><span>${game.i18n.localize("levels3dpreview.mapgen.generator.height")}: <input type="number" id="mapgen-count" value="${this.cellHeight ?? 3}" min="1"/></span><hr>`,
@@ -488,6 +494,20 @@ export class MapGen extends FormApplication{
         return buttons;
     }
 
+    async setTheme(k, e){
+        const flag = this.document.getFlag("levels-3d-preview", "mapgen");
+        const theme = themes[k];
+        if(theme){
+            if(game.keyboard.downKeys.has("ShiftLeft") || game.keyboard.downKeys.has("ShiftRight")){
+                flag.materials.push(...theme.materials);
+            }else{
+                flag.materials = theme.materials;
+            }
+            await this.document.setFlag("levels-3d-preview", "mapgen", flag);
+            this.saveGridAndRefresh();
+        }
+    }
+
     async _render(...args) {
         await super._render(...args);
         if(this._contextEnabled) return;
@@ -496,7 +516,7 @@ export class MapGen extends FormApplication{
             class: "generate-dungeon",
             icon: '<i class="fas fa-dungeon"></i>',
             callback: (event) => {
-                this.generate("rogue");
+                this.generate("rogue", event);
             },
         },
         {
@@ -504,7 +524,7 @@ export class MapGen extends FormApplication{
             class: "generate-caves",
             icon: '<i class="fas fa-icicles"></i>',
             callback: (event) => {
-                this.generate("cellular-caves");
+                this.generate("cellular-caves", event);
             },
         },
         {
@@ -512,7 +532,7 @@ export class MapGen extends FormApplication{
             class: "generate-shore",
             icon: '<i class="fas fa-water"></i>',
             callback: (event) => {
-                this.generate("shore");
+                this.generate("shore", event);
             },
         },
         {
@@ -520,7 +540,7 @@ export class MapGen extends FormApplication{
             class: "generate-hills",
             icon: '<i class="fas fa-mountain"></i>',
             callback: (event) => {
-                this.generate("hills");
+                this.generate("hills", event);
             },
         },
         {
@@ -528,7 +548,7 @@ export class MapGen extends FormApplication{
             class: "generate-mountain",
             icon: '<i class="fas fa-mountain"></i>',
             callback: (event) => {
-                this.generate("mountain");
+                this.generate("mountain", event);
             },
         },
         {
@@ -536,7 +556,7 @@ export class MapGen extends FormApplication{
             class: "generate-island",
             icon: '<i class="fas fa-umbrella-beach"></i>',
             callback: (event) => {
-                this.generate("island");
+                this.generate("island", event);
             },
         },
         {
@@ -544,7 +564,7 @@ export class MapGen extends FormApplication{
             class: "generate-plateau",
             icon: '<i class="fas fa-landmark"></i>',
             callback: (event) => {
-                this.generate("plateau");
+                this.generate("plateau", event);
             },
         },
         {
@@ -552,37 +572,284 @@ export class MapGen extends FormApplication{
             class: "generate-landscape",
             icon: '<i class="fas fa-mountain"></i>',
             callback: (event) => {
-                this.generate("landscape");
+                this.generate("landscape", event);
             },
         },], {eventName: "click"});
 
-        new ContextMenu($("#mapgen"), ".generate-theme", [{
-            name: "levels3dpreview.mapgen.generator.dungeon",
-            class: "generate-dungeon",
-            icon: '<i class="fas fa-dungeon"></i>',
-            callback: (event) => {
-                this.generate("rogue");
-            },
-        },
-        {
-            name: "levels3dpreview.mapgen.generator.cave",
-            class: "generate-caves",
-            icon: '<i class="fas fa-icicles"></i>',
-            callback: (event) => {
-                this.generate("cellular-caves");
-            },
-        },
-        {
-            name: "levels3dpreview.mapgen.generator.landscape",
-            class: "generate-landscape",
-            icon: '<i class="fas fa-mountain"></i>',
-            callback: (event) => {
-                this.generate("landscape");
-        },
-        },], {eventName: "click"});
+        const themeButtons = [];
+        for(let [k,v] of Object.entries(themes)){
+            themeButtons.push({
+                name: "levels3dpreview.mapgen.themes." + k,
+                icon: `<i class="${v.icon}"></i>`,
+                callback: (e) => {
+                    this.setTheme(k, e);
+                },
+            });
+        }
+
+        new ContextMenu($("#mapgen"), ".generate-theme", themeButtons, {eventName: "click"});
 
         this._contextEnabled = true;
     }
 
     
+}
+
+
+
+
+const themes = {
+    "firelands": {
+        icon: "fas fa-fire",
+        materials: [
+      {
+          "materialId": "Lava",
+          "cellColor": "#f98a0b",
+          "texture": {
+              "src": "modules/canvas3dcompendium/assets/Materials/Lava004/Lava004_NormalGL.webp",
+              "tint": "",
+              "repeat": 0.4,
+              "rotate": true
+          },
+          "collapsed": false
+      },
+      {
+          "materialId": "Fire Rock",
+          "cellColor": "#4f4040",
+          "texture": {
+              "src": "modules/canvas3dcompendium/assets/Materials/Lava002/Lava002_NormalGL.webp",
+              "tint": "#5f3d26",
+              "repeat": 0.4,
+              "rotate": true
+          },
+          "collapsed": false
+      }
+  ]},
+  "plains": {
+    icon: "fas fa-seedling",
+    materials: [
+        {
+            "materialId": "Dirt",
+            "cellColor": "#7a4d1a",
+            "texture": {
+                "src": "modules/canvas3dcompendium/assets/Materials/Ground047/Ground047_NormalGL.webp",
+                "tint": "",
+                "repeat": 0.4,
+                "rotate": true
+            },
+            "collapsed": false
+        },
+        {
+            "materialId": "Grass",
+            "cellColor": "#529735",
+            "texture": {
+                "src": "modules/canvas3dcompendium/assets/Materials/Grass002/Grass002_NormalGL.webp",
+                "tint": "",
+                "repeat": 0.2,
+                "rotate": true
+            },
+            "collapsed": false
+        },
+        {
+            "materialId": "Rock",
+            "cellColor": "#707070",
+            "texture": {
+                "src": "modules/canvas3dcompendium/assets/Materials/Rock016/Rock016_NormalGL.webp",
+                "tint": "",
+                "repeat": 0.7,
+                "rotate": true
+            },
+            "collapsed": false
+        }
+    ]
+  },
+  "desert": {
+    icon: "fas fa-sun",
+    materials: [
+        {
+            "materialId": "Sand",
+            "cellColor": "#c9a41d",
+            "texture": {
+                "src": "modules/canvas3dcompendium/assets/Materials/Ground049A/Ground049A_NormalGL.webp",
+                "tint": "#c9953b",
+                "repeat": 0.4,
+                "rotate": true
+            },
+            "collapsed": false
+        },
+        {
+            "materialId": "Sandstone",
+            "cellColor": "#bbb786",
+            "texture": {
+                "src": "modules/canvas3dcompendium/assets/Materials/_Stylized/Ground%20Rock%2001/Ground_Rock_01_NormalGL.webp",
+                "tint": "#d3b073",
+                "repeat": 0.3,
+                "rotate": true
+            },
+            "collapsed": false
+        }
+    ]
+  },
+  "wood": {
+    icon: "fas fa-tree",
+    materials: [
+        {
+            "materialId": "Wood Floor",
+            "cellColor": "#c9a41d",
+            "texture": {
+                "src": "modules/canvas3dcompendium/assets/Materials/_Stylized/stylized_wood_01/stylized_wood_01_NormalGL.webp",
+                "tint": "#a3a3a3",
+                "repeat": 0.2,
+                "rotate": false
+            },
+            "collapsed": false
+        },
+        {
+            "materialId": "Wood Walls",
+            "cellColor": "#734612",
+            "texture": {
+                "src": "modules/canvas3dcompendium/assets/Materials/_Stylized/stylized_wood_04/stylized_wood_04_NormalGL.webp",
+                "tint": "#7c5e4b",
+                "repeat": 0.5,
+                "rotate": false
+            },
+            "collapsed": false
+        }
+    ]
+  },
+  "frost": {
+    icon: "fas fa-snowflake",
+    materials: [
+        {
+            "materialId": "Snow",
+            "cellColor": "#ffffff",
+            "texture": {
+                "src": "modules/canvas3dcompendium/assets/Materials/Snow002/Snow002_NormalGL.webp",
+                "tint": "",
+                "repeat": 1,
+                "rotate": true
+            },
+            "collapsed": false
+        },
+        {
+            "materialId": "Ice",
+            "cellColor": "#4974a2",
+            "texture": {
+                "src": "modules/canvas3dcompendium/assets/Materials/Ice004/Ice004_NormalGL.webp",
+                "tint": "#507bb4",
+                "repeat": 0.3,
+                "rotate": true
+            },
+            "collapsed": false
+        }
+    ]
+  },
+  "jungle": {
+    icon: "fas fa-gopuram",
+    materials: [
+        {
+            "materialId": "Ruins Floor",
+            "cellColor": "#b37b47",
+            "texture": {
+                "src": "modules/canvas3dcompendium/assets/Materials/PavingStones089/PavingStones089_NormalGL.webp",
+                "tint": "#e05e3e",
+                "repeat": 0.2,
+                "rotate": true
+            },
+            "collapsed": false
+        },
+        {
+            "materialId": "Mossy Walls",
+            "cellColor": "#2d7623",
+            "texture": {
+                "src": "modules/canvas3dcompendium/assets/Materials/PavingStones084/PavingStones084_NormalGL.webp",
+                "tint": "",
+                "repeat": 0.5,
+                "rotate": false
+            },
+            "collapsed": false
+        }
+    ]
+  },
+  "crypt": {
+    icon: "fas fa-skull-crossbones",
+    materials: [
+        {
+            "materialId": "Dirt",
+            "cellColor": "#b37b47",
+            "texture": {
+                "src": "modules/canvas3dcompendium/assets/Materials/Ground048/Ground048_NormalGL.webp",
+                "tint": "#875e36",
+                "repeat": 0.4,
+                "rotate": true
+            },
+            "collapsed": false
+        },
+        {
+            "materialId": "Brick Walls",
+            "cellColor": "#818381",
+            "texture": {
+                "src": "modules/canvas3dcompendium/assets/Materials/Bricks076C/Bricks076C_NormalGL.webp",
+                "tint": "",
+                "repeat": 0.5,
+                "rotate": false
+            },
+            "collapsed": false
+        }
+    ]
+  },
+  "alien": {
+    icon: "fas fa-rocket",
+    materials: [
+        {
+            "materialId": "Alien Floor",
+            "cellColor": "#ffeb14",
+            "texture": {
+                "src": "modules/canvas3dcompendium/assets/Materials/_Stylized/Ground%20Rock%2003/Ground_Rock_03_NormalGL.webp",
+                "tint": "#875e36",
+                "repeat": 0.2,
+                "rotate": true
+            },
+            "collapsed": false
+        },
+        {
+            "materialId": "Metal Walls",
+            "cellColor": "#818381",
+            "texture": {
+                "src": "modules/canvas3dcompendium/assets/Materials/SheetMetal001/SheetMetal001_NormalGL.webp",
+                "tint": "",
+                "repeat": 0.3,
+                "rotate": false
+            },
+            "collapsed": false
+        }
+    ]
+  },
+  "tech": {
+    icon: "fas fa-cogs",
+    materials: [
+        {
+            "materialId": "Metal Grid",
+            "cellColor": "#e414ff",
+            "texture": {
+                "src": "modules/canvas3dcompendium/assets/Materials/MetalWalkway010/MetalWalkway010_NormalGL.webp",
+                "tint": "#6e6e6e",
+                "repeat": 0.3,
+                "rotate": false
+            },
+            "collapsed": false
+        },
+        {
+            "materialId": "Metal Walls",
+            "cellColor": "#818381",
+            "texture": {
+                "src": "modules/canvas3dcompendium/assets/Materials/MetalPlates001/MetalPlates001_NormalGL.webp",
+                "tint": "#8a8a8a",
+                "repeat": 0.6,
+                "rotate": false
+            },
+            "collapsed": false
+        }
+    ]
+  }
 }

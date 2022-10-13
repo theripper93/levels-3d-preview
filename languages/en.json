@@ -95,6 +95,17 @@
                 "valley": "Valley",
                 "island": "Island"
             },
+            "themes": {
+                "firelands": "Firelands",
+                "desert": "Desert",
+                "plains": "Plains",
+                "wood": "Wood",
+                "frost": "Frost",
+                "jungle": "Jungle Ruins",
+                "crypt": "Crypt",
+                "alien": "Alien",
+                "tech": "Tech"
+            },
             "material": {
                 "name": "Name",
                 "cellColor": "Cell Color",
