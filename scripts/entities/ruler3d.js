@@ -6,13 +6,18 @@ export class Ruler3D {
     constructor(parent){
         this._parent = parent;
         this.color = new THREE.Color(game.user.color);
+        this.colorCache = {};
         const hsl = {}
         this.color.getHSL(hsl);
         this.lineColor = new THREE.Color().setHSL(hsl.h,hsl.s,hsl.l - 0.2);
         this.origin = new THREE.Vector3(0,0,0);
         this.target = new THREE.Vector3(0,0,0);
-        this.sphereRadius = 0.008;
-        this.lineRadius = 0.003;
+        this.sphereRadius = 0.005;
+        this.lineRadius = 0.002;
+        this.roulerLineMaterial = new THREE.MeshBasicMaterial({
+            depthWrite: false,
+            depthTest: false,
+        });
         this.init();
     }
 
@@ -38,12 +43,7 @@ export class Ruler3D {
     init(){
         this.sphere1 = new THREE.Mesh(
             new THREE.SphereGeometry(this.sphereRadius, 16, 16),
-            new THREE.MeshBasicMaterial({
-                color: this.color,
-                transparent: true,
-                opacity: 0.5,
-                visible: false,
-            })
+            this.roulerLineMaterial
         );
         this.sphere2 = this.sphere1.clone();
         this.baseSphere1 = this.sphere1.clone();
@@ -108,22 +108,22 @@ export class Ruler3D {
             curve = new THREE.QuadraticBezierCurve3(this._origin,bezCtrlg , targetPos);
             midcurve = curve.getPoint(0.5);
         }else{
-            curve = new THREE.LineCurve3(this._origin, targetPos)
+            curve = new THREE.LineCurve3(this._origin, targetPos);
         }
+
         const geometry = new THREE.TubeGeometry(
             curve,
             this.template?.isPreview ? 64 : 1,
             this.lineRadius,
             8,
         );
+        const c = this.getColor(distance);
+        this.roulerLineMaterial.color = c;
         this.line = new THREE.Mesh(
             geometry,
-            new THREE.MeshToonMaterial({
-                color: this.getColor(distance),
-                transparent: true,
-                opacity: 0.8,
-            })
+            this.roulerLineMaterial
         );
+        this.line.renderOrder = 1e20;
         this.sphere1.position.copy(this._origin);
         this.sphere2.position.copy(targetPos);
         this.baseSphere1.position.copy(this._origin);
@@ -143,7 +143,10 @@ export class Ruler3D {
     getColor(distance){
        let color
         if(this.token && game.modules.get("drag-ruler")?.active && dragRuler?.getColorForDistanceAndToken){
-            color = dragRuler?.getColorForDistanceAndToken(distance, this.token)
+            const drColor = dragRuler?.getColorForDistanceAndToken(distance, this.token);
+            if(this.colorCache[drColor]) return this.colorCache[drColor];
+            color = new THREE.Color(drColor);
+            this.colorCache[drColor] = color;
         }
         return color ?? this.color;
     }
