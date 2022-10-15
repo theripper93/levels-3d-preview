@@ -36,11 +36,11 @@ export class OutlineHandler{
         this.composer.addPass(this.hoveredOutline);
     }
 
-    toggleControlled(object, controlled, disposition){
+    toggleControlled(object, controlled){
         if(!this._enabled) return;
         if(controlled){
-            this.controlledOutline.visibleEdgeColor.set(this.getDispositionColor(disposition));
-            this.controlledOutline.hiddenEdgeColor.set(this.getDispositionColor(disposition));
+            this.controlledOutline.visibleEdgeColor.set(CONFIG.Canvas.dispositionColors.CONTROLLED);
+            this.controlledOutline.hiddenEdgeColor.set(CONFIG.Canvas.dispositionColors.CONTROLLED);
             this.controlledOutline.selectedObjects.push(object);
         }else{
             this.controlledOutline.selectedObjects.splice(this.controlledOutline.selectedObjects.indexOf(object), 1);
@@ -67,29 +67,22 @@ function setOutlineHooks(){
 
     Hooks.on("controlToken", (token, controlled) => {
         const object3D = game.Levels3DPreview.tokens[token.id]?.model;
-        if(object3D) game.Levels3DPreview.outline.toggleControlled(object3D, controlled, token?.document?.disposition);
+        if(object3D) game.Levels3DPreview.outline.toggleControlled(object3D, controlled);
     })
 
-    Hooks.on("hoverToken", (token, hovered) => {
+    Hooks.on("refreshToken", (token) => {
         const object3D = game.Levels3DPreview.tokens[token.id]?.model;
-        if(object3D) game.Levels3DPreview.outline.toggleHovered(object3D, hovered, token?.document?.disposition);
-    })
-
-    Hooks.on("highlightObjects", (highlighted) => {
-        Object.values(game.Levels3DPreview.tokens).forEach(token => {
-            const object3D = token.model;
-            if(object3D) game.Levels3DPreview.outline.toggleHovered(object3D, highlighted, token.token?.document?.disposition);
-        });
-    })
+        if(object3D) game.Levels3DPreview.outline.toggleHovered(object3D, token.hover && !token.controlled, token?.document?.disposition);
+    });
 
     Hooks.on("controlTile", (tile, controlled) => {
         const object3D = game.Levels3DPreview.tiles[tile.id]?.mesh;
-        if(object3D) game.Levels3DPreview.outline.toggleControlled(object3D, controlled, 0);
+        if(object3D) game.Levels3DPreview.outline.toggleControlled(object3D, controlled);
     })
 
-    Hooks.on("hoverTile", (tile, hovered) => {
+    Hooks.on("refreshTile", (tile) => {
         const object3D = game.Levels3DPreview.tiles[tile.id]?.mesh;
-        if(object3D) game.Levels3DPreview.outline.toggleHovered(object3D, hovered, 1);
+        if(object3D) game.Levels3DPreview.outline.toggleHovered(object3D, tile.hover && !tile.controlled, 1);
     })
 
 }
