@@ -174,11 +174,11 @@ class OutlinePass extends Pass {
 
 				if ( bVisible === true ) {
 
-					object.visible = cache.get( object );
+					object.visible = cache.get( object.uuid );
 
 				} else {
 
-					cache.set( object, object.visible );
+					cache.set( object.uuid, !!object.visible );
 					object.visible = bVisible;
 
 				}
@@ -239,13 +239,13 @@ class OutlinePass extends Pass {
 
 					const visibility = object.visible;
 
-					if ( bVisible === false || cache.get( object ) === true ) {
+					if ( bVisible === false || cache.get( object.uuid ) === true ) {
 
 						object.visible = bVisible;
 
 					}
 
-					cache.set( object, visibility );
+					cache.set( object.uuid, !!visibility );
 
 				}
 
@@ -256,11 +256,11 @@ class OutlinePass extends Pass {
 
 				if ( bVisible === true ) {
 
-					object.visible = cache.get( object ); // restore
+					object.visible = cache.get( object.uuid ); // restore
 
 				} else {
 
-					cache.set( object, object.visible );
+					cache.set( object.uuid, !!object.visible );
 					object.visible = bVisible;
 
 				}
@@ -287,7 +287,6 @@ class OutlinePass extends Pass {
 	render( renderer, writeBuffer, readBuffer, deltaTime, maskActive ) {
 
 		if ( this.selectedObjects.length > 0 ) {
-
 			renderer.getClearColor( this._oldClearColor );
 			this.oldClearAlpha = renderer.getClearAlpha();
 			const oldAutoClear = renderer.autoClear;
@@ -405,7 +404,6 @@ class OutlinePass extends Pass {
 
 			renderer.setClearColor( this._oldClearColor, this.oldClearAlpha );
 			renderer.autoClear = oldAutoClear;
-
 		}
 
 		if ( this.renderToScreen ) {

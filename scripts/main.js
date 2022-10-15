@@ -1109,8 +1109,8 @@ class Levels3DPreview {
   }
 
   allignChatBubbles() {
-    const bubbles = $(".chat-bubble");
-    bubbles.each((index, bubble) => {
+    const bubbles = document.querySelectorAll(".chat-bubble");
+    bubbles.forEach((bubble) => {
       const token3D = this.tokens[bubble.dataset.tokenId];
       const center = token3D.head;
       center.y += 0.03;
@@ -1243,17 +1243,20 @@ class Levels3DPreview {
           if (t3d) this.helpers.ruler3d.centerElement(e, t3d.head);
         });
       this.allignChatBubbles();
-      this.resizeCanvasToDisplaySize(this);
+      //this.resizeCanvasToDisplaySize(this);
       this.lights.globalIllumination.update(delta);
       this.weather?.update(delta);
       this.GameCamera.update(delta);
       this.controls.update();
       //this.fogExploration?.update();
+      const visibilityCache = {};
+      if(this.outline._enabled) this.scene.traverse((o) => {visibilityCache[o.uuid] = o.visible});
       this.composer.render(time);
       if (this._sharedContext) {
         canvas.app.renderer.reset();
         this.renderer.resetState();
       }
+      if(this.outline._enabled) this.scene.traverse((o) => {o.visible = visibilityCache[o.uuid]});
     } catch (error) {
       this._errCount++;
       console.error("3D Canvas: An Error Occured in the Rendering Loop", error);
@@ -1834,5 +1837,11 @@ Hooks.on("ready", async () => {
   div.hide();
   $("#ui-top").after(div);
 })
+
+window.addEventListener("resize", () => {
+  setTimeout(() => {
+  if (game.Levels3DPreview?._active) game.Levels3DPreview.resizeCanvasToDisplaySize();
+  }, 200);
+});
 
 //javascript:(function(){var script=document.createElement('script');script.onload=function(){var stats=new Stats();document.body.appendChild(stats.dom);requestAnimationFrame(function loop(){stats.update();requestAnimationFrame(loop)});};script.src='//mrdoob.github.io/stats.js/build/stats.min.js';document.head.appendChild(script);})()

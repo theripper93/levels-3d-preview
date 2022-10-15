@@ -484,6 +484,7 @@ export class InteractionManager {
       this._canMouseMove = false;
       this.mousemove.x = (event.clientX / window.innerWidth) * 2 - 1;
       this.mousemove.y = -(event.clientY / window.innerHeight) * 2 + 1;
+      if(this.draggable) return;
       this.updateHoverObj();
       const intersect = this.getHoverObject();
       const object = intersect?.object;
@@ -747,6 +748,7 @@ export class InteractionManager {
         this.forceFree = object.userData.entity3D.wasFreeMode
         this.dragplane.position.set(center.x, object.userData.entity3D.mesh.position.y, center.z);
         this.makeClone();
+        this.ruler.cacheSpeedProvider(object?.userData?.entity3D?.token);
       }else{
         this.forceFree = false;
         this.dragplane.position.set(center.x, 0, center.z);

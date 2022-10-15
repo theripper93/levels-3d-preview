@@ -5,6 +5,7 @@ import {factor} from '../main.js';
 export class Ruler3D {
     constructor(parent){
         this._parent = parent;
+        this.isDragRouler = game.modules.get("drag-ruler")?.active;
         this.color = new THREE.Color(game.user.color);
         this.colorCache = {};
         const hsl = {}
@@ -123,6 +124,7 @@ export class Ruler3D {
             geometry,
             this.roulerLineMaterial
         );
+        this.line.userData.ignoreHover = true;
         this.line.renderOrder = 1e20;
         this.sphere1.position.copy(this._origin);
         this.sphere2.position.copy(targetPos);
@@ -130,6 +132,8 @@ export class Ruler3D {
         this.baseSphere2.position.copy(targetPos);
         this.baseSphere1.position.y = 0;
         this.baseSphere2.position.y = 0;
+        this.baseSphere1.userData.ignoreHover = true;
+        this.baseSphere2.userData.ignoreHover = true;
         //draw floating text
         const text = `${distance} ${canvas.scene.grid.units}.`;
         this.textElement.text(text);
@@ -140,9 +144,13 @@ export class Ruler3D {
         this.drawTemplate();
     }
 
+    cacheSpeedProvider(token){
+        if(!this.isDragRouler || !token) return;
+    }
+
     getColor(distance){
        let color
-        if(this.token && game.modules.get("drag-ruler")?.active && dragRuler?.getColorForDistanceAndToken){
+        if(this.token && this.isDragRouler){
             const drColor = dragRuler?.getColorForDistanceAndToken(distance, this.token);
             if(this.colorCache[drColor]) return this.colorCache[drColor];
             color = new THREE.Color(drColor);
@@ -163,31 +171,25 @@ export class Ruler3D {
 
     static centerElement(element,position, ontop = false){
         //get distance between element and camera
-        const $element = $(element);
-        let cachedFontSize = $element.data("cached-size");
+        element = element[0] ?? element;
+        let cachedFontSize = element.dataset.cachedSize
         if(!cachedFontSize){
-            cachedFontSize = parseFloat(window.getComputedStyle($element[0], null).getPropertyValue('font-size'))
-            $element.data("cached-size", cachedFontSize);
+            cachedFontSize = parseFloat(window.getComputedStyle(element, null).getPropertyValue('font-size'))
+            element.dataset.cachedSize = cachedFontSize;
         }
         
         const dist = game.Levels3DPreview.camera.position.distanceTo(position);
         const scale = Math.max(0.5, 1.2/dist)/game.Levels3DPreview.resolutionMulti;
-        if($element[0].id == 'levels3d-ruler-text'){
-            $element.css({
-                "font-size": cachedFontSize*scale + "px"
-            })
+        if(element.id == 'levels3d-ruler-text'){
+            element.style.fontSize = `${cachedFontSize*scale}px`;
         }else{
-            $element.css({
-                transform: `scale(${scale})`
-            })
+            element.style.transform = `scale(${scale})`;
         }
         const centerPosition = Ruler3D.position3dtoScreen(position);
-        const elementWidth = $element.width();
-        const elementHeight = ontop ? $element.height()*2 : $element.height();
-        $element.css({
-            left: centerPosition.x -elementWidth/2 + "px",
-            top: centerPosition.y -elementHeight/2 + "px",
-        });
+        const elementWidth = element.offsetWidth;
+        const elementHeight = ontop ? element.offsetHeight*2 : element.offsetHeight;
+        element.style.left = `${centerPosition.x - elementWidth/2}px`;
+        element.style.top = `${centerPosition.y - elementHeight/2}px`;
     }
 
     static posCanvasTo3d(position){
