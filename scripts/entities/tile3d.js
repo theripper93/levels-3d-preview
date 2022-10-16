@@ -1328,7 +1328,7 @@ export class Tile3D {
             bevelThickness: bevel,
             bevelSize: bevel,
             bevelOffset: -bevel,
-            bevelSegments: 1
+            bevelSegments: 1,
         };
 
         const baseGeometry = new THREE.ExtrudeGeometry( shape, extrudeSettings );
