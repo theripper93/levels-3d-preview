@@ -120,5 +120,7 @@ flex-direction: column;
 
 #mapgen .material-image:hover{
     transform: scale(4);
+    transform-origin: top left;
+    border-top-left-radius: 0;
     z-index: 999999;
 }

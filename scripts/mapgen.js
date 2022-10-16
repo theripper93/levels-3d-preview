@@ -245,7 +245,7 @@ export class MapGen extends FormApplication{
         }
         flag.zoomLevel = this._zoomLevel || 0.5;
         for(let mat of flag.materials){
-            let colorSrc = mat.texture.src;
+            let colorSrc = mat.texture.src || "";
             tTypes.forEach(t => {
                 colorSrc = colorSrc.replace(t, "Color");
             });
@@ -322,7 +322,12 @@ export class MapGen extends FormApplication{
             flag.materials.push({
                 texture: {
                     repeat: 1,
-                }
+                },
+                collapsed: false,
+                metalness: 0,
+                roughness: 1,
+                opacity: 1,
+                emissive: 0,
             });
             await this.document.setFlag("levels-3d-preview", "mapgen", flag);
             this.saveGridAndRefresh();
@@ -436,8 +441,13 @@ export class MapGen extends FormApplication{
                 {
                     texture: {
                         repeat: 1,
-                    }
-                },
+                    },
+                    collapsed: false,
+                    metalness: 0,
+                    roughness: 1,
+                    opacity: 1,
+                    emissive: 0,
+                }
             ],
             elevation: 1,
             bevel: 0.05,
@@ -607,257 +617,334 @@ export class MapGen extends FormApplication{
 
 
 const themes = {
-    "firelands": {
-        icon: "fas fa-fire",
-        materials: [
+  firelands: {
+    icon: "fas fa-fire",
+    materials: [
       {
-          "materialId": "Lava",
-          "cellColor": "#f98a0b",
-          "texture": {
-              "src": "modules/canvas3dcompendium/assets/Materials/Lava004/Lava004_NormalGL.webp",
-              "tint": "",
-              "repeat": 0.4,
-              "rotate": true
-          },
-          "collapsed": true
+        materialId: "Lava",
+        cellColor: "#f98a0b",
+        texture: {
+          src: "modules/canvas3dcompendium/assets/Materials/Lava004/Lava004_NormalGL.webp",
+          tint: "",
+          repeat: 0.4,
+          rotate: true,
+        },
+        collapsed: true,
+        metalness: 0,
+        roughness: 1,
+        opacity: 1,
+        emissive: 0,
       },
       {
-          "materialId": "Fire Rock",
-          "cellColor": "#4f4040",
-          "texture": {
-              "src": "modules/canvas3dcompendium/assets/Materials/Lava002/Lava002_NormalGL.webp",
-              "tint": "#5f3d26",
-              "repeat": 0.4,
-              "rotate": true
-          },
-          "collapsed": true
-      }
-  ]},
-  "plains": {
+        materialId: "Fire Rock",
+        cellColor: "#4f4040",
+        texture: {
+          src: "modules/canvas3dcompendium/assets/Materials/Lava002/Lava002_NormalGL.webp",
+          tint: "#5f3d26",
+          repeat: 0.4,
+          rotate: true,
+        },
+        collapsed: true,
+        metalness: 0,
+        roughness: 1,
+        opacity: 1,
+        emissive: 0,
+      },
+    ],
+  },
+  plains: {
     icon: "fas fa-seedling",
     materials: [
-        {
-            "materialId": "Dirt",
-            "cellColor": "#7a4d1a",
-            "texture": {
-                "src": "modules/canvas3dcompendium/assets/Materials/Ground047/Ground047_NormalGL.webp",
-                "tint": "",
-                "repeat": 0.4,
-                "rotate": true
-            },
-            "collapsed": true
+      {
+        materialId: "Dirt",
+        cellColor: "#7a4d1a",
+        texture: {
+          src: "modules/canvas3dcompendium/assets/Materials/Ground047/Ground047_NormalGL.webp",
+          tint: "",
+          repeat: 0.4,
+          rotate: true,
         },
-        {
-            "materialId": "Grass",
-            "cellColor": "#529735",
-            "texture": {
-                "src": "modules/canvas3dcompendium/assets/Materials/Grass002/Grass002_NormalGL.webp",
-                "tint": "",
-                "repeat": 0.2,
-                "rotate": true
-            },
-            "collapsed": true
+        collapsed: true,
+        metalness: 0,
+        roughness: 1,
+        opacity: 1,
+        emissive: 0,
+      },
+      {
+        materialId: "Grass",
+        cellColor: "#529735",
+        texture: {
+          src: "modules/canvas3dcompendium/assets/Materials/Grass002/Grass002_NormalGL.webp",
+          tint: "",
+          repeat: 0.2,
+          rotate: true,
         },
-        {
-            "materialId": "Rock",
-            "cellColor": "#707070",
-            "texture": {
-                "src": "modules/canvas3dcompendium/assets/Materials/Rock016/Rock016_NormalGL.webp",
-                "tint": "",
-                "repeat": 0.7,
-                "rotate": true
-            },
-            "collapsed": true
-        }
-    ]
+        collapsed: true,
+        metalness: 0,
+        roughness: 1,
+        opacity: 1,
+        emissive: 0,
+      },
+      {
+        materialId: "Rock",
+        cellColor: "#707070",
+        texture: {
+          src: "modules/canvas3dcompendium/assets/Materials/Rock016/Rock016_NormalGL.webp",
+          tint: "",
+          repeat: 0.7,
+          rotate: true,
+        },
+        collapsed: true,
+        metalness: 0,
+        roughness: 1,
+        opacity: 1,
+        emissive: 0,
+      },
+    ],
   },
-  "desert": {
+  desert: {
     icon: "fas fa-sun",
     materials: [
-        {
-            "materialId": "Sand",
-            "cellColor": "#c9a41d",
-            "texture": {
-                "src": "modules/canvas3dcompendium/assets/Materials/Ground049A/Ground049A_NormalGL.webp",
-                "tint": "#c9953b",
-                "repeat": 0.4,
-                "rotate": true
-            },
-            "collapsed": true
+      {
+        materialId: "Sand",
+        cellColor: "#c9a41d",
+        texture: {
+          src: "modules/canvas3dcompendium/assets/Materials/Ground049A/Ground049A_NormalGL.webp",
+          tint: "#c9953b",
+          repeat: 0.4,
+          rotate: true,
         },
-        {
-            "materialId": "Sandstone",
-            "cellColor": "#bbb786",
-            "texture": {
-                "src": "modules/canvas3dcompendium/assets/Materials/_Stylized/Ground%20Rock%2001/Ground_Rock_01_NormalGL.webp",
-                "tint": "#d3b073",
-                "repeat": 0.3,
-                "rotate": true
-            },
-            "collapsed": true
-        }
-    ]
+        collapsed: true,
+        metalness: 0,
+        roughness: 1,
+        opacity: 1,
+        emissive: 0,
+      },
+      {
+        materialId: "Sandstone",
+        cellColor: "#bbb786",
+        texture: {
+          src: "modules/canvas3dcompendium/assets/Materials/_Stylized/Ground%20Rock%2001/Ground_Rock_01_NormalGL.webp",
+          tint: "#d3b073",
+          repeat: 0.3,
+          rotate: true,
+        },
+        collapsed: true,
+        metalness: 0,
+        roughness: 1,
+        opacity: 1,
+        emissive: 0,
+      },
+    ],
   },
-  "wood": {
+  wood: {
     icon: "fas fa-tree",
     materials: [
-        {
-            "materialId": "Wood Floor",
-            "cellColor": "#c9a41d",
-            "texture": {
-                "src": "modules/canvas3dcompendium/assets/Materials/_Stylized/stylized_wood_01/stylized_wood_01_NormalGL.webp",
-                "tint": "#a3a3a3",
-                "repeat": 0.2,
-                "rotate": false
-            },
-            "collapsed": true
+      {
+        materialId: "Wood Floor",
+        cellColor: "#c9a41d",
+        texture: {
+          src: "modules/canvas3dcompendium/assets/Materials/_Stylized/stylized_wood_01/stylized_wood_01_NormalGL.webp",
+          tint: "#a3a3a3",
+          repeat: 0.2,
+          rotate: false,
         },
-        {
-            "materialId": "Wood Walls",
-            "cellColor": "#734612",
-            "texture": {
-                "src": "modules/canvas3dcompendium/assets/Materials/_Stylized/stylized_wood_04/stylized_wood_04_NormalGL.webp",
-                "tint": "#7c5e4b",
-                "repeat": 0.5,
-                "rotate": false
-            },
-            "collapsed": true
-        }
-    ]
+        collapsed: true,
+        metalness: 0,
+        roughness: 1,
+        opacity: 1,
+        emissive: 0,
+      },
+      {
+        materialId: "Wood Walls",
+        cellColor: "#734612",
+        texture: {
+          src: "modules/canvas3dcompendium/assets/Materials/_Stylized/stylized_wood_04/stylized_wood_04_NormalGL.webp",
+          tint: "#7c5e4b",
+          repeat: 0.5,
+          rotate: false,
+        },
+        collapsed: true,
+        metalness: 0,
+        roughness: 1,
+        opacity: 1,
+        emissive: 0,
+      },
+    ],
   },
-  "frost": {
+  frost: {
     icon: "fas fa-snowflake",
     materials: [
-        {
-            "materialId": "Snow",
-            "cellColor": "#ffffff",
-            "texture": {
-                "src": "modules/canvas3dcompendium/assets/Materials/Snow002/Snow002_NormalGL.webp",
-                "tint": "",
-                "repeat": 1,
-                "rotate": true
-            },
-            "collapsed": true
+      {
+        materialId: "Snow",
+        cellColor: "#ffffff",
+        texture: {
+          src: "modules/canvas3dcompendium/assets/Materials/Snow002/Snow002_NormalGL.webp",
+          tint: "",
+          repeat: 1,
+          rotate: true,
         },
-        {
-            "materialId": "Ice",
-            "cellColor": "#4974a2",
-            "texture": {
-                "src": "modules/canvas3dcompendium/assets/Materials/Ice004/Ice004_NormalGL.webp",
-                "tint": "#507bb4",
-                "repeat": 0.3,
-                "rotate": true
-            },
-            "collapsed": true
-        }
-    ]
+        collapsed: true,
+        metalness: 0,
+        roughness: 1,
+        opacity: 1,
+        emissive: 0,
+      },
+      {
+        materialId: "Ice",
+        cellColor: "#4974a2",
+        texture: {
+          src: "modules/canvas3dcompendium/assets/Materials/Ice004/Ice004_NormalGL.webp",
+          tint: "#507bb4",
+          repeat: 0.3,
+          rotate: true,
+        },
+        collapsed: true,
+        metalness: 0,
+        roughness: 1,
+        opacity: 1,
+        emissive: 0,
+      },
+    ],
   },
-  "jungle": {
+  jungle: {
     icon: "fas fa-gopuram",
     materials: [
-        {
-            "materialId": "Ruins Floor",
-            "cellColor": "#b37b47",
-            "texture": {
-                "src": "modules/canvas3dcompendium/assets/Materials/PavingStones089/PavingStones089_NormalGL.webp",
-                "tint": "#e05e3e",
-                "repeat": 0.2,
-                "rotate": true
-            },
-            "collapsed": true
+      {
+        materialId: "Ruins Floor",
+        cellColor: "#b37b47",
+        texture: {
+          src: "modules/canvas3dcompendium/assets/Materials/PavingStones089/PavingStones089_NormalGL.webp",
+          tint: "#e05e3e",
+          repeat: 0.2,
+          rotate: true,
         },
-        {
-            "materialId": "Mossy Walls",
-            "cellColor": "#2d7623",
-            "texture": {
-                "src": "modules/canvas3dcompendium/assets/Materials/PavingStones084/PavingStones084_NormalGL.webp",
-                "tint": "",
-                "repeat": 0.5,
-                "rotate": false
-            },
-            "collapsed": true
-        }
-    ]
+        collapsed: true,
+        metalness: 0,
+        roughness: 1,
+        opacity: 1,
+        emissive: 0,
+      },
+      {
+        materialId: "Mossy Walls",
+        cellColor: "#2d7623",
+        texture: {
+          src: "modules/canvas3dcompendium/assets/Materials/PavingStones084/PavingStones084_NormalGL.webp",
+          tint: "",
+          repeat: 0.5,
+          rotate: false,
+        },
+        collapsed: true,
+        metalness: 0,
+        roughness: 1,
+        opacity: 1,
+        emissive: 0,
+      },
+    ],
   },
-  "crypt": {
+  crypt: {
     icon: "fas fa-skull-crossbones",
     materials: [
-        {
-            "materialId": "Dirt",
-            "cellColor": "#b37b47",
-            "texture": {
-                "src": "modules/canvas3dcompendium/assets/Materials/Ground048/Ground048_NormalGL.webp",
-                "tint": "#875e36",
-                "repeat": 0.4,
-                "rotate": true
-            },
-            "collapsed": true
+      {
+        materialId: "Dirt",
+        cellColor: "#b37b47",
+        texture: {
+          src: "modules/canvas3dcompendium/assets/Materials/Ground048/Ground048_NormalGL.webp",
+          tint: "#875e36",
+          repeat: 0.4,
+          rotate: true,
         },
-        {
-            "materialId": "Brick Walls",
-            "cellColor": "#818381",
-            "texture": {
-                "src": "modules/canvas3dcompendium/assets/Materials/Bricks076C/Bricks076C_NormalGL.webp",
-                "tint": "",
-                "repeat": 0.5,
-                "rotate": false
-            },
-            "collapsed": true
-        }
-    ]
+        collapsed: true,
+        metalness: 0,
+        roughness: 1,
+        opacity: 1,
+        emissive: 0,
+      },
+      {
+        materialId: "Brick Walls",
+        cellColor: "#818381",
+        texture: {
+          src: "modules/canvas3dcompendium/assets/Materials/Bricks076C/Bricks076C_NormalGL.webp",
+          tint: "",
+          repeat: 0.5,
+          rotate: false,
+        },
+        collapsed: true,
+        metalness: 0,
+        roughness: 1,
+        opacity: 1,
+        emissive: 0,
+      },
+    ],
   },
-  "alien": {
+  alien: {
     icon: "fas fa-rocket",
     materials: [
-        {
-            "materialId": "Alien Floor",
-            "cellColor": "#ffeb14",
-            "texture": {
-                "src": "modules/canvas3dcompendium/assets/Materials/_Stylized/Ground%20Rock%2003/Ground_Rock_03_NormalGL.webp",
-                "tint": "#875e36",
-                "repeat": 0.2,
-                "rotate": true
-            },
-            "collapsed": true
+      {
+        materialId: "Alien Floor",
+        cellColor: "#ffeb14",
+        texture: {
+          src: "modules/canvas3dcompendium/assets/Materials/_Stylized/Ground%20Rock%2003/Ground_Rock_03_NormalGL.webp",
+          tint: "#875e36",
+          repeat: 0.2,
+          rotate: true,
         },
-        {
-            "materialId": "Metal Walls",
-            "cellColor": "#818381",
-            "texture": {
-                "src": "modules/canvas3dcompendium/assets/Materials/SheetMetal001/SheetMetal001_NormalGL.webp",
-                "tint": "",
-                "repeat": 0.3,
-                "rotate": false
-            },
-            "collapsed": true
-        }
-    ]
+        collapsed: true,
+        metalness: 0,
+        roughness: 1,
+        opacity: 1,
+        emissive: 0,
+      },
+      {
+        materialId: "Metal Walls",
+        cellColor: "#818381",
+        texture: {
+          src: "modules/canvas3dcompendium/assets/Materials/SheetMetal001/SheetMetal001_NormalGL.webp",
+          tint: "",
+          repeat: 0.3,
+          rotate: false,
+        },
+        collapsed: true,
+        metalness: 0,
+        roughness: 1,
+        opacity: 1,
+        emissive: 0,
+      },
+    ],
   },
-  "tech": {
+  tech: {
     icon: "fas fa-cogs",
     materials: [
-        {
-            "materialId": "Metal Grid",
-            "cellColor": "#e414ff",
-            "texture": {
-                "src": "modules/canvas3dcompendium/assets/Materials/MetalWalkway010/MetalWalkway010_NormalGL.webp",
-                "tint": "#6e6e6e",
-                "repeat": 0.3,
-                "rotate": false
-            },
-            "collapsed": true
+      {
+        materialId: "Metal Grid",
+        cellColor: "#e414ff",
+        texture: {
+          src: "modules/canvas3dcompendium/assets/Materials/MetalWalkway010/MetalWalkway010_NormalGL.webp",
+          tint: "#6e6e6e",
+          repeat: 0.3,
+          rotate: false,
         },
-        {
-            "materialId": "Metal Walls",
-            "cellColor": "#818381",
-            "texture": {
-                "src": "modules/canvas3dcompendium/assets/Materials/MetalPlates001/MetalPlates001_NormalGL.webp",
-                "tint": "#8a8a8a",
-                "repeat": 0.6,
-                "rotate": false
-            },
-            "collapsed": true
-        }
-    ]
-  }
-}
+        collapsed: true,
+        metalness: 0,
+        roughness: 1,
+        opacity: 1,
+        emissive: 0,
+      },
+      {
+        materialId: "Metal Walls",
+        cellColor: "#818381",
+        texture: {
+          src: "modules/canvas3dcompendium/assets/Materials/MetalPlates001/MetalPlates001_NormalGL.webp",
+          tint: "#8a8a8a",
+          repeat: 0.6,
+          rotate: false,
+        },
+        collapsed: true,
+        metalness: 0,
+        roughness: 1,
+        opacity: 1,
+        emissive: 0,
+      },
+    ],
+  },
+};

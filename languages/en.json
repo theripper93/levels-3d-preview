@@ -112,7 +112,11 @@
                 "tint": "Tint Color",
                 "texture": "Texture",
                 "repeat": "Repeat",
-                "rotate": "Randomize"
+                "rotate": "Randomize",
+                "metalness": "Metalness",
+                "roughness": "Roughness",
+                "opacity": "Opacity",
+                "emissive": "Emissive"
             },
             "bevel": "Bevel",
             "zoom": "Zoom",

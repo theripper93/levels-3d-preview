@@ -1143,6 +1143,15 @@ export class Tile3D {
         mat.color = new THREE.Color(matData.texture.tint || 0xffffff);
         mat.userData.bevelSize = bevelSize;
         mat.userData.tex_repeat = matData.texture.repeat ?? 1;
+        mat.roughness = matData.roughness ?? 1;
+        mat.metalness = matData.metalness ?? 0;
+        mat.emissiveIntensity = matData.emissive ?? 0;
+        if(matData.emissive){
+            mat.emissiveColor = new THREE.Color(matData.texture.tint || 0xffffff);
+            mat.emissiveMap = mat.map;
+        }
+        mat.opacity = matData.opacity ?? 1;
+        mat.transparent = matData.opacity < 1;
         mat.customProgramCacheKey = () => { return "mapgen_shader"};
         mat.onBeforeCompile = (shader) => {
             shader.uniforms.bevelSize = { value: bevelSize };
