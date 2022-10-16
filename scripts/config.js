@@ -689,7 +689,7 @@ Hooks.on("renderTileConfig", (app,html)=>{
         },
         "meshstats": {
             type: "custom",
-            html: meshStats ? `<p style="text-align: center; color: ${meshStats.status}">${game.i18n.localize("levels3dpreview.flags.meshStats").replace("%v%", meshStats.vertices).replace("%t%", meshStats.faces).replace("%m%", meshStats.meshes)}</p><hr>` : ""
+            html: meshStats ? `<p style="text-align: center; color: ${meshStats.status}">${game.i18n.localize("levels3dpreview.flags.meshStats").replace("%v%", meshStats.vertices).replace("%t%", meshStats.faces).replace("%m%", meshStats.meshes).replace("%i%", meshStats.instances)}</p><hr>` : ""
         },
         "model3d" : {
             type: "filepicker.any",

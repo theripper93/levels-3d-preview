@@ -1110,6 +1110,7 @@ export class Tile3D {
         let vertices = 0;
         let faces = 0;
         let meshes = 0;
+        let instances = this.count || "-";
         let status = "green";
         this.mesh.traverse((child) => {
             if (child.isMesh && !child.userData.noShaders) {
@@ -1121,10 +1122,12 @@ export class Tile3D {
 
         if(vertices > 100000) status = "yellow";
         if(meshes > 10) status = "yellow";
+        if(instances > 1000) status = "yellow";
         if(vertices > 1000000) status = "red";
         if(meshes > 50) status = "red";
+        if(instances > 10000) status = "red";
 
-        return {vertices, faces, meshes, status};
+        return {vertices, faces, meshes, instances, status};
     }
 
     async getMapGenMat(matData){
@@ -1235,9 +1238,12 @@ export class Tile3D {
             }
         }
 
+        this.count = 0;
+
         for(const [matId, cells] of Object.entries(cellsByMaterial)){
             const mat = materials[matId];
             const cellCount = cells.length;
+            this.count+=cellCount;
             if(!mat || !cellCount) continue;
             const cellSizeArray = new Float32Array(cellCount);
             const matData = mapgen.materials.find(m => m.materialId === matId);
@@ -1349,9 +1355,12 @@ export class Tile3D {
             }
         }
 
+        this.count = 0;
+
         for(const [matId, cells] of Object.entries(cellsByMaterial)){
             const mat = materials[matId];
             const cellCount = cells.length;
+            this.count+=cellCount;
             if(!mat || !cellCount) continue;
             const cellSizeArray = new Float32Array(cellCount);
             const matData = mapgen.materials.find(m => m.materialId === matId);

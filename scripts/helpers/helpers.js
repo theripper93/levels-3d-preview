@@ -30,6 +30,8 @@ export class Helpers {
     if (this.textureCache[texturePath] && !options.noCache) return this.textureCache[texturePath];
     const texture = await this.getTexture(texturePath);
     texture.encoding = options.linear ? THREE.LinearEncoding : THREE.sRGBEncoding;
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
     this.textureCache[texturePath] = texture;
     if(!options.noCache) THREE.Cache.remove(texturePath);
     return texture;
