@@ -1193,7 +1193,7 @@ export class Tile3D {
         shape.lineTo( 0, 0 );
         
         const extrudeSettings = {
-            steps: 2,
+            steps: 1,
             depth: 1 - bevel*2,
             bevelEnabled: true,
             bevelThickness: bevel,
@@ -1307,7 +1307,7 @@ export class Tile3D {
 
         
         const extrudeSettings = {
-            steps: 2,
+            steps: 1,
             depth: 1 - bevel*2,
             bevelEnabled: true,
             bevelThickness: bevel,
