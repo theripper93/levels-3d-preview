@@ -124,14 +124,14 @@ Hooks.on("renderSceneConfig", (app,html)=>{
             label: game.i18n.localize("levels3dpreview.flags.exr.label"),
             placeholder: game.i18n.localize("levels3dpreview.flags.exr.placeholder"),
             notes: game.i18n.localize("levels3dpreview.flags.exr.notes"),
-            default: "modules/levels-3d-preview/assets/skybox/venice_sunrise_1k.exr"
+            default: game.modules.get("canvas3dcompendium") ? "modules/canvas3dcompendium/assets/Beautiful-Sky/2K/Sky_LowPoly_01_Day_a.webp" : "modules/levels-3d-preview/assets/skybox/venice_sunrise_1k.exr"
         },
         "skybox" : {
             type: "filepicker",
             label: game.i18n.localize("levels3dpreview.flags.skybox.label"),
             placeholder: game.i18n.localize("levels3dpreview.flags.skybox.placeholder"),
             notes: game.i18n.localize("levels3dpreview.flags.skybox.notes"),
-            default: "modules/levels-3d-preview/assets/skybox/humble/humble_bk.jpg"
+            default: game.modules.get("canvas3dcompendium") ? "" : "modules/levels-3d-preview/assets/skybox/humble/humble_bk.jpg"
         },
         "bloom": {
             type: "checkbox",

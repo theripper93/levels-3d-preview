@@ -87,6 +87,7 @@ export class Ruler3D {
     set origin(position){
         this._origin = position;
         this.token = game.Levels3DPreview?.interactionManager?.draggable?.userData?.entity3D?.token
+        this.cacheSpeedProvider(this.token);
         this.updateVisibility();
         if(!this.line) return;
         this.update();
@@ -146,12 +147,13 @@ export class Ruler3D {
 
     cacheSpeedProvider(token){
         if(!this.isDragRouler || !token) return;
+        this._speedProvider = dragRuler.getRangesFromSpeedProvider(token);
     }
 
     getColor(distance){
        let color
         if(this.token && this.isDragRouler){
-            const drColor = dragRuler?.getColorForDistanceAndToken(distance, this.token);
+            const drColor = dragRuler?.getColorForDistanceAndToken(distance, this.token, this._speedProvider);
             if(this.colorCache[drColor]) return this.colorCache[drColor];
             color = new THREE.Color(drColor);
             this.colorCache[drColor] = color;

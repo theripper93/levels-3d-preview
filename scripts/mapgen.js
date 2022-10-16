@@ -1,6 +1,7 @@
 let ROT = null;
 
 import { SimplexNoise, Perlin, FractionalBrownianMotion } from "./lib/noiseFunctions.js";
+import { tTypes } from "./helpers/helpers.js";
 
 export class MapGen extends FormApplication{
     constructor(document) {
@@ -243,6 +244,13 @@ export class MapGen extends FormApplication{
             }
         }
         flag.zoomLevel = this._zoomLevel || 0.5;
+        for(let mat of flag.materials){
+            let colorSrc = mat.texture.src;
+            tTypes.forEach(t => {
+                colorSrc = colorSrc.replace(t, "Color");
+            });
+            mat.colorSrc = colorSrc;
+        }
         return flag;
     }
 
@@ -611,7 +619,7 @@ const themes = {
               "repeat": 0.4,
               "rotate": true
           },
-          "collapsed": false
+          "collapsed": true
       },
       {
           "materialId": "Fire Rock",
@@ -622,7 +630,7 @@ const themes = {
               "repeat": 0.4,
               "rotate": true
           },
-          "collapsed": false
+          "collapsed": true
       }
   ]},
   "plains": {
@@ -637,7 +645,7 @@ const themes = {
                 "repeat": 0.4,
                 "rotate": true
             },
-            "collapsed": false
+            "collapsed": true
         },
         {
             "materialId": "Grass",
@@ -648,7 +656,7 @@ const themes = {
                 "repeat": 0.2,
                 "rotate": true
             },
-            "collapsed": false
+            "collapsed": true
         },
         {
             "materialId": "Rock",
@@ -659,7 +667,7 @@ const themes = {
                 "repeat": 0.7,
                 "rotate": true
             },
-            "collapsed": false
+            "collapsed": true
         }
     ]
   },
@@ -675,7 +683,7 @@ const themes = {
                 "repeat": 0.4,
                 "rotate": true
             },
-            "collapsed": false
+            "collapsed": true
         },
         {
             "materialId": "Sandstone",
@@ -686,7 +694,7 @@ const themes = {
                 "repeat": 0.3,
                 "rotate": true
             },
-            "collapsed": false
+            "collapsed": true
         }
     ]
   },
@@ -702,7 +710,7 @@ const themes = {
                 "repeat": 0.2,
                 "rotate": false
             },
-            "collapsed": false
+            "collapsed": true
         },
         {
             "materialId": "Wood Walls",
@@ -713,7 +721,7 @@ const themes = {
                 "repeat": 0.5,
                 "rotate": false
             },
-            "collapsed": false
+            "collapsed": true
         }
     ]
   },
@@ -729,7 +737,7 @@ const themes = {
                 "repeat": 1,
                 "rotate": true
             },
-            "collapsed": false
+            "collapsed": true
         },
         {
             "materialId": "Ice",
@@ -740,7 +748,7 @@ const themes = {
                 "repeat": 0.3,
                 "rotate": true
             },
-            "collapsed": false
+            "collapsed": true
         }
     ]
   },
@@ -756,7 +764,7 @@ const themes = {
                 "repeat": 0.2,
                 "rotate": true
             },
-            "collapsed": false
+            "collapsed": true
         },
         {
             "materialId": "Mossy Walls",
@@ -767,7 +775,7 @@ const themes = {
                 "repeat": 0.5,
                 "rotate": false
             },
-            "collapsed": false
+            "collapsed": true
         }
     ]
   },
@@ -783,7 +791,7 @@ const themes = {
                 "repeat": 0.4,
                 "rotate": true
             },
-            "collapsed": false
+            "collapsed": true
         },
         {
             "materialId": "Brick Walls",
@@ -794,7 +802,7 @@ const themes = {
                 "repeat": 0.5,
                 "rotate": false
             },
-            "collapsed": false
+            "collapsed": true
         }
     ]
   },
@@ -810,7 +818,7 @@ const themes = {
                 "repeat": 0.2,
                 "rotate": true
             },
-            "collapsed": false
+            "collapsed": true
         },
         {
             "materialId": "Metal Walls",
@@ -821,7 +829,7 @@ const themes = {
                 "repeat": 0.3,
                 "rotate": false
             },
-            "collapsed": false
+            "collapsed": true
         }
     ]
   },
@@ -837,7 +845,7 @@ const themes = {
                 "repeat": 0.3,
                 "rotate": false
             },
-            "collapsed": false
+            "collapsed": true
         },
         {
             "materialId": "Metal Walls",
@@ -848,7 +856,7 @@ const themes = {
                 "repeat": 0.6,
                 "rotate": false
             },
-            "collapsed": false
+            "collapsed": true
         }
     ]
   }

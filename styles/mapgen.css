@@ -105,3 +105,20 @@ flex-direction: column;
 #mapgen:not(.minimized) .window-header{
     overflow: visible;
 }
+
+#mapgen .material-image{
+    position: absolute;
+    width: calc(var(--form-field-height) - 10px);
+    height: calc(var(--form-field-height) - 10px);
+    max-width: calc(var(--form-field-height) - 10px);
+    border-radius: 50%;
+    background-size: contain;
+    margin: 0 0.3rem;
+    box-shadow: 0 0 3px black;
+    transition: all 0.2s ease-in-out;
+}
+
+#mapgen .material-image:hover{
+    transform: scale(4);
+    z-index: 999999;
+}

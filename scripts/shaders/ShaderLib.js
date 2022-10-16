@@ -260,13 +260,13 @@ export class ShaderHandler{
         if(normal.y < 0.5){
             vUv.y = vUv.y*shader_cell_size;
         }
-        #endif
         float angle = shader_random_rotation;
         float s = sin(angle);
         float c = cos(angle);
         vec2 c_uv = vUv;
         vUv.x = c_uv.x * c - c_uv.y * s;
         vUv.y = c_uv.x * s + c_uv.y * c;
+        #endif
         if(transformed.y < 1.0 && transformed.y > 0.5){
             transformed.y = transformed.y + (bevelSize - bevelSize/shader_cell_size);
         }

@@ -55,7 +55,7 @@
                 <li class="material-item" data-material-id="{{materialId}}" data-material-index="{{@index}}">
                     <div class="form-group">
                         <label {{#if collapsed}}style="display: none;" {{/if}}>{{localize "levels3dpreview.mapgen.material.name"}}</label>
-                        <input {{#if collapsed}}style="pointer-events: none; background-color: {{cellColor}}; text-align: center;" {{/if}} type="text" name="materials.{{@index}}.materialId" value="{{materialId}}">
+                        {{#if collapsed}}<div class="material-image" style="background-image: url({{colorSrc}});"></div>{{/if}}<input {{#if collapsed}}style="pointer-events: none; background-color: {{cellColor}}; text-align: center;" {{/if}} type="text" name="materials.{{@index}}.materialId" value="{{materialId}}">
                         <div {{#if collapsed}}style="display: none;" {{/if}} class="hide-color-input">{{colorPicker name=(concat "materials." @index ".cellColor")
                             value=cellColor default="#ffffff"}}</div>
                     </div>

@@ -251,14 +251,6 @@ export class Helpers {
     const folder = path.split("/").slice(0, -1).join("/");
     const extension = path.split(".").pop();
     path = path.replace("." + extension, "");
-    const tTypes = [
-      "Color",
-      "Roughness",
-      "Metalness",
-      "AmbientOcclusion",
-      "NormalGL",
-      "Emissive",
-    ];
     tTypes.forEach((t) => {
       path = path.replace(t, "");
     });
@@ -334,14 +326,6 @@ export class Helpers {
 
   isPBR(path) {
     if (!path) return false;
-    const tTypes = [
-      "Color",
-      "Roughness",
-      "Metalness",
-      "AmbientOcclusion",
-      "NormalGL",
-      "Emissive",
-    ];
     return tTypes.some((t) => {
       return path.includes(t);
     });
@@ -579,3 +563,12 @@ export function hideParams(app, html, element, flags, hide){
 })
 html.find(element).trigger("change");
 }
+
+export const tTypes = [
+  "Color",
+  "Roughness",
+  "Metalness",
+  "AmbientOcclusion",
+  "NormalGL",
+  "Emissive",
+]
