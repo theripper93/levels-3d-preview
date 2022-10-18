@@ -283,7 +283,7 @@ export class Tile3D {
             map: texture,
             side: THREE.DoubleSide,
             roughness : 1,
-            metalness : 1,
+            metalness : 0,
             transparent: this._parent._fullTransparency,
             alphaTest: this._parent._fullTransparency ? 0: 0.99,
         });
@@ -624,7 +624,7 @@ export class Tile3D {
         let textureOrMat = null;
         let isPBR = null;
         if(!texture) return {textureOrMat, isPBR};
-        textureOrMat = await this._parent.helpers.autodetectTextureOrMaterial(texture, {noCache: true, doubleSided: this.doubleSided , ...options});
+        textureOrMat = await this._parent.helpers.autodetectTextureOrMaterial(texture, {noCache: this.flipY || this.repeatTexture !== 1, doubleSided: this.doubleSided , ...options});
         isPBR = this._parent.helpers.isPBR(texture)
         if(isPBR){
             Object.values(textureOrMat).forEach(v => this.setTexture(v));
@@ -1270,9 +1270,9 @@ export class Tile3D {
             mesh.add(instancedMesh);
         }
         const depth = maxElevation - minElevation;
-        const bb = new THREE.Mesh(new THREE.BoxGeometry(rows, depth, cols), new THREE.MeshBasicMaterial({wireframe: true, color: 0x000000}));
+        const bb = new THREE.Mesh(new THREE.BoxGeometry(cols, depth, rows), new THREE.MeshBasicMaterial({wireframe: true, color: 0x000000}));
         bb.visible = false;
-        bb.position.set(rows/2, +depth/2, cols/2 - 1);
+        bb.position.set(cols/2, +depth/2, rows/2 -1);
         bb.userData.collision = false;
         bb.userData.cameraCollision = false;
         bb.userData.sight = false;
@@ -1281,7 +1281,7 @@ export class Tile3D {
         bb.userData.noShaders = true;
         mesh.add(bb);
         const object = new THREE.Group();
-        mesh.position.set(-rows/2, 0, -cols/2 + 1);
+        mesh.position.set(-cols/2, 0, -rows/2 + 1);
         object.add(mesh);
         return {scene: object, model: object, object: object};
 
@@ -1395,8 +1395,8 @@ export class Tile3D {
             mesh.add(instancedMesh);
         }
         const depth = maxElevation - minElevation;
-        const bbW = flatTop ? rows * h * 3/4 + h * 1/4 : rows * w + w/2;
-        const bbH = flatTop ? cols * w + w/2 : cols * h * 3/4 + h * 1/4; 
+        const bbW = flatTop ? cols * h * 3/4 + h * 1/4 : cols * w + w/2;
+        const bbH = flatTop ? rows * w + w/2 : rows * h * 3/4 + h * 1/4; 
         const bb = new THREE.Mesh(new THREE.BoxGeometry(bbW, depth, bbH), new THREE.MeshBasicMaterial({wireframe: true, color: 0x000000}));
         bb.visible = false;
         if(flatTop){

@@ -67,7 +67,7 @@ export class MapGen extends FormApplication{
         return cell.map
     }
 
-    _generateCellular(w,h){
+    _generateCellular(h,w){
         const cell = new ROT.Map.Cellular(w,h, {connected : true});
         cell.randomize(0.5);
         for(let i=0; i<5; i++){
@@ -364,15 +364,15 @@ export class MapGen extends FormApplication{
             const depth = (maxHeight - minHeight) * canvas.scene.dimensions.size;
             const w = canvas.scene.dimensions.size;
             const h = 2 * canvas.scene.dimensions.size / Math.sqrt(3);
-            let height = columns * canvas.scene.dimensions.size;
-            let width = rows * canvas.scene.dimensions.size;
+            let height = rows * canvas.scene.dimensions.size;
+            let width = columns * canvas.scene.dimensions.size;
             if(canvas.scene.grid.type > 3){
-                width = rows * h * 3/4 + h * 1/4;
-                height = columns * w + w/2;
+                width = columns * h * 3/4 + h * 1/4;
+                height = rows * w + w/2;
 
             }else if(canvas.scene.grid.type > 1){
-                width = rows * w + w/2;
-                height = columns * h * 3/4 + h * 1/4;
+                width = columns * w + w/2;
+                height = rows * h * 3/4 + h * 1/4;
             }
             let x = canvas.scene.dimensions.sceneX;
             let y = canvas.scene.dimensions.sceneY;
