@@ -285,7 +285,7 @@ export class Tile3D {
             roughness : 1,
             metalness : 0,
             transparent: this._parent._fullTransparency,
-            alphaTest: this._parent._fullTransparency ? 0: 0.99,
+            alphaTest: this._parent._fullTransparency ? 0.01: 0.99,
         });
         this.mesh = new THREE.Mesh(geometry, material);
         this.mesh.position.set(this.center.x,this.center.y,this.center.z);
