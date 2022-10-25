@@ -48,14 +48,17 @@ export class MapGen extends FormApplication{
         let maps = [];
         for(let i = 0; i < count; i++){
             let map = null;
-            while(!map){
+            let tries = 0;
+            while(!map && tries < 10){
                 try{
                     const m = genFn(this.getData().columns, this.getData().rows, cHeight, gen);
                     map = m;
                 }catch(e){
                     console.warn("Failed to generate, retrying...");
                 }
+                tries++;
             }
+            if(!map) ui.notifications.error("Failed to generate map, please try again with a different grid size.");
             maps.push(map);
         }
         return maps;
