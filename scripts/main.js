@@ -136,6 +136,9 @@ class Levels3DPreview {
       THREEUTILS: {
         DecalGeometry,
       },
+      LOADERS: {
+        GLTFLoader,
+      },
       shaders: {
         ShaderHandler,
         shaders,
@@ -267,6 +270,8 @@ class Levels3DPreview {
         },
       ],
     };
+
+    Hooks.callAll("3DCanvasConfig", this.CONFIG);
     for (let [k, v] of Object.entries(this.CONFIG.tokenAnimations)) {
       v.name = game.i18n.localize(`levels3dpreview.tokenAnimations.${k}`);
     }
@@ -312,7 +317,7 @@ class Levels3DPreview {
     };
     this.animationMixers = [];
     this.clock = new THREE.Clock();
-    this.loader = new GLTFLoader();
+    this.loader = new this.CONFIG.LOADERS.GLTFLoader();
     this.FBXLoader = new FBXLoader();
     this._active = false;
     this._ready = false;
