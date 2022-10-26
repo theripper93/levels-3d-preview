@@ -38,7 +38,7 @@ export class Grid3D {
 
     setVisibility(){
       if(!this.grid) return;
-      this.grid.visible = !(canvas.scene.getFlag("levels-3d-preview", "renderBackground") ?? true);
+      this.grid.visible = false//!(canvas.scene.getFlag("levels-3d-preview", "renderBackground") ?? true);
     }
 
     createBuildPlane(){

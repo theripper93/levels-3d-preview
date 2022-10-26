@@ -71,7 +71,7 @@ export class Fog{
         if(!this.needsUpdate && !force) return;
         this.needsUpdate = false;
         if(this.fogTexture && !this._sharedContext) this.fogTexture.dispose();
-        const isBlank = game.user.isGM && (!canvas.tokens.controlled.length || !canvas.effects.lightSources.size)
+        const isBlank = game.user.isGM && !canvas.effects?.visionSources?.size
         const base64 = isBlank ? this.blank : this.generateTexture();
         this.fogTexture = this._sharedContext || isBlank ? base64 : await new THREE.TextureLoader().loadAsync( base64)
         if(!this.fogTexture) return;
@@ -155,7 +155,7 @@ export function injectFoWShaders(THREELIB){
             vec4 overlayTexel = texture( fogOverlay, vec2(sceneX * overlayRepeat.x, sceneY * overlayRepeat.y) );
             gl_FragColor = mix(gl_FragColor, overlayTexel, 1.0 - fogTexel.r);
         }else{
-            gl_FragColor = mix( vec4(0.0), gl_FragColor, fogTexel.r );
+            gl_FragColor = mix( vec4(0.0, 0.0, 0.0, 1.0), gl_FragColor, fogTexel.r );
         }
     }
     `
