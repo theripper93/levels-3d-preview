@@ -38,6 +38,9 @@ export class Template3D {
         this.setPosition()
         this.scene.add(this.mesh)
         this._parent.templates[this.template.id] = this
+        setTimeout(() => {
+        Hooks.callAll("3DTemplateCreated", this);
+        }, 100);
     }
 
     get isOwner(){
@@ -51,6 +54,11 @@ export class Template3D {
     get fromData(){
         //if(this.isPreview) return false;
         return this.template.data?.x !== undefined ? true : false
+    }
+
+    contains(point, convertSpace = true){
+        if(convertSpace) point = Ruler3D.posCanvasTo3d(point)
+        return this._parent.interactionManager.inMesh(point,this.templateMesh)
     }
 
     setPosition(){

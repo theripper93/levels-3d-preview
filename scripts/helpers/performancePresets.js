@@ -37,12 +37,15 @@ export function injectPresetButtons(html){
 }
 
 async function applyPreset(id, preset){
+    Object.values(ui.windows).find(w => w instanceof SettingsConfig)?.close();
     ui.notifications.notify(`${game.i18n.localize(`levels3dpreview.performance.notification`).replace("{performancemode}", game.i18n.localize(`levels3dpreview.performance.${id}`))}`);
+    setTimeout(async () => {
     for(let [k,v] of Object.entries(preset)){
         if(k == "icon") continue;
         await game.settings.set("levels-3d-preview", k, v);
     }
     SettingsConfig.reloadConfirm();
+    }, 1000);
 }
 
 

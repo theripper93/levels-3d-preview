@@ -1199,7 +1199,7 @@ class Levels3DPreview {
       this.interactionManager.dragObject();
       this.cursors.update();
       const delta = this.clock.getDelta();
-      this.models.reticule.material.rotation += delta*0.05;
+      if(this.models?.reticule?.material)this.models.reticule.material.rotation += delta*0.05;
       tokensArray.forEach((token) => {
         if (token) {
           token.updateVisibility();
@@ -1249,7 +1249,7 @@ class Levels3DPreview {
         });
       this.allignChatBubbles();
       //this.resizeCanvasToDisplaySize(this);
-      this.lights.globalIllumination.update(delta);
+      this.lights?.globalIllumination?.update(delta);
       this.weather?.update(delta);
       this.GameCamera.update(delta);
       this.controls.update();

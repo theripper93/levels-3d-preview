@@ -123,6 +123,25 @@ export class InteractionManager {
       return collision.point;
     }
 
+    inMesh(point, mesh){
+      if(!mesh.geometry) mesh = mesh.children[0];
+      const side = mesh.material.side;
+      mesh.material.side = THREE.DoubleSide;
+      const origin = new THREE.Vector3(0,0,0);
+      const direction = point.clone().sub(origin).normalize();
+      const rcFar = this.raycaster.far;
+      const rcFH = this.sightRaycaster.firstHitOnly;
+      this.sightRaycaster.far = point.distanceTo(origin);
+      this.sightRaycaster.set(origin, direction);
+      this.sightRaycaster.firstHitOnly = false;
+      const collisions = this.sightRaycaster.intersectObject(mesh, false);
+      this.sightRaycaster.far = rcFar;
+      this.sightRaycaster.firstHitOnly = rcFH;
+      mesh.material.side = side;
+      if(collisions.length % 2 === 0) return false;
+      return true;
+    }
+
     activateListeners() {
         this.domElement.addEventListener("mousedown", this._onMouseDown.bind(this), false);
         //this.domElement.addEventListener("mousedown", this._onEnableRuler.bind(this), false);

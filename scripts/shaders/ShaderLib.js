@@ -1015,6 +1015,7 @@ export const shaders = {
                 #ifdef USE_UV
                     noiseSampler = vec2(vUv);
                 #endif
+                noiseSampler /= 2.0;
                 vec3 c1 = fire_color*0.1;
                 vec3 c2 = fire_color*0.7;
                 vec3 c3 = fire_color*0.2;
@@ -1049,6 +1050,7 @@ export const shaders = {
                 type: "float",
                 min: 0.01,
                 max: 2,
+                default: 1
             },
             grain: {
                 type: "float",
@@ -1078,6 +1080,7 @@ export const shaders = {
                 #ifdef USE_UV
                     noiseSampler = vec2(vUv);
                 #endif
+                noiseSampler /= 2.0;
                 vec3 c1 = ice_color*0.1;
                 vec3 c2 = ice_color*0.7;
                 vec3 c3 = ice_color*0.2;
@@ -1113,6 +1116,7 @@ export const shaders = {
                 type: "float",
                 min: 0.01,
                 max: 2,
+                default: 0.5
             },
             scale: {
                 type: "float",
@@ -1124,7 +1128,7 @@ export const shaders = {
             },
             blendMode: {
                 type: "bool",
-                default: true
+                default: false
             },
         },
         varying: {},
@@ -1134,7 +1138,7 @@ export const shaders = {
                 mode: SHADERS_CONSTS.APPEND,
                 injectionPoint: "#include <dithering_fragment>",
                 shaderCode: `
-                vec3 noiseVec = shader_vPosition;          
+                vec3 noiseVec = vWorldPositionFoW;          
                 
                 vec3 lightning_final_color = vec3( 0.0 );
                 for( int i = 0; i < 5; ++i ) {
@@ -1156,7 +1160,7 @@ export const shaders = {
         uniforms: {
             speed: {
                 type: "float",
-                default: 0.1
+                default: 0.02
             },
             intensity: {
                 type: "float",
@@ -1166,7 +1170,7 @@ export const shaders = {
             },
             scale: {
                 type: "float",
-                default: 1
+                default: 5
             },
             color: {
                 type: "vec3",
@@ -1184,7 +1188,7 @@ export const shaders = {
                 mode: SHADERS_CONSTS.APPEND,
                 injectionPoint: "#include <dithering_fragment>",
                 shaderCode: `
-                vec3 noiseSampler = shader_vPosition;
+                vec3 noiseSampler = vWorldPositionFoW;
                 vec3 c1 = oil_color*0.1;
                 vec3 c2 = oil_color*0.7;
                 vec3 c3 = oil_color*0.2;
