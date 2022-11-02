@@ -449,6 +449,7 @@ export class Template3D {
       const data = {
         x: dest.x,
         y: dest.y,
+        t: this._getBaseShape(),
         direction: ((this.isPreview ? this.initialDirection : this.template.document?.direction) - this.directionOffset)%360,
         flags: {
             levels: {
@@ -456,7 +457,7 @@ export class Template3D {
             }
         }
     }
-        this.isPreview ? this.template.document?.update(data) : this.template.document?.update(data)
+        this.isPreview ? this.template.document?.updateSource(data) : this.template.document?.update(data)
         if(this.isPreview) Hooks.callAll(`template3dUpdatePreview`, this.template, data)
     }
 

@@ -1021,6 +1021,7 @@ export class Token3D {
       const spriteMaterial = new THREE.SpriteMaterial({
         map: await new THREE.TextureLoader().loadAsync(base64),
         transparent: true,
+        alphaTest: 0.1,
       });
       const sprite = new THREE.Sprite(spriteMaterial);
       sprite.center.set(0.5,0.5);

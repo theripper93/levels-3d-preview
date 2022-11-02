@@ -104,7 +104,10 @@
                 "jungle": "Jungle Ruins",
                 "crypt": "Crypt",
                 "alien": "Alien",
-                "tech": "Tech"
+                "tech": "Tech",
+                "tmcArabianNights": "Arabian Nights",
+                "tmcNature": "Nature",
+                "tmcDungeon": "Dungeon"
             },
             "material": {
                 "name": "Name",

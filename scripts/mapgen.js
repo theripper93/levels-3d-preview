@@ -601,7 +601,7 @@ export class MapGen extends FormApplication{
         for(let [k,v] of Object.entries(themes)){
             themeButtons.push({
                 name: "levels3dpreview.mapgen.themes." + k,
-                icon: `<i class="${v.icon}"></i>`,
+                icon: k.includes("tmc") ? `<i data-tooltip="The Mad Cartographer"><img src="modules/canvas3dcompendium/assets/TheMadCartographerTexturePack/MAD_Logo_Large_Circle.webp" class="tmc-icon"></i>` : `<i class="${v.icon}"></i>`,
                 callback: (e) => {
                     this.setTheme(k, e);
                 },
@@ -949,5 +949,212 @@ const themes = {
         emissive: 0,
       },
     ],
+  },
+  tmcArabianNights: {
+    icon: "fas fa-crown",
+    materials: [
+        {
+            "materialId": "Sand",
+            "cellColor": "#c9a41d",
+            "texture": {
+                "src": "modules/canvas3dcompendium/assets/TheMadCartographerTexturePack/Texture-Desert.webp",
+                "tint": "",
+                "repeat": 0.4,
+                "rotate": true
+            },
+            "roughness": 1,
+            "metalness": 0,
+            "emissive": 0,
+            "opacity": 1,
+            "collapsed": true,
+            "colorSrc": "modules/canvas3dcompendium/assets/TheMadCartographerTexturePack/Texture-Desert.webp"
+        },
+        {
+            "materialId": "Sand Bricks",
+            "cellColor": "#bbb786",
+            "texture": {
+                "src": "modules/canvas3dcompendium/assets/TheMadCartographerTexturePack/Texture-Desert-Tile-Sandy.webp",
+                "tint": "",
+                "repeat": 0.4,
+                "rotate": false
+            },
+            "roughness": 1,
+            "metalness": 0,
+            "emissive": 0,
+            "opacity": 1,
+            "collapsed": true,
+            "colorSrc": "modules/canvas3dcompendium/assets/TheMadCartographerTexturePack/Texture-Desert-Tile-Sandy.webp"
+        },
+        {
+            "materialId": "Sand Tiles",
+            "cellColor": "#f8ffc7",
+            "texture": {
+                "src": "modules/canvas3dcompendium/assets/TheMadCartographerTexturePack/Texture-Sandstone-Tile.webp",
+                "tint": "",
+                "repeat": 1,
+                "rotate": false
+            },
+            "roughness": 0.44,
+            "metalness": 0.31,
+            "emissive": 0,
+            "opacity": 1,
+            "collapsed": true,
+            "colorSrc": "modules/canvas3dcompendium/assets/TheMadCartographerTexturePack/Texture-Sandstone-Tile.webp"
+        }
+    ]
+  },
+  tmcNature: {
+    icon: "fas fa-tree",
+    materials: [
+        {
+            "materialId": "Dirt",
+            "cellColor": "#877226",
+            "texture": {
+                "src": "modules/canvas3dcompendium/assets/TheMadCartographerTexturePack/Texture-Dirt.webp",
+                "tint": "",
+                "repeat": 0.4,
+                "rotate": true
+            },
+            "roughness": 1,
+            "metalness": 0,
+            "emissive": 0,
+            "opacity": 1,
+            "collapsed": true,
+            "colorSrc": "modules/canvas3dcompendium/assets/TheMadCartographerTexturePack/Texture-Dirt.webp"
+        },
+        {
+            "materialId": "Grass",
+            "cellColor": "#86bb8c",
+            "texture": {
+                "src": "modules/canvas3dcompendium/assets/TheMadCartographerTexturePack/Texture-Grass.webp",
+                "tint": "",
+                "repeat": 0.4,
+                "rotate": true
+            },
+            "roughness": 1,
+            "metalness": 0,
+            "emissive": 0,
+            "opacity": 1,
+            "collapsed": true,
+            "colorSrc": "modules/canvas3dcompendium/assets/TheMadCartographerTexturePack/Texture-Grass.webp"
+        },
+        {
+            "materialId": "Water",
+            "cellColor": "#5ba1ec",
+            "texture": {
+                "src": "modules/canvas3dcompendium/assets/TheMadCartographerTexturePack/Texture-Water.webp",
+                "tint": "",
+                "repeat": 0.3,
+                "rotate": true
+            },
+            "roughness": 0,
+            "metalness": 0,
+            "emissive": 0,
+            "opacity": 0.69,
+            "collapsed": true,
+            "colorSrc": "modules/canvas3dcompendium/assets/TheMadCartographerTexturePack/Texture-Water.webp"
+        }
+    ]
+  },
+  tmcDungeon: {
+    icon: "fas fa-dungeon",
+    materials: [
+        {
+            "materialId": "Stone Brick",
+            "cellColor": "#949494",
+            "texture": {
+                "src": "modules/canvas3dcompendium/assets/TheMadCartographerTexturePack/Texture-Dungeon-Cobble.webp",
+                "tint": "",
+                "repeat": 0.4,
+                "rotate": false
+            },
+            "roughness": 1,
+            "metalness": 0,
+            "emissive": 0,
+            "opacity": 1,
+            "collapsed": true,
+            "colorSrc": "modules/canvas3dcompendium/assets/TheMadCartographerTexturePack/Texture-Dungeon-Cobble.webp"
+        },
+        {
+            "materialId": "Stone Tiles 1",
+            "cellColor": "#808080",
+            "texture": {
+                "src": "modules/canvas3dcompendium/assets/TheMadCartographerTexturePack/Texture-Brick-Flooring.webp",
+                "tint": "",
+                "repeat": 0.4,
+                "rotate": false
+            },
+            "roughness": 1,
+            "metalness": 0,
+            "emissive": 0,
+            "opacity": 1,
+            "collapsed": true,
+            "colorSrc": "modules/canvas3dcompendium/assets/TheMadCartographerTexturePack/Texture-Brick-Flooring.webp"
+        },
+        {
+            "materialId": "Stone Tiles 2",
+            "cellColor": "#828282",
+            "texture": {
+                "src": "modules/canvas3dcompendium/assets/TheMadCartographerTexturePack/Texture-Dungeon-Stone-Tiles.webp",
+                "tint": "",
+                "repeat": 0.3,
+                "rotate": false
+            },
+            "roughness": 1,
+            "metalness": 0,
+            "emissive": 0,
+            "opacity": 1,
+            "collapsed": true,
+            "colorSrc": "modules/canvas3dcompendium/assets/TheMadCartographerTexturePack/Texture-Dungeon-Stone-Tiles.webp"
+        },
+        {
+            "materialId": "Stone Tiles Red",
+            "cellColor": "#9d6262",
+            "texture": {
+                "src": "modules/canvas3dcompendium/assets/TheMadCartographerTexturePack/Texture-Stone-Tile-Red.webp",
+                "tint": "",
+                "repeat": 1,
+                "rotate": false
+            },
+            "roughness": 1,
+            "metalness": 0,
+            "emissive": 0,
+            "opacity": 1,
+            "collapsed": true,
+            "colorSrc": "modules/canvas3dcompendium/assets/TheMadCartographerTexturePack/Texture-Stone-Tile-Red.webp"
+        },
+        {
+            "materialId": "Acid",
+            "cellColor": "#75d797",
+            "texture": {
+                "src": "modules/canvas3dcompendium/assets/TheMadCartographerTexturePack/Texture-Sewer-Acid.webp",
+                "tint": "",
+                "repeat": 0.6,
+                "rotate": true
+            },
+            "roughness": 0,
+            "metalness": 0,
+            "emissive": 0,
+            "opacity": 0.65,
+            "collapsed": true,
+            "colorSrc": "modules/canvas3dcompendium/assets/TheMadCartographerTexturePack/Texture-Sewer-Acid.webp"
+        },
+        {
+            "materialId": "Lava",
+            "cellColor": "#ffa200",
+            "texture": {
+                "src": "modules/canvas3dcompendium/assets/TheMadCartographerTexturePack/Texture-Lava-Bubble.webp",
+                "tint": "#ee8711",
+                "repeat": 0.4,
+                "rotate": true
+            },
+            "roughness": 0.63,
+            "metalness": 0.17,
+            "emissive": 1,
+            "opacity": 1,
+            "collapsed": true,
+            "colorSrc": "modules/canvas3dcompendium/assets/TheMadCartographerTexturePack/Texture-Lava-Bubble.webp"
+        }
+    ]
   },
 };
