@@ -58,7 +58,7 @@ export class GlobalIllumination {
 
     _setShadowQuality(){
       const sunlight = this.global.sunlight;
-      sunlight.shadow.bias = canvas.scene.getFlag("levels-3d-preview", "shadowBias") ?? -0.035;
+      sunlight.shadow.bias = canvas.scene.getFlag("levels-3d-preview", "shadowBias") ?? -0.00018;
       sunlight.castShadow = game.settings.get("levels-3d-preview", "shadowQuality") > 0;
       sunlight.shadow.radius = 1;
       sunlight.shadow.camera.fov = 90;
