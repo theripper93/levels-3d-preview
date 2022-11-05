@@ -43,6 +43,24 @@ export class Wall3D {
 
     }
 
+    get isDisabledVisible(){
+        if(this._isDisabledVisible !== undefined) return this._isDisabledVisible;
+        let isDisabledVisible = true;
+        const isDoor = this.wall.isDoor;
+        if (
+          canvas.scene.getFlag("levels-3d-preview", "showSceneWalls") === false &&
+          !isDoor
+        )
+        isDisabledVisible = false;
+        if (
+          canvas.scene.getFlag("levels-3d-preview", "showSceneDoors") === false &&
+          isDoor
+        )
+        isDisabledVisible = false;
+        this._isDisabledVisible = isDisabledVisible;
+        return isDisabledVisible;
+    }
+
     async init(){
         const geometry = new THREE.BoxGeometry(
             this.depth,
@@ -80,6 +98,7 @@ export class Wall3D {
         this.mesh.receiveShadow = true;
         this.mesh.position.set(this.center.x,this.center.y,this.center.z);
         this.mesh.rotation.set(0,this.angle,0);
+        this.mesh.visible = this.isDisabledVisible;
         this._parent.scene.add(this.mesh);
     }
 
@@ -119,6 +138,7 @@ export class Wall3D {
     }
 
     get isVisible(){
+        if(this._isDisabledVisible === false) return false;
         if(!this.tint && !this.texture) return true;
         if(this.alwaysVisible) return true;
         if(this.wall.document.sense === 0) return false;

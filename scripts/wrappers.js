@@ -186,6 +186,7 @@ Hooks.once('ready', async function() {
     }
 
     function _handleMovement(wrapped,...args){
+        const object3dSight = canvas.scene.getFlag("levels-3d-preview","object3dSight") ?? false;
         const layer = args[1];
         if(!game.Levels3DPreview?._active || !canvas.tokens.controlled[0]) return wrapped(...args);
         const positions = handleArrowKeys(this.moveKeys)

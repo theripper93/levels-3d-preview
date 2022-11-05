@@ -78,7 +78,7 @@ export class InteractionManager {
       }
       for(let wall of Object.values(this._parent.walls)){
         if(wall.placeable.isDoor && wall.placeable.document.ds === CONST.WALL_DOOR_STATES.OPEN) continue;
-        if(!wall.mesh?.visible) continue;
+        if(!wall.mesh?.visible && wall.isDisabledVisible === true) continue;
         if(wall.placeable.document.sight >= 10) sightObjects.push(wall.mesh);
         if(wall.placeable.document.move > 0) collisionObjects.push(wall.mesh);
       }

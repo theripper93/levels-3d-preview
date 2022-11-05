@@ -600,8 +600,6 @@ class Levels3DPreview {
     this.createTemplates();
     const drawFloors =
       canvas.scene.getFlag("levels-3d-preview", "showSceneFloors") ?? true;
-    const drawWalls =
-      canvas.scene.getFlag("levels-3d-preview", "showSceneWalls") ?? true;
     const drawLights =
       canvas.scene.getFlag("levels-3d-preview", "renderSceneLights") ?? true;
     this.standUpFaceCamera =
@@ -891,17 +889,6 @@ class Levels3DPreview {
   }
 
   createWall(wall) {
-    const isDoor = wall.isDoor;
-    if (
-      canvas.scene.getFlag("levels-3d-preview", "showSceneWalls") === false &&
-      !isDoor
-    )
-      return;
-    if (
-      canvas.scene.getFlag("levels-3d-preview", "showSceneDoors") === false &&
-      isDoor
-    )
-      return;
     this.walls[wall.id] = new Wall3D(wall, this);
     if (wall.document.door) this.doors[wall.id] = this.walls[wall.id];
   }
