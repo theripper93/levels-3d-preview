@@ -52,11 +52,23 @@ export class InteractionManager {
       return canvas.activeLayer?.options?.objectClass?.embeddedName;
     }
 
-    generateSightCollisions(){
+    generateSightCollisions(p0,p1){
+      let tileQuadtree, wallsQuadtree;
+      if(p0 && p1){
+        const rectX = Math.min(p0.x, p1.x);
+        const rectY = Math.min(p0.y, p1.y);
+        const rectW = Math.abs(p1.x - p0.x);
+        const rectH = Math.abs(p1.y - p0.y);
+        const rect = new PIXI.Rectangle(rectX, rectY, rectW, rectH);
+        wallsQuadtree = canvas.walls.quadtree.getObjects(rect).map(w => this._parent.walls[w.id]);
+        tileQuadtree = canvas.tiles.quadtree.getObjects(rect).map(t => this._parent.tiles[t.id]);
+      }
       const collisionObjects = [];
       const sightObjects = [];
       const cameraObjects = [];
-      for(let tile of Object.values(this._parent.tiles)){
+      const tiles = tileQuadtree ?? Object.values(this._parent.tiles);
+      const walls = wallsQuadtree ?? Object.values(this._parent.walls);
+      for(let tile of tiles){
         if(!tile.mesh?.visible) continue;
         const mesh = tile.sightMesh ?? tile.mesh;
         if(tile.hasTags){
@@ -76,7 +88,7 @@ export class InteractionManager {
           if(tile.cameraCollision) cameraObjects.push(mesh);
         }
       }
-      for(let wall of Object.values(this._parent.walls)){
+      for(let wall of walls){
         if(wall.placeable.isDoor && wall.placeable.document.ds === CONST.WALL_DOOR_STATES.OPEN) continue;
         if(!wall.mesh?.visible && wall.isDisabledVisible === true) continue;
         if(wall.placeable.document.sight >= 10) sightObjects.push(wall.mesh);
@@ -92,7 +104,7 @@ export class InteractionManager {
         sight: sightObjects,
         camera: cameraObjects
       }
-      canvas.tokens.controlled.forEach(t => t.updateSource())
+      if(!p0 && !p1) canvas.tokens.controlled.forEach(t => t.updateSource())
     }
 
     computeSightCollision(v1,v2, type = "collision", elongate = false){
@@ -102,12 +114,15 @@ export class InteractionManager {
     }
 
     computeSightCollisionFrom3DPositions(origin,target, type, elongate, useDistance = true, useClipping = false, returnAll = false){
+      const rectp0 = {x: origin.x*factor, y: origin.z*factor};
+      const rectp1 = {x: target.x*factor, y: target.z*factor};
       const direction = target.clone().sub(origin).normalize();
       const distance = useDistance ? origin.distanceTo(target) : Infinity;
       this.sightRaycaster.far = distance ?? Infinity;
       this.sightRaycaster.firstHitOnly = !useClipping;
       this.sightRaycaster.set(origin, direction);
-      if(!this._sightCollisions[type] && !this._sightCollisions["collision"])  this.forceSightCollisions();
+      this.forceSightCollisions(rectp0,rectp1);
+      //if(!this._sightCollisions[type] && !this._sightCollisions["collision"])  this.forceSightCollisions(rectp0,rectp1);
       let collisions = this.sightRaycaster.intersectObjects(this._sightCollisions[type] ?? this._sightCollisions["collision"], true);
       if(!collisions.length) return false;
       if(useClipping && !returnAll){
