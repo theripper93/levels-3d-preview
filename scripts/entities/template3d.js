@@ -53,7 +53,7 @@ export class Template3D {
 
     get fromData(){
         //if(this.isPreview) return false;
-        return this.template.data?.x !== undefined ? true : false
+        return this.template.document?.x !== undefined ? true : false
     }
 
     contains(point, convertSpace = true){
@@ -80,7 +80,8 @@ export class Template3D {
         this.width = 1
         const mesh = this._getMesh()
         this.templateMesh = mesh
-        //this.templateMesh.userData.ignoreHover = true;
+        this.templateMesh.userData.interactive = false;
+        this.templateMesh.userData.ignoreHover = true;
         this.mesh.add(mesh)
         this.createHandle()
     }
@@ -283,7 +284,7 @@ export class Template3D {
         this.angle = CONFIG.MeasuredTemplate.defaults.angle
         const radius = (height/Math.cos(angle))*Math.sin(angle)//height*Math.acos(angle)*2
         const group = new THREE.Group()
-        const geometry = new THREE.ConeGeometry(radius, height, this.template?.data?.texture ? 256 : 64)
+        const geometry = new THREE.ConeGeometry(radius, height, this.template?.document?.texture ? 256 : 64)
         const mesh = new THREE.Mesh(geometry, this.material)
         //mesh.position.set(0, -height/2, 0)
         mesh.rotateZ(Math.PI/2)
@@ -336,7 +337,7 @@ export class Template3D {
 
     _get3DData(){
         if(this.fromData){
-            return this.template.data?.flags?.levels ?? {special: 0}
+            return this.template.document?.flags?.levels ?? {special: 0}
         }else{
             return {special: CONFIG.Levels.UI.nextTemplateSpecial}
         }
@@ -374,7 +375,7 @@ export class Template3D {
     }
 
     _getMaterial(){
-        const templateStyle = this.template?.data?.texture || this.hasShaders ? "solid" : game.settings.get(
+        const templateStyle = this.template?.document?.texture || this.hasShaders ? "solid" : game.settings.get(
           "levels-3d-preview",
           "templateSyle"
         );
@@ -413,7 +414,7 @@ export class Template3D {
     }
 
     _getTexture(){
-        if(!this.template.data?.texture && !this.template.document?.flags?.siftoolkit?.displayData?.texture) return
+        if(!this.template.document?.texture && !this.template.document?.flags?.siftoolkit?.displayData?.texture) return
         const texturePath = this.template.document?.texture || this.template.document?.flags?.siftoolkit?.displayData?.texture
         this._parent.helpers.loadTexture(texturePath).then(texture => {
             this.material.map = texture

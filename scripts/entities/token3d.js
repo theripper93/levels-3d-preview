@@ -161,13 +161,21 @@ export class Token3D {
     removeBaseAndReposition(object){
       let model = object?.scene
       if(!model) return;
-      let base;
+      let base, eyeL, eyeR;
       model.traverse((child) => {
         if(child.name === "base"){
           base = child;
         }
+        if(child.name === "eyeL" && !eyeL){
+          eyeL = child;
+        }
+        if(child.name === "eyeR" && !eyeR){
+          eyeR = child;
+        }
       });
       if(!base) return;
+      eyeL.removeFromParent();
+      eyeR.removeFromParent();
       const groundOffset = object?.object?.asset?.extras?.heroForge?.groundOffset ?? 0;
       base.removeFromParent();
       model.children.forEach(c => {

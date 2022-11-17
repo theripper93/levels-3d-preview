@@ -296,12 +296,13 @@ export class InteractionManager {
       }
 
       isRulerDrag(event, intersectData){
-        if(this.isNoSelectDrag() && ui.controls.activeTool !== "tile") return false;
-        if(ui.controls.activeTool === "select") return false
-        if(this.activeLayerEntity === "Tile" && ui.controls.activeTool != "tile") return false
+        if(this.currentHover?.embeddedName === this.activeLayerEntity) return false;
+        if(this.isNoSelectDrag() && ui.controls.control.activeTool !== "tile") return false;
+        if(ui.controls.control.activeTool === "select") return false
+        if(this.activeLayerEntity === "Tile" && ui.controls.control.activeTool != "tile") return false
         if(!ui.controls.isRuler && !this.allowedRulerDrag.some(a => a=== this.activeLayerEntity) ) return false
         if(!this.mouseIntersection3DCollision({x:event.clientX, y: event.clientY})?.length) return false
-        if(this.activeLayerEntity === "Tile" && ui.controls.activeTool != "tile") return false;//if(this.allowedRulerDrag.some(a => a=== intersectData?.object?.userData?.entity3D?.embeddedName) && ui.controls.activeTool != "tile") return false
+        if(this.activeLayerEntity === "Tile" && ui.controls.control.activeTool != "tile") return false;//if(this.allowedRulerDrag.some(a => a=== intersectData?.object?.userData?.entity3D?.embeddedName) && ui.controls.control.activeTool != "tile") return false
         return true;
       }
 
@@ -417,9 +418,10 @@ export class InteractionManager {
       if(event.which === 3) this._rightDown = true;
       this.mousePosition = { x: event.clientX, y: event.clientY };
       if(event.which !== 1 && event.which !== 3) return;
-      //if(event.shiftKey) return;
+      this._onMouseMove(event, true);
       const intersectData = this.findMouseIntersect(event);
       const intersect = intersectData?.object;
+      console.log(intersect)
       if(this.isRulerDrag(event, intersectData)) this.toggleControls(false);
       if(!intersect || event.ctrlKey) return;
       if(intersect.userData?.entity3D?.embeddedName === this.activeLayerEntity && !(this._gizmoEnabled && this.activeLayerEntity === "Tile"))this.toggleControls(false);
@@ -513,8 +515,8 @@ export class InteractionManager {
       this._hoverobj = this._parent.scene.children.filter(this._collisionFilter);
     }
 
-    _onMouseMove(event){
-      if(!this._canMouseMove) return;
+    _onMouseMove(event, force = false){
+      if(!this._canMouseMove && !force) return;
       this._canMouseMove = false;
       this.mousemove.x = (event.clientX / window.innerWidth) * 2 - 1;
       this.mousemove.y = -(event.clientY / window.innerHeight) * 2 + 1;
@@ -953,6 +955,7 @@ export class InteractionManager {
       const entity3D = this.draggable.userData.entity3D;
       entity3D.dragCanceled = true;
       this.draggable = undefined;
+      this.ruler.template = undefined;
       if(entity3D.token)Hooks.call("updateToken", entity3D.token.document, {x: entity3D.token.document.x});
       if(entity3D.template)Hooks.call("updateMeasuredTemplate", entity3D.template.document, {x: entity3D.template.document.x});
       if(entity3D.tile) Hooks.call("updateTile", entity3D.tile.document, {x: entity3D.tile.document.x});

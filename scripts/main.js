@@ -1495,8 +1495,11 @@ class Levels3DPreview {
               this.loadingTiles = {};
               this._onReady();
               setTimeout(() => {
-              Object.values(this.tokens).forEach((token) => { token.forceDrawBars(); });
+              Object.values(this.tokens).forEach((token) => { token.forceDrawBars(); token.drawName(); });
               }, 10);
+              setTimeout(() => {
+                Object.values(this.tokens).forEach((token) => { token.forceDrawBars(); token.drawName(); });
+              }, 200);
               Hooks.callAll("3DCanvasSceneReady", game.Levels3DPreview);
             }, 200);
           }, 300);
