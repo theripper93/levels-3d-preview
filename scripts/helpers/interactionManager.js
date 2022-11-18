@@ -296,13 +296,13 @@ export class InteractionManager {
       }
 
       isRulerDrag(event, intersectData){
+        if(this.activeLayerEntity === "Tile" && ui.controls.activeTool === "tile") return true;
         if(this.currentHover?.embeddedName === this.activeLayerEntity) return false;
-        if(this.isNoSelectDrag() && ui.controls.control.activeTool !== "tile") return false;
-        if(ui.controls.control.activeTool === "select") return false
-        if(this.activeLayerEntity === "Tile" && ui.controls.control.activeTool != "tile") return false
+        if(this.isNoSelectDrag()) return false;
+        if(ui.controls.control.activeTool === "select" && ui.controls.activeTool != "ruler") return false
         if(!ui.controls.isRuler && !this.allowedRulerDrag.some(a => a=== this.activeLayerEntity) ) return false
         if(!this.mouseIntersection3DCollision({x:event.clientX, y: event.clientY})?.length) return false
-        if(this.activeLayerEntity === "Tile" && ui.controls.control.activeTool != "tile") return false;//if(this.allowedRulerDrag.some(a => a=== intersectData?.object?.userData?.entity3D?.embeddedName) && ui.controls.control.activeTool != "tile") return false
+        if(this.activeLayerEntity === "Tile" && ui.controls.control.activeTool != "tile") return false;
         return true;
       }
 

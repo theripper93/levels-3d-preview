@@ -707,6 +707,8 @@ export class Token3D {
       this.reticule.scale.set(scale, scale, scale);
       this.reticule.scale.multiplyScalar(1.2);
       this.reticule.position.y = this.d/2;
+      this.reticule.userData.ignoreHover = true;
+      this.reticule.userData.interactive = false;
     }
 
     get isTokenProne(){
