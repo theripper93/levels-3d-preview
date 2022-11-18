@@ -922,8 +922,10 @@ export class InteractionManager {
       if(!this.draggable) return;
 
       const collisionGeometries = this._collisionGeometries;
+      const token = this.draggable.userData?.entity3D?.token;
+      const isFlying = token && token?.document?.hasStatusEffect("fly");
       const target = this.draggable.userData.isHitbox ? this.draggable.parent : this.draggable;
-      const isFree = this.isFreeMode || this.forceFree
+      const isFree = this.isFreeMode || this.forceFree || isFlying;
       this.draggable.userData.entity3D.wasFreeMode = isFree;
       const center = this._parent.canvasCenter;
       if(this.draggable.userData.entity3D.mesh.position.y < 0){
