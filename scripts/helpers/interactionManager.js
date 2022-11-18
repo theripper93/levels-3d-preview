@@ -53,23 +53,26 @@ export class InteractionManager {
     }
 
     generateSightCollisions(p0,p1){
-      let tileQuadtree, wallsQuadtree;
+      const tileQuadtree = [];
+      const wallsQuadtree = [];
       if(p0 && p1){
         const rectX = Math.min(p0.x, p1.x);
         const rectY = Math.min(p0.y, p1.y);
         const rectW = Math.abs(p1.x - p0.x);
         const rectH = Math.abs(p1.y - p0.y);
         const rect = new PIXI.Rectangle(rectX, rectY, rectW, rectH);
-        wallsQuadtree = canvas.walls.quadtree.getObjects(rect).map(w => this._parent.walls[w.id]);
-        tileQuadtree = canvas.tiles.quadtree.getObjects(rect).map(t => this._parent.tiles[t.id]);
+        const wallsQuadtreeSet = canvas.walls.quadtree.getObjects(rect);
+        const tileQuadtreeSet = canvas.tiles.quadtree.getObjects(rect);
+        wallsQuadtreeSet.forEach(w => wallsQuadtree.push(this._parent.walls[w.id]));
+        tileQuadtreeSet.forEach(t => tileQuadtree.push(this._parent.tiles[t.id]));
       }
       const collisionObjects = [];
       const sightObjects = [];
       const cameraObjects = [];
-      const tiles = tileQuadtree ?? Object.values(this._parent.tiles);
-      const walls = wallsQuadtree ?? Object.values(this._parent.walls);
+      const tiles = tileQuadtree.length ? tileQuadtree : Object.values(this._parent.tiles);
+      const walls = wallsQuadtree.length ? wallsQuadtree : Object.values(this._parent.walls);
       for(let tile of tiles){
-        if(!tile.mesh?.visible) continue;
+        if(!tile?.mesh?.visible) continue;
         const mesh = tile.sightMesh ?? tile.mesh;
         if(tile.hasTags){
           mesh.traverse(o => {
