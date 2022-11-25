@@ -120,7 +120,7 @@ export class Helpers {
 
   async getModel(modelPath) {
     const filePath = modelPath;
-    while (this._loading[filePath]) {
+    while (this._loading[filePath] || Object.keys(this._loading).length > 0) {
       await this.wait(100);
     }
     if(this.modelCache[modelPath]) return this.getClone(modelPath);
