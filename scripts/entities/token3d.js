@@ -174,10 +174,10 @@ export class Token3D {
         }
       });
       if(!base) return;
-      eyeL.removeFromParent();
-      eyeR.removeFromParent();
+      eyeL?.removeFromParent();
+      eyeR?.removeFromParent();
       const groundOffset = object?.object?.asset?.extras?.heroForge?.groundOffset ?? 0;
-      base.removeFromParent();
+      base?.removeFromParent();
       model.children.forEach(c => {
         c.position.y += groundOffset;
       })
