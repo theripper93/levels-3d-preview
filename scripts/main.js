@@ -453,7 +453,7 @@ class Levels3DPreview {
     const reticule = new THREE.Sprite(
       new THREE.SpriteMaterial({
         map: tex,
-        alphaClip: 0.9,
+        alphaTest: 0.9,
         color: game.user.color,
         depthWrite: false,
         depthTest: false,
