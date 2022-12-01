@@ -731,13 +731,12 @@ class Levels3DPreview {
     );
     if (texture) {
       texture.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
-      texture.minFilter = THREE.NearestMipMapLinearFilter;
     }
     const geometry = new THREE.BoxGeometry(width, depth, height);
     const material = new THREE.MeshStandardMaterial({
       map: texture,
       roughness: 1,
-      metalness: 1,
+      metalness: 0,
     });
     const plane = new THREE.Mesh(geometry, material);
     plane.receiveShadow = true;
@@ -806,7 +805,7 @@ class Levels3DPreview {
       ? new THREE.MeshStandardMaterial({
           map: textureMat,
           roughness: 1,
-          metalness: 1,
+          metalness: 0,
         })
       : textureMat;
     const plane = new THREE.Mesh(geometry, material);

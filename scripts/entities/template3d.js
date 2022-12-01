@@ -196,7 +196,6 @@ export class Template3D {
             canvas.scene.createEmbeddedDocuments("Tile",[tileData])
             return this.destroy();
         }
-
         const templateData = {
             angle: this.angle,
             distance: this.distance,
@@ -531,9 +530,10 @@ export class Template3D {
             game.Levels3DPreview.interactionManager.ruler.template = template3d
             game.Levels3DPreview.interactionManager.draggable = template3d.dragHandle;
             game.Levels3DPreview.controls.enableZoom = false;
-            if(_token && game.Levels3DPreview.tokens[_token.id]) {
-                template3d.mesh.position.copy(game.Levels3DPreview.tokens[_token.id].mesh.position)
-                game.Levels3DPreview.interactionManager.ruler.origin = game.Levels3DPreview.tokens[_token.id].mesh.position
+            const token = game.Levels3DPreview.tokens[_token.id]?.token ?? template.item?.actor?.getActiveTokens()[0]
+            if(token && game.Levels3DPreview.tokens[token.id]) {
+                template3d.mesh.position.copy(game.Levels3DPreview.tokens[token.id].mesh.position)
+                game.Levels3DPreview.interactionManager.ruler.origin = game.Levels3DPreview.tokens[token.id].mesh.position
             }
         
             // Hide the sheet that originated the preview
