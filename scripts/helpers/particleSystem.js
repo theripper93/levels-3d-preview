@@ -702,6 +702,7 @@ export class Particle3D {
   }
   name(name) {
     this.params.name = name;
+    return this;
   }
   onEnd(particle3d) {
     particle3d = particle3d instanceof Array ? particle3d : [particle3d];
