@@ -424,7 +424,6 @@ export class InteractionManager {
       this._onMouseMove(event, true);
       const intersectData = this.findMouseIntersect(event);
       const intersect = intersectData?.object;
-      console.log(intersect)
       if(this.isRulerDrag(event, intersectData)) this.toggleControls(false);
       if(!intersect || event.ctrlKey) return;
       if(intersect.userData?.entity3D?.embeddedName === this.activeLayerEntity && !(this._gizmoEnabled && this.activeLayerEntity === "Tile"))this.toggleControls(false);

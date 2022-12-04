@@ -1096,13 +1096,25 @@ export class Tile3D {
 
     _onHoverIn(e) {
         if(canvas.activeLayer.options.objectClass.embeddedName !== "Tile") return;
-        this.placeable._onHoverIn(e);
+        const event = {
+            stopPropagation: () => {},
+            data: {
+              originalEvent: e,
+            }
+          }
+        this.placeable._onHoverIn(event);
         this._parent.setCursor('pointer');
       }
   
     _onHoverOut(e) {
         if(canvas.activeLayer.options.objectClass.embeddedName !== "Tile") return;
-        this.placeable._onHoverOut(e);
+        const event = {
+            stopPropagation: () => {},
+            data: {
+              originalEvent: e,
+            }
+          }
+        this.placeable._onHoverOut(event);
         this._parent.setCursor('auto');
     }
 
