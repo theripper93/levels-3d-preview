@@ -16,7 +16,10 @@ export class DynaMesh{
 
     create(){
         const geometry = this._constructGeometry();
-        const mesh = this.type == "billboard" ? this._createBillboardMesh(geometry) : new THREE.Mesh(geometry, this._material);
+        let mesh;
+        if(this.type == "billboard") mesh = this._createBillboardMesh(geometry);
+        else if(this.type == "billboard2") mesh = this._createBillboardMeshCross(geometry);
+        else mesh = new THREE.Mesh(geometry, this._material);
         mesh.traverse((child) => {
             if(child.isMesh) child.geometry.computeBoundsTree();
         });
@@ -40,6 +43,19 @@ export class DynaMesh{
         return group;
     }
 
+    _createBillboardMeshCross(geometry){
+        const material = this._material;
+        const mesh1 = new THREE.Mesh(geometry, material);
+        const mesh2 = new THREE.Mesh(geometry, material);
+
+        mesh1.rotation.set(0, Math.PI/2, 0);
+
+        const group = new THREE.Group();
+        group.add(mesh1);
+        group.add(mesh2);
+        return group;
+    }
+
     _constructGeometry(){
         if(!this[`_construct${this.type}`]){
             console.error(`DynaMesh: ${this.type} is not a valid type`);
@@ -50,6 +66,10 @@ export class DynaMesh{
 
     _constructbillboard(){
         return new THREE.PlaneGeometry(this.width, this.height, Math.ceil(this.resolution), Math.ceil(this.resolution));
+    }
+
+    _constructbillboard2(){
+        return this._constructbillboard();
     }
 
     _constructbox(){
@@ -136,6 +156,8 @@ export class DynaMesh{
     get _material(){
         switch (this.type) {
             case "billboard":
+                return new THREE.MeshStandardMaterial({ alphaTest: 0.5, color: 0xffffff, side: THREE.DoubleSide });
+            case "billboard2":
                 return new THREE.MeshStandardMaterial({ alphaTest: 0.5, color: 0xffffff, side: THREE.DoubleSide });
             default:
                 return new THREE.MeshStandardMaterial({ color: 0xffffff });

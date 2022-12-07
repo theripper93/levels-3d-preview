@@ -366,6 +366,7 @@
                     "tube": "Tube",
                     "dome": "Dome",
                     "billboard": "Billboard",
+                    "billboard2": "Billboard (Cross)",
                     "mapGen": "Map Generator"
                 }
             },
@@ -1231,7 +1232,8 @@
                 "convoluted": "Convoluted",
                 "ground_blend": "Ground Blending",
                 "ground_color": "Ground Color",
-                "reactive": "Reactive"
+                "reactive": "Reactive",
+                "reactive_intensity": "Reactive Intensity"
             },
             "distortion": {
                 "name": "Distortion",

@@ -532,6 +532,12 @@ export const shaders = {
                 type: "bool",
                 default: false,
             },
+            "reactive_intensity": {
+                type: "float",
+                default: 1.0,
+                min: 0.01,
+                max: 10,
+            },
             "ground_blend": {
                 type: "float",
                 default: 0,
@@ -580,7 +586,7 @@ export const shaders = {
                         vec3 dir = normalize(diff.xyz);
                         float maxDist = tokens[i].w * gridSize * 1.1;
                         if(distance < maxDist) {
-                            windOffset += dir.xz * (maxDist / distance) * gridSize * 10.0 * wind_ground_blend_percent;//(1.0 - distance / mDepth) * tokens[i].w;
+                            windOffset += wind_reactive_intensity * (dir.xz * (maxDist / distance) * gridSize * wind_ground_blend_percent);
                         }
                     }
                 }

@@ -709,6 +709,7 @@ Hooks.on("renderTileConfig", (app,html)=>{
                 "tube": game.i18n.localize("levels3dpreview.flags.dynaMesh.options.tube"),
                 "cone": game.i18n.localize("levels3dpreview.flags.dynaMesh.options.cone"),
                 "billboard": game.i18n.localize("levels3dpreview.flags.dynaMesh.options.billboard"),
+                "billboard2": game.i18n.localize("levels3dpreview.flags.dynaMesh.options.billboard2"),
                 "mapGen": game.i18n.localize("levels3dpreview.flags.dynaMesh.options.mapGen"),
             }
         },
