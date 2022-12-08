@@ -1150,7 +1150,7 @@ class Levels3DPreview {
       if (!this._active) return;
       if (!this._ready) return this._onProgress();
       if (this._sharedContext) {
-        canvas.app.renderer.reset();
+        //canvas.app.renderer.reset();
         this.renderer.resetState();
       }
       if (this.fogExploration) {
@@ -1245,7 +1245,7 @@ class Levels3DPreview {
       this.composer.render(time);
       if (this._sharedContext) {
         canvas.app.renderer.reset();
-        this.renderer.resetState();
+        //this.renderer.resetState();
       }
       if(this.outline._enabled) this.scene.traverse((o) => {o.visible = visibilityCache[o.uuid]});
     } catch (error) {
@@ -1609,8 +1609,8 @@ class Levels3DPreview {
     if (this._active) return;
     this.setFilters(true);
     if (this._sharedContext) {
-      canvas.app.renderer.reset();
-      this.renderer.resetState();
+      //canvas.app.renderer.reset();
+      //this.renderer.resetState();
     }
     this.build3Dscene();
     document.body.appendChild(this.renderer.domElement);
@@ -1642,8 +1642,8 @@ class Levels3DPreview {
     canvas.stage.renderable = true;
     this.clear3Dscene();
     if (this._sharedContext) {
-      canvas.app.renderer.reset();
       this.renderer.resetState();
+      canvas.app.renderer.reset();
     }
   }
 
