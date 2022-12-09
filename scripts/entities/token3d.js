@@ -703,12 +703,13 @@ export class Token3D {
 
     setReticule(){
       this.enableReticule ? this.mesh.add(this.reticule) : this.mesh.remove(this.reticule);
-      const scale = Math.max(this.h, this.w, this.d);
+      const scale = Math.max(this.h, this.w, this.d)*0.8;
       this.reticule.scale.set(scale, scale, scale);
       this.reticule.scale.multiplyScalar(1.2);
       this.reticule.position.y = this.d/2;
       this.reticule.userData.ignoreHover = true;
       this.reticule.userData.interactive = false;
+      this.reticule.userData.noIntersect = true;
     }
 
     get isTokenProne(){

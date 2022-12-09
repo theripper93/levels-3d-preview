@@ -333,7 +333,7 @@ export class InteractionManager {
           rulerObj.position.set(intersectPos.x, intersectPos.y, intersectPos.z)
           this.draggable = rulerObj
         }else if(event.which === 3 && this.draggable){
-          this.ruler.template?.destroy();
+          //this.ruler.template?.destroy();
           this.ruler.template = null;
           this.draggable = null;
         }

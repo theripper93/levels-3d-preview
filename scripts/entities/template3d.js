@@ -458,7 +458,7 @@ export class Template3D {
         }
     }
         this.isPreview ? this.template.document?.updateSource(data) : this.template.document?.update(data)
-        if(this.isPreview) Hooks.callAll(`template3dUpdatePreview`, this.template, data)
+        if(this.isPreview) Hooks.callAll(`template3dUpdatePreview`, this.template, this.template.document  ?? data)
     }
 
     _onClickLeft(e){

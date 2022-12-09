@@ -35,6 +35,18 @@ export class Ruler3D {
         this.template = template;
     }
 
+    get template(){
+        return this._template;
+    }
+
+    set template(value){
+        if(this._template){
+            this._lastTemplate?.destroy();
+            this._lastTemplate = this._template;
+        }
+        this._template = value;
+    }
+
     placeTemplate(){
         if(!this.template) return;
         this.template.fromPreview();
