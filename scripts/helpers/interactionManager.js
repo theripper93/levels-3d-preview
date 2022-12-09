@@ -299,6 +299,7 @@ export class InteractionManager {
       }
 
       isRulerDrag(event, intersectData){
+        if(ui.controls.activeTool == "ruler") return true;
         if(this.activeLayerEntity === "Tile" && ui.controls.activeTool === "tile") return true;
         if(this.currentHover?.embeddedName === this.activeLayerEntity) return false;
         if(this.isNoSelectDrag()) return false;
@@ -487,7 +488,7 @@ export class InteractionManager {
       event.originalIntersect = this.eventData?.originalIntersect;
       setTimeout(() => {
       if(this.prevEventData && this.prevEventData.entity !== this.eventData.entity || this.hasCameraMoved) return this.clicks = 0;
-      if(this._triggerLeft2) this._onClickLeft2(event);
+      if(this._triggerLeft2) {this._onClickLeft2(event);this._onClickLeft(event) }
       else if(this._triggerLeft) this._onClickLeft(event);
       if(this._triggerRight2) this._onClickRight2(event);
       else if(this._triggerRight) this._onClickRight(event);

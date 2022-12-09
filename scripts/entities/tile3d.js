@@ -62,6 +62,7 @@ export class Tile3D {
             this.setUpDoors()
             this.setupDoor()
         }, 100);
+        game.Levels3DPreview.outline?.toggleControlled(this.mesh, this.tile.controlled);
         return this;
     }
 
