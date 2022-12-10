@@ -1610,7 +1610,7 @@ class Levels3DPreview {
     this.setFilters(true);
     if (this._sharedContext) {
       //canvas.app.renderer.reset();
-      //this.renderer.resetState();
+      this.renderer.resetState();
     }
     this.build3Dscene();
     document.body.appendChild(this.renderer.domElement);
