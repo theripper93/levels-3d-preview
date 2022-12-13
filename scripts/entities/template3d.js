@@ -213,7 +213,8 @@ export class Template3D {
                 }
             }
         }
-        canvas.scene.createEmbeddedDocuments("MeasuredTemplate",[templateData])
+        const currentTemplateData = this.template?.document?.toObject() ?? {}
+        canvas.scene.createEmbeddedDocuments("MeasuredTemplate",[mergeObject(currentTemplateData, templateData)])
         this.destroy()
     }
 
