@@ -1414,9 +1414,11 @@ class Levels3DPreview {
         cameraPosition: this.camera.position.clone(),
         cameraLookat: this.controls.target.clone(),
       };
-      this.camera.position.copy(this._animateCameraTarget.cameraPosition);
-      this.controls.target.copy(this._animateCameraTarget.cameraLookat);
-      this.camera.lookAt(this._animateCameraTarget.cameraLookat);
+      if(this._animateCameraTarget.cameraPosition && this._animateCameraTarget.cameraLookat && this._animateCameraTarget.cameraLookat){
+        this.camera.position.copy(this._animateCameraTarget.cameraPosition);
+        this.controls.target.copy(this._animateCameraTarget.cameraLookat);
+        this.camera.lookAt(this._animateCameraTarget.cameraLookat);
+      }
     }
 
     const targetLookat = token3D.head.clone();
@@ -1488,7 +1490,17 @@ class Levels3DPreview {
               "levels3dpreview.controls.loading.shaders"
             );
             setTimeout(() => {
+              const preapplyShaders = game.settings.get("levels-3d-preview", "preapplyShaders");
+              const sphereMesh = new THREE.Mesh(
+                new THREE.SphereGeometry(0.001, 32, 32),
+                new THREE.MeshStandardMaterial({ color: 0x00ff00, side: THREE.DoubleSide })
+              );
+              sphereMesh.position.copy(this.camera.position);
+              const allShaders = {"idle":{"enabled":true,"speed":0.1,"direction":0,"intensity":0.3,"affect_model":0.6968},"wind":{"enabled":true,"speed":0.1,"direction":0,"intensity":0.5,"affect_model":0.5049,"convoluted":false,"reactive":false,"reactive_intensity":1.011,"ground_blend":0,"ground_color":"#ffffff"},"distortion":{"enabled":true,"speed":0.1,"direction":0,"intensity":0.1,"convoluted":false},"water":{"enabled":true,"speed":0.1,"direction":45,"wave_height":0.3,"wave_amplitude":5},"ocean":{"enabled":true,"speed":0.1,"scale":1,"waveA_wavelength":0.6,"waveA_steepness":0.3029,"waveA_direction":90,"waveB_wavelength":0.3,"waveB_steepness":0.2524,"waveB_direction":260,"waveC_wavelength":0.2,"waveC_steepness":0.3534,"waveC_direction":180,"foam":false},"grid":{"enabled":true,"normalCulling":0.01,"heightCulling":1},"textureScroll":{"enabled":true,"speedX":0.01,"speedY":0.01,"direction":0},"textureRotate":{"enabled":true,"speed":0.1,"centerx":0.5,"centery":0.5},"fire":{"enabled":true,"speed":0.1,"intensity":0.4924,"scale":1,"color":"#ff9500","blendMode":false},"ice":{"enabled":true,"speed":0.1,"intensity":0.9949,"grain":0.5,"scale":1,"color":"#abe5e8","blendMode":false},"lightning":{"enabled":true,"speed":0.1,"intensity":0.4924,"scale":1,"color":"#0037ff","blendMode":false},"oil":{"enabled":true,"speed":0.02,"intensity":0.4924,"scale":5,"color":"#00ff00","blendMode":false},"colorwarp":{"enabled":true,"speed":0.1,"glow":1,"hue_angle":0,"flicker":false,"animate_range":0.5},"triplanar":{"enabled":true,"roughnessAdjust":8},"overlay":{"enabled":true,"textureDiffuse":"","color":"#ffffff","strength":1,"repeat":1,"black_alpha":false,"add_blend":false,"mult_blend":false},"sound":{"enabled":true,"intensity":1,"glow":false,"chroma":false,"croma_offset_angle":0,"flat_bottom":true}};
+              this.scene.add(sphereMesh);
+              if(preapplyShaders) this.shaderHandler.applyShader(sphereMesh, {mesh: sphereMesh, bb: {}}, allShaders);
               this.renderer.compile(this.scene, this.camera);
+              this.scene.remove(sphereMesh);
               this._ready = true;
               this.loadingTokens = {};
               this.loadingTiles = {};
