@@ -17,6 +17,7 @@ export class Template3D {
         this.initialDirection = this.template.document?.direction
         this.isFog = this.template?.document?.getFlag("levels-3d-preview", "isFog") ?? false
         this.shaders = this.template?.document?.getFlag("levels-3d-preview", "shaders") ?? {};
+        this.wasFreeMode = this.template?.document?.getFlag("levels-3d-preview", "wasFreeMode") ?? false;
         this.hasShaders = Object.values(this.shaders).some(v => v.enabled);
         this.draggable = true
         this.directionOffset = 0
@@ -433,6 +434,7 @@ export class Template3D {
     }
 
     updatePositionFrom3D(e){
+
         this.skipMoveAnimation = true;
         const useSnapped = canvas.scene.grid.type && !e?.shiftKey;
       const x3d = this.mesh.position.x;
@@ -454,7 +456,8 @@ export class Template3D {
         direction: ((this.isPreview ? this.initialDirection : this.template.document?.direction) - this.directionOffset)%360,
         flags: {
             levels: {
-                elevation: dest.elevation
+                elevation: dest.elevation,
+                wasFreeMode: this.wasFreeMode,
             }
         }
     }

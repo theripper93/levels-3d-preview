@@ -1465,6 +1465,8 @@ Hooks.on("init", () => {
             game.Levels3DPreview.interactionManager.isFreeMode = true
         },
         onUp: () => {
+            const entity3D = game.Levels3DPreview.interactionManager.draggable?.userData?.entity3D;
+            if(entity3D?.template && !game.Levels3DPreview.interactionManager.forceFree) entity3D.wasFreeMode = false;
             game.Levels3DPreview.interactionManager.isFreeMode = false
             game.Levels3DPreview.interactionManager.forceFree = false
         },

@@ -591,7 +591,11 @@ export class InteractionManager {
         const delta = Math.sign(event.deltaY);
         const entity3D = this.draggable.userData.entity3D;
         if(entity3D.template){
-          entity3D.onRotate(delta);
+          if(this.isFreeMode){
+            this.forceFree = true;
+            entity3D.wasFreeMode = true;
+          }
+          if(!entity3D.wasFreeMode) entity3D.onRotate(delta);
         }else{
           this.forceFree = true;
           entity3D.wasFreeMode = true;
@@ -923,12 +927,11 @@ export class InteractionManager {
   
     dragObject(){
       if(!this.draggable) return;
-
       const collisionGeometries = this._collisionGeometries;
       const token = this.draggable.userData?.entity3D?.token;
       const isFlying = token && token?.document?.hasStatusEffect("fly");
       const target = this.draggable.userData.isHitbox ? this.draggable.parent : this.draggable;
-      const isFree = this.isFreeMode || this.forceFree || isFlying;
+      const isFree = this.isFreeMode || this.forceFree || isFlying || (this.draggable.userData.entity3D.template && this.draggable.userData.entity3D.wasFreeMode);
       this.draggable.userData.entity3D.wasFreeMode = isFree;
       const center = this._parent.canvasCenter;
       if(this.draggable.userData.entity3D.mesh.position.y < 0){
