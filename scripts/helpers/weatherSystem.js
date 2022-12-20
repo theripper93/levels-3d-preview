@@ -242,11 +242,7 @@ class BasicDirectionalEffect {
             size: this.options.size,
             opacity: this.options.opacity,
             transparent: true,
-            map: this.options.texture ? new THREE.TextureLoader().load(this.options.texture, (t)=>{
-                //set rotation
-                //t.rotation = rotation;
-
-            }) : null,
+            map: this.options.texture ? new THREE.TextureLoader().load(this.options.texture) : null,
             alphaTest: 0.1,
             onBeforeCompile: (shader)=>{
                 if(this.options.randomScale){
@@ -936,6 +932,7 @@ varying float vAngle;
 varying vec2 vUv;
 void main() {
   vec2 coords = (gl_PointCoord - 0.5) * mat2(cos(vAngle+rotationOffset), sin(vAngle+rotationOffset), -sin(vAngle+rotationOffset), cos(vAngle+rotationOffset)) + 0.5;
+  if(coords.x < 0.0 || coords.x > 1.0 || coords.y < 0.0 || coords.y > 1.0) discard;
   vec4 diffuse;
   #ifBlockHere
   if ( diffuse.a < 0.01 ) discard;

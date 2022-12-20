@@ -385,8 +385,9 @@ class Levels3DPreview {
     )
       ? THREE.PCFSoftShadowMap
       : THREE.PCFShadowMap;
-
-    //this.renderer.debug.checkShaderErrors = false;
+    
+    
+    this.renderer.debug.checkShaderErrors = false;
 
     //composer
 
