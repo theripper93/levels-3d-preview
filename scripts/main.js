@@ -1242,6 +1242,7 @@ class Levels3DPreview {
       this.weather?.update(delta);
       this.GameCamera.update(delta);
       this.controls.update();
+      this.recoverCamera();
       //this.fogExploration?.update();
       const visibilityCache = {};
       if(this.outline._enabled) this.scene.traverse((o) => {visibilityCache[o.uuid] = o.visible});
@@ -1261,6 +1262,14 @@ class Levels3DPreview {
         );
         this.reload();
       }
+    }
+  }
+
+  recoverCamera(){
+    const cameraControlsValues = [this.camera.position.x, this.camera.position.y, this.camera.position.z, this.controls.target.x, this.controls.target.y, this.controls.target.z]
+    if(cameraControlsValues.some(v=>isNaN(v))){
+      ui.notifications.error("3D Canvas | Camera Error: Camera position or target is NaN. Resetting camera.");
+      this.resetCamera();
     }
   }
 
