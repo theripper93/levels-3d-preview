@@ -44,6 +44,13 @@
       </div>
 
       <div class="form-group">
+        <label>{{localize "levels3dpreview.settings.templateEffects.name"}}</label>
+        <input type="checkbox" name="templateEffects" data-dtype="Boolean" {{checked templateEffects}} />
+        <p class="notes">{{localize "levels3dpreview.settings.templateEffects.hint"}}</p>
+      </div>
+      
+
+      <div class="form-group">
         <label>{{localize "levels3dpreview.settings.rangeFinder.name"}}</label>
         <select name="rangeFinder" data-dtype="String">
           {{#select rangeFinder}}

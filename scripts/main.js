@@ -1650,6 +1650,7 @@ class Levels3DPreview {
     this.ClipNavigation?.close();
     $("#hud").removeClass("levels-3d-preview-hud");
     $("#levels3d").remove();
+    $(".rangefinder").remove();
     Object.values(ui.windows)
       ?.find((w) => w.id === "miniCanvas")
       ?.close(true);

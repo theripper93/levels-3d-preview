@@ -776,7 +776,7 @@ export class Token3D {
       if(oldProne !== this.isProne) this.toggleProne();
       const tokenEffects = this.token.document.effects;
       const actorEffects = this.token.actor?.temporaryEffects || [];
-      const effects = tokenEffects.concat(actorEffects).map(e => e.icon);
+      const effects = tokenEffects.concat(actorEffects).map(e => e.icon ?? e);
       if(effects.length === this.effectsContainer.children.length) return;
       const toRemove = this.effectsContainer.children.filter(child => !effects.includes(child.userData.effect));
       toRemove.forEach(child => {
@@ -790,9 +790,8 @@ export class Token3D {
 
       const radiusSubdivision = (Math.PI*2)/effects.length;
       let currentRadius = 0;
-      const currentEffects = this.effectsContainer.children.map(child => child.userData.effect);      for(let effect of effects){
-
-
+      const currentEffects = this.effectsContainer.children.map(child => child.userData.effect);
+      for(let effect of effects){
         const position = {
           x: Math.sin(currentRadius)*(this.h/2),
           y: this.d+effectsize*0.5,

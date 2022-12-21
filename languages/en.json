@@ -962,6 +962,10 @@
                 "name": "Rotate Base",
                 "hint": "Rotate the 3D Base to match token Rotation."
             },
+            "templateEffects": {
+                "name": "Enable Template Effects",
+                "hint": "Automatically apply shaders to templates based on damage type. Currently only dnd5e is supported."
+            },
             "templateSyle" : {
                 "name": "Template Style",
                 "hint": "The style to use for the measured templates.",
