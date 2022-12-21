@@ -270,6 +270,15 @@ Hooks.once('init', function() {
       default: true,
     });
 
+    game.settings.register("levels-3d-preview", "templateEffects", {
+      name: game.i18n.localize("levels3dpreview.settings.templateEffects.name"),
+      hint: game.i18n.localize("levels3dpreview.settings.templateEffects.hint"),
+      scope: "world",
+      config: false,
+      type: Boolean,
+      default: true,
+    });
+
     game.settings.register("levels-3d-preview", "templateSyle", {
       name: game.i18n.localize("levels3dpreview.settings.templateSyle.name"),
       hint: game.i18n.localize("levels3dpreview.settings.templateSyle.hint"),

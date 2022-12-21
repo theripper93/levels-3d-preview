@@ -16,6 +16,7 @@ import { Cursors3D } from "./entities/cursors.js";
 import { FBXLoader } from './lib/FBXLoader.js';
 import { GlobalIllumination } from "./helpers/globalIllumination.js";
 import { InteractionManager } from "./helpers/interactionManager.js";
+import initTemplateEffects from "./shaders/templateEffects.js";
 import * as PIXI from "./helpers/pixilayer.js";
 import { Helpers } from "./helpers/helpers.js";
 import { WeatherSystem } from "./helpers/weatherSystem.js";
@@ -275,6 +276,7 @@ class Levels3DPreview {
     for (let [k, v] of Object.entries(this.CONFIG.tokenAnimations)) {
       v.name = game.i18n.localize(`levels3dpreview.tokenAnimations.${k}`);
     }
+    initTemplateEffects();
     this.setAutopan();
     this.tokens = {};
     this.rangeFinders = [];

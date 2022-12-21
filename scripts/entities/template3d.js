@@ -417,6 +417,7 @@ export class Template3D {
     _getTexture(){
         if(!this.template.document?.texture && !this.template.document?.flags?.siftoolkit?.displayData?.texture) return
         const texturePath = this.template.document?.texture || this.template.document?.flags?.siftoolkit?.displayData?.texture
+        if(texturePath.includes("tokenmagic")) return;
         this._parent.helpers.loadTexture(texturePath).then(texture => {
             this.material.map = texture
             this.material.emissiveMap = texture
