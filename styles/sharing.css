@@ -40,7 +40,7 @@
 }
 
 #tdc-map-browser p {
-  height: 3.5rem;
+  height: 2.2rem;
   overflow-y: auto;
   color: var(--color-text-light-4);
 }
@@ -82,5 +82,4 @@
     display: flex;
     flex-wrap: wrap;
     gap: 0.2rem;
-    position: absolute;
 }
