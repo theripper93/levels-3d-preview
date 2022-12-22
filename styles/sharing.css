@@ -71,6 +71,7 @@
   border-radius: 5px;
   padding: 0.2rem;
   font-size: smaller;
+  border: 1px solid var(--color-text-light-4);
 }
 
 #tdc-map-browser .tdc-pack-container{
