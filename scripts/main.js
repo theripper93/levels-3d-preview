@@ -7,6 +7,7 @@ import {Token3D} from "./entities/token3d.js";
 import { Ruler3D } from "./entities/ruler3d.js";
 import { Light3D } from "./entities/light3d.js";
 import { Wall3D } from "./entities/wall3d.js";
+import {initSharing, setSharingHooks} from "./sharing.js";
 import { Tile3D, recomputeGravityDebounced, recomputeGravity } from "./entities/tile3d.js";
 import { Note3D } from "./entities/note3d.js";
 import { Grid3D } from "./entities/grid3d.js";
@@ -41,6 +42,8 @@ import { DecalGeometry } from "./lib/DecalGeometry.js";
 
 export const factor = 1000;
 injectFoWShaders(THREE);
+
+setSharingHooks();
 
 globalThis.Particle3D = Particle3D;
 
@@ -116,6 +119,7 @@ class Levels3DPreview {
     this.renderer;
     this.factor = factor;
     this.ClipNavigation = null;
+    initSharing(this);
     this.debugMode = game.settings.get("levels-3d-preview", "debugMode");
     this.CONFIG = {
       entityClass: {
