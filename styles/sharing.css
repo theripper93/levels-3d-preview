@@ -35,6 +35,10 @@
   text-shadow: 0 0 5px var(--color-text-light-highlight);
 }
 
+#tdc-map-browser button i{
+  pointer-events: none;
+}
+
 #tdc-map-browser p {
   height: 3.5rem;
   overflow-y: auto;

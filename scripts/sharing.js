@@ -232,7 +232,9 @@ class MapBrowser extends Application{
             button.addEventListener("click", async (e) => {
                 e.preventDefault();
                 const id = e.target.dataset.mapid;
+                const thumb = e.target.dataset.thumb;
                 const map = await getMap(id);
+                map.data.thumb = thumb;
                 Scene.create(map.data);
                 ui.notifications.info(game.i18n.localize("levels3dpreview.sharing.mapbrowser.imported") + `: ${map.data.name}`);
             });
