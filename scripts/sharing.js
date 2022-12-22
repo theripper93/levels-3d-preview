@@ -149,6 +149,7 @@ class ShareMap extends FormApplication{
     async _updateObject(event, formData){
         formData.scene = this.scene;
         if(!formData.image || !formData.description || !formData.assetpacks.length) return ui.notifications.error(game.i18n.localize("levels3dpreview.sharing.sharemap.missingfields"));
+        if(formData.author.toLowerCase() == "gamemaster") return ui.notifications.error(game.i18n.localize("levels3dpreview.sharing.sharemap.gamemaster"));
         Dialog.confirm({
             title: game.i18n.localize("levels3dpreview.sharing.sharemap.confirm.title"),
             content: game.i18n.localize("levels3dpreview.sharing.sharemap.confirm.content"),

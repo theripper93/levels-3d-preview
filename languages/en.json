@@ -139,6 +139,7 @@
                 "error": "An error occurred",
                 "preview": "Image Preview",
                 "missingfields": "3D Canvas - Map Sharing | One or more fields are missing or no Asset Pack was selected",
+                "gamemaster": "Gamemaster is not an allowed author name.",
                 "assetpacks": "Asset Packs",
                 "assetinfo": "The shared map will not include custom assets. Please mainly use assets included in the allowed packs. Ctrl + Click to select multiple packs.",
                 "confirm": {
