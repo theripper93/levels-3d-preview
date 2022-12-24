@@ -128,6 +128,7 @@
         },
         "sharing": {
             "sharemap": {
+                "agreement": "By sharing this map you aknowledge that you have the rights to share it and that you are not violating any terms of service of any of the used assets. You also agree that the map will be stored on the 3D Canvas server and that it can be removed at any time.",
                 "imageinfo": "Please upload a screenshot of the map on imgur and paste the link in the image field. If correct the image will show in the preview.",
                 "title": "Share Map",
                 "name": "Map Name",

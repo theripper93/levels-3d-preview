@@ -247,6 +247,23 @@ class MapBrowser extends Application{
         }
     }
 
+    _getHeaderButtons(){
+      const buttons = super._getHeaderButtons();
+      buttons.unshift({
+        label: "",
+        class: "info",
+        icon: "fas fa-info-circle",
+        onclick: () => {
+          //open url
+          const link = document.createElement("a");
+          link.href = "https://wiki.theripper93.com/levels-3d-preview/communitymaps";
+          link.target = "_blank";
+          link.click();
+        }
+      });
+      return buttons;
+    }
+
     activateListeners(html){
         super.activateListeners(html);
         html = html[0];
