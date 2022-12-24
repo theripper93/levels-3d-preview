@@ -5,7 +5,11 @@
             <div class="tdc-map-card" data-mapid="{{id}}" data-name="{{name}}" style="background-image: linear-gradient(transparent, black), url('{{image}}');">
                 <h3 style="margin: 0;">{{name}}</h3>
                 <span style="font-size: small;">by {{author}}</span>
+                <div class="tdc-btn-container">
+                <button {{#if starred}}style="pointer-events: none"{{/if}} class="tdc-map-star" data-mapid="{{id}}"><i class="{{#if starred}}fa-solid{{else}}fa-regular{{/if}} fa-star"></i></button>
+                <span class="tdc-star-count">{{stars}}</span>
                 <button class="tdc-map-download" data-thumb="{{image}}" data-mapid="{{id}}"><i class="fa-duotone fa-cloud-arrow-down fa-swap-opacity"></i></button>
+                </div>
                 <p>{{description}}</p>
                 <div class="tdc-pack-container">
                 {{#each assetpacks}}

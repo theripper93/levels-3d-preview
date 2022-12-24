@@ -37,6 +37,17 @@ export function setSharingHooks(){
       }
     });
   })
+
+  Hooks.on("init", () => {
+    game.settings.register("levels-3d-preview", "mapsharingStars", {
+      name: "",
+      hint: "",
+      scope: "client",
+      config: false,
+      type: Object,
+      default: {},
+    });
+  })
 }
 
 async function shareMap({ image, author, description, scene, name, assetpacks }) {
@@ -87,6 +98,28 @@ async function getMapList() {
   try {
     const res = await fetch("https://theripper93.com/api/mapsharing");
     return res.json();
+  } catch (e) {
+    return ui.notifications.error(
+      game.i18n.localize("levels3dpreview.sharing.error")
+    );
+  }
+}
+
+async function starMap(id){
+  const alreadyStarred = game.settings.get("levels-3d-preview", "mapsharingStars")[id];
+  if(alreadyStarred) return;
+  try {
+    const res = await fetch("https://theripper93.com/api/mapsharing", {
+      method: "POST",
+      headers: {
+        id: id,
+        userid: game.user.id,
+      },
+    });
+    const data = await res.json();
+    const stars = game.settings.get("levels-3d-preview", "mapsharingStars");
+    stars[id] = true;
+    game.settings.set("levels-3d-preview", "mapsharingStars", stars);
   } catch (e) {
     return ui.notifications.error(
       game.i18n.localize("levels3dpreview.sharing.error")
@@ -205,6 +238,9 @@ class MapBrowser extends Application{
         const mapList = maps.data.sort((a, b) => b.id - a.id);
         mapList.forEach((map) => {
           if(map.assetpacks) map.assetpacks = map.assetpacks.map((ap) => game.i18n.localize(`levels3dpreview.sharing.packs.${ap}`))
+          const stars = map.stars ?? [];
+          map.starred = stars.includes(game.user.id);
+          map.stars = stars.length;
         });
         return {
             maps: mapList,
@@ -238,6 +274,15 @@ class MapBrowser extends Application{
                 map.data.thumb = thumb;
                 Scene.create(map.data);
                 ui.notifications.info(game.i18n.localize("levels3dpreview.sharing.mapbrowser.imported") + `: ${map.data.name}`);
+            });
+        });
+        html.querySelectorAll(".tdc-map-star").forEach((button) => {
+            button.addEventListener("click", async (e) => {
+                e.preventDefault();
+                if(e.target.querySelector("i").classList.contains("fa-solid")) return;
+                const id = e.target.dataset.mapid;
+                await starMap(id);
+                this.render(true);
             });
         });
     }

@@ -16,18 +16,23 @@
   justify-items: center;
 }
 
-#tdc-map-browser button {
+#tdc-map-browser .tdc-btn-container{
   position: absolute;
-  width: 2rem;
-  height: 2rem;
   top: 0;
-  right: 0;
+  right: 0.2rem;
+}
+
+#tdc-map-browser button {
+  width: 1.3rem;
+  height: 2rem;
+  margin: 0;
+  padding: 0;
   background: transparent;
   color: var(--color-text-light-highlight);
   border: none;
 }
 
-#tdc-map-browser button:hover {
+#tdc-map-browser button:hover, #tdc-map-browser button:focus {
   cursor: pointer;
   border: none;
   box-shadow: none;
@@ -37,6 +42,7 @@
 
 #tdc-map-browser button i{
   pointer-events: none;
+  margin: 0;
 }
 
 #tdc-map-browser p {
