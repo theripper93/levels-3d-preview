@@ -215,6 +215,7 @@ class ShareMap extends FormApplication{
 class MapBrowser extends Application{
     constructor(){
         super();
+        this.sortNewest = true;
     }
 
     static get defaultOptions() {
@@ -235,15 +236,17 @@ class MapBrowser extends Application{
 
     async getData(){
         const maps = await getMapList();
-        const mapList = maps.data.sort((a, b) => b.id - a.id);
+        let mapList = maps.data.sort((a, b) => b.id - a.id);
         mapList.forEach((map) => {
           if(map.assetpacks) map.assetpacks = map.assetpacks.map((ap) => game.i18n.localize(`levels3dpreview.sharing.packs.${ap}`))
           const stars = map.stars ?? [];
           map.starred = stars.includes(game.user.id);
           map.stars = stars.length;
         });
+        if(!this.sortNewest) mapList = mapList.sort((a, b) => b.stars - a.stars);
         return {
             maps: mapList,
+            sortNewest: this.sortNewest,
         }
     }
 
@@ -301,6 +304,18 @@ class MapBrowser extends Application{
                 await starMap(id);
                 this.render(true);
             });
+        });
+        html.querySelector("#tdc-sort-newest").addEventListener("click", (e) => {
+            e.preventDefault();
+            const oldSort = this.sortNewest;
+            this.sortNewest = true;
+            if(oldSort != this.sortNewest) this.render(true);
+        });
+        html.querySelector("#tdc-sort-popular").addEventListener("click", (e) => {
+            e.preventDefault();
+            const oldSort = this.sortNewest;
+            this.sortNewest = false;
+            if(oldSort != this.sortNewest) this.render(true);
         });
     }
 }

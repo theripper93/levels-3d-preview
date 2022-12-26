@@ -6,6 +6,33 @@
 #tdc-map-browser input {
   color: var(--color-text-light-highlight);
   background: var(--color-border-dark-2);
+  flex: 1;
+  width: auto;
+}
+
+#tdc-map-browser .tdc-navbar {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+#tdc-map-browser .tdc-navbar button{
+  width: unset;
+  border: 1px solid;
+  padding: 0 0.6rem;
+  margin: 0 0.4rem;
+  height: var(--form-field-height);
+  align-content: center;
+  line-height: calc(var(--form-field-height) - 2px);
+}
+
+#tdc-map-browser .tdc-navbar button:hover{
+  border: 1px solid;
+}
+
+#tdc-map-browser .tdc-navbar button.active{
+  background: var(--color-text-light-highlight);
+  color: var(--color-text-dark-primary);
 }
 
 #tdc-map-browser .tdc-map-list {
