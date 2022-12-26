@@ -567,7 +567,7 @@ Hooks.once("ready", () => {
     await game.settings.set("levels-3d-preview", "oneTimeMessages", oldSett);
   }
 
-  if(true || !game.settings.get("levels-3d-preview", "oneTimeMessages").welcome){
+  if(!game.settings.get("levels-3d-preview", "oneTimeMessages").welcome){
     const dialog = new Dialog({
       title: game.i18n.localize("levels3dpreview.welcome.title"),
       content: game.i18n.localize("levels3dpreview.welcome.content"),

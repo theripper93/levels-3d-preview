@@ -360,14 +360,21 @@ export class InteractionManager {
               rangeBottom: coord3d.z
             },
           }
-          if(data.type === "Actor" && this.activeLayerEntity === "Token"){
+
+          let entityLayer = canvas.activeLayer;
+          if(data.type === "Actor") entityLayer = canvas.tokens;
+          if(data.type === "JournalEntry" || data.type === "JournalEntryPage") entityLayer = canvas.notes;
+          if(data.type === "Tile") entityLayer = canvas.tiles;
+          if(entityLayer !== canvas.activeLayer) entityLayer.activate();
+
+          if(data.type === "Actor"){
             Hooks.once("preCreateToken", (token)=>{
               token.updateSource({elevation: Math.trunc(data.elevation*100)/100, flags: data.flags})
             })
             return canvas.tokens._onDropActorData(event, data);
           }
 
-          if((data.type === "JournalEntry" || data.type === "JournalEntryPage") && this.activeLayerEntity === "Note"){
+          if((data.type === "JournalEntry" || data.type === "JournalEntryPage")){
             const noteDocument = await fromUuid(data.uuid)
             const entryId = data.type === "JournalEntryPage" ? noteDocument.parent.id : noteDocument.id;
             const pageId = data.type === "JournalEntryPage" ? noteDocument.id : null;
@@ -379,7 +386,7 @@ export class InteractionManager {
             model3d: data.texture.src,
             autoGround: true,
           }
-          if(data.type === "Tile" && this.activeLayerEntity === "Tile"){
+          if(data.type === "Tile"){
             const object3d = await this._parent.helpers.loadModel(data.texture.src)
             const modelBB = new THREE.Box3().setFromObject(object3d.model)
             const widthFactor = modelBB.max.x - modelBB.min.x
