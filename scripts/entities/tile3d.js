@@ -86,6 +86,10 @@ export class Tile3D {
         }
     }
 
+    get hudCenter() {
+
+    }
+
     get pseudoRandom() {
         return this.marsenne.random() + 0.5;
     }
@@ -1591,16 +1595,28 @@ Hooks.on("pasteTile", (copy, data) => {
 
 Hooks.on("renderTileHUD", (hud) => {
     if (!game.Levels3DPreview?._active) return;
-
-    const mergeButton = $(`<div class="control-icon" data-action="merge-tiles"><i class="fas fa-object-group" title="Merge Tiles"></i></div>`);
-
-    mergeButton.on("click", (e) => {
-        e.stopPropagation();
-        autoMergeTiles(canvas.tiles.controlled, false);
-    });
-    hud.element.find(`div[data-action="locked"]`).before(mergeButton);
-
+    
     const tile3d = game.Levels3DPreview.tiles[hud.object.id];
+    const isMerged = !!tile3d.mergedMatrix
+    
+    if (!isMerged && canvas.tiles.controlled.length > 1) {
+        const mergeButton = $(`<div class="control-icon" data-action="merge-tiles"><i class="fas fa-object-group" title="Merge Tiles"></i></div>`);
+
+        mergeButton.on("click", (e) => {
+            e.stopPropagation();
+            autoMergeTiles(canvas.tiles.controlled, false);
+        });
+        hud.element.find(`div[data-action="locked"]`).before(mergeButton);
+    } else if(isMerged) { 
+        const unmergeButton = $(`<div class="control-icon" data-action="unmerge-tiles"><i class="fas fa-object-ungroup" title="Unmerge Tiles"></i></div>`);
+
+        unmergeButton.on("click", (e) => {
+            e.stopPropagation();
+            unmergeTiles(canvas.tiles.controlled);
+        });
+        hud.element.find(`div[data-action="locked"]`).before(unmergeButton);
+    }
+
     if (!tile3d?.isAnimated) return;
 
     const images = {
@@ -1722,5 +1738,50 @@ export async function autoMergeTiles(tiles = canvas.tiles.placeables, skipContro
             await mergeTiles(tileDocumentArray);
         }
         if (mergedCount) ui.notifications.info(`Merged ${mergedCount} tiles`);
+    }
+}
+
+export async function unmergeTile(tile) {
+    const instancesMatrix = tile.flags["levels-3d-preview"].mergedMatrix;
+    const newTiles = [];
+    const originalX = tile.x;
+    const originalY = tile.y;
+    const originalZ = tile.flags.levels.rangeBottom;
+    for (const instance of instancesMatrix) {
+        const newTileData = tile.toObject();
+        delete newTileData.flags["levels-3d-preview"].mergedMatrix;
+        delete newTileData.flags["levels-3d-preview"].originalDimensions;
+        newTileData.width = instance.width * factor;
+        newTileData.height = instance.height * factor;
+        newTileData.x = (instance.x * factor) + originalX;
+        newTileData.y = instance.y * factor + originalY;
+        newTileData.flags.levels.rangeBottom = instance.z * factor / (canvas.scene.dimensions.size / canvas.scene.dimensions.distance) + originalZ;
+        newTileData.flags["levels-3d-preview"].depth = instance.depth * factor;
+        newTileData.flags["levels-3d-preview"].color = instance.color;
+        newTileData.rotation = instance.rotation;
+        newTileData.flags["levels-3d-preview"].tiltX = instance.tiltX;
+        newTileData.flags["levels-3d-preview"].tiltZ = instance.tiltZ;
+        newTiles.push(newTileData);
+    }
+    await canvas.scene.createEmbeddedDocuments("Tile", newTiles);
+    await tile.delete();
+}
+
+export async function unmergeTiles(tiles = canvas.tiles.placeables) { 
+    const unmergeTargets = [];
+    let count = 0;
+    for (const tile of tiles) {
+        if (tile.document.flags["levels-3d-preview"]?.mergedMatrix) {
+            unmergeTargets.push(tile.document);
+            count += tile.document.flags["levels-3d-preview"].mergedMatrix.length;
+        }
+    }
+    if (!unmergeTargets.length) return;
+    await unmerge();
+    async function unmerge() {
+        for (const tileDocument of unmergeTargets) {
+            await unmergeTile(tileDocument);
+        }
+        ui.notifications.info(`Unmerged ${unmergeTargets.length} tiles into ${count} tiles`);
     }
 }
