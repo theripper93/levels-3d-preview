@@ -1535,7 +1535,7 @@
         },
         "mergeTiles": {
             "title": "Merge Tiles",
-            "content": "Merging Tiles is an irreversible action, it's suggested to make a backup of the scene before merging high amounts of tiles. Are you sure you want to merge the selected tiles?"
+            "content": "Merging Tiles is an irreversible action, it's suggested to make a backup of the scene before merging high amounts of tiles.<br>You are about to merge <strong>%count% Tiles</strong>. Are you sure you want to continue?"
         }
     }
 }

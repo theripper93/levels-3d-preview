@@ -1688,9 +1688,27 @@ export async function mergeTiles(tileDocuments) {
 }
 
 export async function autoMergeTiles(tiles = canvas.tiles.placeables, skipControlled = true) {
+
+    const mergeTargets = {};
+    let mergedCount = 0;
+    for (const tile of tiles) {
+        if (skipControlled && tile.controlled) continue;
+        const repeatTile = tile.document.flags["levels-3d-preview"]?.mergedMatrix || tile.document.getFlag("levels-3d-preview", "fillType") === "tile";
+        if (repeatTile) continue;
+        const model3d = tile.data.flags["levels-3d-preview"]?.model3d;
+        const texture = tile.data.flags["levels-3d-preview"]?.imageTexture;
+        const dynamesh = tile.data.flags["levels-3d-preview"]?.dynamesh;
+        const key = `${model3d}-${texture}-${dynamesh}`;
+        if (!model3d) continue;
+        if (!mergeTargets[key]) mergeTargets[key] = [];
+        mergeTargets[key].push(tile.document);
+    }
+
+    Object.values(mergeTargets).forEach((tileDocumentArray) => mergedCount += tileDocumentArray.length - 1);
+
     Dialog.confirm({
         title: game.i18n.localize("levels3dpreview.mergeTiles.title"),
-        content: game.i18n.localize("levels3dpreview.mergeTiles.content"),
+        content: game.i18n.localize("levels3dpreview.mergeTiles.content").replace("%count%", mergedCount),
         yes: async () => {
             await merge();
         },
@@ -1699,21 +1717,9 @@ export async function autoMergeTiles(tiles = canvas.tiles.placeables, skipContro
     });
 
     async function merge() {
-        const mergeTargets = {};
-        let mergedCount = 0;
-        for (const tile of tiles) {
-            if (skipControlled && tile.controlled) continue;
-            const repeatTile = tile.document.flags["levels-3d-preview"]?.mergedMatrix || tile.document.getFlag("levels-3d-preview", "fillType") === "tile";
-            if (repeatTile) continue;
-            const model3d = tile.data.flags["levels-3d-preview"]?.model3d;
-            if (!model3d) continue;
-            if (!mergeTargets[model3d]) mergeTargets[model3d] = [];
-            mergeTargets[model3d].push(tile.document);
-        }
         for (const tileDocumentArray of Object.values(mergeTargets)) {
             if (tileDocumentArray.length < 2) continue;
             await mergeTiles(tileDocumentArray);
-            mergedCount += tileDocumentArray.length;
         }
         if (mergedCount) ui.notifications.info(`Merged ${mergedCount} tiles`);
     }
