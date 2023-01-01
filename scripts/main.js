@@ -920,7 +920,7 @@ class Levels3DPreview {
 		if (hud.object) {
 			const tile3D = this.tiles[hud.object.id];
 			if (!tile3D || !tile3D.mesh) return;
-			const center = tile3D.mesh.getWorldPosition(new THREE.Vector3());
+			const center = tile3D.center;
 			Ruler3D.centerElement(hud.element, center);
 		}
 	}

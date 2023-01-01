@@ -1532,6 +1532,10 @@
                     "content": "The Scene Configuration offers many more options, once you are familiar with the basic settings you can click here to show all the advanced options."
                 }
             }
+        },
+        "mergeTiles": {
+            "title": "Merge Tiles",
+            "content": "Merging Tiles is an irreversible action, it's suggested to make a backup of the scene before merging high amounts of tiles. Are you sure you want to merge the selected tiles?"
         }
     }
 }

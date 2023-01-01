@@ -102,6 +102,10 @@ export class Tile3D {
         return this._parent.scene;
     }
 
+    get hudPosition() {
+        return this.center;
+    }
+
     getFlags() {
         this.gtflPath = this.tile.document.getFlag("levels-3d-preview", "model3d");
         this.mapgen = this.tile.document.getFlag("levels-3d-preview", "mapgen");
@@ -576,7 +580,7 @@ export class Tile3D {
     async initMerged() {
         const model = await this.getModel();
         const mergedMatrix = this.mergedMatrix;
-        
+
         this.isInstanced = true;
         const color = new THREE.Color(this.color);
         const { textureOrMat, isPBR } = await this.getTextureOrMat();
@@ -589,15 +593,14 @@ export class Tile3D {
         const count = mergedMatrix.length;
         this.count = count;
         this._processModel(object, textureOrMat, isPBR, color);
-        
+
         const baseScale = object.scale.clone();
         const baseRotation = object.rotation.clone();
         const basePosition = object.position.clone();
         const container = new THREE.Group();
 
-
         const objectsToInstanciate = [];
-        object.traverse((child) => { 
+        object.traverse((child) => {
             if (child.isMesh) {
                 objectsToInstanciate.push(child);
             }
@@ -608,14 +611,13 @@ export class Tile3D {
         const avgWidth = mergedMatrix.reduce((a, b) => a + b.width, 0) / count;
         const avgHeight = mergedMatrix.reduce((a, b) => a + b.height, 0) / count;
         const avgDepth = mergedMatrix.reduce((a, b) => a + b.depth, 0) / count;
-        this.instancedBBSize = new THREE.Vector3(avgWidth /2 , avgDepth / 2, avgHeight /2 );
+        this.instancedBBSize = new THREE.Vector3(avgWidth / 2, avgDepth / 2, avgHeight / 2);
 
         for (const obj of objectsToInstanciate) {
-
             const instancedMesh = new THREE.InstancedMesh(obj.geometry, obj.material, count);
             const positionsArray = new Float32Array(count);
-            
-            for(let i = 0; i < count; i++) {
+
+            for (let i = 0; i < count; i++) {
                 const matrix = mergedMatrix[i];
                 object.scale.copy(new THREE.Vector3((matrix.width * baseScale.x) / mWidth, (matrix.depth * baseScale.y) / mDepth, (matrix.height * baseScale.z) / mHeight));
                 const newSize = new THREE.Box3().setFromObject(object);
@@ -623,7 +625,7 @@ export class Tile3D {
                 const newHeight = newSize.max.z - newSize.min.z;
                 const newDepth = newSize.max.y - newSize.min.y;
                 object.rotation.copy(new THREE.Euler(Math.toRadians(matrix.tiltX), Math.toRadians(-matrix.rotation), Math.toRadians(matrix.tiltZ)));
-                object.position.copy(new THREE.Vector3(matrix.x + newWidth/2, matrix.z, matrix.y + newHeight/2));
+                object.position.copy(new THREE.Vector3(matrix.x + newWidth / 2, matrix.z, matrix.y + newHeight / 2));
                 obj.getWorldPosition(dummy.position);
                 obj.getWorldQuaternion(dummy.quaternion);
                 obj.getWorldScale(dummy.scale);
@@ -638,7 +640,7 @@ export class Tile3D {
                 instancedMesh.setColorAt(i, new THREE.Color(matrix.color));
             }
 
-            instancedMesh.geometry.setAttribute("shader_instance_position", new THREE.InstancedBufferAttribute(positionsArray, 1, false));   
+            instancedMesh.geometry.setAttribute("shader_instance_position", new THREE.InstancedBufferAttribute(positionsArray, 1, false));
             instancedMesh.instanceMatrix.needsUpdate = true;
             instancedMesh.geometry.computeBoundsTree();
             instancedMesh.castShadow = true;
@@ -646,7 +648,6 @@ export class Tile3D {
             instancedMesh.position.set(-this.width / 2, 0, -this.height / 2);
             instancedMesh.scale.set(this.width / this.originalDimensions.width, this.depth / this.originalDimensions.depth, this.height / this.originalDimensions.height);
             container.add(instancedMesh);
-
         }
         this.mesh = container;
 
@@ -660,7 +661,6 @@ export class Tile3D {
         this._parent.scene.add(this.mesh);
         this.scaleFit = 1;
         this.initBoundingBox(baseScale.y * mDepth);
-
     }
 
     async getModel() {
@@ -1596,10 +1596,10 @@ Hooks.on("renderTileHUD", (hud) => {
 
     mergeButton.on("click", (e) => {
         e.stopPropagation();
-        mergeTiles(canvas.tiles.controlled.map((t) => t.document));
+        autoMergeTiles(canvas.tiles.controlled, false);
     });
     hud.element.find(`div[data-action="locked"]`).before(mergeButton);
-    
+
     const tile3d = game.Levels3DPreview.tiles[hud.object.id];
     if (!tile3d?.isAnimated) return;
 
@@ -1621,8 +1621,6 @@ Hooks.on("renderTileHUD", (hud) => {
         hud.object.document.setFlag("levels-3d-preview", "paused", !hud.object.document.getFlag("levels-3d-preview", "paused"));
         controlButton.find("i").toggleClass(`${images.play} ${images.pause}`);
     });
-
-
 
     hud.element.find(`div[data-action="locked"]`).before(controlButton);
 });
@@ -1679,29 +1677,44 @@ export async function mergeTiles(tileDocuments) {
         width: baseData.width / factor,
         height: baseData.height / factor,
         depth: baseData.flags["levels-3d-preview"].depth / factor,
-    }
+    };
     baseData.rotation = 0;
 
     await canvas.scene.createEmbeddedDocuments("Tile", [baseData]);
-    await canvas.scene.deleteEmbeddedDocuments("Tile", tileDocuments.map((td) => td.id));
+    await canvas.scene.deleteEmbeddedDocuments(
+        "Tile",
+        tileDocuments.map((td) => td.id),
+    );
 }
 
-export async function autoMergeTiles(tiles = canvas.tiles.placeables) {
-    const mergeTargets = {};
-    let mergedCount = 0;
-    for (const tile of tiles) {
-        if (tile.controlled) continue;
-        const repeatTile = tile.document.flags["levels-3d-preview"]?.mergedMatrix || tile.document.getFlag("levels-3d-preview", "fillType") === "tile";
-        if (repeatTile) continue;
-        const model3d = tile.data.flags["levels-3d-preview"]?.model3d;
-        if (!model3d) continue;
-        if (!mergeTargets[model3d]) mergeTargets[model3d] = [];
-        mergeTargets[model3d].push(tile.document);
+export async function autoMergeTiles(tiles = canvas.tiles.placeables, skipControlled = true) {
+    Dialog.confirm({
+        title: game.i18n.localize("levels3dpreview.mergeTiles.title"),
+        content: game.i18n.localize("levels3dpreview.mergeTiles.content"),
+        yes: async () => {
+            await merge();
+        },
+        no: () => {},
+        defaultYes: false,
+    });
+
+    async function merge() {
+        const mergeTargets = {};
+        let mergedCount = 0;
+        for (const tile of tiles) {
+            if (skipControlled && tile.controlled) continue;
+            const repeatTile = tile.document.flags["levels-3d-preview"]?.mergedMatrix || tile.document.getFlag("levels-3d-preview", "fillType") === "tile";
+            if (repeatTile) continue;
+            const model3d = tile.data.flags["levels-3d-preview"]?.model3d;
+            if (!model3d) continue;
+            if (!mergeTargets[model3d]) mergeTargets[model3d] = [];
+            mergeTargets[model3d].push(tile.document);
+        }
+        for (const tileDocumentArray of Object.values(mergeTargets)) {
+            if (tileDocumentArray.length < 2) continue;
+            await mergeTiles(tileDocumentArray);
+            mergedCount += tileDocumentArray.length;
+        }
+        if (mergedCount) ui.notifications.info(`Merged ${mergedCount} tiles`);
     }
-    for (const tileDocumentArray of Object.values(mergeTargets)) {
-        if (tileDocumentArray.length < 2) continue;
-        await mergeTiles(tileDocumentArray);
-        mergedCount += tileDocumentArray.length;
-    }
-    if (mergedCount) ui.notifications.info(`Merged ${mergedCount} tiles`);
 }
