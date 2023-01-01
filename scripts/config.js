@@ -1047,6 +1047,13 @@ Hooks.on("renderTileConfig", (app,html)=>{
 
     })
 
+    if (meshStats.merged) { 
+        const fillTypeSelect = html.find(`select[name="flags.levels-3d-preview.fillType"]`);
+        fillTypeSelect[0].disabled = true;
+        const firstOption = fillTypeSelect.find("option")[0];
+        firstOption.innerText = game.i18n.localize("levels3dpreview.flags.fillType.options.merged");
+    }
+
     const advancedSettings = ["displacementIntensity", "dynaMeshResolution", "roughness","metalness", "transparency", "sightMeshComplexity","invertDisplacementMap","sides", "flipY", "shading","displacementMap","autoCenter","enableAnim","animSpeed","animIndex","paused","tiltX","tiltZ", "randomSeed", "autoGround", "depth"];
 
     injectAdvancedToggle(app,html,advancedSettings, injected);

@@ -436,7 +436,8 @@
                 "label": "Fill Type",
                 "options": {
                     "stretch": "Single",
-                    "tile": "Repeat"
+                    "tile": "Repeat",
+                    "merged": "Merged Tile"
                 }
             },
             "enableGravity": {
