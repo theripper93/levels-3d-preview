@@ -1704,18 +1704,20 @@ export async function mergeTiles(tileDocuments) {
 }
 
 export async function autoMergeTiles(tiles = canvas.tiles.placeables, skipControlled = true) {
-
     const mergeTargets = {};
     let mergedCount = 0;
     for (const tile of tiles) {
         if (skipControlled && tile.controlled) continue;
+        const tile3d = game.Levels3DPreview.tiles[tile.id];
+        const isDoor = tile3d?.isDoor || Object.values(tile3d?._doors || {}).length > 0;
+        if (isDoor) continue;
         const repeatTile = tile.document.flags["levels-3d-preview"]?.mergedMatrix || tile.document.getFlag("levels-3d-preview", "fillType") === "tile";
         if (repeatTile) continue;
         const model3d = tile.data.flags["levels-3d-preview"]?.model3d;
         const texture = tile.data.flags["levels-3d-preview"]?.imageTexture;
-        const dynamesh = tile.data.flags["levels-3d-preview"]?.dynamesh;
-        const key = `${model3d}-${texture}-${dynamesh}`;
-        if (!model3d) continue;
+        const dynaMesh = tile.data.flags["levels-3d-preview"]?.dynaMesh;
+        const key = `${model3d}-${texture}-${dynaMesh}`;
+        if (!model3d && (dynaMesh === "default" || !dynaMesh)) continue;
         if (!mergeTargets[key]) mergeTargets[key] = [];
         mergeTargets[key].push(tile.document);
     }
@@ -1733,11 +1735,13 @@ export async function autoMergeTiles(tiles = canvas.tiles.placeables, skipContro
     });
 
     async function merge() {
+        let mergedFinal = 0;
         for (const tileDocumentArray of Object.values(mergeTargets)) {
             if (tileDocumentArray.length < 2) continue;
+            mergedFinal ++;
             await mergeTiles(tileDocumentArray);
         }
-        if (mergedCount) ui.notifications.info(`Merged ${mergedCount} tiles`);
+        if (mergedCount) ui.notifications.info(`Merged ${mergedCount} tiles into ${mergedFinal} tiles.`);
     }
 }
 
