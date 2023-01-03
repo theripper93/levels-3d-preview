@@ -34,8 +34,8 @@ export class Light3D {
         const shadowRes = game.settings.get("levels-3d-preview", "shadowQuality")
         this.light3d.shadow.bias = -0.035;
         this.light3d.shadow.camera.near = 0.001;
-        this.light3d.shadow.mapSize.width = 1024*shadowRes;
-        this.light3d.shadow.mapSize.height = 1024*shadowRes;
+        this.light3d.shadow.mapSize.width = 256*shadowRes;
+        this.light3d.shadow.mapSize.height = 256*shadowRes;
         this.refresh();
         if(!this.isToken) {
             this.mesh.add(this.light3d);
