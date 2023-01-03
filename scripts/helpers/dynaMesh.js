@@ -5,20 +5,22 @@ THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
 THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
 THREE.Mesh.prototype.raycast = acceleratedRaycast;
 
+let font = null;
 export class DynaMesh{
-    constructor(type, {width = 1, height = 1, depth = 1, resolution = 1}){
+    constructor(type, {width = 1, height = 1, depth = 1, resolution = 1, text = ""}){
         this.type = type;
         this.width = width;
         this.height = height;
         this.depth = depth;
         this.resolution = resolution;
+        this.text = text;
     }
 
-    create(){
-        const geometry = this._constructGeometry();
+    async create(){
+        const geometry = await this._constructGeometry();
         let mesh;
         if(this.type == "billboard") mesh = this._createBillboardMesh(geometry);
-        else if(this.type == "billboard2") mesh = this._createBillboardMeshCross(geometry);
+        else if (this.type == "billboard2") mesh = this._createBillboardMeshCross(geometry);
         else mesh = new THREE.Mesh(geometry, this._material);
         mesh.traverse((child) => {
             if(child.isMesh) child.geometry.computeBoundsTree();
@@ -141,6 +143,17 @@ export class DynaMesh{
         return geometry;
     }
 
+    async _constructtext() {
+        if (!font) font = await loadTextFont();
+        const geometry = new THREE.TextGeometry(this.text, {
+            font: font,
+            size: (this.width + this.depth) / 2,
+            height: this.height,
+            curveSegments: this.resolution,
+        });
+        return geometry;
+    }
+
     get _avgWidthHeight(){
         return ((this.width + this.height) / 2) * this.resolution;
     }
@@ -164,3 +177,9 @@ export class DynaMesh{
         }
     }
 }
+
+async function loadTextFont() {
+    const loader = new THREE.FontLoader();
+    font = await loader.loadAsync("modules/levels-3d-preview/assets/helvetiker.json");
+    return font;
+ }

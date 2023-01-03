@@ -407,6 +407,7 @@
                     "dome": "Dome",
                     "billboard": "Billboard",
                     "billboard2": "Billboard (Cross)",
+                    "text": "Text (Use 3D Model field for text)",
                     "mapGen": "Map Generator"
                 }
             },
@@ -892,7 +893,7 @@
                 },
                 "lighting": {
                     "title": "Lighting",
-                    "notes": "Configure Lighting and Fog of war."
+                    "notes": "Configure the global Lighting of the scene."
                 },
                 "particles": {
                     "title": "Particles",

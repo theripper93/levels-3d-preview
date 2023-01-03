@@ -670,7 +670,8 @@ export class Tile3D {
     async getModel() {
         const isMapgen = this.dynaMesh === "mapGen" && this.mapgen;
         if (this.dynaMesh != "default" && !isMapgen) {
-            const mesh = new DynaMesh(this.dynaMesh, { width: this.width, height: this.height, depth: this.depth, resolution: this.dynaMeshResolution }).create();
+            const dynamesh = new DynaMesh(this.dynaMesh, { text: this.gtflPath, width: this.width, height: this.height, depth: this.depth, resolution: this.dynaMeshResolution });
+            const mesh = await dynamesh.create();
             return {
                 scene: mesh,
                 object: mesh,
