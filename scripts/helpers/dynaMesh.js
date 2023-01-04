@@ -151,6 +151,7 @@ export class DynaMesh{
             height: this.height,
             curveSegments: this.resolution,
         });
+        geometry.center();
         return geometry;
     }
 
