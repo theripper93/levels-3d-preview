@@ -1590,4 +1590,4 @@ window.addEventListener('resize', ()=>{
     setTimeout(()=>{
     if(miniCanvas) miniCanvas.resize()
     },100)
-  }, false)
+}, false)

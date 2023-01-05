@@ -1406,6 +1406,28 @@
                 "add_blend": "Additive Blending",
                 "mult_blend": "Multiply Blending"
             },
+            "textureGradient": {
+                "name": "Gradient",
+                "description": "Texture Gradient. Requires a texture to be set. Use 'Multiply Blending' for textures with white background, 'Black Blending' for textures with black background.",
+                "texCount": "Texture Count",
+                "smoothing": "Smoothing",
+                "tex0Begin": "Texture 1 Begin",
+                "tex1Begin": "Texture 2 Begin",
+                "tex2Begin": "Texture 3 Begin",
+                "tex3Begin": "Texture 4 Begin",
+                "textureDiffuse0": "Texture 1",
+                "color0": "Color 1",
+                "repeat0": "Repeat 1",
+                "textureDiffuse1": "Texture 2",
+                "color1": "Color 2",
+                "repeat1": "Repeat 2",
+                "textureDiffuse2": "Texture 3",
+                "color2": "Color 3",
+                "repeat2": "Repeat 3",
+                "textureDiffuse3": "Texture 4",
+                "color3": "Color 4",
+                "repeat3": "Repeat 4"
+            },
             "sound": {
                 "name": "Sound",
                 "description": "Requires a sound to be playing. For performance only the first sound playing will be used if multiple.",

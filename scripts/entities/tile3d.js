@@ -823,7 +823,7 @@ export class Tile3D {
         if (isNaN(this.depth)) this.depth = box.max.z - box.min.z;
         this.bb = {
             width: this.tile.document.width / factor,
-            depth: this.fillType === "tile" || this.mergedMatrix ? depth : this.depth,
+            depth: this.fillType === "tile" || this.mergedMatrix ? depth : box.max.y - box.min.y,//this.depth,
             height: this.tile.document.height / factor,
         };
         const cube = new THREE.Mesh(new THREE.BoxGeometry(this.tile.document.width / factor, this.fillType === "tile" ? depth : this.depth, this.tile.document.height / factor), new THREE.MeshBasicMaterial({ color: c, wireframe: true }));
@@ -1042,6 +1042,7 @@ export class Tile3D {
                 c.geometry.computeVertexNormals();
                 c.geometry.normalizeNormals();
                 c.geometry.computeTangents();
+                c.geometry.computeBoundingBox();
                 c.geometry.attributes.position.needsUpdate = true;
                 c.geometry.attributes.normal.needsUpdate = true;
             }

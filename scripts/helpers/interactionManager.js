@@ -423,6 +423,7 @@ export class InteractionManager {
     }
 
     _onMouseDown(event) {
+        debugger
         if (this._groupSelect && this.activeLayerEntity != "MeasuredTemplate") return this.groupSelectHandler.startSelect(event);
         if (this.preventSelect) return;
         this._parent.stopCameraAnimation();
