@@ -100,8 +100,8 @@ export class GroupSelectHandler {
     endSelect(event){
         this._isSelecting = false;
         this.controls.enabled = true;
+        this._parent.interactionManager._groupSelect = false
         $("#levels-3d-preview-select-box").remove();
-        //this._parent.interactionManager._groupSelect = false
         //handle selection
     }
 }

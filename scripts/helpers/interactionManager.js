@@ -343,15 +343,17 @@ export class InteractionManager {
         }
     }
 
-    async _onDrop(event) {
+    async _onDrop(event, snap = null, normal = null, dataTransfer = null, setRotation = 0, autoCenter = false) {
         if (!game.Levels3DPreview._active) return;
         event.preventDefault();
         // Try to extract the data
-        let data;
-        try {
-            data = JSON.parse(event.dataTransfer.getData("text/plain"));
-        } catch (err) {
-            return false;
+        let data = dataTransfer;
+        if (!dataTransfer) {
+            try {
+                data = JSON.parse(event.dataTransfer.getData("text/plain"));
+            } catch (err) {
+                return false;
+            }
         }
         try {
             const coord3d = this.screen3DtoCanvas2DWithCollision(event);
@@ -388,6 +390,7 @@ export class InteractionManager {
             data.flags["levels-3d-preview"] = {
                 model3d: data.texture.src,
                 autoGround: true,
+                autoCenter: autoCenter,
             };
             if (data.type === "Tile") {
                 const object3d = await this._parent.helpers.loadModel(data.texture.src);
@@ -399,7 +402,18 @@ export class InteractionManager {
                 let height = canvas.grid.size * (canvas.grid.size / data.tileSize) * heightFactor;
 
                 data.flags["levels-3d-preview"].depth = depth ? canvas.grid.size * (canvas.grid.size / data.tileSize) * depth : 0.05;
-                const useSnapped = Ruler3D.useSnapped();
+                if (normal) {
+                    const dummy = new THREE.Object3D();
+                    dummy.lookAt(normal);
+                    dummy.rotateOnAxis(new THREE.Vector3(1, 0, 0), Math.PI / 2);
+                    data.flags["levels-3d-preview"].tiltX = Math.toDegrees(dummy.rotation.x);
+                    data.flags["levels-3d-preview"].tiltZ = Math.toDegrees(dummy.rotation.z);
+                    data.rotation = Math.toDegrees(dummy.rotation.y);
+                    data.flags["levels-3d-preview"].autoCenter = true;
+                }
+                data.rotation = setRotation;
+
+                const useSnapped = snap ?? Ruler3D.useSnapped();
                 let snapped;
                 if (useSnapped) {
                     snapped = canvas.grid.getSnappedPosition(data.x - width / 2, data.y - height / 2);
@@ -413,6 +427,7 @@ export class InteractionManager {
                         img: "modules/levels-3d-preview/assets/blank.webp",
                         overhead: canvas.activeLayer.name !== "BackgroundLayer",
                         flags: data.flags,
+                        rotation: data.rotation,
                     },
                 ]);
             }
@@ -423,7 +438,6 @@ export class InteractionManager {
     }
 
     _onMouseDown(event) {
-        debugger
         if (this._groupSelect && this.activeLayerEntity != "MeasuredTemplate") return this.groupSelectHandler.startSelect(event);
         if (this.preventSelect) return;
         this._parent.stopCameraAnimation();
@@ -442,6 +456,7 @@ export class InteractionManager {
         if (intersect.userData?.entity3D?.embeddedName === this.activeLayerEntity && !(this._gizmoEnabled && this.activeLayerEntity === "Tile")) this.toggleControls(false);
         this.clicks++;
         event.entity = intersect.userData.entity3D;
+        event.intersectData = intersectData;
         event.intersect = intersect;
         event.position3D = intersectData.point;
         event.originalIntersect = intersectData?.originalObject;
@@ -451,6 +466,7 @@ export class InteractionManager {
             position3D: event.position3D,
             intersect: event.intersect,
             originalIntersect: event.originalIntersect,
+            intersectData: intersectData.intersectData,
         };
         if (this.clicks === 1) {
             setTimeout(() => {
@@ -594,13 +610,7 @@ export class InteractionManager {
         const _this = game.Levels3DPreview.interactionManager;
         if (object.userData.ignoreHover) return false;
         if (!canvas.activeLayer) return true;
-        if (
-            object.userData?.entity3D &&
-            _this.activeLayerEntity !== object.userData?.entity3D?.embeddedName &&
-            object.userData?.entity3D?.embeddedName !== "Note" &&
-            object.userData?.entity3D?.embeddedName !== "Tile"
-        )
-            return false;
+        if (object.userData?.entity3D && _this.activeLayerEntity !== object.userData?.entity3D?.embeddedName && object.userData?.entity3D?.embeddedName !== "Note" && object.userData?.entity3D?.embeddedName !== "Tile") return false;
         if (object.userData?.entity3D && _this.activeLayerEntity !== "Tile" && object.userData?.entity3D?.embeddedName === "Tile" && !object.userData?.entity3D?.collision) return false;
         if (!object.visible) return false;
         return true;
@@ -770,13 +780,7 @@ export class InteractionManager {
         this.raycaster.setFromCamera(this.mouse, this.camera);
         let intersectTargets = [];
         for (let child of this.scene.children.concat(this._parent.controlledGroup.children)) {
-            if (
-                this.activeLayerEntity !== child.userData?.entity3D?.embeddedName &&
-                child.userData?.entity3D?.embeddedName !== "Wall" &&
-                child.userData?.entity3D?.embeddedName !== "Tile" &&
-                child.userData?.entity3D?.embeddedName !== "Note"
-            )
-                continue;
+            if (this.activeLayerEntity !== child.userData?.entity3D?.embeddedName && child.userData?.entity3D?.embeddedName !== "Wall" && child.userData?.entity3D?.embeddedName !== "Tile" && child.userData?.entity3D?.embeddedName !== "Note") continue;
             if (!child.visible) continue;
             if (this.activeLayerEntity !== "Tile" && child.userData?.entity3D?.embeddedName === "Tile" && !child.userData?.entity3D?.collision && !child.userData?.entity3D?.isDoor) continue;
             if (child.userData?.hitbox && child.userData.interactive) intersectTargets.push(child.userData.hitbox);
@@ -810,6 +814,7 @@ export class InteractionManager {
             object: intersect?.object,
             point: intersect?.point,
             originalObject: originalObject,
+            intersectData: intersect,
         };
     }
 
