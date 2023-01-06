@@ -641,7 +641,7 @@ export class Tile3D {
                 dummy.getWorldPosition(world);
                 positionsArray[i] = world.y;
                 instancedMesh.setMatrixAt(i, dummy.matrix);
-                instancedMesh.setColorAt(i, new THREE.Color(matrix.color));
+                instancedMesh.setColorAt(i, new THREE.Color(matrix.color ?? "#ffffff"));
             }
 
             instancedMesh.geometry.setAttribute("shader_instance_position", new THREE.InstancedBufferAttribute(positionsArray, 1, false));
@@ -1680,10 +1680,10 @@ export async function mergeTiles(tileDocuments) {
             x: (td.x - minXYZ.x) / factor,
             y: (td.y - minXYZ.y) / factor,
             z: Ruler3D.unitsToPixels(td.flags.levels.rangeBottom - minXYZ.z),
-            color: td.flags["levels-3d-preview"].color,
-            rotation: td.rotation,
-            tiltX: td.flags["levels-3d-preview"].tiltX,
-            tiltZ: td.flags["levels-3d-preview"].tiltZ,
+            color: td.flags["levels-3d-preview"].color ?? "#ffffff",
+            rotation: td.rotation ?? 0,
+            tiltX: td.flags["levels-3d-preview"].tiltX ?? 0,
+            tiltZ: td.flags["levels-3d-preview"].tiltZ ?? 0,
         });
     }
 
