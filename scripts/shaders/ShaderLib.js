@@ -1478,6 +1478,10 @@ export const shaders = {
                 min: 0,
                 max: 0.25,
             },
+            useNormals: {
+                type: "bool",
+                default: false,
+            },
             tex0Begin: {
                 type: "float",
                 default: 0,
@@ -1574,6 +1578,9 @@ export const shaders = {
                 shaderCode: `
                 #ifdef USE_UV
                 float percent = textureGradient_height_percent;
+                if(textureGradient_useNormals){
+                    percent = abs(shader_vNormal.y);
+                }
                 float blend = textureGradient_smoothing;
                 vec4 finalColor = gl_FragColor;
                 if(percent >= textureGradient_tex0Begin && percent <= (textureGradient_tex1Begin + blend) && textureGradient_texCount > 0.0){

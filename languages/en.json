@@ -1408,8 +1408,9 @@
             },
             "textureGradient": {
                 "name": "Gradient",
-                "description": "Texture Gradient. Requires a texture to be set. Use 'Multiply Blending' for textures with white background, 'Black Blending' for textures with black background.",
+                "description": "Texture Gradient. Requires a texture to be set. Map texture to elevation or inclination.\nWhen using Inclination, 1 corresponds to a flat surface, 0 to a vertical surface.",
                 "texCount": "Texture Count",
+                "useNormals": "Use Inclination",
                 "smoothing": "Smoothing",
                 "tex0Begin": "Texture 1 Begin",
                 "tex1Begin": "Texture 2 Begin",
