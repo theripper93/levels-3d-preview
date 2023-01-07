@@ -1574,7 +1574,7 @@ export const shaders = {
         fragmentShader: [
             {
                 mode: SHADERS_CONSTS.APPEND,
-                injectionPoint: "#include <dithering_fragment>",
+                injectionPoint: "#include <map_fragment>",
                 shaderCode: `
                 #ifdef USE_UV
                 float percent = textureGradient_height_percent;
@@ -1582,7 +1582,7 @@ export const shaders = {
                     percent = abs(shader_vNormal.y);
                 }
                 float blend = textureGradient_smoothing;
-                vec4 finalColor = gl_FragColor;
+                vec4 finalColor = texelColor;
                 if(percent >= textureGradient_tex0Begin && percent <= (textureGradient_tex1Begin + blend) && textureGradient_texCount > 0.0){
                     vec2 textureGradient_vUv = vec2(vUv.x, vUv.y) * (textureGradient_repeat0);
                     vec4 textureGradientTexture = texture( textureGradient_textureDiffuse0, textureGradient_vUv );
@@ -1619,7 +1619,8 @@ export const shaders = {
                     }
                     finalColor = mix(finalColor, textureGradientTexture, textureGradientTexture.a*fac);
                 }
-                gl_FragColor = finalColor;
+                texelColor = finalColor;
+                diffuseColor = texelColor;
                 #endif
                 `,
             },

@@ -1048,7 +1048,7 @@ Hooks.on("renderTileConfig", (app,html)=>{
 
     })
 
-    if (meshStats.merged) { 
+    if (meshStats?.merged) { 
         const fillTypeSelect = html.find(`select[name="flags.levels-3d-preview.fillType"]`);
         fillTypeSelect[0].disabled = true;
         const firstOption = fillTypeSelect.find("option")[0];
