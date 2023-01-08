@@ -1565,7 +1565,7 @@ Hooks.on("init", () => {
             game.Levels3DPreview.interactionManager._groupSelect = true
         },
         onUp: () => {
-            //game.Levels3DPreview.interactionManager._groupSelect = false
+            if (!game.Levels3DPreview.interactionManager.groupSelectHandler._isSelecting) game.Levels3DPreview.interactionManager._groupSelect = false;
         },
     });
 
