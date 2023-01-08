@@ -86,9 +86,7 @@ export class Tile3D {
         }
     }
 
-    get hudCenter() {
-
-    }
+    get hudCenter() {}
 
     get pseudoRandom() {
         return this.marsenne.random() + 0.5;
@@ -144,6 +142,7 @@ export class Tile3D {
         this.displacementMap = this.tile.document.getFlag("levels-3d-preview", "displacementMap") ?? "";
         this.invertDisplacementMap = this.tile.document.getFlag("levels-3d-preview", "invertDisplacementMap") ?? false;
         this.displacementIntensity = this.tile.document.getFlag("levels-3d-preview", "displacementIntensity") ?? 1;
+        this.displacementMatrix = this.tile.document.getFlag("levels-3d-preview", "displacementMatrix") ?? "0,0,1,1";
         this.fillType = this.tile.document.getFlag("levels-3d-preview", "fillType") ?? "stretch";
         this.scale = this.tile.document.getFlag("levels-3d-preview", "tileScale") ?? 1;
         this.yScale = this.tile.document.getFlag("levels-3d-preview", "yScale") ?? 1;
@@ -823,7 +822,7 @@ export class Tile3D {
         if (isNaN(this.depth)) this.depth = box.max.z - box.min.z;
         this.bb = {
             width: this.tile.document.width / factor,
-            depth: this.fillType === "tile" || this.mergedMatrix ? depth : box.max.y - box.min.y,//this.depth,
+            depth: this.fillType === "tile" || this.mergedMatrix ? depth : box.max.y - box.min.y, //this.depth,
             height: this.tile.document.height / factor,
         };
         const cube = new THREE.Mesh(new THREE.BoxGeometry(this.tile.document.width / factor, this.fillType === "tile" ? depth : this.depth, this.tile.document.height / factor), new THREE.MeshBasicMaterial({ color: c, wireframe: true }));
@@ -1063,11 +1062,37 @@ export class Tile3D {
         return imagedata;
     }
 
+    get heightmapMatrix() {
+        if (this._heightmapMatrix) return this._heightmapMatrix;
+        try {
+            const string = this.displacementMatrix;
+            const matrix = string.split(",").map((s) => parseFloat(s));
+            this._heightmapMatrix = {
+                offsetX: matrix[0] || 0,
+                offsetY: matrix[1] || 0,
+                scaleX: matrix[2] || 1,
+                scaleY: matrix[3] || 1,
+            };
+            return this._heightmapMatrix;
+        } catch (error) {
+            console.error("Error parsing heightmap matrix", error);
+            return {
+                offsetX: 0,
+                offsetY: 0,
+                scaleX: 1,
+                scaleY: 1,
+            };
+        }
+    }
+
     getPixel(imagedata, x, y) {
-        x *= imagedata.width;
-        y *= imagedata.height;
-        x = parseInt(x);
-        y = parseInt(y);
+        const matrix = this.heightmapMatrix;
+        x *= imagedata.width / matrix.scaleX;
+        y *= imagedata.height / matrix.scaleY;
+        x = parseInt(x + matrix.offsetX * imagedata.width);
+        y = parseInt(y + matrix.offsetY * imagedata.height);
+        x = x % imagedata.width;
+        y = y % imagedata.height;
         var position = (x + imagedata.width * y) * 4,
             data = imagedata.data;
         if (this.invertDisplacementMap) {

@@ -426,6 +426,9 @@
             "displacementIntensity": {
                 "label": "Heightmap Intensity"
             },
+            "displacementMatrix": {
+                "label": "Heightmap Matrix"
+            },
             "wallSidesTexture": {
                 "label": "Sides Texture"
             },

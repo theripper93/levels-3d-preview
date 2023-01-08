@@ -753,6 +753,11 @@ Hooks.on("renderTileConfig", (app,html)=>{
             label: game.i18n.localize("levels3dpreview.flags.displacementIntensity.label"),
             default: 1,
         },
+        "displacementMatrix": {
+            type: "text",
+            label: game.i18n.localize("levels3dpreview.flags.displacementMatrix.label"),
+            default: "0,0,1,1",
+        },
         "color": {
             type: "color",
             label: game.i18n.localize("levels3dpreview.flags.tint.label"),
@@ -1055,7 +1060,7 @@ Hooks.on("renderTileConfig", (app,html)=>{
         firstOption.innerText = game.i18n.localize("levels3dpreview.flags.fillType.options.merged");
     }
 
-    const advancedSettings = ["displacementIntensity", "dynaMeshResolution", "roughness","metalness", "transparency", "sightMeshComplexity","invertDisplacementMap","sides", "flipY", "shading","displacementMap","autoCenter","enableAnim","animSpeed","animIndex","paused","tiltX","tiltZ", "randomSeed", "autoGround", "depth"];
+    const advancedSettings = ["displacementIntensity", "displacementMatrix", "dynaMeshResolution", "roughness", "metalness", "transparency", "sightMeshComplexity", "invertDisplacementMap", "sides", "flipY", "shading", "displacementMap", "autoCenter", "enableAnim", "animSpeed", "animIndex", "paused", "tiltX", "tiltZ", "randomSeed", "autoGround", "depth"];
 
     injectAdvancedToggle(app,html,advancedSettings, injected);
 
