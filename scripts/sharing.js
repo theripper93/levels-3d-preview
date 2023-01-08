@@ -281,7 +281,13 @@ class MapBrowser extends Application {
                 const thumb = e.target.dataset.thumb;
                 const map = await getMap(id);
                 map.data.thumb = thumb;
-                Scene.create(map.data);
+                const originalID = map.data._id;
+                const newID = randomID();
+                map.data.active = false;
+                let stringified = JSON.stringify(map.data);
+                stringified = stringified.replaceAll(originalID, newID);
+                map.data = JSON.parse(stringified);
+                await Scene.create(map.data, {keepId: true});
                 ui.notifications.info(game.i18n.localize("levels3dpreview.sharing.mapbrowser.imported") + `: ${map.data.name}`);
             });
         });
