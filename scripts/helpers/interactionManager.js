@@ -829,7 +829,7 @@ export class InteractionManager {
             this.ruler.cacheSpeedProvider(object?.userData?.entity3D?.token);
         } else {
             this.forceFree = false;
-            this.dragplane.position.set(center.x, 0, center.z);
+            this.dragplane.position.set(center.x, -99999999, center.z);
             this.removeClone();
         }
         if (this.ruler && (canvas.scene.getFlag("levels-3d-preview", "enableRuler") ?? true)) this.ruler.object = object;
