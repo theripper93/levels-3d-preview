@@ -1021,6 +1021,7 @@ export class Tile3D {
                 c.geometry.attributes.position.needsUpdate = true;
                 c.geometry.attributes.normal.needsUpdate = true;
             }
+            if(c.computeSmartUVs) c.computeSmartUVs();
         });
     }
 
