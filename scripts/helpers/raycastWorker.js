@@ -36,6 +36,7 @@ self.onconnect = function (e) {
                         if (!message.hasTags) { 
                             child.userData.sight = message.sight;
                         }
+                        if(child.userData.isDoor) child.userData.sight = !child.userData.isOpen
                         child.material = basicMaterial;
                     }
                 });
@@ -69,14 +70,13 @@ self.onconnect = function (e) {
 
             if (message.type == "clear") { 
                 scene.tiles = {};
-                scene.traverse((child) => {
-                    if (child.isMesh) {
-                        child.dispose?.();
-                    }
-                });
                 while (scene.children.length > 0) {
-                    scene.children[0].dispose?.();
-                    scene.remove(this.scene.children[0]);
+                    if (scene.children[0].geometry) {
+                        scene.children[0].geometry.disposeBoundsTree();
+                        scene.children[0].geometry.dispose();
+                    }
+                    scene.remove(scene.children[0]);
+                    
                 }
             }
 
@@ -85,6 +85,7 @@ self.onconnect = function (e) {
                 scene.traverse((child) => { 
                     if(child?.userData?.sight) raycastObjects.push(child);
                 });
+                port.postMessage({ type: "raycast", raycastObjects: raycastObjects.length });
                 const config = message.config;
                 const polygonPoints = [];
                 const aMin = Math.normalizeRadians(Math.toRadians(config.rotation + 90 - config.angle / 2));
@@ -132,7 +133,7 @@ function computeSightCollisionFrom3DPositions(origin, target, raycastObjects) {
     const distance = Infinity;
     raycaster.far = Infinity;
     raycaster.set(origin, direction);
-    let collisions = raycaster.intersectObjects(raycastObjects, true);
+    let collisions = raycaster.intersectObjects(raycastObjects, false);
     if (!collisions.length) return false;
     const collision = collisions[0];
     if (collision.distance > distance) return false;

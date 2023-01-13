@@ -81,6 +81,8 @@ export class Tile3D {
             id: this.tile.id,
             sight: this.sight,
             hasTags: this.hasTags,
+            isDoor: this.isDoor,
+            isOpen: this.isOpen,
         };
         this._parent.workers.addMesh(data);
     }

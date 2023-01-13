@@ -13,9 +13,7 @@ export class WorkerHandler {
         raycastWorker.port.onmessageerror = (e) => {
             throw new Error(e);
         };
-
         raycastWorker.port.onmessage = (e) => {
-            //console.log(e.data);
             if (e.data.type == "polygon") {
                 const callback = this.callbacks[e.data.callbackId];
                 if (callback) {
@@ -30,48 +28,48 @@ export class WorkerHandler {
         };
     }
 
-    refresh() { 
-                canvas.perception.update(
-                    {
-                        forceUpdateFog: true,
-                        initializeLighting: true,
-                        initializeSounds: true,
-                        initializeVision: true,
-                        refreshLighting: true,
-                        refreshSounds: true,
-                        refreshTiles: true,
-                        refreshVision: true,
-                    },
-                    true,
-                );
+    refresh() {
+        canvas.perception.update(
+            {
+                forceUpdateFog: true,
+                initializeLighting: true,
+                initializeSounds: true,
+                initializeVision: true,
+                refreshLighting: true,
+                refreshSounds: true,
+                refreshTiles: true,
+                refreshVision: true,
+            },
+            true,
+        );
     }
 
     requestWorkerRaycast(data, callback) {
-        data.callbackId = randomID(20)
+        data.callbackId = randomID(20);
         this.raycastWorker.port.postMessage(data);
         this.callbacks[data.callbackId] = callback;
     }
 
-    getLastRaycast(id) { 
+    getLastRaycast(id) {
         const result = this._lastResults[id];
         delete this._lastResults[id];
         return result;
     }
 
-    getLastComputed(id) { 
+    getLastComputed(id) {
         return this._lastKnownValid[id];
     }
 
-    addMesh(data) { 
+    addMesh(data) {
         this.raycastWorker.port.postMessage(data);
     }
 
-    removeMesh(id) { 
+    removeMesh(id) {
         this.raycastWorker.port.postMessage({ type: "remove", id });
     }
 
-    clearMeshes() { 
-        this.raycastWorker.port.postMessage({type: "clear"});
+    clearMeshes() {
+        this.raycastWorker.port.postMessage({ type: "clear" });
         this.callbacks = {};
         this._lastResults = {};
         this._lastKnownValid = {};
