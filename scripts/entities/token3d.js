@@ -483,7 +483,7 @@ export class Token3D {
           elevation: Math.round((token.document.elevation + deltas.elevation)*1000)/1000,
           flags: {
             "levels-3d-preview": {
-              wasFreeMode: this.wasFreeMode
+              wasFreeMode: !!this.wasFreeMode
             }
           }
         })
