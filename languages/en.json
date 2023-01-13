@@ -1060,6 +1060,10 @@
                 "name": "Stand-ups Face Camera",
                 "hint": "2D Tokens displayed in a stand-up style will always face the camera."
             },
+            "useMultithreading": {
+                "name": "EXPERIMENTAL: Use Multithreading",
+                "hint": "Use multithreading to improve performance of Fog of War Calculations. This settings has no effect if you are not using the Fog of War."
+            },
             "miniCanvas": {
                 "name": "Enable Canvas Popout",
                 "hint": "Pop out the 2d canvas into a separate window when the 3D mode is activated"

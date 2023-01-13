@@ -46,6 +46,7 @@ export class Tile3D {
         } else {
             await this.init();
         }
+        if(this._destroyed) return;
         this.initShaders();
         this.setShading();
         this.setSides();
@@ -63,7 +64,25 @@ export class Tile3D {
             this.setupDoor();
         }, 100);
         game.Levels3DPreview.outline?.toggleControlled(this.mesh, this.tile.controlled);
+        this.sendToWorker();
         return this;
+    }
+
+    sendToWorker() { 
+        if(!this.sight && !this.hasTags) return;
+        this.mesh.traverse((o) => { 
+            o.updateMatrix();
+        });
+        const mesh = this.mesh;
+        const json = mesh.toJSONClean();
+        const data = {
+            type: "add",
+            meshJSON: json,
+            id: this.tile.id,
+            sight: this.sight,
+            hasTags: this.hasTags,
+        };
+        this._parent.workers.addMesh(data);
     }
 
     initRandom() {
@@ -236,7 +255,7 @@ export class Tile3D {
                 }
             }
         }
-
+        this.sendToWorker();
         this._parent.interactionManager?.generateSightCollisions();
         this._parent.interactionManager?.buildCollisionGeos();
         canvas.perception.update(
@@ -1106,6 +1125,7 @@ export class Tile3D {
     destroy() {
         this._destroyed = true;
         delete this._parent.tiles[this.tile.id];
+        this._parent.workers.removeMesh(this.tile.id);
         if (!this.mesh) return;
         this.mesh.removeFromParent();
         this.mesh.traverse((child) => {
