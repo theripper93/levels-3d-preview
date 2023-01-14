@@ -1133,6 +1133,7 @@ export class Tile3D {
         this.mesh.traverse((child) => {
             if (child.isMesh) {
                 child.dispose?.();
+                child.geometry?.dispose?.();
             }
         });
     }

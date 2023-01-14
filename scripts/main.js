@@ -870,6 +870,9 @@ class Levels3DPreview {
 		this.scene.background?.dispose?.();
 		this.scene.environment?.dispose?.();
 		this.scene.userData.envRt?.dispose?.();
+		Object.values(this.tiles).forEach((tile) => {
+			tile.destroy();
+		});
 		this.scene.traverse((child) => {
 			if (child.isMesh) {
 				child.dispose?.();
@@ -1170,6 +1173,7 @@ class Levels3DPreview {
 
 	resetCamera(topdown = false) {
 		const center = this.canvasCenter;
+		this.stopCameraAnimation();
 		this.controls.reset();
 		if (!this.GameCamera.enabled) {
 			this.controls.maxDistance = 20;
