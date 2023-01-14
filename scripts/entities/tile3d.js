@@ -69,7 +69,7 @@ export class Tile3D {
     }
 
     sendToWorker() { 
-        if(!this.sight && !this.hasTags) return;
+        if ((!this.sight && !this.hasTags) || !this._parent?.workers?.enabled) return;
         this.mesh.traverse((o) => { 
             o.updateMatrix();
         });

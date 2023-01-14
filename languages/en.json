@@ -139,6 +139,7 @@
                 "share": "Share",
                 "error": "An error occurred",
                 "preview": "Image Preview",
+                "secret": "Secret Key",
                 "missingfields": "3D Canvas - Map Sharing | One or more fields are missing or no Asset Pack was selected",
                 "gamemaster": "Gamemaster is not an allowed author name.",
                 "assetpacks": "Asset Packs",
@@ -148,6 +149,7 @@
                     "content": "Are you sure you want to share this map? Once shared you will not be able to edit the shared content."
                 },
                 "success": {
+                    "titleupdated": "Map Updated",
                     "title": "Map Shared",
                     "content": "The map has been shared successfully. The map is now available for everyone to enjoy, thanks for sharing!"
                 }

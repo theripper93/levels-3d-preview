@@ -92,7 +92,7 @@ Hooks.once("ready", async function () {
             },
             id: id,
         };
-        worker.requestWorkerRaycast(message, (points) => { 
+        worker.requestWorkerRaycast(message, (points) => {
             this.points = points;
             if (!lastRaycast) {
                 this.config.source.object.updatedByWorker = true;

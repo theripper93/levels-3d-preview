@@ -46,10 +46,18 @@ export function setSharingHooks(){
             type: Object,
             default: {},
         });
+        game.settings.register("levels-3d-preview", "mapsharingKeys", {
+            name: "",
+            hint: "",
+            scope: "world",
+            config: false,
+            type: Object,
+            default: {},
+        });
     });
 }
 
-async function shareMap({ image, author, description, scene, name, assetpacks }) {
+async function shareMap({ image, author, description, scene, name, assetpacks, secret }) {
     try {
         const body = JSON.stringify({
             name: name || scene.name,
@@ -57,6 +65,7 @@ async function shareMap({ image, author, description, scene, name, assetpacks })
             author,
             image,
             assetpacks,
+            secret,
             data: scene.toJSON(),
         });
         const res = await fetch("https://theripper93.com/api/mapsharing", {
@@ -66,7 +75,13 @@ async function shareMap({ image, author, description, scene, name, assetpacks })
             },
             body,
         });
-        const rJson = await res.json();
+        console.log(body)
+        let rJson;
+        try {
+            rJson = await res.json();
+        } catch (e) { 
+            rJson = { status: "Updated" };
+        }
         return rJson;
     } catch (e) {
         return ui.notifications.error(game.i18n.localize("levels3dpreview.sharing.error"));
@@ -142,6 +157,7 @@ class ShareMap extends FormApplication {
         return {
             scene: this.scene,
             user: game.user,
+            secret: game.settings.get("levels-3d-preview", "mapsharingKeys")[this.scene.name] ?? "",
             assetpacks: assetpacks.map((ap) => {
                 return {
                     name: game.i18n.localize(`levels3dpreview.sharing.packs.${ap}`),
@@ -172,6 +188,7 @@ class ShareMap extends FormApplication {
 
     async _updateObject(event, formData) {
         formData.scene = this.scene;
+        if (!formData.secret) formData.secret = randomID(40);
         if (!formData.image || !formData.description || !formData.assetpacks.length) return ui.notifications.error(game.i18n.localize("levels3dpreview.sharing.sharemap.missingfields"));
         if (formData.author.toLowerCase() == "gamemaster") return ui.notifications.error(game.i18n.localize("levels3dpreview.sharing.sharemap.gamemaster"));
         Dialog.confirm({
@@ -180,7 +197,11 @@ class ShareMap extends FormApplication {
             yes: async () => {
                 const res = await shareMap(formData);
                 if (res.error) return this.displaySubmissionError(res.error, res.status);
+                const sett = game.settings.get("levels-3d-preview", "mapsharingKeys");
+                sett[formData.name || formData.scene.name] = formData.secret;
+                game.settings.set("levels-3d-preview", "mapsharingKeys", sett);
                 if (res.status == "Created") this.displaySubmissionSuccess(res);
+                if (res.status == "Updated") this.displaySubmissionSuccess(true);
                 this.close();
             },
             no: () => {},
@@ -194,9 +215,9 @@ class ShareMap extends FormApplication {
         });
     }
 
-    displaySubmissionSuccess(res) {
+    displaySubmissionSuccess(update = false) {
         Dialog.prompt({
-            title: game.i18n.localize("levels3dpreview.sharing.sharemap.success.title"),
+            title: game.i18n.localize(`levels3dpreview.sharing.sharemap.success.title` + (update ? "updated" : "")),
             content: `<p>${game.i18n.localize("levels3dpreview.sharing.sharemap.success.content")}</p>`,
         });
     }

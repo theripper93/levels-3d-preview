@@ -7,7 +7,12 @@ export class WorkerHandler {
         this.initRaycastWorker();
     }
 
+    get enabled() { 
+        return game.Levels3DPreview?.CONFIG?.useMultithreading;
+    }
+
     initRaycastWorker() {
+        if(!game.settings.get("levels-3d-preview", "useMultithreading")) return;
         const raycastWorker = new SharedWorker("modules/levels-3d-preview/scripts/helpers/raycastWorker.js", { type: "module" });
         this.raycastWorker = raycastWorker;
         raycastWorker.port.onmessageerror = (e) => {
@@ -20,6 +25,7 @@ export class WorkerHandler {
                     this._lastResults[e.data.id] = e.data.polygonPoints;
                     this._lastKnownValid[e.data.id] = e.data.polygonPoints;
                     callback(e.data.polygonPoints);
+                    delete this.callbacks[e.data.callbackId];
                 }
             }
             if (e.data.type == "refresh") {
@@ -29,6 +35,7 @@ export class WorkerHandler {
     }
 
     refresh() {
+        if(!this.enabled) return;
         canvas.perception.update(
             {
                 forceUpdateFog: true,
@@ -61,14 +68,17 @@ export class WorkerHandler {
     }
 
     addMesh(data) {
+        if (!this.enabled) return;
         this.raycastWorker.port.postMessage(data);
     }
 
     removeMesh(id) {
+        if (!this.enabled) return;
         this.raycastWorker.port.postMessage({ type: "remove", id });
     }
 
     clearMeshes() {
+        if(!this.enabled) return;
         this.raycastWorker.port.postMessage({ type: "clear" });
         this.callbacks = {};
         this._lastResults = {};
