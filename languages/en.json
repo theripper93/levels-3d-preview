@@ -175,6 +175,7 @@
             },
             "lockcamera": "Enable Camera Auto Mode (Game Camera Only)",
             "gameCameraTopDown": "Toggle Top-Down Camera (Game Camera Only)",
+            "toggleFirstPerson": "Toggle First-Person Camera",
             "rotate": "Tile Editor: Rotate",
             "translate": "Tile Editor: Translate",
             "toggleGizmo": "Tile Editor: Toggle Gizmo",

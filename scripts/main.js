@@ -39,7 +39,7 @@ import { ShaderPass } from "./lib/ShaderPass.js";
 import { OutlineHandler } from "./helpers/OutlineHandler.js";
 import { ShaderHandler, shaders } from "./shaders/ShaderLib.js";
 import {DecalGeometry} from "./lib/DecalGeometry.js";
-import { WorkerHandler } from "./helpers/workers.js";
+import {WorkerHandler} from "./helpers/workers.js";
 
 export const factor = 1000;
 injectFoWShaders(THREE);
@@ -111,6 +111,7 @@ class Levels3DPreview {
 		this.isLevels = game.modules.get("levels")?.active;
 		this.fpsKillSwitch = 1;
 		this.camera;
+		this.firstPersonMode = false;
 		this._animateCameraTarget = {};
 		this.scene;
 		this.renderer;
@@ -337,24 +338,25 @@ class Levels3DPreview {
 		this.camera.zoom = 1;
 		this.camera.updateProjectionMatrix();
 
+		
 		this.scene = new THREE.Scene();
 		this.material = new THREE.MeshNormalMaterial();
-
+		
 		this.renderer = this._sharedContext ? new THREE.WebGLRenderer({ context: canvas.app.renderer.context.gl }) : new THREE.WebGLRenderer();
 		this.renderer.setSize(window.innerWidth, window.innerHeight);
 		this.renderer.setAnimationLoop(this.animation.bind(this));
 		this.renderer.shadowMap.enabled = true;
 		this.renderer.outputEncoding = THREE.sRGBEncoding;
-
+		
 		const pixelRatio = window.devicePixelRatio;
-
+		
 		this.resolutionMulti = pixelRatio * game.settings.get("levels-3d-preview", "resolutionMultiplier"); //game.settings.get("levels-3d-preview", "resolution") *
-
+		
 		this.renderer.setPixelRatio(this.resolutionMulti);
 		this.renderer.alpha = false;
 		this.renderer.setClearColor(0x999999, 1);
 		this.renderer.shadowMap.type = game.settings.get("levels-3d-preview", "softShadows") ? THREE.PCFSoftShadowMap : THREE.PCFShadowMap;
-
+		
 		this.renderer.debug.checkShaderErrors = false;
 
 		//composer
@@ -430,6 +432,8 @@ class Levels3DPreview {
 		this._finalizingLoad = false;
 		this._envReady = false;
 		this._lightsOk = !canvas.scene.getFlag("levels-3d-preview", "bakeLights");
+		this.firstPersonMode = false;
+		this._prevCameraPos = null;
 		this.clear3Dscene();
 		this.shaderHandler = new ShaderHandler(this);
 		this.scene = new THREE.Scene();
@@ -984,6 +988,15 @@ class Levels3DPreview {
 		return new THREE.Vector3(1, 1, 1);
 	}
 
+	toggleFirstPerson() {
+		if (!this.firstPersonMode) { 
+			this._prevCameraPos = this.camera.position.clone();
+		} else {
+			if (this._prevCameraPos) this.camera.position.copy(this._prevCameraPos);
+		}
+		this.firstPersonMode = !this.firstPersonMode;
+	}
+
 	animation(time) {
 		try {
 			if (!this._active) return;
@@ -1069,6 +1082,20 @@ class Levels3DPreview {
 			this.weather?.update(delta);
 			this.GameCamera.update(delta);
 			this.controls.update();
+			if (this.firstPersonMode) {
+				let controlled = canvas.tokens.controlled[0];
+				if (!controlled && _token?.scene == canvas.scene) {
+                    _token.control({ releaseOthers: true });
+                    controlled = _token;
+                } 
+				if (controlled) {
+					const token3d = this.tokens[controlled.id];
+					if (token3d) {
+						const pos = token3d.headFast;
+						this.camera.position.set(pos.x, pos.y, pos.z);
+					}
+				}
+			}
 			this.recoverCamera();
 			//this.fogExploration?.update();
 			const visibilityCache = {};
@@ -1141,13 +1168,14 @@ class Levels3DPreview {
 	}
 
 	animateCamera(delta) {
-		if (this._animateCameraTarget.cameraPosition !== undefined) {
-			const targetPos = this._animateCameraTarget.cameraPosition.clone();
-			this.camera.position.lerp(targetPos, this._animateCameraTarget.speed ?? 0.04);
-			if (this.camera.position.distanceTo(targetPos) < 0.001) {
-				this._animateCameraTarget.cameraPosition = undefined;
-			}
-		}
+		if (this.firstPersonMode) return;
+            if (this._animateCameraTarget.cameraPosition !== undefined) {
+                const targetPos = this._animateCameraTarget.cameraPosition.clone();
+                this.camera.position.lerp(targetPos, this._animateCameraTarget.speed ?? 0.04);
+                if (this.camera.position.distanceTo(targetPos) < 0.001) {
+                    this._animateCameraTarget.cameraPosition = undefined;
+                }
+            }
 		if (this._animateCameraTarget.cameraLookat !== undefined) {
 			const targetLookat = this._animateCameraTarget.cameraLookat.clone();
 			const currentLookat = this._animateCameraTarget.currentLookat ?? this.controls.target.clone();

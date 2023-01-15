@@ -14,6 +14,7 @@ export class InteractionManager {
         this._panKeys = {};
         this._gizmoEnabled = true;
         this.raycaster = new THREE.Raycaster();
+        this.raycaster.near = 0.1;
         //this.raycaster.firstHitOnly = true;
         this.sightRaycaster = new THREE.Raycaster();
         this.sightRaycaster.firstHitOnly = true;

@@ -1293,7 +1293,15 @@ export class Token3D {
 
     get d(){
       return this._size.y;
+  }
+  
+  get headFast() { 
+    return {
+      x: this.mesh.position.x,
+      y: this.mesh.position.y + this.d,
+      z: this.mesh.position.z
     }
+  }
 
     get head(){
       return new THREE.Vector3(

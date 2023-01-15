@@ -1338,65 +1338,64 @@ Hooks.on("updateTile", (tile, updates) => {
 
 //KEYBINDINGS
 Hooks.on("init", () => {
-    const {SHIFT, CONTROL, ALT} = KeyboardManager.MODIFIER_KEYS;
+    const { SHIFT, CONTROL, ALT } = KeyboardManager.MODIFIER_KEYS;
     game.keybindings.register("levels-3d-preview", "resetView", {
         name: game.i18n.localize("levels3dpreview.keybindings.resetView"),
-        editable: [
-          {key: "KeyR", modifiers: [ SHIFT ]}
-        ],
+        editable: [{ key: "KeyR", modifiers: [SHIFT] }],
         onDown: () => {
-            if(!game.Levels3DPreview._active || !game.Levels3DPreview.hasFocus) return;
-            game.Levels3DPreview.resetCamera()
+            if (!game.Levels3DPreview._active || !game.Levels3DPreview.hasFocus) return;
+            game.Levels3DPreview.resetCamera();
         },
     });
 
     game.keybindings.register("levels-3d-preview", "cameraToToken", {
         name: game.i18n.localize("levels3dpreview.keybindings.cameraToToken"),
-        editable: [
-          {key: "KeyX", modifiers: [ SHIFT ]}
-        ],
+        editable: [{ key: "KeyX", modifiers: [SHIFT] }],
         onDown: () => {
-            if(!game.Levels3DPreview._active || !game.Levels3DPreview.hasFocus) return;
-            game.Levels3DPreview.setCameraToControlled()
+            if (!game.Levels3DPreview._active || !game.Levels3DPreview.hasFocus) return;
+            game.Levels3DPreview.setCameraToControlled();
         },
     });
 
     game.keybindings.register("levels-3d-preview", "lockcamera", {
         name: game.i18n.localize("levels3dpreview.keybindings.lockcamera"),
-        editable: [
-          {key: "Space"}
-        ],
+        editable: [{ key: "Space" }],
         onDown: () => {
-            if(!game.Levels3DPreview._active || !game.Levels3DPreview.hasFocus) return;
-            game.Levels3DPreview.GameCamera.lock = !game.Levels3DPreview.GameCamera.lock
+            if (!game.Levels3DPreview._active || !game.Levels3DPreview.hasFocus) return;
+            game.Levels3DPreview.GameCamera.lock = !game.Levels3DPreview.GameCamera.lock;
             $("#clip-navigation-lock").toggleClass("clip-navigation-enabled", game.Levels3DPreview.GameCamera.lock);
         },
     });
-
+    //toggleFirstPerson
     game.keybindings.register("levels-3d-preview", "gameCameraTopDown", {
         name: game.i18n.localize("levels3dpreview.keybindings.gameCameraTopDown"),
-        editable: [
-          {key: "KeyO"}
-        ],
+        editable: [{ key: "KeyO" }],
         onDown: () => {
-            if(!game.Levels3DPreview._active || !game.Levels3DPreview.hasFocus) return;
-            if(game.Levels3DPreview.GameCamera.enabled){
-                game.Levels3DPreview.GameCamera.toggleTopDown()
-            }else{
-                game.Levels3DPreview.resetCamera(true)
-            }            
+            if (!game.Levels3DPreview._active || !game.Levels3DPreview.hasFocus) return;
+            if (game.Levels3DPreview.GameCamera.enabled) {
+                game.Levels3DPreview.GameCamera.toggleTopDown();
+            } else {
+                game.Levels3DPreview.resetCamera(true);
+            }
+        },
+    });
+
+    game.keybindings.register("levels-3d-preview", "toggleFirstPerson", {
+        name: game.i18n.localize("levels3dpreview.keybindings.toggleFirstPerson"),
+        editable: [{ key: "KeyL" }],
+        onDown: () => {
+            if (!game.Levels3DPreview._active || !game.Levels3DPreview.hasFocus) return;
+                game.Levels3DPreview.toggleFirstPerson();
         },
     });
 
     game.keybindings.register("levels-3d-preview", "panUp", {
         name: game.i18n.localize("levels3dpreview.keybindings.panUp"),
-        editable: [
-          {key: "KeyW"}
-        ],
+        editable: [{ key: "KeyW" }],
         onDown: () => {
-            if(!game.Levels3DPreview._active || !game.Levels3DPreview.hasFocus) return;
-            game.Levels3DPreview.controls.screenSpacePanning = false
-            game.Levels3DPreview.GameCamera.lock = false
+            if (!game.Levels3DPreview._active || !game.Levels3DPreview.hasFocus) return;
+            game.Levels3DPreview.controls.screenSpacePanning = false;
+            game.Levels3DPreview.GameCamera.lock = false;
         },
         onUp: () => {
             game.Levels3DPreview.controls.screenSpacePanning = game.settings.get("levels-3d-preview", "screenspacepanning");
@@ -1405,13 +1404,11 @@ Hooks.on("init", () => {
 
     game.keybindings.register("levels-3d-preview", "panDown", {
         name: game.i18n.localize("levels3dpreview.keybindings.panDown"),
-        editable: [
-          {key: "KeyS"}
-        ],
+        editable: [{ key: "KeyS" }],
         onDown: () => {
-            if(!game.Levels3DPreview._active || !game.Levels3DPreview.hasFocus) return;
-            game.Levels3DPreview.controls.screenSpacePanning = false
-            game.Levels3DPreview.GameCamera.lock = false
+            if (!game.Levels3DPreview._active || !game.Levels3DPreview.hasFocus) return;
+            game.Levels3DPreview.controls.screenSpacePanning = false;
+            game.Levels3DPreview.GameCamera.lock = false;
         },
         onUp: () => {
             game.Levels3DPreview.controls.screenSpacePanning = game.settings.get("levels-3d-preview", "screenspacepanning");
@@ -1420,13 +1417,11 @@ Hooks.on("init", () => {
 
     game.keybindings.register("levels-3d-preview", "panLeft", {
         name: game.i18n.localize("levels3dpreview.keybindings.panLeft"),
-        editable: [
-          {key: "KeyA"}
-        ],
+        editable: [{ key: "KeyA" }],
         onDown: () => {
-            if(!game.Levels3DPreview._active || !game.Levels3DPreview.hasFocus) return;
-            game.Levels3DPreview.controls.screenSpacePanning = false
-            game.Levels3DPreview.GameCamera.lock = false
+            if (!game.Levels3DPreview._active || !game.Levels3DPreview.hasFocus) return;
+            game.Levels3DPreview.controls.screenSpacePanning = false;
+            game.Levels3DPreview.GameCamera.lock = false;
         },
         onUp: () => {
             game.Levels3DPreview.controls.screenSpacePanning = game.settings.get("levels-3d-preview", "screenspacepanning");
@@ -1435,13 +1430,11 @@ Hooks.on("init", () => {
 
     game.keybindings.register("levels-3d-preview", "panRight", {
         name: game.i18n.localize("levels3dpreview.keybindings.panRight"),
-        editable: [
-          {key: "KeyD"}
-        ],
+        editable: [{ key: "KeyD" }],
         onDown: () => {
-            if(!game.Levels3DPreview._active || !game.Levels3DPreview.hasFocus) return;
-            game.Levels3DPreview.controls.screenSpacePanning = false
-            game.Levels3DPreview.GameCamera.lock = false
+            if (!game.Levels3DPreview._active || !game.Levels3DPreview.hasFocus) return;
+            game.Levels3DPreview.controls.screenSpacePanning = false;
+            game.Levels3DPreview.GameCamera.lock = false;
         },
         onUp: () => {
             game.Levels3DPreview.controls.screenSpacePanning = game.settings.get("levels-3d-preview", "screenspacepanning");
@@ -1450,130 +1443,111 @@ Hooks.on("init", () => {
 
     game.keybindings.register("levels-3d-preview", "pingcamera", {
         name: game.i18n.localize("levels3dpreview.keybindings.pingcamera"),
-        editable: [
-          {key: "KeyQ", modifiers: [ SHIFT ]}
-        ],
+        editable: [{ key: "KeyQ", modifiers: [SHIFT] }],
         onDown: () => {
-            if(!game.Levels3DPreview._active || !game.Levels3DPreview.hasFocus) return;
-            game.Levels3DPreview.helpers.focusCameraToCursor()
+            if (!game.Levels3DPreview._active || !game.Levels3DPreview.hasFocus) return;
+            game.Levels3DPreview.helpers.focusCameraToCursor();
         },
     });
     game.keybindings.register("levels-3d-preview", "ping", {
         name: game.i18n.localize("levels3dpreview.keybindings.ping"),
-        editable: [
-          {key: "KeyE", modifiers: [ SHIFT ]}
-        ],
+        editable: [{ key: "KeyE", modifiers: [SHIFT] }],
         onDown: () => {
-            if(!game.Levels3DPreview._active || !game.Levels3DPreview.hasFocus) return;
-             game.Levels3DPreview.helpers._ping()
-            },
+            if (!game.Levels3DPreview._active || !game.Levels3DPreview.hasFocus) return;
+            game.Levels3DPreview.helpers._ping();
+        },
     });
 
     game.keybindings.register("levels-3d-preview", "freeMode", {
         name: game.i18n.localize("levels3dpreview.keybindings.freeMode"),
-        editable: [
-          {key: "KeyF"}
-        ],
+        editable: [{ key: "KeyF" }],
         onDown: () => {
-            game.Levels3DPreview.interactionManager.isFreeMode = true
+            game.Levels3DPreview.interactionManager.isFreeMode = true;
         },
         onUp: () => {
             const entity3D = game.Levels3DPreview.interactionManager.draggable?.userData?.entity3D;
-            if(entity3D?.template && !game.Levels3DPreview.interactionManager.forceFree) entity3D.wasFreeMode = false;
-            game.Levels3DPreview.interactionManager.isFreeMode = false
-            game.Levels3DPreview.interactionManager.forceFree = false
+            if (entity3D?.template && !game.Levels3DPreview.interactionManager.forceFree) entity3D.wasFreeMode = false;
+            game.Levels3DPreview.interactionManager.isFreeMode = false;
+            game.Levels3DPreview.interactionManager.forceFree = false;
         },
     });
 
     game.keybindings.register("levels-3d-preview", "scale", {
         name: game.i18n.localize("levels3dpreview.keybindings.scale"),
-        editable: [
-          {key: "KeyS"}
-        ],
+        editable: [{ key: "KeyS" }],
         onDown: () => {
-            if(!game.Levels3DPreview._active || !game.Levels3DPreview.hasFocus) return;
-            game.Levels3DPreview.transformControls.setMode('scale')
+            if (!game.Levels3DPreview._active || !game.Levels3DPreview.hasFocus) return;
+            game.Levels3DPreview.transformControls.setMode("scale");
             //game.Levels3DPreview.transformControls.showY = false;
         },
     });
 
     game.keybindings.register("levels-3d-preview", "translate", {
         name: game.i18n.localize("levels3dpreview.keybindings.translate"),
-        editable: [
-          {key: "KeyT"}
-        ],
+        editable: [{ key: "KeyT" }],
         onDown: () => {
-            if(!game.Levels3DPreview._active || !game.Levels3DPreview.hasFocus) return;
-            game.Levels3DPreview.transformControls.setMode('translate')
+            if (!game.Levels3DPreview._active || !game.Levels3DPreview.hasFocus) return;
+            game.Levels3DPreview.transformControls.setMode("translate");
             //game.Levels3DPreview.transformControls.showY = true;
         },
     });
 
     game.keybindings.register("levels-3d-preview", "rotate", {
         name: game.i18n.localize("levels3dpreview.keybindings.rotate"),
-        editable: [
-          {key: "KeyR"}
-        ],
+        editable: [{ key: "KeyR" }],
         onDown: () => {
-            if(!game.Levels3DPreview._active || !game.Levels3DPreview.hasFocus) return;
-            game.Levels3DPreview.transformControls.setMode('rotate')
+            if (!game.Levels3DPreview._active || !game.Levels3DPreview.hasFocus) return;
+            game.Levels3DPreview.transformControls.setMode("rotate");
             //game.Levels3DPreview.transformControls.showY = true;
         },
     });
 
     game.keybindings.register("levels-3d-preview", "toggleGizmo", {
         name: game.i18n.localize("levels3dpreview.keybindings.toggleGizmo"),
-        editable: [
-          {key: "KeyG"}
-        ],
+        editable: [{ key: "KeyG" }],
         onDown: () => {
-            if(!game.Levels3DPreview._active || !game.Levels3DPreview.hasFocus) return;
+            if (!game.Levels3DPreview._active || !game.Levels3DPreview.hasFocus) return;
             game.Levels3DPreview.interactionManager.toggleGizmo();
         },
     });
 
     game.keybindings.register("levels-3d-preview", "toggleMode", {
         name: game.i18n.localize("levels3dpreview.keybindings.toggleMode"),
-        editable: [
-          {key: "KeyQ"}
-        ],
+        editable: [{ key: "KeyQ" }],
         onDown: () => {
-            if(!game.Levels3DPreview._active || !game.Levels3DPreview.hasFocus) return;
+            if (!game.Levels3DPreview._active || !game.Levels3DPreview.hasFocus) return;
             const updates = [];
-            for(let placeable of canvas.activeLayer.controlled){
-                const modes = ["fit", "stretch", "tile"]
+            for (let placeable of canvas.activeLayer.controlled) {
+                const modes = ["fit", "stretch", "tile"];
                 const mode = placeable.document.getFlag("levels-3d-preview", "fillType") ?? "fit";
                 const index = modes.indexOf(mode);
-                if(index === -1) continue;
+                if (index === -1) continue;
                 const next = modes[(index + 1) % modes.length];
                 const update = {
                     _id: placeable.id,
                     flags: {
                         "levels-3d-preview": {
                             fillType: next,
-                        }
-                    }
+                        },
+                    },
                 };
                 updates.push(update);
             }
-            canvas.scene.updateEmbeddedDocuments(canvas.activeLayer.options.objectClass.embeddedName,updates);
+            canvas.scene.updateEmbeddedDocuments(canvas.activeLayer.options.objectClass.embeddedName, updates);
         },
         onUp: () => {},
     });
 
     game.keybindings.register("levels-3d-preview", "toggleSelect", {
         name: game.i18n.localize("levels3dpreview.keybindings.toggleSelect"),
-        editable: [
-          {key: "KeyF"},
-        ],
+        editable: [{ key: "KeyF" }],
         onDown: () => {
-            game.Levels3DPreview.interactionManager._groupSelect = true
+            game.Levels3DPreview.interactionManager._groupSelect = true;
         },
         onUp: () => {
             if (!game.Levels3DPreview.interactionManager.groupSelectHandler._isSelecting) game.Levels3DPreview.interactionManager._groupSelect = false;
         },
     });
-
 })
 
 //TOURS
