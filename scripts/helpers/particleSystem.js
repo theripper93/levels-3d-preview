@@ -191,7 +191,7 @@ export class ParticleSystem {
 }
 
 class ProjectileEffect {
-  constructor(from, to, params) {
+  constructor (from, to, params) {
     this.from = from;
     this.to = to;
     this._missScale = 1;
@@ -460,7 +460,7 @@ class ProjectileEffect {
     });
   }
 
-  resolveTokenAnimation(){
+  resolveTokenAnimation() {
     const tokenAnimation = this.params.tokenAnimation
     if(!tokenAnimation) return
     const from = tokenAnimation.from
@@ -676,11 +676,12 @@ export class Particle3D {
     this.params.up = [x,y,z];
     return this;
   }
-  rotateTowards(){
-    this.params.rotateTowards = true;
+  rotateTowards(v = true){
+    this.params.rotateTowards = v;
     return this;
   }
-  playAnimation(animationData){
+  playAnimation(animationData) {
+    debugger
     const animationFrom = animationData.from
     const animationTo = animationData.to
     const animData = game.Levels3DPreview.CONFIG.tokenAnimations[animationFrom?.id]
