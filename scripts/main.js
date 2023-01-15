@@ -989,12 +989,17 @@ class Levels3DPreview {
 	}
 
 	toggleFirstPerson() {
-		if (!this.firstPersonMode) { 
+		if (!this.firstPersonMode) {
+			this._prevGameCameraState = this.GameCamera.enabled;
 			this._prevCameraPos = this.camera.position.clone();
 		} else {
 			if (this._prevCameraPos) this.camera.position.copy(this._prevCameraPos);
+			if (this._prevGameCameraState === true) this.GameCamera.toggle();
+			delete this._prevCameraPos;
+			delete this._prevGameCameraState;
 		}
 		this.firstPersonMode = !this.firstPersonMode;
+		if(this.GameCamera.enabled && this.firstPersonMode) this.GameCamera.toggle();
 	}
 
 	animation(time) {
