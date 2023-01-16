@@ -40,6 +40,7 @@ import { OutlineHandler } from "./helpers/OutlineHandler.js";
 import { ShaderHandler, shaders } from "./shaders/ShaderLib.js";
 import {DecalGeometry} from "./lib/DecalGeometry.js";
 import {WorkerHandler} from "./helpers/workers.js";
+import { throttle } from "./helpers/utils.js";
 
 export const factor = 1000;
 injectFoWShaders(THREE);
@@ -120,6 +121,9 @@ class Levels3DPreview {
 		this.workers = new WorkerHandler();
 		initSharing(this);
 		this.debugMode = game.settings.get("levels-3d-preview", "debugMode");
+		this.utils = {
+			throttle,
+		}
 		this.CONFIG = {
             useMultithreading: game.settings.get("levels-3d-preview", "useMultithreading"),
             entityClass: {
@@ -1100,6 +1104,7 @@ class Levels3DPreview {
                     controlled = _token;
                 } 
 				if (controlled) {
+					updateTokenRotationCameraThrottle(controlled);
 					const token3d = this.tokens[controlled.id];
 					if (token3d) {
 						const pos = token3d.headFast;
@@ -1703,6 +1708,16 @@ window.addEventListener("resize", () => {
 		if (game.Levels3DPreview?._active) game.Levels3DPreview.resizeCanvasToDisplaySize();
 	}, 200);
 });
+
+function updateTokenRotationCamera(token) {
+	const cPos = game.Levels3DPreview.camera.position;
+	const cTar = game.Levels3DPreview.controls.target;
+
+	const angle = Math.atan2(cTar.z - cPos.z, cTar.x - cPos.x);
+	token.document.update({ rotation: Math.toDegrees(angle - 90) });
+}
+
+const updateTokenRotationCameraThrottle = throttle(updateTokenRotationCamera, 500);
 
 //javascript:(function(){var script=document.createElement('script');script.onload=function(){var stats=new Stats();document.body.appendChild(stats.dom);requestAnimationFrame(function loop(){stats.update();requestAnimationFrame(loop)});};script.src='//mrdoob.github.io/stats.js/build/stats.min.js';document.head.appendChild(script);})()
 
