@@ -157,7 +157,7 @@ class ShareMap extends FormApplication {
         return {
             scene: this.scene,
             user: game.user,
-            secret: game.settings.get("levels-3d-preview", "mapsharingKeys")[this.scene.name] ?? "",
+            secret: game.settings.get("levels-3d-preview", "mapsharingKeys")[this.scene.name] ?? randomID(40),
             assetpacks: assetpacks.map((ap) => {
                 return {
                     name: game.i18n.localize(`levels3dpreview.sharing.packs.${ap}`),
