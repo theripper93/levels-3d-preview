@@ -19,6 +19,7 @@ export class WorkerHandler {
             throw new Error(e);
         };
         raycastWorker.port.onmessage = (e) => {
+            //console.log(e.data);
             if (e.data.type == "polygon") {
                 const callback = this.callbacks[e.data.callbackId];
                 if (callback) {

@@ -991,9 +991,15 @@ class Levels3DPreview {
 	toggleFirstPerson() {
 		if (!this.firstPersonMode) {
 			this._prevGameCameraState = this.GameCamera.enabled;
-			this._prevCameraPos = this.camera.position.clone();
+			this._prevCameraPos = {
+				camera: this.camera.position.clone(),
+				controls: this.controls.target.clone(),
+			}
 		} else {
-			if (this._prevCameraPos) this.camera.position.copy(this._prevCameraPos);
+			if (this._prevCameraPos) {
+				this.camera.position.copy(this._prevCameraPos.camera);
+				this.controls.target.copy(this._prevCameraPos.controls);
+			}
 			if (this._prevGameCameraState === true) this.GameCamera.toggle();
 			delete this._prevCameraPos;
 			delete this._prevGameCameraState;

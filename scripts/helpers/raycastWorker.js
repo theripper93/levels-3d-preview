@@ -1,6 +1,7 @@
 //web worker for raycasing
 import * as THREE from "../lib/three.module.js";
 import {computeBoundsTree, disposeBoundsTree, acceleratedRaycast} from "../lib/three-mesh-bvh.js";
+import { mergeBufferGeometries, toTrianglesDrawMode } from "../lib/BufferGeometryUtils.js";
 import { isMath } from "./math.js";
 //import * as Math from "https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.5.0/math.js";
 THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
@@ -11,11 +12,23 @@ const scene = new THREE.Scene();
 
 scene.tiles = {};
 
+const mergedMesh = new THREE.Mesh(new THREE.BufferGeometry(), new THREE.MeshBasicMaterial({ color: 0x00ff00 }));
+
 const basicMaterial = new THREE.MeshBasicMaterial({color: 0x00ff00});
 
 const raycaster = new THREE.Raycaster();
 
 let _port
+
+function debounce(func, timeout = 200) {
+    let timer;
+    return (...args) => {
+        clearTimeout(timer);
+        timer = setTimeout(() => {
+            func.apply(this, args);
+        }, timeout);
+    };
+}
 
 self.onconnect = function (e) {
     const port = e.ports[0];
@@ -56,7 +69,7 @@ self.onconnect = function (e) {
                     }
                 });
                 mesh.updateMatrixWorld();
-                port.postMessage({type: "refresh"});
+                createMergedGeometryDebounced();
             }
 
             if (message.type == "remove") { 
@@ -65,7 +78,7 @@ self.onconnect = function (e) {
                     mesh.removeFromParent();
                     delete scene.tiles[message.id];
                 }
-                port.postMessage({ type: "refresh" });
+                createMergedGeometryDebounced();
             }
 
             if (message.type == "clear") { 
@@ -81,11 +94,8 @@ self.onconnect = function (e) {
             }
 
             if (message.type == "raycast") {
-                const raycastObjects = [];
-                scene.traverse((child) => { 
-                    if(child?.userData?.sight) raycastObjects.push(child);
-                });
-                port.postMessage({ type: "raycast", raycastObjects: raycastObjects.length });
+                const perf = performance.now();
+                
                 const config = message.config;
                 const polygonPoints = [];
                 const aMin = Math.normalizeRadians(Math.toRadians(config.rotation + 90 - config.angle / 2));
@@ -99,14 +109,19 @@ self.onconnect = function (e) {
                     const a = aMin + (aMax - aMin) * (i / nPoints);
                     const x = origin.x + radius * Math.cos(a);
                     const y = origin.y + radius * Math.sin(a);
-                    const collision = computeSightCollision({ x: origin.x, y: origin.y, z: z }, { x: x, y: y, z: z }, raycastObjects);
+                    const currentTime = performance.now() - perf;
+                    if (currentTime > 5) { 
+                        polygonPoints.push(Math.round(origin.x), Math.round(origin.y));
+                        continue;
+                    }
+                    const collision = computeSightCollision({ x: origin.x, y: origin.y, z: z }, { x: x, y: y, z: z });
                     if (collision) {
                         polygonPoints.push(Math.round(collision.x * factor), Math.round(collision.z * factor));
                     } else {
                         polygonPoints.push(Math.round(x), Math.round(y));
                     }
                 }
-                port.postMessage({ type: "polygon", polygonPoints: polygonPoints, id: message.id, callbackId: message.callbackId });
+                port.postMessage({ type: "polygon", time: performance.now() - perf, polygonPoints: polygonPoints, id: message.id, callbackId: message.callbackId });
             }
         } catch (error) {
             port.postMessage({ type: "error", error: error });
@@ -121,21 +136,83 @@ self.onconnect = function (e) {
 
 
 
-function computeSightCollision(v1, v2, raycastObjects) {
+function computeSightCollision(v1, v2) {
     const factor = 1000;
         const origin =  new THREE.Vector3(v1.x/factor, v1.z, v1.y/factor) //Ruler3D.posCanvasTo3d(v1);
         const target = new THREE.Vector3(v2.x / factor, v2.z, v2.y / factor);
-        return computeSightCollisionFrom3DPositions(origin, target, raycastObjects);
+        return computeSightCollisionFrom3DPositions(origin, target);
     }
 
-function computeSightCollisionFrom3DPositions(origin, target, raycastObjects) {
+function computeSightCollisionFrom3DPositions(origin, target) {
     const direction = target.clone().sub(origin).normalize();
     const distance = Infinity;
     raycaster.far = Infinity;
     raycaster.set(origin, direction);
-    let collisions = raycaster.intersectObjects(raycastObjects, false);
+    let collisions = raycaster.intersectObjects([mergedMesh], false);
     if (!collisions.length) return false;
     const collision = collisions[0];
     if (collision.distance > distance) return false;
     return collision.point.add(direction.multiplyScalar(0.025));
+}
+
+
+function createMergedGeometry(){
+    const geometries = [];
+    scene.traverse((child) => {
+        if (child.isMesh && child?.userData?.sight) {
+            const worldSpaceGeometry = applyMatrixWorldToGeometry(child);
+            geometries.push(...worldSpaceGeometry);
+        }
+    });
+    const mergedGeometry = mergeBufferGeometries(geometries);
+    if(!mergedGeometry) return mergedMesh.geometry;
+    mergedGeometry.computeBoundsTree();
+    mergedMesh.geometry?.dispose();
+    mergedMesh.geometry?.disposeBoundsTree();
+    mergedMesh.geometry = mergedGeometry;
+    port.postMessage({ type: "refresh" });
+    _port.postMessage({type: "mergedGeometry", mergedGeometry: mergedGeometry.attributes.position.array.length});
+    return mergedGeometry;
+}
+
+const createMergedGeometryDebounced = debounce(createMergedGeometry, 100);
+
+function applyMatrixWorldToGeometry(mesh) {
+    if(mesh.isInstancedMesh) return applyMatrixWorldToGeometryInstanced(mesh)
+    const geometry = toTrianglesDrawMode(mesh.geometry.clone());
+    mesh.updateMatrixWorld(true,true)
+    geometry.applyMatrix4(mesh.matrixWorld);
+    const attributes = geometry.attributes;
+    for (const key in attributes) {
+        if (key != "position" && key != "uv" && key != "normal") {
+            delete attributes[key];
+        }
+    }
+    return [geometry];
+}
+
+function applyMatrixWorldToGeometryInstanced(mesh) { 
+    const geometry = toTrianglesDrawMode(mesh.geometry.clone());
+    mesh.updateMatrixWorld(true, true);
+    const attributes = geometry.attributes;
+    for (const key in attributes) {
+        if (key != "position" && key != "uv" && key != "normal") {
+            delete attributes[key];
+        }
+    }
+    geometry.computeVertexNormals();
+    geometry.attributes.position.needsUpdate = true;
+    geometry.attributes.uv.needsUpdate = true;
+    geometry.attributes.normal.needsUpdate = true;
+    const geometries = [];
+    const count = mesh.count;
+    const instanceMatrix = new THREE.Matrix4();
+    for(let i = 0; i < count; i++) {
+        mesh.getMatrixAt(i, instanceMatrix);
+        const worldSpaceGeometry = geometry.clone();
+        worldSpaceGeometry.applyMatrix4(instanceMatrix);
+        worldSpaceGeometry.applyMatrix4(mesh.matrixWorld);
+        geometries.push(worldSpaceGeometry);
+    }
+    return geometries;
 }
