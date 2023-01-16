@@ -249,7 +249,12 @@ class MapBrowser extends Application {
         const maps = await getMapList();
         let mapList = maps.data.sort((a, b) => b.id - a.id);
         mapList.forEach((map) => {
-            if (map.assetpacks) map.assetpacks = map.assetpacks.map((ap) => game.i18n.localize(`levels3dpreview.sharing.packs.${ap}`));
+            if (map.assetpacks) map.assetpacks = map.assetpacks.map((ap) => {
+                return {
+                    name: game.i18n.localize(`levels3dpreview.sharing.packs.${ap}`),
+                    installed: !!game.modules.get(packData[ap].id),
+                };
+            });
             const stars = map.stars ?? [];
             map.starred = stars.includes(game.user.id);
             map.stars = stars.length;
@@ -337,3 +342,15 @@ class MapBrowser extends Application {
 }
 
 const assetpacks = ["mapmakingpack", "tokencollection", "baileywiki"];
+
+const packData = {
+    mapmakingpack: {
+        id: "canvas3dcompendium",
+    },
+    tokencollection: {
+        id: "canvas3dtokencompendium",
+    },
+    baileywiki: {
+        id: "baileywiki-3d",
+    },
+};

@@ -17,7 +17,7 @@
                 <p>{{description}}</p>
                 <div class="tdc-pack-container">
                 {{#each assetpacks}}
-                 <span class="tdc-pack">{{this}}</span>
+                 <span class="tdc-pack {{#unless installed}}missing{{/unless}}">{{name}}</span>
                 {{/each}}
                 </div>
             </div>

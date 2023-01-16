@@ -83,6 +83,8 @@ self.onconnect = function (e) {
 
             if (message.type == "clear") { 
                 scene.tiles = {};
+                mergedMesh.geometry.dispose();
+                mergedMesh.geometry = new THREE.BufferGeometry();
                 while (scene.children.length > 0) {
                     if (scene.children[0].geometry) {
                         scene.children[0].geometry.disposeBoundsTree();

@@ -118,6 +118,11 @@
   font-size: smaller;
   border: 1px solid var(--color-text-light-4);
 }
+#tdc-map-browser .tdc-pack.missing{
+  color: red;
+  border-color: red;
+}
+
 
 #tdc-map-browser .tdc-pack-container{
   display: flex;
