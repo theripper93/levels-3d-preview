@@ -4,6 +4,11 @@
     <button id="tdc-sort-newest" {{#if sortNewest}}class="active"{{/if}} >Newest</button>
     <button id="tdc-sort-popular" {{#unless sortNewest}}class="active"{{/unless}}>Popular</button>
     </div>
+    <div class="tdc-filters">
+        {{#each packs}}
+            <button class="tdc-filter active" data-filter="{{id}}">{{name}}</button>
+        {{/each}}
+    </div>
     <div class="tdc-map-list">
         {{#each maps}}
             <div class="tdc-map-card" data-mapid="{{id}}" data-name="{{name}}" style="background-image: linear-gradient(transparent, black), url('{{image}}');">
@@ -17,7 +22,7 @@
                 <p>{{description}}</p>
                 <div class="tdc-pack-container">
                 {{#each assetpacks}}
-                 <span class="tdc-pack {{#unless installed}}missing{{/unless}}">{{name}}</span>
+                 <span data-pack="{{id}}" class="tdc-pack {{#unless installed}}missing{{/unless}}">{{name}}</span>
                 {{/each}}
                 </div>
             </div>

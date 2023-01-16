@@ -245,16 +245,29 @@ class MapBrowser extends Application {
         });
     }
 
+    get title() {
+        return game.i18n.localize("levels3dpreview.sharing.mapbrowser.title").replace("{count}", this._mapCount);
+    }
+
     async getData() {
         const maps = await getMapList();
         let mapList = maps.data.sort((a, b) => b.id - a.id);
+        this._mapCount = mapList.length;
+        const packs = assetpacks.map((ap) => {
+            return {
+                name: game.i18n.localize(`levels3dpreview.sharing.packs.${ap}`),
+                id: ap,
+            };
+        });
         mapList.forEach((map) => {
-            if (map.assetpacks) map.assetpacks = map.assetpacks.map((ap) => {
-                return {
-                    name: game.i18n.localize(`levels3dpreview.sharing.packs.${ap}`),
-                    installed: !!game.modules.get(packData[ap].id),
-                };
-            });
+            if (map.assetpacks)
+                map.assetpacks = map.assetpacks.map((ap) => {
+                    return {
+                        name: game.i18n.localize(`levels3dpreview.sharing.packs.${ap}`),
+                        installed: !!game.modules.get(packData[ap].id),
+                        id: ap,
+                    };
+                });
             const stars = map.stars ?? [];
             map.starred = stars.includes(game.user.id);
             map.stars = stars.length;
@@ -263,6 +276,7 @@ class MapBrowser extends Application {
         return {
             maps: mapList,
             sortNewest: this.sortNewest,
+            packs,
         };
     }
 
@@ -287,18 +301,7 @@ class MapBrowser extends Application {
         super.activateListeners(html);
         html = html[0];
         html.querySelector("input").addEventListener("keyup", (e) => {
-            const mapCards = html.querySelectorAll(".tdc-map-card");
-            const search = e.target.value.toLowerCase();
-            mapCards.forEach((card) => {
-                const name = card.dataset.name.toLowerCase();
-                const description = card.querySelector("p").innerText.toLowerCase();
-                let tags = "";
-                try {
-                    (card.querySelectorAll(".tdc-pack") ?? []).forEach((t) => (tags += t.innerText.toLowerCase()));
-                } catch (error) {}
-
-                card.style.display = name.includes(search) || description.includes(search) || tags.includes(search) ? "flex" : "none";
-            });
+            this._onFilter();
         });
         html.querySelectorAll(".tdc-map-download").forEach((button) => {
             button.addEventListener("click", async (e) => {
@@ -313,7 +316,7 @@ class MapBrowser extends Application {
                 let stringified = JSON.stringify(map.data);
                 stringified = stringified.replaceAll(originalID, newID);
                 map.data = JSON.parse(stringified);
-                await Scene.create(map.data, {keepId: true});
+                await Scene.create(map.data, { keepId: true });
                 ui.notifications.info(game.i18n.localize("levels3dpreview.sharing.mapbrowser.imported") + `: ${map.data.name}`);
             });
         });
@@ -338,8 +341,47 @@ class MapBrowser extends Application {
             this.sortNewest = false;
             if (oldSort != this.sortNewest) this.render(true);
         });
+        html.querySelectorAll(".tdc-filter").forEach((button) => {
+            button.addEventListener("click", (e) => {
+                e.preventDefault();
+                e.target.classList.toggle("active");
+                e.target.blur();
+                this._onFilter();
+            });
+        });
+    }
+
+    _onFilter() {
+        const html = this.element[0];
+        const mapCards = html.querySelectorAll(".tdc-map-card");
+        const search = html.querySelector("input").value.toLowerCase();
+        const packs = [];
+        html.querySelectorAll(".tdc-filter").forEach((b) => {
+            if (b.classList.contains("active")) packs.push(b.dataset.filter);
+        });
+        mapCards.forEach((card) => {
+            const name = card.dataset.name.toLowerCase();
+            const description = card.querySelector("p").innerText.toLowerCase();
+            const cardpacks = [];
+            card.querySelectorAll(".tdc-pack").forEach((p) => {
+                cardpacks.push(p.dataset.pack);
+            });
+            const packInFilter = packs.length == 0 || cardpacks.every((p) => packs.includes(p));
+            if (!packInFilter) card.style.display = "none";
+            else {
+                
+                let tags = "";
+                try {
+                    (card.querySelectorAll(".tdc-pack") ?? []).forEach((t) => (tags += t.innerText.toLowerCase()));
+                } catch (error) {}
+    
+                card.style.display = name.includes(search) || description.includes(search) || tags.includes(search) ? "flex" : "none";
+            }
+        });
     }
 }
+
+
 
 const assetpacks = ["mapmakingpack", "tokencollection", "baileywiki"];
 

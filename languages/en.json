@@ -19,6 +19,7 @@
                 "rotate": "Rotate",
                 "zoom": "Zoom",
                 "topdown": "Top-Down",
+                "firstperson": "First-Person",
                 "unlock": "Un-lock",
                 "lockon": "Lock-On",
                 "move": "Move",
@@ -155,7 +156,7 @@
                 }
             },
             "mapbrowser": {
-                "title": "Map Browser",
+                "title": "Map Browser: {count} maps available",
                 "imported": "Imported scene",
                 "search": "Start typing to search..."
             },
