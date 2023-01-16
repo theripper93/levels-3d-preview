@@ -74,6 +74,12 @@ self.onconnect = function (e) {
 
             if (message.type == "remove") { 
                 const mesh = scene.tiles[message.id];
+                mesh.traverse((child) => {
+                    if (child.isMesh) {
+                        child.geometry.disposeBoundsTree();
+                        child.geometry.dispose();
+                    }
+                });
                 if (mesh) {
                     mesh.removeFromParent();
                     delete scene.tiles[message.id];
@@ -167,12 +173,13 @@ function createMergedGeometry(){
         }
     });
     const mergedGeometry = mergeBufferGeometries(geometries);
+    geometries.forEach(geometry => geometry.dispose());
     if(!mergedGeometry) return mergedMesh.geometry;
     mergedGeometry.computeBoundsTree();
     mergedMesh.geometry?.dispose();
     mergedMesh.geometry?.disposeBoundsTree();
     mergedMesh.geometry = mergedGeometry;
-    port.postMessage({ type: "refresh" });
+    _port.postMessage({ type: "refresh" });
     _port.postMessage({type: "mergedGeometry", mergedGeometry: mergedGeometry.attributes.position.array.length});
     return mergedGeometry;
 }
