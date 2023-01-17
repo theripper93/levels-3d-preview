@@ -213,7 +213,7 @@ export class Light3D {
             .duration(Infinity)
             .mass(particleData.mass)
             .alpha(particleData.alphaStart, particleData.alphaEnd)
-            .emitterSize((Math.max(this.dim, this.bright) + 0.1)/canvas.scene.dimensions.distance)
+            .emitterSize(((Math.max(this.dim, this.bright) + 0.1)/canvas.scene.dimensions.distance) * Math.max(particleData.emitterScale, 0.000001))
             .push(particleData.push.dx, particleData.push.dy, particleData.push.dz)
             .to({x: this.light.center.x, y: this.light.center.y, z: this.z})
         this.particleEffectId = this.particleEffect.start(false);
@@ -222,6 +222,7 @@ export class Light3D {
     getParticleData(){
         return {
             sprite: this.light.document.getFlag("levels-3d-preview", "ParticleSprite") ?? "",
+            emitterScale: this.light.document.getFlag("levels-3d-preview", "ParticleEmitterSizeMultiplier") ?? 1,
             scale: this.light.document.getFlag("levels-3d-preview", "ParticleScale") ?? 1,
             color: this.light.document.getFlag("levels-3d-preview", "ParticleColor") ?? "#ffffff",
             color2: this.light.document.getFlag("levels-3d-preview", "ParticleColor2") ?? "#ffffff",
@@ -237,8 +238,8 @@ export class Light3D {
                 dx: this.light.document.getFlag("levels-3d-preview", "ParticlePushX") ?? 0,
                 dy: this.light.document.getFlag("levels-3d-preview", "ParticlePushY") ?? 0,
                 dz: this.light.document.getFlag("levels-3d-preview", "ParticlePushZ") ?? 0,
-            }
-        }
+            },
+        };
     }
 
     _onClickLeft(e){

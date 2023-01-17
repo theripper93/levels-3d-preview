@@ -797,6 +797,9 @@
                 "ParticleScale": {
                     "label": "Scale"
                 },
+                "ParticleEmitterSizeMultiplier": {
+                    "label": "Emitter Size Multiplier"
+                },
                 "ParticleColor": {
                     "label": "Starting Color"
                 },

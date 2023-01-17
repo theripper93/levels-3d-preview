@@ -1205,46 +1205,52 @@ Hooks.on("renderNoteConfig", (app,html)=>{
 })
 
 Hooks.on("renderAmbientLightConfig", (app,html)=>{
-    injectConfig.inject(app,html,{
-        "moduleId": "levels-3d-preview",
-        "tab" : {
-            "name": "levels-3d-preview",
-            "label": "3D",
-            "icon": "fas fa-cube",
+    injectConfig.inject(app, html, {
+        moduleId: "levels-3d-preview",
+        tab: {
+            name: "levels-3d-preview",
+            label: "3D",
+            icon: "fas fa-cube",
         },
-        "castShadow": {
+        castShadow: {
             type: "checkbox",
             label: game.i18n.localize("levels3dpreview.flags.castShadow.label"),
             default: false,
             notes: game.i18n.localize("levels3dpreview.flags.castShadow.notes"),
         },
-        "partHeader": {
+        partHeader: {
             type: "custom",
-            html: `<h3 class="form-header"><i class="fas fa-fire"></i> ${game.i18n.localize("levels3dpreview.flags.lightParticleEffect.header.title")}</h3><p class="notes">${game.i18n.localize("levels3dpreview.flags.lightParticleEffect.header.notes")}</p><div>`
+            html: `<h3 class="form-header"><i class="fas fa-fire"></i> ${game.i18n.localize("levels3dpreview.flags.lightParticleEffect.header.title")}</h3><p class="notes">${game.i18n.localize("levels3dpreview.flags.lightParticleEffect.header.notes")}</p><div>`,
         },
-        "enableParticle": {
+        enableParticle: {
             type: "checkbox",
             label: game.i18n.localize("levels3dpreview.flags.lightParticleEffect.enableParticle.label"),
             default: false,
         },
-        "enableParticleHidden": {
+        enableParticleHidden: {
             type: "checkbox",
             label: game.i18n.localize("levels3dpreview.flags.lightParticleEffect.enableParticleHidden.label"),
             default: false,
         },
-        "ParticleSprite": {
+        ParticleSprite: {
             type: "filepicker",
             label: game.i18n.localize("levels3dpreview.flags.lightParticleEffect.ParticleSprite.label"),
             default: "modules/levels-3d-preview/assets/particles/emberssmall.png",
         },
-        "ParticleScale": {
+        ParticleScale: {
             type: "number",
             label: game.i18n.localize("levels3dpreview.flags.lightParticleEffect.ParticleScale.label"),
             units: game.i18n.localize("levels3dpreview.units.gu"),
             default: 1,
             step: 0.000001,
         },
-        "ParticleAlphaStart": {
+        ParticleEmitterSizeMultiplier: {
+            type: "number",
+            label: game.i18n.localize("levels3dpreview.flags.lightParticleEffect.ParticleEmitterSizeMultiplier.label"),
+            default: 1,
+            step: 0.000001,
+        },
+        ParticleAlphaStart: {
             type: "range",
             label: game.i18n.localize("levels3dpreview.flags.lightParticleEffect.ParticleAlphaStart.label"),
             default: 0,
@@ -1252,7 +1258,7 @@ Hooks.on("renderAmbientLightConfig", (app,html)=>{
             max: 1,
             step: 0.01,
         },
-        "ParticleAlphaEnd": {
+        ParticleAlphaEnd: {
             type: "range",
             label: game.i18n.localize("levels3dpreview.flags.lightParticleEffect.ParticleAlphaEnd.label"),
             default: 1,
@@ -1260,74 +1266,73 @@ Hooks.on("renderAmbientLightConfig", (app,html)=>{
             max: 1,
             step: 0.01,
         },
-        "ParticleLife": {
+        ParticleLife: {
             type: "number",
             label: game.i18n.localize("levels3dpreview.flags.lightParticleEffect.ParticleLife.label"),
             units: game.i18n.localize("levels3dpreview.units.ms"),
             default: 1000,
             step: 0.000001,
         },
-        "ParticleCount": {
+        ParticleCount: {
             type: "number",
             label: game.i18n.localize("levels3dpreview.flags.lightParticleEffect.ParticleCount.label"),
             default: 5,
             step: 0.000001,
         },
-        "ParticleEmitTime": {
+        ParticleEmitTime: {
             type: "number",
             label: game.i18n.localize("levels3dpreview.flags.lightParticleEffect.ParticleEmitTime.label"),
             units: game.i18n.localize("levels3dpreview.units.ms"),
             default: 1,
             step: 0.000001,
         },
-        "ParticleForce": {
+        ParticleForce: {
             type: "number",
             label: game.i18n.localize("levels3dpreview.flags.lightParticleEffect.ParticleForce.label"),
             default: 0,
             step: 0.000001,
         },
-        "ParticlePushX": {
+        ParticlePushX: {
             type: "number",
             label: game.i18n.localize("levels3dpreview.flags.lightParticleEffect.ParticlePushX.label"),
             default: 0,
             step: 0.000001,
         },
-        "ParticlePushY": {
+        ParticlePushY: {
             type: "number",
             label: game.i18n.localize("levels3dpreview.flags.lightParticleEffect.ParticlePushY.label"),
             default: 0,
             step: 0.000001,
         },
-        "ParticlePushZ": {
+        ParticlePushZ: {
             type: "number",
             label: game.i18n.localize("levels3dpreview.flags.lightParticleEffect.ParticlePushZ.label"),
             default: 0,
             step: 0.000001,
         },
-        "ParticleGravity": {
+        ParticleGravity: {
             type: "number",
             label: game.i18n.localize("levels3dpreview.flags.lightParticleEffect.ParticleGravity.label"),
             default: 1,
             step: 0.000001,
         },
-        "ParticleMass": {
+        ParticleMass: {
             type: "number",
             label: game.i18n.localize("levels3dpreview.flags.lightParticleEffect.ParticleMass.label"),
             default: 1000,
             step: 0.000001,
         },
-        "ParticleColor": {
+        ParticleColor: {
             type: "color",
             label: game.i18n.localize("levels3dpreview.flags.lightParticleEffect.ParticleColor.label"),
             default: "#ffffff",
         },
-        "ParticleColor2": {
+        ParticleColor2: {
             type: "color",
             label: game.i18n.localize("levels3dpreview.flags.lightParticleEffect.ParticleColor2.label"),
             default: "#ffffff",
         },
-
-    })
+    });
 })
 
 
