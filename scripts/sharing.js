@@ -313,6 +313,8 @@ class MapBrowser extends Application {
                 const originalID = map.data._id;
                 const newID = randomID();
                 map.data.active = false;
+                map.data.flags["levels-3d-preview"].enablePlayers = true;
+                map.data.flags["levels-3d-preview"].auto3d = true;
                 let stringified = JSON.stringify(map.data);
                 stringified = stringified.replaceAll(originalID, newID);
                 map.data = JSON.parse(stringified);
