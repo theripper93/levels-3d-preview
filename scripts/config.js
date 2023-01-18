@@ -881,7 +881,7 @@ Hooks.on("renderTileConfig", (app,html)=>{
         "cameraCollision": {
             type: "checkbox",
             label: game.i18n.localize("levels3dpreview.flags.tcameraCollision.label"),
-            default: true,
+            default: false,
         },
         "sightMeshComplexity": {
             type: "range",

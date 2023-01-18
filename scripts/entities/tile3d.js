@@ -178,7 +178,7 @@ export class Tile3D {
         this.randomSeed = this.randomSeed.substring(0, 7);
         this.randomColor = this.tile.document.getFlag("levels-3d-preview", "randomColor") ?? false;
         this.collision = this.tile.document.getFlag("levels-3d-preview", "collision") ?? true;
-        this.cameraCollision = this.tile.document.getFlag("levels-3d-preview", "cameraCollision") ?? true;
+        this.cameraCollision = this.tile.document.getFlag("levels-3d-preview", "cameraCollision") ?? false;
         this.sight = this.tile.document.getFlag("levels-3d-preview", "sight") ?? true;
         this.tiltX = this.tile.document.getFlag("levels-3d-preview", "tiltX") ?? 0;
         this.tiltX = Math.toRadians(this.tiltX);
