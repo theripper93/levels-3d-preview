@@ -3,7 +3,8 @@ import {factor} from '../main.js';
 import { Ruler3D } from "../entities/ruler3d.js";
 import { mergeVertices } from "../lib/BufferGeometryUtils.js";
 import { setPerformancePreset, injectPresetButtons } from "./performancePresets.js";
-import { SimplifyModifier } from "../lib/Simplify.js";
+import {SimplifyModifier} from "../lib/Simplify.js";
+import { showSceneReport, showPerformanceDialog } from "./performanceReport.js";
 
 const simplify = new SimplifyModifier();
 
@@ -23,6 +24,7 @@ export class Helpers {
     this.ruler3d = Ruler3D;
     this.setPerformancePreset = setPerformancePreset;
     this.injectPresetButtons = injectPresetButtons;
+    this.showPerformanceDialog = showPerformanceDialog;
   }
 
   async loadTexture(texturePath, options = {}) {
@@ -477,52 +479,8 @@ export class Helpers {
     game.Levels3DPreview.ClipNavigation.set(range);
   }
 
-  showSceneReport(){
-    const scene = game.Levels3DPreview.scene;
-    const infos = game.Levels3DPreview.renderer.info;
-    let totalVertices = 0;
-    let totalFaces = infos.render.triangles;
-    let totalMaterials = 0;
-    let totalMeshes = 0;
-    let totalInstances = 0;
-
-    scene.traverse((object) => {
-      if (object instanceof THREE.Mesh) {
-        totalVertices += object.geometry.attributes.position.count;
-        totalMaterials += object.material instanceof Array ? object.material.length : 1;
-        totalMeshes++;
-      }
-    })
-
-    for(let t of Object.values(game.Levels3DPreview.tiles)){
-      if(t.count) totalInstances += t.count;
-    }
-
-    const result = {
-      "Vertices": totalVertices,
-      "Faces": totalFaces,
-      "Materials": totalMaterials,
-      "Meshes": totalMeshes,
-      "Instanced Meshes": totalInstances,
-      "Textures": infos.memory.textures,
-      "Render Calls": infos.render.calls,
-    }
-
-    let score = 20;
-    score -= (game.Levels3DPreview.weather?.effects?.length ?? 0)*3;
-    score -= Math.round(result["Vertices"] / 1000000);
-    score -= Math.round(result["Render Calls"] / 80);
-    score -= Math.round(result["Instanced Meshes"] / 1000);
-    score = Math.clamped(score, 0, 20);
-    const color = new THREE.Color("red").lerpHSL(new THREE.Color("green"), score / 18).getHexString();
-    const grades = ["F", "E", "D", "C", "B", "A"];
-    let grade = grades[Math.floor(score / 3)-1];
-    grade = grade ?? "Real Bad";
-    if(score/3 > Math.floor(score / 3)) grade += "+";
-    else if(score/3 < Math.floor(score / 3)) grade += "-"
-    console.log(`%c3D Canvas | Scene Report`,'color: #f5a742; font-size: 1.8em;');
-    console.log(`%cPerformance Grade | ${grade}`,`color: #${color}; font-size: 1.8em;`);
-    return console.table(result);
+  showSceneReport() {
+    return showSceneReport();
   }
 }
 

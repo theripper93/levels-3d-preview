@@ -949,7 +949,7 @@ export class Tile3D {
         this.toggleBoundingBox();
         this.mesh.visible = !this.tile.document.hidden || game.user.isGM;
         if (this.sightMesh) this.sightMesh.visible = this._parent.ClipNavigation.wireframe;
-        if (game.Levels3DPreview.mirrorLevelsVisibility && this.tile.document.overhead) {
+        if (game.Levels3DPreview.mirrorLevelsVisibility && this.tile.document.overhead && this.tile.mesh) {
             this.mesh.visible = this.tile.occluded || !this.tile.mesh?.visible ? false : this.tile.visible;
         }
     }

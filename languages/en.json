@@ -62,6 +62,7 @@
             "controls": "Show Controls",
             "lockon": "Toggle Lock-On",
             "performance": "Set Performance Mode",
+            "performancereport": "Performance Report",
             "wireframe": "Toggle Colliders"
         },
         "mapgen": {

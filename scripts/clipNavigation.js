@@ -130,6 +130,9 @@ export class ClipNavigation extends Application{
           html.on("click", "#clip-navigation-performance", ()=>{
             game.Levels3DPreview.helpers.setPerformancePreset();
           })
+        html.on("click", "#clip-navigation-performancereport", () => { 
+          game.Levels3DPreview.helpers.showPerformanceDialog();
+        });
           
           if(!this._setOnLoad){
             this.setToClosest();
