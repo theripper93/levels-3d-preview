@@ -118,7 +118,7 @@ self.onconnect = function (e) {
                     const x = origin.x + radius * Math.cos(a);
                     const y = origin.y + radius * Math.sin(a);
                     const currentTime = performance.now() - perf;
-                    if (currentTime > 5) { 
+                    if (currentTime > 16) { 
                         polygonPoints.push(Math.round(origin.x), Math.round(origin.y));
                         continue;
                     }
