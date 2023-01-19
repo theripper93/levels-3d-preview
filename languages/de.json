@@ -1,0 +1,1586 @@
+{
+    "levels3dpreview": {
+        "baseStyles": {
+            "jb2ahex1": "Hex 1 (JB2A)",
+            "jb2ahex1Indicator": "Hex 1 Anzeige (JB2A)",
+            "jb2ahex2": "Hex 2 (JB2A)",
+            "jb2ahex2Indicator": "Hex 2 Anzeige (JB2A)",
+            "jb2around1": "Runde 1 (JB2A)",
+            "jb2around1Indicator": "Runde 1 Indikator (JB2A)",
+            "jb2around2": "Runde 2 (JB2A)",
+            "jb2around2Indicator": "Indikator für Runde 2 (JB2A)",
+            "jb2asquare1": "Platz 1 (JB2A)",
+            "jb2asquare1Indicator": "Quadrat 1 Anzeige (JB2A)",
+            "jb2asquare2": "Platz 2 (JB2A)",
+            "jb2asquare2Indicator": "Quadratische 2-Anzeige (JB2A)",
+            "ringHollow": "Ring hohl",
+            "roundDoubleRing": "Runder Doppelring",
+            "rounded": "Gerundet",
+            "sharp": "Scharf",
+            "sharpIndicator": "Scharfer Indikator"
+        },
+        "clipNavigator": {
+            "automode": "Folgemodus",
+            "cameraToToken": "Fokussieren Sie die Kamera auf das ausgewählte Token",
+            "controls": "Steuerelemente anzeigen",
+            "disabled": "Zeige alles",
+            "gamecamera": "Spielkamera umschalten",
+            "lockon": "Schalten Sie die Sperre um",
+            "performance": "Leistungsmodus einstellen",
+            "performancereport": "Leistungsbericht",
+            "sync": "Mit Spielern synchronisieren",
+            "syncNotification": "Levelansicht für {{level}} mit allen Spielern synchronisiert",
+            "wireframe": "Collider umschalten"
+        },
+        "controls": {
+            "loading": {
+                "env": "3D-Umgebung erstellen...",
+                "gravity": "Berechnung der Schwerkraft ...",
+                "load": "3D-Leinwand wird geladen...",
+                "shaders": "Shader kompilieren..."
+            },
+            "loadingScreen": {
+                "cameracontrols": "Kamerasteuerung",
+                "dragdrop": "Ziehen",
+                "elevation": "Fliege",
+                "firstperson": "Erste Person",
+                "holddrag": "Ziehen halten",
+                "loadingdone": "3D-Leinwand fertig! \n- Drücken Sie <i class='fas fa-question control-highlighted'></i>, um diesen Bildschirm zu schließen.",
+                "lockon": "Lock-On",
+                "manualpan": "Manuell schwenken",
+                "move": "Umzug",
+                "navtools": "Szenennavigationswerkzeuge (links von",
+                "pan": "Pfanne",
+                "rebind": "Sie können die Schlüssel in den Einstellungen neu binden.",
+                "rotate": "Drehen",
+                "scroll": "Scrollen",
+                "showcontrols": "Steuerelemente anzeigen (Umschalten)",
+                "snapping": "Auf den Boden schnappen",
+                "tap": "Klopfen",
+                "toggle": "Umschalten",
+                "togglecamera": "Spielkamera umschalten",
+                "tokencontrols": "Token-Kontrollen",
+                "topdown": "Von oben nach unten",
+                "unlock": "Freischalten",
+                "zoom": "Zoomen"
+            },
+            "miniCanvas": "Popout/Leinwand wiederherstellen",
+            "preview3d": "3D-Modus umschalten"
+        },
+        "errors": {
+            "3dnotactive": "Das Leinwand-Popout kann nicht geöffnet werden, der 3D-Modus ist nicht aktiv.",
+            "canping": "Dem Benutzer fehlt die Berechtigung, Pings auf der Karte anzuzeigen.",
+            "canpingpan": "Dem Benutzer fehlt die Berechtigung zum Senden der Kameraposition.",
+            "critical": "3D-Leinwand: In der Rendering-Schleife ist ein schwerwiegender Fehler aufgetreten. \nVersuch sich zu erholen...",
+            "filenotsupported": "Dateiformat wird nicht unterstützt oder fehlt",
+            "gamecameradisabled": "3D-Leinwand: Spielkamera deaktivieren – Die Spielkamera ist aktiviert, aber „3D-Geometrie für Sichtberechnungen verwenden“ ist deaktiviert.",
+            "initfailed": "3D-Leinwand: Initialisierung fehlgeschlagen. \nDies kann ein Caching-Problem sein, versuchen Sie es mit STRG F5, um die Seite zu aktualisieren. \nStellen Sie außerdem sicher, dass Sie eine aktive Szene haben. \nAlternativ könnte 3D Canvas oder eine seiner Abhängigkeiten veraltet oder beschädigt sein. \nStellen Sie sicher, dass die Module auf dem neuesten Stand sind, und versuchen Sie eine Neuinstallation, wenn alles andere fehlschlägt.",
+            "notarget": "3D-Leinwand: Kein Ziel für Drag & Drop gefunden. \nBitte stellen Sie sicher, dass Sie mindestens ein 3D-Objekt oder den Hintergrund aktiviert haben.",
+            "overmaxelevation": "Die versuchte Bewegung überschreitet die maximale Höhe dieser Szene.",
+            "particleSystem": {
+                "fromto": "Partikelsystem: Ziel und/oder Quelle, wo nicht angegeben oder undefiniert.",
+                "onend": "Partikelsystem: .onEnd() - ein oder mehrere Argumente waren keine Instanz von Particle3D.",
+                "type": "Partikelsystem: Typ '%type%' wird nicht unterstützt, die gültigen Typen sind:"
+            },
+            "toofarfromdoor": "Ihr Token ist zu weit entfernt, um die Tür zu öffnen"
+        },
+        "exporter": {
+            "all": "Vollständige Szene",
+            "background": "Hintergrund",
+            "cancel": "Absagen",
+            "doors": "Türen",
+            "export": "Export",
+            "interactive": "Fügen Sie ziehbare Token hinzu",
+            "tiles": "Fliesen",
+            "title": "Objekte als GLTF exportieren",
+            "tokens": "Token",
+            "walls": "Wände"
+        },
+        "flags": {
+            "alwaysVisible": {
+                "label": "Immer sichtbar"
+            },
+            "animIndex": {
+                "label": "Animationsindex"
+            },
+            "animSpeed": {
+                "label": "Animations Geschwindigkeit"
+            },
+            "auto3d": {
+                "label": "Aktivieren Sie 3D beim Laden"
+            },
+            "autoCenter": {
+                "label": "Autocenter"
+            },
+            "autoGround": {
+                "label": "Automatischer Boden"
+            },
+            "bakeLights": {
+                "label": "Lichter vor dem Backen",
+                "notes": "Backen Sie den Schattenwurf von Lichtern beim Szenenladen vor, sie werden nicht dinamyc sein, aber sie werden nicht durch Wände gehen."
+            },
+            "baseColor": {
+                "label": "Grundfarbe"
+            },
+            "bloom": {
+                "label": "Bloom aktivieren"
+            },
+            "bloomRadius": {
+                "label": "Blütenradius"
+            },
+            "bloomStrength": {
+                "label": "Blütenstärke"
+            },
+            "bloomThreshold": {
+                "label": "Blüteschwelle"
+            },
+            "castShadow": {
+                "label": "Schlagschatten",
+                "notes": "Aktivieren Sie den Schattenwurf auf das Licht - WARNUNG Auswirkungen auf die hohe Leistung!."
+            },
+            "collisionPlane": {
+                "label": "Kollisionsflugzeug"
+            },
+            "color": {
+                "label": "Farbe",
+                "notes": "Material und Farbe funktionieren nur bei einigen Modellen, normalerweise bei den grauen/unstrukturierten."
+            },
+            "depth": {
+                "label": "Tiefe"
+            },
+            "disableBase": {
+                "label": "Basis deaktivieren"
+            },
+            "displacementIntensity": {
+                "label": "Heightmap-Intensität"
+            },
+            "displacementMap": {
+                "label": "Höhenkarte/Heatmap"
+            },
+            "displacementMatrix": {
+                "label": "Heightmap-Matrix"
+            },
+            "doorState": {
+                "options": {
+                    "closed": "Abgeschlossen",
+                    "locked": "Gesperrt",
+                    "open": "Offen"
+                }
+            },
+            "doorType": {
+                "options": {
+                    "door": "Tür",
+                    "none": "Keiner",
+                    "secret": "Geheimnis"
+                }
+            },
+            "draggable": {
+                "label": "Ziehbar"
+            },
+            "dynaMesh": {
+                "label": "Dynamisches Netz",
+                "options": {
+                    "billboard": "Werbetafel",
+                    "billboard2": "Werbetafel (Kreuz)",
+                    "box": "Kasten",
+                    "cone": "Kegel",
+                    "cylinder": "Zylinder",
+                    "default": "Keine (3D-Modell verwenden)",
+                    "dome": "Kuppel",
+                    "mapGen": "Kartengenerator",
+                    "sphere": "Kugel",
+                    "text": "Text (3D-Modellfeld für Text verwenden)",
+                    "tube": "Rohr"
+                }
+            },
+            "dynaMeshResolution": {
+                "label": "Dynamische Netzauflösung"
+            },
+            "enableAnim": {
+                "label": "Animation aktivieren (falls vorhanden)"
+            },
+            "enableCollision": {
+                "label": "Kollision aktivieren",
+                "options": {
+                    "0": "aus",
+                    "1": "Ein (von Token)",
+                    "2": "Ein (vom Himmel)"
+                }
+            },
+            "enableFog": {
+                "label": "Nebel aktivieren"
+            },
+            "enableFogOfWar": {
+                "label": "Fog of War aktivieren (leistungsstark)",
+                "notes": "Leistung schwer. \nDiese Option aktiviert Fog of War in 3D, wenn „3D-Geometrie für Sichtberechnungen verwenden“ aktiviert ist, wird Fog of War basierend auf 3D-Geometrie berechnet (es bleibt immer noch zweidimensional)."
+            },
+            "enableGameCamera": {
+                "label": "Spielekamera aktivieren",
+                "notes": "Aktivieren Sie die Wildkamera für diese Szene. \nDamit dies funktioniert, muss die Game Camera in den 3D-Canvas-Einstellungen global aktiviert sein."
+            },
+            "enableGravity": {
+                "label": "Schwere",
+                "options": {
+                    "gravity": "Nur Schwerkraft",
+                    "gravityRotation": "Rotation der Gravitationsoberfläche",
+                    "none": "Behinderte"
+                }
+            },
+            "enableGrid": {
+                "label": "Raster aktivieren"
+            },
+            "enablePlayers": {
+                "label": "Für Spieler aktivieren",
+                "notes": "Erlauben Sie den Spielern, die 3D-Ansicht für diese Szene zu öffnen. Wenn der Nebel des Krieges nicht aktiviert ist, ist die Karte vollständig sichtbar."
+            },
+            "enableRuler": {
+                "label": "Lineal aktivieren"
+            },
+            "exposure": {
+                "label": "Belichtung",
+                "notes": "Belichtung für das HDRI. \n1 ist die Standardeinstellung, 2 ist am hellsten und 0 am dunkelsten."
+            },
+            "exr": {
+                "label": "HDRI",
+                "notes": "Unterstützt .EXR-Dateien oder Bilder im 360°-Panoramaformat. \nWenn keine Skybox ausgewählt ist, wird das HDRI als Hintergrund verwendet.",
+                "placeholder": "EXR-Datei"
+            },
+            "faceCamera": {
+                "label": "Gesichtskameramodus",
+                "options": {
+                    "default": "Globale Einstellung (Standard)",
+                    "face": "Gesicht Kamera",
+                    "noface": "Blicken Sie nicht in die Kamera"
+                }
+            },
+            "fillType": {
+                "header": "Fliesen",
+                "label": "Fülltyp",
+                "options": {
+                    "merged": "Zusammengeführte Kachel",
+                    "stretch": "Einzel",
+                    "tile": "Wiederholen"
+                }
+            },
+            "filter": {
+                "label": "Filter",
+                "options": {
+                    "brightness": "Helligkeit",
+                    "contrast": "Kontrast",
+                    "custom": "Benutzerdefiniert",
+                    "grayscale": "Graustufen",
+                    "hue": "Farbton",
+                    "invert": "Umkehren",
+                    "none": "Keiner",
+                    "saturate": "Sättigung",
+                    "sepia": "Sepia"
+                }
+            },
+            "filterCustom": {
+                "label": "Benutzerdefinierte Filter",
+                "placeholder": "z.B. \nHelligkeit (0,5) Kontrast (1,5) Sättigung (0,5)"
+            },
+            "filterStrength": {
+                "label": "Filterstärke"
+            },
+            "flipY": {
+                "label": "Y umdrehen"
+            },
+            "fogColor": {
+                "label": "Nebelfarbe"
+            },
+            "fogDistance": {
+                "label": "Nebelentfernung"
+            },
+            "gap": {
+                "label": "Lücke"
+            },
+            "imageTexture": {
+                "label": "Textur"
+            },
+            "initialview": {
+                "button": "Kameraansicht erfassen",
+                "buttondel": "Gespeicherte Kameraansicht löschen",
+                "label": "Anfängliche Ansichtsposition",
+                "notes": "Standard-Kameraposition beim Laden der Szene - vor dem Erfassen der Kameraansicht das Ziel mit einem Ping festlegen."
+            },
+            "invertDisplacementMap": {
+                "label": "Heightmap/Heatmap umkehren"
+            },
+            "isFog": {
+                "label": "Ist Fog of War Box?",
+                "notes": "Sicht verdecken, wenn die Kamera in diese Vorlage eintritt. \nFunktioniert nur für rechteckige Vorlagen."
+            },
+            "joinWall": {
+                "label": "Wand beitreten"
+            },
+            "lightParticleEffect": {
+                "ParticleAlphaEnd": {
+                    "label": "Opazität beenden"
+                },
+                "ParticleAlphaStart": {
+                    "label": "Opazität starten"
+                },
+                "ParticleColor": {
+                    "label": "Startfarbe"
+                },
+                "ParticleColor2": {
+                    "label": "Endfarbe"
+                },
+                "ParticleCount": {
+                    "label": "Zählen"
+                },
+                "ParticleEmitTime": {
+                    "label": "Sendezeit"
+                },
+                "ParticleEmitterSizeMultiplier": {
+                    "label": "Multiplikator für die Emittergröße"
+                },
+                "ParticleForce": {
+                    "label": "Gewalt"
+                },
+                "ParticleGravity": {
+                    "label": "Schwere"
+                },
+                "ParticleLife": {
+                    "label": "Leben"
+                },
+                "ParticleMass": {
+                    "label": "Masse"
+                },
+                "ParticlePushX": {
+                    "label": "Drücken Sie X"
+                },
+                "ParticlePushY": {
+                    "label": "Drücken Sie Y"
+                },
+                "ParticlePushZ": {
+                    "label": "Drücken Sie Z"
+                },
+                "ParticleScale": {
+                    "label": "Skala"
+                },
+                "ParticleSprite": {
+                    "label": "Sprit"
+                },
+                "enableParticle": {
+                    "label": "Partikeleffekt aktivieren"
+                },
+                "enableParticleHidden": {
+                    "label": "Aktivieren Sie den Partikeleffekt, wenn das Licht deaktiviert ist."
+                },
+                "header": {
+                    "notes": "Der für das Licht zu verwendende Partikeleffekt.",
+                    "title": "Partikeleffekt"
+                }
+            },
+            "lockCamera": {
+                "label": "Kameraperspektive sperren",
+                "options": {
+                    "all": "Alle",
+                    "off": "aus",
+                    "players": "Nur Spieler"
+                }
+            },
+            "material": {
+                "label": "Material",
+                "options": {
+                    "basic": "Einfach (keine Beleuchtung/Schatten)",
+                    "metal": "Metall",
+                    "none": "Standard",
+                    "optgroup": {
+                        "advanced": "Fortschrittlich",
+                        "presets": "Voreinstellungen"
+                    },
+                    "pbr": "PBR",
+                    "plastic": "Kunststoff",
+                    "presets": {
+                        "basic-plastic": "Einfacher Kunststoff",
+                        "bronze": "Bronze",
+                        "copper": "Kupfer",
+                        "hammered-steel": "Gehämmerter Stahl",
+                        "leather": "Leder",
+                        "marble": "Marmor",
+                        "premium-plastic": "Premium-Kunststoff",
+                        "steel": "Stahl",
+                        "wood": "Holz"
+                    },
+                    "texcol": "Textur/Farbe",
+                    "wood": "Holz"
+                }
+            },
+            "maxElevation": {
+                "label": "Maximale Höhe",
+                "notes": "Maximal zulässige Höhe für Token in dieser Szene."
+            },
+            "meshStats": "Eckpunkte: %v% | \nDreiecke: %t% | \nMaschen: %m% | \nInstanzen: %i%",
+            "metalness": {
+                "label": "Reflexionsvermögen"
+            },
+            "mirrorLevels": {
+                "label": "Spiegelung der Kachelsichtbarkeit"
+            },
+            "model3d": {
+                "label": "3D-Modell"
+            },
+            "noise": {
+                "header": "Terrain",
+                "label": "Rauschtyp",
+                "options": {
+                    "none": "Keiner",
+                    "perlin": "Perlin",
+                    "simplex": "Simplex"
+                }
+            },
+            "noiseExponent": {
+                "label": "Exponent"
+            },
+            "noiseFlattening": {
+                "label": "Abflachung"
+            },
+            "noiseHeight": {
+                "label": "Höhe"
+            },
+            "noiseLacunarity": {
+                "label": "Lücken"
+            },
+            "noiseOctaves": {
+                "label": "Oktaven"
+            },
+            "noisePersistence": {
+                "label": "Beharrlichkeit"
+            },
+            "noiseScale": {
+                "label": "Lärmskala"
+            },
+            "object3dSight": {
+                "label": "Verwenden Sie 3D-Geometrie für Sichtberechnungen"
+            },
+            "offsetX": {
+                "label": "Versatz X"
+            },
+            "offsetY": {
+                "label": "Versatz Y"
+            },
+            "offsetZ": {
+                "label": "Versatz Z"
+            },
+            "particleBlend": {
+                "label": "Mischung"
+            },
+            "particleBlending": {
+                "label": "Mischen"
+            },
+            "particleColor": {
+                "label": "Farbe"
+            },
+            "particleDensity": {
+                "label": "Dichte"
+            },
+            "particleDirection": {
+                "label": "Richtung"
+            },
+            "particleOpacity": {
+                "label": "Opazität"
+            },
+            "particlePreset": {
+                "label1": "Partikelvoreinstellung 1",
+                "label2": "Partikelvoreinstellung 2",
+                "notes": "Die für die Partikeleffekte zu verwendende Voreinstellung.",
+                "options": {
+                    "custom": "Benutzerdefiniert",
+                    "dust": "Staub",
+                    "embers": "Glut",
+                    "hail": "Hagel",
+                    "heavyrain": "Starkregen",
+                    "leaves": "Blätter",
+                    "mysteriouslights": "Geheimnisvolle Lichter",
+                    "none": "Keiner",
+                    "rain": "Regen",
+                    "smoke": "Rauch",
+                    "snow": "Schnee",
+                    "starfall": "Sternenfall (JB2A)",
+                    "stars": "Sterne",
+                    "toxic": "Giftige Dämpfe"
+                }
+            },
+            "particleRandomRotation": {
+                "label": "Zufällige Rotation"
+            },
+            "particleRandomScale": {
+                "label": "Zufällige Größe"
+            },
+            "particleRotationspeed": {
+                "label": "Drehgeschwindigkeit"
+            },
+            "particleSize": {
+                "label": "Größe"
+            },
+            "particleSpeed": {
+                "label": "Geschwindigkeit"
+            },
+            "particleTexture": {
+                "label": "Textur"
+            },
+            "particleVelocity": {
+                "label": "Geschwindigkeit"
+            },
+            "paused": {
+                "label": "Angehalten"
+            },
+            "randomColor": {
+                "label": "Farbe randomisieren"
+            },
+            "randomDepth": {
+                "label": "Tiefe randomisieren"
+            },
+            "randomPosition": {
+                "label": "Position randomisieren"
+            },
+            "randomRotation": {
+                "label": "Zufällige Rotation"
+            },
+            "randomScale": {
+                "label": "Skala randomisieren"
+            },
+            "randomSeed": {
+                "label": "Zufälliger Samen"
+            },
+            "removeBase": {
+                "label": "Basis entfernen",
+                "notes": "Entfernt die Basis des ursprünglichen Modells, dies funktioniert nur, wenn die Basis in den 3D-Modelldaten „Basis“ genannt wird."
+            },
+            "renderBackground": {
+                "label": "Hintergrund anzeigen",
+                "notes": "Zeigen Sie das Hintergrundbild der Szene als Tafel an."
+            },
+            "renderSceneLights": {
+                "label": "Szenenlichter rendern"
+            },
+            "renderTable": {
+                "label": "Tabelle anzeigen",
+                "notes": "Rendern Sie die Tabelle in der 3D-Ansicht."
+            },
+            "rotateBase": {
+                "label": "Basisrotation korrigieren",
+                "notes": "Bei einigen Modellen muss die Auswahlanzeige gedreht werden, aktivieren Sie sie nach Bedarf. \n(normalerweise aus STL konvertierte Dateien)"
+            },
+            "rotation": {
+                "label": "Drehung"
+            },
+            "rotationAxis": {
+                "label": "Rotationsachse",
+                "notes": "Die zu verwendende Achse, wenn sich die ursprüngliche Tokenrotation ändert. \nWenn die Originaldatei im STL-Format war, ist dies normalerweise Z, ansonsten Y",
+                "options": {
+                    "x": "X",
+                    "y": "Y",
+                    "z": "Z"
+                }
+            },
+            "rotationX": {
+                "label": "Drehung X"
+            },
+            "rotationY": {
+                "label": "Drehung Y"
+            },
+            "rotationZ": {
+                "label": "Drehung Z"
+            },
+            "roughness": {
+                "label": "Rauheit"
+            },
+            "scale": {
+                "label": "Skala"
+            },
+            "sceneTint": {
+                "label": "Szene Tönung"
+            },
+            "shader": {
+                "header": "Shader"
+            },
+            "shaderAlt": {
+                "label": "Verwenden Sie den alternativen Modus"
+            },
+            "shaderIntensity": {
+                "label": "Shader-Intensität"
+            },
+            "shaderOther": {
+                "label": "Shader Andere"
+            },
+            "shaderOther2": {
+                "label": "Shader Andere 2"
+            },
+            "shaderSpeed": {
+                "label": "Geschwindigkeit"
+            },
+            "shading": {
+                "label": "Schattierung",
+                "options": {
+                    "default": "Standard",
+                    "flat": "Eben",
+                    "smooth": "Glatt"
+                }
+            },
+            "shadowBias": {
+                "label": "Schattenvorspannung",
+                "notes": "Zahl, die bestimmt, wie Schatten gerendert werden. Wenn Sie schwarze Streifen auf Objekten in der Szene bemerken, können Sie diese Zahl anpassen. \nKorrekte Werte für diese Zahl sind in der Regel sehr klein, es wird empfohlen, Inkremente oder Dekremente von 0,00001 oder weniger vorzunehmen."
+            },
+            "showSceneDoors": {
+                "label": "Türen rendern"
+            },
+            "showSceneFloors": {
+                "label": "Kacheln rendern"
+            },
+            "showSceneWalls": {
+                "label": "Wände rendern"
+            },
+            "sides": {
+                "label": "Seite",
+                "options": {
+                    "BackSide": "Rückseite",
+                    "DoubleSide": "Doppelseitig",
+                    "FrontSide": "Vorderseite",
+                    "default": "Standard"
+                }
+            },
+            "sightMeshComplexity": {
+                "label": "Collider-Auflösung"
+            },
+            "skybox": {
+                "label": "Skybox-Bild",
+                "notes": "Die Datei muss sich im selben Ordner mit insgesamt 6 Dateien befinden, die Dateien müssen _ft, _bk, _up, _dn, _rt, _lf enthalten.",
+                "placeholder": "Skybox-Bild"
+            },
+            "solidBaseMode": {
+                "label": "Basismodus",
+                "options": {
+                    "default": "Standard",
+                    "merge": "Verschmelzen",
+                    "ontop": "Oben drauf"
+                }
+            },
+            "stem": {
+                "label": "Stamm aktivieren"
+            },
+            "stretchTex": {
+                "label": "Stretch-Textur"
+            },
+            "sunDistance": {
+                "label": "Sonnenabstand"
+            },
+            "sunIntensity": {
+                "label": "Sonnenintensität"
+            },
+            "sunPosition": {
+                "label": "Tageszeit (24h)"
+            },
+            "sunTilt": {
+                "label": "Neigung der Sonne"
+            },
+            "tableTex": {
+                "label": "Tabellenstruktur",
+                "placeholder": "Tabellenstruktur"
+            },
+            "tcameraCollision": {
+                "label": "Kamera-Collider"
+            },
+            "tcollision": {
+                "label": "Bewegung blockieren"
+            },
+            "textureMode": {
+                "label": "Texturmodus",
+                "options": {
+                    "repeat": "Wiederholen",
+                    "stretch": "Strecken"
+                }
+            },
+            "textureRepeat": {
+                "label": "Textur wiederholen"
+            },
+            "tileScale": {
+                "label": "Kachelwaage"
+            },
+            "tiling": {
+                "label": "Kacheloptionen"
+            },
+            "tiltX": {
+                "label": "Neigung X"
+            },
+            "tiltZ": {
+                "label": "Neigung Y"
+            },
+            "timeSync": {
+                "label": "Automatische Beleuchtung",
+                "options": {
+                    "both": "Beide synchronisieren (funktioniert am besten mit SmallTime)",
+                    "darkness": "Belichtung mit Szenendunkelheit synchronisieren",
+                    "off": "aus",
+                    "time": "Position mit Weltzeit synchronisieren"
+                }
+            },
+            "tint": {
+                "label": "Tönungsfarbe"
+            },
+            "transparency": {
+                "label": "Opazität"
+            },
+            "tsight": {
+                "header": "Vision",
+                "label": "Sicht blockieren"
+            },
+            "wallDepth": {
+                "label": "Wandtiefe"
+            },
+            "wallFloorAlpha": {
+                "label": "Wand/Boden-Alpha"
+            },
+            "wallOpacity": {
+                "label": "Opazität"
+            },
+            "wallSidesTexture": {
+                "label": "Seiten Textur"
+            },
+            "wallSidesTint": {
+                "label": "Seiten Tönung"
+            },
+            "yScale": {
+                "label": "Y-Skala"
+            }
+        },
+        "keybindings": {
+            "cameraToToken": "Fokussieren Sie die Kamera auf das ausgewählte Token",
+            "dialog": {
+                "content": "Damit 3D-Canvas-Steuerelemente Kernsteuerungen nicht überlappen, wird dringend empfohlen, die Kern-WASD-Tastenkombinationen zu entfernen. \nSie können Tokens oder andere Entitäten weiterhin mit den Pfeiltasten oder dem Ziffernblock bewegen. \nMöchten Sie sie entfernen?",
+                "title": "3D-Leinwand: Kerntastenbelegungen entfernen"
+            },
+            "freeMode": "Freier Platzierungsmodus",
+            "gameCameraTopDown": "Top-Down-Kamera umschalten (nur Spielkamera)",
+            "lockcamera": "Kamera-Auto-Modus aktivieren (nur Spielekamera)",
+            "panDown": "Kamera: Nach unten schwenken",
+            "panLeft": "Kamera: Nach links schwenken",
+            "panRight": "Kamera: Nach rechts schwenken",
+            "panUp": "Kamera: Nach oben schwenken",
+            "ping": "Pingen Sie die aktuelle Position der Mausposition für alle Clients",
+            "pingcamera": "Pingen Sie und verschieben Sie die Kamera für alle Clients in die aktuelle Ansicht",
+            "resetView": "Kameraansicht zurücksetzen",
+            "rotate": "Kacheleditor: Drehen",
+            "scale": "Kacheleditor: Skalierung",
+            "scaleGap": "Kacheleditor: Lücke skalieren",
+            "scaleHeight": "Kacheleditor: Höhe skalieren",
+            "scaleScale": "Kacheleditor: Kachelskalierung skalieren",
+            "scaleWidth": "Kacheleditor: Breite skalieren",
+            "tiltX": "Kacheleditor: Neige X",
+            "tiltY": "Kacheleditor: Neigung Y",
+            "toggleFirstPerson": "Schalten Sie die First-Person-Kamera um",
+            "toggleGizmo": "Kacheleditor: Gizmo umschalten",
+            "toggleMode": "Kacheleditor: Zyklischer Füllstil",
+            "toggleSelect": "Gruppenauswahl (beim Ziehen gedrückt halten)",
+            "topdownView": "Top-Down-Kameraansicht",
+            "translate": "Kacheleditor: Übersetzen"
+        },
+        "macrodialog": {
+            "cancel": "Absagen",
+            "export": "In Makro speichern",
+            "label": "Name:",
+            "placeholder": "Geben Sie einen Namen für das Makro ein",
+            "title": "Partikeleffekt exportieren"
+        },
+        "mapgen": {
+            "bevel": "Fase",
+            "columns": "Säulen",
+            "generator": {
+                "cave": "Höhle",
+                "content": "Möchten Sie wirklich eine neue Karte erstellen? \nDies überschreibt alle aktuell eingestellten Höhen und kann nicht rückgängig gemacht werden!.\n\nDer erste Materialschlitz wird als Grundmaterial verwendet, der Rest wird automatisch basierend auf der Zellenhöhe zugeordnet.",
+                "dungeon": "Verlies",
+                "generate": "Generieren",
+                "height": "Maximale Höhe",
+                "hills": "Hügel",
+                "island": "Insel",
+                "landscape": "Benutzerdefiniert",
+                "mountains": "Berge",
+                "plateau": "Plateau",
+                "shore": "Ufer",
+                "theme": "Thema",
+                "title": "Karte generieren",
+                "valley": "Schlucht"
+            },
+            "material": {
+                "cellColor": "Zellenfarbe",
+                "emissive": "Ausstrahlend",
+                "metalness": "Metalligkeit",
+                "name": "Name",
+                "opacity": "Opazität",
+                "repeat": "Wiederholen",
+                "rotate": "Randomisieren",
+                "roughness": "Rauheit",
+                "texture": "Textur",
+                "tint": "Tönungsfarbe"
+            },
+            "rows": "Reihen",
+            "themes": {
+                "alien": "Außerirdischer",
+                "crypt": "Krypta",
+                "desert": "Wüste",
+                "firelands": "Feuerlande",
+                "frost": "Frost",
+                "jungle": "Dschungel-Ruinen",
+                "plains": "Ebenen",
+                "tech": "Technik",
+                "tmcArabianNights": "Arabische Nächte",
+                "tmcDungeon": "Verlies",
+                "tmcNature": "Natur",
+                "wood": "Holz"
+            },
+            "title": "Kartengenerator - Zellenhöhe von 1 entspricht",
+            "tooltips": {
+                "add-material": "Material hinzufügen",
+                "apply-material": "Material auf ausgewählte Zellen anwenden",
+                "clear-material": "Klares Material",
+                "delete-material": "Material löschen",
+                "deselect-all": "Alle abwählen",
+                "fit-to-scene": "Kachel automatisch anpassen und positionieren",
+                "invert": "Auswahl umkehren",
+                "select-all": "Wählen Sie Alle",
+                "select-elevation": "Wählen Sie Zellen mit dieser Höhe aus",
+                "select-material": "Zellen mit diesem Material auswählen",
+                "set-elevation": "Höhe für ausgewählte Zellen festlegen",
+                "toggle-material": "Material erweitern/reduzieren"
+            },
+            "zoom": "Zoomen"
+        },
+        "mergeTiles": {
+            "content": "Das Zusammenführen von Kacheln ist eine irreversible Aktion. Es wird empfohlen, eine Sicherungskopie der Szene zu erstellen, bevor Sie eine große Anzahl von Kacheln zusammenführen.<br>Sie sind dabei, <strong>%count% Kacheln</strong> zusammenzuführen. \nBist du dir sicher, dass du weitermachen willst?",
+            "title": "Kacheln zusammenführen"
+        },
+        "performance": {
+            "buttonTooltip": {
+                "high": "Empfohlen für dedizierte High-End-GPUs",
+                "low": "Empfohlen für ältere dedizierte GPUs oder moderne integrierte GPUs",
+                "medium": "Empfohlen für moderne dedizierte GPUs",
+                "veryhigh": "Empfohlen für dedizierte High-End-GPUs",
+                "verylow": "Empfohlen für ältere integrierte GPUs"
+            },
+            "dialog": {
+                "content": "Wählen Sie Ihre bevorzugte Grafikqualität (die Seite wird aktualisiert):",
+                "title": "3D-Leinwand: Leistungseinstellungen"
+            },
+            "high": "Hoch",
+            "low": "Niedrig",
+            "medium": "Mittel",
+            "notification": "3D-Leinwand: Leistungsmodus auf {Performancemode} eingestellt.",
+            "settings": {
+                "header": "Grafikeinstellungen",
+                "presetHint": "Wählen Sie eine Voreinstellung für die visuelle Qualität aus, um die folgenden Einstellungen automatisch festzulegen. \nSie können sie später jederzeit individuell ändern. \nHover-Schaltflächen für Hardwareempfehlungen.",
+                "resolution": "Mit den aktuellen Einstellungen wird 3D Canvas mit einer Auflösung von {resolution} ausgeführt.",
+                "resolutionTooltip": "Die Verwendung von 3D Canvas mit einer hohen Auflösung kann auf Hardware der unteren Preisklasse sehr anspruchsvoll sein, insbesondere wenn eine Auflösung von über 2K ausgeführt wird. \nWenn Leistungsprobleme auftreten, versuchen Sie, die Auflösung zu verringern."
+            },
+            "veryhigh": "Sehr hoch",
+            "verylow": "Sehr niedrig"
+        },
+        "sceneConfigTitle": {
+            "notes": "",
+            "title": ""
+        },
+        "settings": {
+            "altCameraControls": {
+                "hint": "Wenn aktiviert, dreht ein Linksklick die Kamera nicht. \nDie Drehung erfolgt stattdessen auf der mittleren Maustaste.",
+                "name": "Alternative Kamerasteuerung"
+            },
+            "antialiasing": {
+                "hint": "Aktivieren Sie Anti-Aliasing auf Kosten der Leistung. \nFXAA hat nahezu keine Auswirkungen auf die Performance. \nSMAA liefert bessere Ergebnisse, ist jedoch möglicherweise etwas leistungsintensiver.",
+                "name": "Kantenglättung",
+                "options": {
+                    "fxaa": "FXAA",
+                    "none": "Behinderte",
+                    "smaa": "SMAA"
+                }
+            },
+            "autoPan": {
+                "hint": "Verknüpft das Schwenken der 3D-Kamera mit dem 2D-Kameraschwenk. \nWenn Sie einen Token bewegen, folgt ihm hauptsächlich die Kamera. \nWenn deaktiviert, können Sie jederzeit mit Strg X zum ausgewählten Token schwenken",
+                "name": "Automatisches Schwenken",
+                "options": {
+                    "all": "Alle",
+                    "none": "Behinderte",
+                    "player": "Nur Spieler"
+                }
+            },
+            "baseStyle": {
+                "hint": "Der zu verwendende Basisstil: Image zeigt das gewählte Bild an, Solid zeichnet eine Basis im Miniaturstil.",
+                "name": "Basisstil",
+                "options": {
+                    "image": "Bild",
+                    "solid": "Fest",
+                    "solidindicator": "Solide Richtungsanzeige"
+                }
+            },
+            "camerafocuszoom": {
+                "hint": "Wenn Sie die Kamera mit Shift X auf einen Token fokussieren, zoomen Sie auf den Token",
+                "name": "Kamerafokus-Zoom aktivieren"
+            },
+            "cameralockzero": {
+                "hint": "Verhindern, dass die Kamera unter Null geschwenkt oder geschwenkt wird (Aktualisierung erforderlich).",
+                "name": "Negative Kamera verhindern"
+            },
+            "canping": {
+                "hint": "Aktivieren Sie die Möglichkeit, Standorte für Spieler zu pingen (Standard: Shift E).",
+                "name": "Spieler können pingen"
+            },
+            "canpingpan": {
+                "hint": "Aktivieren Sie die Möglichkeit, die Kameraposition für Spieler zu senden (Standard Shift Q).",
+                "name": "Spieler können die Kameraposition senden"
+            },
+            "colorizeInidcator": {
+                "hint": "Färben Sie das Hervorhebungsbild so ein, dass es mit den standardmäßigen Randfarben der Gießerei übereinstimmt.",
+                "name": "Hervorgehobenes Bild einfärben"
+            },
+            "configApp": {
+                "hint": "Konfigurieren Sie die globalen 3D-Leinwandeinstellungen. \nDiese Einstellungen werden auf alle Clients angewendet. \nAlle anderen Einstellungen darunter sind kundenspezifisch.",
+                "label": "Konfigurieren Sie die globalen 3D-Leinwandeinstellungen",
+                "name": "Globale Einstellungen",
+                "save": "Einstellungen speichern",
+                "tabs": {
+                    "base": "Base",
+                    "canvas": "Segeltuch",
+                    "gc": "Spielkamera",
+                    "misc": "Sonstiges",
+                    "perm": "Berechtigungen",
+                    "token": "Zeichen"
+                },
+                "title": "3D-Canvas-Konfiguration"
+            },
+            "conservativeHitbox": {
+                "hint": "Beschränken Sie die Hitbox-Größe für Token, damit sie nicht außerhalb der Basis des Tokens überläuft.",
+                "name": "Konservative Hitbox"
+            },
+            "debugMode": {
+                "hint": "Hilfreiche Debug-Informationen zur Fehlerbehebung anzeigen.",
+                "name": "Debug-Modus"
+            },
+            "disableLighting": {
+                "hint": "Deaktivieren Sie Schatten für eine bessere Leistung.",
+                "name": "Schatten deaktivieren"
+            },
+            "enableEffects": {
+                "hint": "Aktivieren Sie Wetter- und Partikeleffekte. \nEinige der Effekte können je nach Hardware und Menge leistungsintensiv sein. \nFür bessere Leistung deaktivieren.",
+                "name": "Effekte aktivieren"
+            },
+            "enableGameCamera": {
+                "hint": "Aktivieren Sie die 'Videospiel'-ähnliche Kamera. \nDies wird für Spieler erzwungen, während der GM es umschalten kann.",
+                "name": "Spielekamera aktivieren"
+            },
+            "enableReticule": {
+                "hint": "Aktivieren Sie das Zielgitter, um Token hervorzuheben, auf die der aktuelle Benutzer abzielt. \nDadurch wird ein dem 2D ähnliches Fadenkreuz erstellt.",
+                "name": "Fadenkreuz aktivieren"
+            },
+            "enableShaders": {
+                "hint": "Shader-Spezialeffekte aktivieren. \nEinige der Effekte können je nach Hardware und Menge leistungsintensiv sein. \nFür bessere Leistung deaktivieren.",
+                "name": "Shader aktivieren"
+            },
+            "enabledamping": {
+                "hint": "Aktivieren Sie die Dämpfung für die Kamera. \nDeaktivieren Sie diese Option, wenn Sie unter Reisekrankheit leiden. \n(R in der 3D-Ansicht verschieben, um die Kamera zurückzusetzen und diese Änderung zu übernehmen).",
+                "name": "Dämpfung aktivieren"
+            },
+            "fogDebounce": {
+                "hint": "Bei Deaktivierung werden Vision und Fog of War ständig aktualisiert.",
+                "name": "Drosselung des Fog of War-Updates"
+            },
+            "fowQuality": {
+                "hint": "Stellen Sie die Auflösung des Nebels des Krieges ein.",
+                "name": "Nebel des Krieges Qualität",
+                "options": {
+                    "high": "Hoch",
+                    "low": "Niedrig",
+                    "medium": "Mittel",
+                    "native": "Einheimisch",
+                    "verylow": "Sehr niedrig"
+                }
+            },
+            "fullTransparency": {
+                "hint": "Um visuelle Artefakte zu vermeiden, verwendet 3D Canvas Alpha-Clipping, um Transparenz zu handhaben, was zu gezackten Kanten führen kann. \nWenn Sie sehr wenige transparente Texturen verwenden oder keine überlappende Transparenz haben, können Sie diese Einstellung aktivieren, damit transparente Texturen besser aussehen. \nVerwendung auf eigene Gefahr, kann visuelle Störungen verursachen.",
+                "name": "Echte Transparenz"
+            },
+            "gameCameraAutoLock": {
+                "hint": "Wenn die Wildkamera von ihrem Ziel entsperrt ist, wird sie automatisch neu gesperrt, wenn sich das Ziel ändert.",
+                "name": "Automatisches erneutes Sperren"
+            },
+            "gameCameraClipping": {
+                "hint": "Wenn aktiviert, verstecken Sie Objekte, die das aktuelle Kameraziel bedecken.",
+                "name": "Ausschnitt"
+            },
+            "gameCameraDefaultGm": {
+                "hint": "Ob GMs die Spielkamera beim ersten Laden einer Szene eingeschaltet haben sollten.",
+                "name": "GM-Standardeinstellung Ein"
+            },
+            "gameCameraMaxAngle": {
+                "hint": "Der maximale Winkel, in den die Kamera gedreht werden kann.",
+                "name": "Maximaler Winkel"
+            },
+            "gameCameraMinAngle": {
+                "hint": "Der minimale Winkel, in den die Kamera gedreht werden kann.",
+                "name": "Min. Winkel"
+            },
+            "gameCameraWarnings": {
+                "hint": "Wenn aktiviert, wird eine Warnung für die Funktionalität der Wildkamera angezeigt.",
+                "name": "Warnungen anzeigen"
+            },
+            "globalCollision": {
+                "hint": "Aktivieren Sie die Kollision für alle Token auf dem Board.",
+                "name": "Globale Kollision aktivieren"
+            },
+            "gridMode": {
+                "hint": "Wie das Raster gezeichnet wird. \nSchnell ist im Allgemeinen besser, unterstützt aber nur quadratische Gitter. \nSpiegeln, spiegelt 1:1 das Foundry-Raster, ist aber teurer zu rendern.",
+                "name": "Grid Draw-Modus",
+                "options": {
+                    "fast": "Schnell",
+                    "mirror": "Spiegel"
+                }
+            },
+            "headers": {
+                "basics": {
+                    "notes": "Konfigurieren Sie grundlegende Einstellungen für diese 3D-Szene.",
+                    "title": "Grundlagen"
+                },
+                "environment": {
+                    "notes": "Einstellungen für die 3D-Umgebung und Effekte.",
+                    "title": "Umfeld"
+                },
+                "lighting": {
+                    "notes": "Konfigurieren Sie die globale Beleuchtung der Szene.",
+                    "title": "Beleuchtung"
+                },
+                "particles": {
+                    "notes": "Partikeleffekte konfigurieren.",
+                    "title": "Partikel"
+                },
+                "visibility": {
+                    "notes": "Konfigurieren Sie die Sichtbarkeit von 3D-Objekten.",
+                    "title": "Sichtweite"
+                }
+            },
+            "hideTarget": {
+                "hint": "Blenden Sie die Zielanzeige aus, wenn der Token die Basis aktiviert hat, die Ziele werden in der Hervorhebung des Basisrings angezeigt.",
+                "name": "Zielanzeige ausblenden (bei solider Basis)"
+            },
+            "highlightCombat": {
+                "hint": "Markieren Sie den aktuellen Kämpfer.",
+                "name": "Kampf-Highlight"
+            },
+            "miniCanvas": {
+                "hint": "Öffnen Sie die 2D-Leinwand in einem separaten Fenster, wenn der 3D-Modus aktiviert ist",
+                "name": "Leinwand-Popout aktivieren"
+            },
+            "navigatorAuto": {
+                "hint": "Aktiviert automatisch den Folgemodus für den 3D-Navigator beim Laden der Szene.",
+                "name": "Navigator-Folgemodus",
+                "options": {
+                    "all": "Spieler und GMs",
+                    "none": "Niemand",
+                    "players": "Nur Spieler"
+                }
+            },
+            "outline": {
+                "hint": "Umrisse von Leinwandobjekten beim Bewegen und Auswählen. \nFür bessere Leistung deaktivieren.",
+                "name": "Umriss"
+            },
+            "preapplyShaders": {
+                "hint": "Wenn aktiviert, werden die Shader angewendet, bevor die Renderschleife beginnt. \nDies verhindert Ruckeln beim erstmaligen Aktivieren von Shadern, kann jedoch geringfügige Auswirkungen auf die Leistung und/oder Ladezeiten haben.",
+                "name": "Shader vorab laden"
+            },
+            "preventNegative": {
+                "hint": "Verhindert, dass die Token-Bewegung unter das Spielbrett gelangt",
+                "name": "Vermeiden Sie eine negative Höhe"
+            },
+            "rangeFinder": {
+                "hint": "Zeigen Sie die Entfernung zu Token an, wenn Sie mit der Maus darüber fahren.",
+                "name": "Entfernungsmesser",
+                "options": {
+                    "always": "Stets",
+                    "combat": "Nur im Kampf",
+                    "none": "Behinderte"
+                }
+            },
+            "resolution": {
+                "hint": "Die Auflösung der 3D-Leinwand, dies wirkt sich auf die Leistung aus.",
+                "name": "Auflösung",
+                "options": {
+                    "full": "Hoch",
+                    "half": "Mittel",
+                    "quarter": "Niedrig"
+                }
+            },
+            "resolutionMultiplier": {
+                "hint": "WARNUNG: Das Ändern dieser Einstellung wirkt sich auch auf die Auflösung der 2D-Ansicht aus. \nErfordert Aktualisieren.",
+                "name": "Auflösungsmultiplikator"
+            },
+            "rotateIndicator": {
+                "hint": "Drehen Sie die 3D-Basis entsprechend der Token-Rotation.",
+                "name": "Basis drehen"
+            },
+            "screenspacepanning": {
+                "hint": "Schwenken des Bildschirmbereichs für die 3D-Ansicht aktivieren (Stil der Kartensteuerung).",
+                "name": "Schwenken im Bildschirmbereich aktivieren"
+            },
+            "selectedImage": {
+                "hint": "Das Bild, das bei der Auswahl eines Tokens angezeigt werden soll.",
+                "name": "Auswahl Bild hervorheben"
+            },
+            "shadowQuality": {
+                "hint": "Die Auflösung der Schatten. \nAuf „Deaktiviert“ stellen, um Schatten zu deaktivieren.",
+                "name": "Schattenqualität",
+                "options": {
+                    "gamer": "Spieler",
+                    "high": "Hoch",
+                    "low": "Niedrig",
+                    "medium": "Mittel",
+                    "none": "Behinderte",
+                    "ultra": "Ultra"
+                }
+            },
+            "sharedContext": {
+                "hint": "Wenn aktiviert, wird die Leistung von Fog of War drastisch verbessert, aber Sie können die Mini-Leinwand nicht verwenden.",
+                "name": "Geteilter Kontext"
+            },
+            "showAdvanced": {
+                "hide": "Verberge erweiterte Einstellungen",
+                "hint": "Standardmäßig die erweiterten Einstellungen in den Konfigurationsmenüs anzeigen.",
+                "name": "Erweiterte Einstellungen immer anzeigen",
+                "show": "Erweiterte Einstellungen anzeigen"
+            },
+            "softShadows": {
+                "hint": "Aktivieren Sie weiche Schatten zu geringen Leistungseinbußen. \nErfordert eine Aktualisierung.",
+                "name": "Weiche Schatten"
+            },
+            "solidBaseColor": {
+                "hint": "Die Farbe der soliden Basis. \nKann ein Hex-Wert oder ein Farbname (oder eine beliebige CSS-Farbe) sein. \nStandard ist",
+                "name": "Solide Grundfarbe"
+            },
+            "solidBaseMode": {
+                "hint": "Der zu verwendende Standardmodus für solide Basis: Zusammenführen verschiebt das Originalmodell nicht, oben versetzt das Modell zur Oberseite der Basis.",
+                "name": "Solider Basismodus",
+                "options": {
+                    "merge": "Verschmelzen",
+                    "ontop": "Oben drauf"
+                }
+            },
+            "standupFace": {
+                "hint": "2D-Tokens, die im Stehstil angezeigt werden, sind immer zur Kamera gerichtet.",
+                "name": "Stehende Gesichtskamera"
+            },
+            "startMarker": {
+                "hint": "Wenn du dich im Kampf befindest, platziere einen Marker dort, wo ein Spielstein die Runde begonnen hat. \nNur Besitzer dieses Tokens können es sehen.",
+                "name": "Turn-Start-Marker"
+            },
+            "templateEffects": {
+                "hint": "Wenden Sie basierend auf dem Schadenstyp automatisch Shader auf Vorlagen an. \nDerzeit wird nur dnd5e unterstützt.",
+                "name": "Vorlageneffekte aktivieren"
+            },
+            "templateSyle": {
+                "hint": "Der Stil, der für die gemessenen Vorlagen verwendet werden soll.",
+                "name": "Vorlagenstil",
+                "options": {
+                    "solid": "Fest",
+                    "wireframe": "Drahtmodell"
+                }
+            },
+            "useMultithreading": {
+                "hint": "Verwenden Sie Multithreading, um die Leistung von Fog of War-Berechnungen zu verbessern. \nDiese Einstellungen haben keine Auswirkung, wenn Sie den Fog of War nicht verwenden.",
+                "name": "EXPERIMENTELL: Verwenden Sie Multithreading"
+            }
+        },
+        "shaders": {
+            "colorwarp": {
+                "animate_range": "Animationsbereich",
+                "description": "Farbverzerrungseffekte, mehrere können gleichzeitig eingestellt werden. \nGlow funktioniert am besten, wenn der Bloom-Effekt in der Szenenkonfiguration aktiviert ist.",
+                "flicker": "Flackern",
+                "glow": "Glühen",
+                "hue_angle": "Farbtonverschiebung",
+                "name": "Farbe",
+                "speed": "Geschwindigkeit"
+            },
+            "config": {
+                "apply": "Anwenden",
+                "autosave": "Automatisch speichern",
+                "button": "Shader konfigurieren",
+                "enabled": "Ermöglicht?",
+                "label": "Shader-Konfiguration",
+                "macro-btn": "Makro",
+                "macro": {
+                    "content": "Makroname:",
+                    "created": "Makro '%s' erfolgreich erstellt!",
+                    "enabled": "Nur Export aktiviert",
+                    "players": "Spieler zulassen",
+                    "title": "Shader-Makro erstellen"
+                },
+                "notes": "Konfigurieren Sie die visuellen Effekte, die für dieses 3D-Objekt verwendet werden sollen.",
+                "save": "Speichern",
+                "slow": "WARNUNG: Die Verwendung vieler Instanzen dieses Shaders kann zu Leistungsproblemen führen.",
+                "title": "Shader-Konfiguration"
+            },
+            "distortion": {
+                "convoluted": "Gewunden",
+                "description": "Verzerrungseffekt, perfekt für einen Lavapool oder andere viskose Flüssigkeiten.",
+                "direction": "Richtung",
+                "intensity": "Intensität",
+                "name": "Verzerrung",
+                "speed": "Geschwindigkeit"
+            },
+            "fire": {
+                "blendMode": "Mischung mischen",
+                "color": "Farbe",
+                "description": "Feuereffekt. \nDer Effekt kann koloriert und skaliert werden, um Ergebnisse zu erzielen, die weit über Feuer hinausgehen.",
+                "intensity": "Intensität",
+                "name": "Feuer",
+                "scale": "Skala",
+                "speed": "Geschwindigkeit"
+            },
+            "grid": {
+                "description": "Projizieren Sie das Szenenraster auf dieses 3D-Objekt. \nEs werden nur quadratische Raster unterstützt. \nDieser Shader verwendet die in den Szeneneinstellungen festgelegte Gitterfarbe und Deckkraft.",
+                "heightCulling": "Höhe Culling",
+                "name": "Netz",
+                "normalCulling": "Normales Culling"
+            },
+            "ice": {
+                "blendMode": "Mischung mischen",
+                "color": "Farbe",
+                "description": "Mattierter Oberflächeneffekt mit einer sehr subtilen Animation.",
+                "grain": "Getreide",
+                "intensity": "Intensität",
+                "name": "Eis",
+                "scale": "Skala",
+                "speed": "Geschwindigkeit"
+            },
+            "idle": {
+                "affect_model": "Anker (%)",
+                "description": "Einfacher Verdrängungseffekt, der auf Token angewendet werden soll, um ihnen mehr Leben zu verleihen.",
+                "direction": "Richtung",
+                "intensity": "Intensität",
+                "name": "Leerlauf",
+                "speed": "Geschwindigkeit"
+            },
+            "lightning": {
+                "blendMode": "Mischung mischen",
+                "color": "Farbe",
+                "description": "Blitzartiger Effekt mit sich bewegenden Lichtbögen.",
+                "intensity": "Intensität",
+                "name": "Blitz",
+                "scale": "Skala",
+                "speed": "Geschwindigkeit"
+            },
+            "ocean": {
+                "description": "Komplexe Wassersimulation, die mehrere Wellen verwendet. \nLeistungsstärker als der einfache Wasser-Shader.",
+                "foam": "Höhepunkte",
+                "name": "Ozean",
+                "reflections": "Reflexionen",
+                "scale": "Skala",
+                "speed": "Geschwindigkeit",
+                "waveA_direction": "Welle A Richtung",
+                "waveA_steepness": "Wave A Steilheit",
+                "waveA_wavelength": "Welle A Wellenlänge",
+                "waveB_direction": "Richtung Welle B",
+                "waveB_steepness": "Steilheit von Welle B",
+                "waveB_wavelength": "Welle B Wellenlänge",
+                "waveC_direction": "Richtung Welle C",
+                "waveC_steepness": "Steilheit von Welle C",
+                "waveC_wavelength": "Welle C Wellenlänge"
+            },
+            "oil": {
+                "blendMode": "Mischung mischen",
+                "color": "Farbe",
+                "description": "Öl/Flüssigmetall-Effekt. \nDer Effekt kann eingefärbt und skaliert werden, bedenken Sie, dass die Farbe durch den Effekt verzerrt wird.",
+                "intensity": "Intensität",
+                "name": "Öl",
+                "scale": "Skala",
+                "speed": "Geschwindigkeit"
+            },
+            "overlay": {
+                "add_blend": "Additivmischung",
+                "black_alpha": "Schwarze Mischung",
+                "color": "Farbe",
+                "description": "Texturüberlagerung. \nErfordert das Festlegen einer Textur. \nVerwenden Sie „Multiply Blending“ für Texturen mit weißem Hintergrund, „Black Blending“ für Texturen mit schwarzem Hintergrund.",
+                "mult_blend": "Mischen multiplizieren",
+                "name": "Überlagerung",
+                "repeat": "Wiederholen",
+                "strength": "Stärke",
+                "textureDiffuse": "Textur"
+            },
+            "sound": {
+                "chroma": "Chroma",
+                "croma_offset_angle": "Chroma-Offset",
+                "description": "Benötigt einen Ton, um abgespielt zu werden. \nFür die Darbietung wird nur der erste Ton verwendet, der gespielt wird, falls mehrere vorhanden sind.",
+                "flat_bottom": "Flacher Boden",
+                "glow": "Glühen",
+                "intensity": "Intensität",
+                "name": "Klang"
+            },
+            "textureGradient": {
+                "color0": "Farbe 1",
+                "color1": "Farbe 2",
+                "color2": "Farbe 3",
+                "color3": "Farbe 4",
+                "description": "Texturverlauf. \nErfordert das Festlegen einer Textur. \nOrdnen Sie die Textur der Höhe oder Neigung zu.\n\nBei Verwendung der Neigung entspricht 1 einer flachen Oberfläche, 0 einer vertikalen Oberfläche.",
+                "name": "Gradient",
+                "repeat0": "1 wiederholen",
+                "repeat1": "2 wiederholen",
+                "repeat2": "3 wiederholen",
+                "repeat3": "4 wiederholen",
+                "smoothing": "Glättung",
+                "tex0Begin": "Textur 1 Beginn",
+                "tex1Begin": "Textur 2 Beginnen",
+                "tex2Begin": "Textur 3 Beginnen",
+                "tex3Begin": "Textur 4 Beginnen",
+                "texCount": "Texturanzahl",
+                "textureDiffuse0": "Textur 1",
+                "textureDiffuse1": "Textur 2",
+                "textureDiffuse2": "Textur 3",
+                "textureDiffuse3": "Textur 4",
+                "useNormals": "Neigung verwenden"
+            },
+            "textureRotate": {
+                "centerx": "X-Anker",
+                "centery": "Y-Anker",
+                "description": "Texturrotationseffekt, erfordert eine Textur und einige Texturwiederholungen, um zu funktionieren.",
+                "name": "Drehen",
+                "speed": "Geschwindigkeit"
+            },
+            "textureScroll": {
+                "description": "Einfacher Textur-Scrolling-Effekt ähnlich dem 'Parallaxia'-Modul.",
+                "direction": "Richtung",
+                "name": "Scrollen",
+                "speedX": "Geschwindigkeit X",
+                "speedY": "Geschwindigkeit Y"
+            },
+            "triplanar": {
+                "description": "Fortschrittliche Texturprojektionstechnik zur korrekten Texturierung von Oberflächen, die andernfalls in steilen Winkeln gestreckte Texturen hätten.",
+                "name": "Triplanar",
+                "roughnessAdjust": "Reflexion Adj."
+            },
+            "water": {
+                "description": "Einfacher, sinuswellenbasierter Wassereffekt. \nEffektiv und sehr günstig in der Leistung.",
+                "direction": "Richtung",
+                "name": "Wasser",
+                "speed": "Geschwindigkeit",
+                "wave_amplitude": "Wellendichte",
+                "wave_height": "Wellenhöhe"
+            },
+            "wind": {
+                "affect_model": "Anker (%)",
+                "convoluted": "Gewunden",
+                "description": "Windähnlicher Effekt, um Ihrer Vegetation etwas Bewegung zu verleihen.",
+                "direction": "Richtung",
+                "ground_blend": "Bodenmischung",
+                "ground_color": "Grundfarbe",
+                "intensity": "Intensität",
+                "name": "Wind",
+                "reactive": "Reaktiv",
+                "reactive_intensity": "Reaktive Intensität",
+                "speed": "Geschwindigkeit"
+            }
+        },
+        "sharing": {
+            "contextbutton": "Szene teilen",
+            "error": "Zu viele Anfragen. Bitte versuchen Sie es später noch einmal.",
+            "mapbrowser": {
+                "imported": "Importierte Szene",
+                "search": "Beginnen Sie mit der Eingabe, um zu suchen...",
+                "title": "Kartenbrowser: {count} Karten verfügbar"
+            },
+            "packs": {
+                "baileywiki": "Baileywiki",
+                "mapmakingpack": "Mapmaking-Paket",
+                "tokencollection": "Token-Sammlung"
+            },
+            "scenedirbutton": "Durchsuchen Sie Community-3D-Karten",
+            "sharemap": {
+                "agreement": "Indem Sie diese Karte teilen, erkennen Sie an, dass Sie das Recht haben, sie zu teilen, und dass Sie nicht gegen die Nutzungsbedingungen der verwendeten Assets verstoßen. \nSie stimmen auch zu, dass die Karte auf dem 3D-Canvas-Server gespeichert wird und jederzeit entfernt werden kann.",
+                "assetinfo": "Die freigegebene Karte enthält keine benutzerdefinierten Assets. \nBitte verwenden Sie hauptsächlich Assets, die in den zulässigen Paketen enthalten sind. \nStrg Klicken Sie hier, um mehrere Packs auszuwählen.",
+                "assetpacks": "Asset-Pakete",
+                "author": "Autor",
+                "confirm": {
+                    "content": "Möchten Sie diese Karte wirklich teilen? \nNach der Freigabe können Sie die geteilten Inhalte nicht mehr bearbeiten.",
+                    "title": "Map-Sharing-Bestätigung"
+                },
+                "description": "Beschreibung",
+                "error": "Ein Fehler ist aufgetreten",
+                "gamemaster": "Gamemaster ist kein zulässiger Autorenname.",
+                "image": "Bild",
+                "imageinfo": "Bitte laden Sie einen Screenshot der Karte auf imgur hoch und fügen Sie den Link in das Bildfeld ein. \nWenn es korrekt ist, wird das Bild in der Vorschau angezeigt.",
+                "imageplaceholder": "Bild URL",
+                "missingfields": "3D-Leinwand - Kartenfreigabe | \nEin oder mehrere Felder fehlen oder es wurde kein Asset Pack ausgewählt",
+                "name": "Kartenname",
+                "preview": "Bildvorschau",
+                "secret": "Geheimer Schlüssel",
+                "share": "Teilen",
+                "success": {
+                    "content": "Die Karte wurde erfolgreich geteilt. \nDie Karte ist jetzt für alle verfügbar, danke fürs Teilen!",
+                    "title": "Karte geteilt",
+                    "titleupdated": "Karte aktualisiert"
+                },
+                "title": "Karte teilen"
+            }
+        },
+        "tileEditor": {
+            "controlsReference": {
+                "clone": "Halten Sie vor dem Einleiten einer Transformation STRG gedrückt, um zu klonen",
+                "rotate": "Drehen",
+                "scale": "Skala",
+                "scaleGap": "Lücke",
+                "scaleHeight": "Höhe",
+                "scaleScale": "Kachelwaage",
+                "scaleWidth": "Breite",
+                "select": "Halten Sie F gedrückt und ziehen Sie, um auszuwählen, ziehen Sie nach links, um vorherige Objekte freizugeben, ziehen Sie nach rechts, um sie zur Auswahl hinzuzufügen",
+                "tiltX": "Neigung X",
+                "tiltZ": "Neigung Y",
+                "title": "Steuerelemente des 3D-Canvas-Kacheleditors",
+                "toggleGizmo": "Gizmo umschalten",
+                "toggleMode": "Füllmodus",
+                "translate": "Übersetzen",
+                "wheel": "Mausrad zum Erhöhen/Verringern von Werten"
+            }
+        },
+        "tokenAnimations": {
+            "bow": "Bogen",
+            "breath": "Der Atem",
+            "buff": "Ansammeln",
+            "charge": "Aufladen",
+            "debuff": "Masse nach unten",
+            "knockback": "Rückstoß",
+            "shake": "Shake",
+            "slash": "Schrägstrich",
+            "swipe": "Wischen",
+            "title": "Animationen",
+            "twirl": "Drehen"
+        },
+        "tours": {
+            "dialog": {
+                "content": "Möchten Sie mit der 3D-Leinwand-Erste-Schritte-Tour beginnen?",
+                "title": "Einstieg"
+            },
+            "first-tile": {
+                "description": "Diese Tour wird Ihnen den Einstieg in das Platzieren von 3D-Kacheln erleichtern.",
+                "requires": "Sie müssen die 3D-Ansicht aktiv und das 3D Canvas Mapmaking Pack installiert haben, um diese Tour zu starten.",
+                "step-0": {
+                    "content": "Gehen Sie zur Kachelebene.",
+                    "title": "Kachelschicht"
+                },
+                "step-1": {
+                    "content": "Klicken Sie jederzeit auf diese Schaltfläche, um eine Steuerungsreferenz für den Kacheleditor als Chat-Nachricht zu erhalten (nur GM).",
+                    "title": "Kontrollen"
+                },
+                "step-2": {
+                    "content": "Öffnen Sie den Dateibrowser.",
+                    "title": "Dateibrowser"
+                },
+                "step-3": {
+                    "content": "Befolgen Sie die Schritte, um zum Ordner „3D Canvas Mapmaking Pack Tiles“ zu gelangen.",
+                    "title": "Navigieren Sie zu den 3D-Assets"
+                },
+                "step-4": {
+                    "content": "Befolgen Sie die Schritte, um zum Ordner „3D Canvas Mapmaking Pack Tiles“ zu gelangen.",
+                    "title": "Navigieren Sie zu den 3D-Assets"
+                },
+                "step-5": {
+                    "content": "Befolgen Sie die Schritte, um zum Ordner „3D Canvas Mapmaking Pack Tiles“ zu gelangen.",
+                    "title": "Navigieren Sie zu den 3D-Assets"
+                },
+                "step-6": {
+                    "content": "Befolgen Sie die Schritte, um zum Ordner „3D Canvas Mapmaking Pack Tiles“ zu gelangen.",
+                    "title": "Navigieren Sie zu den 3D-Assets"
+                },
+                "step-7": {
+                    "content": "Befolgen Sie die Schritte, um zum Ordner „3D Canvas Mapmaking Pack Tiles“ zu gelangen.",
+                    "title": "Navigieren Sie zu den 3D-Assets"
+                },
+                "step-8": {
+                    "content": "Ziehen",
+                    "title": "Ziehen"
+                },
+                "title": "Platzieren Sie Ihre erste 3D-Kachel"
+            },
+            "getting-started": {
+                "description": "Diese Tour führt Sie durch die Grundlagen von 3D Canvas.",
+                "step-0": {
+                    "content": "Aktivieren Sie die Token-Steuerung.",
+                    "title": "So gelangen Sie zur 3D-Ansicht (1/2)"
+                },
+                "step-1": {
+                    "content": "Klicken Sie auf die Würfel-Schaltfläche, um die 3D-Ansicht zu aktivieren.",
+                    "title": "So gelangen Sie zur 3D-Ansicht (2/2)"
+                },
+                "step-2": {
+                    "content": "Der Ladebildschirm enthält hilfreiche Informationen zur 3D-Canvas-Kamera und zur Token-Steuerung.",
+                    "title": "Kontrollen"
+                },
+                "step-3": {
+                    "content": "Die Navigationsleiste enthält verschiedene Schaltflächen zum Umschalten bestimmter Aspekte der 3D-Ansicht. \nSie können den Mauszeiger über die Schaltflächen bewegen, um eine Beschreibung ihrer Funktion anzuzeigen.",
+                    "title": "Navigation"
+                },
+                "step-4": {
+                    "content": "Die Wildkamera ist standardmäßig für GMs und Spieler aktiviert. \nWenn Sie ein GM sind, können Sie mit dieser Schaltfläche zur freien Kamera wechseln. \nSie können die Game Camera-Optionen in den Moduleinstellungen ändern oder pro Szene deaktivieren.",
+                    "title": "Spielkamera"
+                },
+                "step-5": {
+                    "content": "Sie können die Steuerungsreferenz jederzeit wiederherstellen, indem Sie auf diese Schaltfläche klicken.",
+                    "title": "Steuerungsreferenz"
+                },
+                "title": "Einstieg"
+            },
+            "scene-configuration": {
+                "description": "Diese Tour führt Sie durch die Szenenkonfigurationsoptionen.",
+                "requires": "Sie müssen die 3D-Ansicht aktiviert haben, um diese Tour zu sehen.",
+                "step-0": {
+                    "content": "Die Registerkarte 3D enthält alle Einstellungen für die 3D-Szene.",
+                    "title": "Gehen Sie zur Registerkarte 3D"
+                },
+                "step-1": {
+                    "content": "Wenn Sie diese Einstellung nicht aktiviert haben, können Ihre Spieler die 3D-Ansicht nicht aufrufen.",
+                    "title": "Für Spieler aktivieren"
+                },
+                "step-2": {
+                    "content": "Wenn diese Einstellung aktiviert ist, wird die Szene automatisch in die 3D-Ansicht geladen, wenn Sie sie aktivieren.",
+                    "title": "Aktivieren Sie 3D beim Laden"
+                },
+                "step-3": {
+                    "content": "Standardmäßig spiegelt die 3D-Leinwand die Sichtbarkeit der 2D-Ansicht unter Verwendung ihrer Wände (unabhängig von ihrem sichtbaren Status), um die Token-Sicht zu berechnen. \nAktivieren Sie diese Einstellung, um die 2D-Sicht zu ignorieren und die 3D-Umgebung zur Berechnung der Sicht zu verwenden.",
+                    "title": "Sicht"
+                },
+                "step-4": {
+                    "content": "Der Nebel des Krieges ist im 3D-Modus standardmäßig deaktiviert, auch wenn er im 2D-Modus aktiviert ist. \nWährend FoW in 3D deaktiviert ist, können Spieler die gesamte Umgebung sehen, aber Token werden weiterhin basierend auf der Sicht verborgen. \nWenn Sie FoW verwenden möchten, wird dringend empfohlen, dass Sie „Gemeinsamer Kontext“ in den Einstellungen des 3D-Canvas-Moduls aktiviert haben.",
+                    "title": "Nebel des Krieges"
+                },
+                "step-5": {
+                    "content": "Das HDRI und die Skybox tragen zur Szenenbeleuchtung bei (stellen Sie sich das als globale Beleuchtung vor). \nDas Ändern des HDRI kann das Aussehen einer Szene drastisch verändern! \nVersuchen Sie, das HDRI auf einige der Optionen einzustellen, die im 3D Canvas Mapmaking Pack enthalten sind!",
+                    "title": "Umfeld"
+                },
+                "step-6": {
+                    "content": "Wenn Sie ein qualitativ hochwertiges HDRI verwenden, wird empfohlen, dieses Feld leer zu lassen. \nVersuchen Sie, das HDRI-Feld auf einen der „Beautiful Skies“ einzustellen, die im Mapmaking Pack enthalten sind, und entfernen Sie das Skybox-Feld, um den Unterschied zu sehen.",
+                    "title": "Skybox"
+                },
+                "step-7": {
+                    "content": "In diesem Abschnitt können Sie die globale Beleuchtung der Szene anpassen. \nVersuchen Sie, mit den grundlegenden Schiebereglern herumzuspielen!",
+                    "title": "Beleuchtung"
+                },
+                "step-8": {
+                    "content": "Hier können Sie einen Wetter-/Partikeleffekt für die Szene einstellen. \nVersuchen Sie, einen zu aktivieren und sehen Sie, wie er Ihre Szene verbessern kann!",
+                    "title": "Wetter"
+                },
+                "step-9": {
+                    "content": "Die Szenenkonfiguration bietet viele weitere Optionen, sobald Sie mit den Grundeinstellungen vertraut sind, können Sie hier klicken, um alle erweiterten Optionen anzuzeigen.",
+                    "title": "Fortschrittlich"
+                },
+                "title": "3D-Szenenkonfiguration"
+            }
+        },
+        "units": {
+            "gs": "Gitterquadrate",
+            "gu": "Rastereinheiten",
+            "ms": "Millisekunden"
+        },
+        "welcome": {
+            "content": "<h1>Willkommen bei 3D!</h1>\n\nWillkommen bei 3D Canvas! \nZunächst einmal vielen Dank, dass Sie meine Entwicklungsbemühungen unterstützt und dieses Projekt ermöglicht haben!\n\n<b>Klicken Sie einfach auf die Schaltfläche <i class='fas fa-cube'></i></b> (Token-Steuerelemente, oben links), um eine Szene in 3D umzuschalten.\n\n<h2>Erste Schritte</h2>\n\nObwohl dieses Modul nicht kompliziert zu verwenden ist, hat es viele Optionen, die Ihnen die Möglichkeit geben, das System stark anzupassen. \nEs wird dringend empfohlen, <b>die Dokumentation zu lesen</b> (indem Sie unten auf die Schaltfläche <b><i class='fas fa-book'></i> Erste Schritte</b> klicken). \nDie Dokumentation finden Sie später immer in Ihren Kompendien! \nDie Dokumentation enthält auch eine Sammlung von Video-Tutorials, auf die Sie sich beziehen können.<h2>Fehlerbehebung</h2>\n\nWenn Sie auf ein <b>Problem</b> stoßen oder Probleme mit der <b>Konfiguration</b> oder <b>3D-Modellen</b> haben, zögern Sie nicht, den Discord <b>zu erreichen</b> \nKanal!<hr>",
+            "dontshowagain": "Nicht mehr anzeigen",
+            "ok": "Zurückweisen",
+            "opencompendium": "Einstieg",
+            "title": "Willkommen bei 3D Canvas"
+        }
+    }
+}
