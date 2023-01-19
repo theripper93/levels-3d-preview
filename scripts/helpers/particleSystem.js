@@ -304,6 +304,7 @@ class ProjectileEffect {
           child.castShadow = true;
           child.receiveShadow = true;
           child.material.color.multiply(color);
+          if(child.material.emissiveIntensity && child.material.emissive) child.material.emissive.multiply(color);
         }
       })
       const box =  new THREE.Box3().setFromObject( model );
@@ -681,7 +682,6 @@ export class Particle3D {
     return this;
   }
   playAnimation(animationData) {
-    debugger
     const animationFrom = animationData.from
     const animationTo = animationData.to
     const animData = game.Levels3DPreview.CONFIG.tokenAnimations[animationFrom?.id]
