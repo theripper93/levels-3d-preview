@@ -258,7 +258,7 @@ Hooks.once('init', function() {
       scope: "world",
       config: false,
       type: Boolean,
-      default: false,
+      default: true,
     });
 
     game.settings.register("levels-3d-preview", "preapplyShaders", {
@@ -337,7 +337,7 @@ Hooks.once('init', function() {
       scope: "client",
       config: true,
       type: Boolean,
-      default: false,
+      default: true,
       onChange: value => { game.Levels3DPreview.GameCamera.setControlPreset() }
     });
 
@@ -356,15 +356,6 @@ Hooks.once('init', function() {
       type: Boolean,
       default: false,
     });
-
-    /*game.settings.register("levels-3d-preview", "fogDebounce", {
-      name: game.i18n.localize("levels3dpreview.settings.fogDebounce.name"),
-      hint: game.i18n.localize("levels3dpreview.settings.fogDebounce.hint"),
-      scope: "client",
-      config: true,
-      type: Boolean,
-      default: true,
-    });*/
 
     game.settings.register("levels-3d-preview", "cameralockzero", {
       name: game.i18n.localize("levels3dpreview.settings.cameralockzero.name"),
@@ -429,14 +420,6 @@ Hooks.once('init', function() {
       default: false,
     });
 
-    /**game.settings.register("levels-3d-preview", "disableLighting", {
-      name: game.i18n.localize("levels3dpreview.settings.disableLighting.name"),
-      hint: game.i18n.localize("levels3dpreview.settings.disableLighting.hint"),
-      scope: "client",
-      config: true,
-      type: Boolean,
-      default: false,
-    });*/
 
     game.settings.register("levels-3d-preview", "enableShaders", {
       name: game.i18n.localize("levels3dpreview.settings.enableShaders.name"),
@@ -602,21 +585,6 @@ Hooks.once("ready", () => {
       })
       app.setPosition({width: 500,height:"auto", left: window.innerWidth/2-250})
   
-    })
-  }
-
-  if(!game.settings.get("levels-3d-preview", "oneTimeMessages").sharedContext){
-    Dialog.confirm({
-      title: "3D Canvas: Enable Shared Context?",
-      content: "Enabling the Shared Context will massively imporove FoW Performance BUT it will disable the 2D Canvas Popout. Do you want to enable it? You can always disable this setting later in the module settings under the Misc tab.",
-      yes: async () => {
-        await setSetting("sharedContext");
-        await game.settings.set("levels-3d-preview", "sharedContext", true);
-        window.location.reload();
-      },
-      no: () => {
-        setSetting("sharedContext");
-      },
     })
   }
 
