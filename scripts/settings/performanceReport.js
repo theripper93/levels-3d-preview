@@ -4,15 +4,31 @@ export function showSceneReport() {
     const scene = game.Levels3DPreview.scene;
     const infos = game.Levels3DPreview.renderer.info;
     let totalVertices = 0;
-    let totalMaterials = 0;
+    let totalMaterials = new Set();
     let totalMeshes = 0;
     let totalInstances = 0;
 
+    let ignore = new Set();
+    for (let child of scene.children) { 
+        if (!child.visible && child instanceof THREE.Object3D) {
+            ignore.add(child.uuid);
+            child.traverse((object) => { 
+                if(object instanceof THREE.Mesh) ignore.add(object.uuid);
+            });
+        }
+    }
+
     scene.traverse((object) => {
-        if (object instanceof THREE.Mesh) {
+        if (object instanceof THREE.Mesh && !ignore.has(object.uuid)) {
             const c = object.count ?? 1;
             totalVertices += object.geometry.attributes.position.count * c;
-            totalMaterials += object.material instanceof Array ? object.material.length : 1;
+            if (object.material instanceof Array) {
+                for (let m of object.material) {
+                    totalMaterials.add(m.uuid);
+                }
+            } else {
+                totalMaterials.add(object.material.uuid);
+            }
             totalMeshes++;
         }
     });
@@ -23,7 +39,7 @@ export function showSceneReport() {
 
     const result = {
         Vertices: totalVertices,
-        Materials: totalMaterials,
+        Materials: totalMaterials.size,
         Meshes: totalMeshes,
         "Instanced Meshes": totalInstances,
         Textures: infos.memory.textures,
@@ -66,12 +82,12 @@ export function showPerformanceDialog() {
         buttons: {
             copytoclipboard: {
                 label: '<i class="fas fa-copy"></i> Copy to Clipboard',
-                callback: () => {
+                callback: (e) => {
                     dialogData.Grade = report.grade;
                     const text = Object.entries(dialogData)
                         .map(([k, v]) => `${k}: ${v}`)
                         .join("\n");
-                    navigator.clipboard.writeText("```" + text + "```");
+                    game.clipboard.copyPlainText("```" + text + "```");
                 },
             },
             close: {
