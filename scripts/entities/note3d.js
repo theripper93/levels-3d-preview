@@ -1,5 +1,5 @@
 import * as THREE from "../lib/three.module.js";
-import { Ruler3D } from "./ruler3d.js";
+import { Ruler3D } from "../systems/ruler3d.js";
 import {factor} from '../main.js'; 
 
 export class Note3D {

@@ -1,10 +1,10 @@
 import * as THREE from "../lib/three.module.js";
 import {factor} from '../main.js';
-import { Ruler3D } from "../entities/ruler3d.js";
+import { Ruler3D } from "../systems/ruler3d.js";
 import { mergeVertices } from "../lib/BufferGeometryUtils.js";
-import { setPerformancePreset, injectPresetButtons } from "./performancePresets.js";
+import { setPerformancePreset, injectPresetButtons } from "../settings/performancePresets.js";
 import {SimplifyModifier} from "../lib/Simplify.js";
-import { showSceneReport, showPerformanceDialog } from "./performanceReport.js";
+import { showSceneReport, showPerformanceDialog } from "../settings/performanceReport.js";
 
 const simplify = new SimplifyModifier();
 

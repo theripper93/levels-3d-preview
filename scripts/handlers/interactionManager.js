@@ -1,6 +1,6 @@
 import * as THREE from "../lib/three.module.js";
 import { factor } from "../main.js";
-import { Ruler3D } from "../entities/ruler3d.js";
+import { Ruler3D } from "../systems/ruler3d.js";
 import { GroupSelectHandler } from "./GroupSelectHandler.js";
 import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from "../lib/three-mesh-bvh.js";
 THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;

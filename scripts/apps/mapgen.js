@@ -1,7 +1,7 @@
 let ROT = null;
 
-import { SimplexNoise, Perlin, FractionalBrownianMotion } from "./lib/noiseFunctions.js";
-import { tTypes } from "./helpers/helpers.js";
+import { SimplexNoise, Perlin, FractionalBrownianMotion } from "../lib/noiseFunctions.js";
+import { tTypes } from "../helpers/helpers.js";
 
 export class MapGen extends FormApplication{
     constructor(document) {
@@ -10,7 +10,7 @@ export class MapGen extends FormApplication{
     }
 
     async generate(gen, event){
-        if(!ROT) ROT = await import('./generators/ROT/index.js');
+        if(!ROT) ROT = await import('../generators/ROT/index.js');
         if(game.keyboard.downKeys.has("ShiftLeft") || game.keyboard.downKeys.has("ShiftRight")){
             const genFn = this._getGenerator(gen).bind(this);
             const count = this.cellHeight ?? 3;

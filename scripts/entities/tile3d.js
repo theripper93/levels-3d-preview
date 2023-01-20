@@ -2,7 +2,7 @@ import * as THREE from "../lib/three.module.js";
 import { MersenneTwister } from "../lib/mersenneTwister.js";
 import { noiseShaders } from "../shaders/noise.js";
 import { SimplexNoise, Perlin, FractionalBrownianMotion } from "../lib/noiseFunctions.js";
-import { Ruler3D } from "./ruler3d.js";
+import { Ruler3D } from "../systems/ruler3d.js";
 import { factor } from "../main.js";
 import { DynaMesh } from "../helpers/dynaMesh.js";
 import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from "../lib/three-mesh-bvh.js";

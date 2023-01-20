@@ -1,8 +1,8 @@
-import { toggleAdvancedSettings, injectAdvancedToggle, hideParams } from './helpers/helpers.js';
-import { ShaderConfig } from './shaders/ShaderLib.js';
-import { RegisterTours } from './tours/tours.js';
-import { MapGen } from './mapgen.js';
-import { promptForTour } from './tours/toursHelpers.js';
+import { toggleAdvancedSettings, injectAdvancedToggle, hideParams } from '../helpers/helpers.js';
+import { ShaderConfig } from '../shaders/ShaderLib.js';
+import { RegisterTours } from '../tours/tours.js';
+import { MapGen } from '../apps/mapgen.js';
+import { promptForTour } from '../tours/toursHelpers.js';
 
 Hooks.on("getSceneControlButtons", (buttons)=>{
     buttons.find(b => b.name === "token")?.tools?.push(

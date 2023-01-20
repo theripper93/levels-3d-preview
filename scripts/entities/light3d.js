@@ -1,6 +1,6 @@
 import * as THREE from "../lib/three.module.js";
 import {factor} from '../main.js'; 
-import { Ruler3D } from "./ruler3d.js";
+import { Ruler3D } from "../systems/ruler3d.js";
 import { SimplexNoise } from "../lib/noiseFunctions.js";
 
 export class Light3D {

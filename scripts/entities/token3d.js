@@ -2,7 +2,7 @@ import * as THREE from "../lib/three.module.js";
 import {factor} from '../main.js'; 
 import {sleep} from '../main.js';
 import { Light3D } from "./light3d.js";
-import { TokenAnimationHandler } from "../helpers/tokenAnimationHandler.js";
+import { TokenAnimationHandler } from "../handlers/tokenAnimationHandler.js";
 import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from '../lib/three-mesh-bvh.js';
 THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
 THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
