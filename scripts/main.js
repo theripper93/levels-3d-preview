@@ -779,47 +779,53 @@ class Levels3DPreview {
 
 	makeSkybox(enableFog) {
 		this.setExposure();
-		this.scene.background = enableFog ? this.scene.fog.color : new THREE.Color(canvas.scene.backgroundColor ?? 0xffffff);
-		this.scene.environment = null;
-		this.isEXR = false;
-		this.scene.remove(this.skybox);
-		const sceneSize = Math.max(canvas.scene.dimensions.width, canvas.scene.dimensions.height) / 100;
-		const size = sceneSize < 80 ? 80 : sceneSize;
-		this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-		const rootImage = canvas.scene.getFlag("levels-3d-preview", "skybox") ?? this.CONFIG.skybox.sky;
-		const exr = canvas.scene.getFlag("levels-3d-preview", "exr") ?? this.CONFIG.skybox.exr;
-		if (exr) this.loadEXR(exr, enableFog);
-		if (!rootImage && !exr) this._envReady = true;
-		if (!rootImage) {
-			return;
-		}
-		const imagesSuffix = ["_ft", "_bk", "_up", "_dn", "_rt", "_lf"];
-		let currSuffix;
-		for (let suffix of imagesSuffix) {
-			if (rootImage.includes(suffix)) {
-				currSuffix = suffix;
-				break;
+		try {
+			this.scene.background = enableFog ? this.scene.fog.color : new THREE.Color(canvas.scene.backgroundColor ?? 0xffffff);
+			this.scene.environment = null;
+			this.isEXR = false;
+			this.scene.remove(this.skybox);
+			const sceneSize = Math.max(canvas.scene.dimensions.width, canvas.scene.dimensions.height) / 100;
+			const size = sceneSize < 80 ? 80 : sceneSize;
+			this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+			const rootImage = canvas.scene.getFlag("levels-3d-preview", "skybox") ?? this.CONFIG.skybox.sky;
+			const exr = canvas.scene.getFlag("levels-3d-preview", "exr") ?? this.CONFIG.skybox.exr;
+			if (exr) this.loadEXR(exr, enableFog);
+			if (!rootImage && !exr) this._envReady = true;
+			if (!rootImage) {
+				return;
 			}
-		}
-		let textureArray = [];
-		let materialArray = [];
-		for (let suffix of imagesSuffix) {
-			textureArray.push(rootImage.replace(currSuffix, suffix));
-			materialArray.push(
-				new THREE.MeshBasicMaterial({
-					map: new THREE.TextureLoader().load(rootImage.replace(currSuffix, suffix)),
-					side: THREE.BackSide,
-				}),
-			);
-		}
-		const loader = new THREE.CubeTextureLoader();
-		const textureCube = loader.load(textureArray);
-		textureCube.encoding = THREE.sRGBEncoding;
-		if (!enableFog) this.scene.background = textureCube;
-		if (!exr) {
-			this.scene.environment = textureCube;
+			const imagesSuffix = ["_ft", "_bk", "_up", "_dn", "_rt", "_lf"];
+			let currSuffix;
+			for (let suffix of imagesSuffix) {
+				if (rootImage.includes(suffix)) {
+					currSuffix = suffix;
+					break;
+				}
+			}
+			let textureArray = [];
+			let materialArray = [];
+			for (let suffix of imagesSuffix) {
+				textureArray.push(rootImage.replace(currSuffix, suffix));
+				materialArray.push(
+					new THREE.MeshBasicMaterial({
+						map: new THREE.TextureLoader().load(rootImage.replace(currSuffix, suffix)),
+						side: THREE.BackSide,
+					}),
+				);
+			}
+			const loader = new THREE.CubeTextureLoader();
+			const textureCube = loader.load(textureArray);
+			textureCube.encoding = THREE.sRGBEncoding;
+			if (!enableFog) this.scene.background = textureCube;
+			if (!exr) {
+				this.scene.environment = textureCube;
+				this._envReady = true;
+			}
+		} catch (e) {
+			ui.notifications.error("Error loading skybox");
 			this._envReady = true;
 		}
+		
 	}
 
 	loadEXR(rootImage, enableFog) {
@@ -835,19 +841,25 @@ class Levels3DPreview {
 		}
 
 		function onLoaded(texture) {
-			let exrCubeRenderTarget = pmremGenerator.fromEquirectangular(texture);
-			let newEnvMap = exrCubeRenderTarget ? exrCubeRenderTarget.texture : null;
-			_this.scene.environment = newEnvMap;
-			let background;
-			if (_this.scene.background instanceof THREE.Color && !enableFog) {
-				const rt = new THREE.WebGLCubeRenderTarget(Math.min(1 << (31 - Math.clz32(texture.image.width)), _this.renderer.capabilities.maxTextureSize));
-				rt.fromEquirectangularTexture(_this.renderer, texture);
-				background = rt.texture;
-				_this.scene.background = background;
-				_this.scene.userData.envRt = rt;
+			try {
+				let exrCubeRenderTarget = pmremGenerator.fromEquirectangular(texture);
+				let newEnvMap = exrCubeRenderTarget ? exrCubeRenderTarget.texture : null;
+				_this.scene.environment = newEnvMap;
+				let background;
+				if (_this.scene.background instanceof THREE.Color && !enableFog) {
+					const rt = new THREE.WebGLCubeRenderTarget(Math.min(1 << (31 - Math.clz32(texture.image.width)), _this.renderer.capabilities.maxTextureSize));
+					rt.fromEquirectangularTexture(_this.renderer, texture);
+					background = rt.texture;
+					_this.scene.background = background;
+					_this.scene.userData.envRt = rt;
+				}
+				_this._envReady = true;
+				pmremGenerator.dispose();
+			} catch (error) {
+				ui.notifications.error("Error loading EXR file");
+				_this._envReady = true;
 			}
-			_this._envReady = true;
-			pmremGenerator.dispose();
+
 		}
 	}
 
@@ -1471,6 +1483,7 @@ class Levels3DPreview {
 	}
 
 	toggle(force) {
+		Hooks.callAll("3DCanvasToggleMode", force ?? !this._active);
 		if (force !== undefined) {
 			force ? this.open() : this.close();
 			return;
