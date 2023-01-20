@@ -8,11 +8,9 @@ export function initSharing(canvas3d) {
             MapBrowser,
         },
     };
-
-    setSharingHooks();
 }
 
- function setSharingHooks(){
+ export function setSharingHooks(){
     Hooks.on("renderSidebarTab", (app, html) => {
         if (!game.user.isGM || !(app instanceof SceneDirectory)) return;
         const buttonContainer = html[0].querySelector(".header-actions.action-buttons");

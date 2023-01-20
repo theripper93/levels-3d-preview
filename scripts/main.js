@@ -7,7 +7,7 @@ import { Token3D } from "./entities/token3d.js";
 import { Ruler3D } from "./systems/ruler3d.js";
 import { Light3D } from "./entities/light3d.js";
 import { Wall3D } from "./entities/wall3d.js";
-import { initSharing } from "./apps/sharing.js";
+import { initSharing, setSharingHooks } from "./apps/sharing.js";
 import { Tile3D, recomputeGravity, autoMergeTiles } from "./entities/tile3d.js";
 import { Note3D } from "./entities/note3d.js";
 import { Grid3D } from "./systems/grid3d.js";
@@ -55,6 +55,7 @@ RangeFinder.setHooks();
 InteractionManager.setHooks();
 GlobalIllumination.setHooks();
 ClipNavigation.setHooks();
+setSharingHooks();
 
 globalThis.Particle3D = Particle3D;
 
