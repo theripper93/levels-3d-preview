@@ -270,6 +270,7 @@ class MapBrowser extends Application {
                 });
             const stars = map.stars ?? [];
             map.starred = stars.includes(game.user.id);
+            map.notStarOwned = !map.starred && game.scenes.getName(map.name);
             map.stars = stars.length;
         });
         if (!this.sortNewest) mapList = mapList.sort((a, b) => b.stars - a.stars);
