@@ -138,7 +138,7 @@
 }
 
 #tdc-map-browser .tdc-map-star.not-starred{
-  animation: heart-beat 1s infinite;
+  animation: heart-beat 2s infinite;
 }
 
 @keyframes heart-beat {
