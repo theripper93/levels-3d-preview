@@ -588,4 +588,15 @@ Hooks.once("ready", () => {
     })
   }
 
+  if (!game.settings.get("levels-3d-preview", "oneTimeMessages").mousechanged) {
+    const d = Dialog.prompt({
+      title: "3D Canvas: Default Binding Changed",
+      content: "The default binding for camera rotation changed from Left Click + Drag to Middle Click + Drag, you can change this in the module settings.",
+      callback: () => {
+        setSetting("mousechanged");
+      },
+    })
+    d.render(true);
+  }
+
 })
