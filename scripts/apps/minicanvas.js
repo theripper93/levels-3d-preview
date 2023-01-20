@@ -1,4 +1,4 @@
-class miniCanvas extends Application {
+export class miniCanvas extends Application {
     constructor(actor) {
       super();
       this.actor = actor;

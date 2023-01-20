@@ -45,22 +45,11 @@
   "esmodules": [
     "scripts/main.js",
     "scripts/settings/config.js",
-    "scripts/settings/settingsConfig.js",
-    "scripts/apps/clipNavigation.js",
-    "scripts/entities/token3d.js",
-    "scripts/entities/light3d.js",
-    "scripts/entities/wall3d.js",
-    "scripts/entities/tile3d.js",
-    "scripts/entities/template3d.js",
-    "scripts/entities/note3d.js",
-    "scripts/handlers/interactionManager.js",
-    "scripts/systems/rangeFinder.js",
-    "scripts/systems/globalIllumination.js"
+    "scripts/settings/settingsConfig.js"
   ],
   "scripts": [
     "scripts/wrappers.js",
     "scripts/lib/injectConfig.js",
-    "scripts/apps/minicanvas.js",
     "scripts/lib/three-nebula.js"
   ],
   "styles": [

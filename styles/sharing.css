@@ -1,5 +1,5 @@
 #tdc-map-browser .window-content {
-  background: url(../ui/denim075.png) repeat;
+  background: url(/ui/denim075.png) repeat;
   color: var(--color-text-light-1);
 }
 

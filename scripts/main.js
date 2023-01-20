@@ -7,8 +7,8 @@ import { Token3D } from "./entities/token3d.js";
 import { Ruler3D } from "./systems/ruler3d.js";
 import { Light3D } from "./entities/light3d.js";
 import { Wall3D } from "./entities/wall3d.js";
-import { initSharing, setSharingHooks } from "./apps/sharing.js";
-import { Tile3D, recomputeGravityDebounced, recomputeGravity, autoMergeTiles } from "./entities/tile3d.js";
+import { initSharing } from "./apps/sharing.js";
+import { Tile3D, recomputeGravity, autoMergeTiles } from "./entities/tile3d.js";
 import { Note3D } from "./entities/note3d.js";
 import { Grid3D } from "./systems/grid3d.js";
 import { RangeFinder } from "./systems/rangeFinder.js";
@@ -39,16 +39,27 @@ import { OutlineHandler } from "./handlers/OutlineHandler.js";
 import { ShaderHandler, shaders } from "./shaders/ShaderLib.js";
 import {DecalGeometry} from "./lib/DecalGeometry.js";
 import {WorkerHandler} from "./helpers/workers.js";
-import { throttle } from "./helpers/utils.js";
+import { miniCanvas } from "./apps/minicanvas.js";
+import { throttle, sleep } from "./helpers/utils.js";
 
 export const factor = 1000;
 injectFoWShaders(THREE);
 
-setSharingHooks();
+Light3D.setHooks();
+Note3D.setHooks();
+Token3D.setHooks();
+Wall3D.setHooks();
+Tile3D.setHooks();
+Template3D.setHooks();
+RangeFinder.setHooks();
+InteractionManager.setHooks();
+GlobalIllumination.setHooks();
+ClipNavigation.setHooks();
 
 globalThis.Particle3D = Particle3D;
 
 Hooks.once("ready", () => {
+
 	try {
 		game.Levels3DPreview = new Levels3DPreview();
 	} catch (e) {
@@ -71,28 +82,6 @@ Hooks.once("ready", () => {
 		if (game.Levels3DPreview?._active) game.Levels3DPreview.ClipNavigation?.render(true);
 	});
 });
-
-Hooks.once("socketlib.ready", () => {});
-
-Hooks.on("canvasReady", async () => {
-	do {
-		await sleep(100);
-		if (!game.Levels3DPreview || !game.Levels3DPreview?._init) continue;
-		if (game.threeportrait && !game.threeportrait._dataReady) continue;
-		game.Levels3DPreview._cameraSet = false;
-		game.Levels3DPreview.close();
-		game.Levels3DPreview.controls.reset();
-		const enablePlayers = canvas.scene.getFlag("levels-3d-preview", "enablePlayers");
-		const isGM = game.user.isGM;
-		if (canvas.scene.getFlag("levels-3d-preview", "auto3d") && (enablePlayers || isGM)) {
-			game.Levels3DPreview.open();
-		}
-	} while (!game.Levels3DPreview || !game.Levels3DPreview?._init);
-});
-
-export function sleep(ms) {
-	return new Promise((resolve) => setTimeout(resolve, ms));
-}
 
 class Levels3DPreview {
 	constructor() {
@@ -1601,6 +1590,22 @@ class Levels3DPreview {
 		}
 	}
 }
+
+Hooks.on("canvasReady", async () => {
+    do {
+        await sleep(100);
+        if (!game.Levels3DPreview || !game.Levels3DPreview?._init) continue;
+        if (game.threeportrait && !game.threeportrait._dataReady) continue;
+        game.Levels3DPreview._cameraSet = false;
+        game.Levels3DPreview.close();
+        game.Levels3DPreview.controls.reset();
+        const enablePlayers = canvas.scene.getFlag("levels-3d-preview", "enablePlayers");
+        const isGM = game.user.isGM;
+        if (canvas.scene.getFlag("levels-3d-preview", "auto3d") && (enablePlayers || isGM)) {
+            game.Levels3DPreview.open();
+        }
+    } while (!game.Levels3DPreview || !game.Levels3DPreview?._init);
+});
 
 Hooks.on("sightRefresh", () => {
 	if (game.Levels3DPreview?._active && game.Levels3DPreview.fogExploration) {

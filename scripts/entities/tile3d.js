@@ -1557,6 +1557,124 @@ export class Tile3D {
         object.add(mesh);
         return { scene: object, model: object, object: object };
     }
+
+    static setHooks() {
+        Hooks.on("updateTile", (tile, updates) => {
+            if (game.Levels3DPreview?._active && tile.object && isDoorUpdate(updates)) {
+                game.Levels3DPreview.tiles[tile.id]?.setDoorsMaterials();
+                return;
+            }
+            if (game.Levels3DPreview?._active && tile.object && !isAnimOnly(updates)) {
+                const hasGravity = (tile.getFlag("levels-3d-preview", "enableGravity") ?? "none") !== "none";
+                const hadGravity = game.Levels3DPreview.tiles[tile.id]?.isGravity;
+                if (hasGravity && hadGravity) return recomputeGravityDebounced();
+                game.Levels3DPreview.tiles[tile.id]?.destroy();
+                const newTile = new Tile3D(tile.object, game.Levels3DPreview);
+                game.Levels3DPreview.tiles[tile.id] = newTile;
+                newTile.load().then(() => {
+                    if ("x" in updates || "y" in updates || hasFlag(updates)) {
+                        recomputeGravityDebounced();
+                    }
+                });
+
+                function hasFlag(updates) {
+                    if (updates?.flags?.levels?.rangeBottom !== undefined) return true;
+                    if (updates?.flags?.levels?.rangeTop !== undefined) return true;
+                }
+            }
+
+            function isDoorUpdate(updates) {
+                if (updates.flags && updates.flags["levels-3d-preview"] && updates.flags["levels-3d-preview"].modelDoors) return true;
+            }
+
+            function isAnimOnly(updates) {
+                if (!updates.flags) return false;
+                if (!updates.flags["levels-3d-preview"]) return false;
+                if (Object.values(updates.flags["levels-3d-preview"]).length !== 1) return false;
+                if (updates.flags["levels-3d-preview"].paused !== undefined) return true;
+                return false;
+            }
+        });
+
+        Hooks.on("createTile", (tile) => {
+            if (game.Levels3DPreview?._active && tile.object) game.Levels3DPreview.createTile(tile.object);
+        });
+
+        Hooks.on("deleteTile", (tile) => {
+            if (game.Levels3DPreview?._active) game.Levels3DPreview.tiles[tile.id]?.destroy();
+        });
+
+        Hooks.on("pasteTile", (copy, data) => {
+            if (game.Levels3DPreview?._active) {
+                const pos = game.Levels3DPreview.interactionManager.canvas2dMousePosition;
+                data.forEach((td) => {
+                    const data3d = {
+                        flags: {
+                            levels: {
+                                rangeBottom: pos.z,
+                            },
+                        },
+                    };
+                    mergeObject(td, data3d);
+                });
+            }
+        });
+
+        Hooks.on("renderTileHUD", (hud) => {
+            if (!game.Levels3DPreview?._active) return;
+
+            const tile3d = game.Levels3DPreview.tiles[hud.object.id];
+            const isMerged = !!tile3d.mergedMatrix;
+
+            if (!isMerged && canvas.tiles.controlled.length > 1) {
+                const mergeButton = $(`<div class="control-icon" data-action="merge-tiles"><i class="fas fa-object-group" title="Merge Tiles"></i></div>`);
+
+                mergeButton.on("click", (e) => {
+                    e.stopPropagation();
+                    autoMergeTiles(canvas.tiles.controlled, false);
+                });
+                hud.element.find(`div[data-action="locked"]`).before(mergeButton);
+            } else if (isMerged) {
+                const unmergeButton = $(`<div class="control-icon" data-action="unmerge-tiles"><i class="fas fa-object-ungroup" title="Unmerge Tiles"></i></div>`);
+
+                unmergeButton.on("click", (e) => {
+                    e.stopPropagation();
+                    unmergeTiles(canvas.tiles.controlled);
+                });
+                hud.element.find(`div[data-action="locked"]`).before(unmergeButton);
+            }
+
+            if (!tile3d?.isAnimated) return;
+
+            const images = {
+                pause: "fa-play",
+                play: "fa-pause",
+            };
+
+            const isPaused = tile3d.isPaused;
+
+            const controlButton = $(`
+    <div class="control-icon" data-action="play-pause-3d">
+        <i class="fas ${isPaused ? images.pause : images.play}" title="Overhead Tile"></i>
+    </div>
+    `);
+
+            controlButton.on("click", (e) => {
+                e.stopPropagation();
+                hud.object.document.setFlag("levels-3d-preview", "paused", !hud.object.document.getFlag("levels-3d-preview", "paused"));
+                controlButton.find("i").toggleClass(`${images.play} ${images.pause}`);
+            });
+
+            hud.element.find(`div[data-action="locked"]`).before(controlButton);
+        });
+
+        Hooks.on("controlTile", (tile, controlled) => {
+            if (!game.Levels3DPreview?._active || !game.user.isGM) return;
+            Object.values(game.Levels3DPreview.tiles).forEach((tile3d) => {
+                tile3d.updateControls();
+            });
+        });
+    }
 }
 
 export async function recomputeGravity() {
@@ -1582,122 +1700,6 @@ export async function recomputeGravity() {
 }
 
 export const recomputeGravityDebounced = debounce(recomputeGravity, 100);
-
-Hooks.on("updateTile", (tile, updates) => {
-    if (game.Levels3DPreview?._active && tile.object && isDoorUpdate(updates)) {
-        game.Levels3DPreview.tiles[tile.id]?.setDoorsMaterials();
-        return;
-    }
-    if (game.Levels3DPreview?._active && tile.object && !isAnimOnly(updates)) {
-        const hasGravity = (tile.getFlag("levels-3d-preview", "enableGravity") ?? "none") !== "none";
-        const hadGravity = game.Levels3DPreview.tiles[tile.id]?.isGravity;
-        if (hasGravity && hadGravity) return recomputeGravityDebounced();
-        game.Levels3DPreview.tiles[tile.id]?.destroy();
-        const newTile = new Tile3D(tile.object, game.Levels3DPreview);
-        game.Levels3DPreview.tiles[tile.id] = newTile;
-        newTile.load().then(() => {
-            if ("x" in updates || "y" in updates || hasFlag(updates)) {
-                recomputeGravityDebounced();
-            }
-        });
-
-        function hasFlag(updates) {
-            if (updates?.flags?.levels?.rangeBottom !== undefined) return true;
-            if (updates?.flags?.levels?.rangeTop !== undefined) return true;
-        }
-    }
-
-    function isDoorUpdate(updates) {
-        if (updates.flags && updates.flags["levels-3d-preview"] && updates.flags["levels-3d-preview"].modelDoors) return true;
-    }
-
-    function isAnimOnly(updates) {
-        if (!updates.flags) return false;
-        if (!updates.flags["levels-3d-preview"]) return false;
-        if (Object.values(updates.flags["levels-3d-preview"]).length !== 1) return false;
-        if (updates.flags["levels-3d-preview"].paused !== undefined) return true;
-        return false;
-    }
-});
-
-Hooks.on("createTile", (tile) => {
-    if (game.Levels3DPreview?._active && tile.object) game.Levels3DPreview.createTile(tile.object);
-});
-
-Hooks.on("deleteTile", (tile) => {
-    if (game.Levels3DPreview?._active) game.Levels3DPreview.tiles[tile.id]?.destroy();
-});
-
-Hooks.on("pasteTile", (copy, data) => {
-    if (game.Levels3DPreview?._active) {
-        const pos = game.Levels3DPreview.interactionManager.canvas2dMousePosition;
-        data.forEach((td) => {
-            const data3d = {
-                flags: {
-                    levels: {
-                        rangeBottom: pos.z,
-                    },
-                },
-            };
-            mergeObject(td, data3d);
-        });
-    }
-});
-
-Hooks.on("renderTileHUD", (hud) => {
-    if (!game.Levels3DPreview?._active) return;
-    
-    const tile3d = game.Levels3DPreview.tiles[hud.object.id];
-    const isMerged = !!tile3d.mergedMatrix
-    
-    if (!isMerged && canvas.tiles.controlled.length > 1) {
-        const mergeButton = $(`<div class="control-icon" data-action="merge-tiles"><i class="fas fa-object-group" title="Merge Tiles"></i></div>`);
-
-        mergeButton.on("click", (e) => {
-            e.stopPropagation();
-            autoMergeTiles(canvas.tiles.controlled, false);
-        });
-        hud.element.find(`div[data-action="locked"]`).before(mergeButton);
-    } else if(isMerged) { 
-        const unmergeButton = $(`<div class="control-icon" data-action="unmerge-tiles"><i class="fas fa-object-ungroup" title="Unmerge Tiles"></i></div>`);
-
-        unmergeButton.on("click", (e) => {
-            e.stopPropagation();
-            unmergeTiles(canvas.tiles.controlled);
-        });
-        hud.element.find(`div[data-action="locked"]`).before(unmergeButton);
-    }
-
-    if (!tile3d?.isAnimated) return;
-
-    const images = {
-        pause: "fa-play",
-        play: "fa-pause",
-    };
-
-    const isPaused = tile3d.isPaused;
-
-    const controlButton = $(`
-    <div class="control-icon" data-action="play-pause-3d">
-        <i class="fas ${isPaused ? images.pause : images.play}" title="Overhead Tile"></i>
-    </div>
-    `);
-
-    controlButton.on("click", (e) => {
-        e.stopPropagation();
-        hud.object.document.setFlag("levels-3d-preview", "paused", !hud.object.document.getFlag("levels-3d-preview", "paused"));
-        controlButton.find("i").toggleClass(`${images.play} ${images.pause}`);
-    });
-
-    hud.element.find(`div[data-action="locked"]`).before(controlButton);
-});
-
-Hooks.on("controlTile", (tile, controlled) => {
-    if (!game.Levels3DPreview?._active || !game.user.isGM) return;
-    Object.values(game.Levels3DPreview.tiles).forEach((tile3d) => {
-        tile3d.updateControls();
-    });
-});
 
 export async function mergeTiles(tileDocuments) {
     const sameSource = tileDocuments.every((td) => td.data.flags["levels-3d-preview"]?.model3d === tileDocuments[0].data.flags["levels-3d-preview"]?.model3d);

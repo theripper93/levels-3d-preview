@@ -1,6 +1,6 @@
 import * as THREE from "../lib/three.module.js";
 import {factor} from '../main.js'; 
-import {sleep} from '../main.js';
+import { sleep } from "../helpers/utils.js";
 
 export class TokenAnimationHandler{
 
