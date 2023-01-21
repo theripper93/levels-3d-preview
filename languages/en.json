@@ -1113,6 +1113,10 @@
                     "verylow": "Very Low"
                 }
             },
+            "dofblur": {
+                "name": "Depth of Field",
+                "hint": "Enable Depth of Field Blur. This will blur the background when the camera is close to a token making it feel like you are at the table. High performance impact."
+            },
             "disableLighting":{
                 "name": "Disable Shadows",
                 "hint": "Disable Shadows for better performance."

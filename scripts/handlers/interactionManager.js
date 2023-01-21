@@ -775,6 +775,17 @@ export class InteractionManager {
         if (!this.draggable) this.controls.enableZoom = true;
     }
 
+    findCameraLookatDistance() {
+        const screenCenter = new THREE.Vector2(0.1, 0);
+        this.raycaster.setFromCamera(screenCenter, this.camera);
+        const intersects = this.raycaster.intersectObjects(this.scene.children, true);
+        if (intersects.length > 0) {
+            return intersects[0].distance
+        } else {
+            return 10;
+        }
+    }
+
     findMouseIntersect(event) {
         this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
         this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;

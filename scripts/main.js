@@ -40,7 +40,8 @@ import { ShaderHandler, shaders } from "./shaders/ShaderLib.js";
 import {DecalGeometry} from "./lib/DecalGeometry.js";
 import {WorkerHandler} from "./helpers/workers.js";
 import { miniCanvas } from "./apps/minicanvas.js";
-import { throttle, sleep } from "./helpers/utils.js";
+import {throttle, sleep} from "./helpers/utils.js";
+import { BokehPass } from "./lib/BokehPass.js";
 
 export const factor = 1000;
 injectFoWShaders(THREE);
@@ -433,6 +434,8 @@ class Levels3DPreview {
 		this.rangeFinderMode = game.settings.get("levels-3d-preview", "rangeFinder");
 		this.composer.removePass(this.renderPass);
 		this.composer.removePass(this.bloomPass);
+		this.composer.removePass(this.bokeh);
+		this.bokeh = null;
 		this.renderPass = new RenderPass(this.scene, this.camera);
 		this.composer.addPass(this.renderPass);
 		this.outline = new OutlineHandler(this);
@@ -451,7 +454,15 @@ class Levels3DPreview {
 		if (canvas.scene.tokenVision && canvas.scene.getFlag("levels-3d-preview", "enableFogOfWar")) this.fogExploration = new Fog(this);
 		try {
 			//this.composer.render();
-		} catch {}
+		} catch { }
+		if (game.settings.get("levels-3d-preview", "dofblur")) {
+			this.bokeh = new BokehPass(this.scene, this.camera, {
+					focus: 1.0,
+					aperture: 0.005,
+					maxblur: 0.01,
+				})
+			this.composer.addPass(this.bokeh);
+		}
 		this._active = true;
 		this.particleSystem?.destroy();
 		if (this.particleSystem) {
@@ -1027,6 +1038,7 @@ class Levels3DPreview {
 					this.fogExploration.updateShaders();
 				}
 			}
+			if (this.bokeh) this.bokeh.uniforms.focus.value = this.interactionManager.findCameraLookatDistance();
 			const tokensArray = Object.values(this.tokens);
 			const length = Math.max(tokensArray.length, 100);
 			const tokenPositionsArray = [new THREE.Vector4(0, 0, 0, tokensArray.length)];

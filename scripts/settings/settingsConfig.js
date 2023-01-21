@@ -497,6 +497,15 @@ Hooks.once('init', function() {
         },
       default: 1,
     });
+  
+    game.settings.register("levels-3d-preview", "dofblur", {
+        name: game.i18n.localize("levels3dpreview.settings.dofblur.name"),
+        hint: game.i18n.localize("levels3dpreview.settings.dofblur.hint"),
+        scope: "client",
+        config: true,
+        type: Boolean,
+        default: false,
+    });
 
     game.settings.register("levels-3d-preview", "debugMode", {
       name: game.i18n.localize("levels3dpreview.settings.debugMode.name"),
