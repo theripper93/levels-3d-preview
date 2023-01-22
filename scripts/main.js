@@ -458,8 +458,8 @@ class Levels3DPreview {
 		if (game.settings.get("levels-3d-preview", "dofblur")) {
 			this.bokeh = new BokehPass(this.scene, this.camera, {
 					focus: 1.0,
-					aperture: 0.005,
-					maxblur: 0.01,
+					aperture: 0.0035,
+					maxblur: 0.005,
 				})
 			this.composer.addPass(this.bokeh);
 		}
@@ -1038,7 +1038,10 @@ class Levels3DPreview {
 					this.fogExploration.updateShaders();
 				}
 			}
-			if (this.bokeh) this.bokeh.uniforms.focus.value = this.interactionManager.findCameraLookatDistance();
+			if (this.bokeh) {
+				const dist = this.interactionManager.findCameraLookatDistance();
+				this.bokeh.uniforms.focus.value = dist;
+			}
 			const tokensArray = Object.values(this.tokens);
 			const length = Math.max(tokensArray.length, 100);
 			const tokenPositionsArray = [new THREE.Vector4(0, 0, 0, tokensArray.length)];

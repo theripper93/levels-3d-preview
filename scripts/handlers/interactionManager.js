@@ -776,9 +776,13 @@ export class InteractionManager {
     }
 
     findCameraLookatDistance() {
-        const screenCenter = new THREE.Vector2(0.1, 0);
+        const screenCenter = new THREE.Vector2(-0.1, +0.1);
         this.raycaster.setFromCamera(screenCenter, this.camera);
-        const intersects = this.raycaster.intersectObjects(this.scene.children, true);
+        const targets = [];
+        this.scene.traverse((c) => { 
+            if(c.visible && !c.material?.transparent) targets.push(c);
+        });
+        const intersects = this.raycaster.intersectObjects(targets);//this._sightCollisions.sight, true);
         if (intersects.length > 0) {
             return intersects[0].distance
         } else {
