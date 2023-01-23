@@ -147,7 +147,25 @@ class Levels3DPreview {
             skybox: {
                 sky: "modules/levels-3d-preview/assets/skybox/humble/humble_bk.jpg",
                 exr: "modules/levels-3d-preview/assets/skybox/venice_sunrise_1k.exr",
-            },
+			},
+			bokeh: {
+				"off": null,
+				"low": {
+					focus: 1.0,
+					aperture: 0.0025,
+					maxblur: 0.002,
+				},
+				"medium": {
+					focus: 1.0,
+					aperture: 0.0035,
+					maxblur: 0.005,
+				},
+				"high": {
+					focus: 1.0,
+					aperture: 0.0025,
+					maxblur: 0.003,
+				},
+			},
             presetMaterials: presetMaterials,
             tokenBase: [
                 {
@@ -257,6 +275,7 @@ class Levels3DPreview {
         };
 		this.UTILS = {
 			autoMergeTiles,
+			debouncedReload: debounce(this.reload.bind(this), 300),
 		};
 
 		Hooks.callAll("3DCanvasConfig", this.CONFIG);
@@ -455,14 +474,11 @@ class Levels3DPreview {
 		try {
 			//this.composer.render();
 		} catch { }
-		if (game.settings.get("levels-3d-preview", "dofblur")) {
-			this.bokeh = new BokehPass(this.scene, this.camera, {
-					focus: 1.0,
-					aperture: 0.0035,
-					maxblur: 0.005,
-				})
-			this.composer.addPass(this.bokeh);
-		}
+		const dofblur = this.CONFIG.bokeh[game.settings.get("levels-3d-preview", "dofblur")];
+		if (dofblur) {
+            this.bokeh = new BokehPass(this.scene, this.camera, dofblur);
+            this.composer.addPass(this.bokeh);
+        }
 		this._active = true;
 		this.particleSystem?.destroy();
 		if (this.particleSystem) {

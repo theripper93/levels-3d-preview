@@ -365,6 +365,7 @@ class MapBrowser extends Application {
         mapCards.forEach((card) => {
             const name = card.dataset.name.toLowerCase();
             const description = card.querySelector("p").innerText.toLowerCase();
+            const author = card.querySelector("span").innerText.toLowerCase();
             const cardpacks = [];
             card.querySelectorAll(".tdc-pack").forEach((p) => {
                 cardpacks.push(p.dataset.pack);
@@ -378,7 +379,7 @@ class MapBrowser extends Application {
                     (card.querySelectorAll(".tdc-pack") ?? []).forEach((t) => (tags += t.innerText.toLowerCase()));
                 } catch (error) {}
     
-                card.style.display = name.includes(search) || description.includes(search) || tags.includes(search) ? "flex" : "none";
+                card.style.display = name.includes(search) || author.includes(search) || description.includes(search) || tags.includes(search) ? "flex" : "none";
             }
         });
     }

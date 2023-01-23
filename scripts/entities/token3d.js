@@ -824,7 +824,7 @@ export class Token3D {
             this.border.remove(child);
         });
 
-        if (this.disableBase) return;
+        if (this.disableBase) return this.setUpProne(true);
 
         this._setupBorderMaterials();
 

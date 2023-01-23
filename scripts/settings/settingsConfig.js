@@ -45,17 +45,18 @@ class canvas3dConfig extends FormApplication{
 
 Hooks.once("canvasConfig", (canvasConfig) => {
   game.settings.register("levels-3d-preview", "resolutionMultiplier", {
-    name: game.i18n.localize("levels3dpreview.settings.resolutionMultiplier.name"),
-    hint: game.i18n.localize("levels3dpreview.settings.resolutionMultiplier.hint"),
-    scope: "client",
-    config: true,
-    type: Number,
-    range: {
-      min: 0.25,
-      max: 2,
-      step: 0.05,
-    },
-    default: 1,
+      name: game.i18n.localize("levels3dpreview.settings.resolutionMultiplier.name"),
+      hint: game.i18n.localize("levels3dpreview.settings.resolutionMultiplier.hint"),
+      scope: "client",
+      config: true,
+      type: Number,
+      range: {
+          min: 0.25,
+          max: 2,
+          step: 0.05,
+      },
+      default: 1,
+      requiresReload: true,
   });
 
   canvasConfig.resolution*=game.settings.get("levels-3d-preview", "resolutionMultiplier");
@@ -342,12 +343,13 @@ Hooks.once('init', function() {
     });
 
     game.settings.register("levels-3d-preview", "enabledamping", {
-      name: game.i18n.localize("levels3dpreview.settings.enabledamping.name"),
-      hint: game.i18n.localize("levels3dpreview.settings.enabledamping.hint"),
-      scope: "client",
-      config: true,
-      type: Boolean,
-      default: true,
+        name: game.i18n.localize("levels3dpreview.settings.enabledamping.name"),
+        hint: game.i18n.localize("levels3dpreview.settings.enabledamping.hint"),
+        scope: "client",
+        config: true,
+        type: Boolean,
+        default: true,
+        onChange: () => game.Levels3DPreview.UTILS.debouncedReload(),
     });
 
     game.settings.register("levels-3d-preview", "loadingShown", {
@@ -422,21 +424,23 @@ Hooks.once('init', function() {
 
 
     game.settings.register("levels-3d-preview", "enableShaders", {
-      name: game.i18n.localize("levels3dpreview.settings.enableShaders.name"),
-      hint: game.i18n.localize("levels3dpreview.settings.enableShaders.hint"),
-      scope: "client",
-      config: true,
-      type: Boolean,
-      default: true,
+        name: game.i18n.localize("levels3dpreview.settings.enableShaders.name"),
+        hint: game.i18n.localize("levels3dpreview.settings.enableShaders.hint"),
+        scope: "client",
+        config: true,
+        type: Boolean,
+        default: true,
+        onChange: () => game.Levels3DPreview.UTILS.debouncedReload(),
     });
 
     game.settings.register("levels-3d-preview", "enableEffects", {
-      name: game.i18n.localize("levels3dpreview.settings.enableEffects.name"),
-      hint: game.i18n.localize("levels3dpreview.settings.enableEffects.hint"),
-      scope: "client",
-      config: true,
-      type: Boolean,
-      default: true,
+        name: game.i18n.localize("levels3dpreview.settings.enableEffects.name"),
+        hint: game.i18n.localize("levels3dpreview.settings.enableEffects.hint"),
+        scope: "client",
+        config: true,
+        type: Boolean,
+        default: true,
+        onChange: () => game.Levels3DPreview.UTILS.debouncedReload(),
     });
 
     game.settings.register("levels-3d-preview", "softShadows", {
@@ -452,50 +456,53 @@ Hooks.once('init', function() {
     });
     
     game.settings.register("levels-3d-preview", "shadowQuality", {
-      name: game.i18n.localize("levels3dpreview.settings.shadowQuality.name"),
-      hint: game.i18n.localize("levels3dpreview.settings.shadowQuality.hint"),
-      scope: "client",
-      config: true,
-      type: Number,
-      choices: {
-          32: game.i18n.localize("levels3dpreview.settings.shadowQuality.options.gamer"),
-          16: game.i18n.localize("levels3dpreview.settings.shadowQuality.options.ultra"),
-          8: game.i18n.localize("levels3dpreview.settings.shadowQuality.options.high"),
-          4: game.i18n.localize("levels3dpreview.settings.shadowQuality.options.medium"),
-          2: game.i18n.localize("levels3dpreview.settings.shadowQuality.options.low"),
-          0: game.i18n.localize("levels3dpreview.settings.shadowQuality.options.none")
+        name: game.i18n.localize("levels3dpreview.settings.shadowQuality.name"),
+        hint: game.i18n.localize("levels3dpreview.settings.shadowQuality.hint"),
+        scope: "client",
+        config: true,
+        type: Number,
+        choices: {
+            32: game.i18n.localize("levels3dpreview.settings.shadowQuality.options.gamer"),
+            16: game.i18n.localize("levels3dpreview.settings.shadowQuality.options.ultra"),
+            8: game.i18n.localize("levels3dpreview.settings.shadowQuality.options.high"),
+            4: game.i18n.localize("levels3dpreview.settings.shadowQuality.options.medium"),
+            2: game.i18n.localize("levels3dpreview.settings.shadowQuality.options.low"),
+            0: game.i18n.localize("levels3dpreview.settings.shadowQuality.options.none"),
         },
-      default: 4,
+        onChange: () => game.Levels3DPreview.UTILS.debouncedReload(),
+        default: 4,
     });
     
     game.settings.register("levels-3d-preview", "antialiasing", {
-      name: game.i18n.localize("levels3dpreview.settings.antialiasing.name"),
-      hint: game.i18n.localize("levels3dpreview.settings.antialiasing.hint"),
-      scope: "client",
-      config: true,
-      type: String,
-      choices: {
-          "none": game.i18n.localize("levels3dpreview.settings.antialiasing.options.none"),
-          "fxaa": game.i18n.localize("levels3dpreview.settings.antialiasing.options.fxaa"),
-          "smaa": game.i18n.localize("levels3dpreview.settings.antialiasing.options.smaa"),
+        name: game.i18n.localize("levels3dpreview.settings.antialiasing.name"),
+        hint: game.i18n.localize("levels3dpreview.settings.antialiasing.hint"),
+        scope: "client",
+        config: true,
+        type: String,
+        choices: {
+            none: game.i18n.localize("levels3dpreview.settings.antialiasing.options.none"),
+            fxaa: game.i18n.localize("levels3dpreview.settings.antialiasing.options.fxaa"),
+            smaa: game.i18n.localize("levels3dpreview.settings.antialiasing.options.smaa"),
         },
-      default: "fxaa",
+        onChange: () => game.Levels3DPreview.UTILS.debouncedReload(),
+        default: "fxaa",
     });
 
     game.settings.register("levels-3d-preview", "fowQuality", {
-      name: game.i18n.localize("levels3dpreview.settings.fowQuality.name"),
-      hint: game.i18n.localize("levels3dpreview.settings.fowQuality.hint"),
-      scope: "client",
-      config: true,
-      type: Number,
-      choices: {
-          1: game.i18n.localize("levels3dpreview.settings.fowQuality.options.native"),
-          0.75: game.i18n.localize("levels3dpreview.settings.fowQuality.options.high"),
-          0.5: game.i18n.localize("levels3dpreview.settings.fowQuality.options.medium"),
-          0.25: game.i18n.localize("levels3dpreview.settings.fowQuality.options.low"),
-          0.1: game.i18n.localize("levels3dpreview.settings.fowQuality.options.verylow")
+        name: game.i18n.localize("levels3dpreview.settings.fowQuality.name"),
+        hint: game.i18n.localize("levels3dpreview.settings.fowQuality.hint"),
+        scope: "client",
+        config: true,
+        type: Number,
+        choices: {
+            1: game.i18n.localize("levels3dpreview.settings.fowQuality.options.native"),
+            0.75: game.i18n.localize("levels3dpreview.settings.fowQuality.options.high"),
+            0.5: game.i18n.localize("levels3dpreview.settings.fowQuality.options.medium"),
+            0.25: game.i18n.localize("levels3dpreview.settings.fowQuality.options.low"),
+            0.1: game.i18n.localize("levels3dpreview.settings.fowQuality.options.verylow"),
         },
-      default: 1,
+        onChange: () => game.Levels3DPreview.UTILS.debouncedReload(),
+        default: 1,
     });
   
     game.settings.register("levels-3d-preview", "dofblur", {
@@ -503,7 +510,14 @@ Hooks.once('init', function() {
         hint: game.i18n.localize("levels3dpreview.settings.dofblur.hint"),
         scope: "client",
         config: true,
-        type: Boolean,
+      type: String,
+      choices: {
+        "off": game.i18n.localize("levels3dpreview.settings.dofblur.options.off"),
+        "low": game.i18n.localize("levels3dpreview.settings.dofblur.options.low"),
+        "medium": game.i18n.localize("levels3dpreview.settings.dofblur.options.medium"),
+        "high": game.i18n.localize("levels3dpreview.settings.dofblur.options.high"),
+      },
+      onChange: () => game.Levels3DPreview.UTILS.debouncedReload(),
         default: false,
     });
 

@@ -8,7 +8,7 @@ export class WorkerHandler {
     }
 
     get enabled() { 
-        return game.Levels3DPreview?.CONFIG?.useMultithreading;
+        return (game.Levels3DPreview?.CONFIG?.useMultithreading && game.Levels3DPreview?.object3dSight && game.Levels3DPreview?.fogExploration);
     }
 
     initRaycastWorker() {
@@ -79,7 +79,7 @@ export class WorkerHandler {
     }
 
     clearMeshes() {
-        if(!this.enabled) return;
+        if (!this.raycastWorker) return;
         this.raycastWorker.port.postMessage({ type: "clear" });
         this.callbacks = {};
         this._lastResults = {};
