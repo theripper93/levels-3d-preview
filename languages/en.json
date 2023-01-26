@@ -1425,6 +1425,7 @@
                 "name": "Overlay",
                 "description": "Texture Overlay. Requires a texture to be set. Use 'Multiply Blending' for textures with white background, 'Black Blending' for textures with black background.",
                 "textureDiffuse": "Texture",
+                "coveragePercent": "Coverage Percentage",
                 "color": "Color",
                 "strength": "Strength",
                 "repeat": "Repeat",

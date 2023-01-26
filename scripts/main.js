@@ -147,25 +147,25 @@ class Levels3DPreview {
             skybox: {
                 sky: "modules/levels-3d-preview/assets/skybox/humble/humble_bk.jpg",
                 exr: "modules/levels-3d-preview/assets/skybox/venice_sunrise_1k.exr",
-			},
-			bokeh: {
-				"off": null,
-				"low": {
-					focus: 1.0,
-					aperture: 0.0025,
-					maxblur: 0.002,
-				},
-				"medium": {
-					focus: 1.0,
-					aperture: 0.0035,
-					maxblur: 0.005,
-				},
-				"high": {
-					focus: 1.0,
-					aperture: 0.0025,
-					maxblur: 0.003,
-				},
-			},
+            },
+            bokeh: {
+                off: null,
+                low: {
+                    focus: 1.0,
+                    aperture: 0.0025,
+                    maxblur: 0.002,
+                },
+                medium: {
+                    focus: 1.0,
+                    aperture: 0.0035,
+                    maxblur: 0.005,
+                },
+                high: {
+                    focus: 1.0,
+                    aperture: 0.0025,
+                    maxblur: 0.003,
+                },
+            },
             presetMaterials: presetMaterials,
             tokenBase: [
                 {
@@ -272,6 +272,13 @@ class Levels3DPreview {
                     scale: 0.9,
                 },
             ],
+            models: {
+                targetIndicator: "modules/levels-3d-preview/assets/targetIndicator.fbx",
+                effect: "modules/levels-3d-preview/assets/effect.glb",
+			},
+			textures: {
+				reticule: "modules/levels-3d-preview/assets/animatedreticule.webm",
+			}
         };
 		this.UTILS = {
 			autoMergeTiles,
@@ -403,14 +410,14 @@ class Levels3DPreview {
 
 	async cacheModels() {
 		this.presetMaterialHandler = new PresetMaterialHandler(this.CONFIG.presetMaterials);
-		this.models.target = await (await this.helpers.loadModel("modules/levels-3d-preview/assets/targetIndicator.fbx")).model;
+		this.models.target = await (await this.helpers.loadModel(this.CONFIG.models.targetIndicator)).model;
 		this.models.target.children[0].material = new THREE.MeshBasicMaterial();
-		this.models.effect = await (await this.helpers.loadModel("modules/levels-3d-preview/assets/effect.glb")).model;
+		this.models.effect = await (await this.helpers.loadModel(this.CONFIG.models.effect)).model;
 		const box3 = new THREE.Box3().setFromObject(this.models.effect);
 		//scale model to make it 1x1x1
 		this.models.effect.scale.multiplyScalar(1 / Math.max(box3.max.x - box3.min.x, box3.max.y - box3.min.y, box3.max.z - box3.min.z));
 		//load targeting reticule
-		const tex = await this.helpers.loadTexture("modules/levels-3d-preview/assets/animatedreticule.webm");
+		const tex = await this.helpers.loadTexture(this.CONFIG.textures.reticule);
 		const reticule = new THREE.Sprite(
 			new THREE.SpriteMaterial({
 				map: tex,
@@ -1768,4 +1775,3 @@ function updateTokenRotationCamera(token) {
 const updateTokenRotationCameraThrottle = throttle(updateTokenRotationCamera, 500);
 
 //javascript:(function(){var script=document.createElement('script');script.onload=function(){var stats=new Stats();document.body.appendChild(stats.dom);requestAnimationFrame(function loop(){stats.update();requestAnimationFrame(loop)});};script.src='//mrdoob.github.io/stats.js/build/stats.min.js';document.head.appendChild(script);})()
-

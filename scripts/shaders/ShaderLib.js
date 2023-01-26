@@ -1413,6 +1413,12 @@ export const shaders = {
                 max: 1,
                 min: 0,
             },
+            coveragePercent: {
+                type: "float",
+                default: 1,
+                max: 1,
+                min: 0,
+            },
             repeat: {
                 type: "float",
                 default: 1,
@@ -1430,14 +1436,34 @@ export const shaders = {
                 default: false,
             },
         },
-        varying: {},
-        vertexShader: [],
+        varying: {
+            height_percent: {
+                type: "float",
+            },
+        },
+        vertexShader: [
+            {
+                mode: SHADERS_CONSTS.APPEND,
+                injectionPoint: "#include <begin_vertex>",
+                shaderCode: `
+                float currentY = (modelMatrix * vec4( transformed, 1.0 )).y;
+                float currentYDelta = (currentY - yPos) / mDepth;
+                overlay_height_percent = clamp(currentYDelta, 0.0, 1.0);
+                `,
+            },
+        ],
         fragmentShader: [
             {
                 mode: SHADERS_CONSTS.APPEND,
-                injectionPoint: "#include <dithering_fragment>",
+                injectionPoint: "#include <map_fragment>",
                 shaderCode: `
                 #ifdef USE_UV
+                float percent = textureGradient_height_percent;
+                if(percent < (overlay_coveragePercent + 0.05)){
+                float strength = overlay_strength;
+                if(percent > (overlay_coveragePercent)){
+                    strength *= (1.0 - (percent - overlay_coveragePercent) * 20.0);
+                }
                 vec2 overlay_vUv = vec2(vUv.x, vUv.y) * (overlay_repeat);
                 vec4 overlayTexture = texture( overlay_textureDiffuse, overlay_vUv );
                 if(overlay_black_alpha && overlayTexture.rgb == vec3(0.0)){}
@@ -1447,15 +1473,17 @@ export const shaders = {
                     black_alpha = clamp(black_alpha, 0.0, 1.0);
                     if(overlay_add_blend){
                         overlayTexture.rgb *= overlay_color;
-                        gl_FragColor += overlayTexture*overlay_strength*black_alpha; //mix( gl_FragColor, overlayTexture, overlay_strength );
+                        texelColor += overlayTexture*strength*black_alpha;
                     }else if(overlay_mult_blend){
                         overlayTexture.rgb *= overlay_color;
-                        gl_FragColor *= overlayTexture*overlay_strength*black_alpha;
+                        texelColor *= overlayTexture*strength*black_alpha;
                     }else{
                         overlayTexture.rgb *= overlay_color;
-                        gl_FragColor = mix( gl_FragColor, overlayTexture, overlay_strength*black_alpha*overlayTexture.a );
+                        texelColor = mix( texelColor, overlayTexture, strength*black_alpha*overlayTexture.a );
                     }
 
+                }
+                diffuseColor = texelColor;
                 }
                 #endif
                 `,

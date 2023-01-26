@@ -193,7 +193,7 @@ export class Ruler3D {
         }
         
         const dist = game.Levels3DPreview.camera.position.distanceTo(position);
-        const scale = Math.max(0.5, 1.2/dist)/game.Levels3DPreview.resolutionMulti;
+        const scale = (Math.max(0.5, 1.2/dist)/game.Levels3DPreview.resolutionMulti)//*(canvas.grid.size/100);
         if(element.id == 'levels3d-ruler-text'){
             element.style.fontSize = `${cachedFontSize*scale}px`;
         }else{
