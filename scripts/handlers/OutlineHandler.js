@@ -62,6 +62,11 @@ export class OutlineHandler{
         }
     }
 
+    clearAllOutlines() {
+        this.controlledOutline.selectedObjects = [];
+        this.hoveredOutline.selectedObjects = [];
+    }
+
     static setHooks(){
         setOutlineHooks();
     }
@@ -97,6 +102,18 @@ function setOutlineHooks(){
     Hooks.on("hoverTile", (tile, hovered) => { 
         const object3D = game.Levels3DPreview.tiles[tile.id]?.mesh;
         if(object3D) game.Levels3DPreview.outline.toggleHovered(object3D, hovered && !tile.controlled, 1);
+    });
+
+    Hooks.on("deactivateTilesLayer", () => {
+        setTimeout(() => {
+            game.Levels3DPreview.outline.clearAllOutlines();
+        }, 100);
+    });
+
+    Hooks.on("deactivateTokensLayer", () => {
+        setTimeout(() => {
+            game.Levels3DPreview.outline.clearAllOutlines();
+        }, 100);
     });
 
 }

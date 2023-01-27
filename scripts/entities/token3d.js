@@ -627,11 +627,12 @@ export class Token3D {
 
     updateAnimation() {
         if (!this.mixer) return;
-        const currAction = this.mixer._actions.find((a) => a._clip.uuid == this.mixerAnimations[this.animIndex].uuid);
+        const currAction = this.mixer._actions.find((a) => a.isRunning());
         this.animIndex = this.token.document.getFlag("levels-3d-preview", "animIndex") ?? 0;
         const newAction = this.mixer._actions.find((a) => a._clip.uuid == this.mixerAnimations[this.animIndex].uuid);
         for (let act of this.mixer._actions) {
             if (act != newAction && act != currAction) {
+                act.stop();
                 act.enabled = false;
             }
         }
@@ -639,8 +640,8 @@ export class Token3D {
             if (!this.mixerAnimations[this.animIndex]) {
                 console.error("Animation index out of bounds", this.token);
             } else {
-                this.mixer._actions[this.animIndex].enabled = true;
-                currAction.crossFadeTo(this.mixer._actions[this.animIndex], 0.3).play(); //this.mixer.clipAction( this.mixerAnimations[this.animIndex] ).play();
+                newAction.enabled = true;
+                currAction.crossFadeTo(newAction, 0.3).play(); //this.mixer.clipAction( this.mixerAnimations[this.animIndex] ).play();
             }
         }
     }
