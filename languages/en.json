@@ -650,6 +650,9 @@
             "gap": {
                 "label": "Gap"
             },
+            "tilt": {
+                "label": "Tilt"
+            },
             "tiltX": {
                 "label": "Tilt X"
             },
@@ -1019,6 +1022,10 @@
             "templateEffects": {
                 "name": "Enable Template Effects",
                 "hint": "Automatically apply shaders to templates based on damage type. Currently only dnd5e is supported."
+            },
+            "lightHelpers": {
+                "name": "Enable Light Helpers",
+                "hint": "Enable the light helpers. This will show the light source and the area of effect of the light when in the lighting layer."
             },
             "templateSyle" : {
                 "name": "Template Style",

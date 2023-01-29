@@ -1218,6 +1218,14 @@ Hooks.on("renderAmbientLightConfig", (app,html)=>{
             default: false,
             notes: game.i18n.localize("levels3dpreview.flags.castShadow.notes"),
         },
+        tilt: {
+            type: "range",
+            label: game.i18n.localize("levels3dpreview.flags.tilt.label"),
+            default: 0,
+            min: -90,
+            max: 90,
+            step: 1,
+        },
         partHeader: {
             type: "custom",
             html: `<h3 class="form-header"><i class="fas fa-fire"></i> ${game.i18n.localize("levels3dpreview.flags.lightParticleEffect.header.title")}</h3><p class="notes">${game.i18n.localize("levels3dpreview.flags.lightParticleEffect.header.notes")}</p><div>`,

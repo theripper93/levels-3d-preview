@@ -8,6 +8,7 @@ export class Light3D {
         this.light = light;
         this._parent = parent;
         this.isToken = isToken;
+        this._useHelper = game.user.isGM && game.settings.get("levels-3d-preview", "lightHelpers");
         this.animationFn = () => {};
         if (!this.isToken) {
             this.embeddedName = this.light.document.documentName;
@@ -20,16 +21,6 @@ export class Light3D {
     init() {
         this.noise = new SimplexNoise();
         this.light3d = this.angle != 360 ? new THREE.SpotLight() : new THREE.PointLight();
-        if (this._parent.debugMode) {
-            this.debugSphere = new THREE.Mesh(
-                new THREE.SphereGeometry(5, 32, 32),
-                new THREE.MeshBasicMaterial({
-                    opacity: 0.5,
-                    transparent: true,
-                    wireframe: true,
-                }),
-            );
-        }
         this.mesh = new THREE.Group();
         const shadowRes = game.settings.get("levels-3d-preview", "shadowQuality");
         this.light3d.shadow.bias = -0.035;
@@ -42,9 +33,10 @@ export class Light3D {
             this._parent.scene.add(this.mesh);
             if (game.user.isGM) this.createHandle();
         }
-        if (this._parent.debugMode) {
-            this._parent.scene.add(this.debugSphere);
-        }
+    }
+
+    get useHelper() { 
+        return this._useHelper && !this.isToken;
     }
 
     createHandle() {
@@ -72,6 +64,7 @@ export class Light3D {
     updateHandle() {
         if (!this.dragHandle) return;
         this.dragHandle.visible = canvas.lighting.active;
+        if(this.useHelper) this.lightHelper.visible = canvas.lighting.active && !this.light.document.hidden;
         if (!this.dragHandle.visible) return;
         this.dragHandle.userData.sprite.material.map = this.light.document.hidden ? this._parent.textures.lightOff : this._parent.textures.lightOn;
         this.dragHandle.userData.sprite.material.color.set(this.light.document.hidden ? "#ff0000" : "#ffffff");
@@ -123,6 +116,7 @@ export class Light3D {
 
     refresh() {
         const light = this.light;
+        const tilt = Math.toRadians(light.document.getFlag("levels-3d-preview", "tilt") ?? 0);
         this.particleData = this.getParticleData();
         this.animColors = {
             color1: new THREE.Color(this.particleData.color),
@@ -151,6 +145,7 @@ export class Light3D {
         if (!this.isToken) {
             this.mesh.position.set(position.x, position.y, position.z);
         }
+        this.light3d.position.set(0,0,0);
         this.light3d.color.set(color);
         this.light3d.distance = radius;
         this.light3d.decay = decay;
@@ -165,12 +160,14 @@ export class Light3D {
         };
         if (this.angle != 360) {
             this.light3d.angle = Math.toRadians(this.angle) / 2;
-            const rotationy = -Math.toRadians(this.rotation);
-            const distance = 1;
-            const lx = Math.sin(rotationy) * distance + position.x;
-            const ly = position.y;
-            const lz = Math.cos(rotationy) * distance + position.z;
-            this.light3d.target.position.set(lx, ly, lz);
+            const group = new THREE.Group();
+            const sphere = new THREE.Object3D();
+            group.add(sphere);
+            sphere.position.set(1, 0, 0);
+            group.rotateOnAxis(new THREE.Vector3(0, 0, 1), tilt);
+            group.rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), Math.toRadians(- this.rotation - 90));
+            this.light3d.target.position.copy(sphere.getWorldPosition(new THREE.Vector3()));
+            this.light3d.target.position.add(new THREE.Vector3(position.x, position.y, position.z));
             this.light3d.target.updateMatrixWorld();
         }
         //this.light3d.visible = !this.light.document.hidden && radius != 0;
@@ -180,11 +177,17 @@ export class Light3D {
             this.light3d.intensity = 0;
         }
         this.animationFn = (lightAnimations[this.animationType] ?? lightAnimations.none).bind(this);
+        if (this.useHelper) {            
+            this.mesh.remove(this.lightHelper);
+            this.lightHelper?.dispose();
+            this.lightHelper = this.angle != 360 ? new THREE.SpotLightHelper(this.light3d) : new THREE.PointLightHelper(this.light3d, radius);
+            this.mesh.add(this.lightHelper);
+            this.lightHelper.update();
+            this.lightHelper.matrix = this.light3d.matrix;
+            if (this.angle === 360) this.lightHelper.geometry = new THREE.SphereGeometry(radius, 8, 8);
+            else this.lightHelper.cone.lookAt(this.light3d.target.position)
+        }
         if (this.light.document.getFlag("levels-3d-preview", "enableParticle")) this.initParticle();
-        if (!this.debugSphere) return;
-        this.debugSphere.geometry = new THREE.SphereGeometry(radius, 32, 32);
-        this.debugSphere.position.set(position.x, position.y, position.z);
-        this.debugSphere.material.color.set(color);
     }
 
     update(delta) {
@@ -193,7 +196,6 @@ export class Light3D {
 
     destroy() {
         this._parent.scene.remove(this.mesh);
-        this._parent.scene.remove(this.debugSphere);
         if (this.particleEffectId) Particle3D.stop(this.particleEffectId);
     }
 
