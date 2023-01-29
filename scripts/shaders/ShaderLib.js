@@ -1607,7 +1607,7 @@ export const shaders = {
                 #ifdef USE_UV
                 float percent = textureGradient_height_percent;
                 if(textureGradient_useNormals){
-                    percent = abs(shader_vNormal.y);
+                    percent = max(0.0,shader_vNormal.y);
                 }
                 float blend = textureGradient_smoothing;
                 vec4 finalColor = texelColor;

@@ -64,6 +64,9 @@ Hooks.once("ready", () => {
 
 	try {
 		game.Levels3DPreview = new Levels3DPreview();
+		Object.defineProperty(game, "canvas3D", {
+			get: () => game.Levels3DPreview,
+		});
 	} catch (e) {
 		ui.notifications.error(game.i18n.localize("levels3dpreview.errors.initfailed"));
 		console.error(game.i18n.localize("levels3dpreview.errors.initfailed"), e);
@@ -802,6 +805,9 @@ class Levels3DPreview {
 	makeSkybox(enableFog) {
 		this.setExposure();
 		try {
+			this.scene.background?.dispose?.();
+			this.scene.environment?.dispose?.();
+			this.scene.userData.envRt?.dispose?.();
 			this.scene.background = enableFog ? this.scene.fog.color : new THREE.Color(canvas.scene.backgroundColor ?? 0xffffff);
 			this.scene.environment = null;
 			this.isEXR = false;
@@ -1675,8 +1681,6 @@ Hooks.on("updateScene", (scene, updates) => {
 		"showSceneWalls" in flags ||
 		"showSceneFloors" in flags ||
 		"renderSceneLights" in flags ||
-		"skybox" in flags ||
-		"exr" in flags ||
 		"mirrorLevels" in flags ||
 		"grid" in updates ||
 		"enableFogOfWar" in flags ||
@@ -1691,6 +1695,7 @@ Hooks.on("updateScene", (scene, updates) => {
 			break;
 		}
 	}
+	if( "exr" in flags || "skybox" in flags) game.Levels3DPreview.makeSkybox(canvas.scene.getFlag("levels-3d-preview", "enableFog") ?? false);
 	if ("filter" in flags || "filterStrength" in flags || "filterCustom" in flags) {
 		game.Levels3DPreview.setFilters(true);
 	}

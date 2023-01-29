@@ -195,7 +195,7 @@ class ShareMap extends FormApplication {
             title: game.i18n.localize("levels3dpreview.sharing.sharemap.confirm.title"),
             content: game.i18n.localize("levels3dpreview.sharing.sharemap.confirm.content"),
             yes: async () => {
-                const res = await shareMap(formData);
+                const res = await game.Levels3DPreview.sharing.shareMap(formData);
                 if (res.error) return this.displaySubmissionError(res.error, res.status);
                 const sett = game.settings.get("levels-3d-preview", "mapsharingKeys");
                 sett[formData.name || formData.scene.name] = formData.secret;
