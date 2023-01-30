@@ -13,7 +13,7 @@ export class WorkerHandler {
 
     initRaycastWorker() {
         if(!game.settings.get("levels-3d-preview", "useMultithreading")) return;
-        const raycastWorker = new SharedWorker("modules/levels-3d-preview/scripts/helpers/raycastWorker.js", { type: "module" });
+        const raycastWorker = new SharedWorker("/modules/levels-3d-preview/scripts/helpers/raycastWorker.js", { type: "module" });
         this.raycastWorker = raycastWorker;
         raycastWorker.port.onmessageerror = (e) => {
             throw new Error(e);
