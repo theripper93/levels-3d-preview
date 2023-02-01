@@ -1,6 +1,7 @@
 import * as THREE from "../lib/three.module.js";
 import { factor } from "../main.js";
-import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from '../lib/three-mesh-bvh.js';
+import {computeBoundsTree, disposeBoundsTree, acceleratedRaycast} from '../lib/three-mesh-bvh.js';
+import { mergeBufferGeometries } from "../lib/BufferGeometryUtils.js";
 THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
 THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
 THREE.Mesh.prototype.raycast = acceleratedRaycast;
@@ -18,46 +19,13 @@ export class DynaMesh {
 
     async create() {
         const geometry = await this._constructGeometry();
-        let mesh;
-        if (this.type == "billboard") mesh = this._createBillboardMesh(geometry);
-        else if (this.type == "billboard2") mesh = this._createBillboardMeshCross(geometry);
-        else mesh = new THREE.Mesh(geometry, this._material);
+        const mesh = new THREE.Mesh(geometry, this._material);
         mesh.traverse((child) => {
             if (child.isMesh) {
                 child.geometry.computeBoundsTree();
             }
         });
         return mesh;
-    }
-
-    _createBillboardMesh(geometry) {
-        const material = this._material;
-        const mesh1 = new THREE.Mesh(geometry, material);
-        const mesh2 = new THREE.Mesh(geometry, material);
-        const mesh3 = new THREE.Mesh(geometry, material);
-
-        mesh1.rotation.set(0, Math.PI / 3, 0);
-        mesh2.rotation.set(0, 0, 0);
-        mesh3.rotation.set(0, -Math.PI / 3, 0);
-
-        const group = new THREE.Group();
-        group.add(mesh1);
-        group.add(mesh2);
-        group.add(mesh3);
-        return group;
-    }
-
-    _createBillboardMeshCross(geometry) {
-        const material = this._material;
-        const mesh1 = new THREE.Mesh(geometry, material);
-        const mesh2 = new THREE.Mesh(geometry, material);
-
-        mesh1.rotation.set(0, Math.PI / 2, 0);
-
-        const group = new THREE.Group();
-        group.add(mesh1);
-        group.add(mesh2);
-        return group;
     }
 
     _constructGeometry() {
@@ -69,11 +37,22 @@ export class DynaMesh {
     }
 
     _constructbillboard() {
-        return new THREE.PlaneGeometry(this.width, this.height, Math.ceil(this.resolution), Math.ceil(this.resolution));
+        const plane1 = new THREE.PlaneGeometry(this.width, this.height, Math.ceil(this.resolution), Math.ceil(this.resolution));
+        const plane2 = new THREE.PlaneGeometry(this.width, this.height, Math.ceil(this.resolution), Math.ceil(this.resolution));
+        const plane3 = new THREE.PlaneGeometry(this.width, this.height, Math.ceil(this.resolution), Math.ceil(this.resolution));
+        plane1.rotateY(Math.PI / 3);
+        plane2.rotateY(0);
+        plane3.rotateY(-Math.PI / 3);
+        const geometry = mergeBufferGeometries([plane1, plane2, plane3]);
+        return geometry;
     }
 
     _constructbillboard2() {
-        return this._constructbillboard();
+        const plane1 = new THREE.PlaneGeometry(this.width, this.height, Math.ceil(this.resolution), Math.ceil(this.resolution));
+        const plane2 = new THREE.PlaneGeometry(this.width, this.height, Math.ceil(this.resolution), Math.ceil(this.resolution));
+        plane1.rotateY(Math.PI / 2);
+        const geometry = mergeBufferGeometries([plane1, plane2]);
+        return geometry;
     }
 
     _constructbox() {

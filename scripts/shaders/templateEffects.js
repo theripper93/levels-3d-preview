@@ -1,8 +1,11 @@
 export default function initTemplateEffects(){
+    Hooks.callAll("3DCanvasTemplateEffectsInit", shaderData, handlers);
     const handler = handlers[game.system.id]
-    if(handler) Hooks.on("preCreateMeasuredTemplate", (templateDocument) => {
+    if (handler) {
+        Hooks.on("preCreateMeasuredTemplate", (templateDocument) => {
         if(game.settings.get("levels-3d-preview", "templateEffects")) handler(templateDocument)        
-    })
+        })
+    }
 }
 
 const handlers = {

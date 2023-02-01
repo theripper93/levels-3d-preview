@@ -12,8 +12,9 @@ export class WorkerHandler {
     }
 
     initRaycastWorker() {
-        if(!game.settings.get("levels-3d-preview", "useMultithreading")) return;
-        const raycastWorker = new SharedWorker("/modules/levels-3d-preview/scripts/helpers/raycastWorker.js", { type: "module" });
+        if (!game.settings.get("levels-3d-preview", "useMultithreading")) return;
+        const path = window.location.pathname.split("/game")[1] ?? "";
+        const raycastWorker = new SharedWorker(path + "/modules/levels-3d-preview/scripts/helpers/raycastWorker.js", { type: "module" });
         this.raycastWorker = raycastWorker;
         raycastWorker.port.onmessageerror = (e) => {
             throw new Error(e);
