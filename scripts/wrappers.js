@@ -205,12 +205,12 @@ Hooks.once("ready", async function () {
         return Promise.all(promises);
     }
 
-    function pasteObjects(wrapped, ...args) {
-        if (!game.Levels3DPreview?._active) return wrapped(...args);
+    async function pasteObjects(wrapped, ...args) {
+        if (!game.Levels3DPreview?._active) return await wrapped(...args);
         const pos = game.Levels3DPreview.interactionManager.canvas2dMousePosition;
         args[0].x = pos.x;
         args[0].y = pos.y;
-        return wrapped(...args);
+        return await wrapped(...args);
     }
 
     function updateFog(wrapped, ...args) {

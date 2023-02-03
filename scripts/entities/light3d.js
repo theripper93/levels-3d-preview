@@ -21,6 +21,7 @@ export class Light3D {
     init() {
         this.noise = new SimplexNoise();
         this.light3d = this.angle != 360 ? new THREE.SpotLight() : new THREE.PointLight();
+        this.isPointLight = this.angle == 360;
         this.mesh = new THREE.Group();
         const shadowRes = game.settings.get("levels-3d-preview", "shadowQuality");
         this.light3d.shadow.bias = -0.035;
@@ -159,6 +160,7 @@ export class Light3D {
             intensity: alpha,
         };
         if (this.angle != 360) {
+            if(!this.light3d.target) this.light3d.target = new THREE.Object3D();
             this.light3d.angle = Math.toRadians(this.angle) / 2;
             const group = new THREE.Group();
             const sphere = new THREE.Object3D();
@@ -197,6 +199,7 @@ export class Light3D {
     destroy() {
         this._parent.scene.remove(this.mesh);
         if (this.particleEffectId) Particle3D.stop(this.particleEffectId);
+        this.lightHelper?.dispose();
     }
 
     initParticle() {
@@ -341,7 +344,18 @@ export class Light3D {
 
     static setHooks() {
         Hooks.on("updateAmbientLight", (lightDocument) => {
-            if (game.Levels3DPreview?._active) game.Levels3DPreview.lights.sceneLights[lightDocument.id]?.refresh();
+            if (game.Levels3DPreview?._active) {
+                const light3d = game.Levels3DPreview.lights.sceneLights[lightDocument.id];
+                if (!light3d) return;
+                const isDocumentPoint = lightDocument.config.angle === 360;
+                const isLightPoint = light3d.isPointLight;
+                if (isDocumentPoint !== isLightPoint) { 
+                    light3d.destroy();
+                    game.Levels3DPreview.addLight(lightDocument.object);
+                    return;
+                }
+                game.Levels3DPreview.lights.sceneLights[lightDocument.id]?.refresh();
+            }
         });
 
         Hooks.on("createAmbientLight", (lightDocument) => {
@@ -350,6 +364,17 @@ export class Light3D {
 
         Hooks.on("deleteAmbientLight", (lightDocument) => {
             if (game.Levels3DPreview?._active) game.Levels3DPreview.lights.sceneLights[lightDocument.id]?.destroy();
+        });
+
+        Hooks.on("pasteAmbientLight", (copy, data) => {
+            if (game.Levels3DPreview?._active) {
+                const pos = game.Levels3DPreview.interactionManager.canvas2dMousePosition;
+                data.forEach((ld) => {
+                    if (ld.flags?.levels?.rangeBottom === undefined) ld.flags.levels = {rangeBottom: 0, rangeTop: 0};
+                    ld.flags.levels.rangeBottom = pos.z;
+                    ld.flags.levels.rangeTop = pos.z;
+                });
+            }
         });
     }
 }
