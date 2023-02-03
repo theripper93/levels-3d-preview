@@ -919,7 +919,7 @@ class Levels3DPreview {
 		this.scene.environment?.dispose?.();
 		this.scene.userData.envRt?.dispose?.();
 		Object.values(this.tiles).forEach((tile) => {
-			tile.destroy();
+			tile?.destroy();
 		});
 		this.scene.traverse((child) => {
 			if (child.isMesh) {

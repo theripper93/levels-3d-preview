@@ -357,7 +357,7 @@ export class InteractionManager {
             }
         }
         try {
-            const coord3d = this.screen3DtoCanvas2DWithCollision(event);
+            const coord3d = data.coord3d ? Ruler3D.pos3DToCanvas(data.coord3d) : this.screen3DtoCanvas2DWithCollision(event);
             data.x = coord3d.x;
             data.y = coord3d.y;
             data.elevation = coord3d.z;
@@ -392,6 +392,7 @@ export class InteractionManager {
                 model3d: data.texture.src,
                 autoGround: true,
                 autoCenter: autoCenter,
+                ...(data.params || {})
             };
             if (data.type === "Tile") {
                 const object3d = await this._parent.helpers.loadModel(data.texture.src);
@@ -557,6 +558,7 @@ export class InteractionManager {
         if (this.draggable) return;
         this.updateHoverObj();
         const intersect = this.getHoverObject();
+        if(intersect) this._mouseHoverIntersect = intersect;
         const object = intersect?.object;
         //Handle placeable hover event
         if (intersect?.point) {
@@ -889,8 +891,8 @@ export class InteractionManager {
         }
     }
 
-    buildCollisionGeos() {
-        const draggableId = this.draggable?.userData?.entity3D?.token?.id;
+    buildCollisionGeos(dId) {
+        const draggableId = this.draggable?.userData?.entity3D?.token?.id ?? dId;
         const collisionObjects = Object.values(this._parent.tokens)
             .filter((t) => t.collisionPlane && t.token.id != draggableId)
             .map((t) => t.model);
@@ -953,8 +955,8 @@ export class InteractionManager {
         return pos;
     }
 
-    mouseIntersection3DCollision(screenPosition, build = true) {
-        if (build || !this._collisionGeometries || !this._collisionGeometries.length) this.buildCollisionGeos();
+    mouseIntersection3DCollision(screenPosition, build = true, dId = undefined) {
+        if (build || !this._collisionGeometries || !this._collisionGeometries.length) this.buildCollisionGeos(dId);
         let collisionGeometries = this._collisionGeometries;
         if (screenPosition) {
             this.mousemove.x = (screenPosition.x / window.innerWidth) * 2 - 1;
