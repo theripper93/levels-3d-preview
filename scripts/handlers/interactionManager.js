@@ -392,7 +392,7 @@ export class InteractionManager {
                 model3d: data.texture.src,
                 autoGround: true,
                 autoCenter: autoCenter,
-                ...(data.params || {})
+                ...(data.params || {}),
             };
             if (data.type === "Tile") {
                 const object3d = await this._parent.helpers.loadModel(data.texture.src);
@@ -558,7 +558,7 @@ export class InteractionManager {
         if (this.draggable) return;
         this.updateHoverObj();
         const intersect = this.getHoverObject();
-        if(intersect) this._mouseHoverIntersect = intersect;
+        if (intersect) this._mouseHoverIntersect = intersect;
         const object = intersect?.object;
         //Handle placeable hover event
         if (intersect?.point) {
@@ -781,12 +781,12 @@ export class InteractionManager {
         const screenCenter = new THREE.Vector2(-0.1, +0.1);
         this.raycaster.setFromCamera(screenCenter, this.camera);
         const targets = [];
-        this.scene.traverse((c) => { 
-            if(c.visible && !c.material?.transparent) targets.push(c);
+        this.scene.traverse((c) => {
+            if (c.visible && !c.material?.transparent) targets.push(c);
         });
-        const intersects = this.raycaster.intersectObjects(targets);//this._sightCollisions.sight, true);
+        const intersects = this.raycaster.intersectObjects(targets); //this._sightCollisions.sight, true);
         if (intersects.length > 0) {
-            return intersects[0].distance
+            return intersects[0].distance;
         } else {
             return 10;
         }

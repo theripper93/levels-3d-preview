@@ -46,7 +46,7 @@ export class Tile3D {
         } else {
             await this.init();
         }
-        if(this._destroyed) return;
+        if (this._destroyed) return;
         this.initShaders();
         this.setShading();
         this.setSides();
@@ -68,9 +68,9 @@ export class Tile3D {
         return this;
     }
 
-    sendToWorker() { 
+    sendToWorker() {
         if ((!this.sight && !this.hasTags) || !this._parent?.workers?.enabled) return;
-        this.mesh.traverse((o) => { 
+        this.mesh.traverse((o) => {
             o.updateMatrix();
         });
         const mesh = this.mesh;
@@ -1042,7 +1042,7 @@ export class Tile3D {
                 c.geometry.attributes.position.needsUpdate = true;
                 c.geometry.attributes.normal.needsUpdate = true;
             }
-            if(c.computeSmartUVs) c.computeSmartUVs();
+            if (c.computeSmartUVs) c.computeSmartUVs();
         });
     }
 
@@ -1775,7 +1775,7 @@ export async function autoMergeTiles(tiles = canvas.tiles.placeables, skipContro
         mergeTargets[key].push(tile.document);
     }
 
-    Object.values(mergeTargets).forEach((tileDocumentArray) => mergedCount += tileDocumentArray.length - 1);
+    Object.values(mergeTargets).forEach((tileDocumentArray) => (mergedCount += tileDocumentArray.length - 1));
 
     Dialog.confirm({
         title: game.i18n.localize("levels3dpreview.mergeTiles.title"),
@@ -1791,7 +1791,7 @@ export async function autoMergeTiles(tiles = canvas.tiles.placeables, skipContro
         let mergedFinal = 0;
         for (const tileDocumentArray of Object.values(mergeTargets)) {
             if (tileDocumentArray.length < 2) continue;
-            mergedFinal ++;
+            mergedFinal++;
             await mergeTiles(tileDocumentArray);
         }
         if (mergedCount) ui.notifications.info(`Merged ${mergedCount} tiles into ${mergedFinal} tiles.`);
@@ -1810,9 +1810,9 @@ export async function unmergeTile(tile) {
         delete newTileData.flags["levels-3d-preview"].originalDimensions;
         newTileData.width = instance.width * factor;
         newTileData.height = instance.height * factor;
-        newTileData.x = (instance.x * factor) + originalX;
+        newTileData.x = instance.x * factor + originalX;
         newTileData.y = instance.y * factor + originalY;
-        newTileData.flags.levels.rangeBottom = instance.z * factor / (canvas.scene.dimensions.size / canvas.scene.dimensions.distance) + originalZ;
+        newTileData.flags.levels.rangeBottom = (instance.z * factor) / (canvas.scene.dimensions.size / canvas.scene.dimensions.distance) + originalZ;
         newTileData.flags["levels-3d-preview"].depth = instance.depth * factor;
         newTileData.flags["levels-3d-preview"].color = instance.color;
         newTileData.rotation = instance.rotation;
@@ -1824,7 +1824,7 @@ export async function unmergeTile(tile) {
     await tile.delete();
 }
 
-export async function unmergeTiles(tiles = canvas.tiles.placeables) { 
+export async function unmergeTiles(tiles = canvas.tiles.placeables) {
     const unmergeTargets = [];
     let count = 0;
     for (const tile of tiles) {

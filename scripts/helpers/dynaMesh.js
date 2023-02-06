@@ -1,6 +1,6 @@
 import * as THREE from "../lib/three.module.js";
 import { factor } from "../main.js";
-import {computeBoundsTree, disposeBoundsTree, acceleratedRaycast} from '../lib/three-mesh-bvh.js';
+import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from "../lib/three-mesh-bvh.js";
 import { mergeBufferGeometries } from "../lib/BufferGeometryUtils.js";
 THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
 THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;

@@ -36,7 +36,7 @@ export class Light3D {
         }
     }
 
-    get useHelper() { 
+    get useHelper() {
         return this._useHelper && !this.isToken;
     }
 
@@ -65,7 +65,7 @@ export class Light3D {
     updateHandle() {
         if (!this.dragHandle) return;
         this.dragHandle.visible = canvas.lighting.active;
-        if(this.useHelper) this.lightHelper.visible = canvas.lighting.active && !this.light.document.hidden;
+        if (this.useHelper) this.lightHelper.visible = canvas.lighting.active && !this.light.document.hidden;
         if (!this.dragHandle.visible) return;
         this.dragHandle.userData.sprite.material.map = this.light.document.hidden ? this._parent.textures.lightOff : this._parent.textures.lightOn;
         this.dragHandle.userData.sprite.material.color.set(this.light.document.hidden ? "#ff0000" : "#ffffff");
@@ -146,7 +146,7 @@ export class Light3D {
         if (!this.isToken) {
             this.mesh.position.set(position.x, position.y, position.z);
         }
-        this.light3d.position.set(0,0,0);
+        this.light3d.position.set(0, 0, 0);
         this.light3d.color.set(color);
         this.light3d.distance = radius;
         this.light3d.decay = decay;
@@ -160,14 +160,14 @@ export class Light3D {
             intensity: alpha,
         };
         if (this.angle != 360) {
-            if(!this.light3d.target) this.light3d.target = new THREE.Object3D();
+            if (!this.light3d.target) this.light3d.target = new THREE.Object3D();
             this.light3d.angle = Math.toRadians(this.angle) / 2;
             const group = new THREE.Group();
             const sphere = new THREE.Object3D();
             group.add(sphere);
             sphere.position.set(1, 0, 0);
             group.rotateOnAxis(new THREE.Vector3(0, 0, 1), tilt);
-            group.rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), Math.toRadians(- this.rotation - 90));
+            group.rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), Math.toRadians(-this.rotation - 90));
             this.light3d.target.position.copy(sphere.getWorldPosition(new THREE.Vector3()));
             this.light3d.target.position.add(new THREE.Vector3(position.x, position.y, position.z));
             this.light3d.target.updateMatrixWorld();
@@ -179,7 +179,7 @@ export class Light3D {
             this.light3d.intensity = 0;
         }
         this.animationFn = (lightAnimations[this.animationType] ?? lightAnimations.none).bind(this);
-        if (this.useHelper) {            
+        if (this.useHelper) {
             this.mesh.remove(this.lightHelper);
             this.lightHelper?.dispose();
             this.lightHelper = this.angle != 360 ? new THREE.SpotLightHelper(this.light3d) : new THREE.PointLightHelper(this.light3d, radius);
@@ -187,7 +187,7 @@ export class Light3D {
             this.lightHelper.update();
             this.lightHelper.matrix = this.light3d.matrix;
             if (this.angle === 360) this.lightHelper.geometry = new THREE.SphereGeometry(radius, 8, 8);
-            else this.lightHelper.cone.lookAt(this.light3d.target.position)
+            else this.lightHelper.cone.lookAt(this.light3d.target.position);
         }
         if (this.light.document.getFlag("levels-3d-preview", "enableParticle")) this.initParticle();
     }
@@ -349,7 +349,7 @@ export class Light3D {
                 if (!light3d) return;
                 const isDocumentPoint = lightDocument.config.angle === 360;
                 const isLightPoint = light3d.isPointLight;
-                if (isDocumentPoint !== isLightPoint) { 
+                if (isDocumentPoint !== isLightPoint) {
                     light3d.destroy();
                     game.Levels3DPreview.addLight(lightDocument.object);
                     return;
@@ -370,7 +370,7 @@ export class Light3D {
             if (game.Levels3DPreview?._active) {
                 const pos = game.Levels3DPreview.interactionManager.canvas2dMousePosition;
                 data.forEach((ld) => {
-                    if (ld.flags?.levels?.rangeBottom === undefined) ld.flags.levels = {rangeBottom: 0, rangeTop: 0};
+                    if (ld.flags?.levels?.rangeBottom === undefined) ld.flags.levels = { rangeBottom: 0, rangeTop: 0 };
                     ld.flags.levels.rangeBottom = pos.z;
                     ld.flags.levels.rangeTop = pos.z;
                 });

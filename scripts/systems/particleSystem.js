@@ -242,6 +242,13 @@ class ProjectileEffect {
             group.add(model);
             group.up = this._up;
             return group;
+        } else if (game.Levels3DPreview.vfx.isVFX(this.params.sprite)) {
+            const model = (await game.Levels3DPreview.vfx.loadVFX(this.params.sprite)) ?? new THREE.Group();
+            model.rotation.copy(this._rotation);
+            const group = new THREE.Group();
+            group.add(model);
+            group.up = this._up;
+            return group;
         }
         const tex = await game.Levels3DPreview.helpers.loadTexture(this.params.sprite);
         if (tex.image?.currentTime) tex.image.currentTime = 0;

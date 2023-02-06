@@ -9,11 +9,11 @@ export function showSceneReport() {
     let totalInstances = 0;
 
     let ignore = new Set();
-    for (let child of scene.children) { 
+    for (let child of scene.children) {
         if (!child.visible && child instanceof THREE.Object3D) {
             ignore.add(child.uuid);
-            child.traverse((object) => { 
-                if(object instanceof THREE.Mesh) ignore.add(object.uuid);
+            child.traverse((object) => {
+                if (object instanceof THREE.Mesh) ignore.add(object.uuid);
             });
         }
     }
@@ -69,7 +69,7 @@ export function showPerformanceDialog() {
     const report = showSceneReport();
     const dpr = window.devicePixelRatio;
     const resMulti = game.settings.get("levels-3d-preview", "resolutionMultiplier");
-    const dialogData = { GPU:SupportDetails.generateSupportReport().gpu, Resolution:`${window.innerWidth * dpr * resMulti}x${window.innerHeight * dpr * resMulti}`,...report}
+    const dialogData = { GPU: SupportDetails.generateSupportReport().gpu, Resolution: `${window.innerWidth * dpr * resMulti}x${window.innerHeight * dpr * resMulti}`, ...report };
     dialogData["Shared Context"] = game.settings.get("levels-3d-preview", "sharedContext") ? "Yes" : "No";
     dialogData["Multithreading"] = game.settings.get("levels-3d-preview", "useMultithreading") ? "Yes" : "No";
     delete dialogData.color;
