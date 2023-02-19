@@ -8,7 +8,7 @@ export class VFXSystem {
     constructor(parent) {
         this._parent = parent;
         this.system = new QUARKS.BatchedParticleRenderer();
-        this.loader = new QUARKS.QuarksLoader(this.system);
+        this.loader = new QUARKS.QuarksLoader(new THREE.LoadingManager());
         this.loader.setCrossOrigin("");
     }
 
@@ -29,28 +29,25 @@ export class VFXSystem {
     }
 
     async loadVFX(urlOrId) {
-        return new Promise((resolve, reject) => {
             if (vfxCache[urlOrId]) {
-                resolve(this.getClone(urlOrId));
+                return await this.getClone(urlOrId);
             } else {
-                this.loader.load(
-                    urlOrId,
-                    (vfx) => {
-                        vfxCache[urlOrId] = vfx;
-                        resolve(this.getClone(urlOrId));
-                    },
-                    undefined,
-                    (err) => {
-                        resolve(null);
-                    },
-                );
+                vfxCache[urlOrId] = await fetchJsonWithTimeout(urlOrId);
+                return await this.getClone(urlOrId);
             }
-        });
     }
 
     getClone(urlOrId) {
-        const clone = vfxCache[urlOrId].clone();
-        return this.preProcessVFX(clone);
+        return new Promise(async (resolve, reject) => {
+            this.loader.parse(vfxCache[urlOrId], (vfx) => { 
+                vfx.traverse((child) => {
+                    if (child.type === "ParticleEmitter") {
+                        this.system.addSystem(child.system);
+                    }
+                });
+                resolve(this.preProcessVFX(vfx));
+            });
+        });
     }
 
     preProcessVFX(vfx) {
@@ -64,7 +61,7 @@ export class VFXSystem {
         const box = new THREE.Box3().setFromObject(vfx);
         const center = box.getCenter(new THREE.Vector3());
         vfx.position.set(-center.x, -center.y, -center.z);
-        vfx.scale.set(0.1, 0.1, 0.1);
+        vfx.scale.set(gridSize, gridSize, gridSize);
         return vfx;
     }
 }

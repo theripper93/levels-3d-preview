@@ -85,6 +85,19 @@ export class ParticleSystem {
                 if (effect._currentSpeed > 1) {
                     this.effects.delete(effect);
                     if (effect.emitter instanceof THREE.Sprite || effect.emitter instanceof THREE.Object3D) {
+                        /*const pEmitters = [];
+                        effect.emitter.traverse((o) => { 
+                            if (o.type == "ParticleEmitter") {
+                                pEmitters.push(o);
+                            }
+                        });
+                        pEmitters.forEach((e) => {
+                                const system = e.system;
+                                system.duration = 0;
+                                system.autoDestroy = true;
+                                system.looping = false;
+                            system.dispose();
+                        });*/
                         this.scene.remove(effect.emitter);
                         effect.emitter?.dispose?.();
                     } else {

@@ -84,7 +84,7 @@ Hooks.once('init', function() {
         scope: "world",
         config: false,
         type: Boolean,
-        default: false,
+        default: true,
         onChange: (val) => {
             game.Levels3DPreview.CONFIG.useMultithreading = val;
         },
