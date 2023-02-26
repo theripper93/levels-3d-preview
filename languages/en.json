@@ -1358,6 +1358,19 @@
                 "foam": "Highlights",
                 "reflections": "Reflections"
             },
+            "orbit": {
+                "name": "Orbit",
+                "description": "Orbit effect. Give the object a rotation and an orbit, keep in mind the model needs to be a single mesh for best results.",
+                "orbit_speed": "Orbit Speed",
+                "pivot_speed": "Pivot Speed",
+                "radius": "Orbit Radius"
+            },
+            "bounce": {
+                "name": "Bounce",
+                "description": "Bounce effect. Give the object a bounce effect, keep in mind the model needs to be a single mesh for best results..",
+                "speed": "Speed",
+                "strength": "Intensity"
+            },
             "grid": {
                 "name": "Grid",
                 "description": "Project the scene grid on this 3D Object. Only square grids are supported. This shader will use the grid color and opacity set in the scene settings.",

@@ -380,7 +380,7 @@ class Levels3DPreview {
         this.renderer.setClearColor(0x999999, 1);
         this.renderer.shadowMap.type = game.settings.get("levels-3d-preview", "softShadows") ? THREE.PCFSoftShadowMap : THREE.PCFShadowMap;
 
-        //this.renderer.debug.checkShaderErrors = false;
+        this.renderer.debug.checkShaderErrors = false;
 
         //composer
 

@@ -820,6 +820,74 @@ export const shaders = {
             },
         ],
     },
+    orbit: {
+        icon: `<i class="fa-regular fa-planet-ringed"></i>`,
+        uniforms: {
+            orbit_speed: {
+                type: "float",
+                default: 0.1,
+            },
+            radius: {
+                type: "float",
+                default: 1,
+            },
+            pivot_speed: {
+                type: "float",
+                default: 0.1,
+            },
+        },
+        varying: {},
+        vertexShader: [
+            {
+                mode: SHADERS_CONSTS.APPEND,
+                injectionPoint: "#include <begin_vertex>",
+                shaderCode: `
+                    float orbit_timeSpeed = time * orbit_orbit_speed;
+                    float pivot_timeSpeed = time * orbit_pivot_speed;
+                    
+                    mat4 pivot = mat4(
+                        cos(pivot_timeSpeed), 0, sin(pivot_timeSpeed), 0,
+                        0, 1, 0, 0,
+                        -sin(pivot_timeSpeed), 0, cos(pivot_timeSpeed), 0,
+                        0, 0, 0, 1
+                    );
+                    transformed = (pivot * vec4(transformed, 1)).xyz;
+
+                    float radius = orbit_radius;
+                    float x = radius * cos(orbit_timeSpeed) + transformed.x;
+                    float z = radius * sin(orbit_timeSpeed) + transformed.z;
+                    transformed = vec3(x, transformed.y, z);
+                `,
+            },
+        ],
+        fragmentShader: [],
+    },
+    bounce: {
+        icon: `<i class="fa-solid fa-reel"></i>`,
+        uniforms: {
+            speed: {
+                type: "float",
+                default: 0.1,
+            },
+            strength: {
+                type: "float",
+                default: 1,
+            },
+        },
+        varying: {},
+        vertexShader: [
+            {
+                mode: SHADERS_CONSTS.APPEND,
+                injectionPoint: "#include <begin_vertex>",
+                shaderCode: `
+                    float bounce_timeSpeed = time * bounce_speed;
+                    float bounce = sin(bounce_timeSpeed) * bounce_strength;
+                    transformed = vec3(transformed.x, transformed.y + bounce, transformed.z);
+                `,
+            },
+        ],
+        fragmentShader: [],
+    },
     grid: {
         icon: `<i class="fas fa-grid"></i>`,
         uniforms: {
