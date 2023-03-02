@@ -35,6 +35,7 @@ export class Token3D {
         this._baseColor = new THREE.Color(this.baseColor);
         this.forceDrawBars = this.drawBars;
         this.drawBars = debounce(this.drawBars, 100);
+        this.drawHeightIndicator = debounce(this.drawHeightIndicator, 100);
         this.animationHandler = new TokenAnimationHandler(this);
     }
 
@@ -479,68 +480,6 @@ export class Token3D {
         return true;
     }
 
-    _old_setPosition(lerp = false, forcePosition) {
-        const currentPosition = {
-            x: Math.round(this.mesh.position.x * 1000) / 1000,
-            y: Math.round(this.mesh.position.y * 1000) / 1000,
-            z: Math.round(this.mesh.position.z * 1000) / 1000,
-        };
-        const currentRotation = {
-            x: Math.round(this.mesh.rotation._x * 1000) / 1000,
-            y: Math.round(this.mesh.rotation._y * 1000) / 1000,
-            z: Math.round(this.mesh.rotation._z * 1000) / 1000,
-        };
-        const mesh = this.mesh;
-        const token = this.token;
-        const tokenCenter = {
-            x: (forcePosition?.x ?? token.document.x) + token.w / 2,
-            y: (forcePosition?.y ?? token.document.y) + token.h / 2,
-        };
-        if (!mesh) return;
-        const f = this.factor;
-        const x = tokenCenter.x / f;
-        const z = tokenCenter.y / f;
-        let y;
-        if (this.isModel) {
-            y = (token.document.elevation * canvas.scene.dimensions.size) / canvas.dimensions.distance / f;
-        } else {
-            y = ((token.document.elevation + (token.losHeight - token.document.elevation) / 2) * canvas.scene.dimensions.size) / canvas.dimensions.distance / f;
-        }
-
-        if (!lerp) mesh.position.set(x, y, z);
-        else mesh.position.lerp(new THREE.Vector3(x, y, z), lerp);
-        const rotations = {
-            x: 0,
-            y: -Math.toRadians(token.document.rotation),
-            z: 0,
-        };
-        let toLerp = rotations;
-        if (!lerp) mesh.rotation.set(rotations.x, rotations.y, rotations.z);
-        else {
-            toLerp = new THREE.Quaternion().setFromEuler(mesh.rotation);
-            toLerp.slerp(new THREE.Quaternion().setFromEuler(new THREE.Euler().setFromVector3(rotations)), 0.1);
-            mesh.rotation.setFromQuaternion(toLerp);
-        }
-        this.elevation3d = y;
-        if (this.border && !this.rotateIndicator) {
-            this.border.rotation.set(-toLerp.x, -toLerp.y, -toLerp.z);
-        }
-        if (this.light && this.token.document.light.angle != 360) {
-            const rotationy = rotations.y;
-            const distance = 1;
-            const lx = Math.sin(rotationy) * distance + x;
-            const ly = y + this.d / 2;
-            const lz = Math.cos(rotationy) * distance + z;
-            this.light.light3d.target.position.set(lx, ly, lz);
-            this.light.light3d.target.updateMatrixWorld();
-        }
-        if (currentPosition.x === x && currentPosition.y === y && currentPosition.z === z && currentRotation.x === Math.round(rotations.x * 1000) / 1000 && currentRotation.y === Math.round(rotations.y * 1000) / 1000 && currentRotation.z === Math.round(rotations.z * 1000) / 1000) {
-            return false;
-        } else {
-            return true;
-        }
-    }
-
     setPosition(lerp = false, forcePosition) {
         const currentPosition = {
             x: Math.round(this.mesh.position.x * 1000) / 1000,
@@ -623,6 +562,7 @@ export class Token3D {
         this.drawEffects();
         this.refreshBorder();
         this.setReticule();
+        this.drawHeightIndicator();
     }
 
     updateAnimation() {
@@ -687,6 +627,62 @@ export class Token3D {
         this.reticule.userData.noIntersect = true;
     }
 
+    drawHeightIndicator() {
+        if (this.heightIndicator) this.mesh.remove(this.heightIndicator);
+        if (!this.token.controlled && !this.token.hover) return;
+        const pos = this.mesh.position.clone();
+        const targetPos = this.mesh.position.clone();
+        targetPos.y = -100000;
+        const collision = game.Levels3DPreview.interactionManager.computeSightCollisionFrom3DPositions(pos, targetPos, "collision", true, true, false, true);
+        if (collision[0] && collision[0].distance < 0.1) return;
+        const grid = canvas.dimensions.size / factor;
+        const heightIndicatorGroup = new THREE.Group();
+        const height = collision ? collision[0].distance : 0;
+        const indicatorGeometry = new THREE.CylinderGeometry(0.001, 0.001, height, 4);
+        indicatorGeometry.translate(0, -height / 2, 0);
+        const indicatorMaterial = heightHighlightShaderMaterial.clone();
+        const color = this.getHeightIndicatorColor();
+        indicatorMaterial.uniforms.curvecolor.value = color;
+        indicatorMaterial.uniforms.gridSize.value = grid;
+        this.heightIndicator = heightIndicatorGroup;
+        const indicatorMesh = new THREE.Mesh(indicatorGeometry, indicatorMaterial);
+        this.heightIndicator.add(indicatorMesh);
+        const radialMaterial = radialHighlightShaderMaterial.clone();
+                radialMaterial.uniforms.curvecolor.value = color;
+                radialMaterial.uniforms.gridSize.value = grid;
+        const baseGeometry = new THREE.CylinderGeometry(grid / 2, grid / 2, 0.01, 16);
+        const baseMesh = new THREE.Mesh(baseGeometry, radialMaterial);
+        baseMesh.position.y = -height;
+        this.heightIndicator.add(baseMesh);
+
+        const diamondGeometry = new THREE.OctahedronGeometry(0.01, 0);
+        const diamondMaterial = radialMaterial.clone();
+        diamondMaterial.uniforms.gridSize.value = 0.02;
+        diamondMaterial.uniforms.reverseGradient.value = true;
+        const diamondMesh = new THREE.Mesh(diamondGeometry, diamondMaterial);
+        const count = parseInt(height / grid);
+        for (let i = 0; i < count; i++) {
+            const diamond = diamondMesh.clone();
+            diamond.position.y = -height + grid * (i + 1);
+            this.heightIndicator.add(diamond);
+        }
+
+        this.heightIndicator.visible = true;
+        this.mesh.add(this.heightIndicator);
+    }
+
+    getHeightIndicatorColor() {
+        const disposition = this.token.document.disposition;
+        let disp = "NEUTRAL";
+        for (const [k, v] of Object.entries(CONST.TOKEN_DISPOSITIONS)) {
+            if (v === disposition) {
+                disp = k;
+            }
+        }
+        const color = CONFIG.Canvas.dispositionColors[disp];
+        return new THREE.Color(color);
+    }
+
     get isTokenProne() {
         const token = this.token;
         switch (game.system.id) {
@@ -746,7 +742,8 @@ export class Token3D {
         if (!this.effectsContainer) return;
         this.updateHiden();
         const oldProne = this.isProne ? true : false;
-        this.isProne = this.token?.actor?.effects.some((e) => e.getFlag("core", "statusId") === CONFIG.specialStatusEffects.DEFEATED) || this.isTokenProne ? true : false;
+        const defeated = this.token?.actor?.effects.some((e) => e.getFlag("core", "statusId") === CONFIG.specialStatusEffects.DEFEATED) || this.token?.combatant?.defeated;
+        this.isProne = defeated || this.isTokenProne ? true : false;
         if (oldProne !== this.isProne) this.toggleProne();
         const tokenEffects = this.token.document.effects;
         const actorEffects = this.token.actor?.temporaryEffects || [];
@@ -1159,6 +1156,7 @@ export class Token3D {
     }
 
     updateVisibility() {
+        if(this.heightIndicator) this.heightIndicator.rotation.y += 0.01;
         if (!this._loaded || !this.mesh || !this.nameplate) return;
         this.mesh.visible = this.alwaysVisible || this.token.visible;
         this.nameplate.visible = this.token.nameplate?.visible;
@@ -1440,3 +1438,89 @@ export class Token3D {
         });
     }
 }
+
+
+
+const heightHighlightShaderMaterial = new THREE.ShaderMaterial({
+    transparent: true,
+    depthWrite: false,
+    uniforms: {
+        curvecolor: {
+            value: new THREE.Color(0x00ff00),
+        },
+        gridSize: {
+            value: 0.1,
+        }
+    },
+    varying: {
+        vPosition: { value: new THREE.Vector3() },
+    },
+    vertexShader: `
+
+varying vec2 vUv; 
+varying vec3 vPosition;
+    void main() {
+    vUv = uv;
+    vPosition = position;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+    }
+`,
+    fragmentShader: `
+    
+varying vec2 vUv;
+uniform vec3 curvecolor;
+uniform float gridSize;
+varying vec3 vPosition;
+    
+    void main() {     
+    float multiple = vPosition.y / gridSize;
+    bool isEven = int(multiple) % 2 == 0;
+    gl_FragColor = vec4(curvecolor.x, curvecolor.y, curvecolor.z , isEven ? 0.5 : 1.0);
+    
+}
+`,
+});
+
+const radialHighlightShaderMaterial = new THREE.ShaderMaterial({
+    transparent: true,
+    depthWrite: false,
+    uniforms: {
+        curvecolor: {
+            value: new THREE.Color(0x00ff00),
+        },
+        gridSize: {
+            value: 0.1,
+        },
+        reverseGradient: {
+            value: false,
+        },
+    },
+    varying: {
+        vPosition: { value: new THREE.Vector3() },
+    },
+    vertexShader: `
+
+varying vec2 vUv; 
+varying vec3 vPosition;
+    void main() {
+    vUv = uv;
+    vPosition = position;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+    }
+`,
+    fragmentShader: `
+    
+varying vec2 vUv;
+uniform vec3 curvecolor;
+uniform float gridSize;
+uniform bool reverseGradient;
+varying vec3 vPosition;
+    
+    void main() {     
+    float distanceFromCenter = length(vPosition);
+    float radius = gridSize / 2.0;
+    gl_FragColor = vec4(curvecolor.x, curvecolor.y, curvecolor.z , reverseGradient ? (distanceFromCenter / radius) : 1.0-(distanceFromCenter / radius));
+    
+}
+`,
+});
