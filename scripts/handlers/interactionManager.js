@@ -93,6 +93,7 @@ export class InteractionManager {
             }
         }
         for (let wall of walls) {
+            if(!wall?.placeable) continue;
             if (wall.placeable.isDoor && wall.placeable.document.ds === CONST.WALL_DOOR_STATES.OPEN) continue;
             if (!wall.mesh?.visible && wall.isDisabledVisible === true) continue;
             if (wall.placeable.document.sight >= 10) sightObjects.push(wall.mesh);

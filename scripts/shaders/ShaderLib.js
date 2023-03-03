@@ -1326,6 +1326,78 @@ export const shaders = {
             },
         ],
     },
+    colorswap: {
+        icon: `<i class="fa-solid fa-fill-drip"></i>`,
+        uniforms: {
+            sourceColor1: {
+                type: "vec3",
+                default: "#ff0000",
+            },
+            targetColor1: {
+                type: "vec3",
+                default: "#0000ff",
+            },
+            threshold1: {
+                type: "float",
+                default: 0.4,
+                min: 0,
+                max: 1,
+            },
+            sourceColor2: {
+                type: "vec3",
+                default: "#ff0000",
+            },
+            targetColor2: {
+                type: "vec3",
+                default: "#0000ff",
+            },
+            threshold2: {
+                type: "float",
+                default: 0,
+                min: 0,
+                max: 1,
+            },
+            sourceColor3: {
+                type: "vec3",
+                default: "#ff0000",
+            },
+            targetColor3: {
+                type: "vec3",
+                default: "#0000ff",
+            },
+            threshold3: {
+                type: "float",
+                default: 0,
+                min: 0,
+                max: 1,
+            },
+        },
+        varying: {},
+        vertexShader: [],
+        fragmentShader: [
+            {
+                mode: SHADERS_CONSTS.APPEND,
+                injectionPoint: "#include <map_fragment>",
+                shaderCode: `
+                if(colorswap_threshold1 > 0.0 && distance(texelColor.rgb, colorswap_sourceColor1.rgb) < colorswap_threshold1*1.732){
+                    float gray = 0.21 * texelColor.r + 0.71 * texelColor.g + 0.07 * texelColor.b;
+                    texelColor = vec4(gray * colorswap_targetColor1, texelColor.a);
+                    diffuseColor = texelColor;
+                }
+                else if(colorswap_threshold2 > 0.0 && distance(texelColor.rgb, colorswap_sourceColor2.rgb) < colorswap_threshold2*1.732){
+                    float gray = 0.21 * texelColor.r + 0.71 * texelColor.g + 0.07 * texelColor.b;
+                    texelColor = vec4(gray * colorswap_targetColor2, texelColor.a);
+                    diffuseColor = texelColor;
+                }
+                else if(colorswap_threshold3 > 0.0 && distance(texelColor.rgb, colorswap_sourceColor3.rgb) < colorswap_threshold3*1.732){
+                    float gray = 0.21 * texelColor.r + 0.71 * texelColor.g + 0.07 * texelColor.b;
+                    texelColor = vec4(gray * colorswap_targetColor3, texelColor.a);
+                    diffuseColor = texelColor;
+                }
+                `,
+            },
+        ],
+    },
     triplanar: {
         icon: `<i class="fas fa-cube"></i>`,
         uniforms: {

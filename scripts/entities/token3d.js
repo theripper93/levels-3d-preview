@@ -3,7 +3,8 @@ import { factor } from "../main.js";
 import { sleep } from "../helpers/utils.js";
 import { Light3D } from "./light3d.js";
 import { TokenAnimationHandler } from "../handlers/tokenAnimationHandler.js";
-import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from "../lib/three-mesh-bvh.js";
+import {computeBoundsTree, disposeBoundsTree, acceleratedRaycast} from "../lib/three-mesh-bvh.js";
+import { heightHighlightShaderMaterial, radialGradientShaderMaterial } from "../shaders/shaderMaterials.js";
 THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
 THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
 THREE.Mesh.prototype.raycast = acceleratedRaycast;
@@ -646,8 +647,10 @@ export class Token3D {
         indicatorMaterial.uniforms.gridSize.value = grid;
         this.heightIndicator = heightIndicatorGroup;
         const indicatorMesh = new THREE.Mesh(indicatorGeometry, indicatorMaterial);
+        indicatorMesh.rotation.x = Math.PI;
+        indicatorMesh.position.y = -height;
         this.heightIndicator.add(indicatorMesh);
-        const radialMaterial = radialHighlightShaderMaterial.clone();
+        const radialMaterial = radialGradientShaderMaterial.clone();
                 radialMaterial.uniforms.curvecolor.value = color;
                 radialMaterial.uniforms.gridSize.value = grid;
         const baseGeometry = new THREE.CylinderGeometry(grid / 2, grid / 2, 0.01, 16);
@@ -1438,89 +1441,3 @@ export class Token3D {
         });
     }
 }
-
-
-
-const heightHighlightShaderMaterial = new THREE.ShaderMaterial({
-    transparent: true,
-    depthWrite: false,
-    uniforms: {
-        curvecolor: {
-            value: new THREE.Color(0x00ff00),
-        },
-        gridSize: {
-            value: 0.1,
-        }
-    },
-    varying: {
-        vPosition: { value: new THREE.Vector3() },
-    },
-    vertexShader: `
-
-varying vec2 vUv; 
-varying vec3 vPosition;
-    void main() {
-    vUv = uv;
-    vPosition = position;
-    gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
-    }
-`,
-    fragmentShader: `
-    
-varying vec2 vUv;
-uniform vec3 curvecolor;
-uniform float gridSize;
-varying vec3 vPosition;
-    
-    void main() {     
-    float multiple = vPosition.y / gridSize;
-    bool isEven = int(multiple) % 2 == 0;
-    gl_FragColor = vec4(curvecolor.x, curvecolor.y, curvecolor.z , isEven ? 0.5 : 1.0);
-    
-}
-`,
-});
-
-const radialHighlightShaderMaterial = new THREE.ShaderMaterial({
-    transparent: true,
-    depthWrite: false,
-    uniforms: {
-        curvecolor: {
-            value: new THREE.Color(0x00ff00),
-        },
-        gridSize: {
-            value: 0.1,
-        },
-        reverseGradient: {
-            value: false,
-        },
-    },
-    varying: {
-        vPosition: { value: new THREE.Vector3() },
-    },
-    vertexShader: `
-
-varying vec2 vUv; 
-varying vec3 vPosition;
-    void main() {
-    vUv = uv;
-    vPosition = position;
-    gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
-    }
-`,
-    fragmentShader: `
-    
-varying vec2 vUv;
-uniform vec3 curvecolor;
-uniform float gridSize;
-uniform bool reverseGradient;
-varying vec3 vPosition;
-    
-    void main() {     
-    float distanceFromCenter = length(vPosition);
-    float radius = gridSize / 2.0;
-    gl_FragColor = vec4(curvecolor.x, curvecolor.y, curvecolor.z , reverseGradient ? (distanceFromCenter / radius) : 1.0-(distanceFromCenter / radius));
-    
-}
-`,
-});

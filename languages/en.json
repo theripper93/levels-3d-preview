@@ -1434,6 +1434,19 @@
                 "flicker" : "Flicker",
                 "animate_range" : "Animation Range"
             },
+            "colorswap": {
+                "name": "Color Swap",
+                "description": "Color swap effect. Swap a color of the model with another color.",
+                "sourceColor1": "Source Color 1",
+                "targetColor1": "Target Color 1",
+                "threshold1": "Threshold 1",
+                "sourceColor2": "Source Color 2",
+                "targetColor2": "Target Color 2",
+                "threshold2": "Threshold 2",
+                "sourceColor3": "Source Color 3",
+                "targetColor3": "Target Color 3",
+            "threshold3": "Threshold 3"
+            },
             "textureRotate": {
                 "name": "Rotate",
                 "description": "Texture rotation effect, requires a texture and some texture repetition to work.",

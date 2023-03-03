@@ -183,5 +183,6 @@ export const noiseShaders = {
     return vec3(color * cosAngle + cross(k, color) * sin(hue) + k * dot(k, color) * (1.0 - cosAngle));
   }
 
-    `
-}
+
+    `,
+};
