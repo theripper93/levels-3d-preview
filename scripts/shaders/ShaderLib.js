@@ -1326,6 +1326,128 @@ export const shaders = {
             },
         ],
     },
+    overlay: {
+        icon: '<i class="fas fa-images"></i>',
+        uniforms: {
+            textureDiffuse: {
+                type: "sampler2D",
+                default: null,
+            },
+            color: {
+                type: "vec3",
+                default: "#ffffff",
+            },
+            strength: {
+                type: "float",
+                default: 1,
+                max: 1,
+                min: 0,
+            },
+            coveragePercent: {
+                type: "float",
+                default: 1,
+                max: 1,
+                min: -1,
+                step: 0.01,
+            },
+            repeat: {
+                type: "float",
+                default: 1,
+            },
+            rotation_angle: {
+                type: "float",
+                default: 0,
+            },
+            offsetX: {
+                type: "float",
+                default: 0,
+            },
+            offsetY: {
+                type: "float",
+                default: 0,
+            },
+            black_alpha: {
+                type: "bool",
+                default: false,
+            },
+            add_blend: {
+                type: "bool",
+                default: false,
+            },
+            mult_blend: {
+                type: "bool",
+                default: false,
+            },
+        },
+        varying: {
+            height_percent: {
+                type: "float",
+            },
+        },
+        vertexShader: [
+            {
+                mode: SHADERS_CONSTS.APPEND,
+                injectionPoint: "#include <begin_vertex>",
+                shaderCode: `
+                float currentY = (modelMatrix * vec4( transformed, 1.0 )).y;
+                float currentYDelta = (currentY - yPos) / mDepth;
+                overlay_height_percent = clamp(currentYDelta, 0.0, 1.0);
+                `,
+            },
+        ],
+        fragmentShader: [
+            {
+                mode: SHADERS_CONSTS.APPEND,
+                injectionPoint: "#include <map_fragment>",
+                shaderCode: `
+                #ifdef USE_UV
+                float percent = textureGradient_height_percent;
+                float absCoverage = abs(overlay_coveragePercent);
+                float inversePercent = 1.0 - percent;
+                if(
+                    (overlay_coveragePercent > 0.0 && percent < (overlay_coveragePercent + 0.05)) ||
+                    (overlay_coveragePercent < 0.0 && inversePercent < (absCoverage + 0.05))
+                ){
+                float strength = overlay_strength;
+                if(overlay_coveragePercent > 0.0 && percent > (overlay_coveragePercent)){
+                    strength *= (1.0 - (percent - overlay_coveragePercent) * 20.0);
+                }
+                if(overlay_coveragePercent < 0.0 && inversePercent > (absCoverage)){
+                    strength *= (1.0 - (inversePercent - absCoverage) * 20.0);
+                }
+                vec2 overlay_vUv = vec2(vUv.x, vUv.y) * (overlay_repeat);
+                overlay_vUv.x += overlay_offsetX;
+                overlay_vUv.y += overlay_offsetY;
+                vec2 rotation_center = vec2(0.5, 0.5);
+                overlay_vUv -= rotation_center;
+                overlay_vUv = mat2(cos(overlay_rotation_angle), -sin(overlay_rotation_angle), sin(overlay_rotation_angle), cos(overlay_rotation_angle)) * overlay_vUv;
+                overlay_vUv += rotation_center;
+
+                vec4 overlayTexture = texture( overlay_textureDiffuse, overlay_vUv );
+                if(overlay_black_alpha && overlayTexture.rgb == vec3(0.0)){}
+                else{
+                    float black_alpha = overlay_black_alpha ? (overlayTexture.r + overlayTexture.g + overlayTexture.b) / 3.0 : 1.0;
+                    if(black_alpha > 0.1) black_alpha *= 3.0;
+                    black_alpha = clamp(black_alpha, 0.0, 1.0);
+                    if(overlay_add_blend){
+                        overlayTexture.rgb *= overlay_color;
+                        texelColor += overlayTexture*strength*black_alpha;
+                    }else if(overlay_mult_blend){
+                        overlayTexture.rgb *= overlay_color;
+                        texelColor *= overlayTexture*strength*black_alpha;
+                    }else{
+                        overlayTexture.rgb *= overlay_color;
+                        texelColor = mix( texelColor, overlayTexture, strength*black_alpha*overlayTexture.a );
+                    }
+
+                }
+                diffuseColor = texelColor;
+                }
+                #endif
+                `,
+            },
+        ],
+    },
     colorswap: {
         icon: `<i class="fa-solid fa-fill-drip"></i>`,
         uniforms: {
@@ -1533,100 +1655,7 @@ export const shaders = {
             },
         ],
     },
-    overlay: {
-        icon: '<i class="fas fa-images"></i>',
-        uniforms: {
-            textureDiffuse: {
-                type: "sampler2D",
-                default: null,
-            },
-            color: {
-                type: "vec3",
-                default: "#ffffff",
-            },
-            strength: {
-                type: "float",
-                default: 1,
-                max: 1,
-                min: 0,
-            },
-            coveragePercent: {
-                type: "float",
-                default: 1,
-                max: 1,
-                min: 0,
-            },
-            repeat: {
-                type: "float",
-                default: 1,
-            },
-            black_alpha: {
-                type: "bool",
-                default: false,
-            },
-            add_blend: {
-                type: "bool",
-                default: false,
-            },
-            mult_blend: {
-                type: "bool",
-                default: false,
-            },
-        },
-        varying: {
-            height_percent: {
-                type: "float",
-            },
-        },
-        vertexShader: [
-            {
-                mode: SHADERS_CONSTS.APPEND,
-                injectionPoint: "#include <begin_vertex>",
-                shaderCode: `
-                float currentY = (modelMatrix * vec4( transformed, 1.0 )).y;
-                float currentYDelta = (currentY - yPos) / mDepth;
-                overlay_height_percent = clamp(currentYDelta, 0.0, 1.0);
-                `,
-            },
-        ],
-        fragmentShader: [
-            {
-                mode: SHADERS_CONSTS.APPEND,
-                injectionPoint: "#include <map_fragment>",
-                shaderCode: `
-                #ifdef USE_UV
-                float percent = textureGradient_height_percent;
-                if(percent < (overlay_coveragePercent + 0.05)){
-                float strength = overlay_strength;
-                if(percent > (overlay_coveragePercent)){
-                    strength *= (1.0 - (percent - overlay_coveragePercent) * 20.0);
-                }
-                vec2 overlay_vUv = vec2(vUv.x, vUv.y) * (overlay_repeat);
-                vec4 overlayTexture = texture( overlay_textureDiffuse, overlay_vUv );
-                if(overlay_black_alpha && overlayTexture.rgb == vec3(0.0)){}
-                else{
-                    float black_alpha = overlay_black_alpha ? (overlayTexture.r + overlayTexture.g + overlayTexture.b) / 3.0 : 1.0;
-                    if(black_alpha > 0.1) black_alpha *= 3.0;
-                    black_alpha = clamp(black_alpha, 0.0, 1.0);
-                    if(overlay_add_blend){
-                        overlayTexture.rgb *= overlay_color;
-                        texelColor += overlayTexture*strength*black_alpha;
-                    }else if(overlay_mult_blend){
-                        overlayTexture.rgb *= overlay_color;
-                        texelColor *= overlayTexture*strength*black_alpha;
-                    }else{
-                        overlayTexture.rgb *= overlay_color;
-                        texelColor = mix( texelColor, overlayTexture, strength*black_alpha*overlayTexture.a );
-                    }
 
-                }
-                diffuseColor = texelColor;
-                }
-                #endif
-                `,
-            },
-        ],
-    },
     textureGradient: {
         icon: '<i class="fa-solid fa-grate-droplet"></i>',
         uniforms: {

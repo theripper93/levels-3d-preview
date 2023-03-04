@@ -9,6 +9,9 @@ THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
 THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
 THREE.Mesh.prototype.raycast = acceleratedRaycast;
 
+const heightHighlightMaterialCache = {};
+const diamondGeometry = new THREE.OctahedronGeometry(0.01, 0);
+
 export class Token3D {
     constructor(tokenDocument, parent) {
         this.token = tokenDocument;
@@ -36,7 +39,7 @@ export class Token3D {
         this._baseColor = new THREE.Color(this.baseColor);
         this.forceDrawBars = this.drawBars;
         this.drawBars = debounce(this.drawBars, 100);
-        this.drawHeightIndicator = debounce(this.drawHeightIndicator, 100);
+        this.drawHeightIndicatorDebounced = debounce(this.drawHeightIndicator, 100);
         this.animationHandler = new TokenAnimationHandler(this);
     }
 
@@ -563,7 +566,7 @@ export class Token3D {
         this.drawEffects();
         this.refreshBorder();
         this.setReticule();
-        this.drawHeightIndicator();
+        this.dispatchDrawHeightIndicator();
     }
 
     updateAnimation() {
@@ -628,40 +631,60 @@ export class Token3D {
         this.reticule.userData.noIntersect = true;
     }
 
+    dispatchDrawHeightIndicator() {
+
+        if (!this.token.controlled && !this.token.hover) {
+            if (this.heightIndicator) {
+                this.mesh.remove(this.heightIndicator);
+            }
+            return;
+        }
+
+        if ((this.heightIndicator?.visible && this.heightIndicator?.parent)) return this.drawHeightIndicatorDebounced();
+        this.drawHeightIndicator();
+    }
+
     drawHeightIndicator() {
-        if (this.heightIndicator) this.mesh.remove(this.heightIndicator);
+        if (this.heightIndicator) {
+            this.mesh.remove(this.heightIndicator);
+        }
         if (!this.token.controlled && !this.token.hover) return;
         const pos = this.mesh.position.clone();
         const targetPos = this.mesh.position.clone();
         targetPos.y = -100000;
         const collision = game.Levels3DPreview.interactionManager.computeSightCollisionFrom3DPositions(pos, targetPos, "collision", true, true, false, true);
         if (collision[0] && collision[0].distance < 0.1) return;
+
         const grid = canvas.dimensions.size / factor;
-        const heightIndicatorGroup = new THREE.Group();
+        const color = this.getHeightIndicatorColor();
         const height = collision ? collision[0].distance : 0;
+        
+        //Create the group
+        const heightIndicatorGroup = new THREE.Group();
+        heightIndicatorGroup.name = "heightIndicator";
+        heightIndicatorGroup.userData.ignoreHover = true;
+        heightIndicatorGroup.userData.interactive = false;
+        heightIndicatorGroup.userData.ignoreIntersect = true;
+
+        //Create the height column
         const indicatorGeometry = new THREE.CylinderGeometry(0.001, 0.001, height, 4);
         indicatorGeometry.translate(0, -height / 2, 0);
-        const indicatorMaterial = heightHighlightShaderMaterial.clone();
-        const color = this.getHeightIndicatorColor();
-        indicatorMaterial.uniforms.curvecolor.value = color;
-        indicatorMaterial.uniforms.gridSize.value = grid;
+        const indicatorMaterial = this.getHeightIndicatorMaterial(color, grid, "height");
         this.heightIndicator = heightIndicatorGroup;
         const indicatorMesh = new THREE.Mesh(indicatorGeometry, indicatorMaterial);
         indicatorMesh.rotation.x = Math.PI;
         indicatorMesh.position.y = -height;
         this.heightIndicator.add(indicatorMesh);
-        const radialMaterial = radialGradientShaderMaterial.clone();
-                radialMaterial.uniforms.curvecolor.value = color;
-                radialMaterial.uniforms.gridSize.value = grid;
+
+        //Create the base
+        const radialMaterial = this.getHeightIndicatorMaterial(color, grid, "base");
         const baseGeometry = new THREE.CylinderGeometry(grid / 2, grid / 2, 0.01, 16);
         const baseMesh = new THREE.Mesh(baseGeometry, radialMaterial);
         baseMesh.position.y = -height;
         this.heightIndicator.add(baseMesh);
 
-        const diamondGeometry = new THREE.OctahedronGeometry(0.01, 0);
-        const diamondMaterial = radialMaterial.clone();
-        diamondMaterial.uniforms.gridSize.value = 0.02;
-        diamondMaterial.uniforms.reverseGradient.value = true;
+        //Create the diamond indicators
+        const diamondMaterial = this.getHeightIndicatorMaterial(color, grid, "diamond");
         const diamondMesh = new THREE.Mesh(diamondGeometry, diamondMaterial);
         const count = parseInt(height / grid);
         for (let i = 0; i < count; i++) {
@@ -670,8 +693,41 @@ export class Token3D {
             this.heightIndicator.add(diamond);
         }
 
+        // Add the group to the mesh
+        this.heightIndicator.traverse((child) => { 
+            child.userData.ignoreHover = true;
+            child.userData.interactive = false;
+            child.userData.ignoreIntersect = true;
+        });
         this.heightIndicator.visible = true;
         this.mesh.add(this.heightIndicator);
+    }
+
+    getHeightIndicatorMaterial(color, grid, type) {
+        const hexColor = color.getHexString();
+        const baseMaterialKey = `${grid}-${hexColor}-${type}`;
+        if (heightHighlightMaterialCache[baseMaterialKey]) return heightHighlightMaterialCache[baseMaterialKey];
+        let material;
+        switch (type) {
+            case "height":
+                material = heightHighlightShaderMaterial.clone();
+                material.uniforms.curvecolor.value = color;
+                material.uniforms.gridSize.value = grid;
+                break;
+            case "base":
+                material = radialGradientShaderMaterial.clone();
+                material.uniforms.curvecolor.value = color;
+                material.uniforms.gridSize.value = grid;
+                break;
+            case "diamond":
+                material = radialGradientShaderMaterial.clone();
+                material.uniforms.curvecolor.value = color;
+                material.uniforms.gridSize.value = 0.02;
+                material.uniforms.reverseGradient.value = true;
+                break;
+        }
+        heightHighlightMaterialCache[baseMaterialKey] = material;
+        return material;
     }
 
     getHeightIndicatorColor() {
@@ -1159,7 +1215,7 @@ export class Token3D {
     }
 
     updateVisibility() {
-        if(this.heightIndicator) this.heightIndicator.rotation.y += 0.01;
+        if (this.heightIndicator) this.heightIndicator.rotation.y += 0.01;
         if (!this._loaded || !this.mesh || !this.nameplate) return;
         this.mesh.visible = this.alwaysVisible || this.token.visible;
         this.nameplate.visible = this.token.nameplate?.visible;

@@ -1462,6 +1462,9 @@
                 "color": "Color",
                 "strength": "Strength",
                 "repeat": "Repeat",
+                "rotation_angle": "Rotation (deg)",
+                "offsetX": "Offset X (UV)",
+                "offsetY": "Offset Y (UV)",
                 "black_alpha": "Black Blending",
                 "add_blend": "Additive Blending",
                 "mult_blend": "Multiply Blending"
