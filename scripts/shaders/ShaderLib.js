@@ -1501,6 +1501,7 @@ export const shaders = {
                 mode: SHADERS_CONSTS.APPEND,
                 injectionPoint: "#include <map_fragment>",
                 shaderCode: `
+                #ifdef USE_UV
                 if(colorswap_threshold1 > 0.0 && distance(texelColor.rgb, colorswap_sourceColor1.rgb) < colorswap_threshold1*1.732){
                     float gray = 0.21 * texelColor.r + 0.71 * texelColor.g + 0.07 * texelColor.b;
                     texelColor = vec4(gray * colorswap_targetColor1, texelColor.a);
@@ -1516,6 +1517,7 @@ export const shaders = {
                     texelColor = vec4(gray * colorswap_targetColor3, texelColor.a);
                     diffuseColor = texelColor;
                 }
+                #endif
                 `,
             },
         ],
