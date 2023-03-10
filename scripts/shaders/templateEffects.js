@@ -19,9 +19,16 @@ const handlers = {
         if(!effect) effect = effects["default"];
         applyEffect(templateDocument, effect)
     },
+    "pf2e": (templateDocument) => { 
+        const effects = shaderData.dnd5e;
+        const damageTypes = templateDocument.flags?.pf2e?.origin?.traits;
+        if(!damageTypes) return;
+        let effect = effects[damageTypes[0]]
+        if(!effect) damageTypes.forEach(type => {if(effects[type]) effect = effects[type]})
+        if(!effect) effect = effects["default"];
+        applyEffect(templateDocument, effect)
+    },
 }
-
-
 
 const shaderData = {
     "dnd5e": {

@@ -17,6 +17,8 @@ Hooks.once("ready", async function () {
 
     if (game.system.id === "dnd5e") libWrapper.register("levels-3d-preview", "game.dnd5e.canvas.AbilityTemplate.prototype.drawPreview", drawPreview, "MIXED");
 
+    if (game.system.id === "pf2e") libWrapper.register("levels-3d-preview", "CONFIG.MeasuredTemplate.objectClass.prototype.drawPreview", drawPreview, "MIXED");
+
     async function showBouncingText(wrapped, ...args) {
         wrapped(...args);
         if (!game.Levels3DPreview?._active || game.settings.get("core", "scrollingStatusText") !== true || !this.visible) return null;
