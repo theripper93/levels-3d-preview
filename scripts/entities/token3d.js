@@ -49,7 +49,7 @@ export class Token3D {
         this.baseColor = this.token.document.getFlag("levels-3d-preview", "baseColor") || game.settings.get("levels-3d-preview", "solidBaseColor");
         if (!this.solidBaseMode || this.solidBaseMode === "default") this.solidBaseMode = game.settings.get("levels-3d-preview", "solidBaseMode");
         this.disableBase = this.token.document.getFlag("levels-3d-preview", "disableBase");
-        this.autoCenter = this.token.document.getFlag("levels-3d-preview", "autoCenter") ?? true;
+        this.autoCenter = this.token.document.getFlag("levels-3d-preview", "autoCenter") ?? false;
         this.shaders = this.token.document.getFlag("levels-3d-preview", "shaders") ?? {};
         this.rotationX = Math.toRadians(this.token.document.getFlag("levels-3d-preview", "rotationX") ?? 0);
         this.rotationY = Math.toRadians(this.token.document.getFlag("levels-3d-preview", "rotationY") ?? 0);
@@ -567,6 +567,15 @@ export class Token3D {
         this.refreshBorder();
         this.setReticule();
         this.dispatchDrawHeightIndicator();
+        this.refreshOutline();
+    }
+
+    refreshOutline() {
+        const object3D = this.model;
+        if(!object3D) return;
+        game.Levels3DPreview.outline.toggleControlled(object3D, this.token.controlled);
+        game.Levels3DPreview.outline.toggleHovered(object3D, this.token.hover && !this.token.controlled, this.token?.document?.disposition);
+   
     }
 
     updateAnimation() {
@@ -653,7 +662,7 @@ export class Token3D {
         const targetPos = this.mesh.position.clone();
         targetPos.y = -100000;
         const collision = game.Levels3DPreview.interactionManager.computeSightCollisionFrom3DPositions(pos, targetPos, "collision", true, true, false, true);
-        if (collision[0] && collision[0].distance < 0.1) return;
+        if (!collision[0] || (collision[0] && collision[0].distance < 0.1)) return;
 
         const grid = canvas.dimensions.size / factor;
         const color = this.getHeightIndicatorColor();

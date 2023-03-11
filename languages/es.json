@@ -745,6 +745,9 @@
             },
             "yScale": {
                 "label": "Escala Y"
+            },
+            "tilt": {
+                "label": "Inclinación"
             }
         },
         "keybindings": {
@@ -850,7 +853,8 @@
         },
         "mergeTiles": {
             "content": "La fusión de mosaicos es una acción irreversible, se sugiere hacer una copia de seguridad de la escena antes de fusionar grandes cantidades de mosaicos.<br>Está a punto de fusionar <strong>%count% mosaicos</strong>. \nEstás seguro de que quieres continuar?",
-            "title": "Combinar mosaicos"
+            "title": "Combinar mosaicos",
+            "occlusionGroup": "- ID de oclusión:"
         },
         "performance": {
             "buttonTooltip": {
@@ -1185,6 +1189,20 @@
             "useMultithreading": {
                 "hint": "Utilice subprocesos múltiples para mejorar el rendimiento de los cálculos de niebla de guerra. \nEsta configuración no tiene efecto si no está utilizando la Niebla de Guerra.",
                 "name": "EXPERIMENTAL: uso de subprocesos múltiples"
+            },
+            "dofblur": {
+                "hint": "Activa el desenfoque de profundidad de campo. \nEsto desenfocará el fondo cuando la cámara esté cerca de una ficha, lo que hará que parezca que estás en la mesa. \nUna configuración más alta significa más desenfoque, el rendimiento no se ve afectado por el nivel de desenfoque. \nPuede tener un alto impacto en el rendimiento cuando está habilitado.",
+                "name": "Profundidad de campo",
+                "options": {
+                    "high": "Alto",
+                    "low": "Bajo",
+                    "medium": "Medio",
+                    "off": "Desactivado"
+                }
+            },
+            "lightHelpers": {
+                "hint": "Habilite los ayudantes de luz. \nEsto mostrará la fuente de luz y el área de efecto de la luz cuando esté en la capa de iluminación.",
+                "name": "Habilitar ayudantes de luz"
             }
         },
         "shaders": {
@@ -1301,7 +1319,11 @@
                 "name": "Cubrir",
                 "repeat": "Repetir",
                 "strength": "Fortaleza",
-                "textureDiffuse": "Textura"
+                "textureDiffuse": "Textura",
+                "coveragePercent": "Porcentaje de cobertura",
+                "offsetX": "Compensación X (UV)",
+                "offsetY": "Compensación Y (UV)",
+                "rotation_angle": "Rotación (grados)"
             },
             "sound": {
                 "chroma": "croma",
@@ -1374,6 +1396,32 @@
                 "reactive": "Reactivo",
                 "reactive_intensity": "Intensidad reactiva",
                 "speed": "Velocidad"
+            },
+            "bounce": {
+                "description": "Efecto rebote. \nDale al objeto un efecto de rebote, ten en cuenta que el modelo debe ser una sola malla para obtener los mejores resultados.",
+                "name": "Rebotar",
+                "speed": "Velocidad",
+                "strength": "Intensidad"
+            },
+            "colorswap": {
+                "description": "Efecto de cambio de color. \nCambia un color del modelo por otro color.",
+                "name": "Intercambio de color",
+                "sourceColor1": "Color de origen 1",
+                "sourceColor2": "Color de origen 2",
+                "sourceColor3": "Color de origen 3",
+                "targetColor1": "Color objetivo 1",
+                "targetColor2": "Color objetivo 2",
+                "targetColor3": "Color objetivo 3",
+                "threshold1": "Umbral 1",
+                "threshold2": "Umbral 2",
+                "threshold3": "umbral 3"
+            },
+            "orbit": {
+                "description": "Efecto órbita. \nDale al objeto una rotación y una órbita, ten en cuenta que el modelo debe ser una sola malla para obtener mejores resultados.",
+                "name": "Orbita",
+                "orbit_speed": "Velocidad orbital",
+                "pivot_speed": "Velocidad de pivote",
+                "radius": "Radio de órbita"
             }
         },
         "sharing": {
@@ -1415,7 +1463,8 @@
                     "title": "Mapa compartido",
                     "titleupdated": "Mapa actualizado"
                 },
-                "title": "Compartir mapa"
+                "title": "Compartir mapa",
+                "secretinfo": "Tenga en cuenta que la clave no se almacena en un formato encriptado, se sugiere usar la clave aleatoria generada automáticamente, se guardará automáticamente para uso futuro en caso de que decida volver a enviar una nueva versión del mapa."
             }
         },
         "tileEditor": {

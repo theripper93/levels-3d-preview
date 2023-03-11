@@ -745,6 +745,9 @@
             },
             "yScale": {
                 "label": "Scala Y"
+            },
+            "tilt": {
+                "label": "Inclinare"
             }
         },
         "keybindings": {
@@ -850,7 +853,8 @@
         },
         "mergeTiles": {
             "content": "L'unione dei riquadri è un'azione irreversibile, si consiglia di eseguire un backup della scena prima di unire un numero elevato di riquadri.<br>Stai per unire <strong>%count% riquadri</strong>. \nSei sicuro di voler continuare?",
-            "title": "Unisci tessere"
+            "title": "Unisci tessere",
+            "occlusionGroup": "- ID occlusione:"
         },
         "performance": {
             "buttonTooltip": {
@@ -1185,6 +1189,20 @@
             "useMultithreading": {
                 "hint": "Usa il multithreading per migliorare le prestazioni dei calcoli di Fog of War. \nQuesta impostazione non ha effetto se non stai usando la nebbia di guerra.",
                 "name": "SPERIMENTALE: usa il multithreading"
+            },
+            "dofblur": {
+                "hint": "Abilita la sfocatura della profondità di campo. \nQuesto sfocherà lo sfondo quando la telecamera è vicina a un gettone, facendoti sentire come se fossi al tavolo. \nUn'impostazione più alta significa più sfocatura, le prestazioni non sono influenzate dal livello di sfocatura. \nPuò avere un impatto elevato sulle prestazioni se abilitato.",
+                "name": "Profondità di campo",
+                "options": {
+                    "high": "Alto",
+                    "low": "Basso",
+                    "medium": "medio",
+                    "off": "Disabilitato"
+                }
+            },
+            "lightHelpers": {
+                "hint": "Abilita gli aiutanti di luce. \nQuesto mostrerà la fonte di luce e l'area di effetto della luce quando si trova nel livello di illuminazione.",
+                "name": "Abilita gli aiutanti di luce"
             }
         },
         "shaders": {
@@ -1301,7 +1319,11 @@
                 "name": "Sovrapposizione",
                 "repeat": "Ripetere",
                 "strength": "Forza",
-                "textureDiffuse": "Struttura"
+                "textureDiffuse": "Struttura",
+                "coveragePercent": "Percentuale di copertura",
+                "offsetX": "Offset X (UV)",
+                "offsetY": "Offset Y (UV)",
+                "rotation_angle": "Rotazione (gradi)"
             },
             "sound": {
                 "chroma": "Croma",
@@ -1374,6 +1396,32 @@
                 "reactive": "Reattivo",
                 "reactive_intensity": "Intensità reattiva",
                 "speed": "Velocità"
+            },
+            "bounce": {
+                "description": "Effetto rimbalzo. \nDai all'oggetto un effetto di rimbalzo, tieni presente che il modello deve essere una singola mesh per ottenere i migliori risultati.",
+                "name": "Rimbalzo",
+                "speed": "Velocità",
+                "strength": "Intensità"
+            },
+            "colorswap": {
+                "description": "Effetto cambio colore. \nScambia un colore del modello con un altro colore.",
+                "name": "Scambio colore",
+                "sourceColor1": "Colore sorgente 1",
+                "sourceColor2": "Colore sorgente 2",
+                "sourceColor3": "Colore sorgente 3",
+                "targetColor1": "Colore obiettivo 1",
+                "targetColor2": "Colore obiettivo 2",
+                "targetColor3": "Colore obiettivo 3",
+                "threshold1": "Soglia 1",
+                "threshold2": "Soglia 2",
+                "threshold3": "Soglia 3"
+            },
+            "orbit": {
+                "description": "Effetto orbita. \nAssegna all'oggetto una rotazione e un'orbita, tieni presente che il modello deve essere una mesh singola per ottenere i migliori risultati.",
+                "name": "Orbita",
+                "orbit_speed": "Velocità dell'orbita",
+                "pivot_speed": "Velocità di rotazione",
+                "radius": "Raggio dell'orbita"
             }
         },
         "sharing": {
@@ -1415,7 +1463,8 @@
                     "title": "Mappa condivisa",
                     "titleupdated": "Mappa aggiornata"
                 },
-                "title": "Condividi mappa"
+                "title": "Condividi mappa",
+                "secretinfo": "Si noti che la chiave non è memorizzata in un formato crittografato, si consiglia di utilizzare la chiave casuale generata automaticamente, verrà automaticamente salvata per un uso futuro nel caso in cui si decida di inviare nuovamente una nuova versione della mappa."
             }
         },
         "tileEditor": {

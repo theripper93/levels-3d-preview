@@ -745,6 +745,9 @@
             },
             "yScale": {
                 "label": "Échelle Y"
+            },
+            "tilt": {
+                "label": "Inclinaison"
             }
         },
         "keybindings": {
@@ -850,7 +853,8 @@
         },
         "mergeTiles": {
             "content": "La fusion de tuiles est une action irréversible, il est suggéré de faire une sauvegarde de la scène avant de fusionner de grandes quantités de tuiles.<br>Vous êtes sur le point de fusionner <strong>%count% tuiles</strong>. \nEs-tu sur de vouloir continuer?",
-            "title": "Fusionner les tuiles"
+            "title": "Fusionner les tuiles",
+            "occlusionGroup": "- ID d'occlusion :"
         },
         "performance": {
             "buttonTooltip": {
@@ -1185,6 +1189,20 @@
             "useMultithreading": {
                 "hint": "Utilisez le multithreading pour améliorer les performances des calculs du brouillard de guerre. \nCe paramètre n'a aucun effet si vous n'utilisez pas le brouillard de guerre.",
                 "name": "EXPÉRIMENTAL : Utiliser le multithreading"
+            },
+            "dofblur": {
+                "hint": "Activer le flou de profondeur de champ. \nCela rendra l'arrière-plan flou lorsque la caméra est proche d'un jeton, ce qui donnera l'impression que vous êtes à table. \nUn réglage plus élevé signifie plus de flou, les performances ne sont pas affectées par le niveau de flou. \nPeut avoir un impact élevé sur les performances lorsqu'il est activé.",
+                "name": "Profondeur de champ",
+                "options": {
+                    "high": "Haut",
+                    "low": "Faible",
+                    "medium": "Moyen",
+                    "off": "Désactivé"
+                }
+            },
+            "lightHelpers": {
+                "hint": "Activez les assistants lumineux. \nCela montrera la source de lumière et la zone d'effet de la lumière lorsqu'elle se trouve dans la couche d'éclairage.",
+                "name": "Activer les assistants légers"
             }
         },
         "shaders": {
@@ -1301,7 +1319,11 @@
                 "name": "Recouvrir",
                 "repeat": "Répéter",
                 "strength": "Force",
-                "textureDiffuse": "Texture"
+                "textureDiffuse": "Texture",
+                "coveragePercent": "Pourcentage de couverture",
+                "offsetX": "Décalage X (UV)",
+                "offsetY": "Décalage Y (UV)",
+                "rotation_angle": "Rotation (deg)"
             },
             "sound": {
                 "chroma": "Chroma",
@@ -1374,6 +1396,32 @@
                 "reactive": "Réactif",
                 "reactive_intensity": "Intensité réactive",
                 "speed": "Vitesse"
+            },
+            "bounce": {
+                "description": "Effet rebond. \nDonnez à l'objet un effet de rebond, gardez à l'esprit que le modèle doit être un seul maillage pour de meilleurs résultats.",
+                "name": "Rebond",
+                "speed": "Vitesse",
+                "strength": "Intensité"
+            },
+            "colorswap": {
+                "description": "Effet d'échange de couleurs. \nÉchangez une couleur du modèle avec une autre couleur.",
+                "name": "Changement de couleur",
+                "sourceColor1": "Couleur source 1",
+                "sourceColor2": "Couleur source 2",
+                "sourceColor3": "Couleur source 3",
+                "targetColor1": "Couleur cible 1",
+                "targetColor2": "Couleur cible 2",
+                "targetColor3": "Couleur cible 3",
+                "threshold1": "Seuil 1",
+                "threshold2": "Seuil 2",
+                "threshold3": "Seuil 3"
+            },
+            "orbit": {
+                "description": "Effet d'orbite. \nDonnez à l'objet une rotation et une orbite, gardez à l'esprit que le modèle doit être un maillage unique pour de meilleurs résultats.",
+                "name": "Orbite",
+                "orbit_speed": "Vitesse d'orbite",
+                "pivot_speed": "Vitesse de rotation",
+                "radius": "Rayon d'orbite"
             }
         },
         "sharing": {
@@ -1415,7 +1463,8 @@
                     "title": "Carte partagée",
                     "titleupdated": "Carte mise à jour"
                 },
-                "title": "Partager la carte"
+                "title": "Partager la carte",
+                "secretinfo": "Notez que la clé n'est pas stockée dans un format crypté, il est suggéré d'utiliser la clé aléatoire générée automatiquement, elle sera automatiquement enregistrée pour une utilisation future au cas où vous décideriez de soumettre à nouveau une nouvelle version de la carte."
             }
         },
         "tileEditor": {

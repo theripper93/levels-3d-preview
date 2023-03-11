@@ -1757,44 +1757,69 @@ export async function mergeTiles(tileDocuments) {
 }
 
 export async function autoMergeTiles(tiles = canvas.tiles.placeables, skipControlled = true) {
-    const mergeTargets = {};
-    let mergedCount = 0;
-    for (const tile of tiles) {
-        if (skipControlled && tile.controlled) continue;
-        const tile3d = game.Levels3DPreview.tiles[tile.id];
-        const isDoor = tile3d?.isDoor || Object.values(tile3d?._doors || {}).length > 0;
-        if (isDoor) continue;
-        const repeatTile = tile.document.flags["levels-3d-preview"]?.mergedMatrix || tile.document.getFlag("levels-3d-preview", "fillType") === "tile";
-        if (repeatTile) continue;
-        const model3d = tile.data.flags["levels-3d-preview"]?.model3d;
-        const texture = tile.data.flags["levels-3d-preview"]?.imageTexture;
-        const dynaMesh = tile.data.flags["levels-3d-preview"]?.dynaMesh;
-        const key = `${model3d}-${texture}-${dynaMesh}`;
-        if (!model3d && (dynaMesh === "default" || !dynaMesh)) continue;
-        if (!mergeTargets[key]) mergeTargets[key] = [];
-        mergeTargets[key].push(tile.document);
+
+    const occlusionIdGroups = {
+        "noOcclusionId": [ ],
+    };
+
+    for (const tile of tiles) { 
+        const occlusionId = tile.document.flags?.betterroofs?.occlusionLinkId;
+        if (occlusionId) {
+            if (!occlusionIdGroups[occlusionId]) occlusionIdGroups[occlusionId] = [];
+            occlusionIdGroups[occlusionId].push(tile);
+        } else {
+            occlusionIdGroups["noOcclusionId"].push(tile);
+        }
     }
 
-    Object.values(mergeTargets).forEach((tileDocumentArray) => (mergedCount += tileDocumentArray.length - 1));
+    for (const [oId, group] of Object.entries(occlusionIdGroups)) { 
+        mergeTileGroup(group, oId);
+    }
 
-    Dialog.confirm({
-        title: game.i18n.localize("levels3dpreview.mergeTiles.title"),
-        content: game.i18n.localize("levels3dpreview.mergeTiles.content").replace("%count%", mergedCount),
-        yes: async () => {
-            await merge();
-        },
-        no: () => {},
-        defaultYes: false,
-    });
-
-    async function merge() {
-        let mergedFinal = 0;
-        for (const tileDocumentArray of Object.values(mergeTargets)) {
-            if (tileDocumentArray.length < 2) continue;
-            mergedFinal++;
-            await mergeTiles(tileDocumentArray);
+    function mergeTileGroup(tileGroup, occlusionId) {
+        const mergeTargets = {};
+        let mergedCount = 0;
+        for (const tile of tileGroup) {
+            if (skipControlled && tile.controlled) continue;
+            const tile3d = game.Levels3DPreview.tiles[tile.id];
+            const isDoor = tile3d?.isDoor || Object.values(tile3d?._doors || {}).length > 0;
+            if (isDoor) continue;
+            const repeatTile = tile.document.flags["levels-3d-preview"]?.mergedMatrix || tile.document.getFlag("levels-3d-preview", "fillType") === "tile";
+            if (repeatTile) continue;
+            const model3d = tile.data.flags["levels-3d-preview"]?.model3d;
+            const texture = tile.data.flags["levels-3d-preview"]?.imageTexture;
+            const dynaMesh = tile.data.flags["levels-3d-preview"]?.dynaMesh;
+            const key = `${model3d}-${texture}-${dynaMesh}`;
+            if (!model3d && (dynaMesh === "default" || !dynaMesh)) continue;
+            if (!mergeTargets[key]) mergeTargets[key] = [];
+            mergeTargets[key].push(tile.document);
         }
-        if (mergedCount) ui.notifications.info(`Merged ${mergedCount} tiles into ${mergedFinal} tiles.`);
+
+        Object.values(mergeTargets).forEach((tileDocumentArray) => (mergedCount += tileDocumentArray.length - 1));
+
+        const occlusionIdText = occlusionId == "noOcclusionId" ? "" : game.i18n.localize("levels3dpreview.mergeTiles.occlusionGroup") + occlusionId;
+
+        Dialog.confirm({
+            title: game.i18n.localize("levels3dpreview.mergeTiles.title") + occlusionIdText,
+            content: game.i18n.localize("levels3dpreview.mergeTiles.content").replace("%count%", mergedCount),
+            yes: async () => {
+                await merge();
+            },
+            no: () => {},
+            defaultYes: false,
+        });
+
+        async function merge() {
+            let mergedFinal = 0;
+            for (const tileDocumentArray of Object.values(mergeTargets)) {
+                if (tileDocumentArray.length < 2)
+                    continue;
+                mergedFinal++;
+                await mergeTiles(tileDocumentArray);
+            }
+            if (mergedCount)
+                ui.notifications.info(`Merged ${mergedCount} tiles into ${mergedFinal} tiles.`);
+        }
     }
 }
 

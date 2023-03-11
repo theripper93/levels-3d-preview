@@ -745,6 +745,9 @@
             },
             "yScale": {
                 "label": "Y-Skala"
+            },
+            "tilt": {
+                "label": "Neigung"
             }
         },
         "keybindings": {
@@ -850,7 +853,8 @@
         },
         "mergeTiles": {
             "content": "Das Zusammenführen von Kacheln ist eine irreversible Aktion. Es wird empfohlen, eine Sicherungskopie der Szene zu erstellen, bevor Sie eine große Anzahl von Kacheln zusammenführen.<br>Sie sind dabei, <strong>%count% Kacheln</strong> zusammenzuführen. \nBist du dir sicher, dass du weitermachen willst?",
-            "title": "Kacheln zusammenführen"
+            "title": "Kacheln zusammenführen",
+            "occlusionGroup": "- Okklusions-ID:"
         },
         "performance": {
             "buttonTooltip": {
@@ -1185,6 +1189,20 @@
             "useMultithreading": {
                 "hint": "Verwenden Sie Multithreading, um die Leistung von Fog of War-Berechnungen zu verbessern. \nDiese Einstellungen haben keine Auswirkung, wenn Sie den Fog of War nicht verwenden.",
                 "name": "EXPERIMENTELL: Verwenden Sie Multithreading"
+            },
+            "dofblur": {
+                "hint": "Schärfentiefenunschärfe aktivieren. \nDadurch wird der Hintergrund unscharf, wenn sich die Kamera in der Nähe eines Tokens befindet, sodass es sich anfühlt, als ob Sie am Tisch sitzen. \nEine höhere Einstellung bedeutet mehr Unschärfe, die Leistung wird durch den Grad der Unschärfe nicht beeinträchtigt. \nKann bei Aktivierung hohe Auswirkungen auf die Leistung haben.",
+                "name": "Tiefenschärfe",
+                "options": {
+                    "high": "Hoch",
+                    "low": "Niedrig",
+                    "medium": "Mittel",
+                    "off": "Behinderte"
+                }
+            },
+            "lightHelpers": {
+                "hint": "Aktivieren Sie die Lichthelfer. \nDies zeigt die Lichtquelle und den Wirkungsbereich des Lichts in der Beleuchtungsebene.",
+                "name": "Lichthelfer aktivieren"
             }
         },
         "shaders": {
@@ -1301,7 +1319,11 @@
                 "name": "Überlagerung",
                 "repeat": "Wiederholen",
                 "strength": "Stärke",
-                "textureDiffuse": "Textur"
+                "textureDiffuse": "Textur",
+                "coveragePercent": "Abdeckungsprozentsatz",
+                "offsetX": "Versatz X (UV)",
+                "offsetY": "Versatz Y (UV)",
+                "rotation_angle": "Drehung (Grad)"
             },
             "sound": {
                 "chroma": "Chroma",
@@ -1374,6 +1396,32 @@
                 "reactive": "Reaktiv",
                 "reactive_intensity": "Reaktive Intensität",
                 "speed": "Geschwindigkeit"
+            },
+            "bounce": {
+                "description": "Bounce-Effekt. \nGeben Sie dem Objekt einen Bounce-Effekt, denken Sie daran, dass das Modell für beste Ergebnisse ein einzelnes Netz sein muss.",
+                "name": "Prallen",
+                "speed": "Geschwindigkeit",
+                "strength": "Intensität"
+            },
+            "colorswap": {
+                "description": "Farbwechseleffekt. \nTauschen Sie eine Farbe des Modells gegen eine andere Farbe aus.",
+                "name": "Farbwechsel",
+                "sourceColor1": "Quellfarbe 1",
+                "sourceColor2": "Quellfarbe 2",
+                "sourceColor3": "Quellfarbe 3",
+                "targetColor1": "Zielfarbe 1",
+                "targetColor2": "Zielfarbe 2",
+                "targetColor3": "Zielfarbe 3",
+                "threshold1": "Schwelle 1",
+                "threshold2": "Schwelle 2",
+                "threshold3": "Schwelle 3"
+            },
+            "orbit": {
+                "description": "Orbit-Effekt. \nGeben Sie dem Objekt eine Drehung und eine Umlaufbahn. Denken Sie daran, dass das Modell für beste Ergebnisse ein einzelnes Netz sein muss.",
+                "name": "Orbit",
+                "orbit_speed": "Umlaufgeschwindigkeit",
+                "pivot_speed": "Drehgeschwindigkeit",
+                "radius": "Umlaufbahnradius"
             }
         },
         "sharing": {
@@ -1415,7 +1463,8 @@
                     "title": "Karte geteilt",
                     "titleupdated": "Karte aktualisiert"
                 },
-                "title": "Karte teilen"
+                "title": "Karte teilen",
+                "secretinfo": "Beachten Sie, dass der Schlüssel nicht in einem verschlüsselten Format gespeichert wird. Es wird empfohlen, den automatisch generierten Zufallsschlüssel zu verwenden. Er wird automatisch für die zukünftige Verwendung gespeichert, falls Sie sich entscheiden, eine neue Version der Karte erneut einzureichen."
             }
         },
         "tileEditor": {

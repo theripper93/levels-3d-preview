@@ -8,7 +8,7 @@ import { Ruler3D } from "./systems/ruler3d.js";
 import { Light3D } from "./entities/light3d.js";
 import { Wall3D } from "./entities/wall3d.js";
 import { initSharing, setSharingHooks } from "./apps/sharing.js";
-import { Tile3D, recomputeGravity, autoMergeTiles } from "./entities/tile3d.js";
+import { Tile3D, recomputeGravity, autoMergeTiles, unmergeTiles } from "./entities/tile3d.js";
 import { Note3D } from "./entities/note3d.js";
 import { Grid3D } from "./systems/grid3d.js";
 import { RangeFinder } from "./systems/rangeFinder.js";
@@ -287,6 +287,7 @@ class Levels3DPreview {
         };
         this.UTILS = {
             autoMergeTiles,
+            unmergeTiles,
             debouncedReload: debounce(this.reload.bind(this), 300),
         };
 

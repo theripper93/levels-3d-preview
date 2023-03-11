@@ -615,7 +615,7 @@ Hooks.on("renderTokenConfig", (app,html)=>{
         "autoCenter": {
             type: "checkbox",
             label: game.i18n.localize("levels3dpreview.flags.autoCenter.label"),
-            default: true,
+            default: false,
         },
         "rotationX" : {
             type: "range",

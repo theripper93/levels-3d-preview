@@ -736,6 +736,9 @@
             },
             "yScale": {
                 "label": "Y スケール"
+            },
+            "tilt": {
+                "label": "傾き"
             }
         },
         "settings": {
@@ -1042,6 +1045,20 @@
             "useMultithreading": {
                 "hint": "マルチスレッドを使用して、Fog of War の計算のパフォーマンスを向上させます。 \nFog of War を使用していない場合、この設定は効果がありません。",
                 "name": "実験的: マルチスレッドを使用する"
+            },
+            "dofblur": {
+                "hint": "被写界深度ブラーを有効にします。\nこれにより、カメラがトークンに近づくと背景がぼやけ、テーブルにいるように感じられます。\n設定が高いほどぼかしが大きくなり、パフォーマンスはぼかしのレベルに影響されません。\n有効にすると、パフォーマンスに大きな影響を与える可能性があります。",
+                "name": "被写界深度",
+                "options": {
+                    "high": "高い",
+                    "low": "低い",
+                    "medium": "中くらい",
+                    "off": "無効"
+                }
+            },
+            "lightHelpers": {
+                "hint": "ライト ヘルパーを有効にします。\nこれにより、光源と、照明レイヤーにあるときの光の影響範囲が表示されます。",
+                "name": "ライト ヘルパーを有効にする"
             }
         },
         "exporter": {
@@ -1172,7 +1189,8 @@
         },
         "mergeTiles": {
             "content": "タイルのマージは元に戻せないアクションです。大量のタイルをマージする前に、シーンのバックアップを作成することをお勧めします。<br><strong>%count% 個のタイル</strong>をマージしようとしています。\n続行してもよろしいですか？",
-            "title": "タイルを結合"
+            "title": "タイルを結合",
+            "occlusionGroup": "- オクルージョン ID:"
         },
         "performance": {
             "buttonTooltip": {
@@ -1313,7 +1331,11 @@
                 "name": "かぶせる",
                 "repeat": "繰り返す",
                 "strength": "強さ",
-                "textureDiffuse": "テクスチャ"
+                "textureDiffuse": "テクスチャ",
+                "coveragePercent": "カバー率",
+                "offsetX": "オフセット X (UV)",
+                "offsetY": "オフセット Y (UV)",
+                "rotation_angle": "回転 (度)"
             },
             "sound": {
                 "chroma": "彩度",
@@ -1386,6 +1408,32 @@
                 "reactive": "反応性",
                 "reactive_intensity": "反応強度",
                 "speed": "スピード"
+            },
+            "bounce": {
+                "description": "バウンス効果。\nオブジェクトにバウンス効果を与えます。最良の結果を得るには、モデルが単一のメッシュである必要があることに注意してください。",
+                "name": "跳ねる、弾む",
+                "speed": "スピード",
+                "strength": "強度"
+            },
+            "colorswap": {
+                "description": "カラースワップ効果。\nモデルの色を別の色と交換します。",
+                "name": "カラースワップ",
+                "sourceColor1": "ソース カラー 1",
+                "sourceColor2": "ソースカラー 2",
+                "sourceColor3": "ソースカラー 3",
+                "targetColor1": "対象色 1",
+                "targetColor2": "目標色 2",
+                "targetColor3": "目標色 3",
+                "threshold1": "しきい値 1",
+                "threshold2": "しきい値 2",
+                "threshold3": "しきい値 3"
+            },
+            "orbit": {
+                "description": "軌道効果。\nオブジェクトに回転と軌道を与えます。最良の結果を得るには、モデルが単一のメッシュである必要があることに注意してください。",
+                "name": "軌道",
+                "orbit_speed": "軌道速度",
+                "pivot_speed": "ピボット速度",
+                "radius": "軌道半径"
             }
         },
         "sharing": {
@@ -1427,7 +1475,8 @@
                     "title": "マップ共有",
                     "titleupdated": "地図が更新されました"
                 },
-                "title": "地図を共有"
+                "title": "地図を共有",
+                "secretinfo": "キーは暗号化された形式で保存されないことに注意してください。自動生成されたランダム キーを使用することをお勧めします。マップの新しいバージョンを再送信する場合に備えて、将来の使用のために自動的に保存されます。"
             }
         },
         "tileEditor": {

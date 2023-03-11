@@ -1624,6 +1624,7 @@
         },
         "mergeTiles": {
             "title": "Merge Tiles",
+            "occlusionGroup": " - Occlusion ID: ",
             "content": "Merging Tiles is an irreversible action, it's suggested to make a backup of the scene before merging high amounts of tiles.<br>You are about to merge <strong>%count% Tiles</strong>. Selected tiles will be excluded. Are you sure you want to continue?"
         }
     }
