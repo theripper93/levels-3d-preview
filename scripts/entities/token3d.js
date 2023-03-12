@@ -667,7 +667,7 @@ export class Token3D {
         const grid = canvas.dimensions.size / factor;
         const color = this.getHeightIndicatorColor();
         const height = collision ? collision[0].distance : 0;
-        
+
         //Create the group
         const heightIndicatorGroup = new THREE.Group();
         heightIndicatorGroup.name = "heightIndicator";

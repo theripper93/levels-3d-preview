@@ -93,7 +93,7 @@ export class InteractionManager {
             }
         }
         for (let wall of walls) {
-            if(!wall?.placeable) continue;
+            if (!wall?.placeable) continue;
             if (wall.placeable.isDoor && wall.placeable.document.ds === CONST.WALL_DOOR_STATES.OPEN) continue;
             if (!wall.mesh?.visible && wall.isDisabledVisible === true) continue;
             if (wall.placeable.document.sight >= 10) sightObjects.push(wall.mesh);
@@ -368,72 +368,12 @@ export class InteractionManager {
                 },
             };
 
-            let entityLayer = canvas.activeLayer;
-            if (data.type === "Actor") entityLayer = canvas.tokens;
-            if (data.type === "JournalEntry" || data.type === "JournalEntryPage") entityLayer = canvas.notes;
-            if (data.type === "Tile") entityLayer = canvas.tiles;
-            if (entityLayer !== canvas.activeLayer) entityLayer.activate();
+            const dropFunction = this._parent.CONFIG.INTERACTIONS.dropFunctions[data.type];
 
-            if (data.type === "Actor") {
-                Hooks.once("preCreateToken", (token) => {
-                    token.updateSource({ elevation: Math.trunc(data.elevation * 100) / 100, flags: data.flags });
-                });
-                return canvas.tokens._onDropActorData(event, data);
-            }
+            if (!dropFunction) return ui.notifications.error(game.i18n.localize("levels3dpreview.errors.notarget"));
+            
+            dropFunction.bind(this)(event, data, snap, normal, dataTransfer, setRotation, autoCenter);
 
-            if (data.type === "JournalEntry" || data.type === "JournalEntryPage") {
-                const noteDocument = await fromUuid(data.uuid);
-                const entryId = data.type === "JournalEntryPage" ? noteDocument.parent.id : noteDocument.id;
-                const pageId = data.type === "JournalEntryPage" ? noteDocument.id : null;
-                canvas.scene.createEmbeddedDocuments("Note", [{ ...data, entryId, pageId }]);
-                return;
-            }
-
-            data.flags["levels-3d-preview"] = {
-                model3d: data.texture.src,
-                autoGround: true,
-                autoCenter: autoCenter,
-                ...(data.params || {}),
-            };
-            if (data.type === "Tile") {
-                const object3d = await this._parent.helpers.loadModel(data.texture.src);
-                const modelBB = new THREE.Box3().setFromObject(object3d.model);
-                const widthFactor = modelBB.max.x - modelBB.min.x;
-                const heightFactor = modelBB.max.z - modelBB.min.z;
-                let depth = modelBB.max.y - modelBB.min.y;
-                let width = canvas.grid.size * (canvas.grid.size / data.tileSize) * widthFactor;
-                let height = canvas.grid.size * (canvas.grid.size / data.tileSize) * heightFactor;
-
-                data.flags["levels-3d-preview"].depth = depth ? canvas.grid.size * (canvas.grid.size / data.tileSize) * depth : 0.05;
-                if (normal) {
-                    const dummy = new THREE.Object3D();
-                    dummy.lookAt(normal);
-                    dummy.rotateOnAxis(new THREE.Vector3(1, 0, 0), Math.PI / 2);
-                    data.flags["levels-3d-preview"].tiltX = Math.toDegrees(dummy.rotation.x);
-                    data.flags["levels-3d-preview"].tiltZ = Math.toDegrees(dummy.rotation.z);
-                    data.rotation = Math.toDegrees(dummy.rotation.y);
-                    data.flags["levels-3d-preview"].autoCenter = true;
-                }
-                data.rotation = setRotation;
-
-                const useSnapped = snap ?? Ruler3D.useSnapped();
-                let snapped;
-                if (useSnapped) {
-                    snapped = canvas.grid.getSnappedPosition(data.x - width / 2, data.y - height / 2);
-                }
-                canvas.scene.createEmbeddedDocuments("Tile", [
-                    {
-                        x: snapped ? snapped.x : data.x - width / 2,
-                        y: snapped ? snapped.y : data.y - height / 2,
-                        width: width,
-                        height: height,
-                        img: "modules/levels-3d-preview/assets/blank.webp",
-                        overhead: canvas.activeLayer.name !== "BackgroundLayer",
-                        flags: data.flags,
-                        rotation: data.rotation,
-                    },
-                ]);
-            }
         } catch (e) {
             console.error(e);
             ui.notifications.error(game.i18n.localize("levels3dpreview.errors.notarget"));
@@ -1157,3 +1097,79 @@ export class InteractionManager {
         });
     }
 }
+
+export const dropFunctions = {
+    Tile: async function (event, data, snap = null, normal = null, dataTransfer = null, setRotation = 0, autoCenter = false) {
+        canvas.tiles.activate();
+        
+        data.flags["levels-3d-preview"] = {
+            model3d: data.texture.src,
+            autoGround: true,
+            autoCenter: autoCenter,
+            ...(data.params || {}),
+        };
+        const object3d = await this._parent.helpers.loadModel(data.texture.src);
+        const modelBB = new THREE.Box3().setFromObject(object3d.model);
+        const widthFactor = modelBB.max.x - modelBB.min.x;
+        const heightFactor = modelBB.max.z - modelBB.min.z;
+        let depth = modelBB.max.y - modelBB.min.y;
+        let width = canvas.grid.size * (canvas.grid.size / data.tileSize) * widthFactor;
+        let height = canvas.grid.size * (canvas.grid.size / data.tileSize) * heightFactor;
+
+        data.flags["levels-3d-preview"].depth = depth ? canvas.grid.size * (canvas.grid.size / data.tileSize) * depth : 0.05;
+        if (normal) {
+            const dummy = new THREE.Object3D();
+            dummy.lookAt(normal);
+            dummy.rotateOnAxis(new THREE.Vector3(1, 0, 0), Math.PI / 2);
+            data.flags["levels-3d-preview"].tiltX = Math.toDegrees(dummy.rotation.x);
+            data.flags["levels-3d-preview"].tiltZ = Math.toDegrees(dummy.rotation.z);
+            data.rotation = Math.toDegrees(dummy.rotation.y);
+            data.flags["levels-3d-preview"].autoCenter = true;
+        }
+        data.rotation = setRotation;
+
+        const useSnapped = snap ?? Ruler3D.useSnapped();
+        let snapped;
+        if (useSnapped) {
+            snapped = canvas.grid.getSnappedPosition(data.x - width / 2, data.y - height / 2);
+        }
+        canvas.scene.createEmbeddedDocuments("Tile", [
+            {
+                x: snapped ? snapped.x : data.x - width / 2,
+                y: snapped ? snapped.y : data.y - height / 2,
+                width: width,
+                height: height,
+                img: "modules/levels-3d-preview/assets/blank.webp",
+                overhead: canvas.activeLayer.name !== "BackgroundLayer",
+                flags: data.flags,
+                rotation: data.rotation,
+            },
+        ]);
+    },
+    Actor: async function (event, data) {
+        canvas.tokens.activate();
+        
+        Hooks.once("preCreateToken", (token) => {
+            token.updateSource({ elevation: Math.trunc(data.elevation * 100) / 100, flags: data.flags });
+        });
+        return canvas.tokens._onDropActorData(event, data);
+    },
+    JournalEntry: async function (event, data) {
+        canvas.notes.activate();
+        
+        const noteDocument = await fromUuid(data.uuid);
+        const entryId = noteDocument.id;
+        const pageId = null;
+        canvas.scene.createEmbeddedDocuments("Note", [{ ...data, entryId, pageId }]);
+        return;
+    },
+    JournalEntryPage: async function (event, data) {
+        canvas.notes.activate();
+
+        const noteDocument = await fromUuid(data.uuid);
+        const entryId = noteDocument.parent.id;
+        const pageId = noteDocument.id;
+        canvas.scene.createEmbeddedDocuments("Note", [{ ...data, entryId, pageId }]);
+        return;
+    },
+};

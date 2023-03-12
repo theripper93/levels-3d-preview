@@ -1,3 +1,5 @@
+import { factor } from "../main.js";
+
 export class ClipNavigation extends Application {
     constructor() {
         super();
@@ -21,6 +23,7 @@ export class ClipNavigation extends Application {
         const data = super.getData();
         data.isGC = game.settings.get("levels-3d-preview", "enableGameCamera") && (canvas.scene.getFlag("levels-3d-preview", "enableGameCamera") ?? true);
         data.isGM = game.user.isGM;
+        data.isFog = canvas.scene.getFlag("levels-3d-preview", "enableFog") ?? false;
         const levels = (canvas.scene.getFlag("levels", "sceneLevels") ?? [])
             .filter((l) => l[1] !== undefined && l[0] !== undefined)
             .sort((a, b) => {
@@ -94,6 +97,7 @@ export class ClipNavigation extends Application {
         html.find("#clip-navigation-range input").on("change", this._onRangeSnap.bind(this));
         html.find("#clip-navigation-range input").trigger("change");
         html.find("#game-camera-toggle").toggleClass("clip-navigation-enabled", game.Levels3DPreview.GameCamera.enabled);
+        html.find("#clip-navigation-fog").toggleClass("clip-navigation-enabled", (canvas.scene.getFlag("levels-3d-preview", "fogDistance") ?? 3000) / factor == game.Levels3DPreview.scene.fog?.far);
         html.on("click", "#clip-navigation-camera", () => {
             if (game.Levels3DPreview._active) game.Levels3DPreview.setCameraToControlled();
         });
@@ -129,6 +133,13 @@ export class ClipNavigation extends Application {
         });
         html.on("click", "#clip-navigation-performancereport", () => {
             game.Levels3DPreview.helpers.showPerformanceDialog();
+        });
+        html.on("click", "#clip-navigation-fog", () => {
+            const fogDistance = (canvas.scene.getFlag("levels-3d-preview", "fogDistance") ?? 3000) / factor;
+            game.Levels3DPreview.scene.fog.far = game.Levels3DPreview.scene.fog.far == fogDistance ? 100 : fogDistance;
+            game.Levels3DPreview.camera.far = game.Levels3DPreview.scene.fog.far;
+            game.Levels3DPreview.camera.updateProjectionMatrix();
+            $("#clip-navigation-fog").toggleClass("clip-navigation-enabled", game.Levels3DPreview.scene.fog.far == fogDistance);
         });
 
         if (!this._setOnLoad) {

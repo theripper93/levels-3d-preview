@@ -63,7 +63,8 @@
             "lockon": "Toggle Lock-On",
             "performance": "Set Performance Mode",
             "performancereport": "Performance Report",
-            "wireframe": "Toggle Colliders"
+            "wireframe": "Toggle Colliders",
+            "fog": "Toggle Distance Fog"
         },
         "mapgen": {
             "title": "Map Generator - Cell height of 1 equals ",

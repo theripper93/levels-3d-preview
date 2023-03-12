@@ -16,7 +16,7 @@ import { Template3D } from "./entities/template3d.js";
 import { Cursors3D } from "./systems/cursors.js";
 import { FBXLoader } from "./lib/FBXLoader.js";
 import { GlobalIllumination } from "./systems/globalIllumination.js";
-import { InteractionManager } from "./handlers/interactionManager.js";
+import { InteractionManager, dropFunctions } from "./handlers/interactionManager.js";
 import initTemplateEffects from "./shaders/templateEffects.js";
 import { Helpers } from "./helpers/helpers.js";
 import { WeatherSystem } from "./systems/weatherSystem.js";
@@ -136,6 +136,9 @@ class Levels3DPreview {
                 turnStartMarker,
                 ParticleSystem,
                 Tile3D,
+            },
+            INTERACTIONS: {
+                dropFunctions,
             },
             THREEUTILS: {
                 DecalGeometry,
