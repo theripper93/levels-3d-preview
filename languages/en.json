@@ -3,6 +3,9 @@
         "controls": {
             "preview3d": "Toggle 3D Mode",
             "miniCanvas": "Popout/Restore Canvas",
+            "tips": {
+                "templatePlacement": "3D Template Placement: Mouse Wheel to change elevation. Control + Mouse Wheel to Rotate. Alt + Mouse Wheel to Tilt."
+            },
             "loading": {
                 "load": "Loading 3D Canvas...",
                 "env": "Creating 3D Environment...",
@@ -1460,6 +1463,7 @@
                 "description": "Texture Overlay. Requires a texture to be set. Use 'Multiply Blending' for textures with white background, 'Black Blending' for textures with black background.",
                 "textureDiffuse": "Texture",
                 "coveragePercent": "Coverage Percentage",
+                "inclination": "Inclination",
                 "color": "Color",
                 "strength": "Strength",
                 "repeat": "Repeat",

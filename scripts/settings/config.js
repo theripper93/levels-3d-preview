@@ -1167,20 +1167,28 @@ Hooks.on("renderWallConfig", (app,html)=>{
 })
 
 Hooks.on("renderMeasuredTemplateConfig", (app,html)=>{
-    injectConfig.inject(app,html,{
-        "moduleId": "levels-3d-preview",
-        "tab" : {
-            "name": "levels-3d-preview",
-            "label": "3D",
-            "icon": "fas fa-cube",
+    injectConfig.inject(app, html, {
+        moduleId: "levels-3d-preview",
+        tab: {
+            name: "levels-3d-preview",
+            label: "3D",
+            icon: "fas fa-cube",
         },
-        "isFog": {
+        tilt: {
+            type: "range",
+            label: game.i18n.localize("levels3dpreview.flags.tilt.label"),
+            default: 0,
+            step: 1,
+            min: -180,
+            max: 180,
+        },
+        isFog: {
             type: "checkbox",
             label: game.i18n.localize("levels3dpreview.flags.isFog.label"),
             notes: game.i18n.localize("levels3dpreview.flags.isFog.notes"),
             default: false,
         },
-    })
+    });
     ShaderConfig.injectButton(app, html, html.find(`input[name="flags.levels-3d-preview.isFog"]`).closest(".form-group"));
 })
 

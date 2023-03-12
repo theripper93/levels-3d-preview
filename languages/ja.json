@@ -1,9 +1,6 @@
 {
     "levels3dpreview": {
-        "sceneConfigTitle": {
-            "title": "3D Canvas",
-            "notes": "このシーンの3Dキャンバス設定を行う。"
-        },
+        "sceneConfigTitle": {},
         "controls": {
             "preview3d": "3Dモード切り替え",
             "miniCanvas": "2Dキャンバス表示切り替え",
@@ -37,6 +34,9 @@
                 "topdown": "トップダウン",
                 "unlock": "ロック解除",
                 "zoom": "ズーム"
+            },
+            "tips": {
+                "templatePlacement": "3D テンプレートの配置: マウス ホイールで高さを変更します。\nマウスホイールを回転させます。 \nAlt マウス ホイールを傾けます。"
             }
         },
         "errors": {
@@ -1122,7 +1122,8 @@
             "performancereport": "パフォーマンスレポート",
             "sync": "プレイヤーと同期する",
             "syncNotification": "{{level}} のレベル ビューをすべてのプレイヤーと同期",
-            "wireframe": "コライダーの切り替え"
+            "wireframe": "コライダーの切り替え",
+            "fog": "ディスタンス フォグの切り替え"
         },
         "mapgen": {
             "bevel": "ベベル",
@@ -1335,7 +1336,8 @@
                 "coveragePercent": "カバー率",
                 "offsetX": "オフセット X (UV)",
                 "offsetY": "オフセット Y (UV)",
-                "rotation_angle": "回転 (度)"
+                "rotation_angle": "回転 (度)",
+                "inclination": "傾斜"
             },
             "sound": {
                 "chroma": "彩度",

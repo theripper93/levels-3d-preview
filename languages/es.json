@@ -30,7 +30,8 @@
             "performancereport": "Reporte de desempeño",
             "sync": "Sincronizar con jugadores",
             "syncNotification": "Vista de nivel para {{level}} Sincronizado con todos los jugadores",
-            "wireframe": "Alternar colisionadores"
+            "wireframe": "Alternar colisionadores",
+            "fog": "Alternar niebla de distancia"
         },
         "controls": {
             "loading": {
@@ -65,7 +66,10 @@
                 "zoom": "Zoom"
             },
             "miniCanvas": "Ventana emergente/Restaurar lienzo",
-            "preview3d": "Alternar modo 3D"
+            "preview3d": "Alternar modo 3D",
+            "tips": {
+                "templatePlacement": "Colocación de plantilla 3D: rueda del mouse para cambiar la elevación. \nControle la rueda del mouse para rotar. \nAlt rueda del ratón para inclinar."
+            }
         },
         "errors": {
             "3dnotactive": "No se puede abrir la ventana emergente del lienzo, el modo 3D no está activo.",
@@ -881,10 +885,7 @@
             "veryhigh": "Muy alto",
             "verylow": "Muy bajo"
         },
-        "sceneConfigTitle": {
-            "notes": "",
-            "title": ""
-        },
+        "sceneConfigTitle": {},
         "settings": {
             "altCameraControls": {
                 "hint": "Cuando está habilitado, el clic izquierdo no girará la cámara. \nLa rotación estará en el botón central del mouse en su lugar.",
@@ -1323,7 +1324,8 @@
                 "coveragePercent": "Porcentaje de cobertura",
                 "offsetX": "Compensación X (UV)",
                 "offsetY": "Compensación Y (UV)",
-                "rotation_angle": "Rotación (grados)"
+                "rotation_angle": "Rotación (grados)",
+                "inclination": "Inclinación"
             },
             "sound": {
                 "chroma": "croma",

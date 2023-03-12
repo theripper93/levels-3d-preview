@@ -565,22 +565,18 @@ export class InteractionManager {
         if (this.draggable) {
             const delta = Math.sign(event.deltaY);
             const entity3D = this.draggable.userData.entity3D;
-            if (entity3D.template) {
-                if (this.isFreeMode) {
-                    this.forceFree = true;
-                    entity3D.wasFreeMode = true;
-                }
-                if (!entity3D.wasFreeMode) entity3D.onRotate(delta);
+            if (entity3D.template && (event.ctrlKey || event.altKey)) {
+                event.altKey ? entity3D.onTilt(delta) : entity3D.onRotate(delta);
             } else {
                 this.forceFree = true;
                 entity3D.wasFreeMode = true;
-            }
-            let elevationDiff = canvas.scene.dimensions.distance;
-            if (event.shiftKey) elevationDiff = canvas.scene.dimensions.distance / 5;
-            if (event.ctrlKey) elevationDiff = canvas.scene.dimensions.distance / 50;
-            entity3D.elevation3d += -delta * this.elevationTick * elevationDiff;
-            if (game.settings.get("levels-3d-preview", "preventNegative") && entity3D.elevation3d < Ruler3D.unitsToPixels(canvas.primary.background.elevation)) {
-                entity3D.elevation3d = Ruler3D.unitsToPixels(canvas.primary.background.elevation);
+                let elevationDiff = canvas.scene.dimensions.distance;
+                if (event.shiftKey) elevationDiff = canvas.scene.dimensions.distance / 5;
+                if (event.ctrlKey) elevationDiff = canvas.scene.dimensions.distance / 50;
+                entity3D.elevation3d += -delta * this.elevationTick * elevationDiff;
+                if (game.settings.get("levels-3d-preview", "preventNegative") && entity3D.elevation3d < Ruler3D.unitsToPixels(canvas.primary.background.elevation)) {
+                    entity3D.elevation3d = Ruler3D.unitsToPixels(canvas.primary.background.elevation);
+                }
             }
         }
         const isSpecialKey = this.tiltX || this.tiltZ || this.scaleWidth || this.scaleHeight || this.scaleGap || this.scaleScale || this.scale;

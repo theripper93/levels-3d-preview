@@ -30,7 +30,8 @@
             "performancereport": "Leistungsbericht",
             "sync": "Mit Spielern synchronisieren",
             "syncNotification": "Levelansicht für {{level}} mit allen Spielern synchronisiert",
-            "wireframe": "Collider umschalten"
+            "wireframe": "Collider umschalten",
+            "fog": "Entfernung Nebel umschalten"
         },
         "controls": {
             "loading": {
@@ -65,7 +66,10 @@
                 "zoom": "Zoomen"
             },
             "miniCanvas": "Popout/Leinwand wiederherstellen",
-            "preview3d": "3D-Modus umschalten"
+            "preview3d": "3D-Modus umschalten",
+            "tips": {
+                "templatePlacement": "3D-Vorlagenplatzierung: Mausrad zum Ändern der Höhe. \nSteuern Sie das Mausrad zum Drehen. \nAlt Mausrad zum Neigen."
+            }
         },
         "errors": {
             "3dnotactive": "Das Leinwand-Popout kann nicht geöffnet werden, der 3D-Modus ist nicht aktiv.",
@@ -881,10 +885,7 @@
             "veryhigh": "Sehr hoch",
             "verylow": "Sehr niedrig"
         },
-        "sceneConfigTitle": {
-            "notes": "",
-            "title": ""
-        },
+        "sceneConfigTitle": {},
         "settings": {
             "altCameraControls": {
                 "hint": "Wenn aktiviert, dreht ein Linksklick die Kamera nicht. \nDie Drehung erfolgt stattdessen auf der mittleren Maustaste.",
@@ -1323,7 +1324,8 @@
                 "coveragePercent": "Abdeckungsprozentsatz",
                 "offsetX": "Versatz X (UV)",
                 "offsetY": "Versatz Y (UV)",
-                "rotation_angle": "Drehung (Grad)"
+                "rotation_angle": "Drehung (Grad)",
+                "inclination": "Neigung"
             },
             "sound": {
                 "chroma": "Chroma",

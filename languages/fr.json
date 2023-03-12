@@ -30,7 +30,8 @@
             "performancereport": "Rapport de perfomance",
             "sync": "Synchroniser avec les joueurs",
             "syncNotification": "Affichage du niveau pour {{level}} synchronisé avec tous les joueurs",
-            "wireframe": "Basculer les collisionneurs"
+            "wireframe": "Basculer les collisionneurs",
+            "fog": "Basculer le brouillard de distance"
         },
         "controls": {
             "loading": {
@@ -65,7 +66,10 @@
                 "zoom": "Zoom"
             },
             "miniCanvas": "Popout/Restore Canvas",
-            "preview3d": "Basculer le mode 3D"
+            "preview3d": "Basculer le mode 3D",
+            "tips": {
+                "templatePlacement": "Placement du modèle 3D : molette de la souris pour modifier l'élévation. \nContrôlez la molette de la souris pour faire pivoter. \nAlt molette de la souris pour incliner."
+            }
         },
         "errors": {
             "3dnotactive": "Impossible d'ouvrir la fenêtre contextuelle de la toile, le mode 3D n'est pas actif.",
@@ -881,10 +885,7 @@
             "veryhigh": "Très haut",
             "verylow": "Très lent"
         },
-        "sceneConfigTitle": {
-            "notes": "",
-            "title": ""
-        },
+        "sceneConfigTitle": {},
         "settings": {
             "altCameraControls": {
                 "hint": "Lorsqu'il est activé, le clic gauche ne fera pas pivoter la caméra. \nLa rotation se fera sur le bouton central de la souris à la place.",
@@ -1323,7 +1324,8 @@
                 "coveragePercent": "Pourcentage de couverture",
                 "offsetX": "Décalage X (UV)",
                 "offsetY": "Décalage Y (UV)",
-                "rotation_angle": "Rotation (deg)"
+                "rotation_angle": "Rotation (deg)",
+                "inclination": "Inclination"
             },
             "sound": {
                 "chroma": "Chroma",

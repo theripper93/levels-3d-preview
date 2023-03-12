@@ -16,6 +16,7 @@ export class Template3D {
         this.placeable = template;
         this.initialDirection = this.template.document?.direction;
         this.isFog = this.template?.document?.getFlag("levels-3d-preview", "isFog") ?? false;
+        this.tilt = this.template?.document?.getFlag("levels-3d-preview", "tilt") ?? 0;
         this.shaders = this.template?.document?.getFlag("levels-3d-preview", "shaders") ?? {};
         this.wasFreeMode = this.template?.document?.getFlag("levels-3d-preview", "wasFreeMode") ?? false;
         this.hasShaders = Object.values(this.shaders).some((v) => v.enabled);
@@ -80,6 +81,7 @@ export class Template3D {
         this.angle = 0;
         this.width = 1;
         const mesh = this._getMesh();
+        mesh.rotateZ(Math.toRadians(this.tilt))
         this.templateMesh = mesh;
         this.templateMesh.userData.interactive = false;
         this.templateMesh.userData.ignoreHover = true;
@@ -210,6 +212,9 @@ export class Template3D {
                     elevation: origin2d.z.toFixed(2),
                     special: this.special !== undefined ? this.special.toFixed(2) : undefined,
                 },
+                "levels-3d-preview": {
+                    tilt: this.tilt,
+                },
             },
         };
         const currentTemplateData = this.template?.document?.toObject() ?? {};
@@ -250,7 +255,9 @@ export class Template3D {
         const geometry = new THREE.SphereGeometry(radius, 32, 32);
         const mesh = new THREE.Mesh(geometry, this.material);
         this.fogMesh = mesh;
-        return mesh;
+        const group = new THREE.Group();
+        group.add(mesh);
+        return group;
     }
 
     _getSquareGeometry() {
@@ -272,7 +279,9 @@ export class Template3D {
         }
 
         mesh.position.set(width / 2, height / 2, depth / 2);
-        return mesh;
+        const group = new THREE.Group();
+        group.add(mesh);
+        return group;
     }
 
     _getConeGeometry() {
@@ -303,7 +312,9 @@ export class Template3D {
         const geometry = new THREE.CylinderGeometry(radius, radius, height, 32);
         const mesh = new THREE.Mesh(geometry, this.material);
         mesh.position.set(0, height / 2, 0);
-        return mesh;
+        const group = new THREE.Group();
+        group.add(mesh);
+        return group;
     }
 
     _getRayGeometry() {
@@ -509,6 +520,7 @@ export class Template3D {
     }
 
     static drawPreview(template) {
+        ui.notifications.info(game.i18n.localize("levels3dpreview.controls.tips.templatePlacement"));
         const initialLayer = canvas.activeLayer;
         template.ray = Ray.fromAngle(template.document?.x, template.document?.y, Math.toRadians(template.document?.direction), (template.document?.distance * canvas.scene.dimensions.size) / canvas.scene.dimensions.distance);
         // Draw the template and switch to the template layer
@@ -543,6 +555,14 @@ export class Template3D {
         let snap = delta;
         this.directionOffset += snap * Math.sign(-deltaY);
         this.mesh.rotation.y = Math.toRadians(this.directionOffset);
+    }
+
+    onTilt(deltaY) {
+        if (game.Levels3DPreview.interactionManager.isFreeMode) return;
+        let delta = canvas.grid.type > CONST.GRID_TYPES.SQUARE ? 30 : 15;
+        let snap = delta;
+        this.tilt += snap * Math.sign(-deltaY);
+        this.templateMesh.rotation.z = Math.toRadians(this.tilt);
     }
 
     static setHooks() {
