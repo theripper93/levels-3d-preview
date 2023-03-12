@@ -3,7 +3,11 @@ export default function initTemplateEffects(){
     const handler = handlers[game.system.id]
     if (handler) {
         Hooks.on("preCreateMeasuredTemplate", (templateDocument) => {
-        if(game.settings.get("levels-3d-preview", "templateEffects")) handler(templateDocument)        
+            try {
+                if(game.settings.get("levels-3d-preview", "templateEffects")) handler(templateDocument)        
+            }catch (e) {
+                
+            }
         })
     }
 }
@@ -11,7 +15,7 @@ export default function initTemplateEffects(){
 const handlers = {
     "dnd5e": (templateDocument) => {
         const effects = shaderData[game.system.id]
-        const item = fromUuidSync(templateDocument.flags.dnd5e.origin)
+        const item = fromUuidSync(templateDocument.flags?.dnd5e?.origin)
         if(!item?.system) return;
         const damageTypes = item.system.damage.parts.map(part => part[1])
         let effect = effects[damageTypes[0]]
