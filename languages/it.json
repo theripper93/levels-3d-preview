@@ -1204,6 +1204,10 @@
             "lightHelpers": {
                 "hint": "Abilita gli aiutanti di luce. \nQuesto mostrerà la fonte di luce e l'area di effetto della luce quando si trova nel livello di illuminazione.",
                 "name": "Abilita gli aiutanti di luce"
+            },
+            "templateAuto3D": {
+                "hint": "Quando una terza dimensione non è specificata per un modello, deducila (ad es. un raggio largo 5 piedi sarà alto 5 piedi).",
+                "name": "Modelli 3D automatici"
             }
         },
         "shaders": {

@@ -50,6 +50,12 @@
       </div>
 
       <div class="form-group">
+        <label>{{localize "levels3dpreview.settings.templateAuto3D.name"}}</label>
+        <input type="checkbox" name="templateAuto3D" data-dtype="Boolean" {{checked templateAuto3D}} />
+        <p class="notes">{{localize "levels3dpreview.settings.templateAuto3D.hint"}}</p>
+      </div>
+
+      <div class="form-group">
         <label>{{localize "levels3dpreview.settings.lightHelpers.name"}}</label>
         <input type="checkbox" name="lightHelpers" data-dtype="Boolean" {{checked lightHelpers}} />
         <p class="notes">{{localize "levels3dpreview.settings.lightHelpers.hint"}}</p>

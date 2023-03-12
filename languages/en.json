@@ -1027,6 +1027,10 @@
                 "name": "Enable Template Effects",
                 "hint": "Automatically apply shaders to templates based on damage type. Currently only dnd5e is supported."
             },
+            "templateAuto3D": {
+                "name": "Auto 3D Templates",
+                "hint": "When a third dimension is not specified for a template, infer it (e.g. a 5ft wide ray will be 5ft high)."
+            },
             "lightHelpers": {
                 "name": "Enable Light Helpers",
                 "hint": "Enable the light helpers. This will show the light source and the area of effect of the light when in the lighting layer."

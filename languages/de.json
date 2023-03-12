@@ -1204,6 +1204,10 @@
             "lightHelpers": {
                 "hint": "Aktivieren Sie die Lichthelfer. \nDies zeigt die Lichtquelle und den Wirkungsbereich des Lichts in der Beleuchtungsebene.",
                 "name": "Lichthelfer aktivieren"
+            },
+            "templateAuto3D": {
+                "hint": "Wenn für eine Vorlage keine dritte Dimension angegeben ist, leiten Sie sie ab (z. B. ist ein 5 Fuß breiter Strahl 5 Fuß hoch).",
+                "name": "Automatische 3D-Vorlagen"
             }
         },
         "shaders": {

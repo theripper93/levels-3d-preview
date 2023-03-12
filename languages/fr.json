@@ -1204,6 +1204,10 @@
             "lightHelpers": {
                 "hint": "Activez les assistants lumineux. \nCela montrera la source de lumière et la zone d'effet de la lumière lorsqu'elle se trouve dans la couche d'éclairage.",
                 "name": "Activer les assistants légers"
+            },
+            "templateAuto3D": {
+                "hint": "Lorsqu'une troisième dimension n'est pas spécifiée pour un modèle, déduisez-la (par exemple, un rayon de 5 pieds de large aura 5 pieds de haut).",
+                "name": "Modèles 3D automatiques"
             }
         },
         "shaders": {

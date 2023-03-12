@@ -349,7 +349,7 @@ export class Template3D {
         if (this.fromData) {
             return this.template.document?.flags?.levels ?? { special: 0 };
         } else {
-            return { special: CONFIG.Levels.UI.nextTemplateSpecial };
+            return { special: this.template.document?.flags?.levels?.special ?? CONFIG.Levels.UI.nextTemplateSpecial };
         }
     }
 
@@ -524,6 +524,24 @@ export class Template3D {
         const initialLayer = canvas.activeLayer;
         template.ray = Ray.fromAngle(template.document?.x, template.document?.y, Math.toRadians(template.document?.direction), (template.document?.distance * canvas.scene.dimensions.size) / canvas.scene.dimensions.distance);
         // Draw the template and switch to the template layer
+        
+        
+        let special;
+
+        if (game.settings.get("levels-3d-preview", "templateAuto3D")) {
+            const type = template.document.t;
+            if (type == "rect") {
+                const w = Math.cos(Math.toRadians(template.document.direction)) * template.document.distance;
+                const h = Math.sin(Math.toRadians(template.document.direction)) * template.document.distance;
+                special = Math.min(w, h);
+            } else if (type == "ray") {
+                special = template.document.width;
+            }
+        }
+
+        template.document.flags.levels ??= {};
+        template.document.flags.levels.special = special;
+        
         canvas.templates.activate();
         const template3d = new Template3D(template);
         template3d.initialLayer = initialLayer;

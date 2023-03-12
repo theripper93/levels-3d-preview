@@ -1204,6 +1204,10 @@
             "lightHelpers": {
                 "hint": "Habilite los ayudantes de luz. \nEsto mostrará la fuente de luz y el área de efecto de la luz cuando esté en la capa de iluminación.",
                 "name": "Habilitar ayudantes de luz"
+            },
+            "templateAuto3D": {
+                "hint": "Cuando no se especifica una tercera dimensión para una plantilla, deducirla (por ejemplo, un rayo de 5 pies de ancho tendrá 5 pies de alto).",
+                "name": "Plantillas 3D automáticas"
             }
         },
         "shaders": {
