@@ -253,6 +253,15 @@
       </div>
 
       <div class="form-group">
+        <label>{{localize "levels3dpreview.settings.pingsound.name"}}</label>
+        <div class="form-fields">
+        {{filePicker type="audio" target="pingsound"}}
+        <input type="text" name="pingsound" data-dtype="String" value="{{pingsound}}" />
+        </div>
+        <p class="notes">{{localize "levels3dpreview.settings.pingsound.hint"}}</p>
+      </div>
+
+      <div class="form-group">
         <label>{{localize "levels3dpreview.settings.navigatorAuto.name"}}</label>
         <select name="navigatorAuto" data-dtype="String">
           {{#select navigatorAuto}}

@@ -1092,6 +1092,10 @@
                 "name": "Enable Canvas Popout",
                 "hint": "Pop out the 2d canvas into a separate window when the 3D mode is activated"
             },
+            "pingsound": {
+                "name": "Ping Sound",
+                "hint": "The sound to play when a pinging a location."
+            },
             "preventNegative": {
                 "name": "Prevent Negative Elevation",
                 "hint": "Prevents token movement to go below the game board"

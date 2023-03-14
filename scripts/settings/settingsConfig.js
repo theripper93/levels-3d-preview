@@ -15,7 +15,7 @@ class canvas3dConfig extends FormApplication{
 
 	async getData(options) {
         const data = {}
-        const settingsKeys = ["lightHelpers", "useMultithreading", "templateEffects", "templateAuto3D", "enableReticule", "fullTransparency", "outline", "gameCameraWarnings", "gameCameraAutoLock", "gameCameraDefaultGm", "gameCameraClipping", "gameCameraMinAngle", "gameCameraMaxAngle", "enableGameCamera", "rangeFinder", "preapplyShaders", "sharedContext", "rotateIndicator", "navigatorAuto", "showAdvanced", "canpingpan", "canping", "baseStyle", "solidBaseMode", "solidBaseColor", "highlightCombat", "startMarker", "hideTarget", "templateSyle", "autoPan", "standupFace", "preventNegative", "miniCanvas", "debugMode", "cameralockzero"];
+        const settingsKeys = ["pingsound", "lightHelpers", "useMultithreading", "templateEffects", "templateAuto3D", "enableReticule", "fullTransparency", "outline", "gameCameraWarnings", "gameCameraAutoLock", "gameCameraDefaultGm", "gameCameraClipping", "gameCameraMinAngle", "gameCameraMaxAngle", "enableGameCamera", "rangeFinder", "preapplyShaders", "sharedContext", "rotateIndicator", "navigatorAuto", "showAdvanced", "canpingpan", "canping", "baseStyle", "solidBaseMode", "solidBaseColor", "highlightCombat", "startMarker", "hideTarget", "templateSyle", "autoPan", "standupFace", "preventNegative", "miniCanvas", "debugMode", "cameralockzero"];
         for (let key of settingsKeys) {
             data[key] = game.settings.get("levels-3d-preview", key);
         }
@@ -401,6 +401,13 @@ Hooks.once('init', function() {
       type: Boolean,
       default: false,
     });
+  
+      game.settings.register("levels-3d-preview", "pingsound", {
+          scope: "world",
+          config: false,
+          type: String,
+          default: "sounds/combat/epic-turn-1hit.ogg",
+      });
 
     game.settings.register("levels-3d-preview", "standupFace", {
       name: game.i18n.localize("levels3dpreview.settings.standupFace.name"),

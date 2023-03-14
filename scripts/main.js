@@ -42,7 +42,8 @@ import { WorkerHandler } from "./helpers/workers.js";
 import { miniCanvas } from "./apps/minicanvas.js";
 import { throttle, sleep } from "./helpers/utils.js";
 import { BokehPass } from "./lib/BokehPass.js";
-import { VFXSystem } from "./systems/vfx.js";
+import {VFXSystem} from "./systems/vfx.js";
+import { Ping } from "./entities/effects/ping.js";
 import { injectThreeModifications } from "./threejsmodifications.js";
 
 export const factor = 1000;
@@ -136,6 +137,7 @@ class Levels3DPreview {
                 turnStartMarker,
                 ParticleSystem,
                 Tile3D,
+                Ping,
             },
             INTERACTIONS: {
                 dropFunctions,
@@ -313,6 +315,7 @@ class Levels3DPreview {
         this.tiles = {};
         this.templates = {};
         this.notes = {};
+        this.pings = new Set();
         this.models = {
             target: new THREE.Mesh(new THREE.SphereGeometry(0.1, 32, 32)),
         };
@@ -348,6 +351,7 @@ class Levels3DPreview {
         this.socket.register("socketCamera", this.helpers.socketCamera);
         this.socket.register("syncClipNavigator", this.helpers.syncClipNavigator);
         this.socket.register("playTokenAnimationSocket", this.helpers.playTokenAnimationSocket);
+        this.socket.register("dispatchPing", this.helpers.dispatchPing);
         this.exporter = new Exporter(this);
         $("body").append(`<div id="video-texture-container" style="position: absolute; top: 0; left: 0;display: none;"></div>`);
         this.videoTextureContinaer = $("#video-texture-container");
@@ -384,7 +388,7 @@ class Levels3DPreview {
         this.renderer.setClearColor(0x999999, 1);
         this.renderer.shadowMap.type = game.settings.get("levels-3d-preview", "softShadows") ? THREE.PCFSoftShadowMap : THREE.PCFShadowMap;
 
-        this.renderer.debug.checkShaderErrors = false;
+        //this.renderer.debug.checkShaderErrors = false;
 
         //composer
 
@@ -1146,6 +1150,9 @@ class Levels3DPreview {
             this.weather?.update(delta);
             this.GameCamera.update(delta);
             this.vfx?.update(delta);
+            this.pings.forEach((ping) => { 
+                ping.update(delta);
+            });
             this.controls.update();
             if (this.firstPersonMode) {
                 let controlled = canvas.tokens.controlled[0];

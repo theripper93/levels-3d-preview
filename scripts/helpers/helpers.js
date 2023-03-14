@@ -4,7 +4,8 @@ import { Ruler3D } from "../systems/ruler3d.js";
 import { mergeVertices } from "../lib/BufferGeometryUtils.js";
 import { setPerformancePreset, injectPresetButtons } from "../settings/performancePresets.js";
 import { SimplifyModifier } from "../lib/Simplify.js";
-import { showSceneReport, showPerformanceDialog } from "../settings/performanceReport.js";
+import {showSceneReport, showPerformanceDialog} from "../settings/performanceReport.js";
+import { Ping } from "../entities/effects/ping.js";
 
 const simplify = new SimplifyModifier();
 
@@ -375,11 +376,27 @@ export class Helpers {
         this._ping();
     }
 
+    dispatchPing({ position, color, size }) { 
+        new Ping(position, color, size);
+    }
+
     _ping() {
         if (!game.user.isGM && !game.settings.get("levels-3d-preview", "canping")) return ui.notifications.error(game.i18n.localize("levels3dpreview.errors.canping"));
-        const highPos = game.Levels3DPreview.interactionManager.canvas2dMousePosition.clone();
-        highPos.z = 500;
-        new Particle3D("r").from(highPos).to(game.Levels3DPreview.interactionManager.canvas2dMousePosition).sprite("modules/levels-3d-preview/assets/particles/trace_07.png").color(game.user.color).scale(3, 3).life(1000).rate(100, 1).alpha(0.2, 0).start();
+        let position = game.Levels3DPreview.interactionManager.canvas3dMousePosition.clone();
+        const color = game.user.color;
+        let size = 1;
+        if (canvas.tokens.hover) {
+            const token3D = game.Levels3DPreview.tokens[canvas.tokens.hover.id];
+            if (token3D) { 
+                position = token3D.mesh.position.clone();
+                size = Math.max(token3D.token.document.width, token3D.token.document.height);
+            }
+        }
+        game.Levels3DPreview.socket.executeForEveryone("dispatchPing", {
+            position,
+            color,
+            size,
+        });
     }
 
     focusCameraToPosition(cameraPosition, cameraLookat, speed = 0.04) {
