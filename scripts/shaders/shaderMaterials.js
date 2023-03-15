@@ -56,6 +56,9 @@ export const radialGradientShaderMaterial = new THREE.ShaderMaterial({
         opacity: {
             value: 1.0,
         },
+        glow: {
+            value: false,
+        },
     },
     varying: {
         vPosition: { value: new THREE.Vector3() },
@@ -77,6 +80,7 @@ uniform vec3 curvecolor;
 uniform float gridSize;
 uniform bool reverseGradient;
 uniform float opacity;
+uniform bool glow;
 varying vec3 vPosition;
     
     void main() {     
@@ -84,7 +88,9 @@ varying vec3 vPosition;
     float radius = gridSize / 2.0;
     float alpha = reverseGradient ? (distanceFromCenter / radius) : 1.0-(distanceFromCenter / radius);
     gl_FragColor = vec4(curvecolor.x, curvecolor.y, curvecolor.z , alpha * opacity);
-    
+    if(glow) {
+        gl_FragColor.rgb *= 2.0;
+    }
 }
 `,
 });
@@ -151,7 +157,7 @@ varying vec3 vPosition;
     }
 
     gl_FragColor = vec4(curvecolor.x, curvecolor.y, curvecolor.z , alpha * opacity);
-    
+    gl_FragColor.rgb *= 2.0;
 }
 `,
 });
@@ -206,6 +212,7 @@ varying vec3 vPosition;
     alpha *= (1.0 - distanceFromCenter / height);
 
     gl_FragColor = vec4(curvecolor.x, curvecolor.y, curvecolor.z , alpha * opacity);
+    gl_FragColor.rgb *= 2.0;
     
 }
 `,

@@ -92,6 +92,7 @@ const baseMaterial = radialGradientShaderMaterial.clone();
 baseMaterial.uniforms.curvecolor.value = new THREE.Color(0x00ff00);
 baseMaterial.uniforms.gridSize.value = pingSize * 2;
 baseMaterial.uniforms.reverseGradient.value = false;
+baseMaterial.uniforms.glow.value = true;
 
 const baseMesh = new THREE.Mesh(base, baseMaterial);
 
