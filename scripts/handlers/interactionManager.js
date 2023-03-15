@@ -31,6 +31,7 @@ export class InteractionManager {
         this.controls.enableRotate = !this.isCameraLocked;
         this.forceSightCollisions = this.generateSightCollisions.bind(this);
         this.generateSightCollisions = debounce(this.generateSightCollisions.bind(this), 100);
+        this._downId = null;
         //this.updateHoverObj = debounce(this.updateHoverObj.bind(this), 100);
     }
 
@@ -383,6 +384,20 @@ export class InteractionManager {
     _onMouseDown(event) {
         if (this._groupSelect && this.activeLayerEntity != "MeasuredTemplate") return this.groupSelectHandler.startSelect(event);
         if (this.preventSelect) return;
+        const downId = randomID();
+        this._downId = downId;
+        if (event.which === 1 && canvas.tokens?.active) {
+            setTimeout(() => {
+                if (this.draggable || this._downId !== downId || !this._leftDown || (this.controls.mouseButtons.LEFT && this._downCameraPosition.distanceTo(this._upCameraPosition) > 0.01)) return;
+                this._downId = null;
+                this._onMouseMove(event, true);
+                if (event.shiftKey) {
+                    game.Levels3DPreview.helpers.focusCameraToCursor();
+                } else {
+                    game.Levels3DPreview.helpers._ping();
+                }
+            }, MouseInteractionManager.LONG_PRESS_DURATION_MS);
+        }
         this._parent.stopCameraAnimation();
         this._downCameraPosition = this._parent.camera.position.clone();
         if (event.which === 1 && event.ctrlKey) canvas.activeLayer.releaseAll();
@@ -515,6 +530,9 @@ export class InteractionManager {
         } else {
             this.currentHover?._onHoverOut(event);
             this.currentHover = null;
+        }
+        if (canvas.activeLayer.hover && this.currentHover?.placeable?.id !== canvas.activeLayer.hover?.id) {
+            canvas.activeLayer.hover._onHoverOut(event);
         }
 
         if (game.user.hasPermission("SHOW_CURSOR")) {

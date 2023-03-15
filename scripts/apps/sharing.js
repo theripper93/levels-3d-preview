@@ -154,6 +154,7 @@ class ShareMap extends FormApplication {
     }
 
     getData() {
+        const sceneData = JSON.stringify(this.scene.toObject());
         return {
             scene: this.scene,
             user: game.user,
@@ -162,7 +163,7 @@ class ShareMap extends FormApplication {
                 return {
                     name: game.i18n.localize(`levels3dpreview.sharing.packs.${ap}`),
                     id: ap,
-                    selected: ap == "mapmakingpack",
+                    selected: ap == "mapmakingpack" || sceneData.toLowerCase().includes(packData[ap].id),
                 };
             }),
         };

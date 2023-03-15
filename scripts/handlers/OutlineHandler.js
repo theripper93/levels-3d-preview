@@ -104,7 +104,14 @@ function setOutlineHooks() {
     });
 
     Hooks.on("hoverTile", (tile, hovered) => {
-        if (!game.Levels3DPreview?._active || !canvas.tiles.active) return;
+        if (!game.Levels3DPreview?._active) return;
+        const tile3d = game.Levels3DPreview.tiles[tile.id];
+        if(!tile3d) return;
+        const isDoor = tile3d?.data?.isDoor;
+        const isSecret = tile3d?.data?.isSecret;
+        const tilesActive = canvas.tiles.active;
+        if (!isDoor && !tilesActive) return;
+        if(!game.user.isGM && isSecret) return;
         const object3D = game.Levels3DPreview.tiles[tile.id]?.mesh;
         if (object3D) game.Levels3DPreview.outline.toggleHovered(object3D, hovered && !tile.controlled, 1);
     });

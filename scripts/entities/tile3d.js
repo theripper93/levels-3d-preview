@@ -193,6 +193,7 @@ export class Tile3D {
         this.doorState = this.tile.document.getFlag("levels-3d-preview", "doorState") ?? 0;
         this.mergedMatrix = this.tile.document.getFlag("levels-3d-preview", "mergedMatrix") ?? null;
         this.originalDimensions = this.tile.document.getFlag("levels-3d-preview", "originalDimensions") ?? null;
+        this.highlightOnHover = this.tile.document.getFlag("levels-3d-preview", "highlightOnHover") ?? false;
         this.isDoor = this.doorType != 0;
         this.isSecret = this.doorType == 2;
         this.isOpen = this.doorState == 1;
@@ -1232,8 +1233,23 @@ export class Tile3D {
         this.tile._onClickRight2(event);
     }
 
+    get isDoorHover() { 
+        const isGM = game.user.isGM;
+        const MATTPointer = this.tile.document.flags["monks-active-tiles"]?.pointer;
+        const isHoverable = this.isDoor || this.highlightOnHover || MATTPointer;
+        if (isGM && isHoverable) return true;
+        if (!isGM && isHoverable && !this.isSecret) return true;
+        return false;
+    }
+
     _onHoverIn(e) {
-        if (canvas.activeLayer.options.objectClass.embeddedName !== "Tile") return;
+        if (canvas.activeLayer.options.objectClass.embeddedName !== "Tile") {
+            if (this.isDoorHover) {
+                game.Levels3DPreview.outline.toggleHovered(this.mesh, true, 1);
+                this._parent.setCursor("pointer");
+            }
+            return;
+        }
         const event = {
             stopPropagation: () => {},
             data: {
@@ -1245,7 +1261,11 @@ export class Tile3D {
     }
 
     _onHoverOut(e) {
-        if (canvas.activeLayer.options.objectClass.embeddedName !== "Tile") return;
+        if (canvas.activeLayer.options.objectClass.embeddedName !== "Tile") {
+            if (this.isDoorHover) {
+                game.Levels3DPreview.outline.toggleHovered(this.mesh, false, 1);
+            }
+        }
         const event = {
             stopPropagation: () => {},
             data: {

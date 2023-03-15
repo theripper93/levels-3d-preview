@@ -721,6 +721,9 @@
             "sightMeshComplexity": {
                 "label": "Collider Resolution"
             },
+            "highlightOnHover": {
+                "label": "Highlight on Hover"
+            },
             "enableCollision": {
                 "label": "Enable Collision",
                 "options": {
