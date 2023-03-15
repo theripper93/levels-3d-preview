@@ -711,6 +711,7 @@ Hooks.on("renderTileConfig", (app,html)=>{
                 billboard: game.i18n.localize("levels3dpreview.flags.dynaMesh.options.billboard"),
                 billboard2: game.i18n.localize("levels3dpreview.flags.dynaMesh.options.billboard2"),
                 text: game.i18n.localize("levels3dpreview.flags.dynaMesh.options.text"),
+                decal: game.i18n.localize("levels3dpreview.flags.dynaMesh.options.decal"),
                 mapGen: game.i18n.localize("levels3dpreview.flags.dynaMesh.options.mapGen"),
             },
         },

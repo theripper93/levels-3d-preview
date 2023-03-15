@@ -418,6 +418,7 @@
                     "billboard": "Billboard",
                     "billboard2": "Billboard (Cross)",
                     "text": "Text (Use 3D Model field for text)",
+                    "decal": "Decal",
                     "mapGen": "Map Generator"
                 }
             },

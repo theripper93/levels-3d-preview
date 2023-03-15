@@ -1,20 +1,22 @@
 import * as THREE from "../lib/three.module.js";
 import { factor } from "../main.js";
 import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from "../lib/three-mesh-bvh.js";
-import { mergeBufferGeometries } from "../lib/BufferGeometryUtils.js";
+import {mergeBufferGeometries} from "../lib/BufferGeometryUtils.js";
+import { DecalGeometry } from "../lib/DecalGeometry.js";
 THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
 THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
 THREE.Mesh.prototype.raycast = acceleratedRaycast;
 
 let font = null;
 export class DynaMesh {
-    constructor(type, { width = 1, height = 1, depth = 1, resolution = 1, text = "" }) {
+    constructor(type, { width = 1, height = 1, depth = 1, resolution = 1, text = "", decalData = {} }) {
         this.type = type;
         this.width = width;
         this.height = height;
         this.depth = depth;
         this.resolution = resolution;
         this.text = text;
+        this.decalData = decalData;
     }
 
     async create() {
@@ -82,6 +84,12 @@ export class DynaMesh {
 
     _constructdome() {
         const geometry = new THREE.SphereGeometry(this._avgAll, Math.ceil((this._avgWidthHeight / this._gridUnit) * this.resolution), Math.ceil((this.depth / this._gridUnit) * this.resolution), 0, Math.PI * 2, 0, Math.PI / 2);
+        return geometry;
+    }
+
+    async _constructdecal() { 
+        const decalData = this.decalData;
+        const geometry = new DecalGeometry(decalData.mesh, decalData.position, decalData.rotation, new THREE.Vector3(this.width, this.height, this.height));
         return geometry;
     }
 

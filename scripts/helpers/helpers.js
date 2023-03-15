@@ -56,7 +56,6 @@ export class Helpers {
             await resolveMetadata(video);
             let videoTexture = new THREE.VideoTexture(video);
             videoTexture.format = THREE.RGBAFormat;
-            this.isVideo = true;
             return videoTexture;
         } else {
             let texture;

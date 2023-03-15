@@ -69,7 +69,7 @@ export class Tile3D {
     }
 
     sendToWorker() {
-        if ((!this.sight && !this.hasTags) || !this._parent?.workers?.enabled) return;
+        if ((!this.sight && !this.hasTags) || this.dynaMesh == "decal" || !this._parent?.workers?.enabled) return;
         this.mesh.traverse((o) => {
             o.updateMatrix();
         });
@@ -142,6 +142,7 @@ export class Tile3D {
         this.flipY = this.tile.document.getFlag("levels-3d-preview", "flipY") ?? false;
         this.shaders = this.tile.document.getFlag("levels-3d-preview", "shaders") ?? {};
         this.dynaMesh = this.tile.document.getFlag("levels-3d-preview", "dynaMesh") ?? "default";
+        if(this.dynaMesh === "decal") this.isGravity = true;
         this.dynaMeshResolution = this.tile.document.getFlag("levels-3d-preview", "dynaMeshResolution") ?? 1;
         this.sightMeshComplexity = this.tile.document.getFlag("levels-3d-preview", "sightMeshComplexity") ?? 1;
         this.roughness = this.tile.document.getFlag("levels-3d-preview", "roughness") ?? -0.01;
@@ -349,7 +350,7 @@ export class Tile3D {
             this.displacementMap = this.getDisplacementData(tex.image);
             this.applyDisplacement(model.scene);
         }
-        const object = game.Levels3DPreview.helpers.groundModel(model.scene, this.autoGround, this.autoCenter);
+        const object = this.dynamesh === "decal" ? model.scene : game.Levels3DPreview.helpers.groundModel(model.scene, this.autoGround, this.autoCenter);
         const box = new THREE.Box3().setFromObject(object);
         const mWidth = box.max.x - box.min.x;
         const mHeight = box.max.z - box.min.z;
@@ -393,7 +394,19 @@ export class Tile3D {
             }
         }
         //end migration
-        object.scale.set(this.width / mWidth, this.depth / mDepth, this.height / mHeight);
+
+        if (this.dynaMesh === "decal") {
+            const center = this.center;
+            object.position.set( -center.x, - center.y + 0.01, -center.z);
+            object.traverse((child) => { 
+                if (child.isMesh) { 
+                    child.material.polygonOffset = true
+                    child.material.polygonOffsetFactor = -1;
+                }
+            });
+        } else {
+            object.scale.set(this.width / mWidth, this.depth / mDepth, this.height / mHeight);
+        }
 
         const color = new THREE.Color(this.color);
         this._processModel(object, textureOrMat, isPBR, color);
@@ -423,7 +436,9 @@ export class Tile3D {
         container.add(this.sightMesh);
         container.add(object);
         container.position.set(this.center.x, this.center.y, this.center.z);
-        container.rotation.set(this.tiltX, -this.angle * this.rotSign, this.tiltZ);
+        if (this.dynaMesh !== "decal") container.rotation.set(this.tiltX, -this.angle * this.rotSign, this.tiltZ)
+        else this._decal = object;
+
         container.userData.hitbox = container;
         container.userData.interactive = true;
         container.userData.entity3D = this;
@@ -691,7 +706,29 @@ export class Tile3D {
     async getModel() {
         const isMapgen = this.dynaMesh === "mapGen" && this.mapgen;
         if (this.dynaMesh != "default" && !isMapgen) {
-            const dynamesh = new DynaMesh(this.dynaMesh, { text: this.gtflPath, width: this.width, height: this.height, depth: this.depth, resolution: this.dynaMeshResolution });
+            let decalData = {};
+            if (this.dynaMesh === "decal") {
+                const position = new THREE.Vector3(this.center.x, this.center.y, this.center.z);
+                const targetp = position.clone();
+                targetp.y -= 999999;
+                const intersects = this._parent.interactionManager.computeSightCollisionFrom3DPositions(position, targetp, "collision", false, false, false, true);
+                if (!intersects[0]) {this.dynaMesh = "box"} else {
+                    const intersect = intersects[0];
+                    
+                    //const euler = new THREE.Euler(0, - this.angle * this.rotSign, 0);
+                        const rotation = new THREE.Matrix4();
+                        rotation.lookAt(position, intersect.point, new THREE.Vector3(0, 1, 0));
+                    const euler = new THREE.Euler().setFromRotationMatrix(rotation);
+                    const dummy = new THREE.Object3D();
+                    dummy.rotation.copy(euler);
+                    dummy.updateMatrix();
+                    dummy.rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -this.angle * this.rotSign);
+                    dummy.updateMatrix();
+                    decalData = { mesh: intersect.object, position: intersect.point, rotation: dummy.rotation};
+                }   
+                }
+                
+            const dynamesh = new DynaMesh(this.dynaMesh, { text: this.gtflPath, width: this.width, height: this.height, depth: this.depth, resolution: this.dynaMeshResolution, decalData });
             const mesh = await dynamesh.create();
             return {
                 scene: mesh,
@@ -874,11 +911,6 @@ export class Tile3D {
     processRotation(update, tile) {
         const worldRotation = new THREE.Euler().setFromQuaternion(this.mesh.getWorldQuaternion(new THREE.Quaternion()));
 
-        /*if(Math.abs(worldRotation.x) === Math.PI && Math.abs(worldRotation.z) === Math.PI){
-            worldRotation.y = (Math.PI + (worldRotation.y))*Math.sign(worldRotation.x);
-            worldRotation.x = 0;
-            worldRotation.z = 0;
-        }*/
 
         const currentTiltX = worldRotation.x;
         const currentTiltZ = worldRotation.z;
@@ -886,7 +918,7 @@ export class Tile3D {
 
         let newTiltX = Math.round(Math.toDegrees(currentTiltX % (Math.PI * 2)));
         let newTiltZ = Math.round(Math.toDegrees(currentTiltZ % (Math.PI * 2)));
-        let newTiltY = Math.round(Math.toDegrees((-currentTiltY * this.rotSign) % (Math.PI * 2)));
+        let newTiltY = Math.round(Math.toDegrees((-currentTiltY * this.rotSign + (this._decal ? this.angle : 0)) % (Math.PI * 2)));
 
         if (newTiltX === -180 && newTiltZ === -180 && newTiltY === 0) {
             newTiltX = 0;
