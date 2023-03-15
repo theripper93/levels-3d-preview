@@ -753,6 +753,7 @@ export class Token3D {
 
     get isTokenProne() {
         const token = this.token;
+        const proneIds = ["prone", "unconscious", "dead", "defeated"];
         switch (game.system.id) {
             case "pf2e":
                 return token.actor?.hasCondition("prone") ?? false;
@@ -761,7 +762,10 @@ export class Token3D {
             // D35E: no prone condition?
         }
         // dnd5e, dnd4e, sfrpg, dsa5, cyberpunk2020, shadowrun5e, swade, wfrp4e, ...
-        return token.actor?.effects.some((e) => e.getFlag("core", "statusId")?.toLowerCase()?.includes("prone")) ?? false;
+        return token.actor?.effects.some((e) => {
+            const flag = e.getFlag("core", "statusId");
+            return flag && proneIds.some((id) => flag.toLowerCase().includes(id));
+        }) ?? false;
     }
 
     updateHiden() {

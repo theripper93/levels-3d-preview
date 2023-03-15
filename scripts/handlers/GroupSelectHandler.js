@@ -67,6 +67,12 @@ export class GroupSelectHandler {
         this._selectionBox.endPoint.set(this.mousePos.x, this.mousePos.y, 0.5);
 
         this._selected = this._selectionBox.select();
+        for (const [uuid, ids] of Object.entries(this._selectionBox.instances)) { 
+            if(!ids.length) continue;
+            const object = this.scene.getObjectByProperty("uuid", uuid);
+            if (!object || this._selected.includes(object)) continue;
+            this._selected.push(object);
+        }
 
         this.element.css({
             height: event.clientY - this.elementPosition?.top ?? 0,
@@ -74,6 +80,7 @@ export class GroupSelectHandler {
         });
         this._selectedIds = {};
         this._selected.forEach((entity) => {
+            debugger;
             entity.traverseAncestors((ancestor) => {
                 const entity3D = ancestor?.userData?.entity3D;
                 if (entity3D && entity3D?.placeable?.document?.documentName === this.activeLayerEntity) {
