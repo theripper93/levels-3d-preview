@@ -353,9 +353,6 @@ class Levels3DPreview {
         this.socket.register("playTokenAnimationSocket", this.helpers.playTokenAnimationSocket);
         this.socket.register("dispatchPing", this.helpers.dispatchPing);
         this.exporter = new Exporter(this);
-        $("body").append(`<div id="video-texture-container" style="position: absolute; top: 0; left: 0;display: none;"></div>`);
-        this.videoTextureContinaer = $("#video-texture-container");
-        Hooks.callAll("levels3dpreviewInit", this);
         this.init3d();
     }
 
@@ -388,7 +385,7 @@ class Levels3DPreview {
         this.renderer.setClearColor(0x999999, 1);
         this.renderer.shadowMap.type = game.settings.get("levels-3d-preview", "softShadows") ? THREE.PCFSoftShadowMap : THREE.PCFShadowMap;
 
-        //this.renderer.debug.checkShaderErrors = false;
+        this.renderer.debug.checkShaderErrors = false;
 
         //composer
 
@@ -1177,6 +1174,10 @@ class Levels3DPreview {
                     visibilityCache[o.uuid] = o.visible;
                 });
             this.composer.render(time);
+            if (this._firstFrame) {
+                this._firstFrame = false;
+                recomputeGravity();
+            }
             if (this._sharedContext) {
                 canvas.app.renderer.reset();
                 //this.renderer.resetState();
@@ -1432,6 +1433,7 @@ class Levels3DPreview {
                             this.renderer.compile(this.scene, this.camera);
                             this.scene.remove(sphereMesh);
                             this._ready = true;
+                            this._firstFrame = true;
                             this.loadingTokens = {};
                             this.loadingTiles = {};
                             this._onReady();

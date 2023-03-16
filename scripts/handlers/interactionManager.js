@@ -57,6 +57,10 @@ export class InteractionManager {
     generateSightCollisions(p0, p1) {
         const tileQuadtree = [];
         const wallsQuadtree = [];
+        if (p0 && p1 && p0.x == p1.x && p0.z == p1.z) {
+            p0 = null;
+            p1 = null;
+        }
         if (p0 && p1) {
             const rectX = Math.min(p0.x, p1.x);
             const rectY = Math.min(p0.y, p1.y);
@@ -1115,7 +1119,8 @@ export class InteractionManager {
 export const dropFunctions = {
     Tile: async function (event, data, snap = null, normal = null, dataTransfer = null, setRotation = 0, autoCenter = false) {
         canvas.tiles.activate();
-        
+        if (!game.Levels3DPreview.helpers.is3DModel(data.texture.src)) return dropImage.bind(this)(event, data);
+            
         data.flags["levels-3d-preview"] = {
             model3d: data.texture.src,
             autoGround: true,
@@ -1187,3 +1192,23 @@ export const dropFunctions = {
         return;
     },
 };
+
+function dropImage(event, data) {
+    data.flags["levels-3d-preview"] = {
+        imageTexture: data.texture.src,
+        dynaMesh: "decal",
+        shaders: data.shaderData,
+        transparency: 0.99,
+    };
+    const size = canvas.grid.size * data.tileSize;
+    data.width = size;
+    data.height = size;
+    data.depth = size;
+    data.flags.levels.rangeBottom += 10;
+    data.x -= size / 2;
+    data.y -= size / 2;
+    data.texture.src = "modules/levels-3d-preview/assets/blank.webp";
+    data.overhead = canvas.activeLayer.name !== "BackgroundLayer";
+
+    canvas.scene.createEmbeddedDocuments("Tile", [data]);
+}

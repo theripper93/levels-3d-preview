@@ -1,11 +1,11 @@
 import * as THREE from "../lib/three.module.js";
 import { MersenneTwister } from "../lib/mersenneTwister.js";
-import { noiseShaders } from "../shaders/noise.js";
 import { SimplexNoise, Perlin, FractionalBrownianMotion } from "../lib/noiseFunctions.js";
 import { Ruler3D } from "../systems/ruler3d.js";
 import { factor } from "../main.js";
 import { DynaMesh } from "../helpers/dynaMesh.js";
-import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from "../lib/three-mesh-bvh.js";
+import {computeBoundsTree, disposeBoundsTree, acceleratedRaycast} from "../lib/three-mesh-bvh.js";
+import { getMergedMeshFromInstanced } from "../helpers/geometryUtils.js";
 THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
 THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
 THREE.Mesh.prototype.raycast = acceleratedRaycast;
@@ -433,8 +433,8 @@ export class Tile3D {
                 child.userData.noShaders = true;
             }
         });
-        container.add(this.sightMesh);
         container.add(object);
+        container.add(this.sightMesh);
         container.position.set(this.center.x, this.center.y, this.center.z);
         if (this.dynaMesh !== "decal") container.rotation.set(this.tiltX, -this.angle * this.rotSign, this.tiltZ)
         else this._decal = object;
@@ -709,22 +709,25 @@ export class Tile3D {
             let decalData = {};
             if (this.dynaMesh === "decal") {
                 const position = new THREE.Vector3(this.center.x, this.center.y, this.center.z);
+                const target3d = new THREE.Object3D();
                 const targetp = position.clone();
                 targetp.y -= 999999;
                 const intersects = this._parent.interactionManager.computeSightCollisionFrom3DPositions(position, targetp, "collision", false, false, false, true);
                 if (!intersects[0]) {this.dynaMesh = "box"} else {
                     const intersect = intersects[0];
-                    
-                    //const euler = new THREE.Euler(0, - this.angle * this.rotSign, 0);
                         const rotation = new THREE.Matrix4();
-                        rotation.lookAt(position, intersect.point, new THREE.Vector3(0, 1, 0));
+                    rotation.lookAt(position, intersect.point, new THREE.Vector3(0, 1, 0));
                     const euler = new THREE.Euler().setFromRotationMatrix(rotation);
                     const dummy = new THREE.Object3D();
                     dummy.rotation.copy(euler);
                     dummy.updateMatrix();
                     dummy.rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -this.angle * this.rotSign);
+                    //dummy.rotateOnWorldAxis(new THREE.Vector3(1, 0, 0), this.tiltX);
+                    //dummy.rotateOnWorldAxis(new THREE.Vector3(0, 0, 1), this.tiltZ);
                     dummy.updateMatrix();
-                    decalData = { mesh: intersect.object, position: intersect.point, rotation: dummy.rotation};
+                    let mesh = intersect.object;
+                    if (mesh.isInstancedMesh) mesh = getMergedMeshFromInstanced(mesh);
+                    decalData = { mesh: mesh, position: intersect.point, rotation: dummy.rotation };
                 }   
                 }
                 
@@ -778,7 +781,7 @@ export class Tile3D {
         let textureOrMat = null;
         let isPBR = null;
         if (!texture) return { textureOrMat, isPBR };
-        textureOrMat = await this._parent.helpers.autodetectTextureOrMaterial(texture, { noCache: this.flipY || this.repeatTexture !== 1, doubleSided: this.doubleSided, ...options });
+        textureOrMat = await this._parent.helpers.autodetectTextureOrMaterial(texture, { noCache: this.flipY || this.repeatTexture, doubleSided: this.doubleSided, ...options });
         isPBR = this._parent.helpers.isPBR(texture);
         if (isPBR) {
             Object.values(textureOrMat).forEach((v) => this.setTexture(v));
