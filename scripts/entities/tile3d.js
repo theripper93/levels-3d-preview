@@ -397,7 +397,7 @@ export class Tile3D {
 
         if (this.dynaMesh === "decal") {
             const center = this.center;
-            object.position.set( -center.x, - center.y + 0.01, -center.z);
+            object.position.set( -center.x, - center.y + 0.005, -center.z);
             object.traverse((child) => { 
                 if (child.isMesh) { 
                     child.material.polygonOffset = true
@@ -864,6 +864,7 @@ export class Tile3D {
                 if (this.transparency >= 0) {
                     child.material.transparent = true;
                     child.material.opacity = this.transparency;
+                    child.material.alphaTest = 0.01;
                 }
             }
         });

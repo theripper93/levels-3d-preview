@@ -1199,12 +1199,14 @@ function dropImage(event, data) {
         dynaMesh: "decal",
         shaders: data.shaderData,
         transparency: 0.99,
+        collision: false,
+        sight: false,
     };
     const size = canvas.grid.size * data.tileSize;
     data.width = size;
     data.height = size;
     data.depth = size;
-    data.flags.levels.rangeBottom += 10;
+    data.flags.levels.rangeBottom += canvas.scene.dimensions.distance*2;
     data.x -= size / 2;
     data.y -= size / 2;
     data.texture.src = "modules/levels-3d-preview/assets/blank.webp";

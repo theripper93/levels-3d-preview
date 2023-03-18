@@ -6,6 +6,7 @@ export class RangeFinder {
     constructor(token, options = {}) {
         if (!token.visible) return;
         this.options = options;
+        this.isHoverDistance = this._parent.ruler.isHoverDistance;
         const RFMode = this._parent.rangeFinderMode;
         if (RFMode === "none") return;
         if (RFMode === "combat" && !game.combat?.started) return;
@@ -49,7 +50,11 @@ export class RangeFinder {
         const label = $(`<div id="levels3d-ruler-text" class="rangefinder"></div>`);
         if (this.options.style) label.css(this.options.style);
         $("body").append(label);
-        const text = this.options.text ?? `${distance}${canvas.scene.grid.units}.`;
+        let text = this.options.text ?? `${distance}${canvas.scene.grid.units}.`;
+        if (this.isHoverDistance) {
+            const rangeBand = DistanceTooltip.getRangeBand(distance);
+            if (rangeBand) text = `${rangeBand} (${text})`;
+        }
         label.text(text);
         Ruler3D.centerElement(label, midcurve);
         RFCurve.userData.label = label;

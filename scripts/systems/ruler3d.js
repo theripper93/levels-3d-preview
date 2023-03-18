@@ -6,6 +6,7 @@ export class Ruler3D {
     constructor(parent) {
         this._parent = parent;
         this.isDragRouler = game.modules.get("drag-ruler")?.active;
+        this.isHoverDistance = game.modules.get("hover-distance")?.active;
         this.color = new THREE.Color(game.user.color);
         this.colorCache = {};
         const hsl = {};
