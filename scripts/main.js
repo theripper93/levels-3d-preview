@@ -307,6 +307,10 @@ class Levels3DPreview {
         this.loadingTokens = {};
         this.lights = {
             sceneLights: {},
+            lightCache: {
+                point: [],
+                spot: [],
+            },
             _lightIndex: 0,
         };
         this.utils = {};
@@ -453,6 +457,27 @@ class Levels3DPreview {
         this.particleSystem = new ParticleSystem(this);
     }
 
+    cacheLights() {
+        this.lights.lightCache.point = [];
+        this.lights.lightCache.spot = [];
+
+        const cacheSize = game.settings.get("levels-3d-preview", "lightCacheSize");
+
+        for (let i = 0; i < cacheSize; i++) { 
+            const pointLight = new THREE.PointLight(0xffffff, 0.0001, 0.0001, 2);
+            pointLight.position.set(-100, -100, -100);
+            this.lights.lightCache.point.push(pointLight);
+            this.scene.add(pointLight);
+        }
+
+        for(let i = 0; i < cacheSize/2; i++) {
+            const spotLight = new THREE.SpotLight(0xffffff, 0.0001, 0.0001, 0.5, 0.5, 2);
+            spotLight.position.set(-100, -100, -100);
+            this.lights.lightCache.spot.push(spotLight);
+            this.scene.add(spotLight);
+        }
+    }
+
     build3Dscene() {
         $(".levels-3d-preview-loading-screen").fadeIn(300);
         this._fullTransparency = game.settings.get("levels-3d-preview", "fullTransparency");
@@ -535,6 +560,7 @@ class Levels3DPreview {
         };
         this.scene.add(this.controlledGroup);
         this.scene.add(this.transformControls);
+        this.cacheLights();
         this.interactionManager.initTransformControls();
         this.object3dSight = canvas.scene.getFlag("levels-3d-preview", "object3dSight") ?? false;
         this.mirrorLevelsVisibility = canvas.scene.getFlag("levels-3d-preview", "mirrorLevels") ?? false;

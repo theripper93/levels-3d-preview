@@ -20,7 +20,7 @@ export class Light3D {
 
     init() {
         this.noise = new SimplexNoise();
-        this.light3d = this.angle != 360 ? new THREE.SpotLight() : new THREE.PointLight();
+        this.light3d = this.getLightInstance();
         this.isPointLight = this.angle == 360;
         this.mesh = new THREE.Group();
         const shadowRes = game.settings.get("levels-3d-preview", "shadowQuality");
@@ -34,6 +34,20 @@ export class Light3D {
             this._parent.scene.add(this.mesh);
             if (game.user.isGM) this.createHandle();
         }
+    }
+
+    getLightInstance() {
+        const isSpotLight = this.angle != 360;
+        const cache = this._parent.lights.lightCache;
+        let light;
+        if (isSpotLight && cache.spot.length) {
+            light = cache.spot.pop();
+        }else if (!isSpotLight && cache.point.length) {
+            light = cache.point.pop();
+        } else {
+            light = isSpotLight ? new THREE.SpotLight() : new THREE.PointLight();
+        }
+        return light;
     }
 
     get useHelper() {

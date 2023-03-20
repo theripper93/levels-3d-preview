@@ -15,7 +15,7 @@ class canvas3dConfig extends FormApplication{
 
 	async getData(options) {
         const data = {}
-        const settingsKeys = ["pingsound", "lightHelpers", "useMultithreading", "templateEffects", "templateAuto3D", "enableReticule", "fullTransparency", "outline", "gameCameraWarnings", "gameCameraAutoLock", "gameCameraDefaultGm", "gameCameraClipping", "gameCameraMinAngle", "gameCameraMaxAngle", "enableGameCamera", "rangeFinder", "preapplyShaders", "sharedContext", "rotateIndicator", "navigatorAuto", "showAdvanced", "canpingpan", "canping", "baseStyle", "solidBaseMode", "solidBaseColor", "highlightCombat", "startMarker", "hideTarget", "templateSyle", "autoPan", "standupFace", "preventNegative", "miniCanvas", "debugMode", "cameralockzero"];
+        const settingsKeys = ["lightCacheSize", "pingsound", "lightHelpers", "useMultithreading", "templateEffects", "templateAuto3D", "enableReticule", "fullTransparency", "outline", "gameCameraWarnings", "gameCameraAutoLock", "gameCameraDefaultGm", "gameCameraClipping", "gameCameraMinAngle", "gameCameraMaxAngle", "enableGameCamera", "rangeFinder", "preapplyShaders", "sharedContext", "rotateIndicator", "navigatorAuto", "showAdvanced", "canpingpan", "canping", "baseStyle", "solidBaseMode", "solidBaseColor", "highlightCombat", "startMarker", "hideTarget", "templateSyle", "autoPan", "standupFace", "preventNegative", "miniCanvas", "debugMode", "cameralockzero"];
         for (let key of settingsKeys) {
             data[key] = game.settings.get("levels-3d-preview", key);
         }
@@ -543,6 +543,15 @@ Hooks.once('init', function() {
       onChange: () => game.Levels3DPreview.UTILS.debouncedReload(),
         default: false,
     });
+  
+      game.settings.register("levels-3d-preview", "lightCacheSize", {
+          name: game.i18n.localize("levels3dpreview.settings.lightCacheSize.name"),
+          hint: game.i18n.localize("levels3dpreview.settings.lightCacheSize.hint"),
+          scope: "world",
+          config: false,
+          type: Number,
+          default: 16,
+      });
 
     game.settings.register("levels-3d-preview", "debugMode", {
       name: game.i18n.localize("levels3dpreview.settings.debugMode.name"),
