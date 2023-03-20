@@ -194,7 +194,8 @@
                     "mapGen": "Kartengenerator",
                     "sphere": "Kugel",
                     "text": "Text (3D-Modellfeld für Text verwenden)",
-                    "tube": "Rohr"
+                    "tube": "Rohr",
+                    "decal": "Abziehbild"
                 }
             },
             "dynaMeshResolution": {
@@ -752,6 +753,9 @@
             },
             "tilt": {
                 "label": "Neigung"
+            },
+            "highlightOnHover": {
+                "label": "Highlight auf Hover"
             }
         },
         "keybindings": {
@@ -1208,6 +1212,14 @@
             "templateAuto3D": {
                 "hint": "Wenn für eine Vorlage keine dritte Dimension angegeben ist, leiten Sie sie ab (z. B. ist ein 5 Fuß breiter Strahl 5 Fuß hoch).",
                 "name": "Automatische 3D-Vorlagen"
+            },
+            "lightCacheSize": {
+                "hint": "Die Anzahl der Lichter, die für jede Szene zwischengespeichert werden sollen. \nDiese Menge an Lichtern kann platziert/aktiviert werden, ohne Stottern zu verursachen.",
+                "name": "Leichte Cache-Größe"
+            },
+            "pingsound": {
+                "hint": "Der Ton, der abgespielt wird, wenn ein Ort angepingt wird.",
+                "name": "Ping-Ton"
             }
         },
         "shaders": {

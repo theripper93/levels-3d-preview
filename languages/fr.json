@@ -194,7 +194,8 @@
                     "mapGen": "Générateur de carte",
                     "sphere": "Sphère",
                     "text": "Texte (Utiliser le champ Modèle 3D pour le texte)",
-                    "tube": "Tube"
+                    "tube": "Tube",
+                    "decal": "Décalque"
                 }
             },
             "dynaMeshResolution": {
@@ -752,6 +753,9 @@
             },
             "tilt": {
                 "label": "Inclinaison"
+            },
+            "highlightOnHover": {
+                "label": "Mettre en surbrillance au survol"
             }
         },
         "keybindings": {
@@ -1208,6 +1212,14 @@
             "templateAuto3D": {
                 "hint": "Lorsqu'une troisième dimension n'est pas spécifiée pour un modèle, déduisez-la (par exemple, un rayon de 5 pieds de large aura 5 pieds de haut).",
                 "name": "Modèles 3D automatiques"
+            },
+            "lightCacheSize": {
+                "hint": "Le nombre de lumières à mettre en cache pour chaque scène. \nCette quantité de lumières peut être placée/activée sans causer de bégaiement.",
+                "name": "Taille du cache léger"
+            },
+            "pingsound": {
+                "hint": "Le son à jouer lors d'un ping sur un emplacement.",
+                "name": "Son de ping"
             }
         },
         "shaders": {

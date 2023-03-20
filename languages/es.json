@@ -194,7 +194,8 @@
                     "mapGen": "Generador de mapas",
                     "sphere": "Esfera",
                     "text": "Texto (Usar el campo Modelo 3D para el texto)",
-                    "tube": "Tubo"
+                    "tube": "Tubo",
+                    "decal": "Calcomanía"
                 }
             },
             "dynaMeshResolution": {
@@ -752,6 +753,9 @@
             },
             "tilt": {
                 "label": "Inclinación"
+            },
+            "highlightOnHover": {
+                "label": "Resaltar al pasar el mouse"
             }
         },
         "keybindings": {
@@ -1208,6 +1212,14 @@
             "templateAuto3D": {
                 "hint": "Cuando no se especifica una tercera dimensión para una plantilla, deducirla (por ejemplo, un rayo de 5 pies de ancho tendrá 5 pies de alto).",
                 "name": "Plantillas 3D automáticas"
+            },
+            "lightCacheSize": {
+                "hint": "El número de luces para almacenar en caché para cada escena. \nEsta cantidad de luces se puede colocar/habilitar sin causar tartamudeos.",
+                "name": "Tamaño de caché ligero"
+            },
+            "pingsound": {
+                "hint": "El sonido que se reproducirá cuando se haga ping en una ubicación.",
+                "name": "sonido de ping"
             }
         },
         "shaders": {
