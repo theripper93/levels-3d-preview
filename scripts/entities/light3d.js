@@ -211,9 +211,15 @@ export class Light3D {
     }
 
     destroy() {
+        this._parent.scene.add(this.light3d);
+        this.light3d.position.set(-10000, -10000, -10000);
         this._parent.scene.remove(this.mesh);
         if (this.particleEffectId) Particle3D.stop(this.particleEffectId);
         this.lightHelper?.dispose();
+        const cache = this._parent.lights.lightCache;
+        const isSpotLight = this.angle != 360;
+        if (isSpotLight) cache.spot.push(this.light3d);
+        else cache.point.push(this.light3d);
     }
 
     initParticle() {

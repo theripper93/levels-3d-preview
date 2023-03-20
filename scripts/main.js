@@ -560,7 +560,6 @@ class Levels3DPreview {
         };
         this.scene.add(this.controlledGroup);
         this.scene.add(this.transformControls);
-        this.cacheLights();
         this.interactionManager.initTransformControls();
         this.object3dSight = canvas.scene.getFlag("levels-3d-preview", "object3dSight") ?? false;
         this.mirrorLevelsVisibility = canvas.scene.getFlag("levels-3d-preview", "mirrorLevels") ?? false;
@@ -588,6 +587,7 @@ class Levels3DPreview {
         this.createNotes();
         this.createBoard();
         this.createTable();
+        this.cacheLights();
         for (let token of canvas.tokens.placeables) {
             this.addToken(token);
         }
