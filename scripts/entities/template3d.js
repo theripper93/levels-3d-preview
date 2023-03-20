@@ -1,6 +1,6 @@
 import * as THREE from "../lib/three.module.js";
 import { Ruler3D } from "../systems/ruler3d.js";
-import { factor } from "../main.js";
+import {factor} from "../main.js";
 
 export class Template3D {
     constructor(template, A, B) {

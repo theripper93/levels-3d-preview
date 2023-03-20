@@ -1089,7 +1089,7 @@
                 "hint": "2D Tokens displayed in a stand-up style will always face the camera."
             },
             "useMultithreading": {
-                "name": "EXPERIMENTAL: Use Multithreading",
+                "name": "Use Multithreading",
                 "hint": "Use multithreading to improve performance of Fog of War Calculations. This settings has no effect if you are not using the Fog of War."
             },
             "miniCanvas": {

@@ -82,7 +82,7 @@ Hooks.on("renderSceneConfig", (app,html)=>{
             type: "checkbox",
             label: game.i18n.localize("levels3dpreview.flags.enableFogOfWar.label"),
             //notes: game.i18n.localize("levels3dpreview.flags.enableFogOfWar.notes"),
-            default: false,
+            default: true,
         },
         maxElevation: {
             type: "number",
@@ -489,10 +489,16 @@ Hooks.on("renderSceneConfig", (app,html)=>{
     })
     html.on("click", "#capture-3d-view", (e)=>{
         e.preventDefault();
-        canvas.scene.update({"flags.levels-3d-preview.initialPosition": {
-            target: game.Levels3DPreview.controls.target.clone(),
-            position: game.Levels3DPreview.camera.position.clone(),
-        }}, {render: false});
+        canvas.scene.update(
+            {
+                "flags.levels-3d-preview.initialPosition": {
+                    target: game.Levels3DPreview.controls.target.clone(),
+                    position: game.Levels3DPreview.camera.position.clone(),
+                    firstPersonMode: game.Levels3DPreview.firstPersonMode,
+                },
+            },
+            { render: false },
+        );
     })
 })
 

@@ -385,7 +385,7 @@ class Levels3DPreview {
         this.renderer.setClearColor(0x999999, 1);
         this.renderer.shadowMap.type = game.settings.get("levels-3d-preview", "softShadows") ? THREE.PCFSoftShadowMap : THREE.PCFShadowMap;
 
-        this.renderer.debug.checkShaderErrors = false;
+        //this.renderer.debug.checkShaderErrors = false;
 
         //composer
 
@@ -488,7 +488,7 @@ class Levels3DPreview {
             this.fogExploration.destroy();
             this.fogExploration = null;
         }
-        if (canvas.scene.tokenVision && canvas.scene.getFlag("levels-3d-preview", "enableFogOfWar")) this.fogExploration = new Fog(this);
+        if (canvas.scene.tokenVision && (canvas.scene.getFlag("levels-3d-preview", "enableFogOfWar") ?? true)) this.fogExploration = new Fog(this);
         try {
             //this.composer.render();
         } catch {}
@@ -1301,6 +1301,8 @@ class Levels3DPreview {
         this.camera.position.set(initialPos.position.x, initialPos.position.y, initialPos.position.z);
         this.controls.target.set(initialPos.target.x, initialPos.target.y, initialPos.target.z);
         this.camera.lookAt(initialPos.target);
+        if (!!initialPos.firstPersonMode && !canvas.tokens.controlled[0]) canvas.tokens.ownedTokens[0]?.control();
+        if (!!initialPos.firstPersonMode !== this.firstPersonMode) this.toggleFirstPerson();
         return true;
     }
 

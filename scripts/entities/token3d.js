@@ -784,9 +784,9 @@ export class Token3D {
                 }
             });
         }
-        const hidden = this.token.document.hidden || this.hasClone;
+        const hidden = this.token.document.hidden// || this.hasClone;
         if (this._hidden === hidden) return;
-        this._hidden = this.token.document.hidden || this.hasClone;
+        this._hidden = this.token.document.hidden// || this.hasClone;
         this.model.traverse((child) => {
             if (child.isMesh) {
                 if (hidden) {
