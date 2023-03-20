@@ -400,7 +400,7 @@ export class InteractionManager {
                 } else {
                     game.Levels3DPreview.helpers._ping();
                 }
-            }, MouseInteractionManager.LONG_PRESS_DURATION_MS);
+            }, MouseInteractionManager.LONG_PRESS_DURATION_MS + 250);
         }
         this._parent.stopCameraAnimation();
         this._downCameraPosition = this._parent.camera.position.clone();
@@ -433,7 +433,7 @@ export class InteractionManager {
         if (this.clicks === 1) {
             setTimeout(() => {
                 if (event.which === 1) {
-                    this.mousedown ? this.startDrag(event, intersectData) : (this._triggerLeft = true);
+                    this.mousedown && this.clicks === 1 ? this.startDrag(event, intersectData) : (this._triggerLeft = true);
                 } else {
                     this._triggerRight = true;
                 }
@@ -587,18 +587,24 @@ export class InteractionManager {
         if (this.draggable) {
             const delta = Math.sign(event.deltaY);
             const entity3D = this.draggable.userData.entity3D;
-            if (entity3D.template && (event.ctrlKey || event.altKey)) {
-                event.altKey ? entity3D.onTilt(delta) : entity3D.onRotate(delta);
-            } else {
+            const isTemplate = !!entity3D.template;
+            const changeElevation = () => {
                 this.forceFree = true;
                 entity3D.wasFreeMode = true;
                 let elevationDiff = canvas.scene.dimensions.distance;
                 if (event.shiftKey) elevationDiff = canvas.scene.dimensions.distance / 5;
-                if (event.ctrlKey) elevationDiff = canvas.scene.dimensions.distance / 50;
+                if (event.ctrlKey && !isTemplate) elevationDiff = canvas.scene.dimensions.distance / 50;
                 entity3D.elevation3d += -delta * this.elevationTick * elevationDiff;
                 if (game.settings.get("levels-3d-preview", "preventNegative") && entity3D.elevation3d < Ruler3D.unitsToPixels(canvas.primary.background.elevation)) {
                     entity3D.elevation3d = Ruler3D.unitsToPixels(canvas.primary.background.elevation);
                 }
+            }
+            if (isTemplate) {
+                if (event.altKey) entity3D.onTilt(delta);
+                else if (event.ctrlKey) changeElevation();
+                else entity3D.onRotate(delta);
+            } else {
+                changeElevation();
             }
         }
         const isSpecialKey = this.tiltX || this.tiltZ || this.scaleWidth || this.scaleHeight || this.scaleGap || this.scaleScale || this.scale;

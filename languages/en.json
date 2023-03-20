@@ -4,7 +4,7 @@
             "preview3d": "Toggle 3D Mode",
             "miniCanvas": "Popout/Restore Canvas",
             "tips": {
-                "templatePlacement": "3D Template Placement: Mouse Wheel to change elevation. Control + Mouse Wheel to Rotate. Alt + Mouse Wheel to Tilt."
+                "templatePlacement": "3D Template Placement: Mouse Wheel to Rotate. Control + Mouse Wheel to change elevation. Alt + Mouse Wheel to Tilt."
             },
             "loading": {
                 "load": "Loading 3D Canvas...",
