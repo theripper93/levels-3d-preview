@@ -342,6 +342,7 @@ export class Tile3D {
     }
 
     async initModel() {
+        const container = new THREE.Group();
         const stretch = this.fillType === "stretch";
         const model = await this.getModel();
         const { textureOrMat, isPBR } = await this.getTextureOrMat();
@@ -396,14 +397,23 @@ export class Tile3D {
         //end migration
 
         if (this.dynaMesh === "decal") {
+            const decalGeo = object.children[0].geometry;
+            const cone = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.10, 32), new THREE.MeshBasicMaterial({ color: 0xff0000 }));
+            cone.userData.noShaders = true;
+            container.add(cone);
+            this._decalCone = cone;
+            this._decal = object;
             const center = this.center;
-            object.position.set( -center.x, - center.y + 0.005, -center.z);
+            decalGeo.translate(-center.x, -center.y + 0.005, -center.z);
             object.traverse((child) => { 
                 if (child.isMesh) { 
                     child.material.polygonOffset = true
                     child.material.polygonOffsetFactor = -1;
                 }
             });
+            decalGeo.rotateX(-this.tiltX);
+            decalGeo.rotateY(this.angle * this.rotSign);
+            decalGeo.rotateZ(-this.tiltZ);
         } else {
             object.scale.set(this.width / mWidth, this.depth / mDepth, this.height / mHeight);
         }
@@ -423,7 +433,6 @@ export class Tile3D {
             }
         }
 
-        const container = new THREE.Group();
         this.mesh = container;
         this.sightMesh = this._parent.helpers.getSightMesh(object, this.sightMeshComplexity);
         this.sightMesh.visible = false;
@@ -436,8 +445,7 @@ export class Tile3D {
         container.add(object);
         container.add(this.sightMesh);
         container.position.set(this.center.x, this.center.y, this.center.z);
-        if (this.dynaMesh !== "decal") container.rotation.set(this.tiltX, -this.angle * this.rotSign, this.tiltZ)
-        else this._decal = object;
+        container.rotation.set(this.tiltX, -this.angle * this.rotSign, this.tiltZ)
 
         container.userData.hitbox = container;
         container.userData.interactive = true;
@@ -709,9 +717,14 @@ export class Tile3D {
             let decalData = {};
             if (this.dynaMesh === "decal") {
                 const position = new THREE.Vector3(this.center.x, this.center.y, this.center.z);
-                const target3d = new THREE.Object3D();
-                const targetp = position.clone();
-                targetp.y -= 999999;
+                const target3d = new THREE.Group();
+                //const targetp = position.clone();
+                const raycastTarget = new THREE.Object3D();
+                raycastTarget.position.y = -999999;
+                target3d.add(raycastTarget);
+                target3d.rotation.set(this.tiltX, -this.angle * this.rotSign, this.tiltZ);
+                const targetp = raycastTarget.getWorldPosition(new THREE.Vector3());
+                //targetp.y -= 999999;
                 const intersects = this._parent.interactionManager.computeSightCollisionFrom3DPositions(position, targetp, "collision", false, false, false, true);
                 if (!intersects[0]) {this.dynaMesh = "box"} else {
                     const intersect = intersects[0];
@@ -722,8 +735,6 @@ export class Tile3D {
                     dummy.rotation.copy(euler);
                     dummy.updateMatrix();
                     dummy.rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -this.angle * this.rotSign);
-                    //dummy.rotateOnWorldAxis(new THREE.Vector3(1, 0, 0), this.tiltX);
-                    //dummy.rotateOnWorldAxis(new THREE.Vector3(0, 0, 1), this.tiltZ);
                     dummy.updateMatrix();
                     let mesh = intersect.object;
                     if (mesh.isInstancedMesh) mesh = getMergedMeshFromInstanced(mesh);
@@ -922,7 +933,7 @@ export class Tile3D {
 
         let newTiltX = Math.round(Math.toDegrees(currentTiltX % (Math.PI * 2)));
         let newTiltZ = Math.round(Math.toDegrees(currentTiltZ % (Math.PI * 2)));
-        let newTiltY = Math.round(Math.toDegrees((-currentTiltY * this.rotSign + (this._decal ? this.angle : 0)) % (Math.PI * 2)));
+        let newTiltY = Math.round(Math.toDegrees((-currentTiltY * this.rotSign + (0)) % (Math.PI * 2)));
 
         if (newTiltX === -180 && newTiltZ === -180 && newTiltY === 0) {
             newTiltX = 0;
@@ -986,6 +997,7 @@ export class Tile3D {
         this.toggleBoundingBox();
         this.mesh.visible = !this.tile.document.hidden || game.user.isGM;
         if (this.sightMesh) this.sightMesh.visible = this._parent.ClipNavigation.wireframe;
+        if(this._decalCone) this._decalCone.visible = !!canvas?.tiles?.active;
         if (game.Levels3DPreview.mirrorLevelsVisibility && this.tile.document.overhead && this.tile.mesh) {
             this.mesh.visible = this.tile.occluded || !this.tile.mesh?.visible ? false : this.tile.visible;
         }
