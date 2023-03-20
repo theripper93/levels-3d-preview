@@ -196,7 +196,7 @@ export class ShaderHandler {
 
     applyShader(Object3D, entity3D, shaderParams) {
         const enableShaders = game.settings.get("levels-3d-preview", "enableShaders");
-        if (!enableShaders) return;
+        if (!enableShaders) shaderParams = this.disablePerformanceHeavyShaders(shaderParams);
         const hasShaders = Object.values(shaderParams).some((v) => v.enabled);
         if (!hasShaders) return;
         const commonParams = getSizesForShader(entity3D);
@@ -206,6 +206,14 @@ export class ShaderHandler {
                 this.buildShader(child, shaderParams, commonParams, entity3D);
             }
         });
+    }
+
+    disablePerformanceHeavyShaders(shaderParams){
+        const perfHeavy = ["ice", "fire", "oil", "lightning"];
+        perfHeavy.forEach((shader) => { 
+            delete shaderParams[shader];
+        });
+        return shaderParams;
     }
 
     buildShader(mesh, shaderParams, commonParams, entity3D) {
