@@ -1217,10 +1217,15 @@
         },
         "welcome": {
             "title": "Welcome to 3D Canvas",
-            "content": "<h1>Welcome to 3D!</h1>\nWelcome to 3D Canvas! First, thanks for supporting my development endevour and making this project possible!\nSimply <b>Click the <i class='fas fa-cube'></i> button</b> (Token controls, top left) to switch a scene to 3D.\n<h2>Getting Started</h2>\nThis module, while not complicated to use has a lot of options that will give you the ability to highly customize the system. It's highly advised to <b>read the documentation</b> (by clicking the <b><i class='fas fa-book'></i> Getting Started</b> button below). You can always find the documentation later in your compendiums! The documentation also has a collection of video tutorials that you can reference.<h2>Troubleshooting</h2>\nIf you experience any <b>issue</b> or have trouble with <b>configuration</b> or <b>3d models</b> do not esitate to <b>reach out</b> on the discord channel!<hr>",
+            "content": "<h1>Welcome to 3D!</h1>\nWelcome to 3D Canvas! First, thanks for supporting my development endevour and making this project possible!\nSimply <b>Click the <i class='fas fa-cube'></i> button</b> (Token controls, top left) to switch a scene to 3D.\n<h2>Important Modules</h2>\nIt's higly suggested to install the <a href='https://wiki.theripper93.com/levels-3d-preview/canvas3dcompendium'>Mapmaking Pack</a> and <a href='https://wiki.theripper93.com/levels-3d-preview/canvas3dtokencompendium'>Token Collection</a> modules to get a ton of 3D Props, Tokens and many easy-building tools!\n<h2>Getting Started</h2>\n After installing the <b>Mapmaking Pack</b> you will get access to an easy and fast <b>Quickstart Tutorial</b>.After the Quickstart, if you want to dive into the advanced settings, it's highly advised to <b>read the documentation</b> (by clicking the <b><i class='fas fa-book'></i> Getting Started</b> button below). You can always find the documentation later in your compendiums! The documentation also has a collection of video tutorials that you can reference.<h2>Troubleshooting</h2>\nIf you experience any <b>issue</b> or have trouble with <b>configuration</b> or <b>3d models</b> do not esitate to <b>reach out</b> on the discord channel!<hr>",
             "ok": "Dismiss",
             "dontshowagain": "Don't show again",
             "opencompendium": "Getting Started"
+        },
+        "newuserexperience": {
+            "title": "Welcome to 3D Canvas",
+            "content": "<h1>3D Quick Start!</h1> Welcome to 3D Canvas, this is a quick start tutorial to get you making maps right away and easly! Click the <b>Start Tour!</b> button to begin the tour.<hr>",
+            "starttour": "Start Tour!"
         },
         "performance": {
             "verylow": "Very Low",
@@ -1529,7 +1534,7 @@
                 "content": "Do you want to start the 3D Canvas Getting Started Tour?"
             },
             "getting-started": {
-                "title": "Getting Started",
+                "title": "Basic: Getting Started",
                 "description": "This tour will guide you through the very basics of 3D Canvas.",
                 "step-0": {
                     "title": "Getting to the 3D View (1/2)",
@@ -1557,8 +1562,8 @@
                 }
             },
             "first-tile": {
-                "title": "Placing your first 3D Tile",
-                "description": "This tour will get you started on placing 3D Tiles.",
+                "title": "Intermediate: 3D Tile Manipulation and Custom Assets",
+                "description": "This tour will get you started on 3D Tiles manipulation and how to use custom assets.",
                 "requires": "You need to have the 3D View active and the 3D Canvas Mapmaking Pack installed to start this tour.",
                 "step-0": {
                     "title": "Tiles Layer",
@@ -1598,7 +1603,7 @@
                 }
             },
             "scene-configuration": {
-                "title": "3D Scene Configuration",
+                "title": "Advanced: 3D Scene Configuration",
                 "description": "This tour will guide you through the scene configuration options.",
                 "requires": "You need to have the 3D View active to see this tour.",
                 "step-0": {
@@ -1640,6 +1645,39 @@
                 "step-9": {
                     "title": "Advanced",
                     "content": "The Scene Configuration offers many more options, once you are familiar with the basic settings you can click here to show all the advanced options."
+                }
+            },
+            "first-scene": {
+                "title": "Basic: Creating your first 3D Scene",
+                "description": "This tour will get you started on creating 3D Scenes.",
+                "requires": "You need the 3D Canvas Mapmaking Pack installed to start this tour.",
+                "step-0": {
+                    "title": "Head to the Scenes Tab",
+                    "content": "The Scenes Tab contains all the scenes in your world."
+                },
+                "step-1": {
+                    "title": "Create a new Scene",
+                    "content": "Click the 'Create Scene' button to create a new scene."
+                },
+                "step-2": {
+                    "title": "Enable Quick 3D Scene Creation",
+                    "content": "Check this box to enable the Quick 3D Scene Creation."
+                },
+                "step-3": {
+                    "title": "Create the Scene",
+                    "content": "Click the 'Create New Scene' button to confirm the creation of the scene."
+                },
+                "step-4": {
+                    "title": "Quick Terrain Panel",
+                    "content": "This panel allows you to quickly create a terrain for your scene."
+                },
+                "step-5": {
+                    "title": "3D Scene Panel",
+                    "content": "This panel allows you to quickly build your scene. Hover over the buttons to see what they do!"
+                },
+                "step-6": {
+                    "title": "Start Building!",
+                    "content": "This is all you need to get started! Try to create a scene using the Quick Terrain and the 3D Scene Panel. Once you feel more confident with 3D Canvas, you can head to the Tours page and start the more advanced tours!."
                 }
             }
         },

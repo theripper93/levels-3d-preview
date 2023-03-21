@@ -215,7 +215,7 @@ export class InteractionManager {
         this.preventSelect = true;
         if (this.isCtrl) {
             const tilesToCreate = [];
-            for (let tile of canvas.activeLayer.controlled) {
+            for (let tile of canvas.activeLayer?.controlled) {
                 tilesToCreate.push(tile.document.toObject());
             }
             canvas.scene.createEmbeddedDocuments("Tile", tilesToCreate);
@@ -239,7 +239,7 @@ export class InteractionManager {
         const controlledGroup = this._parent.controlledGroup;
         const controls = this._parent.transformControls;
         if (this._gizmoEnabled) controls.attach(controlledGroup);
-        for (let placeable of canvas.activeLayer.controlled) {
+        for (let placeable of canvas.activeLayer?.controlled) {
             const tile3d = this._parent.tiles[placeable.id];
             if (!tile3d) continue;
             const mesh = tile3d.mesh;
@@ -278,7 +278,7 @@ export class InteractionManager {
             minY,
             minZ = 0;
 
-        for (let placeable of canvas.activeLayer.controlled) {
+        for (let placeable of canvas.activeLayer?.controlled) {
             const tile3d = this._parent.tiles[placeable.id];
             if (!tile3d) continue;
             const pos = tile3d.mesh.position;
@@ -300,7 +300,7 @@ export class InteractionManager {
         if (!this._gizmoEnabled) {
             this._parent.transformControls.detach();
         } else {
-            if (canvas.activeLayer.options.objectClass.name !== "Tile") return;
+            if (canvas.activeLayer?.options.objectClass.name !== "Tile") return;
             Object.values(game.Levels3DPreview.tiles).forEach((tile3d) => {
                 tile3d.updateControls();
             });
@@ -404,7 +404,7 @@ export class InteractionManager {
         }
         this._parent.stopCameraAnimation();
         this._downCameraPosition = this._parent.camera.position.clone();
-        if (event.which === 1 && event.ctrlKey) canvas.activeLayer.releaseAll();
+        if (event.which === 1 && event.ctrlKey) canvas.activeLayer?.releaseAll();
         this.mousedown = true;
         if (event.which === 1) this._leftDown = true;
         if (event.which === 3) this._rightDown = true;
@@ -535,8 +535,8 @@ export class InteractionManager {
             this.currentHover?._onHoverOut(event);
             this.currentHover = null;
         }
-        if (canvas.activeLayer.hover && this.currentHover?.placeable?.id !== canvas.activeLayer.hover?.id) {
-            canvas.activeLayer.hover._onHoverOut(event);
+        if (canvas.activeLayer?.hover && this.currentHover?.placeable?.id !== canvas.activeLayer?.hover?.id) {
+            canvas.activeLayer?.hover._onHoverOut(event);
         }
 
         if (game.user.hasPermission("SHOW_CURSOR")) {
@@ -611,14 +611,14 @@ export class InteractionManager {
         const dBig = canvas.grid.type > CONST.GRID_TYPES.SQUARE ? 60 : 45;
         let snap = event.shiftKey ? dBig : 15;
         const delta = Math.sign(event.deltaY) * snap;
-        if (!this.draggable && event.ctrlKey && !isSpecialKey && !event.altKey && canvas.activeLayer.controlled.length) {
-            canvas.activeLayer.rotateMany({ delta, snap });
+        if (!this.draggable && event.ctrlKey && !isSpecialKey && !event.altKey && canvas.activeLayer?.controlled.length) {
+            canvas.activeLayer?.rotateMany({ delta, snap });
         }
-        if (!this.draggable && isSpecialKey && event.ctrlKey && canvas.activeLayer.controlled.length) {
+        if (!this.draggable && isSpecialKey && event.ctrlKey && canvas.activeLayer?.controlled.length) {
             let updates = [];
             const multi = Math.sign(event.deltaY) < 0 ? 1.1 : 0.9;
             const gridS = -Math.sign(event.deltaY) * canvas.grid.size;
-            for (let placeable of canvas.activeLayer.controlled) {
+            for (let placeable of canvas.activeLayer?.controlled) {
                 const width = placeable.document.width;
                 const height = placeable.document.height;
                 const gap = placeable.document.getFlag("levels-3d-preview", "gap") ?? 0;
@@ -665,7 +665,7 @@ export class InteractionManager {
         let intersect = event.intersect;
         const placeable = entity.placeable;
         if (!placeable?.controlled && placeable) placeable.control({ releaseOthers: true });
-        if (canvas.activeLayer.controlled.some((p) => p?.document?.locked)) return this.abortDrag();
+        if (canvas.activeLayer?.controlled.some((p) => p?.document?.locked)) return this.abortDrag();
         if (!placeable?.isOwner && !game.user.isGM) return this.abortDrag();
         if (!entity.draggable || entity.mesh.userData?.entity3D?.embeddedName !== this.activeLayerEntity) return this.abortDrag();
         if (entity.mesh.userData?.entity3D?.embeddedName == "Tile") {
@@ -689,8 +689,8 @@ export class InteractionManager {
     _onClickLeft(event) {
         if (ui.controls.isRuler || this.draggable) return;
         const entity = event.entity;
-        if ((entity?.tile && canvas.activeLayer.options.objectClass.name !== "Tile" && !entity?.isDoor && !event?.originalIntersect?.userData?.isDoor) || !entity) {
-            if (this._downCameraPosition.distanceTo(this._upCameraPosition) < 0.01 && game.settings.get("core", "leftClickRelease")) canvas.activeLayer.releaseAll();
+        if ((entity?.tile && canvas.activeLayer?.options.objectClass.name !== "Tile" && !entity?.isDoor && !event?.originalIntersect?.userData?.isDoor) || !entity) {
+            if (this._downCameraPosition.distanceTo(this._upCameraPosition) < 0.01 && game.settings.get("core", "leftClickRelease")) canvas.activeLayer?.releaseAll();
         }
         if (entity?.placeable?.document?.locked) return;
         if (!entity) return;
@@ -1165,7 +1165,7 @@ export const dropFunctions = {
                 width: width,
                 height: height,
                 img: "modules/levels-3d-preview/assets/blank.webp",
-                overhead: canvas.activeLayer.name !== "BackgroundLayer",
+                overhead: canvas.activeLayer?.name !== "BackgroundLayer",
                 flags: data.flags,
                 rotation: data.rotation,
             },
@@ -1216,7 +1216,7 @@ function dropImage(event, data) {
     data.x -= size / 2;
     data.y -= size / 2;
     data.texture.src = "modules/levels-3d-preview/assets/blank.webp";
-    data.overhead = canvas.activeLayer.name !== "BackgroundLayer";
+    data.overhead = canvas.activeLayer?.name !== "BackgroundLayer";
 
     canvas.scene.createEmbeddedDocuments("Tile", [data]);
 }

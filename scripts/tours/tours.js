@@ -50,10 +50,27 @@ export const SceneConfiguration = () => { return new GenericTour("scene-configur
         return game.Levels3DPreview._active;
     },
     init: async () => { canvas.scene.sheet.render(true); const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms)); await wait(500) },
-})}
+    })
+}
+
+export const First3DScene = () => {
+    return new GenericTour("first-scene", [`.item[data-tab="scenes"]`, `#scenes button.create-document`, `input[name="scene3d"]`, `.dialog-button.ok.default`, `#quick-terrain`, `#build-panel`, `#build-panel`], {
+        moduleId: "levels-3d-preview",
+        localizationRoot: "levels3dpreview.tours",
+        display: true,
+        restricted: true,
+        autoRegister: true,
+        requires: () => {
+            return game.modules.get("canvas3dcompendium");
+        },
+        init: () => {},
+        onComplete: () => {},
+    });
+};
 
 export const RegisterTours = () => {
     GettingStartedTour();
+    First3DScene();
     First3DTile();
     SceneConfiguration();
 }

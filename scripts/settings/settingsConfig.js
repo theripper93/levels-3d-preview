@@ -643,15 +643,22 @@ Hooks.once("ready", () => {
     })
   }
 
-  if (!game.settings.get("levels-3d-preview", "oneTimeMessages").mousechanged) {
-    const d = Dialog.prompt({
-      title: "3D Canvas: Default Binding Changed",
-      content: "The default binding for camera rotation changed from Left Click + Drag to Middle Click + Drag, you can change this in the module settings.",
-      callback: () => {
-        setSetting("mousechanged");
-      },
-    })
-    d.render(true);
+  if (game.modules.get("canvas3dcompendium")?.active && !game.settings.get("levels-3d-preview", "oneTimeMessages").newuserexperience) {
+      const dialog = new Dialog({
+          title: game.i18n.localize("levels3dpreview.newuserexperience.title"),
+          content: game.i18n.localize("levels3dpreview.newuserexperience.content"),
+          buttons: {
+              starttour: {
+                  label: `<i class="fas fa-person-hiking"></i> ` + game.i18n.localize("levels3dpreview.newuserexperience.starttour"),
+                  callback: () => {
+                      game.tours.get("levels-3d-preview.first-scene").start();
+                      setSetting("newuserexperience");
+                  },
+              },
+          },
+          default: "starttour",
+      });
+      dialog.render(true);
   }
 
 })

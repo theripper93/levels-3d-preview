@@ -47,10 +47,12 @@
     transition: opacity 0.5s ease-in-out , right 0.5s ease-in-out;
     transition-delay: 2s;
     z-index: 100;
+    pointer-events: none;
 }
 
 #clip-navigation #clip-navigation-btns{
     text-align: center;
+    pointer-events: all;
 }
 
 #clip-navigation:hover{
@@ -62,6 +64,7 @@
     position: relative;
     transform: translateX(calc(-100% - 0.2rem)) rotate(-90deg);
     transform-origin: top right;
+    pointer-events: all;
 }
 
 #clip-navigation #clip-navigation-range span{
