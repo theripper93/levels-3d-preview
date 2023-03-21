@@ -1501,7 +1501,8 @@
                 "toggleGizmo": "Attiva Gizmo",
                 "toggleMode": "Modalità riempimento",
                 "translate": "Tradurre",
-                "wheel": "Rotellina del mouse per aumentare/diminuire i valori"
+                "wheel": "Rotellina del mouse per aumentare/diminuire i valori",
+                "nogizmo": "Con il Gizmo disabilitato, trascinando una tessera la farai agganciare al terreno"
             }
         },
         "tokenAnimations": {
@@ -1585,11 +1586,9 @@
                     "content": "La Game Camera è abilitata per impostazione predefinita per GM e giocatori. \nSe sei un GM, puoi passare a Free Camera con questo pulsante. \nPuoi modificare le opzioni della videocamera di gioco nelle impostazioni del modulo o disabilitarla per scena.",
                     "title": "Macchina fotografica del gioco"
                 },
-                "step-5": {
-                    "content": "Puoi richiamare il riferimento ai controlli in qualsiasi momento facendo clic su questo pulsante.",
-                    "title": "Riferimento controlli"
-                },
-                "title": "Iniziare"
+                "step-5": {},
+                "title": "Iniziare",
+                "requires": "NON devi avere la vista 3D attiva per iniziare questo tour."
             },
             "scene-configuration": {
                 "description": "Questo tour ti guiderà attraverso le opzioni di configurazione della scena.",
@@ -1630,10 +1629,7 @@
                     "content": "Qui puoi impostare un effetto meteo/particelle per la scena. \nProva ad abilitarne uno e vedi come può migliorare la tua scena!",
                     "title": "Tempo metereologico"
                 },
-                "step-9": {
-                    "content": "La configurazione della scena offre molte più opzioni, una volta acquisita familiarità con le impostazioni di base, puoi fare clic qui per visualizzare tutte le opzioni avanzate.",
-                    "title": "Avanzate"
-                },
+                "step-9": {},
                 "title": "Configurazione della scena 3D"
             },
             "first-scene": {
@@ -1667,7 +1663,73 @@
                     "content": "Questo è tutto ciò di cui hai bisogno per iniziare! \nProva a creare una scena utilizzando Quick Terrain e il pannello Scena 3D. \nUna volta che ti sentirai più a tuo agio con 3D Canvas, puoi andare alla pagina Tour e iniziare i tour più avanzati!.",
                     "title": "Inizia a costruire!"
                 },
-                "title": "Base: creare la tua prima scena 3D"
+                "title": "Base: creare la tua prima scena 3D",
+                "step-7": {
+                    "content": "Questo è tutto ciò di cui hai bisogno per iniziare! \nProva a creare una scena utilizzando Quick Terrain e il pannello Scena 3D. \nUna volta che ti sentirai più a tuo agio con 3D Canvas, puoi andare alla pagina Tour e iniziare i tour più avanzati!.",
+                    "title": "Inizia a costruire!"
+                }
+            },
+            "tile-configuration": {
+                "description": "Questo tour ti guiderà attraverso le opzioni di configurazione dei riquadri e gli shader.",
+                "requires": "Devi aver selezionato un riquadro per iniziare questo tour.",
+                "step-0": {
+                    "content": "La scheda 3D contiene tutte le impostazioni per il riquadro 3D.",
+                    "title": "Vai alla scheda 3D"
+                },
+                "step-1": {
+                    "content": "Questa impostazione consente di impostare il modello 3D della piastrella. \nAnalogamente alle immagini 2D, puoi sfogliare e caricare file 3D.",
+                    "title": "Modello 3D"
+                },
+                "step-2": {
+                    "content": "L'opzione Dynamic Mesh è uno strumento molto potente, ti consente di generare semplici forme 3D e altro ancora.",
+                    "title": "Rete dinamica"
+                },
+                "step-3": {
+                    "content": "Questa impostazione consente di impostare la trama del riquadro. \nMentre puoi utilizzare la normale navigazione dei file Foundry, puoi anche utilizzare il pulsante \"Apri browser materiali\" per sfogliare tonnellate di trame incluse.",
+                    "title": "Struttura"
+                },
+                "step-4": {
+                    "content": "Queste impostazioni ti permetteranno di decidere in che modo il riquadro interagirà con la visione. \nIn 3D i muri non sono necessari e le piastrelle faranno tutto il loro lavoro!",
+                    "title": "Visione"
+                },
+                "step-5": {
+                    "content": "Questa sezione consente di applicare gli shader al riquadro. \nGli shader sono uno strumento potente che può essere utilizzato per creare molti effetti. \nProva ad applicare alcuni shader alla tua tessera e guarda come funzionano!",
+                    "title": "Shader"
+                },
+                "step-6": {
+                    "content": "Questa finestra consente di modificare i parametri dello shader. \nPassa da una scheda all'altra per abilitare i vari effetti e provali!",
+                    "title": "Finestra dell'ombreggiatore"
+                },
+                "title": "Avanzato: configurazione dei riquadri"
+            },
+            "tokens": {
+                "description": "Questo tour ti guiderà attraverso la configurazione del token per impostare i token 3D.",
+                "requires": "Per iniziare questo tour devi avere selezionato un token, il 3D Canvas Mapmaking Pack e la 3D Canvas Token Collection.",
+                "step-0": {
+                    "content": "La scheda 3D contiene tutte le impostazioni per il token 3D.",
+                    "title": "Vai alla scheda 3D"
+                },
+                "step-1": {
+                    "content": "Questa impostazione consente di impostare il modello 3D del token. \nAnalogamente alle immagini 2D, puoi sfogliare e caricare file 3D.",
+                    "title": "Modello 3D"
+                },
+                "step-2": {
+                    "content": "Questa impostazione consente di impostare il materiale del token. \nPuoi scegliere tra preset o utilizzare un materiale personalizzato.",
+                    "title": "Materiale"
+                },
+                "step-3": {
+                    "content": "Questa impostazione consente di impostare il colore del gettone se si utilizza un materiale preimpostato o un gettone non colorato.",
+                    "title": "Colore"
+                },
+                "step-4": {
+                    "content": "Questo pulsante aprirà il Token Browser.",
+                    "title": "Browser token"
+                },
+                "step-5": {
+                    "content": "Questa finestra consente di sfogliare i token inclusi. \nPer impostazione predefinita vengono mostrati solo i token colorati, puoi vedere tutti i token abilitando l'impostazione corrispondente nelle impostazioni del modulo 3D Canvas Mappmaking Pack.",
+                    "title": "Browser token"
+                },
+                "title": "Di base: gettoni 3D"
             }
         },
         "units": {

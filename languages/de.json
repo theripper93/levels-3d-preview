@@ -1501,7 +1501,8 @@
                 "toggleGizmo": "Gizmo umschalten",
                 "toggleMode": "Füllmodus",
                 "translate": "Übersetzen",
-                "wheel": "Mausrad zum Erhöhen/Verringern von Werten"
+                "wheel": "Mausrad zum Erhöhen/Verringern von Werten",
+                "nogizmo": "Wenn das Gizmo deaktiviert ist, rastet das Ziehen einer Kachel im Gelände ein"
             }
         },
         "tokenAnimations": {
@@ -1585,11 +1586,9 @@
                     "content": "Die Wildkamera ist standardmäßig für GMs und Spieler aktiviert. \nWenn Sie ein GM sind, können Sie mit dieser Schaltfläche zur freien Kamera wechseln. \nSie können die Game Camera-Optionen in den Moduleinstellungen ändern oder pro Szene deaktivieren.",
                     "title": "Spielkamera"
                 },
-                "step-5": {
-                    "content": "Sie können die Steuerungsreferenz jederzeit wiederherstellen, indem Sie auf diese Schaltfläche klicken.",
-                    "title": "Steuerungsreferenz"
-                },
-                "title": "Einstieg"
+                "step-5": {},
+                "title": "Einstieg",
+                "requires": "Sie müssen die 3D-Ansicht NICHT aktiviert haben, um diese Tour zu starten."
             },
             "scene-configuration": {
                 "description": "Diese Tour führt Sie durch die Szenenkonfigurationsoptionen.",
@@ -1630,10 +1629,7 @@
                     "content": "Hier können Sie einen Wetter-/Partikeleffekt für die Szene einstellen. \nVersuchen Sie, einen zu aktivieren und sehen Sie, wie er Ihre Szene verbessern kann!",
                     "title": "Wetter"
                 },
-                "step-9": {
-                    "content": "Die Szenenkonfiguration bietet viele weitere Optionen, sobald Sie mit den Grundeinstellungen vertraut sind, können Sie hier klicken, um alle erweiterten Optionen anzuzeigen.",
-                    "title": "Fortschrittlich"
-                },
+                "step-9": {},
                 "title": "3D-Szenenkonfiguration"
             },
             "first-scene": {
@@ -1667,7 +1663,73 @@
                     "content": "Das ist alles, was Sie brauchen, um loszulegen! \nVersuchen Sie, eine Szene mit Quick Terrain und dem 3D-Szenenfenster zu erstellen. \nSobald Sie sich mit 3D Canvas sicherer fühlen, können Sie zur Seite Touren gehen und die fortgeschritteneren Touren beginnen!.",
                     "title": "Beginnen Sie mit dem Bauen!"
                 },
-                "title": "Basic: Erstellen Sie Ihre erste 3D-Szene"
+                "title": "Basic: Erstellen Sie Ihre erste 3D-Szene",
+                "step-7": {
+                    "content": "Das ist alles, was Sie brauchen, um loszulegen! \nVersuchen Sie, eine Szene mit Quick Terrain und dem 3D-Szenenfenster zu erstellen. \nSobald Sie sich mit 3D Canvas sicherer fühlen, können Sie zur Seite Touren gehen und die fortgeschritteneren Touren beginnen!.",
+                    "title": "Beginnen Sie mit dem Bauen!"
+                }
+            },
+            "tile-configuration": {
+                "description": "Diese Tour führt Sie durch die Kachelkonfigurationsoptionen und Shader.",
+                "requires": "Sie müssen eine Kachel ausgewählt haben, um diese Tour zu starten.",
+                "step-0": {
+                    "content": "Die Registerkarte 3D enthält alle Einstellungen für die 3D-Kachel.",
+                    "title": "Gehen Sie zur Registerkarte 3D"
+                },
+                "step-1": {
+                    "content": "Mit dieser Einstellung können Sie das 3D-Modell der Kachel festlegen. \nÄhnlich wie bei 2D-Bildern können Sie 3D-Dateien durchsuchen und hochladen.",
+                    "title": "3D-Modell"
+                },
+                "step-2": {
+                    "content": "Die Option „Dynamisches Netz“ ist ein sehr leistungsfähiges Werkzeug, mit dem Sie einfache 3D-Formen und mehr erstellen können.",
+                    "title": "Dynamisches Netz"
+                },
+                "step-3": {
+                    "content": "Mit dieser Einstellung können Sie die Textur der Kachel festlegen. \nWährend Sie das normale Durchsuchen von Foundry-Dateien verwenden können, können Sie auch die Schaltfläche „Materialbrowser öffnen“ verwenden, um unzählige enthaltene Texturen zu durchsuchen.",
+                    "title": "Textur"
+                },
+                "step-4": {
+                    "content": "Mit diesen Einstellungen können Sie entscheiden, wie die Kachel mit der Sicht interagiert. \nIn 3D werden Wände nicht benötigt und Fliesen erledigen ihre ganze Arbeit!",
+                    "title": "Vision"
+                },
+                "step-5": {
+                    "content": "In diesem Abschnitt können Sie Shader auf die Kachel anwenden. \nShader sind ein mächtiges Werkzeug, mit dem viele Effekte erzeugt werden können. \nVersuchen Sie, einige Shader auf Ihre Kachel anzuwenden und sehen Sie, wie sie funktionieren!",
+                    "title": "Shader"
+                },
+                "step-6": {
+                    "content": "In diesem Fenster können Sie die Shader-Parameter bearbeiten. \nWechseln Sie zwischen den Registerkarten, um die verschiedenen Effekte zu aktivieren und auszuprobieren!",
+                    "title": "Shader-Fenster"
+                },
+                "title": "Erweitert: Kachelkonfiguration"
+            },
+            "tokens": {
+                "description": "Diese Tour führt Sie durch die Token-Konfiguration, um 3D-Token einzurichten.",
+                "requires": "Sie müssen einen Token ausgewählt haben, das 3D Canvas Mapmaking Pack und die 3D Canvas Token Collection, um diese Tour zu starten.",
+                "step-0": {
+                    "content": "Der 3D-Tab enthält alle Einstellungen für den 3D-Token.",
+                    "title": "Gehen Sie zur Registerkarte 3D"
+                },
+                "step-1": {
+                    "content": "Mit dieser Einstellung können Sie das 3D-Modell des Tokens festlegen. \nÄhnlich wie bei 2D-Bildern können Sie 3D-Dateien durchsuchen und hochladen.",
+                    "title": "3D-Modell"
+                },
+                "step-2": {
+                    "content": "Mit dieser Einstellung können Sie das Material des Tokens festlegen. \nSie können zwischen Voreinstellungen wählen oder ein benutzerdefiniertes Material verwenden.",
+                    "title": "Material"
+                },
+                "step-3": {
+                    "content": "Mit dieser Einstellung können Sie die Farbe des Tokens festlegen, wenn Sie ein voreingestelltes Material oder einen ungefärbten Token verwenden.",
+                    "title": "Farbe"
+                },
+                "step-4": {
+                    "content": "Diese Schaltfläche öffnet den Token-Browser.",
+                    "title": "Token-Browser"
+                },
+                "step-5": {
+                    "content": "In diesem Fenster können Sie die enthaltenen Token durchsuchen. \nStandardmäßig werden nur die farbigen Token angezeigt, Sie können alle Token sehen, indem Sie die entsprechende Einstellung in den Moduleinstellungen des 3D Canvas Mappmaking Pack aktivieren.",
+                    "title": "Token-Browser"
+                },
+                "title": "Basis: 3D-Token"
             }
         },
         "units": {

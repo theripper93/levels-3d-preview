@@ -1501,7 +1501,8 @@
                 "toggleGizmo": "Basculer le gadget",
                 "toggleMode": "Mode de remplissage",
                 "translate": "Traduire",
-                "wheel": "Molette de la souris pour augmenter/diminuer les valeurs"
+                "wheel": "Molette de la souris pour augmenter/diminuer les valeurs",
+                "nogizmo": "Avec le Gizmo désactivé, faire glisser une tuile l'alignera sur le terrain"
             }
         },
         "tokenAnimations": {
@@ -1585,11 +1586,9 @@
                     "content": "La caméra de jeu est activée par défaut pour les GM et les joueurs. \nSi vous êtes un GM, vous pouvez passer à Free Camera avec ce bouton. \nVous pouvez modifier les options Game Camera dans les paramètres du module ou les désactiver par scène.",
                     "title": "Caméra de jeu"
                 },
-                "step-5": {
-                    "content": "Vous pouvez à tout moment faire remonter la référence des contrôles en cliquant sur ce bouton.",
-                    "title": "Référence des commandes"
-                },
-                "title": "Commencer"
+                "step-5": {},
+                "title": "Commencer",
+                "requires": "Vous n'avez PAS besoin d'avoir la vue 3D active pour commencer cette visite."
             },
             "scene-configuration": {
                 "description": "Cette visite guidée vous guidera à travers les options de configuration de la scène.",
@@ -1630,10 +1629,7 @@
                     "content": "Ici, vous pouvez définir un effet météo/particules pour la scène. \nEssayez d'en activer un et voyez comment il peut améliorer votre scène !",
                     "title": "Temps"
                 },
-                "step-9": {
-                    "content": "La configuration de la scène offre de nombreuses autres options, une fois que vous êtes familiarisé avec les paramètres de base, vous pouvez cliquer ici pour afficher toutes les options avancées.",
-                    "title": "Avancé"
-                },
+                "step-9": {},
                 "title": "Configuration de la scène 3D"
             },
             "first-scene": {
@@ -1667,7 +1663,73 @@
                     "content": "C'est tout ce dont vous avez besoin pour commencer ! \nEssayez de créer une scène en utilisant le terrain rapide et le panneau de scène 3D. \nUne fois que vous vous sentez plus à l'aise avec 3D Canvas, vous pouvez vous diriger vers la page Tours et commencer les visites plus avancées !.",
                     "title": "Commencez à construire !"
                 },
-                "title": "Basique : Création de votre première scène 3D"
+                "title": "Basique : Création de votre première scène 3D",
+                "step-7": {
+                    "content": "C'est tout ce dont vous avez besoin pour commencer ! \nEssayez de créer une scène en utilisant le terrain rapide et le panneau de scène 3D. \nUne fois que vous vous sentez plus à l'aise avec 3D Canvas, vous pouvez vous diriger vers la page Tours et commencer les visites plus avancées !.",
+                    "title": "Commencez à construire !"
+                }
+            },
+            "tile-configuration": {
+                "description": "Cette visite guidée vous guidera à travers les options de configuration des tuiles et les shaders.",
+                "requires": "Vous devez avoir sélectionné une tuile pour commencer cette visite.",
+                "step-0": {
+                    "content": "L'onglet 3D contient tous les paramètres de la tuile 3D.",
+                    "title": "Dirigez-vous vers l'onglet 3D"
+                },
+                "step-1": {
+                    "content": "Ce paramètre vous permet de définir le modèle 3D de la tuile. \nSemblable aux images 2D, vous pouvez parcourir et télécharger des fichiers 3D.",
+                    "title": "modèle 3D"
+                },
+                "step-2": {
+                    "content": "L'option Dynamic Mesh est un outil très puissant, il vous permet de générer des formes 3D simples et plus encore.",
+                    "title": "Maillage dynamique"
+                },
+                "step-3": {
+                    "content": "Ce paramètre vous permet de définir la texture de la tuile. \nBien que vous puissiez utiliser la navigation normale dans les fichiers Foundry, vous pouvez également utiliser le bouton \"Ouvrir le navigateur de matériaux\" pour parcourir des tonnes de textures incluses.",
+                    "title": "Texture"
+                },
+                "step-4": {
+                    "content": "Ces paramètres vous permettront de décider comment la tuile interagira avec la vision. \nEn 3D, les murs ne sont pas nécessaires et les tuiles feront tout leur travail !",
+                    "title": "Vision"
+                },
+                "step-5": {
+                    "content": "Cette section vous permet d'appliquer des shaders à la tuile. \nLes shaders sont un outil puissant qui peut être utilisé pour créer de nombreux effets. \nEssayez d'appliquer des shaders à votre tuile et voyez comment ils fonctionnent !",
+                    "title": "Shaders"
+                },
+                "step-6": {
+                    "content": "Cette fenêtre vous permet d'éditer les paramètres du shader. \nBasculez entre les onglets pour activer les différents effets et essayez-les !",
+                    "title": "Fenêtre d'ombrage"
+                },
+                "title": "Avancé : configuration des tuiles"
+            },
+            "tokens": {
+                "description": "Cette visite guidée vous guidera à travers la configuration des jetons pour configurer les jetons 3D.",
+                "requires": "Vous devez avoir sélectionné un jeton, le pack de cartographie en toile 3D et la collection de jetons en toile 3D pour commencer cette visite.",
+                "step-0": {
+                    "content": "L'onglet 3D contient tous les paramètres du jeton 3D.",
+                    "title": "Dirigez-vous vers l'onglet 3D"
+                },
+                "step-1": {
+                    "content": "Ce paramètre vous permet de définir le modèle 3D du jeton. \nSemblable aux images 2D, vous pouvez parcourir et télécharger des fichiers 3D.",
+                    "title": "modèle 3D"
+                },
+                "step-2": {
+                    "content": "Ce paramètre vous permet de définir le matériau du jeton. \nVous pouvez choisir entre des préréglages ou utiliser un matériau personnalisé.",
+                    "title": "Matériel"
+                },
+                "step-3": {
+                    "content": "Ce paramètre vous permet de définir la couleur du jeton si vous utilisez un matériau prédéfini ou un jeton non coloré.",
+                    "title": "Couleur"
+                },
+                "step-4": {
+                    "content": "Ce bouton ouvrira le navigateur de jetons.",
+                    "title": "Navigateur de jetons"
+                },
+                "step-5": {
+                    "content": "Cette fenêtre vous permet de parcourir les jetons inclus. \nPar défaut, seuls les jetons colorisés sont affichés, vous pouvez voir tous les jetons en activant le paramètre correspondant dans les paramètres du module 3D Canvas Mappmaking Pack.",
+                    "title": "Navigateur de jetons"
+                },
+                "title": "De base : jetons 3D"
             }
         },
         "units": {

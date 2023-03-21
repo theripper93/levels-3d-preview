@@ -1501,7 +1501,8 @@
                 "toggleGizmo": "Alternar gizmo",
                 "toggleMode": "Modo de relleno",
                 "translate": "Traducir",
-                "wheel": "Rueda del ratón para aumentar/disminuir valores"
+                "wheel": "Rueda del ratón para aumentar/disminuir valores",
+                "nogizmo": "Con el Gizmo deshabilitado, arrastrar un mosaico lo ajustará al terreno."
             }
         },
         "tokenAnimations": {
@@ -1585,11 +1586,9 @@
                     "content": "La Game Camera está habilitada de manera predeterminada para los GM y los jugadores. \nSi es un GM, puede cambiar a Cámara libre con este botón. \nPuede cambiar las opciones de Game Camera en la configuración del módulo o deshabilitarla por escena.",
                     "title": "Cámara de juego"
                 },
-                "step-5": {
-                    "content": "Puede recuperar la referencia de controles en cualquier momento haciendo clic en este botón.",
-                    "title": "Referencia de controles"
-                },
-                "title": "Empezando"
+                "step-5": {},
+                "title": "Empezando",
+                "requires": "NO necesita tener activa la vista 3D para comenzar este recorrido."
             },
             "scene-configuration": {
                 "description": "Este recorrido lo guiará a través de las opciones de configuración de la escena.",
@@ -1630,10 +1629,7 @@
                     "content": "Aquí puede establecer un efecto de clima/partículas para la escena. \n¡Intente habilitar uno y vea cómo puede mejorar su escena!",
                     "title": "Clima"
                 },
-                "step-9": {
-                    "content": "La configuración de escena ofrece muchas más opciones, una vez que esté familiarizado con la configuración básica, puede hacer clic aquí para mostrar todas las opciones avanzadas.",
-                    "title": "Avanzado"
-                },
+                "step-9": {},
                 "title": "Configuración de escena 3D"
             },
             "first-scene": {
@@ -1667,7 +1663,73 @@
                     "content": "¡Esto es todo lo que necesitas para empezar! \nIntente crear una escena usando Quick Terrain y 3D Scene Panel. \nUna vez que se sienta más seguro con 3D Canvas, puede dirigirse a la página de Tours y comenzar los tours más avanzados.",
                     "title": "¡Empieza a construir!"
                 },
-                "title": "Básico: Creando tu primera Escena 3D"
+                "title": "Básico: Creando tu primera Escena 3D",
+                "step-7": {
+                    "content": "¡Esto es todo lo que necesitas para empezar! \nIntente crear una escena usando Quick Terrain y 3D Scene Panel. \nUna vez que se sienta más seguro con 3D Canvas, puede dirigirse a la página de Tours y comenzar los tours más avanzados.",
+                    "title": "¡Empieza a construir!"
+                }
+            },
+            "tile-configuration": {
+                "description": "Este recorrido lo guiará a través de las opciones de configuración de mosaicos y sombreadores.",
+                "requires": "Necesita tener un mosaico seleccionado para comenzar este recorrido.",
+                "step-0": {
+                    "content": "La pestaña 3D contiene todas las configuraciones para el Mosaico 3D.",
+                    "title": "Dirígete a la pestaña 3D"
+                },
+                "step-1": {
+                    "content": "Esta configuración le permite configurar el modelo 3D del mosaico. \nSimilar a las imágenes 2D, puede buscar y cargar archivos 3D.",
+                    "title": "modelo 3d"
+                },
+                "step-2": {
+                    "content": "La opción Dynamic Mesh es una herramienta muy poderosa, le permite generar formas 3D simples y más.",
+                    "title": "Malla Dinámica"
+                },
+                "step-3": {
+                    "content": "Esta configuración le permite establecer la textura del azulejo. \nSi bien puede usar la exploración normal de archivos de Foundry, también puede usar el botón \"Abrir explorador de materiales\" para explorar toneladas de texturas incluidas.",
+                    "title": "Textura"
+                },
+                "step-4": {
+                    "content": "Esta configuración le permitirá decidir cómo interactuará el mosaico con la visión. \n¡En 3D, las paredes no son necesarias y los mosaicos harán todo su trabajo!",
+                    "title": "Visión"
+                },
+                "step-5": {
+                    "content": "Esta sección le permite aplicar sombreadores al mosaico. \nLos sombreadores son una herramienta poderosa que se puede usar para crear muchos efectos. \n¡Intenta aplicar algunos sombreadores a tu mosaico y mira cómo funcionan!",
+                    "title": "sombreadores"
+                },
+                "step-6": {
+                    "content": "Esta ventana le permite editar los parámetros del shader. \n¡Cambie entre pestañas para habilitar los diversos efectos y pruébelos!",
+                    "title": "Ventana de sombreado"
+                },
+                "title": "Avanzado: configuración de teselas"
+            },
+            "tokens": {
+                "description": "Este recorrido lo guiará a través de la configuración de tokens para configurar tokens 3D.",
+                "requires": "Debe tener un token seleccionado, el paquete de creación de mapas de lienzo 3D y la colección de tokens de lienzo 3D para comenzar este recorrido.",
+                "step-0": {
+                    "content": "La pestaña 3D contiene todas las configuraciones para el token 3D.",
+                    "title": "Dirígete a la pestaña 3D"
+                },
+                "step-1": {
+                    "content": "Esta configuración le permite configurar el modelo 3D del token. \nSimilar a las imágenes 2D, puede buscar y cargar archivos 3D.",
+                    "title": "modelo 3d"
+                },
+                "step-2": {
+                    "content": "Esta configuración le permite configurar el material de la ficha. \nPuede elegir entre ajustes preestablecidos o utilizar un material personalizado.",
+                    "title": "Material"
+                },
+                "step-3": {
+                    "content": "Esta configuración le permite establecer el color de la ficha si está utilizando un material preestablecido o una ficha sin color.",
+                    "title": "Color"
+                },
+                "step-4": {
+                    "content": "Este botón abrirá el navegador de fichas.",
+                    "title": "Explorador de fichas"
+                },
+                "step-5": {
+                    "content": "Esta ventana le permite navegar por los tokens incluidos. \nDe forma predeterminada, solo se muestran los tokens coloreados, puede ver todos los tokens habilitando la configuración correspondiente en la configuración del módulo 3D Canvas Mappmaking Pack.",
+                    "title": "Explorador de fichas"
+                },
+                "title": "Básico: Fichas 3D"
             }
         },
         "units": {
