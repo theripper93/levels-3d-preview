@@ -1006,7 +1006,7 @@ export class InteractionManager {
     }
 
     showControlReference() {
-        const keybindings = ["translate", "rotate", "scale", "toggleGizmo", "toggleMode"];
+        const keybindings = ["translate", "rotate", "scale", "toggleGizmo"];
         const kbObj = {};
         keybindings.forEach((key) => {
             kbObj[key] = game.keybindings.get("levels-3d-preview", key)[0];
@@ -1020,6 +1020,7 @@ export class InteractionManager {
             const mods = (v.modifiers.length = v.modifiers.join("+"));
             controlsReference += `<p><strong>${game.i18n.localize(`levels3dpreview.tileEditor.controlsReference.${k}`)}</strong>: ${mods + (v.modifiers.length ? " + " : "") + v.key}</p>`;
         }
+        controlsReference += `<p>${game.i18n.localize(`levels3dpreview.tileEditor.controlsReference.nogizmo`)}</p>`;
         controlsReference += `<p>${game.i18n.localize(`levels3dpreview.tileEditor.controlsReference.clone`)}</p>`;
         controlsReference += `<p>${game.i18n.localize(`levels3dpreview.tileEditor.controlsReference.select`)}</p>`;
 

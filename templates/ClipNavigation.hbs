@@ -1,7 +1,9 @@
 <div id="clip-navigation">
   <div id="clip-navigation-btns">
     <i class="fas fa-video" id="clip-navigation-camera" data-tooltip="{{localize "levels3dpreview.clipNavigator.cameraToToken"}}"></i>
+    {{#if showRange}}
     <i class="fas fa-street-view{{#if autoMode}} clip-navigation-enabled{{/if}}" id="clip-navigation-automode" data-tooltip="{{localize "levels3dpreview.clipNavigator.automode"}}"></i>
+    {{/if}}
     {{#if isGC}}
       <i class="fas fa-lock" id="clip-navigation-lock" data-tooltip="{{localize "levels3dpreview.clipNavigator.lockon"}}"></i>
     {{/if}}
@@ -9,7 +11,9 @@
       {{#if isGC}}
         <i class="fas fa-location-arrow" id="game-camera-toggle" data-tooltip="{{localize "levels3dpreview.clipNavigator.gamecamera"}}"></i>
       {{/if}}
+      {{#if showRange}}
       <i class="fas fa-random" id="clip-navigation-sync" data-tooltip="{{localize "levels3dpreview.clipNavigator.sync"}}"></i>
+      {{/if}}
       {{#if isFog}}
         <i class="fa-solid fa-cloud" id="clip-navigation-fog" data-tooltip="{{localize "levels3dpreview.clipNavigator.fog"}}"></i>
       {{/if}}

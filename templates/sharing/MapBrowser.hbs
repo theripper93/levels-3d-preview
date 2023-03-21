@@ -6,7 +6,7 @@
     </div>
     <div class="tdc-filters">
         {{#each packs}}
-            <button class="tdc-filter active" data-filter="{{id}}">{{name}}</button>
+            <button class="tdc-filter {{#if installed}}active{{/if}}" data-filter="{{id}}">{{name}}</button>
         {{/each}}
     </div>
     <div class="tdc-map-list">

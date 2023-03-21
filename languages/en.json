@@ -1217,7 +1217,7 @@
         },
         "welcome": {
             "title": "Welcome to 3D Canvas",
-            "content": "<h1>Welcome to 3D!</h1>\nWelcome to 3D Canvas! First, thanks for supporting my development endevour and making this project possible!\nSimply <b>Click the <i class='fas fa-cube'></i> button</b> (Token controls, top left) to switch a scene to 3D.\n<h2>Important Modules</h2>\nIt's higly suggested to install the <a href='https://wiki.theripper93.com/levels-3d-preview/canvas3dcompendium'>Mapmaking Pack</a> and <a href='https://wiki.theripper93.com/levels-3d-preview/canvas3dtokencompendium'>Token Collection</a> modules to get a ton of 3D Props, Tokens and many easy-building tools!\n<h2>Getting Started</h2>\n After installing the <b>Mapmaking Pack</b> you will get access to an easy and fast <b>Quickstart Tutorial</b>.After the Quickstart, if you want to dive into the advanced settings, it's highly advised to <b>read the documentation</b> (by clicking the <b><i class='fas fa-book'></i> Getting Started</b> button below). You can always find the documentation later in your compendiums! The documentation also has a collection of video tutorials that you can reference.<h2>Troubleshooting</h2>\nIf you experience any <b>issue</b> or have trouble with <b>configuration</b> or <b>3d models</b> do not esitate to <b>reach out</b> on the discord channel!<hr>",
+            "content": "<h1>Welcome to 3D!</h1>\nWelcome to 3D Canvas! First, thanks for supporting my development endevour and making this project possible!\nSimply <b>Click the <i class='fas fa-cube'></i> button</b> (Token controls, top left) to switch a scene to 3D.\n<h2>Important Modules</h2>\nIt's higly suggested to install the <a href='https://wiki.theripper93.com/levels-3d-preview/canvas3dcompendium'>Mapmaking Pack</a> and <a href='https://wiki.theripper93.com/levels-3d-preview/canvas3dtokencompendium'>Token Collection</a> modules to get a ton of 3D Props, Tokens and many easy-building tools!\n<h2>Getting Started</h2>\n After enabling the <b>Mapmaking Pack</b> you will get access to an easy and fast <b>Quickstart Tutorial</b>.After the Quickstart, if you want to dive into the advanced settings, it's highly advised to <b>read the documentation</b> (by clicking the <b><i class='fas fa-book'></i> Getting Started</b> button below). You can always find the documentation later in your compendiums! The documentation also has a collection of video tutorials that you can reference.<h2>Troubleshooting</h2>\nIf you experience any <b>issue</b> or have trouble with <b>configuration</b> or <b>3d models</b> do not esitate to <b>reach out</b> on the discord channel!<hr>",
             "ok": "Dismiss",
             "dontshowagain": "Don't show again",
             "opencompendium": "Getting Started"
@@ -1259,6 +1259,7 @@
                 "rotate": "Rotate",
                 "scale": "Scale",
                 "toggleGizmo": "Toggle Gizmo",
+                "nogizmo": "With the Gizmo disabled, dragging a tile will snap it to the terrain",
                 "scaleWidth": "Width",
                 "scaleHeight": "Height",
                 "tiltX": "Tilt X",
@@ -1268,7 +1269,7 @@
                 "toggleMode": "Fill Mode",
                 "wheel": "Mouse Wheel to Increase/Decrease Values",
                 "clone": "Before initiating a transform, hold CTRL to Clone",
-                "select": "Hold F and drag to select, Left drag to release previous objects, Right drag to add to selection"
+                "select": "Hold F and drag to box-select, Left drag to release previous objects, Right drag to add to selection"
             }
         },
         "tokenAnimations": {
@@ -1536,6 +1537,7 @@
             "getting-started": {
                 "title": "Basic: Getting Started",
                 "description": "This tour will guide you through the very basics of 3D Canvas.",
+                "requires": "You need to NOT have the 3D View active to start this tour.",
                 "step-0": {
                     "title": "Getting to the 3D View (1/2)",
                     "content": "Activate the Token Controls."
@@ -1553,10 +1555,6 @@
                     "content": "The navigation bar contains various buttons to toggle specific aspects of the 3D View. You can hover over the buttons to see a description of what they do."
                 },
                 "step-4": {
-                    "title": "Game Camera",
-                    "content": "The Game Camera is enabled by default for GMs and Players. If you are a GM, you can switch to Free Camera with this button. You can change the Game Camera options in the module settings or disable it per scene."
-                },
-                "step-5": {
                     "title": "Controls Reference",
                     "content": "You can bring back up the controls reference any time by clicking this button."
                 }
@@ -1631,18 +1629,14 @@
                     "content": "The HDRI and the Skybox contribute to the scene lighting (think of it as global illumination). Changing the HDRI can drastically alter how a scene looks! Try to set the HDRI to some of the options included in the 3D Canvas Mapmaking Pack!"
                 },
                 "step-6": {
-                    "title": "Skybox",
-                    "content": "If you are using a high quality HDRI, it's suggested to leave this field empty. Try setting the HDRI field to one of the 'Beautiful Skies' included in the Mapmaking Pack and Remove the Skybox field to see the difference."
-                },
-                "step-7": {
                     "title": "Lighting",
                     "content": "This section allows you to adjust the global lighting of the scene. Try messing with the basic sliders!"
                 },
-                "step-8": {
+                "step-7": {
                     "title": "Weather",
                     "content": "Here you can set a Weather/Particle Effect for the scene. Try to enable one and see how it can enhance your scene!"
                 },
-                "step-9": {
+                "step-8": {
                     "title": "Advanced",
                     "content": "The Scene Configuration offers many more options, once you are familiar with the basic settings you can click here to show all the advanced options."
                 }
@@ -1673,11 +1667,77 @@
                 },
                 "step-5": {
                     "title": "3D Scene Panel",
-                    "content": "This panel allows you to quickly build your scene. Hover over the buttons to see what they do!"
+                    "content": "This panel allows you to quickly build your scene. Hover over the buttons after the tour is complete to see what they do!"
                 },
                 "step-6": {
+                    "title": "Tile Manipulation",
+                    "content": "After you place a tile, you can move, scale and rotate it. Click this button to get a reference of the controls as a chat message."
+                },
+                "step-7": {
                     "title": "Start Building!",
                     "content": "This is all you need to get started! Try to create a scene using the Quick Terrain and the 3D Scene Panel. Once you feel more confident with 3D Canvas, you can head to the Tours page and start the more advanced tours!."
+                }
+            },
+            "tile-configuration": {
+                "title": "Advanced: Tile Configuration",
+                "description": "This tour will guide you through the tile configuration options and shaders.",
+                "requires": "You need to have a tile selected to start this tour.",
+                "step-0": {
+                    "title": "Head to the 3D Tab",
+                    "content": "The 3D Tab contains all the settings for the 3D Tile."
+                },
+                "step-1": {
+                    "title": "3D Model",
+                    "content": "This setting allows you to set the 3D Model of the tile. Similar to 2D images you can browse and upload 3D Files."
+                },
+                "step-2": {
+                    "title": "Dynamic Mesh",
+                    "content": "The Dynamic Mesh option is a very powerful tool, it allows you to generate simple 3D shapes and more."
+                },
+                "step-3": {
+                    "title": "Texture",
+                    "content": "This setting allows you to set the texture of the tile. While you can use normal Foundry file browsing, you can also use the 'Open Material Browser' button to browse tons of included textures."
+                },
+                "step-4": {
+                    "title": "Vision",
+                    "content": "This settings will let you decide how the tile will interact with vision. In 3D Walls are not needed and Tiles will do all their job!"
+                },
+                "step-5": {
+                    "title": "Shaders",
+                    "content": "This section allows you to apply shaders to the tile. Shaders are a powerful tool that can be used to create many effects. Try to apply some shaders to your tile and see how they work!"    
+                },
+                "step-6": {
+                    "title": "Shader Window",
+                    "content": "This window allows you to edit the shader parameters. Switch between tabs to enable the various effects and try them out!"
+                }
+            },
+            "tokens": {
+                "title": "Basic: 3D Tokens",
+                "description": "This tour will guide you through the token configuration to setup 3D Tokens.",
+                "requires": "You need to have a token selected, the 3D Canvas Mapmaking Pack and the 3D Canvas Token Collection to start this tour.",
+                "step-0": {
+                    "title": "Head to the 3D Tab",
+                    "content": "The 3D Tab contains all the settings for the 3D Token."
+                },
+                "step-1": {
+                    "title": "3D Model",
+                    "content": "This setting allows you to set the 3D Model of the token. Similar to 2D images you can browse and upload 3D Files."
+                },
+                "step-2": {
+                    "title": "Material",
+                    "content": "This setting allows you to set the material of the token. You can chose between presets or use a custom material."
+                },
+                "step-3": {
+                    "title": "Color",
+                    "content": "This setting allows you to set the color of the token if you are using a preset material or a non-colored token."
+                },
+                "step-4": {
+                    "title": "Token Browser",
+                    "content": "This button will open the Token Browser."
+                },
+                "step-5": {
+                    "title": "Token Browser",
+                    "content": "This window allows you to browse the included tokens. By default only the colorized tokens are shown, you can see all tokens by enabling the corresponding setting in the 3D Canvas Mappmaking Pack module settings."
                 }
             }
         },

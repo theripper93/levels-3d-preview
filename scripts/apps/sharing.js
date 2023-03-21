@@ -258,6 +258,7 @@ class MapBrowser extends Application {
             return {
                 name: game.i18n.localize(`levels3dpreview.sharing.packs.${ap}`),
                 id: ap,
+                installed: !!game.modules.get(packData[ap].id),
             };
         });
         mapList.forEach((map) => {
@@ -353,6 +354,7 @@ class MapBrowser extends Application {
                 this._onFilter();
             });
         });
+        this._onFilter();
     }
 
     _onFilter() {
