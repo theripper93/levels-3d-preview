@@ -1635,6 +1635,39 @@
                     "title": "Avancé"
                 },
                 "title": "Configuration de la scène 3D"
+            },
+            "first-scene": {
+                "description": "Cette visite guidée vous permettra de commencer à créer des scènes 3D.",
+                "requires": "Vous devez installer le pack de cartographie 3D Canvas pour commencer cette visite.",
+                "step-0": {
+                    "content": "L'onglet Scènes contient toutes les scènes de votre monde.",
+                    "title": "Dirigez-vous vers l'onglet Scènes"
+                },
+                "step-1": {
+                    "content": "Cliquez sur le bouton \"Créer une scène\" pour créer une nouvelle scène.",
+                    "title": "Créer une nouvelle scène"
+                },
+                "step-2": {
+                    "content": "Cochez cette case pour activer la création rapide de scènes 3D.",
+                    "title": "Activer la création rapide de scènes 3D"
+                },
+                "step-3": {
+                    "content": "Cliquez sur le bouton \"Créer une nouvelle scène\" pour confirmer la création de la scène.",
+                    "title": "Créer la scène"
+                },
+                "step-4": {
+                    "content": "Ce panneau vous permet de créer rapidement un terrain pour votre scène.",
+                    "title": "Panneau de terrain rapide"
+                },
+                "step-5": {
+                    "content": "Ce panneau vous permet de construire rapidement votre scène. \nSurvolez les boutons pour voir ce qu'ils font !",
+                    "title": "Panneau Scène 3D"
+                },
+                "step-6": {
+                    "content": "C'est tout ce dont vous avez besoin pour commencer ! \nEssayez de créer une scène en utilisant le terrain rapide et le panneau de scène 3D. \nUne fois que vous vous sentez plus à l'aise avec 3D Canvas, vous pouvez vous diriger vers la page Tours et commencer les visites plus avancées !.",
+                    "title": "Commencez à construire !"
+                },
+                "title": "Basique : Création de votre première scène 3D"
             }
         },
         "units": {
@@ -1647,6 +1680,11 @@
             "dontshowagain": "Ne plus afficher",
             "ok": "Rejeter",
             "opencompendium": "Commencer",
+            "title": "Bienvenue sur Toile 3D"
+        },
+        "newuserexperience": {
+            "content": "<h1>Démarrage rapide 3D !</h1> Bienvenue dans 3D Canevas, il s'agit d'un didacticiel de démarrage rapide pour vous permettre de créer des cartes immédiatement et facilement ! \nCliquez sur le bouton <b>Démarrer la visite !</b> pour commencer la visite.<hr>",
+            "starttour": "Tour initial!",
             "title": "Bienvenue sur Toile 3D"
         }
     }

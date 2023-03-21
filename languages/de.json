@@ -1635,6 +1635,39 @@
                     "title": "Fortschrittlich"
                 },
                 "title": "3D-Szenenkonfiguration"
+            },
+            "first-scene": {
+                "description": "Diese Tour wird Ihnen den Einstieg in die Erstellung von 3D-Szenen erleichtern.",
+                "requires": "Sie müssen das 3D Canvas Mapmaking Pack installiert haben, um diese Tour zu starten.",
+                "step-0": {
+                    "content": "Die Szenen-Registerkarte enthält alle Szenen in Ihrer Welt.",
+                    "title": "Gehen Sie zur Registerkarte Szenen"
+                },
+                "step-1": {
+                    "content": "Klicken Sie auf die Schaltfläche „Szene erstellen“, um eine neue Szene zu erstellen.",
+                    "title": "Erstellen Sie eine neue Szene"
+                },
+                "step-2": {
+                    "content": "Aktivieren Sie dieses Kontrollkästchen, um die schnelle 3D-Szenenerstellung zu aktivieren.",
+                    "title": "Aktivieren Sie die schnelle Erstellung von 3D-Szenen"
+                },
+                "step-3": {
+                    "content": "Klicken Sie auf die Schaltfläche „Neue Szene erstellen“, um die Erstellung der Szene zu bestätigen.",
+                    "title": "Erstellen Sie die Szene"
+                },
+                "step-4": {
+                    "content": "Mit diesem Bedienfeld können Sie schnell ein Terrain für Ihre Szene erstellen.",
+                    "title": "Schnelles Terrain-Panel"
+                },
+                "step-5": {
+                    "content": "Mit diesem Bedienfeld können Sie Ihre Szene schnell erstellen. \nBewegen Sie den Mauszeiger über die Schaltflächen, um zu sehen, was sie tun!",
+                    "title": "3D-Szenenpanel"
+                },
+                "step-6": {
+                    "content": "Das ist alles, was Sie brauchen, um loszulegen! \nVersuchen Sie, eine Szene mit Quick Terrain und dem 3D-Szenenfenster zu erstellen. \nSobald Sie sich mit 3D Canvas sicherer fühlen, können Sie zur Seite Touren gehen und die fortgeschritteneren Touren beginnen!.",
+                    "title": "Beginnen Sie mit dem Bauen!"
+                },
+                "title": "Basic: Erstellen Sie Ihre erste 3D-Szene"
             }
         },
         "units": {
@@ -1647,6 +1680,11 @@
             "dontshowagain": "Nicht mehr anzeigen",
             "ok": "Zurückweisen",
             "opencompendium": "Einstieg",
+            "title": "Willkommen bei 3D Canvas"
+        },
+        "newuserexperience": {
+            "content": "<h1>3D-Schnellstart!</h1> Willkommen bei 3D Canvas, dies ist ein Schnellstart-Tutorial, mit dem Sie Karten sofort und einfach erstellen können! \nKlicken Sie auf die Schaltfläche <b>Tour starten!</b>, um die Tour zu beginnen.<hr>",
+            "starttour": "Tour starten!",
             "title": "Willkommen bei 3D Canvas"
         }
     }

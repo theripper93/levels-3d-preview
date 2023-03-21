@@ -1635,6 +1635,39 @@
                     "title": "Avanzado"
                 },
                 "title": "Configuración de escena 3D"
+            },
+            "first-scene": {
+                "description": "Este recorrido lo ayudará a comenzar a crear escenas en 3D.",
+                "requires": "Necesita tener instalado el paquete de creación de mapas de lienzo 3D para comenzar este recorrido.",
+                "step-0": {
+                    "content": "La pestaña Escenas contiene todas las escenas de tu mundo.",
+                    "title": "Dirígete a la pestaña Escenas"
+                },
+                "step-1": {
+                    "content": "Haga clic en el botón 'Crear escena' para crear una nueva escena.",
+                    "title": "Crear una nueva escena"
+                },
+                "step-2": {
+                    "content": "Marque esta casilla para habilitar la creación rápida de escenas en 3D.",
+                    "title": "Habilitar la creación rápida de escenas en 3D"
+                },
+                "step-3": {
+                    "content": "Haga clic en el botón 'Crear nueva escena' para confirmar la creación de la escena.",
+                    "title": "Crea la escena"
+                },
+                "step-4": {
+                    "content": "Este panel le permite crear rápidamente un terreno para su escena.",
+                    "title": "Panel de terreno rápido"
+                },
+                "step-5": {
+                    "content": "Este panel le permite construir rápidamente su escena. \nPasa el cursor sobre los botones para ver lo que hacen.",
+                    "title": "Panel de escena 3D"
+                },
+                "step-6": {
+                    "content": "¡Esto es todo lo que necesitas para empezar! \nIntente crear una escena usando Quick Terrain y 3D Scene Panel. \nUna vez que se sienta más seguro con 3D Canvas, puede dirigirse a la página de Tours y comenzar los tours más avanzados.",
+                    "title": "¡Empieza a construir!"
+                },
+                "title": "Básico: Creando tu primera Escena 3D"
             }
         },
         "units": {
@@ -1647,6 +1680,11 @@
             "dontshowagain": "no volver a mostrar",
             "ok": "Despedir",
             "opencompendium": "Empezando",
+            "title": "Bienvenido a Lienzo 3D"
+        },
+        "newuserexperience": {
+            "content": "<h1>¡Inicio rápido en 3D!</h1> ¡Bienvenido a 3D Canvas, este es un tutorial de inicio rápido para que pueda crear mapas de inmediato y con facilidad! \nHaz clic en el botón <b>¡Iniciar recorrido!</b> para comenzar el recorrido.<hr>",
+            "starttour": "¡Empezar recorrido!",
             "title": "Bienvenido a Lienzo 3D"
         }
     }

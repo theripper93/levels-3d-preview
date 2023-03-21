@@ -1635,6 +1635,39 @@
                     "title": "Avanzate"
                 },
                 "title": "Configurazione della scena 3D"
+            },
+            "first-scene": {
+                "description": "Questo tour ti farà iniziare a creare scene 3D.",
+                "requires": "Per iniziare questo tour è necessario che sia installato il 3D Canvas Mapmaking Pack.",
+                "step-0": {
+                    "content": "La scheda Scene contiene tutte le scene del tuo mondo.",
+                    "title": "Vai alla scheda Scene"
+                },
+                "step-1": {
+                    "content": "Fare clic sul pulsante \"Crea scena\" per creare una nuova scena.",
+                    "title": "Crea una nuova scena"
+                },
+                "step-2": {
+                    "content": "Seleziona questa casella per abilitare la creazione rapida di scene 3D.",
+                    "title": "Abilita la creazione rapida di scene 3D"
+                },
+                "step-3": {
+                    "content": "Fare clic sul pulsante \"Crea nuova scena\" per confermare la creazione della scena.",
+                    "title": "Crea la scena"
+                },
+                "step-4": {
+                    "content": "Questo pannello ti consente di creare rapidamente un terreno per la tua scena.",
+                    "title": "Pannello rapido del terreno"
+                },
+                "step-5": {
+                    "content": "Questo pannello ti consente di costruire rapidamente la tua scena. \nPassa il mouse sopra i pulsanti per vedere cosa fanno!",
+                    "title": "Pannello scena 3D"
+                },
+                "step-6": {
+                    "content": "Questo è tutto ciò di cui hai bisogno per iniziare! \nProva a creare una scena utilizzando Quick Terrain e il pannello Scena 3D. \nUna volta che ti sentirai più a tuo agio con 3D Canvas, puoi andare alla pagina Tour e iniziare i tour più avanzati!.",
+                    "title": "Inizia a costruire!"
+                },
+                "title": "Base: creare la tua prima scena 3D"
             }
         },
         "units": {
@@ -1647,6 +1680,11 @@
             "dontshowagain": "Non mostrare più",
             "ok": "Congedare",
             "opencompendium": "Iniziare",
+            "title": "Benvenuti in Tela 3D"
+        },
+        "newuserexperience": {
+            "content": "<h1>Avvio rapido 3D!</h1> Benvenuto in 3D Canvas, questo è un tutorial rapido per aiutarti a creare mappe subito e facilmente! \nFai clic sul pulsante <b>Avvia tour!</b> per iniziare il tour.<hr>",
+            "starttour": "Inizia il giro!",
             "title": "Benvenuti in Tela 3D"
         }
     }
