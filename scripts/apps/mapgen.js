@@ -7,6 +7,9 @@ export class MapGen extends FormApplication{
     constructor(document) {
         super();
         this.document = document;
+        const data = this.document.getFlag("levels-3d-preview", "mapgen");
+        this.document.setFlag("levels-3d-preview", "dynaMesh", "mapGen");
+        if(!data) this.document.setFlag("levels-3d-preview", "mapgen", this.generateDefaultData());
     }
 
     async generate(gen, event){

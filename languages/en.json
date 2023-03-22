@@ -1778,12 +1778,12 @@
                     "content": "You can set this field to apply a multiplier to the scale of the assets (defaults to 1)."
                 },
                 "step-5": {
-                    "title": "Angle",
-                    "content": "You can set this field to set the default rotation at which assets are created."
-                },
-                "step-6": {
                     "title": "Density",
                     "content": "When Asset Painting is enabled, this setting will control the density of the assets. The higher the value, the more assets will be placed."
+                },
+                "step-6": {
+                    "title": "Angle",
+                    "content": "You can set this field to set the default rotation at which assets are created."
                 },
                 "step-7": {
                     "title": "Merge",

@@ -109,7 +109,7 @@ export const Tokens = () => {
 };
 
 export const AssetBrowser = () => {
-    return new GenericTour("asset-browser", [`#material-browser`, `#material-browser #search`, `#material-browser ol`, `#material-browser .quick-placement`, `#material-browser #scale`, `#material-browser #angle`, `#material-browser #density`, `#material-browser .merge`], {
+    return new GenericTour("asset-browser", [`#material-browser`, `#material-browser #search`, `#material-browser ol`, `#material-browser .quick-placement`, `#material-browser #scale`, `#material-browser #density`, `#material-browser #angle`, `#material-browser .merge`], {
         moduleId: "levels-3d-preview",
         localizationRoot: "levels3dpreview.tours",
         display: true,
@@ -118,8 +118,7 @@ export const AssetBrowser = () => {
         requires: () => {
             return game.modules.get("canvas3dcompendium")?.active && Object.values(ui.windows).find((window) => window instanceof game.Levels3DPreview.CONFIG.UI.AssetBrowser);
         },
-        init: () => {
-        },
+        init: () => {},
     });
 };
 
