@@ -35,7 +35,8 @@
                 "dragdrop": "Drag & Drop",
                 "tap": "Tap",
                 "scroll": "Scroll",
-                "loadingdone": "3D Canvas Ready! - Press <i class='fas fa-question control-highlighted'></i> to close this screen."
+                "loadingdone": "3D Canvas Ready! - Press <i class='fas fa-question control-highlighted'></i> to close this screen.",
+                "loadingarrow": "Click the '?' icon where the Arrow is pointing to close the loading screen."
            }
         },
         "errors": {
@@ -1618,7 +1619,7 @@
                 },
                 "step-3": {
                     "title": "Sight",
-                    "content": "By default 3D Canvas will mirror visibility of the 2D View using it's walls (indipendently of their visible status) to calculate token vision. Enable this setting to ignore the 2D Vision and use the 3D Environment to calculate sight."
+                    "content": "By default 3D Canvas will mirror visibility of the 2D View using it's walls (independently of their visible status) to calculate token vision. Enable this setting to ignore the 2D Vision and use the 3D Environment to calculate sight."
                 },
                 "step-4": {
                     "title": "Fog of War",
@@ -1626,7 +1627,7 @@
                 },
                 "step-5": {
                     "title": "Environment",
-                    "content": "The HDRI and the Skybox contribute to the scene lighting (think of it as global illumination). Changing the HDRI can drastically alter how a scene looks! Try to set the HDRI to some of the options included in the 3D Canvas Mapmaking Pack!"
+                    "content": "The HDRI (a 2:1 image) contributes to the scene lighting and background (think of it as global illumination). Changing the HDRI can drastically alter how a scene looks! Try to set the HDRI to some of the options included in the 3D Canvas Mapmaking Pack!"
                 },
                 "step-6": {
                     "title": "Lighting",

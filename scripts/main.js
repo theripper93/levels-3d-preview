@@ -1508,6 +1508,7 @@ class Levels3DPreview {
                     top: `calc(${$qm.offset().top + $qm.height() / 2}px - 2rem)`,
                 });
                 $("body").append($arrow);
+                ui.notifications.info(game.i18n.localize("levels3dpreview.controls.loadingScreen.loadingarrow"));
             });
             game.settings.set("levels-3d-preview", "loadingShown", true);
         }
