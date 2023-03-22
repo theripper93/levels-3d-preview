@@ -2,7 +2,8 @@ import { toggleAdvancedSettings, injectAdvancedToggle, hideParams } from '../hel
 import { ShaderConfig } from '../shaders/ShaderLib.js';
 import { RegisterTours } from '../tours/tours.js';
 import { MapGen } from '../apps/mapgen.js';
-import { promptForTour } from '../tours/toursHelpers.js';
+import {promptForTour} from '../tours/toursHelpers.js';
+import { getTimeSyncDefault } from '../systems/globalIllumination.js';
 
 Hooks.on("getSceneControlButtons", (buttons)=>{
     buttons.find(b => b.name === "token")?.tools?.push(
@@ -236,7 +237,7 @@ Hooks.on("renderSceneConfig", (app,html)=>{
         timeSync: {
             type: "select",
             label: game.i18n.localize("levels3dpreview.flags.timeSync.label"),
-            default: "off",
+            default: getTimeSyncDefault(app.object),
             options: {
                 off: game.i18n.localize("levels3dpreview.flags.timeSync.options.off"),
                 time: game.i18n.localize("levels3dpreview.flags.timeSync.options.time"),

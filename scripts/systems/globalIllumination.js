@@ -132,7 +132,7 @@ export class GlobalIllumination {
             if (!game.user.isGM || !game.Levels3DPreview._active) return;
             const deltaTime = Math.abs(game.time.worldTime - previousTime);
             if (deltaTime < 10) return;
-            const timeSync = canvas.scene.getFlag("levels-3d-preview", "timeSync") ?? "off";
+            const timeSync = getTimeSync();
             if (timeSync == "off" || timeSync == "darkness") return;
             previousTime = game.time.worldTime;
             game.Levels3DPreview.lights.globalIllumination.setFromWorldTime();
@@ -140,16 +140,27 @@ export class GlobalIllumination {
 
         Hooks.on("preUpdateScene", (scene, updates) => {
             if (!game.user.isGM || !game.Levels3DPreview?._active || scene.id != canvas.scene.id || !("darkness" in updates)) return;
-            const timeSync = canvas.scene.getFlag("levels-3d-preview", "timeSync") ?? "off";
+            const timeSync = getTimeSync();
             if (timeSync == "off" || timeSync == "time") return;
             const lightness = 1 - updates.darkness;
             mergeObject(updates, {
                 flags: {
                     "levels-3d-preview": {
-                        exposure: 0.2 + lightness * 1.3,
+                        exposure: 0.2 + lightness * 0.8,
                     },
                 },
             });
         });
     }
+}
+
+function getTimeSync() {
+    const flag = canvas.scene.getFlag("levels-3d-preview", "timeSync");
+    return flag ?? getTimeSyncDefault(canvas.scene);
+}
+
+export function getTimeSyncDefault(scene) {
+    const smalltime = game.modules.get("smalltime")?.active;
+    if (smalltime && scene.getFlag("smalltime", "darkness-link")) return "time";
+    return "darkness";
 }

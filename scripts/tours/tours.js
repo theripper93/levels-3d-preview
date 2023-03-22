@@ -64,7 +64,9 @@ export const First3DScene = () => {
         requires: () => {
             return game.modules.get("canvas3dcompendium")?.active;
         },
-        init: () => {},
+        init: () => {
+            Object.values(ui.windows).forEach((window) => window instanceof Dialog && window.close());
+        },
         onComplete: () => {},
     });
 };
