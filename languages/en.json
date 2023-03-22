@@ -1218,7 +1218,7 @@
         },
         "welcome": {
             "title": "Welcome to 3D Canvas",
-            "content": "<h1>Welcome to 3D!</h1>\nWelcome to 3D Canvas! First, thanks for supporting my development endevour and making this project possible!\nSimply <b>Click the <i class='fas fa-cube'></i> button</b> (Token controls, top left) to switch a scene to 3D.\n<h2>Important Modules</h2>\nBefore starting with 3D Canvas, install: <ul><li><a href='https://wiki.theripper93.com/levels-3d-preview/canvas3dcompendium'>Mapmaking Pack</a></li><li><a href='https://wiki.theripper93.com/levels-3d-preview/canvas3dtokencompendium'>Token Collection</a></li></ul> You'll get a ton of 3D Props, Tokens and many easy-building tools!\n<h2>Getting Started</h2>\n After enabling the <b>Mapmaking Pack</b> you will get access to an easy and fast <b>Quickstart Tutorial</b>. After the Quickstart, if you want to dive into the advanced settings, it's highly advised to <b>read the documentation</b> (by clicking the <b><i class='fas fa-book'></i> Getting Started</b> button below). You can always find the documentation later in your compendiums! The documentation also has a collection of video tutorials that you can reference.<h2>Troubleshooting</h2>\nIf you experience any <b>issue</b> or have trouble with <b>configuration</b> or <b>3d models</b> do not esitate to <b>reach out</b> on the discord channel!<hr>",
+            "content": "<h1>Welcome to 3D!</h1>\nWelcome to 3D Canvas! First, thanks for supporting my development endevour and making this project possible!\nSimply <b>Click the <i class='fas fa-cube'></i> button</b> (Token controls, top left) to switch a scene to 3D.<p><h2>Important Modules</h2>\nBefore starting with 3D Canvas, install: <ul><li><a href='https://wiki.theripper93.com/levels-3d-preview/canvas3dcompendium'>Mapmaking Pack</a></li><li><a href='https://wiki.theripper93.com/levels-3d-preview/canvas3dtokencompendium'>Token Collection</a></li></ul> You'll get a ton of 3D Props, Tokens and many easy-building tools!<p><h2>Getting Started</h2>\n After enabling the <b>Mapmaking Pack</b> you will get access to an easy and fast <b>Quickstart Tutorial</b>. After the Quickstart, if you want to dive into the advanced settings, it's highly advised to <b>read the documentation</b> (by clicking the <b><i class='fas fa-book'></i> Getting Started</b> button below). You can always find the documentation later in your compendiums! The documentation also has a collection of video tutorials that you can reference.<p><h2>Troubleshooting</h2>\nIf you experience any <b>issue</b> or have trouble with <b>configuration</b> or <b>3d models</b> do not esitate to <b>reach out</b> on the discord channel!<hr>",
             "ok": "Dismiss",
             "dontshowagain": "Don't show again",
             "opencompendium": "Getting Started"
@@ -1663,18 +1663,30 @@
                     "content": "Click the 'Create New Scene' button to confirm the creation of the scene."
                 },
                 "step-4": {
+                    "title": "Controls",
+                    "content": "The Loading Screen contains helpful information on the 3D Canvas Camera and Token Controls."
+                },
+                "step-5": {
+                    "title": "Navigation",
+                    "content": "The navigation bar contains various buttons to toggle specific aspects of the 3D View. You can hover over the buttons to see a description of what they do."
+                },
+                "step-6": {
+                    "title": "Controls Reference",
+                    "content": "You can bring back up the controls reference any time by clicking this button."
+                },
+                "step-7": {
                     "title": "Quick Terrain Panel",
                     "content": "This panel allows you to quickly create a terrain for your scene."
                 },
-                "step-5": {
+                "step-8": {
                     "title": "3D Scene Panel",
                     "content": "This panel allows you to quickly build your scene. Hover over the buttons after the tour is complete to see what they do!"
                 },
-                "step-6": {
+                "step-9": {
                     "title": "Tile Manipulation",
                     "content": "After you place a tile, you can move, scale and rotate it. Click this button to get a reference of the controls as a chat message."
                 },
-                "step-7": {
+                "step-10": {
                     "title": "Start Building!",
                     "content": "This is all you need to get started! Try to create a scene using the Quick Terrain and the 3D Scene Panel. Once you feel more confident with 3D Canvas, you can head to the Tours page and start the more advanced tours!."
                 }
@@ -1739,6 +1751,43 @@
                 "step-5": {
                     "title": "Token Browser",
                     "content": "This window allows you to browse the included tokens. By default only the colorized tokens are shown, you can see all tokens by enabling the corresponding setting in the 3D Canvas Mappmaking Pack module settings."
+                }
+            },
+            "asset-browser": {
+                "title": "Intermediate: Asset Browser",
+                "description": "This tour will guide you through the Asset Browser advanced features.",
+                "requires": "You need to have the 3D Canvas Mapmaking Pack installed and the Asset Browser open to start this tour.",
+                "step-0": {
+                    "title": "Asset Browser Window",
+                    "content": "This window allows you to browse the included assets."
+                },
+                "step-1": {
+                    "title": "Search Bar",
+                    "content": "You can use the search bar to find specific assets. You can also use keywords such as 'nature' or 'scifi' to find assets that match a specific theme."
+                },
+                "step-2": {
+                    "title": "Assets Panel",
+                    "content": "This panel contains all the assets that match your search. You can ether drag and drop them into the scene or click (or Ctrl+Click for multiple selection) to select them. If you have one or more assets selected, clicking on the scene will place one of them at random. While you have one or more assets selected, you cannot manipulate tiles in the scene."
+                },
+                "step-3": {
+                    "title": "Randomization Toggles",
+                    "content": "You can use these toggles to randomize the placement of the assets. You can randomize the rotation, scale and more. Hover over the buttons to see what they do."
+                },
+                "step-4": {
+                    "title": "Scale",
+                    "content": "You can set this field to apply a multiplier to the scale of the assets (defaults to 1)."
+                },
+                "step-5": {
+                    "title": "Angle",
+                    "content": "You can set this field to set the default rotation at which assets are created."
+                },
+                "step-6": {
+                    "title": "Density",
+                    "content": "When Asset Painting is enabled, this setting will control the density of the assets. The higher the value, the more assets will be placed."
+                },
+                "step-7": {
+                    "title": "Merge",
+                    "content": "When you are done building your scene, clicking this button will merge all the similar tiles into a single tile. This will reduce the number of tiles in the scene and improve performance."
                 }
             }
         },

@@ -55,7 +55,7 @@ export const SceneConfiguration = () => { return new GenericTour("scene-configur
 }
 
 export const First3DScene = () => {
-    return new GenericTour("first-scene", [`.item[data-tab="scenes"]`, `#scenes button.create-document`, `input[name="scene3d"]`, `.dialog-button.ok.default`, `#quick-terrain`, `#build-panel`, `li[data-tool="controlsRef"]`, `.item[data-tab="chat"]`], {
+    return new GenericTour("first-scene", [`.item[data-tab="scenes"]`, `#scenes button.create-document`, `input[name="scene3d"]`, `.dialog-button.ok.default`, `.levels-3d-preview-loading-screen`, `#clip-navigation-btns`, `#clip-navigation-controls`, `#quick-terrain`, `#build-panel`, `li[data-tool="controlsRef"]`, `.item[data-tab="chat"]`], {
         moduleId: "levels-3d-preview",
         localizationRoot: "levels3dpreview.tours",
         display: true,
@@ -65,6 +65,7 @@ export const First3DScene = () => {
             return game.modules.get("canvas3dcompendium")?.active;
         },
         init: () => {
+            game.Levels3DPreview.CONFIG.UI.BUILD_PANEL.FORCE_AUTOHIDE_OFF = true;
             Object.values(ui.windows).forEach((window) => window instanceof Dialog && window.close());
         },
         onComplete: () => {},
@@ -107,9 +108,25 @@ export const Tokens = () => {
     });
 };
 
+export const AssetBrowser = () => {
+    return new GenericTour("asset-browser", [`#material-browser`, `#material-browser #search`, `#material-browser ol`, `#material-browser .quick-placement`, `#material-browser #scale`, `#material-browser #angle`, `#material-browser #density`, `#material-browser .merge`], {
+        moduleId: "levels-3d-preview",
+        localizationRoot: "levels3dpreview.tours",
+        display: true,
+        restricted: true,
+        autoRegister: true,
+        requires: () => {
+            return game.modules.get("canvas3dcompendium")?.active && Object.values(ui.windows).find((window) => window instanceof game.Levels3DPreview.CONFIG.UI.AssetBrowser);
+        },
+        init: () => {
+        },
+    });
+};
+
 export const RegisterTours = () => {
     GettingStartedTour();
     First3DScene();
+    AssetBrowser();
     Tokens();
     First3DTile();
     SceneConfiguration();

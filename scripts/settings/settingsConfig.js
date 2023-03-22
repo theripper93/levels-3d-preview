@@ -613,8 +613,6 @@ Hooks.once("ready", () => {
   }
 
   if (!game.settings.get("levels-3d-preview", "oneTimeMessages").welcome) {
-    setTimeout(() => {
-    Object.values(ui.windows).forEach((window) => window instanceof Dialog && window.close());
     const dialog = new Dialog({
       title: game.i18n.localize("levels3dpreview.welcome.title"),
       content: game.i18n.localize("levels3dpreview.welcome.content"),
@@ -643,7 +641,6 @@ Hooks.once("ready", () => {
       app.setPosition({width: 500,height:"auto", left: window.innerWidth/2-250})
   
     })
-    }, 1000);
   }
 
   if (game.modules.get("canvas3dcompendium")?.active && !game.settings.get("levels-3d-preview", "oneTimeMessages").newuserexperience) {

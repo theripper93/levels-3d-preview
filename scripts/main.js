@@ -152,6 +152,11 @@ class Levels3DPreview {
                 ShaderHandler,
                 shaders,
             },
+            UI: {
+                BUILD_PANEL: {
+                    FORCE_AUTOHIDE_OFF: false,
+                }
+            },
             autoPan: false,
             tokenAnimations: defaultTokenAnimations,
             skybox: {
