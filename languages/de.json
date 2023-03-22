@@ -63,7 +63,8 @@
                 "tokencontrols": "Token-Kontrollen",
                 "topdown": "Von oben nach unten",
                 "unlock": "Freischalten",
-                "zoom": "Zoomen"
+                "zoom": "Zoomen",
+                "loadingarrow": "Drücke den '?' \nSymbol, auf das der Pfeil zeigt, um den Ladebildschirm zu schließen."
             },
             "miniCanvas": "Popout/Leinwand wiederherstellen",
             "preview3d": "3D-Modus umschalten",
@@ -1667,6 +1668,18 @@
                 "step-7": {
                     "content": "Das ist alles, was Sie brauchen, um loszulegen! \nVersuchen Sie, eine Szene mit Quick Terrain und dem 3D-Szenenfenster zu erstellen. \nSobald Sie sich mit 3D Canvas sicherer fühlen, können Sie zur Seite Touren gehen und die fortgeschritteneren Touren beginnen!.",
                     "title": "Beginnen Sie mit dem Bauen!"
+                },
+                "step-10": {
+                    "content": "Das ist alles, was Sie brauchen, um loszulegen! \nVersuchen Sie, eine Szene mit Quick Terrain und dem 3D-Szenenfenster zu erstellen. \nSobald Sie sich mit 3D Canvas sicherer fühlen, können Sie zur Seite Touren gehen und die fortgeschritteneren Touren beginnen!.",
+                    "title": "Beginnen Sie mit dem Bauen!"
+                },
+                "step-8": {
+                    "content": "Mit diesem Bedienfeld können Sie Ihre Szene schnell erstellen. \nBewegen Sie den Mauszeiger nach Abschluss der Tour über die Schaltflächen, um zu sehen, was sie tun!",
+                    "title": "3D-Szenenpanel"
+                },
+                "step-9": {
+                    "content": "Nachdem Sie eine Kachel platziert haben, können Sie sie verschieben, skalieren und drehen. \nKlicken Sie auf diese Schaltfläche, um eine Referenz der Steuerelemente als Chat-Nachricht zu erhalten.",
+                    "title": "Kachelmanipulation"
                 }
             },
             "tile-configuration": {
@@ -1730,6 +1743,43 @@
                     "title": "Token-Browser"
                 },
                 "title": "Basis: 3D-Token"
+            },
+            "asset-browser": {
+                "description": "Diese Tour führt Sie durch die erweiterten Funktionen des Asset-Browsers.",
+                "requires": "Sie müssen das 3D Canvas Mapmaking Pack installiert und den Asset Browser geöffnet haben, um diese Tour zu starten.",
+                "step-0": {
+                    "content": "In diesem Fenster können Sie die enthaltenen Assets durchsuchen.",
+                    "title": "Asset-Browser-Fenster"
+                },
+                "step-1": {
+                    "content": "Sie können die Suchleiste verwenden, um bestimmte Assets zu finden. \nSie können auch Schlüsselwörter wie „Natur“ oder „Scifi“ verwenden, um Assets zu finden, die zu einem bestimmten Thema passen.",
+                    "title": "Suchleiste"
+                },
+                "step-2": {
+                    "content": "Dieses Panel enthält alle Assets, die Ihrer Suche entsprechen. \nSie können sie entweder per Drag & Drop in die Szene ziehen oder klicken (oder Strg-Klick für Mehrfachauswahl), um sie auszuwählen. \nWenn Sie ein oder mehrere Assets ausgewählt haben, wird durch Klicken auf die Szene eines davon zufällig platziert. \nSolange Sie ein oder mehrere Assets ausgewählt haben, können Sie Kacheln in der Szene nicht bearbeiten.",
+                    "title": "Assets-Panel"
+                },
+                "step-3": {
+                    "content": "Sie können diese Schalter verwenden, um die Platzierung der Assets zu randomisieren. \nSie können die Rotation, Skalierung und mehr randomisieren. \nBewegen Sie den Mauszeiger über die Schaltflächen, um zu sehen, was sie tun.",
+                    "title": "Randomisierungsschalter"
+                },
+                "step-4": {
+                    "content": "Sie können dieses Feld so einstellen, dass ein Multiplikator auf die Skalierung der Assets angewendet wird (standardmäßig 1).",
+                    "title": "Skala"
+                },
+                "step-5": {
+                    "content": "Wenn Asset Painting aktiviert ist, steuert diese Einstellung die Dichte der Assets. \nJe höher der Wert, desto mehr Assets werden platziert.",
+                    "title": "Dichte"
+                },
+                "step-6": {
+                    "content": "Sie können dieses Feld festlegen, um die Standardrotation festzulegen, bei der Assets erstellt werden.",
+                    "title": "Winkel"
+                },
+                "step-7": {
+                    "content": "Wenn Sie mit dem Erstellen Ihrer Szene fertig sind, werden durch Klicken auf diese Schaltfläche alle ähnlichen Kacheln zu einer einzigen Kachel zusammengeführt. \nDadurch wird die Anzahl der Kacheln in der Szene reduziert und die Leistung verbessert.",
+                    "title": "Verschmelzen"
+                },
+                "title": "Mittelstufe: Asset-Browser"
             }
         },
         "units": {

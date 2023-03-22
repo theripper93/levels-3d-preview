@@ -63,7 +63,8 @@
                 "tokencontrols": "Controlli token",
                 "topdown": "Dall'alto al basso",
                 "unlock": "Sbloccare",
-                "zoom": "Ingrandisci"
+                "zoom": "Ingrandisci",
+                "loadingarrow": "Clicca il '?' \nicona in cui punta la freccia per chiudere la schermata di caricamento."
             },
             "miniCanvas": "Popout/Ripristina tela",
             "preview3d": "Attiva la modalità 3D",
@@ -1667,6 +1668,18 @@
                 "step-7": {
                     "content": "Questo è tutto ciò di cui hai bisogno per iniziare! \nProva a creare una scena utilizzando Quick Terrain e il pannello Scena 3D. \nUna volta che ti sentirai più a tuo agio con 3D Canvas, puoi andare alla pagina Tour e iniziare i tour più avanzati!.",
                     "title": "Inizia a costruire!"
+                },
+                "step-10": {
+                    "content": "Questo è tutto ciò di cui hai bisogno per iniziare! \nProva a creare una scena utilizzando Quick Terrain e il pannello Scena 3D. \nUna volta che ti sentirai più a tuo agio con 3D Canvas, puoi andare alla pagina Tour e iniziare i tour più avanzati!.",
+                    "title": "Inizia a costruire!"
+                },
+                "step-8": {
+                    "content": "Questo pannello ti consente di costruire rapidamente la tua scena. \nPassa il mouse sopra i pulsanti al termine del tour per vedere cosa fanno!",
+                    "title": "Pannello scena 3D"
+                },
+                "step-9": {
+                    "content": "Dopo aver posizionato una tessera, puoi spostarla, ridimensionarla e ruotarla. \nFare clic su questo pulsante per ottenere un riferimento dei controlli come messaggio di chat.",
+                    "title": "Manipolazione delle tessere"
                 }
             },
             "tile-configuration": {
@@ -1730,6 +1743,43 @@
                     "title": "Browser token"
                 },
                 "title": "Di base: gettoni 3D"
+            },
+            "asset-browser": {
+                "description": "Questo tour ti guiderà attraverso le funzionalità avanzate di Asset Browser.",
+                "requires": "Per iniziare questo tour, devi avere installato il pacchetto di creazione di mappe su tela 3D e aperto il browser delle risorse.",
+                "step-0": {
+                    "content": "Questa finestra consente di sfogliare le risorse incluse.",
+                    "title": "Finestra del browser delle risorse"
+                },
+                "step-1": {
+                    "content": "Puoi utilizzare la barra di ricerca per trovare risorse specifiche. \nPuoi anche utilizzare parole chiave come \"natura\" o \"scifi\" per trovare risorse che corrispondono a un tema specifico.",
+                    "title": "Barra di ricerca"
+                },
+                "step-2": {
+                    "content": "Questo pannello contiene tutte le risorse che corrispondono alla tua ricerca. \nPuoi trascinarli e rilasciarli nella scena o fare clic (o Ctrl Click per selezioni multiple) per selezionarli. \nSe hai selezionato una o più risorse, facendo clic sulla scena ne posizionerai una a caso. \nMentre hai selezionato uno o più asset, non puoi manipolare i riquadri nella scena.",
+                    "title": "Pannello risorse"
+                },
+                "step-3": {
+                    "content": "Puoi utilizzare questi interruttori per rendere casuale il posizionamento delle risorse. \nPuoi randomizzare la rotazione, la scala e altro. \nPassa il mouse sopra i pulsanti per vedere cosa fanno.",
+                    "title": "Attiva/disattiva la randomizzazione"
+                },
+                "step-4": {
+                    "content": "È possibile impostare questo campo per applicare un moltiplicatore alla scala delle risorse (il valore predefinito è 1).",
+                    "title": "Scala"
+                },
+                "step-5": {
+                    "content": "Quando Asset Painting è abilitato, questa impostazione controllerà la densità delle risorse. \nPiù alto è il valore, più risorse verranno collocate.",
+                    "title": "Densità"
+                },
+                "step-6": {
+                    "content": "È possibile impostare questo campo per impostare la rotazione predefinita con cui vengono create le risorse.",
+                    "title": "Angolo"
+                },
+                "step-7": {
+                    "content": "Quando hai finito di costruire la tua scena, facendo clic su questo pulsante unirai tutti i riquadri simili in un unico riquadro. \nCiò ridurrà il numero di riquadri nella scena e migliorerà le prestazioni.",
+                    "title": "Unisci"
+                },
+                "title": "Intermedio: Asset Browser"
             }
         },
         "units": {

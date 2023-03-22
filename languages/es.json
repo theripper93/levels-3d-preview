@@ -63,7 +63,8 @@
                 "tokencontrols": "Controles de fichas",
                 "topdown": "De arriba hacia abajo",
                 "unlock": "Desbloquear",
-                "zoom": "Zoom"
+                "zoom": "Zoom",
+                "loadingarrow": "Haga clic en el '?' \nicono donde apunta la flecha para cerrar la pantalla de carga."
             },
             "miniCanvas": "Ventana emergente/Restaurar lienzo",
             "preview3d": "Alternar modo 3D",
@@ -1667,6 +1668,18 @@
                 "step-7": {
                     "content": "¡Esto es todo lo que necesitas para empezar! \nIntente crear una escena usando Quick Terrain y 3D Scene Panel. \nUna vez que se sienta más seguro con 3D Canvas, puede dirigirse a la página de Tours y comenzar los tours más avanzados.",
                     "title": "¡Empieza a construir!"
+                },
+                "step-10": {
+                    "content": "¡Esto es todo lo que necesitas para empezar! \nIntente crear una escena usando Quick Terrain y 3D Scene Panel. \nUna vez que se sienta más seguro con 3D Canvas, puede dirigirse a la página de Tours y comenzar los tours más avanzados.",
+                    "title": "¡Empieza a construir!"
+                },
+                "step-8": {
+                    "content": "Este panel le permite construir rápidamente su escena. \nPase el cursor sobre los botones después de que se complete el recorrido para ver lo que hacen.",
+                    "title": "Panel de escena 3D"
+                },
+                "step-9": {
+                    "content": "Después de colocar un mosaico, puede moverlo, escalarlo y rotarlo. \nHaga clic en este botón para obtener una referencia de los controles como un mensaje de chat.",
+                    "title": "Manipulación de azulejos"
                 }
             },
             "tile-configuration": {
@@ -1730,6 +1743,43 @@
                     "title": "Explorador de fichas"
                 },
                 "title": "Básico: Fichas 3D"
+            },
+            "asset-browser": {
+                "description": "Este recorrido lo guiará a través de las funciones avanzadas del Navegador de activos.",
+                "requires": "Debe tener instalado 3D Canvas Mapmaking Pack y el Explorador de activos abierto para comenzar este recorrido.",
+                "step-0": {
+                    "content": "Esta ventana le permite navegar por los activos incluidos.",
+                    "title": "Ventana del navegador de activos"
+                },
+                "step-1": {
+                    "content": "Puede usar la barra de búsqueda para encontrar activos específicos. \nTambién puede usar palabras clave como 'naturaleza' o 'ciencia ficción' para encontrar activos que coincidan con un tema específico.",
+                    "title": "Barra de búsqueda"
+                },
+                "step-2": {
+                    "content": "Este panel contiene todos los activos que coinciden con su búsqueda. \nPuede arrastrarlos y soltarlos en la escena o hacer clic (o Ctrl Clic para selección múltiple) para seleccionarlos. \nSi tiene uno o más activos seleccionados, al hacer clic en la escena se colocará uno de ellos al azar. \nMientras tenga uno o más activos seleccionados, no puede manipular mosaicos en la escena.",
+                    "title": "Panel de activos"
+                },
+                "step-3": {
+                    "content": "Puede usar estos conmutadores para aleatorizar la ubicación de los activos. \nPuede aleatorizar la rotación, la escala y más. \nPase el cursor sobre los botones para ver lo que hacen.",
+                    "title": "Alternancia de aleatorización"
+                },
+                "step-4": {
+                    "content": "Puede configurar este campo para aplicar un multiplicador a la escala de los activos (el valor predeterminado es 1).",
+                    "title": "Escala"
+                },
+                "step-5": {
+                    "content": "Cuando la pintura de activos está habilitada, esta configuración controlará la densidad de los activos. \nCuanto mayor sea el valor, más activos se colocarán.",
+                    "title": "Densidad"
+                },
+                "step-6": {
+                    "content": "Puede configurar este campo para establecer la rotación predeterminada en la que se crean los activos.",
+                    "title": "Ángulo"
+                },
+                "step-7": {
+                    "content": "Cuando haya terminado de construir su escena, al hacer clic en este botón se fusionarán todos los mosaicos similares en un solo mosaico. \nEsto reducirá la cantidad de mosaicos en la escena y mejorará el rendimiento.",
+                    "title": "Unir"
+                },
+                "title": "Intermedio: Navegador de activos"
             }
         },
         "units": {
