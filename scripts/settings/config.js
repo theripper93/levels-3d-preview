@@ -30,17 +30,6 @@ Hooks.on("getSceneControlButtons", (buttons)=>{
             miniCanvas.toggle();
         }
     });
-    buttons.find(b => b.name === "tiles")?.tools?.push(
-        {
-            "name": "controlsRef",
-            "title": game.i18n.localize(`levels3dpreview.tileEditor.controlsReference.title`),
-            "icon": "fas fa-gamepad",
-            button: true,
-            visible: game.Levels3DPreview?._active,
-            onClick: () => {
-                game.Levels3DPreview.interactionManager.showControlReference()
-            },
-        });
     if(game.Levels3DPreview?._active && game.user.isGM) buttons.find(b => b.name === "tiles").tools.find(t => t.name === "browse").onClick = () => { game.Levels3DPreview.open3DFilePicker() }
 })
 

@@ -24,6 +24,9 @@ export class ClipNavigation extends Application {
         data.isGC = game.settings.get("levels-3d-preview", "enableGameCamera") && (canvas.scene.getFlag("levels-3d-preview", "enableGameCamera") ?? true);
         data.isGM = game.user.isGM;
         data.isFog = canvas.scene.getFlag("levels-3d-preview", "enableFog") ?? false;
+        this.isGC = data.isGC;
+        this.isGM = data.isGM;
+        this.isFog = data.isFog;
         const levels = (canvas.scene.getFlag("levels", "sceneLevels") ?? [])
             .filter((l) => l[1] !== undefined && l[0] !== undefined)
             .sort((a, b) => {
@@ -39,6 +42,9 @@ export class ClipNavigation extends Application {
         data.autoMode = this.autoMode;
         data.showRange = levels.length > 0;
         this.showRange = data.showRange;
+        const compendium = game.modules.get("canvas3dcompendium")?.active;
+        const buttons = compendium ? [] : CLIP_NAVIGATION_BUTTONS.filter((b) => b.visible());
+        data.buttons = buttons;
         if (!data.showRange) return data;
         this.lowestLevel = levels.reduce((a, b) => {
             return a.bottom < b.bottom ? a : b;
@@ -98,48 +104,11 @@ export class ClipNavigation extends Application {
         html.find("#clip-navigation-range input").trigger("change");
         html.find("#game-camera-toggle").toggleClass("clip-navigation-enabled", game.Levels3DPreview.GameCamera.enabled);
         html.find("#clip-navigation-fog").toggleClass("clip-navigation-enabled", (canvas.scene.getFlag("levels-3d-preview", "fogDistance") ?? 3000) / factor == game.Levels3DPreview.scene.fog?.far);
-        html.on("click", "#clip-navigation-camera", () => {
-            if (game.Levels3DPreview._active) game.Levels3DPreview.setCameraToControlled();
-        });
-        html.on("click", "#clip-navigation-sync", () => {
-            game.Levels3DPreview.socket.executeForEveryone("syncClipNavigator", this.currentRange);
-            ui.notifications.info(game.i18n.localize("levels3dpreview.clipNavigator.syncNotification").replace("{{level}}", this.currentLevel.name));
-        });
-        html.on("click", "#clip-navigation-automode", (e) => {
-            this.autoMode = !this.autoMode;
-            game.settings.set("levels-3d-preview", "clipNavigatorFollowClient", this.autoMode);
-            $(e.currentTarget).toggleClass("clip-navigation-enabled");
-        });
-        html.on("click", "#game-camera-toggle", (e) => {
-            game.Levels3DPreview.GameCamera.toggle();
-            $(e.currentTarget).toggleClass("clip-navigation-enabled", game.Levels3DPreview.GameCamera.enabled);
-        });
-        html.on("click", "#clip-navigation-wireframe", (e) => {
-            this.wireframe = !this.wireframe;
-            $(e.currentTarget).toggleClass("clip-navigation-enabled", this.wireframe);
-        });
-        html.on("click", "#clip-navigation-controls", (e) => {
-            if (!game.Levels3DPreview._ready) return;
-            $("#levels-3d-preview-loading-bar").hide();
-            $("#clip-navigation-higlight-arrow").remove();
-            $(".levels-3d-preview-loading-screen").fadeToggle(200);
-        });
-        html.on("click", "#clip-navigation-lock", () => {
-            game.Levels3DPreview.GameCamera.lock = !game.Levels3DPreview.GameCamera.lock;
-            $("#clip-navigation-lock").toggleClass("clip-navigation-enabled", game.Levels3DPreview.GameCamera.lock);
-        });
-        html.on("click", "#clip-navigation-performance", () => {
-            game.Levels3DPreview.helpers.setPerformancePreset();
-        });
-        html.on("click", "#clip-navigation-performancereport", () => {
-            game.Levels3DPreview.helpers.showPerformanceDialog();
-        });
-        html.on("click", "#clip-navigation-fog", () => {
-            const fogDistance = (canvas.scene.getFlag("levels-3d-preview", "fogDistance") ?? 3000) / factor;
-            game.Levels3DPreview.scene.fog.far = game.Levels3DPreview.scene.fog.far == fogDistance ? 100 : fogDistance;
-            game.Levels3DPreview.camera.far = game.Levels3DPreview.scene.fog.far;
-            game.Levels3DPreview.camera.updateProjectionMatrix();
-            $("#clip-navigation-fog").toggleClass("clip-navigation-enabled", game.Levels3DPreview.scene.fog.far == fogDistance);
+        
+        html.on("click", ".clip-navigation-btn", (e) => { 
+            const id = e.currentTarget.id;
+            const button = CLIP_NAVIGATION_BUTTONS.find((b) => b.id == id);
+            if (button) button.callback(e);
         });
 
         if (!this._setOnLoad) {
@@ -273,3 +242,125 @@ export class ClipNavigation extends Application {
         });
     }
 }
+
+export const CLIP_NAVIGATION_BUTTONS = [
+    {
+        id: "clip-navigation-camera",
+        name: "levels3dpreview.clipNavigator.cameraToToken",
+        icon: "fas fa-video",
+        visible: () => true,
+        callback: () => game.Levels3DPreview.setCameraToControlled(),
+    },
+    {
+        id: "clip-navigation-automode",
+        name: "levels3dpreview.clipNavigator.automode",
+        icon: "fas fa-street-view",
+        toggle: true,
+        visible: () => game.Levels3DPreview.ClipNavigation.showRange,
+        callback: (e) => {
+            game.Levels3DPreview.ClipNavigation.autoMode = !game.Levels3DPreview.ClipNavigation.autoMode;
+            game.settings.set("levels-3d-preview", "clipNavigatorFollowClient", game.Levels3DPreview.ClipNavigation.autoMode);
+            $(e.currentTarget).toggleClass("clip-navigation-enabled");
+        },
+    },
+    {
+        id: "clip-navigation-lock",
+        name: "levels3dpreview.clipNavigator.lockon",
+        icon: "fas fa-lock",
+        toggle: true,
+        visible: () => game.Levels3DPreview.ClipNavigation.isGC,
+        callback: (e) => {
+            game.Levels3DPreview.GameCamera.lock = !game.Levels3DPreview.GameCamera.lock;
+            $(e.currentTarget).toggleClass("clip-navigation-enabled", game.Levels3DPreview.GameCamera.lock);
+        },
+    },
+    //GM
+    {
+        id: "game-camera-toggle",
+        name: "levels3dpreview.clipNavigator.gamecamera",
+        icon: "fas fa-location-arrow",
+        toggle: true,
+        visible: () => game.Levels3DPreview.ClipNavigation.isGM && game.Levels3DPreview.ClipNavigation.isGC,
+        callback: (e) => {
+            game.Levels3DPreview.GameCamera.toggle();
+            $(e.currentTarget).toggleClass("clip-navigation-enabled", game.Levels3DPreview.GameCamera.enabled);
+        },
+    },
+    {
+        id: "clip-navigation-sync",
+        name: "levels3dpreview.clipNavigator.sync",
+        icon: "fas fa-random",
+        visible: () => game.Levels3DPreview.ClipNavigation.isGM && game.Levels3DPreview.ClipNavigation.showRange,
+        callback: () => {
+            game.Levels3DPreview.socket.executeForEveryone("syncClipNavigator", game.Levels3DPreview.ClipNavigation.currentRange);
+            ui.notifications.info(game.i18n.localize("levels3dpreview.clipNavigator.syncNotification").replace("{{level}}", game.Levels3DPreview.ClipNavigation.currentLevel.name));
+        },
+    },
+    {
+        id: "clip-navigation-fog",
+        name: "levels3dpreview.clipNavigator.fog",
+        icon: "fas fa-smog",
+        toggle: true,
+        visible: () => game.Levels3DPreview.ClipNavigation.isFog && game.Levels3DPreview.ClipNavigation.isGM,
+        callback: (e) => {
+            const factor = game.Levels3DPreview.factor;
+            const fogDistance = (canvas.scene.getFlag("levels-3d-preview", "fogDistance") ?? 3000) / factor;
+            if (fogDistance == game.Levels3DPreview.scene.fog?.far) {
+                game.Levels3DPreview.scene.fog.far = 3000;
+            } else {
+                game.Levels3DPreview.scene.fog.far = fogDistance;
+            }
+            $(e.currentTarget).toggleClass("clip-navigation-enabled", game.Levels3DPreview.scene.fog.far == fogDistance);
+        },
+    },
+    {
+        id: "clip-navigation-wireframe",
+        name: "levels3dpreview.clipNavigator.wireframe",
+        icon: "fas fa-low-vision",
+        toggle: true,
+        visible: () => game.Levels3DPreview.ClipNavigation.isGM,
+        callback: (e) => {
+            game.Levels3DPreview.ClipNavigation.wireframe = !game.Levels3DPreview.ClipNavigation.wireframe;
+            $(e.currentTarget).toggleClass("clip-navigation-enabled", game.Levels3DPreview.ClipNavigation.wireframe);
+        },
+    },
+    {
+        id: "clip-navigation-performancereport",
+        name: "levels3dpreview.clipNavigator.performancereport",
+        icon: "fas fa-chart-column",
+        visible: () => game.Levels3DPreview.ClipNavigation.isGM,
+        callback: () => {
+            game.Levels3DPreview.helpers.showPerformanceDialog();
+        },
+    },
+    {
+        id: "clip-navigation-controls",
+        name: "levels3dpreview.clipNavigator.controls",
+        icon: "fas fa-question",
+        visible: () => true,
+        callback: (e) => {
+            if (!game.Levels3DPreview._ready) return;
+            $("#levels-3d-preview-loading-bar").hide();
+            $("#clip-navigation-higlight-arrow").remove();
+            $(".levels-3d-preview-loading-screen").fadeToggle(200);
+        },
+    },
+    {
+        id: "controlsRef",
+        name: `levels3dpreview.tileEditor.controlsReference.title`,
+        icon: "fas fa-gamepad",
+        visible: () => game.Levels3DPreview?._active && game.Levels3DPreview.ClipNavigation.isGM,
+        callback: () => {
+            game.Levels3DPreview.interactionManager.showControlReference();
+        },
+    },
+    {
+        id: "clip-navigation-performance",
+        name: "levels3dpreview.clipNavigator.performance",
+        icon: "fas fa-cog",
+        visible: () => true,
+        callback: (e) => {
+            game.Levels3DPreview.helpers.setPerformancePreset();
+        },
+    },
+];

@@ -1,6 +1,6 @@
 import { GenericTour } from "./toursHelpers.js";
 
-export const GettingStartedTour = () => { return new GenericTour("getting-started", [`li.scene-control[data-control="token"]`, `li.control-tool[data-tool="preview3d"]`, `.levels-3d-preview-loading-screen`, `#clip-navigation-btns`, `#clip-navigation-controls`], {
+export const GettingStartedTour = () => { return new GenericTour("getting-started", [`li.scene-control[data-control="token"]`, `li.control-tool[data-tool="preview3d"]`, `.levels-3d-preview-loading-screen`], {
     moduleId: "levels-3d-preview",
     localizationRoot: "levels3dpreview.tours",
     display: true,
@@ -14,7 +14,6 @@ export const GettingStartedTour = () => { return new GenericTour("getting-starte
 
 export const First3DTile = () => { return new GenericTour("first-tile", [
     `li.scene-control[data-control="tiles"]`,
-    `li.control-tool[data-tool="controlsRef"]`,
     `li.control-tool[data-tool="browse"]`,
     `li.dir[data-name="modules"]`,
     `li.dir[data-name="canvas3dcompendium"]`,
@@ -25,7 +24,7 @@ export const First3DTile = () => { return new GenericTour("first-tile", [
 ],
 {moduleId: "levels-3d-preview",localizationRoot: "levels3dpreview.tours",display: true,restricted: true,autoRegister: true,
     requires: () => {
-        return game.Levels3DPreview._active && game.modules.get("canvas3dcompendium");
+        return game.Levels3DPreview._active && game.modules.get("canvas3dcompendium")?.active;
     },
     init: () => {
         FilePicker.LAST_BROWSED_DIRECTORY = "";
@@ -55,7 +54,7 @@ export const SceneConfiguration = () => { return new GenericTour("scene-configur
 }
 
 export const First3DScene = () => {
-    return new GenericTour("first-scene", [`.item[data-tab="scenes"]`, `#scenes button.create-document`, `input[name="scene3d"]`, `.dialog-button.ok.default`, `.levels-3d-preview-loading-screen`, `#clip-navigation-btns`, `#clip-navigation-controls`, `#quick-terrain`, `#build-panel`, `li[data-tool="controlsRef"]`, `.item[data-tab="chat"]`], {
+    return new GenericTour("first-scene", [`.item[data-tab="scenes"]`, `#scenes button.create-document`, `input[name="scene3d"]`, `.dialog-button.ok.default`, `.levels-3d-preview-loading-screen`, `#build-panel`, `#clip-navigation-controls`, `#controlsRef` , `.item[data-tab="chat"]`], {
         moduleId: "levels-3d-preview",
         localizationRoot: "levels3dpreview.tours",
         display: true,

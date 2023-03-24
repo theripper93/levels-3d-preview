@@ -536,7 +536,9 @@ export class InteractionManager {
             this.currentHover = null;
         }
         if (canvas.activeLayer?.hover && this.currentHover?.placeable?.id !== canvas.activeLayer?.hover?.id) {
-            canvas.activeLayer?.hover._onHoverOut(event);
+            try {
+                canvas.activeLayer?.hover._onHoverOut(event);
+            }catch(e){}
         }
 
         if (game.user.hasPermission("SHOW_CURSOR")) {
@@ -1125,9 +1127,9 @@ export class InteractionManager {
 
 export const dropFunctions = {
     Tile: async function (event, data, snap = null, normal = null, dataTransfer = null, setRotation = 0, autoCenter = false) {
-        canvas.tiles.activate();
-        if (!game.Levels3DPreview.helpers.is3DModel(data.texture.src)) return dropImage.bind(this)(event, data);
-            
+
+         if (!game.Levels3DPreview.helpers.is3DModel(data.texture.src)) return dropImage.bind(this)(event, data);
+         canvas.tiles.activate();
         data.flags["levels-3d-preview"] = {
             model3d: data.texture.src,
             autoGround: true,
@@ -1219,5 +1221,19 @@ function dropImage(event, data) {
     data.texture.src = "modules/levels-3d-preview/assets/blank.webp";
     data.overhead = canvas.activeLayer?.name !== "BackgroundLayer";
 
-    canvas.scene.createEmbeddedDocuments("Tile", [data]);
+    let isToken = false;
+    if (game.modules.get("token-attacher")?.active) {
+        game.Levels3DPreview.interactionManager._onMouseMove(event, true);
+        isToken = game.Levels3DPreview.interactionManager.currentHover?.token;
+        if (isToken) {
+            data.x = isToken.center.x - size / 2;
+            data.y = isToken.center.y - size / 2;
+            data.elevation = isToken.document.elevation+1;
+            
+        }
+    }
+    canvas.scene.createEmbeddedDocuments("Tile", [data]).then((tiles) => { 
+        if(isToken) tokenAttacher.attachElementToToken(tiles[0].object, game.Levels3DPreview.interactionManager.currentHover?.token);
+        else canvas.tiles.activate();
+    });
 }

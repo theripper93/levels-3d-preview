@@ -98,7 +98,7 @@
     opacity: 1;
 }
 
-#clip-navigation i.clip-navigation-enabled{
+#clip-navigation i.clip-navigation-enabled, .build-panel-button.clip-navigation-enabled{
     color: var(--color-shadow-highlight);
 }
 

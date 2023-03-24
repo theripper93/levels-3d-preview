@@ -30,7 +30,7 @@ import { turnStartMarker } from "./systems/turnStartMarker.js";
 import { ParticleSystem } from "./systems/particleSystem.js";
 import { Particle3D } from "./systems/particleSystem.js";
 import { defaultTokenAnimations } from "./handlers/tokenAnimationHandler.js";
-import { ClipNavigation } from "./apps/clipNavigation.js";
+import { ClipNavigation, CLIP_NAVIGATION_BUTTONS } from "./apps/clipNavigation.js";
 import { presetMaterials, PresetMaterialHandler, populateScene } from "./helpers/presetMaterials.js";
 import { FXAAShader } from "./lib/FXAA.js";
 import { SMAAPass } from "./lib/SMAAPass.js";
@@ -155,6 +155,9 @@ class Levels3DPreview {
             UI: {
                 BUILD_PANEL: {
                     FORCE_AUTOHIDE_OFF: false,
+                },
+                CLIP_NAVIGATION: {
+                    BUTTONS: CLIP_NAVIGATION_BUTTONS,
                 }
             },
             autoPan: false,
@@ -1505,19 +1508,24 @@ class Levels3DPreview {
                 $("#levels-3d-preview-loading-bar-inner").css("width", `0%`);
             });
         } else {
+            this.CONFIG.UI.BUILD_PANEL.FORCE_AUTOHIDE_OFF = true;
             Hooks.once("renderClipNavigation", () => {
-                const $qm = $("#clip-navigation-controls");
-                $("#levels-3d-preview-loading-bar-text").html(game.i18n.localize("levels3dpreview.controls.loadingScreen.loadingdone"));
-                const $arrow = $('<i id="clip-navigation-higlight-arrow" class="fas fa-arrow-right"></i>').css({
-                    right: window.innerWidth - $qm.offset().left + 20,
-                    top: `calc(${$qm.offset().top + $qm.height() / 2}px - 2rem)`,
-                });
-                $("body").append($arrow);
-                ui.notifications.info(game.i18n.localize("levels3dpreview.controls.loadingScreen.loadingarrow"));
+                const isClipNav = $("#clip-navigation-controls").length > 0;
+                setTimeout(() => {
+                    const $qm = $("#clip-navigation-controls").length ? $("#clip-navigation-controls") : $("#build-panel");
+                    $("#levels-3d-preview-loading-bar-text").html(game.i18n.localize("levels3dpreview.controls.loadingScreen.loadingdone"));
+                    const $arrow = $('<i id="clip-navigation-higlight-arrow" class="fas fa-arrow-right"></i>').css({
+                        right: window.innerWidth - $qm.offset().left + 20,
+                        top: `calc(${$qm.offset().top + $qm.height() / 2}px - 2rem)`,
+                    });
+                    $("body").append($arrow);
+                    ui.notifications.info(game.i18n.localize("levels3dpreview.controls.loadingScreen.loadingarrow"));
+                }, isClipNav ? 0 : 1000);
             });
             game.settings.set("levels-3d-preview", "loadingShown", true);
         }
-        this.ClipNavigation = new ClipNavigation().render(true);
+        this.ClipNavigation = new ClipNavigation()
+        this.ClipNavigation.render(true);
         this.weather = new WeatherSystem(this);
 
         canvas.perception.update(

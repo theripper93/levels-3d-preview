@@ -1550,14 +1550,6 @@
                 "step-2": {
                     "title": "Controls",
                     "content": "The Loading Screen contains helpful information on the 3D Canvas Camera and Token Controls."
-                },
-                "step-3": {
-                    "title": "Navigation",
-                    "content": "The navigation bar contains various buttons to toggle specific aspects of the 3D View. You can hover over the buttons to see a description of what they do."
-                },
-                "step-4": {
-                    "title": "Controls Reference",
-                    "content": "You can bring back up the controls reference any time by clicking this button."
                 }
             },
             "first-tile": {
@@ -1569,12 +1561,12 @@
                     "content": "Head to the Tiles Layer."
                 },
                 "step-1": {
-                    "title": "Controls",
-                    "content": "Click this button any time to get a controls reference for the Tile Editor as a Chat Message (GM only)."
-                },
-                "step-2": {
                     "title": "File Browser",
                     "content": "Open the File browser."
+                },
+                "step-2": {
+                    "title": "Navigate to the 3D Assets",
+                    "content": "Follow the steps to get to the 3D Canvas Mapmaking Pack Tiles folder."
                 },
                 "step-3": {
                     "title": "Navigate to the 3D Assets",
@@ -1593,10 +1585,6 @@
                     "content": "Follow the steps to get to the 3D Canvas Mapmaking Pack Tiles folder."
                 },
                 "step-7": {
-                    "title": "Navigate to the 3D Assets",
-                    "content": "Follow the steps to get to the 3D Canvas Mapmaking Pack Tiles folder."
-                },
-                "step-8": {
                     "title": "Drag & Drop",
                     "content": "Drag & Drop a 3D Model the same way you would do with a 2D Tile. Use the Controls Reference to manipulate the Tile as you prefer. The 3D Canvas Macro Compendium includes useful macros to manipulate tiles."
                 }
@@ -1667,26 +1655,18 @@
                     "content": "The Loading Screen contains helpful information on the 3D Canvas Camera and Token Controls."
                 },
                 "step-5": {
-                    "title": "Navigation",
-                    "content": "The navigation bar contains various buttons to toggle specific aspects of the 3D View. You can hover over the buttons to see a description of what they do."
+                    "title": "3D Scene Panel",
+                    "content": "This panel allows you to quickly build your scene. Hover over the buttons after the tour is complete to see what they do!"
                 },
                 "step-6": {
                     "title": "Controls Reference",
                     "content": "You can bring back up the controls reference any time by clicking this button."
                 },
                 "step-7": {
-                    "title": "Quick Terrain Panel",
-                    "content": "This panel allows you to quickly create a terrain for your scene."
-                },
-                "step-8": {
-                    "title": "3D Scene Panel",
-                    "content": "This panel allows you to quickly build your scene. Hover over the buttons after the tour is complete to see what they do!"
-                },
-                "step-9": {
                     "title": "Tile Manipulation",
                     "content": "After you place a tile, you can move, scale and rotate it. Click this button to get a reference of the controls as a chat message."
                 },
-                "step-10": {
+                "step-8": {
                     "title": "Start Building!",
                     "content": "This is all you need to get started! Try to create a scene using the Quick Terrain and the 3D Scene Panel. Once you feel more confident with 3D Canvas, you can head to the Tours page and start the more advanced tours!."
                 }

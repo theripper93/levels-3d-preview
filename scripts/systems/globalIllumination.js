@@ -30,6 +30,13 @@ export class GlobalIllumination {
 
         const lightingGroup = new THREE.Group();
         lightingGroup.position.copy(this._parent.canvasCenter);
+        const sizeX = canvas.scene.dimensions.sceneWidth / factor;
+        const sizeY = canvas.scene.dimensions.sceneHeight / factor;
+        sunlight.shadow.camera.left = -sizeX / 2;
+        sunlight.shadow.camera.right = sizeX / 2;
+        sunlight.shadow.camera.top = sizeY / 2;
+        sunlight.shadow.camera.bottom = -sizeY / 2;
+        sunlight.shadow.camera.updateProjectionMatrix();
         lightingGroup.add(sunlight);
         lightingGroup.add(debugSphere);
 
