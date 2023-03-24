@@ -1377,6 +1377,17 @@ Hooks.on("init", () => {
         },
     });
 
+    game.keybindings.register("levels-3d-preview", "removeWaypoint", {
+        name: "levels3dpreview.keybindings.removeWaypoint",
+        editable: [
+            {
+                key: "Space",
+            },
+        ],
+        onDown: () => game.Levels3DPreview.ruler.removeSegment(),
+        precedence: -1,
+    });
+
     game.keybindings.register("levels-3d-preview", "lockcamera", {
         name: game.i18n.localize("levels3dpreview.keybindings.lockcamera"),
         editable: [{ key: "Space" }],

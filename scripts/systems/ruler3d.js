@@ -1,15 +1,18 @@
 import * as THREE from "../lib/three.module.js";
 import { Template3D } from "../entities/template3d.js";
 import { factor } from "../main.js";
+import {sleep} from "../helpers/utils.js";
 
 export class Ruler3D {
     constructor(parent) {
         this._parent = parent;
+        this._distanceOffset = 0;
         this.isDragRouler = game.modules.get("drag-ruler")?.active;
         this.isHoverDistance = game.modules.get("hover-distance")?.active;
         this.color = new THREE.Color(game.user.color);
         this.colorCache = {};
         const hsl = {};
+        this.segments = [];
         this.color.getHSL(hsl);
         this.lineColor = new THREE.Color().setHSL(hsl.h, hsl.s, hsl.l - 0.2);
         this.origin = new THREE.Vector3(0, 0, 0);
@@ -72,6 +75,7 @@ export class Ruler3D {
 
     set object(value) {
         if (!value) {
+            this.clearSegments();
             this._object = null;
             this._parent.scene.remove(this.line);
             this.sphere1.material.visible = false;
@@ -81,6 +85,7 @@ export class Ruler3D {
             this.template?.destroy();
             this.textElement.hide();
         } else {
+            this.clearSegments();
             const target = value.userData.isHitbox ? value.parent : value;
             this._object = target;
             this.origin = new THREE.Vector3(target.position.x, target.position.y, target.position.z);
@@ -103,13 +108,52 @@ export class Ruler3D {
         this.update();
     }
 
+    get origin() {
+        return this._origin;
+    }
+
     updateVisibility() {}
+
+    addSegment() {
+        const segment = new RulerSegment(this);
+        this.segments.push(segment);
+        this.origin = this.getTargetPos().clone();
+        this._distanceOffset += segment._distance;
+        return segment;
+    }
+
+    removeSegment() {
+        if (!this._object) return false;
+        if (!this.segments.length) {
+            this._parent.interactionManager.cancelDrag(true);
+            return true;
+        }
+        const segment = this.segments.pop();
+        this.origin = segment.origin.clone();
+        segment.destroy();
+        this._distanceOffset -= segment._distance;
+        return true;
+    }
+
+    clearSegments() {
+        this.segments.forEach((s) => s.destroy());
+        this.segments = [];
+        this._distanceOffset = 0;
+    }
+
+    getTargetPos() {
+        return Ruler3D.useSnapped() ? Ruler3D.snapped3DPosition(this._object.position) : this._object.position;
+    }
+
+    getCurrentDistance() {
+        return parseFloat(Ruler3D.measureDistance(this._origin, this.getTargetPos()));
+    }
 
     update() {
         if (!this._object || !this._origin) return;
-        const targetPos = Ruler3D.useSnapped() ? Ruler3D.snapped3DPosition(this._object.position) : this._object.position;
+        const targetPos = this.getTargetPos();
         this._parent.scene.remove(this.line);
-        const distance = Ruler3D.measureDistance(this._origin, targetPos);
+        const distance = (this.getCurrentDistance() + this._distanceOffset).toFixed(1);
         //draw ruler
         let curve;
         let midcurve;
@@ -163,6 +207,36 @@ export class Ruler3D {
         return color ?? this.color;
     }
 
+    async executeMovement(token) {
+        const token3D = this._parent.tokens[token.id];
+
+        // Iterate over each measured segment
+        let priorDest = undefined;
+        for (const segment of this.segments) {
+            const dest = Ruler3D.pos3DToCanvas(segment.target);
+            dest.x -= token.document.width * canvas.grid.size / 2;
+            dest.y -= token.document.height * canvas.grid.size / 2;
+            dest.x = Math.round(dest.x);
+            dest.y = Math.round(dest.y);
+            dest.elevation = dest.z;
+            dest.elevation = parseFloat(dest.elevation.toFixed(2));
+
+            if (priorDest && (token.document.x !== priorDest.x || token.document.y !== priorDest.y)) break;
+            const canMove = token3D.testCollision(dest);
+            if (!canMove) break;
+            await this._animateSegment(token, dest);
+            priorDest = dest;
+        }
+    }
+
+    async _animateSegment(token, destination) {
+        await token.document.update(destination);
+        await sleep(100);
+        const anim = CanvasAnimation.getAnimation(token.animationName);
+        if(!anim) return;
+        return anim.promise;
+    }
+
     static position3dtoScreen(position) {
         const camera = game.Levels3DPreview.camera;
         const vector = new THREE.Vector3(position.x, position.y, position.z);
@@ -209,8 +283,10 @@ export class Ruler3D {
         return (pixels * canvas.scene.dimensions.distance * factor) / canvas.scene.dimensions.size;
     }
 
-    static pos3DToCanvas(position) {
-        return new THREE.Vector3(position.x * factor, position.z * factor, ((position.y * factor) / canvas.scene.dimensions.size) * canvas.scene.dimensions.distance);
+    static pos3DToCanvas(position, topLeft = false) {
+        if (topLeft) {
+            
+        }else return new THREE.Vector3(position.x * factor, position.z * factor, ((position.y * factor) / canvas.scene.dimensions.size) * canvas.scene.dimensions.distance);
     }
 
     static useSnapped() {
@@ -280,5 +356,35 @@ export class Ruler3D {
             }
         }
         return Math.min(...measurements);
+    }
+}
+
+
+class RulerSegment {
+    constructor(ruler3d) {
+        this.sphere1 = ruler3d.sphere1.clone();
+        this.sphere2 = ruler3d.sphere2.clone();
+        this.line = ruler3d.line.clone();
+        this.origin = ruler3d.origin.clone();
+        this.target = ruler3d.getTargetPos().clone();
+        this._parent = ruler3d._parent;
+        this._distance = ruler3d.getCurrentDistance();
+        this.addToScene();
+    }
+
+    get scene() {
+        return this._parent.scene;
+    }
+
+    addToScene() {
+        this.scene.add(this.sphere1);
+        this.scene.add(this.sphere2);
+        this.scene.add(this.line);
+    }
+
+    destroy() {
+        this.scene.remove(this.sphere1);
+        this.scene.remove(this.sphere2);
+        this.scene.remove(this.line);
     }
 }

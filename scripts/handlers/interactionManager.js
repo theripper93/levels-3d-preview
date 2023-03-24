@@ -430,19 +430,24 @@ export class InteractionManager {
             originalIntersect: event.originalIntersect,
             intersectData: intersectData.intersectData,
         };
-        if (this.clicks === 1) {
-            setTimeout(() => {
-                if (event.which === 1) {
-                    this.mousedown && this.clicks === 1 ? this.startDrag(event, intersectData) : (this._triggerLeft = true);
-                } else {
-                    this._triggerRight = true;
-                }
-            }, 250);
+        if (this.draggable?.userData?.entity3D?.token) {
+            this._parent.ruler.addSegment();
         } else {
-            if (this.draggable) return this.cancelDrag();
-            else event.which === 1 ? (this._triggerLeft2 = true) : (this._triggerRight2 = true);
-            this.toggleControls(true);
+            if (this.clicks === 1) {
+                setTimeout(() => {
+                    if (event.which === 1) {
+                        this.mousedown && this.clicks === 1 ? this.startDrag(event, intersectData) : (this._triggerLeft = true);
+                    } else {
+                        this._triggerRight = true;
+                    }
+                }, 250);
+            } else {
+                if (this.draggable) return this.cancelDrag();
+                else event.which === 1 ? (this._triggerLeft2 = true) : (this._triggerRight2 = true);
+                this.toggleControls(true);
+            }
         }
+
     }
 
     set clicks(val) {
@@ -492,10 +497,18 @@ export class InteractionManager {
             this.draggable.position.copy(this.currentDragTarget);
             this.ruler.placeTemplate();
             const entity3D = this.draggable?.userData?.entity3D;
-            if (!entity3D.updatePositionFrom3D(event)) this.cancelDrag();
+            if (entity3D.token) {
+                this._parent.ruler.addSegment();
+                entity3D.setPosition(false, true);
+                this._parent.ruler.executeMovement(entity3D.token);
+
+            } else {
+                if (!entity3D.updatePositionFrom3D(event)) this.cancelDrag();
+            }
+            /*if (!entity3D.updatePositionFrom3D(event)) this.cancelDrag();
             if (entity3D.token) {
                 entity3D.setPosition(false, true);
-            }
+            }*/
             this.draggable = null;
             this.clicks = 0;
         }
@@ -977,9 +990,14 @@ export class InteractionManager {
         }
     }
 
-    cancelDrag() {
+    cancelDrag(force = false) {
         if (!this.draggable) return;
         const entity3D = this.draggable.userData.entity3D;
+        const isToken = !!entity3D.token;
+        if (isToken && !force) {
+            this.clicks = 0;
+            return this._parent.ruler.addSegment();
+        }
         entity3D.dragCanceled = true;
         this.draggable = undefined;
         this.ruler.template = undefined;

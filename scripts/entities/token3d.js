@@ -484,6 +484,43 @@ export class Token3D {
         return true;
     }
 
+    testCollision({x, y, z} = {}) {
+        const dest = {
+            x: x,
+            y: y,
+            elevation: z,
+        };
+        if (!game.user.isGM) {
+            if (game.paused) return false;
+            const center = canvas.grid.getCenter(x, y);
+            const geometryCollisions = game.Levels3DPreview?.object3dSight;
+            let collides;
+            if (geometryCollisions) {
+                const tokenHeight = this.token.losHeight - this.token.document.elevation;
+                collides = CONFIG.Levels.API.testCollision(
+                    {
+                        x: this.token.center.x,
+                        y: this.token.center.y,
+                        z: this.token.losHeight,
+                    },
+                    {
+                        x: dest.x + this.token.document.width * canvas.grid.size * 0.5,
+                        y: dest.y + this.token.document.height * canvas.grid.size * 0.5,
+                        z: dest.elevation + tokenHeight,
+                    },
+                    "collision",
+                );
+            } else {
+                collides = this.token.checkCollision({ x: center[0], y: center[1] });
+            }
+            if (collides) {
+                ui.notifications.error("ERROR.TokenCollide", { localize: true });
+                return false;
+            }
+        }
+        return true;
+    }
+
     setPosition(lerp = false, forcePosition) {
         const currentPosition = {
             x: Math.round(this.mesh.position.x * 1000) / 1000,
