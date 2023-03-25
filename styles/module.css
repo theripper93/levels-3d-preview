@@ -46,7 +46,7 @@
     color: var(--color-text-light-highlight);
     transition: opacity 0.5s ease-in-out , right 0.5s ease-in-out;
     transition-delay: 2s;
-    z-index: 100;
+    z-index: calc(var(--z-index-app) - 1);
     pointer-events: none;
 }
 
