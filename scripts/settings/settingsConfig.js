@@ -550,7 +550,7 @@ Hooks.once('init', function() {
           scope: "world",
           config: false,
           type: Number,
-          default: 16,
+          default: 4,
       });
 
     game.settings.register("levels-3d-preview", "debugMode", {

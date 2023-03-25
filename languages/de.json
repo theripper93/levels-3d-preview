@@ -788,7 +788,8 @@
             "toggleMode": "Kacheleditor: Zyklischer Füllstil",
             "toggleSelect": "Gruppenauswahl (beim Ziehen gedrückt halten)",
             "topdownView": "Top-Down-Kameraansicht",
-            "translate": "Kacheleditor: Übersetzen"
+            "translate": "Kacheleditor: Übersetzen",
+            "removeWaypoint": "Lineal-Wegpunkt entfernen"
         },
         "macrodialog": {
             "cancel": "Absagen",
@@ -1559,10 +1560,7 @@
                     "content": "Befolgen Sie die Schritte, um zum Ordner „3D Canvas Mapmaking Pack Tiles“ zu gelangen.",
                     "title": "Navigieren Sie zu den 3D-Assets"
                 },
-                "step-8": {
-                    "content": "Ziehen",
-                    "title": "Ziehen"
-                },
+                "step-8": {},
                 "title": "Platzieren Sie Ihre erste 3D-Kachel"
             },
             "getting-started": {
@@ -1579,14 +1577,8 @@
                     "content": "Der Ladebildschirm enthält hilfreiche Informationen zur 3D-Canvas-Kamera und zur Token-Steuerung.",
                     "title": "Kontrollen"
                 },
-                "step-3": {
-                    "content": "Die Navigationsleiste enthält verschiedene Schaltflächen zum Umschalten bestimmter Aspekte der 3D-Ansicht. \nSie können den Mauszeiger über die Schaltflächen bewegen, um eine Beschreibung ihrer Funktion anzuzeigen.",
-                    "title": "Navigation"
-                },
-                "step-4": {
-                    "content": "Die Wildkamera ist standardmäßig für GMs und Spieler aktiviert. \nWenn Sie ein GM sind, können Sie mit dieser Schaltfläche zur freien Kamera wechseln. \nSie können die Game Camera-Optionen in den Moduleinstellungen ändern oder pro Szene deaktivieren.",
-                    "title": "Spielkamera"
-                },
+                "step-3": {},
+                "step-4": {},
                 "step-5": {},
                 "title": "Einstieg",
                 "requires": "Sie müssen die 3D-Ansicht NICHT aktiviert haben, um diese Tour zu starten."
@@ -1669,18 +1661,12 @@
                     "content": "Das ist alles, was Sie brauchen, um loszulegen! \nVersuchen Sie, eine Szene mit Quick Terrain und dem 3D-Szenenfenster zu erstellen. \nSobald Sie sich mit 3D Canvas sicherer fühlen, können Sie zur Seite Touren gehen und die fortgeschritteneren Touren beginnen!.",
                     "title": "Beginnen Sie mit dem Bauen!"
                 },
-                "step-10": {
-                    "content": "Das ist alles, was Sie brauchen, um loszulegen! \nVersuchen Sie, eine Szene mit Quick Terrain und dem 3D-Szenenfenster zu erstellen. \nSobald Sie sich mit 3D Canvas sicherer fühlen, können Sie zur Seite Touren gehen und die fortgeschritteneren Touren beginnen!.",
-                    "title": "Beginnen Sie mit dem Bauen!"
-                },
+                "step-10": {},
                 "step-8": {
                     "content": "Mit diesem Bedienfeld können Sie Ihre Szene schnell erstellen. \nBewegen Sie den Mauszeiger nach Abschluss der Tour über die Schaltflächen, um zu sehen, was sie tun!",
                     "title": "3D-Szenenpanel"
                 },
-                "step-9": {
-                    "content": "Nachdem Sie eine Kachel platziert haben, können Sie sie verschieben, skalieren und drehen. \nKlicken Sie auf diese Schaltfläche, um eine Referenz der Steuerelemente als Chat-Nachricht zu erhalten.",
-                    "title": "Kachelmanipulation"
-                }
+                "step-9": {}
             },
             "tile-configuration": {
                 "description": "Diese Tour führt Sie durch die Kachelkonfigurationsoptionen und Shader.",

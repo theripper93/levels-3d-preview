@@ -1559,10 +1559,7 @@
                     "content": "Segui i passaggi per accedere alla cartella 3D Canvas Mapmaking Pack Tiles.",
                     "title": "Passare alle risorse 3D"
                 },
-                "step-8": {
-                    "content": "Lagna",
-                    "title": "Lagna"
-                },
+                "step-8": {},
                 "title": "Posiziona la tua prima tessera 3D"
             },
             "getting-started": {
@@ -1579,14 +1576,8 @@
                     "content": "La schermata di caricamento contiene informazioni utili sulla videocamera 3D Canvas e sui controlli token.",
                     "title": "Controlli"
                 },
-                "step-3": {
-                    "content": "La barra di navigazione contiene vari pulsanti per alternare aspetti specifici della vista 3D. \nPuoi passare il mouse sopra i pulsanti per vedere una descrizione di ciò che fanno.",
-                    "title": "Navigazione"
-                },
-                "step-4": {
-                    "content": "La Game Camera è abilitata per impostazione predefinita per GM e giocatori. \nSe sei un GM, puoi passare a Free Camera con questo pulsante. \nPuoi modificare le opzioni della videocamera di gioco nelle impostazioni del modulo o disabilitarla per scena.",
-                    "title": "Macchina fotografica del gioco"
-                },
+                "step-3": {},
+                "step-4": {},
                 "step-5": {},
                 "title": "Iniziare",
                 "requires": "NON devi avere la vista 3D attiva per iniziare questo tour."
@@ -1669,18 +1660,12 @@
                     "content": "Questo è tutto ciò di cui hai bisogno per iniziare! \nProva a creare una scena utilizzando Quick Terrain e il pannello Scena 3D. \nUna volta che ti sentirai più a tuo agio con 3D Canvas, puoi andare alla pagina Tour e iniziare i tour più avanzati!.",
                     "title": "Inizia a costruire!"
                 },
-                "step-10": {
-                    "content": "Questo è tutto ciò di cui hai bisogno per iniziare! \nProva a creare una scena utilizzando Quick Terrain e il pannello Scena 3D. \nUna volta che ti sentirai più a tuo agio con 3D Canvas, puoi andare alla pagina Tour e iniziare i tour più avanzati!.",
-                    "title": "Inizia a costruire!"
-                },
+                "step-10": {},
                 "step-8": {
                     "content": "Questo pannello ti consente di costruire rapidamente la tua scena. \nPassa il mouse sopra i pulsanti al termine del tour per vedere cosa fanno!",
                     "title": "Pannello scena 3D"
                 },
-                "step-9": {
-                    "content": "Dopo aver posizionato una tessera, puoi spostarla, ridimensionarla e ruotarla. \nFare clic su questo pulsante per ottenere un riferimento dei controlli come messaggio di chat.",
-                    "title": "Manipolazione delle tessere"
-                }
+                "step-9": {}
             },
             "tile-configuration": {
                 "description": "Questo tour ti guiderà attraverso le opzioni di configurazione dei riquadri e gli shader.",

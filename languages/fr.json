@@ -788,7 +788,8 @@
             "toggleMode": "Éditeur de tuiles : Style de remplissage cyclique",
             "toggleSelect": "Sélection de groupe (maintenir tout en faisant glisser)",
             "topdownView": "Vue de caméra descendante",
-            "translate": "Éditeur de tuiles : Traduire"
+            "translate": "Éditeur de tuiles : Traduire",
+            "removeWaypoint": "Supprimer le waypoint de la règle"
         },
         "macrodialog": {
             "cancel": "Annuler",
@@ -1559,10 +1560,7 @@
                     "content": "Suivez les étapes pour accéder au dossier 3D Canvas Mapmaking Pack Tiles.",
                     "title": "Accédez aux ressources 3D"
                 },
-                "step-8": {
-                    "content": "Traîne",
-                    "title": "Traîne"
-                },
+                "step-8": {},
                 "title": "Placer votre première tuile 3D"
             },
             "getting-started": {
@@ -1579,14 +1577,8 @@
                     "content": "L'écran de chargement contient des informations utiles sur la caméra 3D Canvas et les commandes des jetons.",
                     "title": "Les contrôles"
                 },
-                "step-3": {
-                    "content": "La barre de navigation contient divers boutons permettant de basculer entre des aspects spécifiques de la vue 3D. \nVous pouvez survoler les boutons pour voir une description de ce qu'ils font.",
-                    "title": "La navigation"
-                },
-                "step-4": {
-                    "content": "La caméra de jeu est activée par défaut pour les GM et les joueurs. \nSi vous êtes un GM, vous pouvez passer à Free Camera avec ce bouton. \nVous pouvez modifier les options Game Camera dans les paramètres du module ou les désactiver par scène.",
-                    "title": "Caméra de jeu"
-                },
+                "step-3": {},
+                "step-4": {},
                 "step-5": {},
                 "title": "Commencer",
                 "requires": "Vous n'avez PAS besoin d'avoir la vue 3D active pour commencer cette visite."
@@ -1669,18 +1661,12 @@
                     "content": "C'est tout ce dont vous avez besoin pour commencer ! \nEssayez de créer une scène en utilisant le terrain rapide et le panneau de scène 3D. \nUne fois que vous vous sentez plus à l'aise avec 3D Canvas, vous pouvez vous diriger vers la page Tours et commencer les visites plus avancées !.",
                     "title": "Commencez à construire !"
                 },
-                "step-10": {
-                    "content": "C'est tout ce dont vous avez besoin pour commencer ! \nEssayez de créer une scène en utilisant le terrain rapide et le panneau de scène 3D. \nUne fois que vous vous sentez plus à l'aise avec 3D Canvas, vous pouvez vous diriger vers la page Tours et commencer les visites plus avancées !.",
-                    "title": "Commencez à construire !"
-                },
+                "step-10": {},
                 "step-8": {
                     "content": "Ce panneau vous permet de construire rapidement votre scène. \nPassez la souris sur les boutons une fois la visite terminée pour voir ce qu'ils font !",
                     "title": "Panneau Scène 3D"
                 },
-                "step-9": {
-                    "content": "Après avoir placé une tuile, vous pouvez la déplacer, la mettre à l'échelle et la faire pivoter. \nCliquez sur ce bouton pour obtenir une référence des commandes sous forme de message de chat.",
-                    "title": "Manipulation des tuiles"
-                }
+                "step-9": {}
             },
             "tile-configuration": {
                 "description": "Cette visite guidée vous guidera à travers les options de configuration des tuiles et les shaders.",

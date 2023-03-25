@@ -788,7 +788,8 @@
             "toggleMode": "Editor de mosaicos: estilo de relleno cíclico",
             "toggleSelect": "Selección de grupo (mantener presionado mientras arrastra)",
             "topdownView": "Vista de cámara de arriba hacia abajo",
-            "translate": "Editor de mosaicos: Traducir"
+            "translate": "Editor de mosaicos: Traducir",
+            "removeWaypoint": "Quitar punto de referencia de la regla"
         },
         "macrodialog": {
             "cancel": "Cancelar",
@@ -1559,10 +1560,7 @@
                     "content": "Siga los pasos para llegar a la carpeta de mosaicos del paquete de creación de mapas de lienzo 3D.",
                     "title": "Navegar a los Activos 3D"
                 },
-                "step-8": {
-                    "content": "Arrastrar",
-                    "title": "Arrastrar"
-                },
+                "step-8": {},
                 "title": "Colocando tu primer mosaico 3D"
             },
             "getting-started": {
@@ -1579,14 +1577,8 @@
                     "content": "La pantalla de carga contiene información útil sobre la cámara de lienzo 3D y los controles de fichas.",
                     "title": "Control S"
                 },
-                "step-3": {
-                    "content": "La barra de navegación contiene varios botones para alternar aspectos específicos de la Vista 3D. \nPuede pasar el cursor sobre los botones para ver una descripción de lo que hacen.",
-                    "title": "Navegación"
-                },
-                "step-4": {
-                    "content": "La Game Camera está habilitada de manera predeterminada para los GM y los jugadores. \nSi es un GM, puede cambiar a Cámara libre con este botón. \nPuede cambiar las opciones de Game Camera en la configuración del módulo o deshabilitarla por escena.",
-                    "title": "Cámara de juego"
-                },
+                "step-3": {},
+                "step-4": {},
                 "step-5": {},
                 "title": "Empezando",
                 "requires": "NO necesita tener activa la vista 3D para comenzar este recorrido."
@@ -1669,18 +1661,12 @@
                     "content": "¡Esto es todo lo que necesitas para empezar! \nIntente crear una escena usando Quick Terrain y 3D Scene Panel. \nUna vez que se sienta más seguro con 3D Canvas, puede dirigirse a la página de Tours y comenzar los tours más avanzados.",
                     "title": "¡Empieza a construir!"
                 },
-                "step-10": {
-                    "content": "¡Esto es todo lo que necesitas para empezar! \nIntente crear una escena usando Quick Terrain y 3D Scene Panel. \nUna vez que se sienta más seguro con 3D Canvas, puede dirigirse a la página de Tours y comenzar los tours más avanzados.",
-                    "title": "¡Empieza a construir!"
-                },
+                "step-10": {},
                 "step-8": {
                     "content": "Este panel le permite construir rápidamente su escena. \nPase el cursor sobre los botones después de que se complete el recorrido para ver lo que hacen.",
                     "title": "Panel de escena 3D"
                 },
-                "step-9": {
-                    "content": "Después de colocar un mosaico, puede moverlo, escalarlo y rotarlo. \nHaga clic en este botón para obtener una referencia de los controles como un mensaje de chat.",
-                    "title": "Manipulación de azulejos"
-                }
+                "step-9": {}
             },
             "tile-configuration": {
                 "description": "Este recorrido lo guiará a través de las opciones de configuración de mosaicos y sombreadores.",
