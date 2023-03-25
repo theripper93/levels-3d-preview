@@ -390,11 +390,14 @@ export class InteractionManager {
         if (this.preventSelect) return;
         const downId = randomID();
         this._downId = downId;
+        const currentMousePos = { x: this.mousemove.x, y: this.mousemove.y };
         if (event.which === 1 && canvas.tokens?.active) {
             setTimeout(() => {
                 if (this.draggable || this._downId !== downId || !this._leftDown || (this.controls.mouseButtons.LEFT && this._downCameraPosition.distanceTo(this._upCameraPosition) > 0.01)) return;
+                const moveDelta = Math.abs(currentMousePos.x - this.mousemove.x) + Math.abs(currentMousePos.y - this.mousemove.y);
+                if(moveDelta > 0.1) return;
                 this._downId = null;
-                this._onMouseMove(event, true);
+                this._onMouseMove(null, true);
                 if (event.shiftKey) {
                     game.Levels3DPreview.helpers.focusCameraToCursor();
                 } else {
@@ -526,14 +529,17 @@ export class InteractionManager {
     _onMouseMove(event, force = false) {
         if (!this._canMouseMove && !force) return;
         this._canMouseMove = false;
-        this.mousemove.x = (event.clientX / window.innerWidth) * 2 - 1;
-        this.mousemove.y = -(event.clientY / window.innerHeight) * 2 + 1;
+        if (event) {            
+            this.mousemove.x = (event.clientX / window.innerWidth) * 2 - 1;
+            this.mousemove.y = -(event.clientY / window.innerHeight) * 2 + 1;
+        }
         if (this.draggable) return;
         this.updateHoverObj();
         const intersect = this.getHoverObject();
         if (intersect) this._mouseHoverIntersect = intersect;
         const object = intersect?.object;
         //Handle placeable hover event
+        if(!event) return;
         if (intersect?.point) {
             this.canvas2dMousePosition = Ruler3D.pos3DToCanvas(intersect.point);
             this.canvas3dMousePosition = intersect.point;

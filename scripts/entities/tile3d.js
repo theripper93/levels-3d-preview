@@ -872,7 +872,7 @@ export class Tile3D {
             if (child.isMesh && !(child.material instanceof Array)) {
                 if (this.metalness >= 0) child.material.metalness = this.metalness;
                 if (this.roughness >= 0) child.material.roughness = this.roughness;
-                if (this.transparency >= 0) {
+                if (this.transparency >= 0 && this.transparency < 1) {
                     child.material.transparent = true;
                     child.material.opacity = this.transparency;
                     child.material.alphaTest = 0.01;

@@ -2,6 +2,7 @@ import * as THREE from "../lib/three.module.js";
 import { Template3D } from "../entities/template3d.js";
 import { factor } from "../main.js";
 import {sleep} from "../helpers/utils.js";
+import { rulerUVTubeMaterial } from "../shaders/shaderMaterials.js";
 
 export class Ruler3D {
     constructor(parent) {
@@ -59,9 +60,8 @@ export class Ruler3D {
 
     init() {
         this.sphere1 = new THREE.Mesh(new THREE.SphereGeometry(this.sphereRadius, 16, 16), this.roulerLineMaterial);
+        this.sphere1.renderOrder = 1e20 - 1;
         this.sphere2 = this.sphere1.clone();
-        this.baseSphere1 = this.sphere1.clone();
-        this.baseSphere2 = this.sphere2.clone();
         this.textElement = $(`<div id="levels3d-ruler-text"></div>`);
         $("body").append(this.textElement);
     }
@@ -69,30 +69,28 @@ export class Ruler3D {
     addMarkers() {
         this._parent.scene.add(this.sphere1);
         this._parent.scene.add(this.sphere2);
-        this._parent.scene.add(this.baseSphere1);
-        this._parent.scene.add(this.baseSphere2);
+    }
+
+    removeMarkers() {
+        this._parent.scene.remove(this.sphere1);
+        this._parent.scene.remove(this.sphere2);
     }
 
     set object(value) {
         if (!value) {
-            this.clearSegments();
+            //this.clearSegments();                 
             this._object = null;
-            this._parent.scene.remove(this.line);
-            this.sphere1.material.visible = false;
-            this.sphere2.material.visible = false;
-            this.baseSphere1.material.visible = false;
-            this.baseSphere2.material.visible = false;
             this.template?.destroy();
             this.textElement.hide();
+            this._parent.scene.remove(this.line);
+            this.removeMarkers();
+
         } else {
             this.clearSegments();
+            this.addMarkers();
             const target = value.userData.isHitbox ? value.parent : value;
             this._object = target;
             this.origin = new THREE.Vector3(target.position.x, target.position.y, target.position.z);
-            this.sphere1.material.visible = true;
-            this.sphere2.material.visible = true;
-            this.baseSphere1.material.visible = true;
-            this.baseSphere2.material.visible = true;
             this.textElement.show();
         }
 
@@ -175,12 +173,6 @@ export class Ruler3D {
         this.line.renderOrder = 1e20;
         this.sphere1.position.copy(this._origin);
         this.sphere2.position.copy(targetPos);
-        this.baseSphere1.position.copy(this._origin);
-        this.baseSphere2.position.copy(targetPos);
-        this.baseSphere1.position.y = 0;
-        this.baseSphere2.position.y = 0;
-        this.baseSphere1.userData.ignoreHover = true;
-        this.baseSphere2.userData.ignoreHover = true;
         //draw floating text
         const text = `${distance} ${canvas.scene.grid.units}.`;
         this.textElement.text(text);
@@ -225,8 +217,10 @@ export class Ruler3D {
             const canMove = token3D.testCollision(dest);
             if (!canMove) break;
             await this._animateSegment(token, dest);
+            segment.destroy();
             priorDest = dest;
         }
+        this.clearSegments();
     }
 
     async _animateSegment(token, destination) {
