@@ -898,6 +898,7 @@
             },
             "showAdvanced": {
                 "show": "Show Advanced Settings",
+                "wiki": "Learn More",
                 "hide": "Hide Advanced Settings",
                 "name": "Always Show Advanced Settings",
                 "hint": "Show the advanced settings in configuration menus by default."
@@ -1748,25 +1749,29 @@
                 },
                 "step-2": {
                     "title": "Assets Panel",
-                    "content": "This panel contains all the assets that match your search. You can ether drag and drop them into the scene or click (or Ctrl+Click for multiple selection) to select them. If you have one or more assets selected, clicking on the scene will place one of them at random. While you have one or more assets selected, you cannot manipulate tiles in the scene."
+                    "content": "This panel contains all the assets that match your search. You can ether drag and drop them into the scene or click (or Ctrl/Shift+Click for multiple selection) to select them."
                 },
                 "step-3": {
-                    "title": "Randomization Toggles",
-                    "content": "You can use these toggles to randomize the placement of the assets. You can randomize the rotation, scale and more. Hover over the buttons to see what they do."
+                    "title": "Randomization",
+                    "content": "You can use these toggles to randomize the placement of the assets. You can randomize the rotation, scale and tint."
                 },
                 "step-4": {
-                    "title": "Scale",
-                    "content": "You can set this field to apply a multiplier to the scale of the assets (defaults to 1)."
+                    "title": "Placement",
+                    "content": "You can use these toggles to determine how assets are placed. For example if you want them grid alligned."
                 },
                 "step-5": {
-                    "title": "Density",
-                    "content": "When Asset Painting is enabled, this setting will control the density of the assets. The higher the value, the more assets will be placed."
+                    "title": "Collision",
+                    "content": "These toggles will let you decide if the placed assets should block sight and/or movement."
                 },
                 "step-6": {
-                    "title": "Angle",
-                    "content": "You can set this field to set the default rotation at which assets are created."
+                    "title": "Painting",
+                    "content": "This button will toggle the Asset Painting mode. When enabled, you can click and drag on the scene to place multiple assets."
                 },
                 "step-7": {
+                    "title": "Appearance",
+                    "content": "These fields determine basic appearance settings for the assets. Such as Scale, Rotation and Tint."
+                },
+                "step-8": {
                     "title": "Merge",
                     "content": "When you are done building your scene, clicking this button will merge all the similar tiles into a single tile. This will reduce the number of tiles in the scene and improve performance."
                 }

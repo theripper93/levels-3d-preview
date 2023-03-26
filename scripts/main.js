@@ -158,7 +158,8 @@ class Levels3DPreview {
                 },
                 CLIP_NAVIGATION: {
                     BUTTONS: CLIP_NAVIGATION_BUTTONS,
-                }
+                },
+                windows: {}
             },
             autoPan: false,
             tokenAnimations: defaultTokenAnimations,
@@ -465,20 +466,22 @@ class Levels3DPreview {
         this.particleSystem = new ParticleSystem(this);
     }
 
-    cacheLights() {
+    cacheLights(cacheSize) {
         this.lights.lightCache.point = [];
         this.lights.lightCache.spot = [];
 
-        const cacheSize = game.settings.get("levels-3d-preview", "lightCacheSize");
-
-        for (let i = 0; i < cacheSize; i++) { 
+        cacheSize = cacheSize ?? game.settings.get("levels-3d-preview", "lightCacheSize");
+        
+        if (!game.user.isGM) cacheSize = Math.min(cacheSize, 4)
+        
+        for (let i = 0; i < cacheSize; i++) {
             const pointLight = new THREE.PointLight(0xffffff, 0.0001, 0.0001, 2);
             pointLight.position.set(-100, -100, -100);
             this.lights.lightCache.point.push(pointLight);
             this.scene.add(pointLight);
         }
 
-        for(let i = 0; i < cacheSize/2; i++) {
+        for (let i = 0; i < cacheSize / 2; i++) {
             const spotLight = new THREE.SpotLight(0xffffff, 0.0001, 0.0001, 0.5, 0.5, 2);
             spotLight.position.set(-100, -100, -100);
             this.lights.lightCache.spot.push(spotLight);
@@ -1181,7 +1184,7 @@ class Levels3DPreview {
             this.weather?.update(delta);
             this.GameCamera.update(delta);
             this.vfx?.update(delta);
-            this.pings.forEach((ping) => { 
+            this.pings.forEach((ping) => {
                 ping.update(delta);
             });
             this.controls.update();
@@ -1511,20 +1514,23 @@ class Levels3DPreview {
             this.CONFIG.UI.BUILD_PANEL.FORCE_AUTOHIDE_OFF = true;
             Hooks.once("renderClipNavigation", () => {
                 const isClipNav = $("#clip-navigation-controls").length > 0;
-                setTimeout(() => {
-                    const $qm = $("#clip-navigation-controls").length ? $("#clip-navigation-controls") : $("#build-panel");
-                    $("#levels-3d-preview-loading-bar-text").html(game.i18n.localize("levels3dpreview.controls.loadingScreen.loadingdone"));
-                    const $arrow = $('<i id="clip-navigation-higlight-arrow" class="fas fa-arrow-right"></i>').css({
-                        right: window.innerWidth - $qm.offset().left + 20,
-                        top: `calc(${$qm.offset().top + $qm.height() / 2}px - 2rem)`,
-                    });
-                    $("body").append($arrow);
-                    ui.notifications.info(game.i18n.localize("levels3dpreview.controls.loadingScreen.loadingarrow"));
-                }, isClipNav ? 0 : 1000);
+                setTimeout(
+                    () => {
+                        const $qm = $("#clip-navigation-controls").length ? $("#clip-navigation-controls") : $("#build-panel");
+                        $("#levels-3d-preview-loading-bar-text").html(game.i18n.localize("levels3dpreview.controls.loadingScreen.loadingdone"));
+                        const $arrow = $('<i id="clip-navigation-higlight-arrow" class="fas fa-arrow-right"></i>').css({
+                            right: window.innerWidth - $qm.offset().left + 20,
+                            top: `calc(${$qm.offset().top + $qm.height() / 2}px - 2rem)`,
+                        });
+                        $("body").append($arrow);
+                        ui.notifications.info(game.i18n.localize("levels3dpreview.controls.loadingScreen.loadingarrow"));
+                    },
+                    isClipNav ? 0 : 1000,
+                );
             });
             game.settings.set("levels-3d-preview", "loadingShown", true);
         }
-        this.ClipNavigation = new ClipNavigation()
+        this.ClipNavigation = new ClipNavigation();
         this.ClipNavigation.render(true);
         this.weather = new WeatherSystem(this);
 

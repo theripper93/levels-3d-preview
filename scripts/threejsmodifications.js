@@ -43,6 +43,7 @@ export function injectThreeModifications(THREE) {
         const userDataCopy = { ...this.userData };
         delete userDataCopy.entity3D;
         delete userDataCopy.hitbox;
+        delete userDataCopy.sightMesh;
         if (JSON.stringify(userDataCopy) !== "{}") object.userData = userDataCopy;
 
         object.layers = this.layers.mask;

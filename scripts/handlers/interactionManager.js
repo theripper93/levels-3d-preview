@@ -338,6 +338,10 @@ export class InteractionManager {
                 },
             };
             rulerObj.parent = rulerObj.userData.entity3D.mesh;
+            if (this._gizmoEnabled && this.activeLayerEntity === "Tile") {
+                this.clearControlledGroup();
+                canvas.tiles.releaseAll();
+            }
             this.toggleControls(false);
             const position = this.mouseIntersection3DCollision({ x: event.clientX, y: event.clientY });
             const intersectPos = position[0].point;
@@ -377,7 +381,8 @@ export class InteractionManager {
 
             if (!dropFunction) return ui.notifications.error(game.i18n.localize("levels3dpreview.errors.notarget"));
             
-            dropFunction.bind(this)(event, data, snap, normal, dataTransfer, setRotation, autoCenter);
+            const placeable = await dropFunction.bind(this)(event, data, snap, normal, dataTransfer, setRotation, autoCenter);
+            if (placeable) placeable[0]?.object?.control({ releaseOthers: true });
 
         } catch (e) {
             console.error(e);
@@ -385,9 +390,24 @@ export class InteractionManager {
         }
     }
 
+    get canDragStart() {
+        if (!this.altControls) return false;
+        if(ui.controls.activeTool !== "select") return false;
+            if (this.activeLayerEntity === "Tile") {
+                return this._gizmoEnabled;
+            } else {
+                return this.currentHover?.embeddedName !== this.activeLayerEntity;
+            }
+    }
+
     _onMouseDown(event) {
+        if ((this._parent.CONFIG.UI.windows.AssetBrowser?._hasSelected || this._parent.CONFIG.UI.windows.EffectBrowser?._hasSelected) && event.shiftKey) return;
         if (this._groupSelect && this.activeLayerEntity != "MeasuredTemplate") return this.groupSelectHandler.startSelect(event);
         if (this.preventSelect) return;
+        if (!event.shiftKey && !event.ctrlKey && !event.altKey && event.which === 1 && this.canDragStart) {
+            this._groupSelect = true;
+            return this.groupSelectHandler.startSelect(event);
+        }
         const downId = randomID();
         this._downId = downId;
         const currentMousePos = { x: this.mousemove.x, y: this.mousemove.y };
@@ -1185,7 +1205,7 @@ export const dropFunctions = {
         if (useSnapped) {
             snapped = canvas.grid.getSnappedPosition(data.x - width / 2, data.y - height / 2);
         }
-        canvas.scene.createEmbeddedDocuments("Tile", [
+        return await canvas.scene.createEmbeddedDocuments("Tile", [
             {
                 x: snapped ? snapped.x : data.x - width / 2,
                 y: snapped ? snapped.y : data.y - height / 2,
@@ -1204,7 +1224,7 @@ export const dropFunctions = {
         Hooks.once("preCreateToken", (token) => {
             token.updateSource({ elevation: Math.trunc(data.elevation * 100) / 100, flags: data.flags });
         });
-        return canvas.tokens._onDropActorData(event, data);
+        return await canvas.tokens._onDropActorData(event, data);
     },
     JournalEntry: async function (event, data) {
         canvas.notes.activate();
@@ -1226,7 +1246,7 @@ export const dropFunctions = {
     },
 };
 
-function dropImage(event, data) {
+async function dropImage(event, data) {
     data.flags["levels-3d-preview"] = {
         imageTexture: data.texture.src,
         dynaMesh: "decal",
@@ -1256,7 +1276,7 @@ function dropImage(event, data) {
             
         }
     }
-    canvas.scene.createEmbeddedDocuments("Tile", [data]).then((tiles) => { 
+    return await canvas.scene.createEmbeddedDocuments("Tile", [data]).then((tiles) => { 
         if(isToken) tokenAttacher.attachElementToToken(tiles[0].object, game.Levels3DPreview.interactionManager.currentHover?.token);
         else canvas.tiles.activate();
     });

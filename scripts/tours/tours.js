@@ -54,7 +54,7 @@ export const SceneConfiguration = () => { return new GenericTour("scene-configur
 }
 
 export const First3DScene = () => {
-    return new GenericTour("first-scene", [`.item[data-tab="scenes"]`, `#scenes button.create-document`, `input[name="scene3d"]`, `.dialog-button.ok.default`, `.levels-3d-preview-loading-screen`, `#build-panel`, `#clip-navigation-controls`, `#controlsRef` , `.item[data-tab="chat"]`], {
+    return new GenericTour("first-scene", [`.item[data-tab="scenes"]`, `#scenes button.create-document`, `input[name="scene3d"]`, `.dialog-button.ok.default`, `.levels-3d-preview-loading-screen`, `#build-panel`, `#clip-navigation-controls`, `#controlsRef`, ".chat-message:last-child"], {
         moduleId: "levels-3d-preview",
         localizationRoot: "levels3dpreview.tours",
         display: true,
@@ -90,7 +90,7 @@ export const AdvancedTileConfiguration = () => {
 };
 
 export const Tokens = () => {
-    return new GenericTour("tokens", [`a[data-tab="levels-3d-preview"]`, `.form-group:has(label[for="model3d"])`, `.form-group:has(label[for="material"])`, `.form-group:has(label[for="color"])`, `.fa-regular.fa-person`, `#material-browser`], {
+    return new GenericTour("tokens", [`a[data-tab="levels-3d-preview"]`, `.form-group:has(label[for="model3d"])`, `.form-group:has(label[for="material"])`, `.form-group:has(label[for="color"])`, `.fa-regular.fa-person`, `#token-browser`], {
         moduleId: "levels-3d-preview",
         localizationRoot: "levels3dpreview.tours",
         display: true,
@@ -108,7 +108,7 @@ export const Tokens = () => {
 };
 
 export const AssetBrowser = () => {
-    return new GenericTour("asset-browser", [`#material-browser`, `#material-browser #search`, `#material-browser ol`, `#material-browser .quick-placement`, `#material-browser #scale`, `#material-browser #density`, `#material-browser #angle`, `#material-browser .merge`], {
+    return new GenericTour("asset-browser", [`#asset-browser`, `#asset-browser #search`, `#asset-browser ol`, `#asset-browser #ab-randomization`, `#asset-browser #ab-placement`, `#asset-browser #ab-collision`, `#asset-browser #ab-painting`, `#asset-browser #ab-appearance`, `#asset-browser .merge`], {
         moduleId: "levels-3d-preview",
         localizationRoot: "levels3dpreview.tours",
         display: true,

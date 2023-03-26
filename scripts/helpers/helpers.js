@@ -449,9 +449,12 @@ export function toggleAdvancedSettings(app, html, settings, other) {
 export function injectAdvancedToggle(app, html, settings, injected, other = []) {
     const alwaysShowAdvanced = game.settings.get("levels-3d-preview", "showAdvanced");
     if (alwaysShowAdvanced) return;
-    const toggleAdvanced = $(`<div class="form-group"><a id="levels-3d-preview-advanced" style="color: var(--color-text-hyperlink); text-align: center; font-weight: bolder; text-decoration: underline;">${game.i18n.localize("levels3dpreview.settings.showAdvanced.show")}</a></div>`);
+    const toggleAdvanced = $(`<div class="form-group">
+    <a id="levels-3d-preview-advanced" style="color: var(--color-text-hyperlink); text-align: center; font-weight: bolder; text-decoration: underline;">${game.i18n.localize("levels3dpreview.settings.showAdvanced.show")}</a>
+    <a href="https://wiki.theripper93.com/levels-3d-preview#entities-in-3d" target="_blank" id="levels-3d-preview-wiki" style="color: var(--color-text-hyperlink); text-align: center; font-weight: bolder; text-decoration: underline;">${game.i18n.localize("levels3dpreview.settings.showAdvanced.wiki")}</a>
+    </div>`);
     (injected.find(".form-group").last().length ? injected.find(".form-group").last() : $(injected[injected.length - 1])).after(toggleAdvanced);
-    toggleAdvanced.click(() => {
+    toggleAdvanced.find("#levels-3d-preview-advanced").click(() => {
         toggleAdvancedSettings(app, html, settings, other);
         toggleAdvanced.find("a").text(toggleAdvanced.find("a").text() === game.i18n.localize("levels3dpreview.settings.showAdvanced.show") ? game.i18n.localize("levels3dpreview.settings.showAdvanced.hide") : game.i18n.localize("levels3dpreview.settings.showAdvanced.show"));
     });

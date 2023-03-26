@@ -294,7 +294,8 @@ export class GameCamera {
     }
 
     setControlPreset() {
-        if (game.settings.get("levels-3d-preview", "altCameraControls")) {
+        this._parent.interactionManager.altControls = game.settings.get("levels-3d-preview", "altCameraControls");
+        if (this._parent.interactionManager.altControls) {
             this.controls.mouseButtons = {
                 LEFT: undefined,
                 MIDDLE: THREE.MOUSE.ROTATE,

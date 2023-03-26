@@ -351,7 +351,9 @@ export const CLIP_NAVIGATION_BUTTONS = [
         icon: "fas fa-gamepad",
         visible: () => game.Levels3DPreview?._active && game.Levels3DPreview.ClipNavigation.isGM,
         callback: () => {
+            canvas.tiles.activate();
             game.Levels3DPreview.interactionManager.showControlReference();
+            $(".item[data-tab='chat']")[0].click();
         },
     },
     {
