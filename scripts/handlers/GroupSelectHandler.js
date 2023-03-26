@@ -80,10 +80,9 @@ export class GroupSelectHandler {
         });
         this._selectedIds = {};
         this._selected.forEach((entity) => {
-            debugger;
             entity.traverseAncestors((ancestor) => {
                 const entity3D = ancestor?.userData?.entity3D;
-                if (entity3D && entity3D?.placeable?.document?.documentName === this.activeLayerEntity) {
+                if (entity3D && entity3D?.placeable?.document?.documentName === this.activeLayerEntity && !entity3D?.placeable?.document?.locked) {
                     this._selectedIds[entity3D.placeable.id] = true;
                 }
             });

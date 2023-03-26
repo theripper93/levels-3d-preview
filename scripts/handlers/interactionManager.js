@@ -404,13 +404,19 @@ export class InteractionManager {
         if ((this._parent.CONFIG.UI.windows.AssetBrowser?._hasSelected || this._parent.CONFIG.UI.windows.EffectBrowser?._hasSelected) && event.shiftKey) return;
         if (this._groupSelect && this.activeLayerEntity != "MeasuredTemplate") return this.groupSelectHandler.startSelect(event);
         if (this.preventSelect) return;
-        if (!event.shiftKey && !event.ctrlKey && !event.altKey && event.which === 1 && this.canDragStart) {
-            this._groupSelect = true;
-            return this.groupSelectHandler.startSelect(event);
-        }
         const downId = randomID();
         this._downId = downId;
-        const currentMousePos = { x: this.mousemove.x, y: this.mousemove.y };
+        const currentMousePos = {x: this.mousemove.x, y: this.mousemove.y};
+        if (!event.shiftKey && !event.ctrlKey && !event.altKey && event.which === 1 && this.canDragStart) {
+            setTimeout(() => {
+                const moveDelta = Math.abs(currentMousePos.x - this.mousemove.x) + Math.abs(currentMousePos.y - this.mousemove.y);
+                if (this._downId !== downId || !this._leftDown || moveDelta < 0.05) return;
+                this._downId = null;
+            
+                this._groupSelect = true;
+                return this.groupSelectHandler.startSelect(event);
+            }, 100);
+        }
         if (event.which === 1 && canvas.tokens?.active) {
             setTimeout(() => {
                 if (this.draggable || this._downId !== downId || !this._leftDown || (this.controls.mouseButtons.LEFT && this._downCameraPosition.distanceTo(this._upCameraPosition) > 0.01)) return;
