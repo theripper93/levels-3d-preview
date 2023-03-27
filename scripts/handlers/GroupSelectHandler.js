@@ -48,7 +48,11 @@ export class GroupSelectHandler {
         this._isSelecting = true;
         this._selectedIds = {};
         $("body").append(this.element);
-        this._selectionBox.startPoint.set(this.mousePos.x, this.mousePos.y, 0.5);
+        const mouseP = new THREE.Vector2(
+            (event.clientX / window.innerWidth) * 2 - 1,
+            -(event.clientY / window.innerHeight) * 2 + 1
+        );
+        this._selectionBox.startPoint.set(mouseP.x, mouseP.y, 0.5);
         this.element.css({
             position: "absolute",
             top: event.clientY,
@@ -80,15 +84,18 @@ export class GroupSelectHandler {
         });
         this._selectedIds = {};
         this._selected.forEach((entity) => {
-            entity.traverseAncestors((ancestor) => {
-                const entity3D = ancestor?.userData?.entity3D;
-                if (entity3D && entity3D?.placeable?.document?.documentName === this.activeLayerEntity && !entity3D?.placeable?.document?.locked) {
-                    this._selectedIds[entity3D.placeable.id] = true;
-                }
-            });
+            this.processEntity(entity);
+            entity.traverseAncestors(this.processEntity.bind(this));
         });
 
         this.updateCanvasSelection();
+    }
+
+    processEntity(entity) { 
+        const entity3D = entity?.userData?.entity3D;
+        if (entity3D && entity3D?.placeable?.document?.documentName === this.activeLayerEntity && !entity3D?.placeable?.document?.locked) {
+            this._selectedIds[entity3D.placeable.id] = true;
+        }
     }
 
     updateCanvasSelection() {

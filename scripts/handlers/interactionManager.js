@@ -410,12 +410,12 @@ export class InteractionManager {
         if (!event.shiftKey && !event.ctrlKey && !event.altKey && event.which === 1 && this.canDragStart) {
             setTimeout(() => {
                 const moveDelta = Math.abs(currentMousePos.x - this.mousemove.x) + Math.abs(currentMousePos.y - this.mousemove.y);
-                if (this._downId !== downId || !this._leftDown || moveDelta < 0.05) return;
+                if (this._downId !== downId || !this._leftDown || moveDelta < 0.03) return;
                 this._downId = null;
             
                 this._groupSelect = true;
                 return this.groupSelectHandler.startSelect(event);
-            }, 100);
+            }, 150);
         }
         if (event.which === 1 && canvas.tokens?.active) {
             setTimeout(() => {
