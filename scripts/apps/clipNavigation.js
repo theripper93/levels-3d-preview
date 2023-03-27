@@ -107,7 +107,7 @@ export class ClipNavigation extends Application {
         
         html.on("click", ".clip-navigation-btn", (e) => { 
             const id = e.currentTarget.id;
-            const button = CLIP_NAVIGATION_BUTTONS.find((b) => b.id == id);
+            const button = CLIP_NAVIGATION_BUTTONS.find((b) => b.id === id);
             if (button) button.callback(e);
         });
 
@@ -343,6 +343,7 @@ export const CLIP_NAVIGATION_BUTTONS = [
             $("#levels-3d-preview-loading-bar").hide();
             $("#clip-navigation-higlight-arrow").remove();
             $(".levels-3d-preview-loading-screen").fadeToggle(200);
+            $("#close-loading-screen").css("display", "flex");
         },
     },
     {

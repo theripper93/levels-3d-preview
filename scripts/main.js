@@ -1449,6 +1449,7 @@ class Levels3DPreview {
 
     setProgressBar(label, progress) {
         $("#levels-3d-preview-loading-bar").show();
+        $("#close-loading-screen").css("display", "none");
         const progressBar = $("#levels-3d-preview-loading-bar-inner");
         const labelText = $("#levels-3d-preview-loading-bar-text");
         progressBar.css("width", `${progress}%`);
@@ -1473,6 +1474,7 @@ class Levels3DPreview {
                             top: `calc(${$qm.offset().top + $qm.height() / 2}px - 2rem)`,
                         });
                         $("body").append($arrow);
+                        $("#close-loading-screen").css("display", "flex");
                         ui.notifications.info(game.i18n.localize("levels3dpreview.controls.loadingScreen.loadingarrow"));
                     },
                     isClipNav ? 0 : 1000,
@@ -1773,6 +1775,9 @@ Hooks.on("preUpdateToken", (token, updates) => {
 Hooks.on("ready", async () => {
     const html = await renderTemplate("modules/levels-3d-preview/templates/loadingScreen.hbs", { isGM: game.user.isGM });
     const div = $(`<div class="levels-3d-preview-loading-screen">${html}</div>`);
+    div.on("click", "#close-loading-screen", () => { 
+        game.Levels3DPreview.CONFIG.UI.CLIP_NAVIGATION.BUTTONS.find((b) => (b.id === "clip-navigation-controls")).callback();
+    });
     div.hide();
     $("#ui-top").after(div);
 });
