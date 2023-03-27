@@ -752,7 +752,7 @@ export class Tile3D {
         }
 
         const filePath = this.gtflPath;
-        const extension = filePath.split(".").pop().toLowerCase();
+        const extension = filePath?.split(".")?.pop()?.toLowerCase();
         const model = isMapgen ? await this.computeMapGen() : await game.Levels3DPreview.helpers.loadModel(this.gtflPath);
         if (model) {
             game.Levels3DPreview.helpers.groundModel(model.model, this.autoGround, this.autoCenter);
@@ -1501,6 +1501,7 @@ export class Tile3D {
         const object = new THREE.Group();
         mesh.position.set(-cols / 2, 0, -rows / 2 + 1);
         object.add(mesh);
+        if (this.count <= 0) return
         return { scene: object, model: object, object: object };
     }
 
@@ -1623,6 +1624,7 @@ export class Tile3D {
         const object = new THREE.Group();
         mesh.position.set(-bbW / 2 + (flatTop ? 0 : 0), 0, -bbH / 2 + (flatTop ? w : h));
         object.add(mesh);
+        if (this.count <= 0) return;
         return { scene: object, model: object, object: object };
     }
 
