@@ -199,18 +199,33 @@ export class Ruler3D {
         return color ?? this.color;
     }
 
+    async executeAllMovement() {
+        const promises = [];
+        for (const token of canvas.tokens.controlled) {
+            promises.push(this.executeMovement(token));
+        }
+        await Promise.all(promises);
+        this.clearSegments();
+    }
+
     async executeMovement(token) {
         const token3D = this._parent.tokens[token.id];
+        const origin = Ruler3D.pos3DToCanvas(this.segments[0].origin);
+        const [topLeftX, topLeftY] = canvas.grid.getTopLeft(origin.x, origin.y);
+        origin.x = topLeftX;
+        origin.y = topLeftY;
+        const startPosition = {x: token.document.x, y: token.document.y, elevation: token.document.elevation};
+        const offset = { x: origin.x - startPosition.x, y: origin.y - startPosition.y, elevation: origin.z - startPosition.elevation };
 
         // Iterate over each measured segment
         let priorDest = undefined;
         for (const segment of this.segments) {
             const dest = Ruler3D.pos3DToCanvas(segment.target);
-            dest.x -= token.document.width * canvas.grid.size / 2;
-            dest.y -= token.document.height * canvas.grid.size / 2;
+            dest.x -= token.document.width * canvas.grid.size / 2 + offset.x;
+            dest.y -= token.document.height * canvas.grid.size / 2 + offset.y;
             dest.x = Math.round(dest.x);
             dest.y = Math.round(dest.y);
-            dest.elevation = dest.z;
+            dest.elevation = dest.z + offset.elevation;
             dest.elevation = parseFloat(dest.elevation.toFixed(2));
 
             if (priorDest && (token.document.x !== priorDest.x || token.document.y !== priorDest.y)) break;
@@ -220,7 +235,6 @@ export class Ruler3D {
             segment.destroy();
             priorDest = dest;
         }
-        this.clearSegments();
     }
 
     async _animateSegment(token, destination) {

@@ -533,7 +533,7 @@ export class InteractionManager {
             if (entity3D.token) {
                 this._parent.ruler.addSegment();
                 entity3D.setPosition(false, true);
-                this._parent.ruler.executeMovement(entity3D.token);
+                this._parent.ruler.executeAllMovement(entity3D.token);
 
             } else {
                 if (!entity3D.updatePositionFrom3D(event)) this.cancelDrag();
