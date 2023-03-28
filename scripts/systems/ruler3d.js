@@ -181,7 +181,10 @@ export class Ruler3D {
         if (!this._object || !this._origin) return;
         const isToken = this._object?.userData?.entity3D?.token;
         const targetPos = this.getTargetPos();
+        const hasChanged = !this._prevPosition || targetPos.distanceTo(this._prevPosition) > 0.01;
+        this._prevPosition = targetPos.clone();
         if (isToken) {
+            if(hasChanged) this._object.userData.entity3D.drawHeightIndicatorDebounced();
             this.dragRing.scale.x = isToken.document.width;
             this.dragRing.scale.z = isToken.document.height;
         }
