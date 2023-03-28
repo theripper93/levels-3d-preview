@@ -625,7 +625,6 @@ class Levels3DPreview {
         this.makeSkybox(enableFog);
         //this.weather = new WeatherSystem(this);
         this.lights.globalIllumination = new GlobalIllumination(this);
-        this.ruler.addMarkers();
         const useTurnMarker = game.settings.get("levels-3d-preview", "startMarker");
         if (useTurnMarker) this.turnStartMarker = new turnStartMarker(this);
         if (!this._cameraSet) {
@@ -1220,6 +1219,12 @@ class Levels3DPreview {
                     token.forceDrawBars();
                     token.drawName();
                 });
+                setTimeout(() => {
+                    Object.values(this.tokens).forEach((token) => {
+                        token.forceDrawBars();
+                        token.drawName();
+                    });
+                }, 100);
             }
             if (this._sharedContext) {
                 canvas.app.renderer.reset();
