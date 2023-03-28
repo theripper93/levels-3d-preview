@@ -168,7 +168,7 @@ export class Ruler3D {
             const isEven = (width % 2 === 0) && (height % 2 === 0);
             if(isEven) useTopLeft = true;
         }
-        const pos = Ruler3D.useSnapped() ? Ruler3D.snapped3DPosition(this._object.position, useTopLeft) : this._object.position.clone();
+        const pos = Ruler3D.useSnapped() ? Ruler3D.snapped3DPosition(this._object.position, useTopLeft, isToken) : this._object.position.clone();
         if (isToken) pos.y -= RULER_TOKEN_OFFSET;
         return pos;
     }
@@ -349,9 +349,19 @@ export class Ruler3D {
         return Math.round(number / multiple) * multiple;
     }
 
-    static snapped3DPosition(position, useTopLeft = false) {
+    static snapped3DPosition(position, useTopLeft = false, isToken = false) {
+        console.log(isToken)
         const canvasPosition = Ruler3D.pos3DToCanvas(position);
-        const snappedCenterPos = useTopLeft ? {x: Ruler3D.roundToMultiple(canvasPosition.x, canvas.grid.size), y: Ruler3D.roundToMultiple(canvasPosition.y, canvas.grid.size)} : canvas.grid.getSnappedPosition(canvasPosition.x, canvasPosition.y, 2);
+        let snappedCenterPos;
+        if (useTopLeft) {
+            snappedCenterPos = {x: Ruler3D.roundToMultiple(canvasPosition.x, canvas.grid.size), y: Ruler3D.roundToMultiple(canvasPosition.y, canvas.grid.size)};
+        } else if (isToken) {
+            const [x, y] = canvas.grid.getCenter(canvasPosition.x, canvasPosition.y);
+            snappedCenterPos = {x: x, y: y};
+        } else {
+            canvas.grid.getSnappedPosition(canvasPosition.x, canvasPosition.y, 2);
+        }
+        
         const snappedPos = {
             x: snappedCenterPos.x,
             y: snappedCenterPos.y,
