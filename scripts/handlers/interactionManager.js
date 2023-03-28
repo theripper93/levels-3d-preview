@@ -250,6 +250,8 @@ export class InteractionManager {
     }
 
     clearControlledGroup() {
+        this.controls.enabled = true;
+        this.preventSelect = false;
         const controlledGroup = this._parent.controlledGroup;
         while (controlledGroup.children.length) {
             const tile3d = controlledGroup.children[0].userData.entity3D;

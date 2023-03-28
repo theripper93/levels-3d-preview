@@ -1772,8 +1772,12 @@
                     "content": "These fields determine basic appearance settings for the assets. Such as Scale, Rotation and Tint."
                 },
                 "step-8": {
-                    "title": "Merge",
-                    "content": "When you are done building your scene, clicking this button will merge all the similar tiles into a single tile. This will reduce the number of tiles in the scene and improve performance."
+                    "title": "Utility",
+                    "content": "The utility tab contains quick shortcuts to batch actions."
+                },
+                "step-9": {
+                    "title": "Optimization",
+                    "content": "When you are done building your scene, use the 'Merge Tiles' button to merge all the similar tiles into a single tile to improve performance."
                 }
             }
         },

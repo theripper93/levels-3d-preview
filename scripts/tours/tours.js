@@ -108,7 +108,7 @@ export const Tokens = () => {
 };
 
 export const AssetBrowser = () => {
-    return new GenericTour("asset-browser", [`#asset-browser`, `#asset-browser #search`, `#asset-browser ol`, `#asset-browser #ab-randomization`, `#asset-browser #ab-placement`, `#asset-browser #ab-collision`, `#asset-browser #ab-painting`, `#asset-browser #ab-appearance`, `#asset-browser .merge`], {
+    return new GenericTour("asset-browser", [`#asset-browser`, `#asset-browser #search`, `#asset-browser ol`, `#asset-browser #ab-randomization`, `#asset-browser #ab-placement`, `#asset-browser #ab-collision`, `#asset-browser #ab-painting`, `#asset-browser #ab-appearance`, `#asset-browser .tab-button[data-tab="utility"]`, `#asset-browser #ab-optimization`], {
         moduleId: "levels-3d-preview",
         localizationRoot: "levels3dpreview.tours",
         display: true,
