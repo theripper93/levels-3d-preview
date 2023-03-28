@@ -208,7 +208,7 @@ export class Tile3D {
     setUpDoors() {
         const doors = {};
         this.mesh.traverse((child) => {
-            if (child.isMesh && child?.userData?.isDoor && child?.userData?.doorId) {
+            if (child.isMesh && child?.userData?.isDoor && child?.userData?.doorId && !child?.userData?.noShaders) {
                 doors[child?.userData?.doorId] = child;
                 child.userData.doorMaterialData = {
                     transparent: true,

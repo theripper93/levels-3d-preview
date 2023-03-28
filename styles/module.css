@@ -8,21 +8,29 @@
 }
 
 #levels3d-ruler-text {
-    font-size: 2rem;
-    color: rgb(189 189 189);
-    text-shadow: 0px 0 5px #000;
+    font-size: 6rem;
+    color: rgb(255, 255, 255);
+    text-shadow: 0px 0 2px #000, 0px 0 2px #000, 0px 0 2px #000, 0px 0 2px #000, 0px 0 2px #000;
+    font-weight: 900;
     position: absolute;
     pointer-events: none;
     z-index: calc(var(--z-index-canvas) + 2);
     opacity: 1;
     text-align: center;
     transition: opacity 0.4s ease-in-out 1.3s, transform 1.4s ease-out;
+    display: flex;
+    flex-direction: column-reverse;
 }
 
-#levels3d-ruler-text.rangefinder {
+#levels3d-ruler-text::before {
+    transform: scale(0.6) translateY(-1rem);
+    font-family: "Font Awesome 5 Free"; font-weight: 900; content: "\f0d7";
+}
+
+/*#levels3d-ruler-text.rangefinder {
     font-size: 1.5rem;
     font-family: 'Font Awesome 5 Free';
-}
+}*/
 
 #levels3d-ruler-text.scrolling-text {
     opacity: 0;

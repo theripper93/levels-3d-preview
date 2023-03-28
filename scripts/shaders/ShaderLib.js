@@ -432,13 +432,13 @@ export const shaders = {
             gridMinX: {
                 type: "float",
                 value: () => {
-                    return canvas.grid.grid._bounds.minX / factor;
+                    return (canvas.grid.grid._bounds?.minX ?? 0) / factor;
                 },
             },
             gridMinY: {
                 type: "float",
                 value: () => {
-                    return canvas.grid.grid._bounds.minY / factor;
+                    return (canvas.grid.grid._bounds?.minY ?? 0) / factor;
                 },
             },
         },

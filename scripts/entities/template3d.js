@@ -445,7 +445,7 @@ export class Template3D {
         const x = x3d * factor;
         const y = z3d * factor;
         const z = ((y3d * factor * canvas.dimensions.distance) / canvas.dimensions.size).toFixed(2);
-        const snapped = canvas.grid.getSnappedPosition(x, y);
+        const snapped = canvas.grid.getSnappedPosition(x, y, 2);
         const dest = {
             x: useSnapped ? snapped.x : x,
             y: useSnapped ? snapped.y : y,

@@ -1,6 +1,6 @@
 import * as THREE from "../lib/three.module.js";
 import { factor } from "../main.js";
-import { Ruler3D } from "../systems/ruler3d.js";
+import { Ruler3D, RULER_TOKEN_OFFSET } from "../systems/ruler3d.js";
 import { GroupSelectHandler } from "./GroupSelectHandler.js";
 import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from "../lib/three-mesh-bvh.js";
 THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
@@ -527,9 +527,12 @@ export class InteractionManager {
         this.mousedown = false;
         if (event.which !== 1) return;
         if (this.draggable) {
+            const entity3D = this.draggable?.userData?.entity3D;
+            if (entity3D.token) {
+                this.currentDragTarget.y -= RULER_TOKEN_OFFSET;
+            }
             this.draggable.position.copy(this.currentDragTarget);
             this.ruler.placeTemplate();
-            const entity3D = this.draggable?.userData?.entity3D;
             if (entity3D.token) {
                 this._parent.ruler.addSegment();
                 entity3D.setPosition(false, true);
@@ -1015,7 +1018,9 @@ export class InteractionManager {
             const distance = target.position.distanceTo(intersects[0].point);
             let lerpFactor = 1 / (1 + distance * 20);
             if (lerpFactor < 0.1) lerpFactor = 0.1;
+            const isToken = !!entity3D.token;
             this.currentDragTarget = new THREE.Vector3(intersects[0].point.x, !isFree ? intersects[0].point.y : entity3D.elevation3d, intersects[0].point.z);
+            if (isToken) this.currentDragTarget.y += RULER_TOKEN_OFFSET;
             target.position.lerp(this.currentDragTarget, lerpFactor);
             if (!isFree) {
                 entity3D.elevation3d = intersects[0].point.y;

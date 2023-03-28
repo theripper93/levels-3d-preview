@@ -86,7 +86,7 @@ export class Light3D {
         this.dragHandle.userData.sphere.material.color.set(this.color || "#ffffff");
     }
 
-    updatePositionFrom3D(e) {
+    async updatePositionFrom3D(e) {
         this.skipMoveAnimation = true;
         const useSnapped = Ruler3D.useSnapped();
         const x3d = this.mesh.position.x;
@@ -95,7 +95,7 @@ export class Light3D {
         const x = x3d * factor;
         const y = z3d * factor;
         const z = Math.round(((y3d * factor * canvas.dimensions.distance) / canvas.dimensions.size) * 100) / 100;
-        const snapped = canvas.grid.getSnappedPosition(x, y);
+        const snapped = canvas.grid.getSnappedPosition(x, y, 2);
         const { rangeTop, rangeBottom } = CONFIG.Levels.helpers.getRangeForDocument(this.light.document);
         const dest = {
             x: useSnapped ? snapped.x : x,
@@ -125,7 +125,8 @@ export class Light3D {
                 },
             });
         }
-        canvas.scene.updateEmbeddedDocuments("AmbientLight", updates);
+        const res = await canvas.scene.updateEmbeddedDocuments("AmbientLight", updates);
+        if(!res.length) this.refresh();
         return true;
     }
 

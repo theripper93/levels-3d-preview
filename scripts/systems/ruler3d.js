@@ -2,7 +2,6 @@ import * as THREE from "../lib/three.module.js";
 import { Template3D } from "../entities/template3d.js";
 import { factor } from "../main.js";
 import {sleep} from "../helpers/utils.js";
-import { rulerUVTubeMaterial } from "../shaders/shaderMaterials.js";
 
 export class Ruler3D {
     constructor(parent) {
@@ -23,6 +22,9 @@ export class Ruler3D {
         this.roulerLineMaterial = new THREE.MeshBasicMaterial({
             depthWrite: false,
             depthTest: false,
+        });
+        this.dragRingMaterial = new THREE.MeshBasicMaterial({
+            color: 0xffffff,
         });
         this.init();
     }
@@ -62,18 +64,32 @@ export class Ruler3D {
         this.sphere1 = new THREE.Mesh(new THREE.SphereGeometry(this.sphereRadius, 16, 16), this.roulerLineMaterial);
         this.sphere1.renderOrder = 1e20 - 1;
         this.sphere2 = this.sphere1.clone();
-        this.textElement = $(`<div id="levels3d-ruler-text"></div>`);
+        const tGeo1 = new THREE.TorusGeometry((canvas.grid.size / factor) * 0.5 * Math.SQRT2, 0.0002, 8, 32);
+        tGeo1.rotateX(Math.PI / 2);
+        const tGeo2 = new THREE.TorusGeometry((canvas.grid.size / factor) * 0.5 * Math.SQRT2, 0.001, 8, 32);
+        tGeo2.rotateX(Math.PI / 2);
+        this.dragRing = new THREE.Group();
+        const ring1 = new THREE.Mesh(tGeo1, this.roulerLineMaterial);
+        ring1.renderOrder = 1e20 - 1;
+        const ring2 = new THREE.Mesh(tGeo2, this.dragRingMaterial);
+        this.dragRing.add(ring1);
+        this.dragRing.add(ring2);
+        this.textElement = $(`<div id="levels3d-ruler-text"><span class="distance"></span></div>`);
+        this.textDistance = this.textElement.find(".distance")[0];
+        this.textElement.hide();
         $("body").append(this.textElement);
     }
 
     addMarkers() {
         this._parent.scene.add(this.sphere1);
         this._parent.scene.add(this.sphere2);
+        this._parent.scene.add(this.dragRing);
     }
 
     removeMarkers() {
         this._parent.scene.remove(this.sphere1);
         this._parent.scene.remove(this.sphere2);
+        this._parent.scene.remove(this.dragRing);
     }
 
     set object(value) {
@@ -110,10 +126,14 @@ export class Ruler3D {
         return this._origin;
     }
 
+    get isToken() {
+        return !!this._object?.userData?.entity3D?.token;
+    }
+
     updateVisibility() {}
 
     addSegment() {
-        const segment = new RulerSegment(this);
+        const segment = new RulerSegment(this, this.isToken);
         this.segments.push(segment);
         this.origin = this.getTargetPos().clone();
         this._distanceOffset += segment._distance;
@@ -140,7 +160,17 @@ export class Ruler3D {
     }
 
     getTargetPos() {
-        return Ruler3D.useSnapped() ? Ruler3D.snapped3DPosition(this._object.position) : this._object.position;
+        const isToken = this._object?.userData?.entity3D?.token;
+        let useTopLeft = false;
+        if (isToken) { 
+            const width = isToken.document.width;
+            const height = isToken.document.height;
+            const isEven = (width % 2 === 0) && (height % 2 === 0);
+            if(isEven) useTopLeft = true;
+        }
+        const pos = Ruler3D.useSnapped() ? Ruler3D.snapped3DPosition(this._object.position, useTopLeft) : this._object.position.clone();
+        if (isToken) pos.y -= RULER_TOKEN_OFFSET;
+        return pos;
     }
 
     getCurrentDistance() {
@@ -149,7 +179,13 @@ export class Ruler3D {
 
     update() {
         if (!this._object || !this._origin) return;
+        const isToken = this._object?.userData?.entity3D?.token;
         const targetPos = this.getTargetPos();
+        if (isToken) {
+            this.dragRing.scale.x = isToken.document.width;
+            this.dragRing.scale.z = isToken.document.height;
+        }
+        this.dragRing.visible = !!isToken;
         this._parent.scene.remove(this.line);
         const distance = (this.getCurrentDistance() + this._distanceOffset).toFixed(1);
         //draw ruler
@@ -168,17 +204,21 @@ export class Ruler3D {
         const geometry = new THREE.TubeGeometry(curve, this.template?.isPreview ? 64 : 1, this.lineRadius, 8);
         const c = this.getColor(distance);
         this.roulerLineMaterial.color = c;
+        this.dragRingMaterial.color = c;
         this.line = new THREE.Mesh(geometry, this.roulerLineMaterial);
         this.line.userData.ignoreHover = true;
         this.line.renderOrder = 1e20;
         this.sphere1.position.copy(this._origin);
         this.sphere2.position.copy(targetPos);
+        this.dragRing.position.copy(targetPos);
         //draw floating text
         const text = `${distance} ${canvas.scene.grid.units}.`;
-        this.textElement.text(text);
+        this.textDistance.innerHTML = text;
         //get mid point of ruler
         const midPoint = this.template?.isPreview ? midcurve : new THREE.Vector3(this._origin.x + (targetPos.x - this._origin.x) / 2, this._origin.y + (targetPos.y - this._origin.y) / 2, this._origin.z + (targetPos.z - this._origin.z) / 2);
-        Ruler3D.centerElement(this.textElement, midPoint);
+        const textPoint = targetPos
+        textPoint.y += 0.05;
+        Ruler3D.centerElement(this.textElement, targetPos);
         this._parent.scene.add(this.line);
         this.drawTemplate();
     }
@@ -200,6 +240,8 @@ export class Ruler3D {
     }
 
     async executeAllMovement() {
+        const lastSegment = this.segments[this.segments.length - 1];
+        if(this.isToken) lastSegment.target.y += RULER_TOKEN_OFFSET;
         const promises = [];
         for (const token of canvas.tokens.controlled) {
             promises.push(this.executeMovement(token));
@@ -211,10 +253,7 @@ export class Ruler3D {
     async executeMovement(token) {
         const token3D = this._parent.tokens[token.id];
         const origin = Ruler3D.pos3DToCanvas(this.segments[0].origin);
-        const [topLeftX, topLeftY] = canvas.grid.getTopLeft(origin.x, origin.y);
-        origin.x = topLeftX;
-        origin.y = topLeftY;
-        const startPosition = {x: token.document.x, y: token.document.y, elevation: token.document.elevation};
+        const startPosition = { x: token.document.x + (token.document.width / 2 * canvas.grid.size), y: token.document.y + (token.document.height / 2 * canvas.grid.size), elevation: token.document.elevation };
         const offset = { x: origin.x - startPosition.x, y: origin.y - startPosition.y, elevation: origin.z - startPosition.elevation };
 
         // Iterate over each measured segment
@@ -291,10 +330,8 @@ export class Ruler3D {
         return (pixels * canvas.scene.dimensions.distance * factor) / canvas.scene.dimensions.size;
     }
 
-    static pos3DToCanvas(position, topLeft = false) {
-        if (topLeft) {
-            
-        }else return new THREE.Vector3(position.x * factor, position.z * factor, ((position.y * factor) / canvas.scene.dimensions.size) * canvas.scene.dimensions.distance);
+    static pos3DToCanvas(position) {
+        return new THREE.Vector3(position.x * factor, position.z * factor, ((position.y * factor) / canvas.scene.dimensions.size) * canvas.scene.dimensions.distance);
     }
 
     static useSnapped() {
@@ -305,12 +342,16 @@ export class Ruler3D {
         return false;
     }
 
-    static snapped3DPosition(position) {
+    static roundToMultiple(number, multiple) { 
+        return Math.round(number / multiple) * multiple;
+    }
+
+    static snapped3DPosition(position, useTopLeft = false) {
         const canvasPosition = Ruler3D.pos3DToCanvas(position);
-        const snappedCenterPos = canvas.grid.getCenter(canvasPosition.x, canvasPosition.y);
+        const snappedCenterPos = useTopLeft ? {x: Ruler3D.roundToMultiple(canvasPosition.x, canvas.grid.size), y: Ruler3D.roundToMultiple(canvasPosition.y, canvas.grid.size)} : canvas.grid.getSnappedPosition(canvasPosition.x, canvasPosition.y, 2);
         const snappedPos = {
-            x: snappedCenterPos[0],
-            y: snappedCenterPos[1],
+            x: snappedCenterPos.x,
+            y: snappedCenterPos.y,
             z: canvasPosition.z,
         };
         return Ruler3D.posCanvasTo3d(snappedPos);
@@ -369,7 +410,7 @@ export class Ruler3D {
 
 
 class RulerSegment {
-    constructor(ruler3d) {
+    constructor(ruler3d, isToken) {
         this.sphere1 = ruler3d.sphere1.clone();
         this.sphere2 = ruler3d.sphere2.clone();
         this.line = ruler3d.line.clone();
@@ -396,3 +437,5 @@ class RulerSegment {
         this.scene.remove(this.line);
     }
 }
+
+export const RULER_TOKEN_OFFSET = 0.05;
