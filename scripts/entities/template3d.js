@@ -1,6 +1,7 @@
 import * as THREE from "../lib/three.module.js";
 import { Ruler3D } from "../systems/ruler3d.js";
 import {factor} from "../main.js";
+import { isLockedOnOrigin } from "../shaders/templateEffects.js";
 
 export class Template3D {
     constructor(template, A, B) {
@@ -570,7 +571,7 @@ export class Template3D {
     onRotate(deltaY) {
         if (game.Levels3DPreview.interactionManager.isFreeMode) return;
         let delta = canvas.grid.type > CONST.GRID_TYPES.SQUARE ? 30 : 15;
-        let snap = delta;
+        let snap = delta / 2;
         this.directionOffset += snap * Math.sign(-deltaY);
         this.mesh.rotation.y = Math.toRadians(this.directionOffset);
     }
@@ -578,7 +579,7 @@ export class Template3D {
     onTilt(deltaY) {
         if (game.Levels3DPreview.interactionManager.isFreeMode) return;
         let delta = canvas.grid.type > CONST.GRID_TYPES.SQUARE ? 30 : 15;
-        let snap = delta;
+        let snap = delta / 2;
         this.tilt += snap * Math.sign(-deltaY);
         this.templateMesh.rotation.z = Math.toRadians(this.tilt);
     }

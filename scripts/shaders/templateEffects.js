@@ -102,3 +102,13 @@ const shaderData = {
 function applyEffect(templateDocument, effect){
     templateDocument.updateSource({fillColor: effect.fillColor, flags: {"levels-3d-preview": {shaders: effect.shaderData}}})
 }
+
+export function isLockedOnOrigin(item) {
+    const system = game.system.id;
+    if (system === "dnd5e") { 
+        const isLocked = !item.system?.range?.value;
+        const token = item.parent.getActiveTokens()[0] ?? _token;
+        return isLocked ? token : false;
+    }
+    return false;
+}

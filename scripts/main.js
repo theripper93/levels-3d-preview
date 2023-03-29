@@ -44,7 +44,8 @@ import { throttle, sleep } from "./helpers/utils.js";
 import { BokehPass } from "./lib/BokehPass.js";
 import {VFXSystem} from "./systems/vfx.js";
 import { Ping } from "./entities/effects/ping.js";
-import { injectThreeModifications } from "./threejsmodifications.js";
+import {injectThreeModifications} from "./threejsmodifications.js";
+import { ActiveEffectEffect } from "./entities/effects/activeEffect.js";
 
 export const factor = 1000;
 injectFoWShaders(THREE);
@@ -138,6 +139,7 @@ class Levels3DPreview {
                 ParticleSystem,
                 Tile3D,
                 Ping,
+                ActiveEffectEffect,
             },
             INTERACTIONS: {
                 dropFunctions,

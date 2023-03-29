@@ -74,7 +74,7 @@ export class Ruler3D {
         const ring2 = new THREE.Mesh(tGeo2, this.dragRingMaterial);
         this.dragRing.add(ring1);
         this.dragRing.add(ring2);
-        this.textElement = $(`<div id="levels3d-ruler-text"><span class="distance"></span></div>`);
+        this.textElement = $(`<div id="levels3d-ruler-text" class="ruler"><span class="distance"></span></div>`);
         this.textDistance = this.textElement.find(".distance")[0];
         this.textElement.hide();
         $("body").append(this.textElement);
@@ -86,7 +86,7 @@ export class Ruler3D {
         this._parent.scene.add(this.dragRing);
     }
 
-    removeMarkers() {
+    async removeMarkers() {
         this._parent.scene.remove(this.sphere1);
         this._parent.scene.remove(this.sphere2);
         this._parent.scene.remove(this.dragRing);
@@ -94,12 +94,13 @@ export class Ruler3D {
 
     set object(value) {
         if (!value) {
-            //this.clearSegments();                 
+            //this.clearSegments();  
+            const isToken = this.isToken;
             this._object = null;
             this.template?.destroy();
             this.textElement.hide();
             this._parent.scene.remove(this.line);
-            this.removeMarkers();
+            this.removeMarkers(isToken);
 
         } else {
             this.clearSegments();
@@ -108,6 +109,23 @@ export class Ruler3D {
             this._object = target;
             this.origin = new THREE.Vector3(target.position.x, target.position.y, target.position.z);
             this.textElement.show();
+            const isToken = this._object?.userData?.entity3D?.token;
+            if (isToken) {
+                this.dragRing.scale.set(0, 1, 0);
+                const animation = [
+                    {
+                        parent: this.dragRing.scale,
+                        attribute: "x",
+                        to: isToken.document.width,
+                    },
+                    {
+                        parent: this.dragRing.scale,
+                        attribute: "z",
+                        to: isToken.document.height,
+                    },
+                ];
+                CanvasAnimation.animate(animation, { duration: 500, easing: "easeOutCircle", name: "dragRing" });
+            }
         }
 
         this.updateVisibility();
@@ -178,15 +196,15 @@ export class Ruler3D {
     }
 
     update() {
-        if (!this._object || !this._origin) return;
+        if (!this._object || !this._origin || this._parent.interactionManager._lockTemplateElevation) return;
         const isToken = this._object?.userData?.entity3D?.token;
         const targetPos = this.getTargetPos();
         const hasChanged = !this._prevPosition || targetPos.distanceTo(this._prevPosition) > 0.01;
         this._prevPosition = targetPos.clone();
         if (isToken) {
             if(hasChanged) this._object.userData.entity3D.drawHeightIndicatorDebounced();
-            this.dragRing.scale.x = isToken.document.width;
-            this.dragRing.scale.z = isToken.document.height;
+            //this.dragRing.scale.x = isToken.document.width;
+            //this.dragRing.scale.z = isToken.document.height;
         }
         this.dragRing.visible = !!isToken;
         this._parent.scene.remove(this.line);
@@ -350,7 +368,6 @@ export class Ruler3D {
     }
 
     static snapped3DPosition(position, useTopLeft = false, isToken = false) {
-        console.log(isToken)
         const canvasPosition = Ruler3D.pos3DToCanvas(position);
         let snappedCenterPos;
         if (useTopLeft) {
@@ -359,7 +376,7 @@ export class Ruler3D {
             const [x, y] = canvas.grid.getCenter(canvasPosition.x, canvasPosition.y);
             snappedCenterPos = {x: x, y: y};
         } else {
-            canvas.grid.getSnappedPosition(canvasPosition.x, canvasPosition.y, 2);
+            snappedCenterPos = canvas.grid.getSnappedPosition(canvasPosition.x, canvasPosition.y, 2);
         }
         
         const snappedPos = {

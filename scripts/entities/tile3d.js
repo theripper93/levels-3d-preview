@@ -792,7 +792,7 @@ export class Tile3D {
         let textureOrMat = null;
         let isPBR = null;
         if (!texture) return { textureOrMat, isPBR };
-        textureOrMat = await this._parent.helpers.autodetectTextureOrMaterial(texture, { noCache: this.flipY || this.repeatTexture, doubleSided: this.doubleSided, ...options });
+        textureOrMat = await this._parent.helpers.autodetectTextureOrMaterial(texture, {noMatCache: true, noCache: this.flipY || this.repeatTexture, doubleSided: this.doubleSided, ...options });
         isPBR = this._parent.helpers.isPBR(texture);
         if (isPBR) {
             Object.values(textureOrMat).forEach((v) => this.setTexture(v));

@@ -4,7 +4,8 @@ import { sleep } from "../helpers/utils.js";
 import { Light3D } from "./light3d.js";
 import { TokenAnimationHandler } from "../handlers/tokenAnimationHandler.js";
 import {computeBoundsTree, disposeBoundsTree, acceleratedRaycast} from "../lib/three-mesh-bvh.js";
-import { heightHighlightShaderMaterial, radialGradientShaderMaterial } from "../shaders/shaderMaterials.js";
+import {heightHighlightShaderMaterial, radialGradientShaderMaterial} from "../shaders/shaderMaterials.js";
+import { ActiveEffectEffect } from "./effects/activeEffect.js";
 THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
 THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
 THREE.Mesh.prototype.raycast = acceleratedRaycast;
@@ -293,7 +294,7 @@ export class Token3D {
         this.drawBorder();
         this.drawName();
         this.drawBars();
-        this.reDraw();
+        this.reDraw(true);
         this.setPosition();
         return this;
     }
@@ -484,7 +485,7 @@ export class Token3D {
         return true;
     }
 
-    testCollision({x, y, z} = {}) {
+    testCollision({ x, y, z } = {}) {
         const dest = {
             x: x,
             y: y,
@@ -598,9 +599,9 @@ export class Token3D {
         this.mesh.position.z = z;
     }
 
-    reDraw() {
+    reDraw(firstDraw = false) {
         this.drawTargets();
-        this.drawEffects();
+        this.drawEffects(firstDraw);
         this.refreshBorder();
         this.setReticule();
         this.dispatchDrawHeightIndicator();
@@ -609,10 +610,9 @@ export class Token3D {
 
     refreshOutline() {
         const object3D = this.model;
-        if(!object3D) return;
+        if (!object3D) return;
         game.Levels3DPreview.outline.toggleControlled(object3D, this.token.controlled);
         game.Levels3DPreview.outline.toggleHovered(object3D, this.token.hover && !this.token.controlled, this.token?.document?.disposition);
-   
     }
 
     updateAnimation() {
@@ -678,7 +678,6 @@ export class Token3D {
     }
 
     dispatchDrawHeightIndicator() {
-
         if (!this.token.controlled && !this.token.hover) {
             if (this.heightIndicator) {
                 this.mesh.remove(this.heightIndicator);
@@ -686,7 +685,7 @@ export class Token3D {
             return;
         }
 
-        if ((this.heightIndicator?.visible && this.heightIndicator?.parent)) return this.drawHeightIndicatorDebounced();
+        if (this.heightIndicator?.visible && this.heightIndicator?.parent) return this.drawHeightIndicatorDebounced();
         this.drawHeightIndicator();
     }
 
@@ -740,7 +739,7 @@ export class Token3D {
         }
 
         // Add the group to the mesh
-        this.heightIndicator.traverse((child) => { 
+        this.heightIndicator.traverse((child) => {
             child.userData.ignoreHover = true;
             child.userData.interactive = false;
             child.userData.ignoreIntersect = true;
@@ -799,10 +798,12 @@ export class Token3D {
             // D35E: no prone condition?
         }
         // dnd5e, dnd4e, sfrpg, dsa5, cyberpunk2020, shadowrun5e, swade, wfrp4e, ...
-        return token.actor?.effects.some((e) => {
-            const flag = e.getFlag("core", "statusId");
-            return flag && proneIds.some((id) => flag.toLowerCase().includes(id));
-        }) ?? false;
+        return (
+            token.actor?.effects.some((e) => {
+                const flag = e.getFlag("core", "statusId");
+                return flag && proneIds.some((id) => flag.toLowerCase().includes(id));
+            }) ?? false
+        );
     }
 
     updateHiden() {
@@ -821,9 +822,9 @@ export class Token3D {
                 }
             });
         }
-        const hidden = this.token.document.hidden// || this.hasClone;
+        const hidden = this.token.document.hidden; // || this.hasClone;
         if (this._hidden === hidden) return;
-        this._hidden = this.token.document.hidden// || this.hasClone;
+        this._hidden = this.token.document.hidden; // || this.hasClone;
         this.model.traverse((child) => {
             if (child.isMesh) {
                 if (hidden) {
@@ -846,7 +847,7 @@ export class Token3D {
         });
     }
 
-    drawEffects() {
+    drawEffects(firstDraw = false) {
         //remove old effects
         if (!this.effectsContainer) return;
         this.updateHiden();
@@ -858,6 +859,12 @@ export class Token3D {
         const actorEffects = this.token.actor?.temporaryEffects || [];
         const effects = tokenEffects.concat(actorEffects).map((e) => e.icon ?? e);
         if (effects.length === this.effectsContainer.children.length) return;
+        if (!firstDraw && effects.length > this.effectsContainer.children.length) {
+            const newEffects = effects.filter((effect) => !this.effectsContainer.children.map((child) => child.userData.effect).includes(effect));
+            newEffects.forEach((effect) => {
+                new ActiveEffectEffect(this, effect);
+            });
+        }
         const toRemove = this.effectsContainer.children.filter((child) => !effects.includes(child.userData.effect));
         toRemove.forEach((child) => {
             child.userData.targetPosition = new THREE.Vector3(0, 0, 0);

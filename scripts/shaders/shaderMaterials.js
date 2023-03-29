@@ -256,3 +256,47 @@ varying vec3 vPosition;
 }
 `,
 });
+
+export const radialDomeFadeShaderMaterial = new THREE.ShaderMaterial({
+    transparent: true,
+    depthWrite: false,
+    side: THREE.DoubleSide,
+    uniforms: {
+        opacity: {
+            value: 1.0,
+        },
+        map: {
+            value: new THREE.Texture(),
+        },
+    },
+    varying: {
+        vPosition: { value: new THREE.Vector3() },
+    },
+    vertexShader: `
+
+varying vec2 vUv; 
+varying vec3 vPosition;
+    void main() {
+    vPosition = position;
+    vUv = uv;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+    }
+`,
+    fragmentShader: `
+    
+    uniform float opacity;
+    varying vec3 vPosition;
+    varying vec2 vUv;
+    uniform sampler2D map;
+
+    
+    void main() {     
+        float distanceFromCenter = 1.0 - distance(vPosition, vec3(0.0, 0.0, 0.4));
+        vec4 mapColor = texture2D(map, vUv);
+        if(mapColor.a < 0.001) {
+            discard;
+        }
+        gl_FragColor = vec4(mapColor.rgb * 2.0 , mapColor.a * opacity * distanceFromCenter);
+    }
+`,
+});

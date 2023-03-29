@@ -1,7 +1,8 @@
 import * as THREE from "../lib/three.module.js";
 import { factor } from "../main.js";
 import { Ruler3D, RULER_TOKEN_OFFSET } from "../systems/ruler3d.js";
-import { GroupSelectHandler } from "./GroupSelectHandler.js";
+import {GroupSelectHandler} from "./GroupSelectHandler.js";
+import { isLockedOnOrigin } from "../shaders/templateEffects.js";
 import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from "../lib/three-mesh-bvh.js";
 THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
 THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
@@ -655,7 +656,7 @@ export class InteractionManager {
             }
             if (isTemplate) {
                 if (event.altKey) entity3D.onTilt(delta);
-                else if (event.ctrlKey) changeElevation();
+                else if (event.ctrlKey && !this._lockTemplateElevation) changeElevation();
                 else entity3D.onRotate(delta);
             } else {
                 changeElevation();
@@ -856,6 +857,7 @@ export class InteractionManager {
     }
 
     set draggable(object) {
+        this._lockTemplateElevation = false;
         this._draggable = object;
         const center = this._parent.canvasCenter;
         if (object) {
@@ -1014,6 +1016,19 @@ export class InteractionManager {
         if (!intersects.length) intersects = this.raycaster.intersectObjects([this.dragplane], true);
 
         if (intersects.length > 0) {
+            if (this.draggable.userData?.entity3D?.template && this.draggable.userData.entity3D.isPreview) {
+                const locked = isLockedOnOrigin(this.draggable.userData?.entity3D?.template?.item);
+                if (locked) {
+                    const token3d = this._parent.tokens[locked?.id];
+                    if (token3d) {
+                        this._lockTemplateElevation = true;
+                        intersects[0].point = token3d.mesh.position.clone();
+                        intersects[0].point.y += token3d.d / 2;
+                    }
+                }
+            } else {
+                this._lockTemplateElevation = false;
+            }
             const entity3D = this.draggable.userData.entity3D;
             const distance = target.position.distanceTo(intersects[0].point);
             let lerpFactor = 1 / (1 + distance * 20);

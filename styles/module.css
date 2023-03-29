@@ -22,7 +22,7 @@
     flex-direction: column-reverse;
 }
 
-#levels3d-ruler-text::before {
+#levels3d-ruler-text.ruler::before {
     transform: scale(0.6) translateY(-1rem);
     font-family: "Font Awesome 5 Free"; font-weight: 900; content: "\f0d7";
 }
