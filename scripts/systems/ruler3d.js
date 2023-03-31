@@ -17,8 +17,8 @@ export class Ruler3D {
         this.lineColor = new THREE.Color().setHSL(hsl.h, hsl.s, hsl.l - 0.2);
         this.origin = new THREE.Vector3(0, 0, 0);
         this.target = new THREE.Vector3(0, 0, 0);
-        this.sphereRadius = 0.005;
-        this.lineRadius = 0.002;
+        this.lineRadius = this._parent.CONFIG.RULER.RULER_SIZE;
+        this.sphereRadius = this.lineRadius * 2;
         this.roulerLineMaterial = new THREE.MeshBasicMaterial({
             depthWrite: false,
             depthTest: false,
@@ -64,9 +64,9 @@ export class Ruler3D {
         this.sphere1 = new THREE.Mesh(new THREE.SphereGeometry(this.sphereRadius, 16, 16), this.roulerLineMaterial);
         this.sphere1.renderOrder = 1e20 - 1;
         this.sphere2 = this.sphere1.clone();
-        const tGeo1 = new THREE.TorusGeometry((canvas.grid.size / factor) * 0.5 * Math.SQRT2, 0.0002, 8, 32);
+        const tGeo1 = new THREE.TorusGeometry((canvas.grid.size / factor) * 0.5 * Math.SQRT2, this.lineRadius / 10, 8, 32);
         tGeo1.rotateX(Math.PI / 2);
-        const tGeo2 = new THREE.TorusGeometry((canvas.grid.size / factor) * 0.5 * Math.SQRT2, 0.001, 8, 32);
+        const tGeo2 = new THREE.TorusGeometry((canvas.grid.size / factor) * 0.5 * Math.SQRT2, this.lineRadius / 2, 8, 32);
         tGeo2.rotateX(Math.PI / 2);
         this.dragRing = new THREE.Group();
         const ring1 = new THREE.Mesh(tGeo1, this.roulerLineMaterial);
@@ -223,12 +223,18 @@ export class Ruler3D {
         }
 
         const geometry = new THREE.TubeGeometry(curve, this.template?.isPreview ? 64 : 1, this.lineRadius, 8);
+        const geometry2 = new THREE.TubeGeometry(curve, this.template?.isPreview ? 64 : 1, this.lineRadius / 5, 8);
         const c = this.getColor(distance);
         this.roulerLineMaterial.color = c;
         this.dragRingMaterial.color = c;
-        this.line = new THREE.Mesh(geometry, this.roulerLineMaterial);
-        this.line.userData.ignoreHover = true;
-        this.line.renderOrder = 1e20;
+        this.line = new THREE.Group();
+        this.lineOuter = new THREE.Mesh(geometry, this.dragRingMaterial);
+        this.lineInner = new THREE.Mesh(geometry2, this.roulerLineMaterial);
+        this.lineInner.userData.ignoreHover = true;
+        this.lineInner.renderOrder = 1e20;
+        this.lineOuter.userData.ignoreHover = true;
+        this.line.add(this.lineOuter);
+        this.line.add(this.lineInner);
         this.sphere1.position.copy(this._origin);
         this.sphere2.position.copy(targetPos);
         this.dragRing.position.copy(targetPos);

@@ -58,7 +58,8 @@ Hooks.once("canvasConfig", (canvasConfig) => {
       default: 1,
       requiresReload: true,
   });
-
+  const resFactor = window.innerHeight * devicePixelRatio / 2160;
+  document.documentElement.style.setProperty("--levels3d-ruler-font-size", `${game.settings.get("levels-3d-preview", "resolutionMultiplier") * resFactor * 6}rem`);
   canvasConfig.resolution*=game.settings.get("levels-3d-preview", "resolutionMultiplier");
 })
 

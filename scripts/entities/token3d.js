@@ -1409,7 +1409,7 @@ export class Token3D {
             if (animChanged) {
                 game.Levels3DPreview.tokens[token.id]?.updateAnimation();
             }
-            if ((updates?.flags && updates?.flags["levels-3d-preview"] && !wasFreeUpdated && !onlyAnim) || "light" in updates || "width" in updates || "height" in updates || "texture" in updates) {
+            if ((updates?.flags && updates?.flags["levels-3d-preview"] && !wasFreeUpdated && !onlyAnim) || ("light" in updates && !isEmpty(updates.light)) || "width" in updates || "height" in updates || "texture" in updates) {
                 game.Levels3DPreview.tokens[token.id]?.refresh();
             }
             if ("x" in updates || "y" in updates || "elevation" in updates || "rotation" in updates) {

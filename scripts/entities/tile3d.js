@@ -1939,3 +1939,36 @@ export async function unmergeTiles(tiles = canvas.tiles.placeables) {
         ui.notifications.info(`Unmerged ${unmergeTargets.length} tiles into ${count} tiles`);
     }
 }
+
+export async function splitToChunks(tileDocument, splitX, splitY) {
+    const displacementMatrix = tileDocument.flags["levels-3d-preview"].displacementMatrix;
+    const components = displacementMatrix.split(",").map((c) => parseFloat(c));
+    const offsetX = components[0];
+    const offsetY = components[1];
+    const scaleX = components[2];
+    const scaleY = components[3];
+    const newScaleX = scaleX * splitX;
+    const newScaleY = scaleY * splitY;
+    const width = tileDocument.width;
+    const height = tileDocument.height;
+    const chunkWidth = width / splitX;
+    const chunkHeight = height / splitY;
+    const newTiles = [];
+    for (let x = 0; x < splitX; x++) { 
+        for (let y = 0; y < splitY; y++) { 
+            const newTileData = tileDocument.toObject();
+            newTileData.width = chunkWidth;
+            newTileData.height = chunkHeight;
+            newTileData.x = tileDocument.x + x * chunkWidth;
+            newTileData.y = tileDocument.y + y * chunkHeight;
+
+            newTileData.flags["levels-3d-preview"].displacementMatrix = `${offsetX + x * (1/newScaleX)},${offsetY + y * (1/newScaleY)},${newScaleX},${newScaleY}`;
+
+
+            newTiles.push(newTileData);
+        }
+    }
+    await canvas.scene.createEmbeddedDocuments("Tile", newTiles);
+    await tileDocument.delete();
+
+}
