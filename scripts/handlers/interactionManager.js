@@ -357,7 +357,7 @@ export class InteractionManager {
         }
     }
 
-    async _onDrop(event, snap = null, normal = null, dataTransfer = null, setRotation = 0, autoCenter = false) {
+    async _onDrop(event, dataTransfer = null) {
         if (!game.Levels3DPreview._active) return;
         event.preventDefault();
         // Try to extract the data
@@ -383,10 +383,9 @@ export class InteractionManager {
             const dropFunction = this._parent.CONFIG.INTERACTIONS.dropFunctions[data.type];
 
             if (!dropFunction) return ui.notifications.error(game.i18n.localize("levels3dpreview.errors.notarget"));
-            
-            const placeable = await dropFunction.bind(this)(event, data, snap, normal, dataTransfer, setRotation, autoCenter);
-            if (placeable) placeable[0]?.object?.control({ releaseOthers: true });
 
+            const placeable = await dropFunction.bind(this)(event, data);
+            if (placeable) placeable[0]?.object?.control({ releaseOthers: true });
         } catch (e) {
             console.error(e);
             ui.notifications.error(game.i18n.localize("levels3dpreview.errors.notarget"));
@@ -395,12 +394,12 @@ export class InteractionManager {
 
     get canDragStart() {
         if (!this.altControls) return false;
-        if(ui.controls.activeTool !== "select") return false;
-            if (this.activeLayerEntity === "Tile") {
-                return this._gizmoEnabled;
-            } else {
-                return this.currentHover?.embeddedName !== this.activeLayerEntity;
-            }
+        if (ui.controls.activeTool !== "select") return false;
+        if (this.activeLayerEntity === "Tile") {
+            return this._gizmoEnabled;
+        } else {
+            return this.currentHover?.embeddedName !== this.activeLayerEntity;
+        }
     }
 
     _onMouseDown(event) {
@@ -411,13 +410,13 @@ export class InteractionManager {
         if (this.preventSelect) return;
         const downId = randomID();
         this._downId = downId;
-        const currentMousePos = {x: this.mousemove.x, y: this.mousemove.y};
+        const currentMousePos = { x: this.mousemove.x, y: this.mousemove.y };
         if (!event.shiftKey && !event.ctrlKey && !event.altKey && event.which === 1 && this.canDragStart) {
             setTimeout(() => {
                 const moveDelta = Math.abs(currentMousePos.x - this.mousemove.x) + Math.abs(currentMousePos.y - this.mousemove.y);
                 if (this._downId !== downId || !this._leftDown || moveDelta < 0.03) return;
                 this._downId = null;
-            
+
                 this._groupSelect = true;
                 return this.groupSelectHandler.startSelect(event);
             }, 150);
@@ -426,7 +425,7 @@ export class InteractionManager {
             setTimeout(() => {
                 if (this.draggable || this._downId !== downId || !this._leftDown || (this.controls.mouseButtons.LEFT && this._downCameraPosition.distanceTo(this._upCameraPosition) > 0.01)) return;
                 const moveDelta = Math.abs(currentMousePos.x - this.mousemove.x) + Math.abs(currentMousePos.y - this.mousemove.y);
-                if(moveDelta > 0.1) return;
+                if (moveDelta > 0.1) return;
                 this._downId = null;
                 this._onMouseMove(null, true);
                 if (event.shiftKey) {
@@ -481,7 +480,6 @@ export class InteractionManager {
                 this.toggleControls(true);
             }
         }
-
     }
 
     set clicks(val) {
@@ -538,7 +536,6 @@ export class InteractionManager {
                 this._parent.ruler.addSegment();
                 entity3D.setPosition(false, true);
                 this._parent.ruler.executeAllMovement(entity3D.token);
-
             } else {
                 if (!entity3D.updatePositionFrom3D(event)) this.cancelDrag();
             }
@@ -563,7 +560,7 @@ export class InteractionManager {
     _onMouseMove(event, force = false) {
         if (!this._canMouseMove && !force) return;
         this._canMouseMove = false;
-        if (event) {            
+        if (event) {
             this.mousemove.x = (event.clientX / window.innerWidth) * 2 - 1;
             this.mousemove.y = -(event.clientY / window.innerHeight) * 2 + 1;
         }
@@ -573,7 +570,7 @@ export class InteractionManager {
         if (intersect) this._mouseHoverIntersect = intersect;
         const object = intersect?.object;
         //Handle placeable hover event
-        if(!event) return;
+        if (!event) return;
         if (intersect?.point) {
             this.canvas2dMousePosition = Ruler3D.pos3DToCanvas(intersect.point);
             this.canvas3dMousePosition = intersect.point;
@@ -591,7 +588,7 @@ export class InteractionManager {
         if (canvas.activeLayer?.hover && this.currentHover?.placeable?.id !== canvas.activeLayer?.hover?.id) {
             try {
                 canvas.activeLayer?.hover._onHoverOut(event);
-            }catch(e){}
+            } catch (e) {}
         }
 
         if (game.user.hasPermission("SHOW_CURSOR")) {
@@ -653,10 +650,10 @@ export class InteractionManager {
                 if (game.settings.get("levels-3d-preview", "preventNegative") && entity3D.elevation3d < Ruler3D.unitsToPixels(canvas.primary.background.elevation)) {
                     entity3D.elevation3d = Ruler3D.unitsToPixels(canvas.primary.background.elevation);
                 }
-            }
+            };
             if (isTemplate) {
                 if (event.altKey) entity3D.onTilt(delta);
-                else if (event.ctrlKey && !this._lockTemplateElevation) changeElevation();
+                else if (event.ctrlKey) changeElevation();
                 else entity3D.onRotate(delta);
             } else {
                 changeElevation();
@@ -1016,19 +1013,6 @@ export class InteractionManager {
         if (!intersects.length) intersects = this.raycaster.intersectObjects([this.dragplane], true);
 
         if (intersects.length > 0) {
-            if (this.draggable.userData?.entity3D?.template && this.draggable.userData.entity3D.isPreview) {
-                const locked = isLockedOnOrigin(this.draggable.userData?.entity3D?.template?.item);
-                if (locked) {
-                    const token3d = this._parent.tokens[locked?.id];
-                    if (token3d) {
-                        this._lockTemplateElevation = true;
-                        intersects[0].point = token3d.mesh.position.clone();
-                        intersects[0].point.y += token3d.d / 2;
-                    }
-                }
-            } else {
-                this._lockTemplateElevation = false;
-            }
             const entity3D = this.draggable.userData.entity3D;
             const distance = target.position.distanceTo(intersects[0].point);
             let lerpFactor = 1 / (1 + distance * 20);
@@ -1200,37 +1184,46 @@ export class InteractionManager {
 }
 
 export const dropFunctions = {
-    Tile: async function (event, data, snap = null, normal = null, dataTransfer = null, setRotation = 0, autoCenter = false) {
-
-         if (!game.Levels3DPreview.helpers.is3DModel(data.texture.src)) return dropImage.bind(this)(event, data);
-         canvas.tiles.activate();
+    Tile: async function (event, data) {
+        const isBillboard = data.params?.dynaMesh?.includes("billboard");
+        if (!game.Levels3DPreview.helpers.is3DModel(data.texture.src) && !isBillboard) return dropImage.bind(this)(event, data);
+        canvas.tiles.activate();
+        const {grid, normal, rotation, pos} = data.assetBrowser ?? {};
         data.flags["levels-3d-preview"] = {
             model3d: data.texture.src,
             autoGround: true,
-            autoCenter: autoCenter,
+            autoCenter: !!pos,
             ...(data.params || {}),
         };
-        const object3d = await this._parent.helpers.loadModel(data.texture.src);
-        const modelBB = new THREE.Box3().setFromObject(object3d.model);
-        const widthFactor = modelBB.max.x - modelBB.min.x;
-        const heightFactor = modelBB.max.z - modelBB.min.z;
-        let depth = modelBB.max.y - modelBB.min.y;
-        let width = canvas.grid.size * (canvas.grid.size / data.tileSize) * widthFactor;
-        let height = canvas.grid.size * (canvas.grid.size / data.tileSize) * heightFactor;
-
-        data.flags["levels-3d-preview"].depth = depth ? canvas.grid.size * (canvas.grid.size / data.tileSize) * depth : 0.05;
+        let depth, width, height;
+        if (isBillboard) {
+            data.flags["levels-3d-preview"].model3d = "";
+            data.flags["levels-3d-preview"].imageTexture = data.texture.src;
+            depth = width = height = canvas.grid.size * (canvas.grid.size / data.tileSize);
+        } else {
+            const object3d = await this._parent.helpers.loadModel(data.texture.src);
+            const modelBB = new THREE.Box3().setFromObject(object3d.model);
+            const widthFactor = modelBB.max.x - modelBB.min.x;
+            const heightFactor = modelBB.max.z - modelBB.min.z;
+            depth = (modelBB.max.y - modelBB.min.y ) * canvas.grid.size * (canvas.grid.size / data.tileSize);
+            width = canvas.grid.size * (canvas.grid.size / data.tileSize) * widthFactor;
+            height = canvas.grid.size * (canvas.grid.size / data.tileSize) * heightFactor;
+        }
+        
+        data.rotation = rotation ?? 0;
+        data.flags["levels-3d-preview"].depth = depth || 0.05;
         if (normal) {
             const dummy = new THREE.Object3D();
-            dummy.lookAt(normal);
+            dummy.lookAt(normal.x, normal.y, normal.z);
             dummy.rotateOnAxis(new THREE.Vector3(1, 0, 0), Math.PI / 2);
             data.flags["levels-3d-preview"].tiltX = Math.toDegrees(dummy.rotation.x);
             data.flags["levels-3d-preview"].tiltZ = Math.toDegrees(dummy.rotation.z);
             data.rotation = Math.toDegrees(dummy.rotation.y);
             data.flags["levels-3d-preview"].autoCenter = true;
         }
-        data.rotation = setRotation;
 
-        const useSnapped = snap ?? Ruler3D.useSnapped();
+
+        const useSnapped = grid ?? Ruler3D.useSnapped();
         let snapped;
         if (useSnapped) {
             snapped = canvas.grid.getSnappedPosition(data.x - width / 2, data.y - height / 2);
@@ -1250,7 +1243,7 @@ export const dropFunctions = {
     },
     Actor: async function (event, data) {
         canvas.tokens.activate();
-        
+
         Hooks.once("preCreateToken", (token) => {
             token.updateSource({ elevation: Math.trunc(data.elevation * 100) / 100, flags: data.flags });
         });
@@ -1258,7 +1251,7 @@ export const dropFunctions = {
     },
     JournalEntry: async function (event, data) {
         canvas.notes.activate();
-        
+
         const noteDocument = await fromUuid(data.uuid);
         const entryId = noteDocument.id;
         const pageId = null;

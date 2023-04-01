@@ -804,6 +804,11 @@ Hooks.on("renderTileConfig", (app,html)=>{
                 DoubleSide: game.i18n.localize("levels3dpreview.flags.sides.options.DoubleSide"),
             },
         },
+        castShadow: {
+            type: "checkbox",
+            label: game.i18n.localize("levels3dpreview.flags.castShadow.label"),
+            default: true,
+        },
         autoCenter: {
             type: "checkbox",
             label: game.i18n.localize("levels3dpreview.flags.autoCenter.label"),
@@ -1059,7 +1064,7 @@ Hooks.on("renderTileConfig", (app,html)=>{
         firstOption.innerText = game.i18n.localize("levels3dpreview.flags.fillType.options.merged");
     }
 
-    const advancedSettings = ["displacementIntensity", "displacementMatrix", "dynaMeshResolution", "roughness", "metalness", "transparency", "sightMeshComplexity", "invertDisplacementMap", "sides", "flipY", "shading", "displacementMap", "autoCenter", "enableAnim", "animSpeed", "animIndex", "paused", "tiltX", "tiltZ", "randomSeed", "autoGround", "depth"];
+    const advancedSettings = ["castShadow", "displacementIntensity", "displacementMatrix", "dynaMeshResolution", "roughness", "metalness", "transparency", "sightMeshComplexity", "invertDisplacementMap", "sides", "flipY", "shading", "displacementMap", "autoCenter", "enableAnim", "animSpeed", "animIndex", "paused", "tiltX", "tiltZ", "randomSeed", "autoGround", "depth"];
 
     injectAdvancedToggle(app,html,advancedSettings, injected);
 

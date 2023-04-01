@@ -196,7 +196,7 @@ export class Ruler3D {
     }
 
     update() {
-        if (!this._object || !this._origin || this._parent.interactionManager._lockTemplateElevation) return;
+        if (!this._object || !this._origin ) return;
         const isToken = this._object?.userData?.entity3D?.token;
         const targetPos = this.getTargetPos();
         const hasChanged = !this._prevPosition || targetPos.distanceTo(this._prevPosition) > 0.01;
@@ -208,6 +208,8 @@ export class Ruler3D {
         }
         this.dragRing.visible = !!isToken;
         this._parent.scene.remove(this.line);
+        this.lineInner?.geometry?.dispose();
+        this.lineOuter?.geometry?.dispose();
         const distance = (this.getCurrentDistance() + this._distanceOffset).toFixed(1);
         //draw ruler
         let curve;
@@ -223,18 +225,20 @@ export class Ruler3D {
         }
 
         const geometry = new THREE.TubeGeometry(curve, this.template?.isPreview ? 64 : 1, this.lineRadius, 8);
-        const geometry2 = new THREE.TubeGeometry(curve, this.template?.isPreview ? 64 : 1, this.lineRadius / 5, 8);
         const c = this.getColor(distance);
         this.roulerLineMaterial.color = c;
         this.dragRingMaterial.color = c;
         this.line = new THREE.Group();
         this.lineOuter = new THREE.Mesh(geometry, this.dragRingMaterial);
-        this.lineInner = new THREE.Mesh(geometry2, this.roulerLineMaterial);
-        this.lineInner.userData.ignoreHover = true;
-        this.lineInner.renderOrder = 1e20;
         this.lineOuter.userData.ignoreHover = true;
         this.line.add(this.lineOuter);
-        this.line.add(this.lineInner);
+        if (!this.template?.isPreview) {
+            const geometry2 = new THREE.TubeGeometry(curve, this.template?.isPreview ? 64 : 1, this.lineRadius / 5, 8);
+            this.lineInner = new THREE.Mesh(geometry2, this.roulerLineMaterial);
+            this.lineInner.userData.ignoreHover = true;
+            this.lineInner.renderOrder = 1e20;
+            this.line.add(this.lineInner);
+        }
         this.sphere1.position.copy(this._origin);
         this.sphere2.position.copy(targetPos);
         this.dragRing.position.copy(targetPos);
@@ -471,6 +475,9 @@ class RulerSegment {
         this.scene.remove(this.sphere1);
         this.scene.remove(this.sphere2);
         this.scene.remove(this.line);
+        this.line.traverse((o) => { 
+            if (o.geometry) o.geometry.dispose();
+        });
     }
 }
 

@@ -149,6 +149,7 @@ export class Tile3D {
         this.metalness = this.tile.document.getFlag("levels-3d-preview", "metalness") ?? -0.01;
         this.transparency = this.tile.document.getFlag("levels-3d-preview", "transparency") ?? -0.01;
         this.sides = this.tile.document.getFlag("levels-3d-preview", "sides") ?? "default";
+        this.castShadow = this.tile.document.getFlag("levels-3d-preview", "castShadow") ?? true;
         this.noiseParams = {
             scale: this.tile.document.getFlag("levels-3d-preview", "noiseScale") ?? 1,
             height: this.tile.document.getFlag("levels-3d-preview", "noiseHeight") ?? 1,
@@ -609,7 +610,7 @@ export class Tile3D {
         this.mesh = container;
         this.mesh.traverse((child) => {
             if (child.isMesh) {
-                child.castShadow = true;
+                child.castShadow = this.castShadow;
                 child.receiveShadow = true;
                 child.geometry.computeBoundsTree();
             }
@@ -691,7 +692,7 @@ export class Tile3D {
             instancedMesh.geometry.setAttribute("shader_instance_position", new THREE.InstancedBufferAttribute(positionsArray, 1, false));
             instancedMesh.instanceMatrix.needsUpdate = true;
             instancedMesh.geometry.computeBoundsTree();
-            instancedMesh.castShadow = true;
+            instancedMesh.castShadow = this.castShadow;
             instancedMesh.receiveShadow = true;
             instancedMesh.position.set(-this.width / 2, 0, -this.height / 2);
             instancedMesh.scale.set(this.width / this.originalDimensions.width, this.depth / this.originalDimensions.depth, this.height / this.originalDimensions.height);
@@ -812,7 +813,7 @@ export class Tile3D {
         };
         object.traverse((child) => {
             if (child.isMesh) {
-                child.castShadow = true;
+                child.castShadow = this.castShadow;
                 child.receiveShadow = true;
                 child.geometry.computeBoundsTree();
 
