@@ -395,7 +395,7 @@ class Levels3DPreview {
         this.renderer.shadowMap.enabled = true;
         this.renderer.outputEncoding = THREE.sRGBEncoding;
 
-        const pixelRatio = window.devicePixelRatio;
+        const pixelRatio = game.settings.get("core", "pixelRatioResolutionScaling") ? window.devicePixelRatio : 1;
 
         this.resolutionMulti = pixelRatio * game.settings.get("levels-3d-preview", "resolutionMultiplier"); //game.settings.get("levels-3d-preview", "resolution") *
 
@@ -1625,6 +1625,7 @@ class Levels3DPreview {
     particleSocket(...args) {
         game.Levels3DPreview.particleSystem.resolveSocket(...args);
     }
+    
     Particle3DStop(...args) {
         game.Levels3DPreview.particleSystem.stop(...args);
     }

@@ -23,7 +23,7 @@ export function setPerformancePreset(){
 }
 
 export function injectPresetButtons(html) {
-    const dpr = window.devicePixelRatio;
+    const dpr = game.settings.get("core", "pixelRatioResolutionScaling") ? window.devicePixelRatio : 1;
     const resMulti = game.settings.get("levels-3d-preview", "resolutionMultiplier");
     const currentPreset = findCurrentPreset();
     const finalResWidth = window.innerWidth * dpr * resMulti;

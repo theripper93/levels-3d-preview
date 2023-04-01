@@ -67,7 +67,7 @@ export function showSceneReport() {
 
 export function showPerformanceDialog() {
     const report = showSceneReport();
-    const dpr = window.devicePixelRatio;
+    const dpr = game.settings.get("core", "pixelRatioResolutionScaling") ? window.devicePixelRatio : 1;
     const resMulti = game.settings.get("levels-3d-preview", "resolutionMultiplier");
     const dialogData = { GPU: SupportDetails.generateSupportReport().gpu, Resolution: `${window.innerWidth * dpr * resMulti}x${window.innerHeight * dpr * resMulti}`, ...report };
     dialogData["Shared Context"] = game.settings.get("levels-3d-preview", "sharedContext") ? "Yes" : "No";
