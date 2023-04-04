@@ -8,7 +8,7 @@ import { Ruler3D } from "./systems/ruler3d.js";
 import { Light3D } from "./entities/light3d.js";
 import { Wall3D } from "./entities/wall3d.js";
 import { initSharing, setSharingHooks } from "./apps/sharing.js";
-import { Tile3D, recomputeGravity, autoMergeTiles, unmergeTiles, splitToChunks } from "./entities/tile3d.js";
+import { Tile3D, recomputeGravity, autoMergeTiles, unmergeTiles, splitToChunks, extractPointsFromDrawing } from "./entities/tile3d.js";
 import { Note3D } from "./entities/note3d.js";
 import { Grid3D } from "./systems/grid3d.js";
 import { RangeFinder } from "./systems/rangeFinder.js";
@@ -45,7 +45,8 @@ import { BokehPass } from "./lib/BokehPass.js";
 import {VFXSystem} from "./systems/vfx.js";
 import { Ping } from "./entities/effects/ping.js";
 import {injectThreeModifications} from "./threejsmodifications.js";
-import { ActiveEffectEffect } from "./entities/effects/activeEffect.js";
+import {ActiveEffectEffect} from "./entities/effects/activeEffect.js";
+import { RangeRingEffect } from "./entities/effects/rangeRing.js";
 
 export const factor = 1000;
 injectFoWShaders(THREE);
@@ -140,6 +141,7 @@ class Levels3DPreview {
                 Tile3D,
                 Ping,
                 ActiveEffectEffect,
+                RangeRingEffect,
             },
             INTERACTIONS: {
                 dropFunctions,
@@ -161,10 +163,16 @@ class Levels3DPreview {
                 CLIP_NAVIGATION: {
                     BUTTONS: CLIP_NAVIGATION_BUTTONS,
                 },
-                windows: {}
+                windows: {},
             },
             RULER: {
                 RULER_SIZE: 0.002,
+            },
+            PADDING_PRESETS: {
+                matpaper: { texture: "modules/canvas3dcompendium/assets/Materials/Paper003/Paper003_NormalGL.webp", color: "#341f0f", repeat: 1 },
+                matwood: { texture: "modules/canvas3dcompendium/assets/Materials/_Stylized2/Wood_05/Wood_05_NormalGL.webp", color: "#ffffff", repeat: 0.5 },
+                matcloth: { texture: "modules/canvas3dcompendium/assets/Materials/Fabric023/Fabric023_NormalGL.webp", color: "#ffffff", repeat: 1 },
+                matblueprint: { texture: "modules/canvas3dcompendium/assets/Materials/_Stylized2/Glass_02/Glass_02_NormalGL.webp", color: "#ffffff", repeat: 1 },
             },
             autoPan: false,
             tokenAnimations: defaultTokenAnimations,
@@ -309,6 +317,7 @@ class Levels3DPreview {
             unmergeTiles,
             debouncedReload: debounce(this.reload.bind(this), 300),
             splitToChunks,
+            extractPointsFromDrawing,
         };
 
         Hooks.callAll("3DCanvasConfig", this.CONFIG);
@@ -729,39 +738,53 @@ class Levels3DPreview {
 
     async createTable() {
         this.scene.remove(this.table);
-        if (!(canvas.scene.getFlag("levels-3d-preview", "renderTable") ?? false) || !canvas.scene.getFlag("levels-3d-preview", "tableTex")) return;
+        const tableOption = canvas.scene.getFlag("levels-3d-preview", "renderTable") ?? game.settings.get("levels-3d-preview", "paddingAppearance");
+        const tableTex = canvas.scene.getFlag("levels-3d-preview", "tableTex") ?? "";
+        if (tableOption == "none" || !tableOption) return;
         //make a plane and apply a texture
-        const width = canvas.scene.dimensions.width / this.factor;
-        const height = canvas.scene.dimensions.height / this.factor;
+        const isMat = tableOption.includes("mat")
+        const width = isMat ? 1000 : canvas.scene.dimensions.width / this.factor;
+        const height = isMat ? 1000 : canvas.scene.dimensions.height / this.factor;
         const center = this.canvasCenter;
-        const depth = Math.max(width, height) / 10;
-        const textureMat = await this.helpers.autodetectTextureOrMaterial(canvas.scene.getFlag("levels-3d-preview", "tableTex"));
-        const geometry = new THREE.BoxGeometry(width, height, depth);
+        const depth = isMat ? 0.1 : Math.max(width, height) / 10;
+        const preset = this.CONFIG.PADDING_PRESETS[tableOption] ?? {};
+        const textureMat = await this.helpers.autodetectTextureOrMaterial(preset.texture ?? tableTex);
+        const geometry = new THREE.BoxGeometry(width, depth, height);
         let uvAttribute = geometry.attributes.uv;
-
+        const repeat = preset.repeat ?? 1;
         for (let i = 0; i < uvAttribute.count; i++) {
             let u = uvAttribute.getX(i);
             let v = uvAttribute.getY(i);
-            u *= Math.round(canvas.scene.dimensions.width / canvas.scene.dimensions.size) / 10;
-            v *= Math.round(canvas.scene.dimensions.height / canvas.scene.dimensions.size) / 10;
+            u *= repeat * Math.round((width / canvas.scene.dimensions.size) * this.factor) / 10;
+            v *= repeat * Math.round((height / canvas.scene.dimensions.size) * this.factor) / 10;
             uvAttribute.setXY(i, u, v);
         }
         if (textureMat.image) {
             textureMat.wrapS = THREE.RepeatWrapping;
             textureMat.wrapT = THREE.RepeatWrapping;
         }
-        const material = textureMat.image
+        const material = textureMat.isTexture
             ? new THREE.MeshStandardMaterial({
                   map: textureMat,
                   roughness: 1,
                   metalness: 0,
               })
             : textureMat;
+        const color = preset.color ?? canvas.scene.getFlag("levels-3d-preview", "tableColor") ?? "#341f0f";
+        material.color = new THREE.Color(color);
         const plane = new THREE.Mesh(geometry, material);
         plane.receiveShadow = true;
         plane.position.set(center.x, center.y - (depth / 2 + 0.011) + Ruler3D.unitsToPixels(canvas.primary.background.elevation), center.z);
-        plane.rotation.x = -Math.PI / 2;
         this.table = plane;
+        if (canvas.scene.grid.type > 0)
+            this.shaderHandler.applyShader(
+                this.table,
+                {
+                    bb: { depth: height, width: width, height: depth },
+                    mesh: this.table,
+                },
+                { grid: { enabled: true } },
+            );
         this.scene.add(plane);
     }
 
@@ -1277,7 +1300,7 @@ class Levels3DPreview {
         groundPosition.y = Ruler3D.unitsToPixels(canvas.primary.background.elevation);
         const d = centerPosition.distanceTo(groundPosition);
 
-        const origin = new THREE.Vector2(this.controls.target.y, 0);
+        const origin = new THREE.Vector2(this.controls.target.y - 0.1, 0);
         const remote = new THREE.Vector2(0, d);
         const angleRadians = Math.atan2(remote.y - origin.y, remote.x - origin.x);
         this.controls.maxPolarAngle = angleRadians;
@@ -1730,7 +1753,7 @@ Hooks.on("updateScene", (scene, updates) => {
     game.Levels3DPreview.setBloom();
     if ("exposure" in flags) game.Levels3DPreview.setExposure();
     if ("renderBackground" in flags && !("img" in updates)) game.Levels3DPreview.createBoard();
-    if ("renderTable" in flags || "tableTex" in flags) game.Levels3DPreview.createTable();
+    if ("renderTable" in flags || "tableTex" in flags || "tableColor" in flags) game.Levels3DPreview.createTable();
 });
 
 Hooks.on("updateCombat", () => {

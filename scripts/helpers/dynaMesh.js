@@ -87,7 +87,7 @@ export class DynaMesh {
         return geometry;
     }
 
-    async _constructdecal() { 
+    async _constructdecal() {
         const decalData = this.decalData;
         const geometry = new DecalGeometry(decalData.mesh, decalData.position, decalData.rotation, new THREE.Vector3(this.width, this.height, this.height));
         return geometry;
@@ -101,6 +101,43 @@ export class DynaMesh {
             height: this.height,
             curveSegments: this.resolution,
         });
+        geometry.center();
+        return geometry;
+    }
+
+    _constructpolygon() {
+        const points = this.text.split(",").map((point) => parseInt(point) / factor);
+        const shape = new THREE.Shape();
+        shape.moveTo(points[0], points[1]);
+        for (let i = 2; i < points.length; i += 2) {
+            shape.lineTo(points[i], points[i + 1]);
+        }
+        shape.lineTo(points[0], points[1]);
+        const geometry = new THREE.ExtrudeGeometry(shape, { depth: this.depth, bevelEnabled: false });
+        geometry.rotateX(Math.PI / 2);
+        geometry.center();
+        return geometry;
+    }
+
+    _constructpolygonbevel() {
+        const points = this.text.split(",").map((point) => parseInt(point) / factor);
+        const shape = new THREE.Shape();
+        shape.moveTo(points[0], points[1]);
+        for (let i = 2; i < points.length; i += 2) {
+            shape.lineTo(points[i], points[i + 1]);
+        }
+        shape.lineTo(points[0], points[1]);
+        const extrudeSettings = {
+            steps: 2,
+            depth: this.depth,
+            bevelEnabled: true,
+            bevelThickness: 0.011,
+            bevelSize: 0.01,
+            bevelOffset: 0,
+            bevelSegments: 3,
+        };
+        const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+        geometry.rotateX(Math.PI / 2);
         geometry.center();
         return geometry;
     }

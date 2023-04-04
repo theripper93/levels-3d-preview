@@ -300,12 +300,24 @@
                 "notes": "Exposure for the HDRI. 1 is the default, 2 is the brightest, and 0 is the darkest."
             },
             "renderTable": {
-                "label": "Display Table",
-                "notes": "Render the table in the 3D view."
+                "label": "Padding Area",
+                "notes": "How to show the padding area when in the 3D view.",
+                "options": {
+                    "none": "None",
+                    "table": "Table (Custom)",
+                    "matpaper": "Infinite Mat (Paper)",
+                    "matwood": "Infinite Mat (Wood)",
+                    "matcloth": "Infinite Mat (Cloth)",
+                    "matblueprint": "Infinite Mat (Blueprint)",
+                    "matcustom": "Infinite Mat (Custom)"
+                }
             },
             "tableTex" : {
-                "label": "Table Texture",
-                "placeholder": "Table Texture"
+                "label": "Padding Texture",
+                "placeholder": "Padding Texture"
+            },
+            "tableColor": {
+                "label": "Padding Tint"
             },
             "renderBackground": {
                 "label": "Display Background",
@@ -421,6 +433,8 @@
                     "billboard2": "Billboard (Cross)",
                     "text": "Text (Use 3D Model field for text)",
                     "decal": "Decal",
+                    "polygon": "Polygon",
+                    "polygonbevel": "Polygon (Bevel)",
                     "mapGen": "Map Generator"
                 }
             },
@@ -717,6 +731,18 @@
             "tsight": {
                 "header": "Vision",
                 "label": "Block Sight"
+            },
+            "aura": {
+                "header": "Auras"
+            },
+            "advanced": {
+                "header": "Advanced"
+            },
+            "auraRange": {
+                "label": "Aura Range"
+            },
+            "auraColor": {
+                "label": "Aura Color"
             },
             "tcameraCollision": {
                 "label": "Camera Collider"
@@ -1053,6 +1079,10 @@
                     "wireframe": "Wireframe",
                     "solid": "Solid"
                 }
+            },
+            "paddingAppearance": {
+                "name": "Padding Appearance",
+                "hint": "The default appearance of the padding. This can be customized per scene as well."
             },
             "gridMode" : {
                 "name": "Grid Draw Mode",

@@ -5,7 +5,8 @@ import { Light3D } from "./light3d.js";
 import { TokenAnimationHandler } from "../handlers/tokenAnimationHandler.js";
 import {computeBoundsTree, disposeBoundsTree, acceleratedRaycast} from "../lib/three-mesh-bvh.js";
 import {heightHighlightShaderMaterial, radialGradientShaderMaterial} from "../shaders/shaderMaterials.js";
-import { ActiveEffectEffect } from "./effects/activeEffect.js";
+import {ActiveEffectEffect} from "./effects/activeEffect.js";
+import { RangeRingEffect } from "./effects/rangeRing.js";
 THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
 THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
 THREE.Mesh.prototype.raycast = acceleratedRaycast;
@@ -52,6 +53,8 @@ export class Token3D {
         this.disableBase = this.token.document.getFlag("levels-3d-preview", "disableBase");
         this.autoCenter = this.token.document.getFlag("levels-3d-preview", "autoCenter") ?? false;
         this.shaders = this.token.document.getFlag("levels-3d-preview", "shaders") ?? {};
+        this.auraRange = this.token.document.getFlag("levels-3d-preview", "auraRange") ?? 0;
+        this.auraColor = this.token.document.getFlag("levels-3d-preview", "auraColor") ?? "#ffffff";
         this.rotationX = Math.toRadians(this.token.document.getFlag("levels-3d-preview", "rotationX") ?? 0);
         this.rotationY = Math.toRadians(this.token.document.getFlag("levels-3d-preview", "rotationY") ?? 0);
         this.rotationZ = Math.toRadians(this.token.document.getFlag("levels-3d-preview", "rotationZ") ?? 0);
@@ -294,6 +297,7 @@ export class Token3D {
         this.drawBorder();
         this.drawName();
         this.drawBars();
+        this.drawAura();
         this.reDraw(true);
         this.setPosition();
         return this;
@@ -606,6 +610,11 @@ export class Token3D {
         this.setReticule();
         this.dispatchDrawHeightIndicator();
         this.refreshOutline();
+    }
+
+    drawAura() {
+        if (!this.auraRange || this.aura || !this.mesh) return;
+        this.aura = new RangeRingEffect(this, this.auraRange, this.auraColor);
     }
 
     refreshOutline() {

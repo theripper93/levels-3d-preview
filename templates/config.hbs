@@ -33,6 +33,22 @@
       </div>
 
       <div class="form-group">
+        <label>{{localize "levels3dpreview.settings.paddingAppearance.name"}}</label>
+        <select name="paddingAppearance" data-dtype="String">
+          {{#select templateSyle}}
+          <option value="none">{{localize "levels3dpreview.flags.renderTable.options.none"}}</option>
+          <option value="table">{{localize "levels3dpreview.flags.renderTable.options.table"}}</option>
+          <option value="matpaper">{{localize "levels3dpreview.flags.renderTable.options.matpaper"}}</option>
+          <option value="matwood">{{localize "levels3dpreview.flags.renderTable.options.matwood"}}</option>
+          <option value="matcloth">{{localize "levels3dpreview.flags.renderTable.options.matcloth"}}</option>
+          <option value="matblueprint">{{localize "levels3dpreview.flags.renderTable.options.matblueprint"}}</option>
+          <option value="matcustom">{{localize "levels3dpreview.flags.renderTable.options.matcustom"}}</option>
+          {{/select}}
+        </select>
+        <p class="notes">{{localize "levels3dpreview.settings.paddingAppearance.hint"}}</p>
+      </div>
+
+      <div class="form-group">
         <label>{{localize "levels3dpreview.settings.templateSyle.name"}}</label>
         <select name="templateSyle" data-dtype="String">
           {{#select templateSyle}}
