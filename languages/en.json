@@ -3,6 +3,7 @@
         "controls": {
             "preview3d": "Toggle 3D Mode",
             "miniCanvas": "Popout/Restore Canvas",
+            "tile3dPolygon": "Draw 3D Tile",
             "tips": {
                 "templatePlacement": "3D Template Placement: Mouse Wheel to Rotate. Control + Mouse Wheel to change elevation. Alt + Mouse Wheel to Tilt."
             },
