@@ -318,6 +318,9 @@ class Levels3DPreview {
             debouncedReload: debounce(this.reload.bind(this), 300),
             splitToChunks,
             extractPointsFromDrawing,
+            TEXTURES: {
+                BLANK: new THREE.TextureLoader().load("modules/levels-3d-preview/assets/blankTex.jpg"),
+            },
         };
 
         Hooks.callAll("3DCanvasConfig", this.CONFIG);
@@ -413,7 +416,7 @@ class Levels3DPreview {
         this.renderer.setClearColor(0x999999, 1);
         this.renderer.shadowMap.type = game.settings.get("levels-3d-preview", "softShadows") ? THREE.PCFSoftShadowMap : THREE.PCFShadowMap;
 
-        //this.renderer.debug.checkShaderErrors = false;
+        this.renderer.debug.checkShaderErrors = false;
 
         //composer
 

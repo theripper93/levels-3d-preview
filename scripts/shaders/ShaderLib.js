@@ -203,6 +203,7 @@ export class ShaderHandler {
         commonParams.localSize = entity3D.isInstanced ? new THREE.Vector3(commonParams.mWidth * 0.3, commonParams.mDepth * 0.3, commonParams.mHeight * 0.3) : new THREE.Vector3(0.2, 0.2, 0.2);
         Object3D.traverse((child) => {
             if (child.isMesh && !child.userData?.noShaders) {
+                if(!child.material.map) child.material.map = game.Levels3DPreview.UTILS.TEXTURES.BLANK
                 this.buildShader(child, shaderParams, commonParams, entity3D);
             }
         });
