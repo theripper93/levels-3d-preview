@@ -1022,6 +1022,12 @@ export const shaders = {
                 type: "float",
                 default: 0.1,
             },
+            offsetAngle: {
+                type: "float",
+                default: 0,
+                min: 0,
+                max: 360,
+            },
             centerx: {
                 type: "float",
                 default: 0.5,
@@ -1047,7 +1053,7 @@ export const shaders = {
                 float textureRotate_r = distance(vUv, textureRotate_center);
                 vec2 textureRotate_vUv = (vUv - textureRotate_center) / textureRotate_center_uv;
                 float textureRotate_angle = atan(textureRotate_vUv.y, textureRotate_vUv.x);
-                textureRotate_angle = textureRotate_angle + time * 0.1 * textureRotate_speed;
+                textureRotate_angle = textureRotate_angle + time * 0.1 * textureRotate_speed + textureRotate_offsetAngle;
                 vec2 textureRotate_newUv = vec2(cos(textureRotate_angle), sin(textureRotate_angle)) * textureRotate_r;
                 vUv = (textureRotate_newUv) + textureRotate_center;
                 #endif

@@ -25,14 +25,10 @@ export class Exporter{
             return false;
         });
         objects = objects.filter((o) => !o?.userData?.entity3D?.gtflPath?.includes("[HeroForge]"))
-        if(exportData.all){
-            objects.traverse(child => { child.userData = {} });
-        }else{
-            objects.forEach (o => {
-                o.traverse(child => { child.userData = {} });
-                o.userData = {};
-            })
-        }
+        objects.forEach (o => {
+            o.traverse(child => { child.userData = {} });
+            o.userData = {};
+        })
         this.exportToGltf({
             objects
         });

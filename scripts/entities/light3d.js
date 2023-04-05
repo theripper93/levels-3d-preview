@@ -203,6 +203,12 @@ export class Light3D {
             this.lightHelper.matrix = this.light3d.matrix;
             if (this.angle === 360) this.lightHelper.geometry = new THREE.SphereGeometry(radius, 8, 8);
             else this.lightHelper.cone.lookAt(this.light3d.target.position);
+            this.lightHelper.userData.ignoreHover = true;
+            this.lightHelper.userData.interactive = false;
+            this.lightHelper.traverse((o) => { 
+                o.userData.ignoreHover = true;
+                o.userData.interactive = false;
+            });
         }
         if (this.light.document.getFlag("levels-3d-preview", "enableParticle")) this.initParticle();
     }

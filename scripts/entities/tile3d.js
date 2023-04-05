@@ -1980,6 +1980,11 @@ export function extractPointsFromDrawing() {
     canvas.tiles.placeables.forEach((t) => (t.visible = false));
     canvas.tokens.placeables.forEach((t) => (t.visible = false));
     ui.notifications.info("Please create a polygon drawing to extract points from");
+    Hooks.once("renderSceneControls", () => { 
+        setTimeout(() => {
+            $(`li[data-tool="polygon"]`)[0].click();
+        }, 500);
+    })
     Hooks.once("createDrawing", async (drawing) => {
         if(drawing.shape.type != "p") return ui.notifications.error("Please create a polygon drawing to extract points from");
         const points = drawing.shape.points;
@@ -1995,14 +2000,14 @@ export function extractPointsFromDrawing() {
             height: maxY,
             flags: {
                 "levels-3d-preview": {
-                    dynaMesh: "polygon",
+                    dynaMesh: "polygonbevel",
                     model3d: points.join(","),
                     depth: 10,
+                    autoGround: true,
                 },
             },
         };
         const tile = (await canvas.scene.createEmbeddedDocuments("Tile", [tileData]))[0];
-        await drawing.delete();
         canvas.tiles.placeables.forEach((t) => (t.visible = true));
         canvas.tokens.placeables.forEach((t) => (t.visible = true));
         canvas.tiles.activate();

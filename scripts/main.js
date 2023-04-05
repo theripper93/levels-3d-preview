@@ -558,7 +558,7 @@ class Levels3DPreview {
         }
         this.transformControls?.dispose();
         this.transformControls = new TransformControls(this.camera, this.renderer.domElement);
-        this.transformControls.size = 1;
+        this.transformControls.size = 1.4;
         this.controlledGroup = new THREE.Group();
         this.controlledGroup.userData = {
             entity3D: {

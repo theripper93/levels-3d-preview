@@ -153,6 +153,8 @@ export class InteractionManager {
         if (!mesh.geometry) mesh = mesh.children[0];
         const side = mesh.material.side;
         mesh.material.side = THREE.DoubleSide;
+        const prevVisiblity = mesh.visible;
+        mesh.visible = true;
         const origin = new THREE.Vector3(0, 0, 0);
         const direction = point.clone().sub(origin).normalize();
         const rcFar = this.raycaster.far;
@@ -164,6 +166,7 @@ export class InteractionManager {
         this.sightRaycaster.far = rcFar;
         this.sightRaycaster.firstHitOnly = rcFH;
         mesh.material.side = side;
+        mesh.visible = prevVisiblity;
         if (collisions.length % 2 === 0) return false;
         return true;
     }
@@ -526,6 +529,7 @@ export class InteractionManager {
         this.mousedown = false;
         if (event.which !== 1) return;
         if (this.draggable) {
+            this.forceDraggablePosition(event);
             const entity3D = this.draggable?.userData?.entity3D;
             if (entity3D.token) {
                 this.currentDragTarget.y -= RULER_TOKEN_OFFSET;
@@ -1028,6 +1032,12 @@ export class InteractionManager {
             if (entity3D.template) entity3D.onMove();
             this.ruler.update();
         }
+    }
+
+    forceDraggablePosition(event) {
+        const target = this.draggable.userData.isHitbox ? this.draggable.parent : this.draggable;
+        target.position.copy(this.currentDragTarget);
+        this.ruler.update();
     }
 
     cancelDrag(force = false) {

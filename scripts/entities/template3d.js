@@ -1,7 +1,10 @@
 import * as THREE from "../lib/three.module.js";
 import { Ruler3D } from "../systems/ruler3d.js";
 import {factor} from "../main.js";
-import { isLockedOnOrigin } from "../shaders/templateEffects.js";
+import { mergeBufferGeometries } from "../lib/BufferGeometryUtils.js";
+import {isLockedOnOrigin} from "../shaders/templateEffects.js";
+
+const basicMat = new THREE.MeshBasicMaterial();
 
 export class Template3D {
     constructor(template, A, B) {
@@ -61,7 +64,7 @@ export class Template3D {
 
     contains(point, convertSpace = true) {
         if (convertSpace) point = Ruler3D.posCanvasTo3d(point);
-        return this._parent.interactionManager.inMesh(point, this.templateMesh);
+        return this._parent.interactionManager.inMesh(point, this.collisionMesh ?? this.templateMesh);
     }
 
     setPosition() {
@@ -82,6 +85,10 @@ export class Template3D {
         this.angle = 0;
         this.width = 1;
         const mesh = this._getMesh();
+        mesh.traverse((o) => { 
+            o.userData.interactive = false;
+            o.userData.ignoreHover = true;
+        });
         mesh.rotateZ(Math.toRadians(this.tilt))
         this.templateMesh = mesh;
         this.templateMesh.userData.interactive = false;
@@ -94,33 +101,24 @@ export class Template3D {
         return !(this.shape === "sphere" || this.shape === "cone");
     }
 
-    _createHandle() {
-        const texture = this.isLight ? this._parent.textures.lightOn : this._parent.textures.template;
-        const size = (canvas.scene.dimensions.size * 0.7) / factor;
-        const geometry = new THREE.BoxGeometry(size, size, size);
-        const material = new THREE.MeshBasicMaterial({ map: texture });
-        const mesh = new THREE.Mesh(geometry, material);
-        this.mesh.userData.hitbox = mesh;
-        this.mesh.userData.interactive = true;
-        this.mesh.userData.entity3D = this;
-        mesh.userData.entity3D = this;
-        mesh.userData.isHitbox = true;
-        this.dragHandle = mesh;
-        if (this.placeable?.document) mesh.visible = this.placeable.owner;
-        this.mesh.add(mesh);
-    }
-
     createHandle() {
         const texture = this.isLight ? this._parent.textures.lightOn : this._parent.textures.template;
         const size = (canvas.scene.dimensions.size * 0.5) / factor / 2;
-        const geometry = new THREE.SphereGeometry(size, 16, 16);
-        const material = this.material; //new THREE.MeshBasicMaterial({color: new THREE.Color("white"), transparent: true, depthWrite:false, opacity: 0.5})
+        const geometry = new THREE.OctahedronGeometry(size,0,)// 16, 16);
+        const material = new THREE.MeshStandardMaterial({ color: this.material.color, emissive: this.material.color });//this.material; //new THREE.MeshBasicMaterial({color: new THREE.Color("white"), transparent: true, depthWrite:false, opacity: 0.5})
         const lightSphere = new THREE.Mesh(geometry, material);
+        const outline = new THREE.EdgesGeometry(geometry);
+        const outlineMaterial = new THREE.LineBasicMaterial({color: 0x000000, linewidth: 2});
+        const outlineMesh = new THREE.LineSegments(outline, outlineMaterial);
+        outlineMesh.userData.ignoreHover = true;
+        outlineMesh.userData.interactive = false;
+        outlineMesh.userData.noIntersect = true;
         const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: texture, transparent: true, depthWrite: false, opacity: 0.8 }));
         sprite.scale.set(size * 1.5, size * 1.5, size * 1.5);
         const mesh = new THREE.Group();
         mesh.add(lightSphere);
-        mesh.add(sprite);
+        mesh.add(outlineMesh);
+        if (this.isLight) mesh.add(sprite);
         this.mesh.userData.hitbox = mesh;
         this.mesh.userData.interactive = true;
         this.mesh.userData.entity3D = this;
@@ -129,6 +127,9 @@ export class Template3D {
         mesh.userData.sprite = sprite;
         mesh.userData.sphere = lightSphere;
         this.dragHandle = mesh;
+        this.dragHandle.traverse((o) => { 
+            o.userData.noShaders = true;
+        });
         if (this.placeable?.document) mesh.visible = this.placeable.owner;
         this.mesh.add(mesh);
     }
@@ -251,12 +252,49 @@ export class Template3D {
         }
     }
 
+    _makeMesh(geometry) {
+        const isWireframe = this.templateStyle === "wireframe";
+        const isFog = this.isFog;
+        if (!isWireframe || isFog) return new THREE.Mesh(geometry, this.material);
+        const color = this.material.color;
+        const edges = new THREE.EdgesGeometry(geometry, 1);
+        const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({color: color, linewidth: 10}));
+        return line;
+    }
+
+    _makeCollisionMesh(geometry, originalMesh) { 
+
+        const mesh = new THREE.Mesh(geometry, basicMat);
+        mesh.geometry.computeBoundsTree();
+        if (originalMesh) {
+            mesh.position.copy(originalMesh.position);
+            mesh.rotation.copy(originalMesh.rotation);
+            mesh.scale.copy(originalMesh.scale);
+        }
+        mesh.visible = false;
+        this.collisionMesh = mesh;
+        return mesh
+    }
+
     _getSphereGeometry() {
+        const isWireframe = this.templateStyle === "wireframe";
         const radius = this._origin && this._destination ? this._origin.distanceTo(this._destination) : Ruler3D.unitsToPixels(this.template.document?.distance);
-        const geometry = new THREE.SphereGeometry(radius, 32, 32);
-        const mesh = new THREE.Mesh(geometry, this.material);
-        this.fogMesh = mesh;
+        const sphereGeometry = new THREE.SphereGeometry(radius, 16, 16);
+        let torusGeo;
+        if (isWireframe) {            
+            const torus1 = new THREE.TorusGeometry(radius, 0.001, 6, 32);
+            const torus2 = torus1.clone();
+            const torus3 = torus1.clone();
+            torus2.rotateX(Math.PI / 2);
+            torus3.rotateY(Math.PI / 2);
+            torusGeo = mergeBufferGeometries([torus1, torus2, torus3]);
+        }
+        const geometry = isWireframe ? torusGeo : sphereGeometry;
+
+        const mesh = this._makeMesh(geometry);
         const group = new THREE.Group();
+        this._makeCollisionMesh(sphereGeometry);
+        group.add(this.collisionMesh);
         group.add(mesh);
         return group;
     }
@@ -269,7 +307,7 @@ export class Template3D {
         this.special = Ruler3D.pixelsToUnits(height);
         const depth = vertexB.z - vertexA.z;
         const geometry = new THREE.BoxGeometry(width, height, depth, 8, 8, 8);
-        const mesh = new THREE.Mesh(geometry, this.material);
+        const mesh = this._makeMesh(geometry);
 
         if (this.isFog) {
             const cameraNear = game.Levels3DPreview.camera.near * 2;
@@ -282,6 +320,8 @@ export class Template3D {
         mesh.position.set(width / 2, height / 2, depth / 2);
         const group = new THREE.Group();
         group.add(mesh);
+        this._makeCollisionMesh(geometry, mesh);
+        group.add(this.collisionMesh);
         return group;
     }
 
@@ -293,12 +333,14 @@ export class Template3D {
         this.angle = CONFIG.MeasuredTemplate.defaults.angle;
         const radius = (height / Math.cos(angle)) * Math.sin(angle); //height*Math.acos(angle)*2
         const group = new THREE.Group();
-        const geometry = new THREE.ConeGeometry(radius, height, this.template?.document?.texture ? 256 : 64);
-        const mesh = new THREE.Mesh(geometry, this.material);
+        const geometry = new THREE.ConeGeometry(radius, height, this.template?.document?.texture ? 256 : 24);
+        const mesh = this._makeMesh(geometry);
         //mesh.position.set(0, -height/2, 0)
         mesh.rotateZ(Math.PI / 2);
         mesh.translateY(-height / 2);
         group.add(mesh);
+        this._makeCollisionMesh(geometry, mesh);
+        group.add(this.collisionMesh);
         const rotationAngle = Math.atan2(vertexB.z - vertexA.z, vertexB.x - vertexA.x);
         group.rotateY(-rotationAngle);
         return group;
@@ -311,10 +353,12 @@ export class Template3D {
         this.special = this.template3dData.special;
         const radius = vertexB.distanceTo(vertexA);
         const geometry = new THREE.CylinderGeometry(radius, radius, height, 32);
-        const mesh = new THREE.Mesh(geometry, this.material);
+        const mesh = this._makeMesh(geometry);
         mesh.position.set(0, height / 2, 0);
         const group = new THREE.Group();
         group.add(mesh);
+        this._makeCollisionMesh(geometry, mesh);
+        group.add(this.collisionMesh);
         return group;
     }
 
@@ -327,10 +371,12 @@ export class Template3D {
         const depth = Ruler3D.unitsToPixels(5);
         this.width = Ruler3D.pixelsToUnits(depth);
         const geometry = new THREE.BoxGeometry(width, height, depth, 5, 5, 5);
-        const mesh = new THREE.Mesh(geometry, this.material);
+        const mesh = this._makeMesh(geometry);
         mesh.position.set(width / 2, height / 2, 0);
         const group = new THREE.Group();
         group.add(mesh);
+        this._makeCollisionMesh(geometry, mesh);
+        group.add(this.collisionMesh);
         const rotationAngle = Math.atan2(vertexB.z - vertexA.z, vertexB.x - vertexA.x);
         group.rotateY(-rotationAngle);
         return group;
@@ -385,8 +431,12 @@ export class Template3D {
         return this.template.document?.t ?? this.template.t;
     }
 
+    get templateStyle() {
+        return this.template?.document?.texture || this.hasShaders ? "solid" : game.settings.get("levels-3d-preview", "templateSyle");
+    }
+
     _getMaterial() {
-        const templateStyle = this.template?.document?.texture || this.hasShaders ? "solid" : game.settings.get("levels-3d-preview", "templateSyle");
+        const templateStyle = this.templateStyle;
         if (this.isFog) {
             return new THREE.MeshBasicMaterial({
                 color: 0x000000,

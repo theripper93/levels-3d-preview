@@ -142,6 +142,71 @@ export class DynaMesh {
         return geometry;
     }
 
+    _constructpolygonsolidify() {
+        if (this.text.includes("#")){
+            const split = this.text.split("#");
+            this.solidifyThickness = parseFloat(split[0]) / factor;
+            this.text = split[1];
+        }
+        const points = solidifyPolygon(this.text.split(",").map((point) => parseInt(point) / factor), this.solidifyThickness);
+        const shape = new THREE.Shape();
+        shape.moveTo(points[0], points[1]);
+        for (let i = 2; i < points.length; i += 2) {
+            shape.lineTo(points[i], points[i + 1]);
+        }
+        shape.lineTo(points[0], points[1]);
+        const geometry = new THREE.ExtrudeGeometry(shape, { depth: this.depth, bevelEnabled: false });
+        geometry.rotateX(Math.PI / 2);
+        geometry.center();
+        return geometry;
+    }
+
+    _constructpolygonbevelsolidify() {
+        if (this.text.includes("#")) {
+            const split = this.text.split("#") / factor;
+            this.solidifyThickness = parseFloat(split[0]);
+            this.text = split[1];
+        }
+        const points = solidifyPolygon(this.text.split(",").map((point) => parseInt(point) / factor), this.solidifyThickness);
+        const shape = new THREE.Shape();
+        shape.moveTo(points[0], points[1]);
+        for (let i = 2; i < points.length; i += 2) {
+            shape.lineTo(points[i], points[i + 1]);
+        }
+        shape.lineTo(points[0], points[1]);
+        const extrudeSettings = {
+            steps: 2,
+            depth: this.depth,
+            bevelEnabled: true,
+            bevelThickness: 0.011,
+            bevelSize: 0.01,
+            bevelOffset: 0,
+            bevelSegments: 3,
+        };
+        const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+        geometry.rotateX(Math.PI / 2);
+        geometry.center();
+        return geometry;
+    }
+
+    _constructpolygonlathe() { 
+        let phiLength = Math.PI * 2;
+        if (this.text.includes("#")) {
+            const split = this.text.split("#");
+            phiLength = parseFloat(split[0]) * Math.PI / 180;
+            this.text = split[1];
+        }
+        const points = this.text.split(",").map((point) => parseInt(point) / factor);
+        const vector2Points = [];
+        for (let i = 0; i < points.length; i += 2) {
+            vector2Points.push(new THREE.Vector2(points[i], points[i + 1]));
+        }
+        const geometry = new THREE.LatheGeometry(vector2Points, this.resolution * 4, 0, phiLength);
+        geometry.rotateX(Math.PI);
+        geometry.center();
+        return geometry;
+    }
+
     get _avgWidthHeight() {
         return ((this.width + this.height) / 2) * this.resolution;
     }
@@ -170,4 +235,42 @@ async function loadTextFont() {
     const loader = new THREE.FontLoader();
     font = await loader.loadAsync("modules/levels-3d-preview/assets/helvetiker.json");
     return font;
+}
+
+function solidifyPolygon(points, thickness) {
+    const solidifyThickness = thickness ?? 0.05;
+    
+    points = points
+        .map((point, index) => {
+            if (index % 2 === 0) {
+                return { x: point, y: points[index + 1] };
+            }
+        })
+        .filter((point) => point);
+    
+    points.push(points[0]);
+    
+    const solidifiedPoints = [];
+    for (let i = 0; i < points.length; i += 1) { 
+        const current = points[i];
+        const next = points[(i + 1) % points.length];
+        const prev = points[(i - 1 + points.length) % points.length];
+        
+        const currentNextNormal = new THREE.Vector2(next.x - current.x, next.y - current.y).normalize();
+        const currentPrevNormal = new THREE.Vector2(current.x - prev.x, current.y - prev.y).normalize();
+        const currentNormal = new THREE.Vector2(currentNextNormal.x + currentPrevNormal.x, currentNextNormal.y + currentPrevNormal.y).normalize();
+        const currentNormalPerp = new THREE.Vector2(-currentNormal.y, currentNormal.x);
+
+        solidifiedPoints.push(current.x + currentNormalPerp.x * solidifyThickness, current.y + currentNormalPerp.y * solidifyThickness);
+    }
+    points.reverse();
+
+    for (let i = 0; i < points.length; i += 1) {
+        const current = points[i];
+        solidifiedPoints.push(current.x, current.y);
+    }
+
+    return solidifiedPoints;
+
+
 }
