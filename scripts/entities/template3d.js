@@ -64,6 +64,7 @@ export class Template3D {
 
     contains(point, convertSpace = true) {
         if (convertSpace) point = Ruler3D.posCanvasTo3d(point);
+        debugger
         return this._parent.interactionManager.inMesh(point, this.collisionMesh ?? this.templateMesh);
     }
 
@@ -271,7 +272,7 @@ export class Template3D {
             mesh.rotation.copy(originalMesh.rotation);
             mesh.scale.copy(originalMesh.scale);
         }
-        mesh.visible = false;
+        mesh.visible = true;
         this.collisionMesh = mesh;
         return mesh
     }

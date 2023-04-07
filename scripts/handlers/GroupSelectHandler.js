@@ -1,7 +1,6 @@
 import * as THREE from "../lib/three.module.js";
 import { factor } from "../main.js";
 import { SelectionBox } from "../lib/SelectionBox.js";
-import { SelectionHelper } from "../lib/SelectionHelper.js";
 
 export class GroupSelectHandler {
     constructor(parent) {
@@ -34,7 +33,6 @@ export class GroupSelectHandler {
     init() {
         $("#levels-3d-preview-select-box").remove();
         this._selectionBox = new SelectionBox(this.camera, this.scene);
-        //this._selectionHelper = new SelectionHelper(this.renderer, 'selection-helper');
     }
 
     startSelect(event) {
@@ -78,9 +76,16 @@ export class GroupSelectHandler {
             this._selected.push(object);
         }
 
+        const elLeft = Math.min(this.elementPosition?.left ?? 0, event.clientX);
+        const elTop = Math.min(this.elementPosition?.top ?? 0, event.clientY);
+        const elWidth = Math.abs((this.elementPosition?.left ?? 0) - event.clientX);
+        const elHeight = Math.abs((this.elementPosition?.top ?? 0) - event.clientY);
+
         this.element.css({
-            height: event.clientY - this.elementPosition?.top ?? 0,
-            width: event.clientX - this.elementPosition?.left ?? 0,
+            height: elHeight,
+            width: elWidth,
+            top: elTop,
+            left: elLeft,
         });
         this._selectedIds = {};
         this._selected.forEach((entity) => {
