@@ -62,7 +62,7 @@ export class Tile3D {
         if (this.tile.controlled) this._parent.interactionManager.setControlledGroup(this);
         setTimeout(() => {
             this.setUpDoors();
-            this.setupDoor();
+            this.setupDoor(true);
         }, 100);
         game.Levels3DPreview.outline?.toggleControlled(this.mesh, this.tile.controlled);
         return this;
@@ -70,9 +70,11 @@ export class Tile3D {
 
     sendToWorker() {
         if ((!this.sight && !this.hasTags) || this.dynaMesh == "decal" || !this._parent?.workers?.enabled) return;
+        this.sightMesh.name = "sightMesh"
         this.mesh.traverse((o) => {
-            o.updateMatrix();
+            o.updateMatrixWorld();
         });
+        this.mesh.updateMatrixWorld();
         const mesh = this.mesh;
         const json = mesh.toJSONClean();
         const data = {
@@ -191,6 +193,8 @@ export class Tile3D {
         this.textureRepeat = this.tile.document.getFlag("levels-3d-preview", "textureRepeat") ?? 1;
         this.repeatTexture = this.textureRepeat > 1;
         this.wasFreeMode = this.tile.document.getFlag("levels-3d-preview", "wasFreeMode") ?? false;
+        this.doorStyle = parseInt(this.tile.document.getFlag("levels-3d-preview", "doorStyle") ?? 0);
+        this.doorAnimateAngle = Math.toRadians(parseInt(this.tile.document.getFlag("levels-3d-preview", "doorAnimateAngle") ?? 90));
         this.doorType = this.tile.document.getFlag("levels-3d-preview", "doorType") ?? 0;
         this.doorState = this.tile.document.getFlag("levels-3d-preview", "doorState") ?? 0;
         this.mergedMatrix = this.tile.document.getFlag("levels-3d-preview", "mergedMatrix") ?? null;
@@ -206,11 +210,12 @@ export class Tile3D {
         }
     }
 
-    setUpDoors() {
+    setUpDoors(init = false) {
         const doors = {};
         this.mesh.traverse((child) => {
             if (child.isMesh && child?.userData?.isDoor && child?.userData?.doorId && !child?.userData?.noShaders) {
                 doors[child?.userData?.doorId] = child;
+                const doorAngle = child.userData.doorAnimateAngle ?? this.doorAnimateAngle;
                 child.userData.doorMaterialData = {
                     transparent: true,
                     opacity: 0.4,
@@ -218,6 +223,7 @@ export class Tile3D {
                     depthWrite: false,
                     format: THREE.RGBAFormat,
                     needsUpdate: true,
+                    angle: child.rotation.y + doorAngle,
                 };
                 child.userData.originalMaterial = {
                     transparent: child.material.transparent,
@@ -226,6 +232,7 @@ export class Tile3D {
                     depthWrite: child.material.depthWrite,
                     format: child.material.format,
                     needsUpdate: true,
+                    angle: child.rotation.y,
                 };
             }
         });
@@ -237,11 +244,14 @@ export class Tile3D {
             });
         }
         this._doors = doors;
-        this.setDoorsMaterials();
+        this.setDoorsMaterials(true);
     }
 
     setDoorsMaterials(sendToWorker = false) {
         const modelDoorsStates = this.tile.document.getFlag("levels-3d-preview", "modelDoors") || {};
+        let res;
+        const fillerPromise = new Promise((r) => { res = r; });
+        const promises = [fillerPromise];
         for (let doorId in this._doors) {
             let isOpen = this._doors[doorId].userData?.isOpen == 1;
             isOpen = modelDoorsStates[doorId]?.ds !== undefined ? modelDoorsStates[doorId].ds == 1 : isOpen;
@@ -249,64 +259,136 @@ export class Tile3D {
             const originalMaterial = door.userData.originalMaterial;
             const doorMaterialData = door.userData.doorMaterialData;
             let matToApply = isOpen ? doorMaterialData : originalMaterial;
-            for (let [k, v] of Object.entries(matToApply)) {
-                door.material[k] = v;
-                door.userData.sight = isOpen ? false : this.sight;
-                door.userData.collision = isOpen ? false : this.collision;
-                const sightMesh = door.userData.sightMesh;
-                if (sightMesh) {
-                    sightMesh.userData.sight = door.userData.sight;
-                    sightMesh.userData.collision = door.userData.collision;
-                }
+            const doorStyle = door.userData.doorStyle ?? this.doorStyle;
+            switch (doorStyle) {
+                case 0:
+                    for (let [k, v] of Object.entries(matToApply)) {
+                        door.material[k] = v;
+                    }
+                    door.userData.isOpen = isOpen;
+                    door.userData.sight = isOpen ? false : this.sight;
+                    door.userData.collision = isOpen ? false : this.collision;
+                    break;
+                case 1:
+                    const animation = [
+                        {
+                            parent: door.rotation,
+                            attribute: "y",
+                            to: matToApply.angle,
+                        },
+                    ];
+                    const p = CanvasAnimation.animate(animation, { duration: 400, easing: "easeOutCircle" });
+                    promises.push(p);
             }
+            const sightMesh = door.userData.sightMesh;
+            if (sightMesh) {
+                sightMesh.userData.sight = door.userData.sight;
+                sightMesh.userData.collision = door.userData.collision;
+            }
+
         }
-        if (sendToWorker) this.sendToWorker();
-        this._parent.interactionManager?.generateSightCollisions();
-        this._parent.interactionManager?.buildCollisionGeos();
-        canvas.perception.update(
-            {
-                forceUpdateFog: true,
-                initializeLighting: true,
-                initializeSounds: true,
-                initializeVision: true,
-                refreshLighting: true,
-                refreshSounds: true,
-                refreshTiles: true,
-                refreshVision: true,
-            },
-            true,
-        );
+        Promise.all(promises).then(() => { 
+            if (sendToWorker) this.sendToWorker();
+            this._parent.interactionManager?.generateSightCollisions();
+            this._parent.interactionManager?.buildCollisionGeos();
+            canvas.perception.update(
+                {
+                    forceUpdateFog: true,
+                    initializeLighting: true,
+                    initializeSounds: true,
+                    initializeVision: true,
+                    refreshLighting: true,
+                    refreshSounds: true,
+                    refreshTiles: true,
+                    refreshVision: true,
+                },
+                true,
+            );
+        });
+        res();
     }
 
-    setupDoor() {
+    setupDoor(firstRender = false) {
+        this.doorState = this.tile.document.getFlag("levels-3d-preview", "doorState") ?? 0;
+        this.isDoor = this.doorType != 0;
+        this.isSecret = this.doorType == 2;
+        this.isOpen = this.doorState == 1;
+        this.isLocked = this.doorState == 2;
         if (!this.isDoor) return;
-
-        this._parent.interactionManager?.generateSightCollisions();
-        canvas.perception.update(
-            {
-                forceUpdateFog: true,
-                initializeLighting: true,
-                initializeSounds: true,
-                initializeVision: true,
-                refreshLighting: true,
-                refreshSounds: true,
-                refreshTiles: true,
-                refreshVision: true,
-            },
-            true,
-        );
-        if (this.isOpen) {
-            this.mesh.traverse((child) => {
+        let promise;
+        if (firstRender) {
+            this.originalDoorMaterials = {};
+            this.originalAngle = this.mesh.children[0].rotation.y;
+            this.mesh.traverse((child) => { 
                 if (child.isMesh) {
-                    child.material.transparent = true;
-                    child.material.opacity = 0.4;
-                    child.material.alphaTest = 0;
-                    child.material.depthWrite = false;
-                    child.material.format = THREE.RGBAFormat;
-                    child.material.needsUpdate = true;
+                    this.originalDoorMaterials[child.uuid] = {
+                        transparent: child.material.transparent,
+                        opacity: child.material.opacity,
+                        alphaTest: child.material.alphaTest,
+                        depthWrite: child.material.depthWrite,
+                        format: child.material.format,
+                        needsUpdate: true,
+                    }
                 }
             });
+        } 
+        switch (this.doorStyle) {
+            case 0:
+                if (this.isOpen) {
+                    this.mesh.traverse((child) => {
+                        if (child.isMesh) {
+                            child.material.transparent = true;
+                            child.material.opacity = 0.4;
+                            child.material.alphaTest = 0;
+                            child.material.depthWrite = false;
+                            child.material.format = THREE.RGBAFormat;
+                            child.material.needsUpdate = true;
+                        }
+                    });
+                } else {
+                    this.mesh.traverse((child) => {
+                        if (child.isMesh) {
+                            const mat = this.originalDoorMaterials[child.uuid];
+                            for (let [k, v] of Object.entries(mat)) {
+                                child.material[k] = v;
+                            }
+                        }
+                    });
+                }
+                break;
+            case 1:
+                const animation = [
+                    {
+                        parent: this.mesh.children[0].rotation,
+                        attribute: "y",
+                        to: this.isOpen ? this.originalAngle + this.doorAnimateAngle : this.originalAngle,
+                    },
+                ];
+                if (!firstRender) promise = CanvasAnimation.animate(animation, {duration: 400, easing: "easeOutCircle"});
+                else this.mesh.children[0].rotation.y = this.isOpen ? this.originalAngle + this.doorAnimateAngle : this.originalAngle;
+                break;
         }
+        const finalizeDoor = () => {            
+                this._parent.interactionManager?.generateSightCollisions();
+                canvas.perception.update(
+                    {
+                        forceUpdateFog: true,
+                        initializeLighting: true,
+                        initializeSounds: true,
+                        initializeVision: true,
+                        refreshLighting: true,
+                        refreshSounds: true,
+                        refreshTiles: true,
+                        refreshVision: true,
+                    },
+                    true,
+                );
+                if(!firstRender) this.sendToWorker();
+        }
+        
+        if (promise) promise.then(() => {finalizeDoor();});
+        else finalizeDoor();
+
     }
 
     async init() {
@@ -1635,27 +1717,39 @@ export class Tile3D {
                 game.Levels3DPreview.tiles[tile.id]?.setDoorsMaterials(true);
                 return;
             }
-            if (game.Levels3DPreview?._active && tile.object && !isAnimOnly(updates)) {
-                const hasGravity = (tile.getFlag("levels-3d-preview", "enableGravity") ?? "none") !== "none";
-                const hadGravity = game.Levels3DPreview.tiles[tile.id]?.isGravity;
-                if (hasGravity && hadGravity) return recomputeGravityDebounced();
-                game.Levels3DPreview.tiles[tile.id]?.destroy(true);
-                const newTile = new Tile3D(tile.object, game.Levels3DPreview);
-                game.Levels3DPreview.tiles[tile.id] = newTile;
-                newTile.load().then(() => {
-                    if ("x" in updates || "y" in updates || hasFlag(updates)) {
-                        recomputeGravityDebounced();
-                    }
-                });
-
-                function hasFlag(updates) {
-                    if (updates?.flags?.levels?.rangeBottom !== undefined) return true;
-                    if (updates?.flags?.levels?.rangeTop !== undefined) return true;
-                }
+            if (game.Levels3DPreview?._active && tile.object && isSingleDoorUpdate(updates)) {
+                game.Levels3DPreview.tiles[tile.id]?.setupDoor();
+                return;
             }
+                if (game.Levels3DPreview?._active && tile.object && !isAnimOnly(updates)) {
+                    const hasGravity = (tile.getFlag("levels-3d-preview", "enableGravity") ?? "none") !== "none";
+                    const hadGravity = game.Levels3DPreview.tiles[tile.id]?.isGravity;
+                    if (hasGravity && hadGravity) return recomputeGravityDebounced();
+                    game.Levels3DPreview.tiles[tile.id]?.destroy(true);
+                    const newTile = new Tile3D(tile.object, game.Levels3DPreview);
+                    game.Levels3DPreview.tiles[tile.id] = newTile;
+                    newTile.load().then(() => {
+                        if ("x" in updates || "y" in updates || hasFlag(updates)) {
+                            recomputeGravityDebounced();
+                        }
+                    });
+
+                    function hasFlag(updates) {
+                        if (updates?.flags?.levels?.rangeBottom !== undefined) return true;
+                        if (updates?.flags?.levels?.rangeTop !== undefined) return true;
+                    }
+                }
 
             function isDoorUpdate(updates) {
                 if (updates.flags && updates.flags["levels-3d-preview"] && updates.flags["levels-3d-preview"].modelDoors) return true;
+            }
+
+            function isSingleDoorUpdate(updates) { 
+                if (!updates.flags) return false;
+                if (!updates.flags["levels-3d-preview"]) return false;
+                if (Object.values(updates.flags["levels-3d-preview"]).length !== 1) return false;
+                if (updates.flags && updates.flags["levels-3d-preview"] && updates.flags["levels-3d-preview"].doorState) return true;
+                return false;
             }
 
             function isAnimOnly(updates) {

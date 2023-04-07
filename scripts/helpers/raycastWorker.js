@@ -45,12 +45,13 @@ self.onconnect = function (e) {
                 const mesh = new THREE.ObjectLoader().parse(message.meshJSON);
                 const boxes = [];
                 mesh.traverse((child) => {
-                    if (child.isMesh) { 
+                    if (child.name == "sightMesh") boxes.push(child);
+                    if (child.isMesh) {
                         if (child.visible == false) boxes.push(child);
-                        if (!message.hasTags) { 
+                        if (!message.hasTags) {
                             child.userData.sight = message.sight;
                         }
-                        if(child.userData.isDoor) child.userData.sight = !child.userData.isOpen
+                        if (child.userData.isDoor) child.userData.sight = !child.userData.isOpen;
                         child.material = basicMaterial;
                     }
                 });
@@ -175,7 +176,6 @@ function createMergedGeometry() {
         const geometries = [];
         scene.traverse((child) => {
             if (child.isMesh && child?.userData?.sight) {
-                _port.postMessage({ type: "mergedGeometry", data: { g:child.geometry.toJSON() } });
                 const worldSpaceGeometry = applyMatrixWorldToGeometry(child);
                 geometries.push(...worldSpaceGeometry);
             }
@@ -189,7 +189,8 @@ function createMergedGeometry() {
         mergedMesh.geometry = mergedGeometry;
         mergedMesh.updateMatrixWorld();
         mergedMesh.updateMatrix();
-        _port.postMessage({ type: "refresh" });
+        _port.postMessage({type: "refresh"});
+        //_port.postMessage({ type: "mergedGeometry", data: { g: (new THREE.Mesh(mergedGeometry)).toJSON() } });
         return mergedGeometry;
     } catch (error) {
         _port.postMessage({ type: "error", error: error });
@@ -201,7 +202,7 @@ const createMergedGeometryDebounced = debounce(createMergedGeometry, 100);
 function applyMatrixWorldToGeometry(mesh) {
     if(mesh.isInstancedMesh) return applyMatrixWorldToGeometryInstanced(mesh)
     const geometry = toTrianglesDrawMode(mesh.geometry.clone());
-    if (geometry.type = "ExtrudeGeometry") {
+    if (geometry.type == "ExtrudeGeometry") {
         geometry.rotateX(Math.PI / 2);
         geometry.center();
     }

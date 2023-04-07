@@ -975,6 +975,23 @@ Hooks.on("renderTileConfig", (app,html)=>{
                 2: game.i18n.localize("levels3dpreview.flags.doorState.options.locked"),
             },
         },
+        doorStyle: {
+            type: "select",
+            label: game.i18n.localize("WALLS.DoorStyle"),
+            default: 0,
+            options: {
+                0: game.i18n.localize("levels3dpreview.flags.doorStyle.options.transparent"),
+                1: game.i18n.localize("levels3dpreview.flags.doorStyle.options.animate"),
+            },
+        },
+        doorAnimateAngle: {
+            type: "range",
+            label: game.i18n.localize("levels3dpreview.flags.doorAnimateAngle.label"),
+            default: 90,
+            min: -180,
+            max: 180,
+            step: 1,
+        },
         header3: {
             type: "custom",
             html: `<h3 class="form-header"><i class="fas fa-th"></i> ${game.i18n.localize("levels3dpreview.flags.fillType.header")}</h3><div>`,

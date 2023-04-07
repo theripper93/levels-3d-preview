@@ -1,3 +1,4 @@
+import * as THREE from "../lib/three.module.js";
 export class WorkerHandler {
     constructor() {
         this.raycastWorker = null;
@@ -7,8 +8,8 @@ export class WorkerHandler {
         this.initRaycastWorker();
     }
 
-    get enabled() { 
-        return (game.Levels3DPreview?.CONFIG?.useMultithreading && game.Levels3DPreview?.object3dSight && game.Levels3DPreview?.fogExploration);
+    get enabled() {
+        return game.Levels3DPreview?.CONFIG?.useMultithreading && game.Levels3DPreview?.object3dSight && game.Levels3DPreview?.fogExploration;
     }
 
     initRaycastWorker() {
@@ -33,26 +34,31 @@ export class WorkerHandler {
             if (e.data.type == "refresh") {
                 this.refresh();
             }
-            ///debug
-            /*
             if (e.data.type == "error") {
                 console.error(e.data.error);
             }
-            if (e.data.type == "removed") { 
+            ///debug
+            
+            /*
+            if (e.data.type == "removed") {
                 console.log("Removed", e.data.data);
             }
-            if(e.data.type == "added") { 
+            if (e.data.type == "added") {
                 console.log("Added", e.data.data);
             }
             if (e.data.type == "mergedGeometry") {
                 console.log("Merged", e.data.data);
+                game.Levels3DPreview.scene.remove(game.Levels3DPreview.scene.getObjectByName("shadowWorld"));
+                const mesh = new THREE.ObjectLoader().parse(e.data.data.g);
+                mesh.name = "shadowWorld";
+                game.Levels3DPreview.scene.add(mesh);
             }
             */
         };
     }
 
     refresh() {
-        if(!this.enabled) return;
+        if (!this.enabled) return;
         canvas.perception.update(
             {
                 forceUpdateFog: true,
