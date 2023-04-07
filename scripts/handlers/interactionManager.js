@@ -115,7 +115,7 @@ export class InteractionManager {
             sight: sightObjects,
             camera: cameraObjects,
         };
-        if (!p0 && !p1) canvas.tokens.controlled.forEach((t) => t.updateSource());
+        //if (!p0 && !p1) canvas.tokens.controlled.forEach((t) => t.updateSource());
     }
 
     computeSightCollision(v1, v2, type = "collision", elongate = false) {

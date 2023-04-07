@@ -69,7 +69,10 @@ export class Tile3D {
     }
 
     sendToWorker() {
-        if ((!this.sight && !this.hasTags) || this.dynaMesh == "decal" || !this._parent?.workers?.enabled) return;
+        let dontSend = false;
+        if ((!this.sight && !this.hasTags) || this.dynaMesh == "decal" || !this._parent?.workers?.enabled) dontSend = true;
+        if (!this.sight && this._parent?.workers?.enabled) return this._parent.workers.removeMesh(this.tile.id);
+        if (dontSend) return;
         this.sightMesh.name = "sightMesh"
         this.mesh.traverse((o) => {
             o.updateMatrixWorld();
@@ -277,6 +280,10 @@ export class Tile3D {
                             to: matToApply.angle,
                         },
                     ];
+                    const sightMesh = door.userData.sightMesh;
+                    if (sightMesh) { 
+                        sightMesh.rotation.y = matToApply.angle;
+                    }
                     const p = CanvasAnimation.animate(animation, { duration: 400, easing: "easeOutCircle" });
                     promises.push(p);
             }
@@ -310,11 +317,17 @@ export class Tile3D {
 
     setupDoor(firstRender = false) {
         this.doorState = this.tile.document.getFlag("levels-3d-preview", "doorState") ?? 0;
-        this.isDoor = this.doorType != 0;
+        this.sight = this.tile.document.getFlag("levels-3d-preview", "sight") ?? true;
+        this.collision = this.tile.document.getFlag("levels-3d-preview", "collision") ?? true;
         this.isSecret = this.doorType == 2;
         this.isOpen = this.doorState == 1;
         this.isLocked = this.doorState == 2;
+        this.isDoor = this.doorType != 0;
         if (!this.isDoor) return;
+        if (this.isOpen) {
+            this.collision = false;
+            this.sight = false;
+        }
         let promise;
         if (firstRender) {
             this.originalDoorMaterials = {};

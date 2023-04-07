@@ -242,6 +242,16 @@
                     "locked": "Locked"
                 }
             },
+            "doorStyle": {
+                "label": "Door Style",
+                "options": {
+                    "transparent": "Transparent",
+                    "animate": "Animated"
+                }
+            },
+            "doorAnimateAngle": {
+                "label": "Door Animation Angle"
+            },
             "isFog":{
                 "label": "Is Fog of War Box?",
                 "notes": "Obscure view when camera enters this template. Works only for rectangle templates."

@@ -977,7 +977,7 @@ Hooks.on("renderTileConfig", (app,html)=>{
         },
         doorStyle: {
             type: "select",
-            label: game.i18n.localize("WALLS.DoorStyle"),
+            label: game.i18n.localize("levels3dpreview.flags.doorStyle.label"),
             default: 0,
             options: {
                 0: game.i18n.localize("levels3dpreview.flags.doorStyle.options.transparent"),
@@ -1139,7 +1139,7 @@ Hooks.on("renderTileConfig", (app,html)=>{
         firstOption.innerText = game.i18n.localize("levels3dpreview.flags.fillType.options.merged");
     }
 
-    const advancedSettings = ["castShadow", "displacementIntensity", "displacementMatrix", "dynaMeshResolution", "roughness", "metalness", "transparency", "sightMeshComplexity", "invertDisplacementMap", "sides", "flipY", "shading", "displacementMap", "autoCenter", "enableAnim", "animSpeed", "animIndex", "paused", "tiltX", "tiltZ", "randomSeed", "autoGround", "depth"];
+    const advancedSettings = ["doorAnimateAngle","doorStyle","castShadow", "displacementIntensity", "displacementMatrix", "dynaMeshResolution", "roughness", "metalness", "transparency", "sightMeshComplexity", "invertDisplacementMap", "sides", "flipY", "shading", "displacementMap", "autoCenter", "enableAnim", "animSpeed", "animIndex", "paused", "tiltX", "tiltZ", "randomSeed", "autoGround", "depth"];
 
     injectAdvancedToggle(app,html,advancedSettings, injected);
 
