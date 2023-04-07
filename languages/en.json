@@ -1305,8 +1305,7 @@
                 "scaleScale": "Tile Scale",
                 "toggleMode": "Fill Mode",
                 "wheel": "Mouse Wheel to Increase/Decrease Values",
-                "clone": "Before initiating a transform, hold CTRL to Clone",
-                "select": "Hold F and drag to box-select, Left drag to release previous objects, Right drag to add to selection"
+                "clone": "Before initiating a transform, hold CTRL to Clone"
             }
         },
         "tokenAnimations": {
@@ -1515,7 +1514,8 @@
                 "description": "Texture rotation effect, requires a texture and some texture repetition to work.",
                 "speed": "Speed",
                 "centerx": "X Anchor",
-                "centery": "Y Anchor"
+                "centery": "Y Anchor",
+                "offsetAngle": "Angle Offset"
             },
             "overlay": {
                 "name": "Overlay",

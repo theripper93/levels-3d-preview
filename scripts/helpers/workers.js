@@ -33,6 +33,21 @@ export class WorkerHandler {
             if (e.data.type == "refresh") {
                 this.refresh();
             }
+            ///debug
+            /*
+            if (e.data.type == "error") {
+                console.error(e.data.error);
+            }
+            if (e.data.type == "removed") { 
+                console.log("Removed", e.data.data);
+            }
+            if(e.data.type == "added") { 
+                console.log("Added", e.data.data);
+            }
+            if (e.data.type == "mergedGeometry") {
+                console.log("Merged", e.data.data);
+            }
+            */
         };
     }
 

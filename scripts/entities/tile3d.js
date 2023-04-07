@@ -54,6 +54,7 @@ export class Tile3D {
         this._loaded = true;
         this.elevation3d = this.mesh.position.y;
         this.setHidden();
+        this.sendToWorker();
         this.updateControls();
         setTimeout(() => {
             this.updateControls();
@@ -64,7 +65,6 @@ export class Tile3D {
             this.setupDoor();
         }, 100);
         game.Levels3DPreview.outline?.toggleControlled(this.mesh, this.tile.controlled);
-        this.sendToWorker();
         return this;
     }
 
@@ -240,7 +240,7 @@ export class Tile3D {
         this.setDoorsMaterials();
     }
 
-    setDoorsMaterials() {
+    setDoorsMaterials(sendToWorker = false) {
         const modelDoorsStates = this.tile.document.getFlag("levels-3d-preview", "modelDoors") || {};
         for (let doorId in this._doors) {
             let isOpen = this._doors[doorId].userData?.isOpen == 1;
@@ -260,7 +260,7 @@ export class Tile3D {
                 }
             }
         }
-        this.sendToWorker();
+        if (sendToWorker) this.sendToWorker();
         this._parent.interactionManager?.generateSightCollisions();
         this._parent.interactionManager?.buildCollisionGeos();
         canvas.perception.update(
@@ -1174,10 +1174,10 @@ export class Tile3D {
         }
     }
 
-    destroy() {
+    destroy(isUpdate = false) {
         this._destroyed = true;
         delete this._parent.tiles[this.tile.id];
-        this._parent.workers.removeMesh(this.tile.id);
+        if (!isUpdate) this._parent.workers.removeMesh(this.tile.id);
         if (!this.mesh) return;
         this.mesh.removeFromParent();
         this.mesh.traverse((child) => {
@@ -1632,14 +1632,14 @@ export class Tile3D {
     static setHooks() {
         Hooks.on("updateTile", (tile, updates) => {
             if (game.Levels3DPreview?._active && tile.object && isDoorUpdate(updates)) {
-                game.Levels3DPreview.tiles[tile.id]?.setDoorsMaterials();
+                game.Levels3DPreview.tiles[tile.id]?.setDoorsMaterials(true);
                 return;
             }
             if (game.Levels3DPreview?._active && tile.object && !isAnimOnly(updates)) {
                 const hasGravity = (tile.getFlag("levels-3d-preview", "enableGravity") ?? "none") !== "none";
                 const hadGravity = game.Levels3DPreview.tiles[tile.id]?.isGravity;
                 if (hasGravity && hadGravity) return recomputeGravityDebounced();
-                game.Levels3DPreview.tiles[tile.id]?.destroy();
+                game.Levels3DPreview.tiles[tile.id]?.destroy(true);
                 const newTile = new Tile3D(tile.object, game.Levels3DPreview);
                 game.Levels3DPreview.tiles[tile.id] = newTile;
                 newTile.load().then(() => {
@@ -1861,6 +1861,7 @@ export async function autoMergeTiles(tiles = canvas.tiles.placeables, skipContro
             const texture = tile.data.flags["levels-3d-preview"]?.imageTexture;
             const dynaMesh = tile.data.flags["levels-3d-preview"]?.dynaMesh;
             const heightmap = tile.data.flags["levels-3d-preview"]?.displacementMap;
+            if(dynaMesh === "decal") continue;
             if(heightmap) continue;
             const key = `${model3d}-${texture}-${dynaMesh}`;
             if (!model3d && (dynaMesh === "default" || !dynaMesh)) continue;

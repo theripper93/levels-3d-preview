@@ -41,6 +41,7 @@ self.onconnect = function (e) {
         try {
             const message = e.data;
             if (message.type == "add") {
+                removeMeshFromScene(message.id);
                 const mesh = new THREE.ObjectLoader().parse(message.meshJSON);
                 const boxes = [];
                 mesh.traverse((child) => {
@@ -56,10 +57,6 @@ self.onconnect = function (e) {
                 boxes.forEach(box => {
                     box.removeFromParent();
                 });
-                if (scene.tiles[message.id]) {
-                    scene.tiles[message.id].removeFromParent();
-                    delete scene.tiles[message.id];
-                }
                 scene.add(mesh);
                 scene.tiles[message.id] = mesh;
                 mesh.traverse((child) => { 
@@ -69,21 +66,12 @@ self.onconnect = function (e) {
                     }
                 });
                 mesh.updateMatrixWorld();
+                _port.postMessage({ type: "added", data: {type: mesh.type, scene: scene.children.length} });
                 createMergedGeometryDebounced();
             }
 
             if (message.type == "remove") { 
-                const mesh = scene.tiles[message.id];
-                mesh.traverse((child) => {
-                    if (child.isMesh) {
-                        child.geometry.disposeBoundsTree();
-                        child.geometry.dispose();
-                    }
-                });
-                if (mesh) {
-                    mesh.removeFromParent();
-                    delete scene.tiles[message.id];
-                }
+                removeMeshFromScene(message.id);
                 createMergedGeometryDebounced();
             }
 
@@ -140,7 +128,19 @@ self.onconnect = function (e) {
 };
 
 
-
+function removeMeshFromScene(id) {
+    const mesh = scene.tiles[id];
+    if (!mesh) return;
+    mesh.traverse((child) => {
+        if (child.isMesh) {
+            child.geometry.disposeBoundsTree();
+            child.geometry.dispose();
+        }
+    });
+    mesh.removeFromParent();
+    delete scene.tiles[id];
+    _port.postMessage({ type: "removed", data: { id, scene: scene.children.length } });
+}
 
 
 
@@ -164,24 +164,36 @@ function computeSightCollisionFrom3DPositions(origin, target) {
 }
 
 
-function createMergedGeometry(){
-    const geometries = [];
-    scene.traverse((child) => {
-        if (child.isMesh && child?.userData?.sight) {
-            const worldSpaceGeometry = applyMatrixWorldToGeometry(child);
-            geometries.push(...worldSpaceGeometry);
+function createMergedGeometry() {
+    try {
+        if (!scene.children.length) {
+            mergedMesh.geometry?.dispose();
+            mergedMesh.geometry = new THREE.BufferGeometry();
+            _port.postMessage({ type: "refresh" });
+            return;
         }
-    });
-    const mergedGeometry = mergeBufferGeometries(geometries);
-    geometries.forEach(geometry => geometry.dispose());
-    if(!mergedGeometry) return mergedMesh.geometry;
-    mergedGeometry.computeBoundsTree();
-    mergedMesh.geometry?.dispose();
-    mergedMesh.geometry?.disposeBoundsTree();
-    mergedMesh.geometry = mergedGeometry;
-    _port.postMessage({ type: "refresh" });
-    _port.postMessage({type: "mergedGeometry", mergedGeometry: mergedGeometry.attributes.position.array.length});
-    return mergedGeometry;
+        const geometries = [];
+        scene.traverse((child) => {
+            if (child.isMesh && child?.userData?.sight) {
+                _port.postMessage({ type: "mergedGeometry", data: { g:child.geometry.toJSON() } });
+                const worldSpaceGeometry = applyMatrixWorldToGeometry(child);
+                geometries.push(...worldSpaceGeometry);
+            }
+        });
+        const mergedGeometry = mergeBufferGeometries(geometries);
+        geometries.forEach((geometry) => geometry.dispose());
+        if (!mergedGeometry) return mergedMesh.geometry;
+        mergedGeometry.computeBoundsTree();
+        mergedMesh.geometry?.dispose();
+        mergedMesh.geometry?.disposeBoundsTree();
+        mergedMesh.geometry = mergedGeometry;
+        mergedMesh.updateMatrixWorld();
+        mergedMesh.updateMatrix();
+        _port.postMessage({ type: "refresh" });
+        return mergedGeometry;
+    } catch (error) {
+        _port.postMessage({ type: "error", error: error });
+    }
 }
 
 const createMergedGeometryDebounced = debounce(createMergedGeometry, 100);
@@ -189,6 +201,10 @@ const createMergedGeometryDebounced = debounce(createMergedGeometry, 100);
 function applyMatrixWorldToGeometry(mesh) {
     if(mesh.isInstancedMesh) return applyMatrixWorldToGeometryInstanced(mesh)
     const geometry = toTrianglesDrawMode(mesh.geometry.clone());
+    if (geometry.type = "ExtrudeGeometry") {
+        geometry.rotateX(Math.PI / 2);
+        geometry.center();
+    }
     mesh.updateMatrixWorld(true,true)
     geometry.applyMatrix4(mesh.matrixWorld);
     const attributes = geometry.attributes;

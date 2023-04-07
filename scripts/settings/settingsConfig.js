@@ -614,38 +614,43 @@ Hooks.once("ready", () => {
     await game.settings.set("levels-3d-preview", "oneTimeMessages", oldSett);
   }
 
-  if (!game.settings.get("levels-3d-preview", "oneTimeMessages").welcome) {
-    const dialog = new Dialog({
-      title: game.i18n.localize("levels3dpreview.welcome.title"),
-      content: game.i18n.localize("levels3dpreview.welcome.content"),
-      buttons: {
-          ok:{
-              label: `<i class="fas fa-times"></i> ` + game.i18n.localize("levels3dpreview.welcome.ok"),
+  const showNewUserExperience = game.modules.get("canvas3dcompendium")?.active && !game.settings.get("levels-3d-preview", "oneTimeMessages").newuserexperience;
+
+  const showWelcomeMessage = !game.settings.get("levels-3d-preview", "oneTimeMessages").welcome;
+
+  if (showWelcomeMessage && !showNewUserExperience) {
+      const dialog = new Dialog({
+          title: game.i18n.localize("levels3dpreview.welcome.title"),
+          content: game.i18n.localize("levels3dpreview.welcome.content"),
+          buttons: {
+              ok: {
+                  label: `<i class="fas fa-times"></i> ` + game.i18n.localize("levels3dpreview.welcome.ok"),
+              },
+              dontshowagain: {
+                  label: `<i class="fas fa-check-double"></i> ` + game.i18n.localize("levels3dpreview.welcome.dontshowagain"),
+                  callback: () => {
+                      setSetting("welcome");
+                  },
+              },
+              opencompendium: {
+                  label: `<i class="fas fa-book"></i> ` + game.i18n.localize("levels3dpreview.welcome.opencompendium"),
+                  callback: () => {
+                      game.packs.get("levels-3d-preview.documentation").render(true);
+                  },
+              },
           },
-          dontshowagain: {
-              label: `<i class="fas fa-check-double"></i> ` + game.i18n.localize("levels3dpreview.welcome.dontshowagain"),
-              callback: () => {
-                setSetting("welcome");
-              }
-          },
-          opencompendium: {
-              label: `<i class="fas fa-book"></i> ` + game.i18n.localize("levels3dpreview.welcome.opencompendium"),
-              callback: () => {game.packs.get("levels-3d-preview.documentation").render(true);}
-          },
-      },
-      default: "ok",
-    })
-    dialog.render(true);
-    Hooks.once("renderDialog", (app,html)=>{
-      html.find("button").css({
-        height: "3rem"
-      })
-      app.setPosition({width: 500,height:"auto", left: window.innerWidth/2-250})
-  
-    })
+          default: "ok",
+      });
+      dialog.render(true);
+      Hooks.once("renderDialog", (app, html) => {
+          html.find("button").css({
+              height: "3rem",
+          });
+          app.setPosition({ width: 500, height: "auto", left: window.innerWidth / 2 - 250 });
+      });
   }
 
-  if (game.modules.get("canvas3dcompendium")?.active && !game.settings.get("levels-3d-preview", "oneTimeMessages").newuserexperience) {
+  if (showNewUserExperience) {
       const dialog = new Dialog({
           title: game.i18n.localize("levels3dpreview.newuserexperience.title"),
           content: game.i18n.localize("levels3dpreview.newuserexperience.content"),

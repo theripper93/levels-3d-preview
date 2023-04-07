@@ -1092,7 +1092,6 @@ export class InteractionManager {
         }
         controlsReference += `<p>${game.i18n.localize(`levels3dpreview.tileEditor.controlsReference.nogizmo`)}</p>`;
         controlsReference += `<p>${game.i18n.localize(`levels3dpreview.tileEditor.controlsReference.clone`)}</p>`;
-        controlsReference += `<p>${game.i18n.localize(`levels3dpreview.tileEditor.controlsReference.select`)}</p>`;
 
         //controlsReference += `<p>${game.i18n.localize(`levels3dpreview.tileEditor.controlsReference.wheel`)}</p>`
 

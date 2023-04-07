@@ -62,6 +62,24 @@ export class RangeRingEffect {
     }
 
     remove() { 
-        this.effect.removeFromParent();
+        const scaleInAnimation = [
+            {
+                parent: this.effect.scale,
+                attribute: "x",
+                to: 0,
+            },
+            {
+                parent: this.effect.scale,
+                attribute: "y",
+                to: 0,
+            },
+            {
+                parent: this.effect.scale,
+                attribute: "z",
+                to: 0,
+            },
+        ];
+        CanvasAnimation.animate(scaleInAnimation, { duration: 400, easing: "easeOutCircle" }).then(() => this.effect.removeFromParent());
+        
     }
 }

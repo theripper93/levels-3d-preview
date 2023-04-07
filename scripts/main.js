@@ -779,6 +779,9 @@ class Levels3DPreview {
         plane.receiveShadow = true;
         plane.position.set(center.x, center.y - (depth / 2 + 0.011) + Ruler3D.unitsToPixels(canvas.primary.background.elevation), center.z);
         this.table = plane;
+        this.table.renderOrder = -1e20;
+        this.table.material.polygonOffset = true;
+        this.table.material.polygonOffsetFactor = 10;
         if (canvas.scene.grid.type > 0)
             this.shaderHandler.applyShader(
                 this.table,
