@@ -456,7 +456,7 @@ export function injectAdvancedToggle(app, html, settings, injected, other = []) 
     (injected.find(".form-group").last().length ? injected.find(".form-group").last() : $(injected[injected.length - 1])).after(toggleAdvanced);
     toggleAdvanced.find("#levels-3d-preview-advanced").click(() => {
         toggleAdvancedSettings(app, html, settings, other);
-        toggleAdvanced.find("a").text(toggleAdvanced.find("a").text() === game.i18n.localize("levels3dpreview.settings.showAdvanced.show") ? game.i18n.localize("levels3dpreview.settings.showAdvanced.hide") : game.i18n.localize("levels3dpreview.settings.showAdvanced.show"));
+        toggleAdvanced.find("#levels-3d-preview-advanced").text(toggleAdvanced.find("#levels-3d-preview-advanced").text() === game.i18n.localize("levels3dpreview.settings.showAdvanced.show") ? game.i18n.localize("levels3dpreview.settings.showAdvanced.hide") : game.i18n.localize("levels3dpreview.settings.showAdvanced.show"));
     });
     toggleAdvancedSettings(app, html, settings, other);
 }

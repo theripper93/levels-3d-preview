@@ -2125,12 +2125,52 @@ export function extractPointsFromDrawing() {
 }
 
 export async function extrudeWalls(walls) {
+
+    const confirm = Dialog.confirm({
+        title: game.i18n.localize("levels3dpreview.extrudeWalls.title"),
+        content: game.i18n.localize("levels3dpreview.extrudeWalls.content"),
+        yes: () => true,
+        no: () => false,
+    });
+
+    if(!(await confirm)) return false;
     
     walls = walls ?? (canvas.walls.controlled.length ? canvas.walls.controlled : canvas.walls.placeables);
 
     const tilesToCreate = [];
 
-    const segments = walls.filter(w => !w.isDoor).map((w) => {return { x0: w.document.c[0], y0: w.document.c[1], x1: w.document.c[2], y1: w.document.c[3] };});
+    const wallGroups = {};
+
+    for (const wall of walls) { 
+        const top = wall.document.data.flags["wall-height"]?.top ?? canvas.scene.dimensions.distance * 2;
+        const bottom = wall.document.data.flags["wall-height"]?.bottom ?? 0;
+        const key = `${top}-${bottom}`;
+        if (!wallGroups[key]) wallGroups[key] = [];
+        wallGroups[key].push(wall);
+    }
+
+    for (const [key, wallGroup] of Object.entries(wallGroups)) { 
+        const [top, bottom] = key.split("-").map((v) => parseFloat(v));
+        const tiles = extrudeWallGroup(wallGroup, top, bottom);
+        tilesToCreate.push(...tiles);
+    }
+
+    const tiles = await canvas.scene.createEmbeddedDocuments("Tile", tilesToCreate);
+
+    ui.notifications.info(`Extruded ${walls.length} walls to ${tiles.length} tiles`);
+
+    return tiles;
+
+}
+
+function extrudeWallGroup(walls, top, bottom) {
+    const tilesToCreate = [];
+
+    const segments = walls
+        .filter((w) => !w.isDoor)
+        .map((w) => {
+            return { x0: w.document.c[0], y0: w.document.c[1], x1: w.document.c[2], y1: w.document.c[3] };
+        });
 
     const polygons = [];
 
@@ -2140,7 +2180,8 @@ export async function extrudeWalls(walls) {
         polygon.push(start);
         let current = start;
         while (true) {
-            const next = segments.find((s) => s.x0 == current.x1 && s.y0 == current.y1);
+            const dist = (a, b) => Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2);
+            const next = segments.find((s) => dist({x: s.x0, y: s.y0}, {x: current.x1, y: current.y1}) < 10);
             if (!next) break;
             polygon.push(next);
             segments.splice(segments.indexOf(next), 1);
@@ -2149,9 +2190,20 @@ export async function extrudeWalls(walls) {
         polygons.push(polygon);
     }
 
-    for (const polygon of polygons) {
-        const topLeft = {x: polygon[0].x0, y: polygon[0].y0};
-        const bottomRight = {x: polygon[0].x0, y: polygon[0].y0};
+    let finalPolygons = polygons;
+    let lastCount = 0;
+    let currentCount = polygons.length;
+
+    while (currentCount !== lastCount) {
+        finalPolygons = joinPolygons(finalPolygons);
+        lastCount = currentCount;
+        currentCount = finalPolygons.length;
+    }
+    
+
+    for (const polygon of finalPolygons) {
+        const topLeft = { x: polygon[0].x0, y: polygon[0].y0 };
+        const bottomRight = { x: polygon[0].x0, y: polygon[0].y0 };
         for (const segment of polygon) {
             if (segment.x0 < topLeft.x) topLeft.x = segment.x0;
             if (segment.y0 < topLeft.y) topLeft.y = segment.y0;
@@ -2160,13 +2212,15 @@ export async function extrudeWalls(walls) {
         }
         const width = bottomRight.x - topLeft.x;
         const height = bottomRight.y - topLeft.y;
-        const pointsShifted = polygon.map((s) => {return {x0: s.x0 - topLeft.x, y0: s.y0 - topLeft.y, x1: s.x1 - topLeft.x, y1: s.y1 - topLeft.y};});
+        const pointsShifted = polygon.map((s) => {
+            return { x0: s.x0 - topLeft.x, y0: s.y0 - topLeft.y, x1: s.x1 - topLeft.x, y1: s.y1 - topLeft.y };
+        });
 
         const points = [];
-        for (const segment of pointsShifted) { 
+        for (const segment of pointsShifted) {
             points.push(segment.x0, segment.y0, segment.x1, segment.y1);
         }
-        
+
         const tileData = {
             x: topLeft.x,
             y: topLeft.y,
@@ -2176,21 +2230,39 @@ export async function extrudeWalls(walls) {
                 "levels-3d-preview": {
                     dynaMesh: "polygonbevelsolidify",
                     model3d: points.join(","),
-                    depth: 200,
+                    depth: ((top - bottom) / canvas.scene.dimensions.distance) * canvas.dimensions.size,
                     autoGround: true,
+                },
+                levels: {
+                    rangeBottom: bottom,
                 },
             },
         };
 
         tilesToCreate.push(tileData);
-
-
     }
 
-    const tiles = await canvas.scene.createEmbeddedDocuments("Tile", tilesToCreate);
+    return tilesToCreate;
+}
 
-    ui.notifications.info(`Extruded ${walls.length} walls to ${tiles.length} tiles`);
+function joinPolygons(polygons) {
+    const finalPolygons = [];
 
-    return tiles;
+    while (polygons.length) { 
+        const polygon = [];
+        const start = polygons.shift();
+        polygon.push(...start);
+        let current = start;
+        while (true) {
+            const dist = (a, b) => Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2);
+            const next = polygons.find((s) => dist({x: s[0].x0, y: s[0].y0}, {x: current[current.length-1].x1, y: current[current.length-1].y1}) < 10);
+            if (!next) break;
+            polygon.push(...next);
+            polygons.splice(polygons.indexOf(next), 1);
+            current = next;
+        }
+        finalPolygons.push(polygon);
+    }
 
+    return finalPolygons;
 }

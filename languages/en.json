@@ -1027,7 +1027,7 @@
             },
             "baseStyle": {
                 "name": "Base Style",
-                "hint": "The base style to use: Image will display the chosen image, solid will draw a miniature style base.",
+                "hint": "The base style to use for all tokens.",
                 "options": {
                     "image": "Image",
                     "solid": "Solid",
@@ -1035,15 +1035,15 @@
                 }
             },
             "solidBaseMode": {
-                "name": "Solid Base Mode",
-                "hint": "The default solid base mode to use: Merge will not move the original model, on top will offset the model to the top of the base.",
+                "name": "Base Mode",
+                "hint": "Merge will not move the original model, on top will offset the model to the top of the base.",
                 "options": {
                     "merge": "Merge",
                     "ontop": "On Top"
                 }
             },
             "solidBaseColor": {
-                "name": "Solid Base Color",
+                "name": "Base Color",
                 "hint": "The color of the solid base. Can be a hex value or a color name (or any CSS color). default is #1c1c1c"
             },
             "highlightCombat": {
@@ -1829,6 +1829,10 @@
             "title": "Merge Tiles",
             "occlusionGroup": " - Occlusion ID: ",
             "content": "Merging Tiles is an irreversible action, it's suggested to make a backup of the scene before merging high amounts of tiles.<br>You are about to merge <strong>%count% Tiles</strong>. Selected tiles will be excluded. Are you sure you want to continue?"
+        },
+        "extrudeWalls": {
+            "title": "Extrude Walls",
+            "content": "This process will attempt to transform the walls in the scene into tiles. Are you sure you want to continue?"
         }
     }
 }
