@@ -1,7 +1,7 @@
 import * as THREE from "../lib/three.module.js";
 import { factor } from "../main.js";
 import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from "../lib/three-mesh-bvh.js";
-import {mergeBufferGeometries} from "../lib/BufferGeometryUtils.js";
+import {mergeBufferGeometries, toTrianglesDrawMode} from "../lib/BufferGeometryUtils.js";
 import { DecalGeometry } from "../lib/DecalGeometry.js";
 THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
 THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
@@ -116,7 +116,7 @@ export class DynaMesh {
         const geometry = new THREE.ExtrudeGeometry(shape, { depth: this.depth, bevelEnabled: false });
         geometry.rotateX(Math.PI / 2);
         geometry.center();
-        return geometry;
+        return mergeBufferGeometries([geometry]);
     }
 
     _constructpolygonbevel() {
@@ -139,7 +139,7 @@ export class DynaMesh {
         const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
         geometry.rotateX(Math.PI / 2);
         geometry.center();
-        return geometry;
+        return mergeBufferGeometries([geometry]);
     }
 
     _constructpolygonsolidify() {
@@ -158,7 +158,7 @@ export class DynaMesh {
         const geometry = new THREE.ExtrudeGeometry(shape, { depth: this.depth, bevelEnabled: false });
         geometry.rotateX(Math.PI / 2);
         geometry.center();
-        return geometry;
+        return mergeBufferGeometries([geometry]);
     }
 
     _constructpolygonbevelsolidify() {
@@ -186,7 +186,7 @@ export class DynaMesh {
         const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
         geometry.rotateX(Math.PI / 2);
         geometry.center();
-        return geometry;
+        return mergeBufferGeometries([geometry]);
     }
 
     _constructpolygonlathe() { 
@@ -204,7 +204,7 @@ export class DynaMesh {
         const geometry = new THREE.LatheGeometry(vector2Points, this.resolution * 4, 0, phiLength);
         geometry.rotateX(Math.PI);
         geometry.center();
-        return geometry;
+        return mergeBufferGeometries([geometry]);
     }
 
     get _avgWidthHeight() {
@@ -248,7 +248,7 @@ function solidifyPolygon(points, thickness) {
         })
         .filter((point) => point);
     
-    points.push(points[0]);
+    //points.push(points[0]);
     
     const solidifiedPoints = [];
     for (let i = 0; i < points.length; i += 1) { 

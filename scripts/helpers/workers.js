@@ -46,6 +46,9 @@ export class WorkerHandler {
             if (e.data.type == "added") {
                 console.log("Added", e.data.data);
             }
+            if (e.data.type == "geoType") { 
+                console.log("GeoType", e.data.data);
+            }
             if (e.data.type == "mergedGeometry") {
                 console.log("Merged", e.data.data);
                 game.Levels3DPreview.scene.remove(game.Levels3DPreview.scene.getObjectByName("shadowWorld"));

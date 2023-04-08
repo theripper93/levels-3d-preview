@@ -73,7 +73,7 @@ export class Tile3D {
         if ((!this.sight && !this.hasTags) || this.dynaMesh == "decal" || !this._parent?.workers?.enabled) dontSend = true;
         if (!this.sight && this._parent?.workers?.enabled) return this._parent.workers.removeMesh(this.tile.id);
         if (dontSend) return;
-        this.sightMesh.name = "sightMesh"
+        if (this.sightMesh) this.sightMesh.name = "sightMesh";
         this.mesh.traverse((o) => {
             o.updateMatrixWorld();
         });
@@ -2122,4 +2122,75 @@ export function extractPointsFromDrawing() {
         tile.object.control();
         game.Levels3DPreview.toggle();
     });
+}
+
+export async function extrudeWalls(walls) {
+    
+    walls = walls ?? (canvas.walls.controlled.length ? canvas.walls.controlled : canvas.walls.placeables);
+
+    const tilesToCreate = [];
+
+    const segments = walls.filter(w => !w.isDoor).map((w) => {return { x0: w.document.c[0], y0: w.document.c[1], x1: w.document.c[2], y1: w.document.c[3] };});
+
+    const polygons = [];
+
+    while (segments.length) {
+        const polygon = [];
+        const start = segments.shift();
+        polygon.push(start);
+        let current = start;
+        while (true) {
+            const next = segments.find((s) => s.x0 == current.x1 && s.y0 == current.y1);
+            if (!next) break;
+            polygon.push(next);
+            segments.splice(segments.indexOf(next), 1);
+            current = next;
+        }
+        polygons.push(polygon);
+    }
+
+    for (const polygon of polygons) {
+        const topLeft = {x: polygon[0].x0, y: polygon[0].y0};
+        const bottomRight = {x: polygon[0].x0, y: polygon[0].y0};
+        for (const segment of polygon) {
+            if (segment.x0 < topLeft.x) topLeft.x = segment.x0;
+            if (segment.y0 < topLeft.y) topLeft.y = segment.y0;
+            if (segment.x1 > bottomRight.x) bottomRight.x = segment.x1;
+            if (segment.y1 > bottomRight.y) bottomRight.y = segment.y1;
+        }
+        const width = bottomRight.x - topLeft.x;
+        const height = bottomRight.y - topLeft.y;
+        const pointsShifted = polygon.map((s) => {return {x0: s.x0 - topLeft.x, y0: s.y0 - topLeft.y, x1: s.x1 - topLeft.x, y1: s.y1 - topLeft.y};});
+
+        const points = [];
+        for (const segment of pointsShifted) { 
+            points.push(segment.x0, segment.y0, segment.x1, segment.y1);
+        }
+        
+        const tileData = {
+            x: topLeft.x,
+            y: topLeft.y,
+            width: width,
+            height: height,
+            flags: {
+                "levels-3d-preview": {
+                    dynaMesh: "polygonbevelsolidify",
+                    model3d: points.join(","),
+                    depth: 200,
+                    autoGround: true,
+                },
+            },
+        };
+
+        tilesToCreate.push(tileData);
+
+
+    }
+
+    const tiles = await canvas.scene.createEmbeddedDocuments("Tile", tilesToCreate);
+
+    ui.notifications.info(`Extruded ${walls.length} walls to ${tiles.length} tiles`);
+
+    return tiles;
+
 }

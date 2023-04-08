@@ -11,6 +11,21 @@ THREE.Mesh.prototype.raycast = acceleratedRaycast;
 const scene = new THREE.Scene();
 
 scene.tiles = {};
+scene.doors = {};
+
+function computeDoors() {
+    const group = new THREE.Group();
+    Object.values(scene.doors).forEach((door) => { 
+        group.add(door);
+    });
+    const doorColliders = [];
+    group.traverse((child) => {
+        if (child.isMesh && child.userData.sight) {
+            doorColliders.push(child);
+        }
+    });
+    return doorColliders;
+}
 
 const mergedMesh = new THREE.Mesh(new THREE.BufferGeometry(), new THREE.MeshBasicMaterial({ color: 0x00ff00 }));
 
@@ -44,6 +59,7 @@ self.onconnect = function (e) {
                 removeMeshFromScene(message.id);
                 const mesh = new THREE.ObjectLoader().parse(message.meshJSON);
                 const boxes = [];
+                let hasDoor = message.isDoor;
                 mesh.traverse((child) => {
                     if (child.name == "sightMesh") boxes.push(child);
                     if (child.isMesh) {
@@ -51,15 +67,20 @@ self.onconnect = function (e) {
                         if (!message.hasTags) {
                             child.userData.sight = message.sight;
                         }
-                        if (child.userData.isDoor) child.userData.sight = !child.userData.isOpen;
+                        if (child.userData.isDoor) {
+                            hasDoor = true;
+                            child.userData.sight = !child.userData.isOpen;
+                        }
                         child.material = basicMaterial;
                     }
                 });
                 boxes.forEach(box => {
                     box.removeFromParent();
                 });
-                scene.add(mesh);
                 scene.tiles[message.id] = mesh;
+                if (hasDoor) scene.doors[message.id] = mesh;
+                else scene.add(mesh);
+
                 mesh.traverse((child) => { 
                     if (child.isMesh) { 
                         child.updateMatrixWorld();
@@ -68,7 +89,7 @@ self.onconnect = function (e) {
                 });
                 mesh.updateMatrixWorld();
                 _port.postMessage({ type: "added", data: {type: mesh.type, scene: scene.children.length} });
-                createMergedGeometryDebounced();
+                if (!hasDoor) createMergedGeometryDebounced();
             }
 
             if (message.type == "remove") { 
@@ -92,7 +113,7 @@ self.onconnect = function (e) {
 
             if (message.type == "raycast") {
                 const perf = performance.now();
-                
+                scene._doors = computeDoors();
                 const config = message.config;
                 const polygonPoints = [];
                 const aMin = Math.normalizeRadians(Math.toRadians(config.rotation + 90 - config.angle / 2));
@@ -140,6 +161,7 @@ function removeMeshFromScene(id) {
     });
     mesh.removeFromParent();
     delete scene.tiles[id];
+    delete scene.doors[id];
     _port.postMessage({ type: "removed", data: { id, scene: scene.children.length } });
 }
 
@@ -157,7 +179,7 @@ function computeSightCollisionFrom3DPositions(origin, target) {
     const distance = Infinity;
     raycaster.far = Infinity;
     raycaster.set(origin, direction);
-    let collisions = raycaster.intersectObjects([mergedMesh], false);
+    let collisions = raycaster.intersectObjects([mergedMesh, ...scene._doors], false);
     if (!collisions.length) return false;
     const collision = collisions[0];
     if (collision.distance > distance) return false;
@@ -200,12 +222,8 @@ function createMergedGeometry() {
 const createMergedGeometryDebounced = debounce(createMergedGeometry, 100);
 
 function applyMatrixWorldToGeometry(mesh) {
-    if(mesh.isInstancedMesh) return applyMatrixWorldToGeometryInstanced(mesh)
+    if (mesh.isInstancedMesh) return applyMatrixWorldToGeometryInstanced(mesh)    
     const geometry = toTrianglesDrawMode(mesh.geometry.clone());
-    if (geometry.type == "ExtrudeGeometry") {
-        geometry.rotateX(Math.PI / 2);
-        geometry.center();
-    }
     mesh.updateMatrixWorld(true,true)
     geometry.applyMatrix4(mesh.matrixWorld);
     const attributes = geometry.attributes;
