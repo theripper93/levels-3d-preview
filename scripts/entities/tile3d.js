@@ -2229,7 +2229,7 @@ function extrudeWallGroup(walls, top, bottom) {
             flags: {
                 "levels-3d-preview": {
                     dynaMesh: "polygonbevelsolidify",
-                    model3d: points.join(","),
+                    model3d: "10#" + points.join(","),
                     depth: ((top - bottom) / canvas.scene.dimensions.distance) * canvas.dimensions.size,
                     autoGround: true,
                 },
@@ -2266,3 +2266,5 @@ function joinPolygons(polygons) {
 
     return finalPolygons;
 }
+
+canvas.tiles.controlled.map(t => {return {_id: t.id, flags: {"levels-3d-preview": {textureRepeat: 9}}}})

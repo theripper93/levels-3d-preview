@@ -1001,6 +1001,7 @@ export class InteractionManager {
 
     dragObject() {
         if (!this.draggable) return;
+        if(this.groupSelectHandler._isSelecting) this.groupSelectHandler.endSelect();
         const collisionGeometries = this._collisionGeometries;
         const token = this.draggable.userData?.entity3D?.token;
         const isFlying = token && token?.document?.hasStatusEffect("fly");

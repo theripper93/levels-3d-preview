@@ -163,8 +163,8 @@ export class DynaMesh {
 
     _constructpolygonbevelsolidify() {
         if (this.text.includes("#")) {
-            const split = this.text.split("#") / factor;
-            this.solidifyThickness = parseFloat(split[0]);
+            const split = this.text.split("#");
+            this.solidifyThickness = parseFloat(split[0]) / factor;
             this.text = split[1];
         }
         const points = solidifyPolygon(this.text.split(",").map((point) => parseInt(point) / factor), this.solidifyThickness);
@@ -237,7 +237,87 @@ async function loadTextFont() {
     return font;
 }
 
+
+
 function solidifyPolygon(points, thickness) {
+    const solidifyThickness = thickness ?? 0.05;
+    
+    points = points
+        .map((point, index) => {
+            if (index % 2 === 0) {
+                return { x: point, y: points[index + 1] };
+            }
+        })
+        .filter((point) => point);
+    
+    //points.push(points[0]);
+    
+    const outerEdgePoints = [];
+    const innerEdgePoints = [];
+
+    //outerEdgePoints.push(points[0].x, points[0].y);
+
+    //Create starting Cap
+
+    const startCapDirectionFirstSecond = new THREE.Vector2(points[1].x - points[0].x, points[1].y - points[0].y).normalize();
+
+    const startCapNormalFirstSecond = new THREE.Vector2(startCapDirectionFirstSecond.y, -startCapDirectionFirstSecond.x);
+    startCapNormalFirstSecond.negate();
+
+    const startCapBottom = new THREE.Vector2(points[0].x + startCapNormalFirstSecond.x * solidifyThickness, points[0].y + startCapNormalFirstSecond.y * solidifyThickness);
+    const startCapTop = new THREE.Vector2(points[0].x - startCapNormalFirstSecond.x * solidifyThickness, points[0].y - startCapNormalFirstSecond.y * solidifyThickness);
+    startCapDirectionFirstSecond.negate();
+    const startCapMiddle = new THREE.Vector2(points[0].x + startCapDirectionFirstSecond.x * solidifyThickness, points[0].y + startCapDirectionFirstSecond.y * solidifyThickness);
+    outerEdgePoints.push(startCapBottom.x, startCapBottom.y, startCapMiddle.x, startCapMiddle.y, startCapTop.x, startCapTop.y);
+
+
+    for (let i = 1; i < points.length -1; i += 1) { 
+        const current = points[i];
+        const next = points[i + 1];
+        const prev = points[i - 1];
+        
+        const directionCurrentNext = new THREE.Vector2(next.x - current.x, next.y - current.y).normalize();
+        const directionCurrentPrev = new THREE.Vector2(current.x - prev.x, current.y - prev.y).normalize();
+
+        const normalCurrentNext = new THREE.Vector2(directionCurrentNext.y, -directionCurrentNext.x);
+        const normalCurrentPrev = new THREE.Vector2(directionCurrentPrev.y, -directionCurrentPrev.x);
+
+        const avgDirection = new THREE.Vector2(normalCurrentNext.x + normalCurrentPrev.x, normalCurrentNext.y + normalCurrentPrev.y).normalize();
+
+        const outerEdgePoint = new THREE.Vector2(current.x + avgDirection.x * solidifyThickness, current.y + avgDirection.y * solidifyThickness);
+        const innerEdgePoint = new THREE.Vector2(current.x - avgDirection.x * solidifyThickness, current.y - avgDirection.y * solidifyThickness);
+
+        outerEdgePoints.push(outerEdgePoint.x, outerEdgePoint.y);
+        innerEdgePoints.push({ x: innerEdgePoint.x, y: innerEdgePoint.y}); 
+    }
+
+    //Create ending Cap
+
+    const endCapDirectionLastSecondLast = new THREE.Vector2(points[points.length - 1].x - points[points.length - 2].x, points[points.length - 1].y - points[points.length - 2].y).normalize();
+
+    const endCapNormalLastSecondLast = new THREE.Vector2(endCapDirectionLastSecondLast.y, -endCapDirectionLastSecondLast.x);
+    endCapNormalLastSecondLast.negate();
+
+    const endCapBottom = new THREE.Vector2(points[points.length - 1].x + endCapNormalLastSecondLast.x * solidifyThickness, points[points.length - 1].y + endCapNormalLastSecondLast.y * solidifyThickness);
+    const endCapTop = new THREE.Vector2(points[points.length - 1].x - endCapNormalLastSecondLast.x * solidifyThickness, points[points.length - 1].y - endCapNormalLastSecondLast.y * solidifyThickness);
+
+    const endCapMiddle = new THREE.Vector2(points[points.length - 1].x + endCapDirectionLastSecondLast.x * solidifyThickness, points[points.length - 1].y + endCapDirectionLastSecondLast.y * solidifyThickness);
+
+    outerEdgePoints.push(endCapTop.x, endCapTop.y, endCapMiddle.x, endCapMiddle.y, endCapBottom.x, endCapBottom.y);
+
+
+    innerEdgePoints.reverse();
+
+    for (let i = 0; i < innerEdgePoints.length; i += 1) {
+        outerEdgePoints.push(innerEdgePoints[i].x, innerEdgePoints[i].y);
+    }
+
+    return outerEdgePoints;
+
+
+}
+
+function _solidifyPolygon(points, thickness) {
     const solidifyThickness = thickness ?? 0.05;
     
     points = points
