@@ -123,7 +123,7 @@ class Levels3DPreview {
             throttle,
         };
         this.CONFIG = {
-            useMultithreading: game.settings.get("levels-3d-preview", "useMultithreading"),
+            useMultithreading: true,
             entityClass: {
                 RangeFinder,
                 Template3D,

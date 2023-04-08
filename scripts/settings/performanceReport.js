@@ -71,7 +71,6 @@ export function showPerformanceDialog() {
     const resMulti = game.settings.get("levels-3d-preview", "resolutionMultiplier");
     const dialogData = { GPU: SupportDetails.generateSupportReport().gpu, Resolution: `${window.innerWidth * dpr * resMulti}x${window.innerHeight * dpr * resMulti}`, ...report };
     dialogData["Shared Context"] = game.settings.get("levels-3d-preview", "sharedContext") ? "Yes" : "No";
-    dialogData["Multithreading"] = game.settings.get("levels-3d-preview", "useMultithreading") ? "Yes" : "No";
     delete dialogData.color;
     delete dialogData.grade;
     const dialog = new Dialog({

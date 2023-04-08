@@ -271,7 +271,7 @@ export class Template3D {
             mesh.rotation.copy(originalMesh.rotation);
             mesh.scale.copy(originalMesh.scale);
         }
-        mesh.visible = true;
+        mesh.visible = false;
         this.collisionMesh = mesh;
         return mesh
     }
