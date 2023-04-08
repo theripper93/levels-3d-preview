@@ -90,6 +90,7 @@ self.onconnect = function (e) {
                 mesh.updateMatrixWorld();
                 _port.postMessage({ type: "added", data: {type: mesh.type, scene: scene.children.length} });
                 if (!hasDoor) createMergedGeometryDebounced();
+                else _port.postMessage({ type: "refresh" });
             }
 
             if (message.type == "remove") { 
