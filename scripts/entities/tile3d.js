@@ -2266,5 +2266,3 @@ function joinPolygons(polygons) {
 
     return finalPolygons;
 }
-
-canvas.tiles.controlled.map(t => {return {_id: t.id, flags: {"levels-3d-preview": {textureRepeat: 9}}}})
