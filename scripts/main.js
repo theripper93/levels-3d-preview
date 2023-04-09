@@ -655,6 +655,21 @@ class Levels3DPreview {
         this.interactionManager.initGroupSelect();
     }
 
+    setFog() {
+        const enableFog = canvas.scene.getFlag("levels-3d-preview", "enableFog") ?? false;
+        const fogColor = canvas.scene.getFlag("levels-3d-preview", "fogColor") ?? "#000000";
+        const fogDistance = (canvas.scene.getFlag("levels-3d-preview", "fogDistance") ?? 3000) / this.factor;
+        this.scene.background = enableFog ? new THREE.Color(fogColor) : new THREE.Color(canvas.scene.backgroundColor ?? 0xffffff);
+        if (enableFog) {
+            this.scene.fog = new THREE.Fog(fogColor, 1, fogDistance);
+            this.camera.far = fogDistance;
+        } else {
+            this.scene.background = this._sceneBackground;
+            this.scene.fog = null;
+            this.camera.far = 100;
+        }
+    }
+
     initAA() {
         this.aaType = game.settings.get("levels-3d-preview", "antialiasing");
 
@@ -925,6 +940,7 @@ class Levels3DPreview {
             const textureCube = loader.load(textureArray);
             textureCube.encoding = THREE.sRGBEncoding;
             if (!enableFog) this.scene.background = textureCube;
+            this._sceneBackground = textureCube;
             if (!exr) {
                 this.scene.environment = textureCube;
                 this._envReady = true;
@@ -958,6 +974,7 @@ class Levels3DPreview {
                     rt.fromEquirectangularTexture(_this.renderer, texture);
                     background = rt.texture;
                     _this.scene.background = background;
+                    _this._sceneBackground = background;
                     _this.scene.userData.envRt = rt;
                 }
                 _this._envReady = true;
@@ -1729,13 +1746,13 @@ Hooks.on("updateScene", (scene, updates) => {
         canvas.draw();
         return;
     }
+    if(        "enableFog" in flags ||
+    "fogColor" in flags ||
+    "fogDistance" in flags) game.Levels3DPreview.setFog();
     game.Levels3DPreview.grid.setVisibility();
     if (
         //do reload
         "enableGrid" in flags ||
-        "enableFog" in flags ||
-        "fogColor" in flags ||
-        "fogDistance" in flags ||
         "showSceneWalls" in flags ||
         "showSceneFloors" in flags ||
         "renderSceneLights" in flags ||

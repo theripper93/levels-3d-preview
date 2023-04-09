@@ -833,6 +833,9 @@
             "particleBlending": {
                 "label": "Blending"
             },
+            "particleGroundOffset": {
+                "label": "Ground Offset"
+            },
             "particleRandomRotation": {
                 "label": "Random Rotation"
             },

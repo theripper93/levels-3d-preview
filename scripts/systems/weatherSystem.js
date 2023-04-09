@@ -82,8 +82,9 @@ export class WeatherSystem {
         const randomScale = canvas.scene.getFlag("levels-3d-preview", "particleRandomScale") ?? true;
         const blending = canvas.scene.getFlag("levels-3d-preview", "particleBlending") ? THREE.AdditiveBlending : THREE.NormalBlending;
         const rotationSpeed = Math.toRadians((canvas.scene.getFlag("levels-3d-preview", "particleRotationspeed") ?? 0) / 5);
+        const groundOffset = (canvas.scene.getFlag("levels-3d-preview", "particleGroundOffset") ?? 0) / factor;
 
-        return { density, direction, color, size, speed, velocity, opacity, texture, randomRotation, randomScale, blending, rotationSpeed };
+        return { density, direction, color, size, speed, velocity, opacity, texture, randomRotation, randomScale, blending, rotationSpeed, groundOffset };
     }
 
     update(delta) {
@@ -183,7 +184,7 @@ class BasicDirectionalEffect {
     async init() {
         this.detectAnimFn(this.options.direction);
         this.object = new THREE.Group();
-        this.object.position.set(canvas.scene.dimensions.sceneX / factor, 0, canvas.scene.dimensions.sceneY / factor);
+        this.object.position.set(canvas.scene.dimensions.sceneX / factor, this.options.groundOffset, canvas.scene.dimensions.sceneY / factor);
         this.object.userData.ignoreHover = true;
         this.textures = await this._loadTextures();
         this.material = this._getMaterial();
@@ -648,6 +649,7 @@ class BasicDirectionalEffect {
             randomRotation: false,
             randomScale: true,
             rotationSpeed: 0,
+            groundOffset: 0,
         };
     }
 }

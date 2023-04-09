@@ -431,6 +431,11 @@ Hooks.on("renderSceneConfig", (app,html)=>{
             label: game.i18n.localize("levels3dpreview.flags.particleBlend.label"),
             default: false,
         },
+        particleGroundOffset: {
+            type: "number",
+            label: game.i18n.localize("levels3dpreview.flags.particleGroundOffset.label"),
+            default: 0,
+        },
         partGroupEnd: {
             type: "custom",
             html: `</div>`,
