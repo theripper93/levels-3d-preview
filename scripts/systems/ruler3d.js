@@ -38,7 +38,8 @@ export class Ruler3D {
         if (this.template?.isPreview) return;
         if (this.allowedRulerDrag.some((a) => a === this._object?.userData?.entity3D?.placeable?.document?.documentName)) return;
         this.template?.destroy();
-        const template = new Template3D({ t: ui.controls.activeTool }, this._origin, this._object.position);
+        const pos = Ruler3D.useSnapped() ? Ruler3D.snapped3DPosition(this._object.position) : this._object.position;
+        const template = new Template3D({ t: ui.controls.activeTool }, this._origin, pos);
         this.template = template;
     }
 
@@ -132,7 +133,9 @@ export class Ruler3D {
     }
 
     set origin(position) {
-        this._origin = position;
+        const pos = Ruler3D.useSnapped() ? Ruler3D.snapped3DPosition(position) : position;
+        
+        this._origin = pos;
         this.token = game.Levels3DPreview?.interactionManager?.draggable?.userData?.entity3D?.token;
         this.cacheSpeedProvider(this.token);
         this.updateVisibility();

@@ -144,7 +144,7 @@ export function injectFoWShaders(THREELIB) {
     `;
 
     THREELIB.ShaderChunk.fog_fragment += `
-    if( sceneDimensions.x != 0.0 && vWorldPositionFoW.x >= sceneOrigin.x && vWorldPositionFoW.x <= sceneOrigin.x + sceneDimensions.x && vWorldPositionFoW.z >= sceneOrigin.y && vWorldPositionFoW.z <= sceneOrigin.y + sceneDimensions.y ){
+    if( sceneDimensions.x != 0.0 && vWorldPositionFoW.x >= sceneOrigin.x && vWorldPositionFoW.x <= sceneDimensions.x - sceneOrigin.x && vWorldPositionFoW.z >= sceneOrigin.y && vWorldPositionFoW.z <= sceneDimensions.y - sceneOrigin.y ){
         float sceneX = (vWorldPositionFoW.x)/sceneDimensions.x;
         float sceneY = (vWorldPositionFoW.z)/sceneDimensions.y;
         vec4 fogTexel = texture( fogTexture, vec2(sceneX, sceneY) );
