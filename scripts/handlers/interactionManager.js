@@ -1052,6 +1052,10 @@ export class InteractionManager {
         entity3D.dragCanceled = true;
         this.draggable = undefined;
         this.ruler.template = undefined;
+        if (this.ruler._templatePreviewData) {
+            this.ruler._templatePreviewData.resolve(false);
+            this.ruler._templatePreviewData = null;
+        }
         if (entity3D.token) Hooks.call("updateToken", entity3D.token.document, { x: entity3D.token.document.x });
         if (entity3D.template) Hooks.call("updateMeasuredTemplate", entity3D.template.document, { x: entity3D.template.document.x });
         if (entity3D.tile) Hooks.call("updateTile", entity3D.tile.document, { x: entity3D.tile.document.x });

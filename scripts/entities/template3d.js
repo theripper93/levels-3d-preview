@@ -141,7 +141,7 @@ export class Template3D {
         if (this.shape !== "cylinder") this.B.y += Ruler3D.unitsToPixels(this.template.document?.flags?.levels?.special ?? 0);
     }
 
-    fromPreview() {
+    async fromPreview(create = true) {
         const origin2d = this.isPreview ? Ruler3D.pos3DToCanvas(this.mesh.position) : Ruler3D.pos3DToCanvas(this.A);
 
         if (this.isLight) {
@@ -220,8 +220,15 @@ export class Template3D {
             },
         };
         const currentTemplateData = this.template?.document?.toObject() ?? {};
-        canvas.scene.createEmbeddedDocuments("MeasuredTemplate", [mergeObject(currentTemplateData, templateData)]);
-        this.destroy();
+        const finalTemplateData = mergeObject(currentTemplateData, templateData);
+        if (!create) {
+            this.destroy();
+            return finalTemplateData;
+        } else {
+            const placeable = await canvas.scene.createEmbeddedDocuments("MeasuredTemplate", [finalTemplateData]);
+            this.destroy();
+            return placeable[0];
+        }
     }
 
     destroy() {
@@ -515,7 +522,7 @@ export class Template3D {
             },
         };
         this.isPreview ? this.template.document?.updateSource(data) : this.template.document?.update(data);
-        if (this.isPreview) Hooks.callAll(`template3dUpdatePreview`, this.template, this.template.document ?? data);
+        if (this.isPreview && !!this.template.document) Hooks.callAll(`template3dUpdatePreview`, this.template, this.template.document ?? data);
     }
 
     _onClickLeft(e) {
@@ -570,37 +577,39 @@ export class Template3D {
         if (this.isPreview) this.updatePositionFrom3D();
     }
 
-    static drawPreview(template) {
+    static async drawPreview(template, create = true) {
+        const templateDocument = template.document ?? template;
+        const isPlaceable = !!template.document
         ui.notifications.info(game.i18n.localize("levels3dpreview.controls.tips.templatePlacement"));
         const initialLayer = canvas.activeLayer;
-        template.ray = Ray.fromAngle(template.document?.x, template.document?.y, Math.toRadians(template.document?.direction), (template.document?.distance * canvas.scene.dimensions.size) / canvas.scene.dimensions.distance);
+        template.ray = Ray.fromAngle(templateDocument?.x, templateDocument?.y, Math.toRadians(templateDocument?.direction), (templateDocument?.distance * canvas.scene.dimensions.size) / canvas.scene.dimensions.distance);
         // Draw the template and switch to the template layer
         
         
         let special;
 
         if (game.settings.get("levels-3d-preview", "templateAuto3D")) {
-            const type = template.document.t;
+            const type = templateDocument.t;
             if (type == "rect") {
-                const w = Math.cos(Math.toRadians(template.document.direction)) * template.document.distance;
-                const h = Math.sin(Math.toRadians(template.document.direction)) * template.document.distance;
+                const w = Math.cos(Math.toRadians(templateDocument.direction)) * templateDocument.distance;
+                const h = Math.sin(Math.toRadians(templateDocument.direction)) * templateDocument.distance;
                 special = Math.min(w, h);
             } else if (type == "ray") {
-                special = template.document.width;
+                special = templateDocument.width;
             }
         }
 
-        template.document.flags.levels ??= {};
-        template.document.flags.levels.special = special;
+        templateDocument.flags.levels ??= {};
+        templateDocument.flags.levels.special = special;
         
         canvas.templates.activate();
-        const template3d = new Template3D(template);
+        const template3d = isPlaceable ? new Template3D(template) : new Template3D(template,new THREE.Vector2(template.ray.A.x, template.ray.A.y), new THREE.Vector2(template.ray.B.x, template.ray.B.y));
         template3d.initialLayer = initialLayer;
         template3d.draggable = true;
         template3d.isPreview = true;
-        template3d.angle = template.document?.angle;
-        template3d.distance = template.document?.distance;
-        template3d.direction = template.document?.direction;
+        template3d.angle = templateDocument?.angle;
+        template3d.distance = templateDocument?.distance;
+        template3d.direction = templateDocument?.direction;
         template3d.arcDelta = Ruler3D.unitsToPixels(template3d.distance);
         game.Levels3DPreview.interactionManager.ruler.template = template3d;
         game.Levels3DPreview.interactionManager.draggable = template3d.dragHandle;
@@ -616,6 +625,15 @@ export class Template3D {
             template3d.actorSheet = template.actorSheet;
             template.actorSheet.minimize();
         }
+        let res;
+        const promise = new Promise((resolve) => {
+            res = resolve;
+        });
+        game.Levels3DPreview.interactionManager.ruler._templatePreviewData = {
+            resolve: res,
+            create: create,
+        }
+        return promise;
     }
 
     onRotate(deltaY) {

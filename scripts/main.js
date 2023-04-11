@@ -46,12 +46,14 @@ import {VFXSystem} from "./systems/vfx.js";
 import { Ping } from "./entities/effects/ping.js";
 import {injectThreeModifications} from "./threejsmodifications.js";
 import {ActiveEffectEffect} from "./entities/effects/activeEffect.js";
-import { RangeRingEffect } from "./entities/effects/rangeRing.js";
+import {RangeRingEffect} from "./entities/effects/rangeRing.js";
+import { registerWrappers } from "./wrappers.js";
 
 export const factor = 1000;
 injectFoWShaders(THREE);
 injectThreeModifications(THREE);
 
+registerWrappers();
 Light3D.setHooks();
 Note3D.setHooks();
 Token3D.setHooks();

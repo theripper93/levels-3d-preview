@@ -53,7 +53,6 @@
     "scripts/settings/settingsConfig.js"
   ],
   "scripts": [
-    "scripts/wrappers.js",
     "scripts/lib/injectConfig.js",
     "scripts/lib/three-nebula.js"
   ],
