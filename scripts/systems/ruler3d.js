@@ -57,7 +57,7 @@ export class Ruler3D {
 
     placeTemplate() {
         if (!this.template) return;
-        const data = this.template.fromPreview(this._templatePreviewData.create ?? true);
+        const data = this.template.fromPreview(this._templatePreviewData?.create ?? true);
         if (this._templatePreviewData) this._templatePreviewData.resolve(data);
         this._templatePromiseResolve = null;
         this.template = null;
