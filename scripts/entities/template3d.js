@@ -583,7 +583,7 @@ export class Template3D {
         template.actorSheet = template.actorSheet ?? currentSheet;
         const templateDocument = template.document ?? template;
         const isPlaceable = !!template.document
-        ui.notifications.info(game.i18n.localize("levels3dpreview.controls.tips.templatePlacement"));
+        if(create) ui.notifications.info(game.i18n.localize("levels3dpreview.controls.tips.templatePlacement"));
         const initialLayer = canvas.activeLayer;
         template.ray = Ray.fromAngle(templateDocument?.x, templateDocument?.y, Math.toRadians(templateDocument?.direction), (templateDocument?.distance * canvas.scene.dimensions.size) / canvas.scene.dimensions.distance);
         // Draw the template and switch to the template layer
