@@ -219,7 +219,7 @@ export class Ruler3D {
         //draw ruler
         let curve;
         let midcurve;
-        if (this.template?.isPreview) {
+        if (this.template?.isPreview && !this.template?.temporary) {
             midcurve = this._origin.clone().lerp(targetPos, 0.8); //new THREE.Vector3(this._origin.x + (targetPos.x - this._origin.x)/2, this._origin.y + (targetPos.y - this._origin.y)/2, this._origin.z + (targetPos.z - this._origin.z)/2);
             midcurve.y += 2;
             const bezCtrlg = midcurve.clone();

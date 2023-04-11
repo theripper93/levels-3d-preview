@@ -577,7 +577,10 @@ export class Template3D {
         if (this.isPreview) this.updatePositionFrom3D();
     }
 
-    static async drawPreview(template, create = true) {
+    static async drawPreview(template, create = true, sheet) {
+        sheet = sheet ?? _token?.actor?.sheet;
+        const currentSheet = sheet?.rendered ? sheet : null;
+        template.actorSheet = template.actorSheet ?? currentSheet;
         const templateDocument = template.document ?? template;
         const isPlaceable = !!template.document
         ui.notifications.info(game.i18n.localize("levels3dpreview.controls.tips.templatePlacement"));
@@ -604,6 +607,7 @@ export class Template3D {
         
         canvas.templates.activate();
         const template3d = isPlaceable ? new Template3D(template) : new Template3D(template,new THREE.Vector2(template.ray.A.x, template.ray.A.y), new THREE.Vector2(template.ray.B.x, template.ray.B.y));
+        template3d.temporary = !create;
         template3d.initialLayer = initialLayer;
         template3d.draggable = true;
         template3d.isPreview = true;
