@@ -302,7 +302,7 @@ export function registerWrappers() {
                     const collision = token.document.getFlag("levels-3d-preview", "wasFreeMode") ? null : game.Levels3DPreview.interactionManager.computeSightCollision(newPos, collisionPos, "collision");
                     let targetElevation = token.document.elevation;
                     if (collision) {
-                        point2d = game.Levels3DPreview.helpers.ruler3d.pos3DToCanvas(collision);
+                        let point2d = game.Levels3DPreview.helpers.ruler3d.pos3DToCanvas(collision);
                         targetElevation = point2d.z.toFixed(2);
                     }
                     const movementCollision = game.Levels3DPreview.interactionManager.computeSightCollision(oldPos, newPos, "collision");

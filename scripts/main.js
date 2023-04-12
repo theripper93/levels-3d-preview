@@ -1148,6 +1148,7 @@ class Levels3DPreview {
             delete this._prevGameCameraState;
         }
         this.firstPersonMode = !this.firstPersonMode;
+        this.camera.near = this.firstPersonMode ? 0.05 : 0.01;
         if (this.GameCamera.enabled && this.firstPersonMode) this.GameCamera.toggle();
     }
 
