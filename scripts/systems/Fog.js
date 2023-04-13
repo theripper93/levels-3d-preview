@@ -143,7 +143,7 @@ export function injectFoWShaders(THREELIB) {
     #endif
     `;
 
-    THREELIB.ShaderChunk.fog_fragment += `
+    THREELIB.ShaderChunk.fog_fragment = `
     if( sceneDimensions.x != 0.0 && vWorldPositionFoW.x >= sceneOrigin.x && vWorldPositionFoW.x <= sceneDimensions.x - sceneOrigin.x && vWorldPositionFoW.z >= sceneOrigin.y && vWorldPositionFoW.z <= sceneDimensions.y - sceneOrigin.y ){
         float sceneX = (vWorldPositionFoW.x)/sceneDimensions.x;
         float sceneY = (vWorldPositionFoW.z)/sceneDimensions.y;
@@ -155,5 +155,5 @@ export function injectFoWShaders(THREELIB) {
             gl_FragColor = mix( vec4(0.0, 0.0, 0.0, 1.0), gl_FragColor, fogTexel.r );
         }
     }
-    `;
+    ` + THREELIB.ShaderChunk.fog_fragment;
 }

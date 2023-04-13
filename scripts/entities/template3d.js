@@ -232,6 +232,8 @@ export class Template3D {
     }
 
     destroy() {
+        if (this._destroyed) return;
+        this._destroyed = true;
         if (this.isPreview) {
             this.initialLayer?.activate();
             this.actorSheet?.maximize();

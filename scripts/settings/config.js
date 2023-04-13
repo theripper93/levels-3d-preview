@@ -29,17 +29,17 @@ Hooks.on("getSceneControlButtons", (buttons)=>{
             }
             miniCanvas.toggle();
         }
-    });
+        });
+    
     if (game.Levels3DPreview?._active && game.user.isGM) {
         const drawPolygonTool = {
             name: "tile3dPolygon",
             title: game.i18n.localize("levels3dpreview.controls.tile3dPolygon"),
             icon: "fa-solid fa-draw-polygon",
-            button: true,
             visible: true,
-            onClick: () => {
+            /*onClick: () => {
                 game.Levels3DPreview.UTILS.extractPointsFromDrawing();
-            },
+            },*/
         };
         buttons.find(b => b.name === "tiles")?.tools?.splice(1,0,drawPolygonTool);
         buttons.find(b => b.name === "tiles").tools.find(t => t.name === "browse").onClick = () => {game.Levels3DPreview.open3DFilePicker()}

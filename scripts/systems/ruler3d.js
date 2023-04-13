@@ -34,7 +34,7 @@ export class Ruler3D {
     }
 
     drawTemplate() {
-        if (ui.controls.activeTool === "select" || !this.allowedRulerDrag.some((a) => a === canvas.activeLayer.options.objectClass.embeddedName)) return;
+        if (ui.controls.activeTool === "select" || ui.controls.activeTool === "tile3dPolygon" || !this.allowedRulerDrag.some((a) => a === canvas.activeLayer.options.objectClass.embeddedName)) return;
         if (this.template?.isPreview) return;
         if (this.allowedRulerDrag.some((a) => a === this._object?.userData?.entity3D?.placeable?.document?.documentName)) return;
         this.template?.destroy();
@@ -156,6 +156,7 @@ export class Ruler3D {
     updateVisibility() {}
 
     addSegment() {
+        if(!this._object) return;
         const segment = new RulerSegment(this, this.isToken);
         this.segments.push(segment);
         this.origin = this.getTargetPos().clone();
@@ -273,6 +274,51 @@ export class Ruler3D {
             this.colorCache[drColor] = color;
         }
         return color ?? this.color;
+    }
+
+    async createTile() { 
+        const points = this.segments.map(s => s.origin);
+        const lastSegment = this.segments[this.segments.length - 1];
+        const lastPoint = lastSegment.target;
+        points.push(lastPoint);
+        const isClosed = points[0].distanceTo(points[points.length - 1]) < 0.01;
+        const minX = Math.min(...points.map(p => p.x));
+        const maxX = Math.max(...points.map(p => p.x));
+        const minY = Math.min(...points.map(p => p.z));
+        const maxY = Math.max(...points.map(p => p.z));
+        const minElevation = Math.min(...points.map(p => p.y));
+        const maxElevation = Math.max(...points.map(p => p.y));
+
+        const depth = parseInt((maxElevation - minElevation)*factor);
+        const width = parseInt((maxX - minX)*factor);
+        const height = parseInt((maxY - minY) * factor);
+        const bottom = Ruler3D.pixelsToUnits(minElevation);
+        const polygonPoints = [];
+        for(const point of points) {
+            polygonPoints.push(parseInt((point.x - minX)*factor), parseInt((point.z - minY)*factor));
+        }
+        isClosed && polygonPoints.push(polygonPoints[0], polygonPoints[1]);
+        const tileData = {
+            width: Math.max(width, 10),
+            height: Math.max(height, 10),
+            x: minX * factor,
+            y: minY * factor,
+            flags: {
+                "levels-3d-preview": {
+                    depth: Math.max(depth, 50),
+                    dynaMesh: isClosed ? "polygonbevel" : "polygonbevelsolidify",
+                    model3d: isClosed ? polygonPoints.join(",") : "10#" + polygonPoints.join(","),
+                    fromPolygonTool: true,
+                    autoGround: true,
+                },
+                levels: {
+                    rangeBottom: bottom,
+                }
+            },
+        };
+        this.clearSegments();
+        const res = await canvas.scene.createEmbeddedDocuments("Tile", [tileData]);
+        return res[0];
     }
 
     async executeAllMovement() {

@@ -408,7 +408,7 @@ export class Light3D {
 
 const lightAnimations = {
     none: () => {},
-    flame: function torch(time) {
+    torch: function torch(time) {
         const f = 0.0015;
         const random = 0.5 + (this.noise.noise(f * time * this.animationSpeed, 0) + this.animationIntensity) * 0.25;
         this.light3d.distance = this.initialLightParams.radius * random;

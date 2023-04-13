@@ -315,7 +315,7 @@ export class InteractionManager {
 
     isRulerDrag(event, intersectData) {
         if (ui.controls.activeTool == "ruler") return true;
-        if (this.activeLayerEntity === "Tile" && ui.controls.activeTool === "tile") return true;
+        if (this.activeLayerEntity === "Tile" && (ui.controls.activeTool === "tile" || ui.controls.activeTool === "tile3dPolygon")) return true;
         if (this.currentHover?.embeddedName === this.activeLayerEntity) return false;
         if (this.isNoSelectDrag()) return false;
         if (ui.controls.control.activeTool === "select" && ui.controls.activeTool != "ruler") return false;
@@ -466,7 +466,7 @@ export class InteractionManager {
             originalIntersect: event.originalIntersect,
             intersectData: intersectData.intersectData,
         };
-        if (this.draggable?.userData?.entity3D?.token) {
+        if (event.which === 3 && (this.draggable?.userData?.entity3D?.token || ui.controls.activeTool === "tile3dPolygon")) {
             this._parent.ruler.addSegment();
         } else {
             if (this.clicks === 1) {
@@ -540,13 +540,12 @@ export class InteractionManager {
                 this._parent.ruler.addSegment();
                 entity3D.setPosition(false, true);
                 this._parent.ruler.executeAllMovement(entity3D.token);
+            }else if (ui.controls.activeTool === "tile3dPolygon") {
+                this._parent.ruler.addSegment();
+                this._parent.ruler.createTile();
             } else {
                 if (!entity3D.updatePositionFrom3D(event)) this.cancelDrag();
             }
-            /*if (!entity3D.updatePositionFrom3D(event)) this.cancelDrag();
-            if (entity3D.token) {
-                entity3D.setPosition(false, true);
-            }*/
             this.draggable = null;
             this.clicks = 0;
         }
@@ -1015,20 +1014,24 @@ export class InteractionManager {
 
         this.raycaster.setFromCamera(this.mousemove, this.camera);
         let intersects = this.raycaster.intersectObjects(collisionGeometries.length && !isFree ? collisionGeometries : [this.dragplane], true).filter(this._clippingFilter);
-        if (!intersects.length) intersects = this.raycaster.intersectObjects([this.dragplane], true);
+        if (!intersects?.length) intersects = this.raycaster.intersectObjects([this.dragplane], true);
 
         if (intersects.length > 0) {
             const entity3D = this.draggable.userData.entity3D;
-            const distance = target.position.distanceTo(intersects[0].point);
+            const intersect = intersects[0];
+            if (this._parent.CONFIG.UI.windows.RoomBuilder && ui.controls.activeTool == "tile") {
+                intersect.point.y = this.ruler.origin.y;
+            }
+            const distance = target.position.distanceTo(intersect.point);
             let lerpFactor = 1 / (1 + distance * 20);
             if (lerpFactor < 0.1) lerpFactor = 0.1;
             const isToken = !!entity3D.token;
-            this.currentDragTarget = new THREE.Vector3(intersects[0].point.x, !isFree ? intersects[0].point.y : entity3D.elevation3d, intersects[0].point.z);
+            this.currentDragTarget = new THREE.Vector3(intersect.point.x, !isFree ? intersect.point.y : entity3D.elevation3d, intersect.point.z);
             if (isToken) this.currentDragTarget.y += RULER_TOKEN_OFFSET;
             target.position.lerp(this.currentDragTarget, lerpFactor);
             if (!isFree) {
-                entity3D.elevation3d = intersects[0].point.y;
-                this.dragplane.position.set(center.x, intersects[0].point.y, center.z);
+                entity3D.elevation3d = intersect.point.y;
+                this.dragplane.position.set(center.x, intersect.point.y, center.z);
             }
             if (entity3D.template) entity3D.onMove();
             this.ruler.update();
