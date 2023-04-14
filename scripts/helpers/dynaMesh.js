@@ -1,8 +1,9 @@
 import * as THREE from "../lib/three.module.js";
 import { factor } from "../main.js";
 import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from "../lib/three-mesh-bvh.js";
-import {mergeBufferGeometries, toTrianglesDrawMode} from "../lib/BufferGeometryUtils.js";
-import { DecalGeometry } from "../lib/DecalGeometry.js";
+import {mergeBufferGeometries, toTrianglesDrawMode, mergeVertices} from "../lib/BufferGeometryUtils.js";
+import {DecalGeometry} from "../lib/DecalGeometry.js";
+import { ImprovedNoise } from "../lib/imporovedNoise.js";
 THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
 THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
 THREE.Mesh.prototype.raycast = acceleratedRaycast;
@@ -189,6 +190,40 @@ export class DynaMesh {
         return mergeBufferGeometries([geometry]);
     }
 
+    _constructpolygonbevelsolidifyjagged() {
+        if (this.text.includes("#")) {
+            const split = this.text.split("#");
+            this.solidifyThickness = parseFloat(split[0]) / factor;
+            this.text = split[1];
+        }
+        const iterations = this.resolution + 2;
+        let points = this.text.split(",").map((point) => parseInt(point) / factor);
+        points = subdividePolygon(points, iterations);
+        const pixiP = new PIXI.Polygon(points);
+        points = solidifyPolygon(points, this.solidifyThickness);
+        const shape = new THREE.Shape();
+        shape.moveTo(points[0], points[1]);
+        for (let i = 2; i < points.length; i += 2) {
+            shape.lineTo(points[i], points[i + 1]);
+        }
+        shape.lineTo(points[0], points[1]);
+        const extrudeSettings = {
+            steps: iterations * 2,
+            depth: this.depth,
+            bevelEnabled: false,
+            bevelThickness: 0.011,
+            bevelSize: 0.01,
+            bevelOffset: 0,
+            bevelSegments: 3,
+        };
+        let geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+        geometry = applyJagged(geometry, pixiP, (this.solidifyThickness * 2) / factor);
+        geometry.rotateX(Math.PI / 2);
+        geometry.center();
+        
+        return mergeBufferGeometries([geometry]);
+    }
+
     _constructpolygonlathe() { 
         let phiLength = Math.PI * 2;
         if (this.text.includes("#")) {
@@ -317,40 +352,104 @@ function solidifyPolygon(points, thickness) {
 
 }
 
-function _solidifyPolygon(points, thickness) {
-    const solidifyThickness = thickness ?? 0.05;
-    
-    points = points
+function subdividePolygon(polygon, iterations = 1) {
+    for (let i = 0; i < iterations; i += 1) {
+        polygon = subdividePolygonPoints(polygon);
+    }
+    return polygon;
+}
+
+function subdividePolygonPoints(polygon) {
+    const points = polygon
         .map((point, index) => {
             if (index % 2 === 0) {
-                return { x: point, y: points[index + 1] };
+                return { x: point, y: polygon[index + 1] };
             }
         })
         .filter((point) => point);
     
-    //points.push(points[0]);
-    
-    const solidifiedPoints = [];
-    for (let i = 0; i < points.length; i += 1) { 
-        const current = points[i];
-        const next = points[(i + 1) % points.length];
-        const prev = points[(i - 1 + points.length) % points.length];
-        
-        const currentNextNormal = new THREE.Vector2(next.x - current.x, next.y - current.y).normalize();
-        const currentPrevNormal = new THREE.Vector2(current.x - prev.x, current.y - prev.y).normalize();
-        const currentNormal = new THREE.Vector2(currentNextNormal.x + currentPrevNormal.x, currentNextNormal.y + currentPrevNormal.y).normalize();
-        const currentNormalPerp = new THREE.Vector2(-currentNormal.y, currentNormal.x);
-
-        solidifiedPoints.push(current.x + currentNormalPerp.x * solidifyThickness, current.y + currentNormalPerp.y * solidifyThickness);
+    const segments = [];
+    for (let i = 0; i < points.length - 1; i += 1) {
+        segments.push({ start: points[i], end: points[i + 1] });
     }
-    points.reverse();
-
-    for (let i = 0; i < points.length; i += 1) {
-        const current = points[i];
-        solidifiedPoints.push(current.x, current.y);
+    const subdivededSegments = [];
+    for (let i = 0; i < segments.length; i += 1) { 
+        const segment = segments[i];
+        const midPoint = new THREE.Vector2((segment.start.x + segment.end.x) / 2, (segment.start.y + segment.end.y) / 2);
+        subdivededSegments.push({ start: segment.start, end: midPoint });
+        subdivededSegments.push({ start: midPoint, end: segment.end });
     }
+    const subdivededPoints = [];
+    for (let i = 0; i < subdivededSegments.length; i += 1) {
+        subdivededPoints.push(subdivededSegments[i].start.x, subdivededSegments[i].start.y);
+    }
+    subdivededPoints.push(subdivededSegments[subdivededSegments.length - 1].end.x, subdivededSegments[subdivededSegments.length - 1].end.y);
 
-    return solidifiedPoints;
+    return subdivededPoints;
+}
 
+function applyJagged(geometry, pixiP, thickness, scale = 10, strength = 1) {
+    geometry.computeBoundingBox();
+    const polygonVec2 = [];
+    for (let i = 0; i < pixiP.points.length; i += 2) {
+        polygonVec2.push(new THREE.Vector2(pixiP.points[i], pixiP.points[i + 1]));
+    }
+    const positionAttributes = geometry.getAttribute("position");
+    const count = positionAttributes.count;
+    const improvedNoise = new ImprovedNoise();
+    const minY = geometry.boundingBox.min.y;
+    const maxY = geometry.boundingBox.max.y;
+    const center = geometry.boundingBox.getCenter(new THREE.Vector3());
+    for (let i = 0; i < count; i++) {
+        const x = positionAttributes.getX(i);
+        const y = positionAttributes.getY(i);
+        const z = positionAttributes.getZ(i);
+        if (!pixiP.contains(x, y)) continue;
+        const currentPointV2 = new THREE.Vector2(x, y);
+        const closestPoint = polygonVec2.reduce((prev, curr) => {
+            return prev.distanceTo(currentPointV2) < curr.distanceTo(currentPointV2) ? prev : curr;
+        });
+        const displacementDirection = new THREE.Vector2().subVectors(currentPointV2, closestPoint).normalize();
+        //const yPercent = (y - minY) / (maxY - minY);
+        //if(yPercent > 0.97) continue;
+        const displacement = 1 - improvedNoise.noise(x * scale, y * scale, z * scale); //1 - this.getPixel(this.displacementMap, xPercent*zPercent, yPercent).r / 255;
+        const displaced = currentPointV2.add(displacementDirection.clone().multiplyScalar(displacement * strength * 0.05));
+        positionAttributes.setX(i, displaced.x);
+        positionAttributes.setY(i, displaced.y);
+    }
+    geometry.computeVertexNormals();
+    geometry.normalizeNormals();
+    geometry.attributes.position.needsUpdate = true;
+    geometry.attributes.normal.needsUpdate = true;
+    return geometry;
+}
 
+function _applyJagged(geometry, thickness, scale = 10, strength = 1) {
+    const positionAttributes = geometry.getAttribute("position");
+    const count = positionAttributes.count;
+    const improvedNoise = new ImprovedNoise();
+    geometry.computeBoundingBox();
+    const minY = geometry.boundingBox.min.y;
+    const maxY = geometry.boundingBox.max.y;
+    const center = geometry.boundingBox.getCenter(new THREE.Vector3());
+    for (let i = 0; i < count; i++) {
+        const x = positionAttributes.getX(i);
+        const y = positionAttributes.getY(i);
+        const z = positionAttributes.getZ(i);
+        const yPercent = (y - minY) / (maxY - minY);
+        //if(yPercent > 0.97) continue;
+        const point = new THREE.Vector3(x, y, z);
+        const towardsCenter = new THREE.Vector3().subVectors(center, point).normalize();
+        const displacement = 1 - improvedNoise.noise(x * scale, y * scale, z * scale); //1 - this.getPixel(this.displacementMap, xPercent*zPercent, yPercent).r / 255;
+        const displaced = point.add(towardsCenter.clone().multiplyScalar(displacement * strength * 0.05));
+        displaced.sub(towardsCenter.multiplyScalar(thickness));
+        positionAttributes.setX(i, displaced.x);
+        positionAttributes.setZ(i, displaced.z);
+    }
+    geometry.computeVertexNormals();
+    geometry.normalizeNormals();
+    geometry.computeTangents();
+    geometry.attributes.position.needsUpdate = true;
+    geometry.attributes.normal.needsUpdate = true;
+    return geometry;
 }

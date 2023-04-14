@@ -1387,7 +1387,7 @@ class Levels3DPreview {
             this.controls.screenSpacePanning = game.settings.get("levels-3d-preview", "screenspacepanning");
         }
         this.controls.enableDamping = game.settings.get("levels-3d-preview", "enabledamping"); //true;
-        this.controls.dampingFactor = 0.07;
+        this.controls.dampingFactor = 0.1;
 
         this.controls.target.set(center.x, center.y, center.z);
         const loaded = topdown ? false : this.loadInitialCameraPosition();

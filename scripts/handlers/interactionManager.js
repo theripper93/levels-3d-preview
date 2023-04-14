@@ -118,10 +118,10 @@ export class InteractionManager {
         //if (!p0 && !p1) canvas.tokens.controlled.forEach((t) => t.updateSource());
     }
 
-    computeSightCollision(v1, v2, type = "collision", elongate = false) {
+    computeSightCollision(v1, v2, type = "collision", elongate = false, useDistance = true, useClipping = false, returnAll = false) {
         const origin = Ruler3D.posCanvasTo3d(v1);
         const target = Ruler3D.posCanvasTo3d(v2);
-        return this.computeSightCollisionFrom3DPositions(origin, target, type, elongate);
+        return this.computeSightCollisionFrom3DPositions(origin, target, type, elongate, useDistance, useClipping, returnAll);
     }
 
     computeSightCollisionFrom3DPositions(origin, target, type, elongate, useDistance = true, useClipping = false, returnAll = false) {

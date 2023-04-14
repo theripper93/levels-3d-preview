@@ -1,6 +1,6 @@
 import * as THREE from "../lib/three.module.js";
 import { MersenneTwister } from "../lib/mersenneTwister.js";
-import { SimplexNoise, Perlin, FractionalBrownianMotion } from "../lib/noiseFunctions.js";
+import {SimplexNoise, Perlin, FractionalBrownianMotion} from "../lib/noiseFunctions.js";
 import { Ruler3D } from "../systems/ruler3d.js";
 import { factor } from "../main.js";
 import { DynaMesh } from "../helpers/dynaMesh.js";
@@ -2265,4 +2265,8 @@ function joinPolygons(polygons) {
     }
 
     return finalPolygons;
+}
+
+function witchOfAgnesi(x, a) {
+    return (8*a*a*a)/(x*x + 4*a*a);
 }
