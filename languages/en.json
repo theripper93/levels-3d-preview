@@ -448,6 +448,8 @@
                     "polygonbevel": "Polygon (Bevel)",
                     "polygonsolidify": "Polygon (Solidify)",
                     "polygonbevelsolidify": "Polygon (Bevel + Solidify)",
+                    "polygonbevelsolidifyjagged": "Polygon (Jagged Curved)",
+                    "polygonbevelsolidifyjaggedstraight": "Polygon (Jagged Straight)",
                     "polygonlathe": "Polygon (Lathe)",
                     "mapGen": "Map Generator"
                 }

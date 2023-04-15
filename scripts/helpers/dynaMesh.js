@@ -210,14 +210,48 @@ export class DynaMesh {
         const extrudeSettings = {
             steps: iterations * 2,
             depth: this.depth,
-            bevelEnabled: false,
+            bevelEnabled: true,
             bevelThickness: 0.011,
             bevelSize: 0.01,
             bevelOffset: 0,
             bevelSegments: 3,
         };
         let geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
-        geometry = applyJagged(geometry, pixiP, (this.solidifyThickness * 2) / factor);
+        geometry = applyJagged(geometry, pixiP, 10, this.depth * 4, this.depth * 4);
+        geometry.rotateX(Math.PI / 2);
+        geometry.center();
+        
+        return mergeBufferGeometries([geometry]);
+    }
+
+    _constructpolygonbevelsolidifyjaggedstraight() {
+        if (this.text.includes("#")) {
+            const split = this.text.split("#");
+            this.solidifyThickness = parseFloat(split[0]) / factor;
+            this.text = split[1];
+        }
+        const iterations = this.resolution + 2;
+        let points = this.text.split(",").map((point) => parseInt(point) / factor);
+        points = subdividePolygon(points, iterations);
+        const pixiP = new PIXI.Polygon(points);
+        points = solidifyPolygon(points, this.solidifyThickness);
+        const shape = new THREE.Shape();
+        shape.moveTo(points[0], points[1]);
+        for (let i = 2; i < points.length; i += 2) {
+            shape.lineTo(points[i], points[i + 1]);
+        }
+        shape.lineTo(points[0], points[1]);
+        const extrudeSettings = {
+            steps: iterations * 2,
+            depth: this.depth,
+            bevelEnabled: true,
+            bevelThickness: 0.011,
+            bevelSize: 0.01,
+            bevelOffset: 0,
+            bevelSegments: 3,
+        };
+        let geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+        geometry = applyJagged(geometry, pixiP, 10, 1, 0.1);
         geometry.rotateX(Math.PI / 2);
         geometry.center();
         
@@ -352,6 +386,27 @@ function solidifyPolygon(points, thickness) {
 
 }
 
+
+function _subdividePolygon(polygon, iterations = 1) {
+    const vec2Points = [];
+    for (let i = 0; i < polygon.length; i += 2) {
+        vec2Points.push(new THREE.Vector2(polygon[i], polygon[i + 1]));
+    }
+    const endPoint = [vec2Points[vec2Points.length - 1].x, vec2Points[vec2Points.length - 1].y];
+    const count = vec2Points.length;
+    const curve = new THREE.SplineCurve(vec2Points);
+    const points = curve.getPoints(count * (iterations + 1));
+    points.pop();
+    //remove first point
+    points.shift();
+    const subdividedPolygon = [vec2Points[0].x, vec2Points[0].y];
+    for (let i = 0; i < points.length; i += 1) {
+        subdividedPolygon.push(points[i].x, points[i].y);
+    }
+    subdividedPolygon.push(endPoint[0], endPoint[1]);
+    return subdividedPolygon;
+}
+
 function subdividePolygon(polygon, iterations = 1) {
     for (let i = 0; i < iterations; i += 1) {
         polygon = subdividePolygonPoints(polygon);
@@ -388,7 +443,7 @@ function subdividePolygonPoints(polygon) {
     return subdivededPoints;
 }
 
-function applyJagged(geometry, pixiP, thickness, scale = 10, strength = 1) {
+function applyJagged(geometry, pixiP, scale = 10, strength = 1, curvature = 1) {
     geometry.computeBoundingBox();
     const polygonVec2 = [];
     for (let i = 0; i < pixiP.points.length; i += 2) {
@@ -397,8 +452,8 @@ function applyJagged(geometry, pixiP, thickness, scale = 10, strength = 1) {
     const positionAttributes = geometry.getAttribute("position");
     const count = positionAttributes.count;
     const improvedNoise = new ImprovedNoise();
-    const minY = geometry.boundingBox.min.y;
-    const maxY = geometry.boundingBox.max.y;
+    const minZ = geometry.boundingBox.min.z;
+    const maxZ = geometry.boundingBox.max.z;
     const center = geometry.boundingBox.getCenter(new THREE.Vector3());
     for (let i = 0; i < count; i++) {
         const x = positionAttributes.getX(i);
@@ -410,46 +465,15 @@ function applyJagged(geometry, pixiP, thickness, scale = 10, strength = 1) {
             return prev.distanceTo(currentPointV2) < curr.distanceTo(currentPointV2) ? prev : curr;
         });
         const displacementDirection = new THREE.Vector2().subVectors(currentPointV2, closestPoint).normalize();
-        //const yPercent = (y - minY) / (maxY - minY);
-        //if(yPercent > 0.97) continue;
-        const displacement = 1 - improvedNoise.noise(x * scale, y * scale, z * scale); //1 - this.getPixel(this.displacementMap, xPercent*zPercent, yPercent).r / 255;
+        const zPercent = (z - minZ) / (maxZ - minZ);
+        if (zPercent < 0.05) continue;
+        const curve = 1 - Math.sin(zPercent * Math.PI) * curvature;
+        const displacement = (1 - improvedNoise.noise(x * scale, y * scale, z * scale)) * curve; //1 - this.getPixel(this.displacementMap, xPercent*zPercent, yPercent).r / 255;
         const displaced = currentPointV2.add(displacementDirection.clone().multiplyScalar(displacement * strength * 0.05));
-        positionAttributes.setX(i, displaced.x);
-        positionAttributes.setY(i, displaced.y);
+        const hasOvershot = !pixiP.contains(displaced.x, displaced.y);
+        positionAttributes.setX(i, hasOvershot ? closestPoint.x : displaced.x);
+        positionAttributes.setY(i, hasOvershot ? closestPoint.y : displaced.y);
     }
-    geometry.computeVertexNormals();
-    geometry.normalizeNormals();
     geometry.attributes.position.needsUpdate = true;
-    geometry.attributes.normal.needsUpdate = true;
-    return geometry;
-}
-
-function _applyJagged(geometry, thickness, scale = 10, strength = 1) {
-    const positionAttributes = geometry.getAttribute("position");
-    const count = positionAttributes.count;
-    const improvedNoise = new ImprovedNoise();
-    geometry.computeBoundingBox();
-    const minY = geometry.boundingBox.min.y;
-    const maxY = geometry.boundingBox.max.y;
-    const center = geometry.boundingBox.getCenter(new THREE.Vector3());
-    for (let i = 0; i < count; i++) {
-        const x = positionAttributes.getX(i);
-        const y = positionAttributes.getY(i);
-        const z = positionAttributes.getZ(i);
-        const yPercent = (y - minY) / (maxY - minY);
-        //if(yPercent > 0.97) continue;
-        const point = new THREE.Vector3(x, y, z);
-        const towardsCenter = new THREE.Vector3().subVectors(center, point).normalize();
-        const displacement = 1 - improvedNoise.noise(x * scale, y * scale, z * scale); //1 - this.getPixel(this.displacementMap, xPercent*zPercent, yPercent).r / 255;
-        const displaced = point.add(towardsCenter.clone().multiplyScalar(displacement * strength * 0.05));
-        displaced.sub(towardsCenter.multiplyScalar(thickness));
-        positionAttributes.setX(i, displaced.x);
-        positionAttributes.setZ(i, displaced.z);
-    }
-    geometry.computeVertexNormals();
-    geometry.normalizeNormals();
-    geometry.computeTangents();
-    geometry.attributes.position.needsUpdate = true;
-    geometry.attributes.normal.needsUpdate = true;
     return geometry;
 }
