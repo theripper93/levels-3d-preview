@@ -217,7 +217,41 @@ export class DynaMesh {
             bevelSegments: 3,
         };
         let geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
-        geometry = applyJagged(geometry, pixiP, 10, this.depth * 4, this.depth * 4);
+        geometry = applyJagged(geometry, pixiP, 10, this.depth * 4, this.depth * 4, false);
+        geometry.rotateX(Math.PI / 2);
+        geometry.center();
+        
+        return mergeBufferGeometries([geometry]);
+    }
+
+    _constructpolygonbevelsolidifyjaggeddouble() {
+        if (this.text.includes("#")) {
+            const split = this.text.split("#");
+            this.solidifyThickness = parseFloat(split[0]) / factor;
+            this.text = split[1];
+        }
+        const iterations = this.resolution + 2;
+        let points = this.text.split(",").map((point) => parseInt(point) / factor);
+        points = subdividePolygon(points, iterations);
+        const pixiP = new PIXI.Polygon(points);
+        points = solidifyPolygon(points, this.solidifyThickness);
+        const shape = new THREE.Shape();
+        shape.moveTo(points[0], points[1]);
+        for (let i = 2; i < points.length; i += 2) {
+            shape.lineTo(points[i], points[i + 1]);
+        }
+        shape.lineTo(points[0], points[1]);
+        const extrudeSettings = {
+            steps: iterations * 2,
+            depth: this.depth,
+            bevelEnabled: true,
+            bevelThickness: 0.011,
+            bevelSize: 0.01,
+            bevelOffset: 0,
+            bevelSegments: 3,
+        };
+        let geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+        geometry = applyJagged(geometry, pixiP, 10, this.depth * 4, this.depth * 4, true);
         geometry.rotateX(Math.PI / 2);
         geometry.center();
         
@@ -251,7 +285,7 @@ export class DynaMesh {
             bevelSegments: 3,
         };
         let geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
-        geometry = applyJagged(geometry, pixiP, 10, 1, 0.1);
+        geometry = applyJagged(geometry, pixiP, 10, 1, 0.1, false);
         geometry.rotateX(Math.PI / 2);
         geometry.center();
         
@@ -443,7 +477,8 @@ function subdividePolygonPoints(polygon) {
     return subdivededPoints;
 }
 
-function applyJagged(geometry, pixiP, scale = 10, strength = 1, curvature = 1) {
+function applyJagged(geometry, pixiP, scale = 10, strength = 1, curvature = 1, doubleSided = true) {
+    curvature = Math.min(curvature, 2)
     geometry.computeBoundingBox();
     const polygonVec2 = [];
     for (let i = 0; i < pixiP.points.length; i += 2) {
@@ -459,18 +494,20 @@ function applyJagged(geometry, pixiP, scale = 10, strength = 1, curvature = 1) {
         const x = positionAttributes.getX(i);
         const y = positionAttributes.getY(i);
         const z = positionAttributes.getZ(i);
-        if (!pixiP.contains(x, y)) continue;
+        const isInside = pixiP.contains(x, y);
+        if (!isInside && !doubleSided) continue;
         const currentPointV2 = new THREE.Vector2(x, y);
         const closestPoint = polygonVec2.reduce((prev, curr) => {
             return prev.distanceTo(currentPointV2) < curr.distanceTo(currentPointV2) ? prev : curr;
         });
+        const displacementSign = isInside ? 1 : 1;
         const displacementDirection = new THREE.Vector2().subVectors(currentPointV2, closestPoint).normalize();
         const zPercent = (z - minZ) / (maxZ - minZ);
         if (zPercent < 0.05) continue;
         const curve = 1 - Math.sin(zPercent * Math.PI) * curvature;
         const displacement = (1 - improvedNoise.noise(x * scale, y * scale, z * scale)) * curve; //1 - this.getPixel(this.displacementMap, xPercent*zPercent, yPercent).r / 255;
-        const displaced = currentPointV2.add(displacementDirection.clone().multiplyScalar(displacement * strength * 0.05));
-        const hasOvershot = !pixiP.contains(displaced.x, displaced.y);
+        const displaced = currentPointV2.add(displacementDirection.clone().multiplyScalar(displacement * displacementSign * strength * 0.05));
+        const hasOvershot = isInside ? !pixiP.contains(displaced.x, displaced.y) : pixiP.contains(displaced.x, displaced.y);
         positionAttributes.setX(i, hasOvershot ? closestPoint.x : displaced.x);
         positionAttributes.setY(i, hasOvershot ? closestPoint.y : displaced.y);
     }

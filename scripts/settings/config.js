@@ -771,6 +771,7 @@ Hooks.on("renderTileConfig", (app,html)=>{
                 polygonsolidify: game.i18n.localize("levels3dpreview.flags.dynaMesh.options.polygonsolidify"),
                 polygonbevelsolidify: game.i18n.localize("levels3dpreview.flags.dynaMesh.options.polygonbevelsolidify"),
                 polygonbevelsolidifyjagged: game.i18n.localize("levels3dpreview.flags.dynaMesh.options.polygonbevelsolidifyjagged"),
+                polygonbevelsolidifyjaggeddouble: game.i18n.localize("levels3dpreview.flags.dynaMesh.options.polygonbevelsolidifyjaggeddouble"),
                 polygonbevelsolidifyjaggedstraight: game.i18n.localize("levels3dpreview.flags.dynaMesh.options.polygonbevelsolidifyjaggedstraight"),
                 polygonlathe: game.i18n.localize("levels3dpreview.flags.dynaMesh.options.polygonlathe"),
                 mapGen: game.i18n.localize("levels3dpreview.flags.dynaMesh.options.mapGen"),
