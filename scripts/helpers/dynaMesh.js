@@ -217,7 +217,7 @@ export class DynaMesh {
             bevelSegments: 3,
         };
         let geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
-        geometry = applyJagged(geometry, pixiP, 10, this.depth * 4, this.depth * 4, false);
+        geometry = applyJagged(geometry, pixiP, 10, this.depth * 5, this.solidifyThickness * 100, false);
         geometry.rotateX(Math.PI / 2);
         geometry.center();
         
@@ -512,5 +512,5 @@ function applyJagged(geometry, pixiP, scale = 10, strength = 1, curvature = 1, d
         positionAttributes.setY(i, hasOvershot ? closestPoint.y : displaced.y);
     }
     geometry.attributes.position.needsUpdate = true;
-    return geometry;
+    return geometry
 }

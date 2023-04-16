@@ -47,6 +47,7 @@ import { Ping } from "./entities/effects/ping.js";
 import {injectThreeModifications} from "./threejsmodifications.js";
 import {ActiveEffectEffect} from "./entities/effects/activeEffect.js";
 import {RangeRingEffect} from "./entities/effects/rangeRing.js";
+import { CutsceneEngine } from "./systems/cutsceneEngine.js";
 import { registerWrappers } from "./wrappers.js";
 
 export const factor = 1000;
@@ -144,6 +145,7 @@ class Levels3DPreview {
                 Ping,
                 ActiveEffectEffect,
                 RangeRingEffect,
+                CutsceneEngine,
             },
             INTERACTIONS: {
                 dropFunctions,
@@ -386,6 +388,7 @@ class Levels3DPreview {
         this.socket.register("syncClipNavigator", this.helpers.syncClipNavigator);
         this.socket.register("playTokenAnimationSocket", this.helpers.playTokenAnimationSocket);
         this.socket.register("dispatchPing", this.helpers.dispatchPing);
+        this.socket.register("playCutscene", this.cutsceneSocket)
         this.exporter = new Exporter(this);
         this.init3d();
     }
@@ -446,6 +449,7 @@ class Levels3DPreview {
         this.interactionManager = new InteractionManager(this);
         this.interactionManager.activateListeners();
         this.cursors = new Cursors3D(this);
+        this.cutsceneEngine = new CutsceneEngine(this);
 
         this.GameCamera = new GameCamera(this.camera, this.controls, this);
         //clipping
@@ -1228,6 +1232,7 @@ class Levels3DPreview {
                 rangeFinder.updateText();
             });
             this.particleSystem.update(delta);
+            this.cutsceneEngine.update(delta);
             this.checkInFog();
             this.animateCamera(delta);
             this.centerHUD();
@@ -1670,6 +1675,11 @@ class Levels3DPreview {
             animationId,
             options,
         });
+    }
+
+    cutsceneSocket({userIds, sceneId, cutsceneId}) {
+        if(canvas.scene.id !== sceneId || (userIds?.length && !userIds.includes(game.user.id))) return;
+        game.Levels3DPreview.cutsceneEngine.play(cutsceneId)
     }
 
     particleSocket(...args) {

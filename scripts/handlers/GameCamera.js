@@ -24,6 +24,14 @@ export class GameCamera {
         this.setControlPreset();
     }
 
+    get enabled() {
+        return this._enabled && !this._parent.cutsceneEngine.isPlaying;
+    }
+
+    set enabled(v) {
+        this._enabled = v;
+    }
+
     getY() {
         const origin = new THREE.Vector3(this.toFixedFloat(this.camera.position.x, 2), this.toFixedFloat(this.camera.position.y, 2), this.toFixedFloat(this.camera.position.z, 2)); //this.camera.position;
         origin.y += 0.2;
