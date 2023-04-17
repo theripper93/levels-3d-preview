@@ -70,7 +70,8 @@
             "preview3d": "Alternar modo 3D",
             "tips": {
                 "templatePlacement": "Colocación de plantilla 3D: rueda del mouse para cambiar la elevación. \nControle la rueda del mouse para rotar. \nAlt rueda del ratón para inclinar."
-            }
+            },
+            "tile3dPolygon": "Dibujar forma para extruir"
         },
         "errors": {
             "3dnotactive": "No se puede abrir la ventana emergente del lienzo, el modo 3D no está activo.",
@@ -196,7 +197,15 @@
                     "sphere": "Esfera",
                     "text": "Texto (Usar el campo Modelo 3D para el texto)",
                     "tube": "Tubo",
-                    "decal": "Calcomanía"
+                    "decal": "Calcomanía",
+                    "polygon": "Polígono",
+                    "polygonbevel": "Polígono (bisel)",
+                    "polygonbevelsolidify": "Polígono (bisel solidificado)",
+                    "polygonbevelsolidifyjagged": "Polígono (curvo dentado)",
+                    "polygonbevelsolidifyjaggeddouble": "Polígono (doble dentado)",
+                    "polygonbevelsolidifyjaggedstraight": "Polígono (recta dentada)",
+                    "polygonlathe": "Polígono (Torno)",
+                    "polygonsolidify": "Polígono (Solidificar)"
                 }
             },
             "dynaMeshResolution": {
@@ -565,7 +574,16 @@
             },
             "renderTable": {
                 "label": "Tabla de exhibición",
-                "notes": "Renderice la tabla en la vista 3D."
+                "notes": "Renderice la tabla en la vista 3D.",
+                "options": {
+                    "matblueprint": "Tapete Infinito (Plano)",
+                    "matcloth": "Tapete Infinito (Tela)",
+                    "matcustom": "Tapete Infinito (Personalizado)",
+                    "matpaper": "Tapete Infinito (Papel)",
+                    "matwood": "Tapete Infinito (Madera)",
+                    "none": "Ninguno",
+                    "table": "Mesa (Personalizada)"
+                }
             },
             "rotateBase": {
                 "label": "Fijar la rotación de la base",
@@ -757,6 +775,34 @@
             },
             "highlightOnHover": {
                 "label": "Resaltar al pasar el mouse"
+            },
+            "advanced": {
+                "header": "Avanzado"
+            },
+            "aura": {
+                "header": "auras"
+            },
+            "auraColor": {
+                "label": "Color del aura"
+            },
+            "auraRange": {
+                "label": "Rango de aura"
+            },
+            "doorAnimateAngle": {
+                "label": "Ángulo de animación de la puerta"
+            },
+            "doorStyle": {
+                "label": "Estilo de puerta",
+                "options": {
+                    "animate": "Animado",
+                    "transparent": "Transparente"
+                }
+            },
+            "particleGroundOffset": {
+                "label": "Compensación de tierra"
+            },
+            "tableColor": {
+                "label": "Tinte de relleno"
             }
         },
         "keybindings": {
@@ -1155,7 +1201,8 @@
                 "hide": "Ocultar configuración avanzada",
                 "hint": "Muestra los ajustes avanzados en los menús de configuración por defecto.",
                 "name": "Mostrar siempre la configuración avanzada",
-                "show": "Mostrar configuración avanzada"
+                "show": "Mostrar configuración avanzada",
+                "wiki": "Aprende más"
             },
             "softShadows": {
                 "hint": "Habilite las sombras suaves a un costo menor en el rendimiento. \nRequiere actualización.",
@@ -1222,6 +1269,10 @@
             "pingsound": {
                 "hint": "El sonido que se reproducirá cuando se haga ping en una ubicación.",
                 "name": "sonido de ping"
+            },
+            "paddingAppearance": {
+                "hint": "La apariencia predeterminada del relleno. \nEsto también se puede personalizar por escena.",
+                "name": "Apariencia de relleno"
             }
         },
         "shaders": {
@@ -1382,7 +1433,8 @@
                 "centery": "Ancla Y",
                 "description": "Efecto de rotación de textura, requiere una textura y algo de repetición de textura para funcionar.",
                 "name": "Girar",
-                "speed": "Velocidad"
+                "speed": "Velocidad",
+                "offsetAngle": "Desplazamiento de ángulo"
             },
             "textureScroll": {
                 "description": "Efecto de desplazamiento de textura simple similar al módulo 'Parallaxia'.",
@@ -1496,7 +1548,6 @@
                 "scaleHeight": "Altura",
                 "scaleScale": "Escala de mosaico",
                 "scaleWidth": "Ancho",
-                "select": "Mantenga presionada F y arrastre para seleccionar, arrastre hacia la izquierda para liberar objetos anteriores, arrastre hacia la derecha para agregar a la selección",
                 "tiltX": "Inclinar X",
                 "tiltZ": "Incline Y",
                 "title": "Controles del editor de mosaicos de lienzo 3D",
@@ -1765,7 +1816,230 @@
                     "content": "Cuando haya terminado de construir su escena, al hacer clic en este botón se fusionarán todos los mosaicos similares en un solo mosaico. \nEsto reducirá la cantidad de mosaicos en la escena y mejorará el rendimiento.",
                     "title": "Unir"
                 },
-                "title": "Intermedio: Navegador de activos"
+                "title": "Intermedio: Navegador de activos",
+                "step-8": {
+                    "content": "La pestaña de utilidades contiene accesos directos rápidos a acciones por lotes.",
+                    "title": "Utilidad"
+                },
+                "step-9": {
+                    "content": "Cuando haya terminado de construir su escena, use el botón 'Combinar mosaicos' para fusionar todos los mosaicos similares en un solo mosaico para mejorar el rendimiento.",
+                    "title": "Mejoramiento"
+                }
+            },
+            "asset-browser-paint": {
+                "description": "Este recorrido lo guiará a través del modo de pintura del Explorador de activos.",
+                "requires": "Debe tener instalado 3D Canvas Mapmaking Pack y el Explorador de activos abierto para comenzar este recorrido.",
+                "step-0": {
+                    "content": "El modo Pintura le permitirá dispersar mosaicos en la escena rápidamente.",
+                    "title": "Modo de pintura"
+                },
+                "step-1": {
+                    "content": "Para comenzar a pintar, debe seleccionar uno o más activos en el Explorador de activos. \nHaga clic en un activo para seleccionarlo o haga clic en Ctrl para seleccionar varios activos.",
+                    "title": "Seleccione uno o más Activos"
+                },
+                "step-2": {
+                    "content": "Una vez que haya seleccionado uno o más activos, verá una notificación en la parte inferior de la ventana.",
+                    "title": "Notificación de selección"
+                },
+                "step-3": {
+                    "content": "Mientras la herramienta 'Colocar mosaico' está habilitada, puede hacer clic y arrastrar la escena para dibujar un rectángulo. \nEl rectángulo se rellenará con los activos seleccionados.",
+                    "title": "Pintura: Rectángulo"
+                },
+                "step-4": {
+                    "content": "Mientras la herramienta 'Polígono' está habilitada, haga clic y arrastre para iniciar el polígono. \nMientras mantiene presionado el botón izquierdo del mouse, haga clic en el botón derecho del mouse para agregar un punto. \nSuelte el botón izquierdo del mouse una vez que esté satisfecho, si no cierra, los activos de forma se dispersarán en el segmento; de lo contrario, llenarán el área.",
+                    "title": "Pintura: Polígono"
+                },
+                "step-5": {
+                    "content": "Mientras la herramienta 'Seleccionar' está habilitada, mantenga presionada la tecla Mayús, luego haga clic y arrastre para colocar activos en la escena.",
+                    "title": "Pintura: Mano alzada"
+                },
+                "title": "Panel: Navegador de activos - Pintura"
+            },
+            "cutscene-panel": {
+                "description": "Este recorrido lo guiará a través del panel de escena.",
+                "requires": "Debe tener instalado el Paquete de creación de mapas de lienzo 3D y el Panel de escena abierto para comenzar este recorrido.",
+                "step-0": {
+                    "content": "Este panel le permite configurar rápidamente una o más cinemáticas para su escena.",
+                    "title": "Panel de escena"
+                },
+                "step-1": {
+                    "content": "Para crear un nuevo clip, haga clic en el botón <strong>Agregar clip</strong>. \nEsto creará un nuevo clip y abrirá la configuración del clip.",
+                    "title": "Crear un clip"
+                },
+                "step-10": {
+                    "content": "Una vez que haya terminado con su escena, puede reproducirla haciendo clic en el botón <strong>Reproducir</strong>. \nSe le pedirá que seleccione qué jugadores podrán ver la escena.",
+                    "title": "Jugar"
+                },
+                "step-2": {
+                    "content": "Esta sección le permitirá configurar los ajustes para el clip actual. \nPuede editar el nombre, reproducir o eliminar el clip.",
+                    "title": "Ajustes de clips"
+                },
+                "step-3": {
+                    "content": "Para agregar un fotograma clave, haga clic en el botón <strong>Agregar fotograma clave</strong>. \nEsto creará un nuevo fotograma clave.<hr>Un fotograma clave es un punto en el tiempo en el que se colocará y girará la cámara. \nPuede agregar tantos fotogramas clave como desee para crear una cinemática.",
+                    "title": "Adición de fotogramas clave"
+                },
+                "step-4": {
+                    "content": "Para capturar la posición y rotación actual de la cámara, haga clic en el botón <strong>Capturar</strong>. \nEsto almacenará la posición actual de la cámara y la rotación del fotograma clave.",
+                    "title": "Captura de fotogramas clave"
+                },
+                "step-5": {
+                    "content": "Este campo le permitirá cambiar la duración del fotograma clave actual. \nEsto afectará el tiempo que tardará la cámara en pasar del fotograma clave anterior a este.<hr>Si el campo <strong>Transición</strong> está configurado en <strong>Fundido cruzado</strong>, la duración es \nel tiempo que tardará la cámara en desaparecer y volver a aparecer.",
+                    "title": "Duración"
+                },
+                "step-6": {
+                    "content": "Este campo le permitirá cambiar el tiempo que la cámara permanecerá en el fotograma clave actual antes de pasar al siguiente.",
+                    "title": "Parar por"
+                },
+                "step-7": {
+                    "content": "Este campo le permitirá cambiar el tipo de transición. \nPuede elegir entre <strong>Cadena</strong> y <strong>Fundido cruzado</strong>. \nChain hará que la cámara se mueva de un fotograma clave al siguiente, Cross-Fade hará que la cámara se desvanezca y entre fotogramas clave.",
+                    "title": "Transición"
+                },
+                "step-8": {
+                    "content": "Este campo le permitirá cambiar el tipo de aceleración. \nPuede leer más sobre la aceleración <a href='https://easings.net/en'>aquí</a>.",
+                    "title": "facilitando"
+                },
+                "step-9": {
+                    "content": "Este botón le permitirá alternar la configuración de fotogramas clave para este clip.",
+                    "title": "Editar"
+                },
+                "title": "Paneles: Escena"
+            },
+            "effect-browser": {
+                "description": "Este recorrido lo guiará a través del Panel de efectos.",
+                "requires": "Debe tener instalado el Paquete de creación de mapas de lienzo 3D y el Panel de efectos abierto para comenzar este recorrido.",
+                "step-0": {
+                    "content": "Este panel le permite arrastrar y soltar efectos en la escena.<hr>Los efectos son texturas proyectadas como calcomanías, una vez colocadas, verá un cono rojo que indica la dirección de proyección. \nEsto solo es visible para los GM mientras están en la capa de mosaico.",
+                    "title": "Panel de efectos"
+                },
+                "step-1": {
+                    "content": "Este campo le permitirá cambiar la escala de los efectos seleccionados.",
+                    "title": "Escala"
+                },
+                "step-2": {
+                    "content": "Puede usar la barra de búsqueda para encontrar efectos específicos.",
+                    "title": "Barra de búsqueda"
+                },
+                "step-3": {
+                    "content": "Esta lista contiene todos los efectos que coinciden con su búsqueda. \nArrastra y suelta un efecto en la escena para colocarlo.<hr>Si tienes el módulo <strong>Token Attacher</strong>, soltar un efecto en un token lo adjuntará al token.",
+                    "title": "Lista de efectos"
+                },
+                "title": "Paneles: Efectos"
+            },
+            "material-browser": {
+                "description": "Este recorrido lo guiará a través del Panel de materiales.",
+                "requires": "Debe tener instalado el Paquete de creación de mapas de lienzo 3D y el Panel de materiales abierto para comenzar este recorrido.",
+                "step-0": {
+                    "content": "Este panel le permite navegar y cambiar rápidamente los materiales en mosaicos seleccionados.",
+                    "title": "Panel de materiales"
+                },
+                "step-1": {
+                    "content": "Puede usar la barra de búsqueda para encontrar materiales específicos.",
+                    "title": "Barra de búsqueda"
+                },
+                "step-2": {
+                    "content": "Este campo le permitirá cambiar la repetición de la textura de los mosaicos seleccionados. \nEsto afectará el mosaico de la textura en el mosaico.",
+                    "title": "Repetición de textura"
+                },
+                "step-3": {
+                    "content": "Esta lista contiene todos los materiales que coinciden con su búsqueda. \nHaga clic en un material para aplicarlo a todos los mosaicos seleccionados.",
+                    "title": "Lista de materiales"
+                },
+                "title": "Paneles: Materiales"
+            },
+            "quick-environment": {
+                "description": "Este recorrido lo guiará a través del Panel de Medio Ambiente.",
+                "requires": "Debe tener instalado 3D Canvas Mapmaking Pack y el Panel de entorno abierto para comenzar este recorrido.",
+                "step-0": {
+                    "content": "Este panel le permite configurar rápidamente una sensación de escena con unos pocos clics.",
+                    "title": "Mesa de Medio Ambiente"
+                },
+                "step-1": {
+                    "content": "Configure la hora del día en el formato de 24 horas. \nEsto afectará la iluminación y las sombras, puede dirigirse a la configuración de escena para una configuración más avanzada.",
+                    "title": "Hora del día"
+                },
+                "step-2": {
+                    "content": "Puede configurar el clima en uno de los ajustes preestablecidos o dirigirse a la configuración de la escena para obtener efectos múltiples y personalizados.",
+                    "title": "Clima"
+                },
+                "step-3": {
+                    "content": "El palco afectará no solo al fondo de la escena, sino también a la iluminación. \nPruebe usted mismo cómo diferentes palcos pueden alterar drásticamente el estado de ánimo de una escena.",
+                    "title": "palco"
+                },
+                "title": "Paneles: Medio ambiente"
+            },
+            "quick-terrain": {
+                "description": "Este recorrido lo guiará a través del panel de terreno.",
+                "requires": "Debe tener instalado el Paquete de creación de mapas de lienzo 3D y el Panel de terreno abierto para comenzar este recorrido.",
+                "step-0": {
+                    "content": "Este panel le permite configurar rápidamente un terreno para usarlo como base para su escena.",
+                    "title": "Panel de terreno"
+                },
+                "step-1": {
+                    "content": "En esta sección puedes elegir entre algunos temas preestablecidos para el terreno. \nUtilice el botón Aplicar tema para aplicar el tema seleccionado al terreno actual.",
+                    "title": "Tema"
+                },
+                "step-2": {
+                    "content": "Esta sección le permitirá generar aleatoriamente un terreno, use el menú desplegable para elegir entre diferentes tipos de terreno. \nEl botón Ajuste fino le permitirá compensar y escalar manualmente el mapa de altura utilizado para el terreno.",
+                    "title": "Terreno"
+                },
+                "step-3": {
+                    "content": "Haga clic en los diferentes botones de fluidos para crear un mosaico fluido. \nTenga en cuenta que, dependiendo de su terreno, es posible que sea necesario escalar o reposicionar el fluido. \nUse las herramientas de gizmo para hacerlo si es necesario.",
+                    "title": "Fluidos"
+                },
+                "step-4": {
+                    "content": "Esta sección contiene algunas herramientas para ayudarte con el terreno. \nUse el botón Bloquear/Desbloquear para evitar que el terreno se seleccione con el botón izquierdo o use el botón Cuadrícula para alternar la visualización de la cuadrícula en el terreno.",
+                    "title": "Herramientas"
+                },
+                "title": "Paneles: Terreno"
+            },
+            "room-builder": {
+                "description": "Este tour te guiará a través de las mazmorras.",
+                "requires": "Necesita tener instalado el paquete de creación de mapas de lienzo 3D y las mazmorras",
+                "step-0": {
+                    "content": "Este panel te permite crear mazmorras, cuevas e interiores de edificios.",
+                    "title": "Mazmorras"
+                },
+                "step-1": {
+                    "content": "Esta sección contiene todas las herramientas que necesitará para construir su diseño.",
+                    "title": "Construir"
+                },
+                "step-10": {
+                    "content": "Ahora que sabe cómo usar el panel, ¡comencemos a construir! \nEs muy recomendable construir sobre una superficie plana.",
+                    "title": "¡Empecemos!"
+                },
+                "step-2": {
+                    "content": "Mientras esté en este modo, las formas dibujadas en la escena se agregarán al diseño",
+                    "title": "Agregar"
+                },
+                "step-3": {
+                    "content": "Mientras esté en este modo, las formas dibujadas en la escena se restarán del diseño",
+                    "title": "Sustraer"
+                },
+                "step-4": {
+                    "content": "Mientras está en este modo, puede cortar pedazos de paredes para crear aberturas",
+                    "title": "Cuchillo"
+                },
+                "step-5": {
+                    "content": "Esta sección determinará el modo de dibujo<h3>Rectángulo",
+                    "title": "formas"
+                },
+                "step-6": {
+                    "content": "Este campo le permitirá cambiar el tipo de pared. \n<strong>Liso</strong> creará paredes similares a interiores, <strong>Áspero</strong> creará paredes similares a cuevas.",
+                    "title": "Tipo de pared"
+                },
+                "step-7": {
+                    "content": "Esta sección le permitirá elegir si desea dibujar paredes, pisos o ambos.",
+                    "title": "Paredes"
+                },
+                "step-8": {
+                    "content": "Esta sección te permitirá elegir el tema de la mazmorra. \nPuede seleccionar un tema personalizado eligiendo <strong>Personalizado</strong> en el menú desplegable y luego seleccionando texturas para paredes y pisos.",
+                    "title": "Tema"
+                },
+                "step-9": {
+                    "content": "Esta sección te permitirá cambiar la altura y el grosor de las paredes (en píxeles).",
+                    "title": "Dimensiones"
+                },
+                "title": "Paneles: Mazmorras"
             }
         },
         "units": {
@@ -1784,6 +2058,10 @@
             "content": "<h1>¡Inicio rápido en 3D!</h1> ¡Bienvenido a 3D Canvas, este es un tutorial de inicio rápido para que pueda crear mapas de inmediato y con facilidad! \nHaz clic en el botón <b>¡Iniciar recorrido!</b> para comenzar el recorrido.<hr>",
             "starttour": "¡Empezar recorrido!",
             "title": "Bienvenido a Lienzo 3D"
+        },
+        "extrudeWalls": {
+            "content": "Este proceso intentará transformar las paredes de la escena en mosaicos. \nEstás seguro de que quieres continuar?",
+            "title": "Extruir paredes"
         }
     }
 }

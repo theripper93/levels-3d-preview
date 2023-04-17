@@ -70,7 +70,8 @@
             "preview3d": "3D-Modus umschalten",
             "tips": {
                 "templatePlacement": "3D-Vorlagenplatzierung: Mausrad zum Ändern der Höhe. \nSteuern Sie das Mausrad zum Drehen. \nAlt Mausrad zum Neigen."
-            }
+            },
+            "tile3dPolygon": "Zeichnen Sie die zu extrudierende Form"
         },
         "errors": {
             "3dnotactive": "Das Leinwand-Popout kann nicht geöffnet werden, der 3D-Modus ist nicht aktiv.",
@@ -196,7 +197,15 @@
                     "sphere": "Kugel",
                     "text": "Text (3D-Modellfeld für Text verwenden)",
                     "tube": "Rohr",
-                    "decal": "Abziehbild"
+                    "decal": "Abziehbild",
+                    "polygon": "Vieleck",
+                    "polygonbevel": "Polygon (Abschrägung)",
+                    "polygonbevelsolidify": "Polygon (Bevel Solidify)",
+                    "polygonbevelsolidifyjagged": "Polygon (gezackte Kurve)",
+                    "polygonbevelsolidifyjaggeddouble": "Polygon (gezacktes Doppel)",
+                    "polygonbevelsolidifyjaggedstraight": "Polygon (gezackte Gerade)",
+                    "polygonlathe": "Polygon (Drehmaschine)",
+                    "polygonsolidify": "Polygon (Verfestigen)"
                 }
             },
             "dynaMeshResolution": {
@@ -565,7 +574,16 @@
             },
             "renderTable": {
                 "label": "Tabelle anzeigen",
-                "notes": "Rendern Sie die Tabelle in der 3D-Ansicht."
+                "notes": "Rendern Sie die Tabelle in der 3D-Ansicht.",
+                "options": {
+                    "matblueprint": "Unendliche Matte (Blaupause)",
+                    "matcloth": "Unendliche Matte (Stoff)",
+                    "matcustom": "Unendliche Matte (Benutzerdefiniert)",
+                    "matpaper": "Unendliche Matte (Papier)",
+                    "matwood": "Unendliche Matte (Holz)",
+                    "none": "Keiner",
+                    "table": "Tabelle (Benutzerdefiniert)"
+                }
             },
             "rotateBase": {
                 "label": "Basisrotation korrigieren",
@@ -757,6 +775,34 @@
             },
             "highlightOnHover": {
                 "label": "Highlight auf Hover"
+            },
+            "advanced": {
+                "header": "Fortschrittlich"
+            },
+            "aura": {
+                "header": "Auren"
+            },
+            "auraColor": {
+                "label": "Aura-Farbe"
+            },
+            "auraRange": {
+                "label": "Aura-Bereich"
+            },
+            "doorAnimateAngle": {
+                "label": "Türanimationswinkel"
+            },
+            "doorStyle": {
+                "label": "Türstil",
+                "options": {
+                    "animate": "Animiert",
+                    "transparent": "Transparent"
+                }
+            },
+            "particleGroundOffset": {
+                "label": "Bodenversatz"
+            },
+            "tableColor": {
+                "label": "Polsterung Tönung"
             }
         },
         "keybindings": {
@@ -1155,7 +1201,8 @@
                 "hide": "Verberge erweiterte Einstellungen",
                 "hint": "Standardmäßig die erweiterten Einstellungen in den Konfigurationsmenüs anzeigen.",
                 "name": "Erweiterte Einstellungen immer anzeigen",
-                "show": "Erweiterte Einstellungen anzeigen"
+                "show": "Erweiterte Einstellungen anzeigen",
+                "wiki": "Erfahren Sie mehr"
             },
             "softShadows": {
                 "hint": "Aktivieren Sie weiche Schatten zu geringen Leistungseinbußen. \nErfordert eine Aktualisierung.",
@@ -1222,6 +1269,10 @@
             "pingsound": {
                 "hint": "Der Ton, der abgespielt wird, wenn ein Ort angepingt wird.",
                 "name": "Ping-Ton"
+            },
+            "paddingAppearance": {
+                "hint": "Das Standardaussehen der Polsterung. \nDies kann auch pro Szene angepasst werden.",
+                "name": "Polsterung Aussehen"
             }
         },
         "shaders": {
@@ -1382,7 +1433,8 @@
                 "centery": "Y-Anker",
                 "description": "Texturrotationseffekt, erfordert eine Textur und einige Texturwiederholungen, um zu funktionieren.",
                 "name": "Drehen",
-                "speed": "Geschwindigkeit"
+                "speed": "Geschwindigkeit",
+                "offsetAngle": "Winkelversatz"
             },
             "textureScroll": {
                 "description": "Einfacher Textur-Scrolling-Effekt ähnlich dem 'Parallaxia'-Modul.",
@@ -1496,7 +1548,6 @@
                 "scaleHeight": "Höhe",
                 "scaleScale": "Kachelwaage",
                 "scaleWidth": "Breite",
-                "select": "Halten Sie F gedrückt und ziehen Sie, um auszuwählen, ziehen Sie nach links, um vorherige Objekte freizugeben, ziehen Sie nach rechts, um sie zur Auswahl hinzuzufügen",
                 "tiltX": "Neigung X",
                 "tiltZ": "Neigung Y",
                 "title": "Steuerelemente des 3D-Canvas-Kacheleditors",
@@ -1765,7 +1816,230 @@
                     "content": "Wenn Sie mit dem Erstellen Ihrer Szene fertig sind, werden durch Klicken auf diese Schaltfläche alle ähnlichen Kacheln zu einer einzigen Kachel zusammengeführt. \nDadurch wird die Anzahl der Kacheln in der Szene reduziert und die Leistung verbessert.",
                     "title": "Verschmelzen"
                 },
-                "title": "Mittelstufe: Asset-Browser"
+                "title": "Mittelstufe: Asset-Browser",
+                "step-8": {
+                    "content": "Die Registerkarte „Dienstprogramme“ enthält Schnellzugriffe auf Batch-Aktionen.",
+                    "title": "Dienstprogramm"
+                },
+                "step-9": {
+                    "content": "Wenn Sie mit dem Erstellen Ihrer Szene fertig sind, verwenden Sie die Schaltfläche \"Kacheln zusammenführen\", um alle ähnlichen Kacheln zu einer einzigen Kachel zusammenzuführen, um die Leistung zu verbessern.",
+                    "title": "Optimierung"
+                }
+            },
+            "asset-browser-paint": {
+                "description": "Diese Tour führt Sie durch den Malmodus des Asset-Browsers.",
+                "requires": "Sie müssen das 3D Canvas Mapmaking Pack installiert und den Asset Browser geöffnet haben, um diese Tour zu starten.",
+                "step-0": {
+                    "content": "Im Malmodus können Sie schnell Kacheln auf der Szene verteilen.",
+                    "title": "Malmodus"
+                },
+                "step-1": {
+                    "content": "Um mit dem Malen zu beginnen, müssen Sie im Asset-Browser ein oder mehrere Assets auswählen. \nKlicken Sie auf ein Asset, um es auszuwählen, oder klicken Sie mit der Strg-Taste, um mehrere Assets auszuwählen.",
+                    "title": "Wählen Sie ein oder mehrere Assets aus"
+                },
+                "step-2": {
+                    "content": "Sobald Sie ein oder mehrere Assets ausgewählt haben, sehen Sie eine Benachrichtigung am unteren Rand des Fensters.",
+                    "title": "Auswahlbenachrichtigung"
+                },
+                "step-3": {
+                    "content": "Während das Werkzeug „Kachel platzieren“ aktiviert ist, können Sie auf die Szene klicken und ziehen, um ein Rechteck zu zeichnen. \nDas Rechteck wird mit den ausgewählten Assets gefüllt.",
+                    "title": "Malerei: Rechteck"
+                },
+                "step-4": {
+                    "content": "Während das Werkzeug „Polygon“ aktiviert ist, klicken und ziehen Sie, um das Polygon zu starten. \nHalten Sie die linke Maustaste gedrückt und klicken Sie mit der rechten Maustaste, um einen Punkt hinzuzufügen. \nLassen Sie die linke Maustaste los, sobald Sie zufrieden sind. Wenn Sie die Formelemente nicht schließen, werden sie auf dem Segment verstreut, andernfalls füllen sie den Bereich aus.",
+                    "title": "Malerei: Polygon"
+                },
+                "step-5": {
+                    "content": "Halten Sie bei aktiviertem Werkzeug „Auswählen“ die Umschalttaste gedrückt und klicken und ziehen Sie, um Assets in der Szene zu platzieren.",
+                    "title": "Malen: Freihand"
+                },
+                "title": "Bedienfeld: Asset-Browser – Malen"
+            },
+            "cutscene-panel": {
+                "description": "Diese Tour führt Sie durch das Cutscene-Panel.",
+                "requires": "Sie müssen das 3D Canvas Mapmaking Pack installiert und das Cutscene Panel geöffnet haben, um diese Tour zu starten.",
+                "step-0": {
+                    "content": "Mit diesem Bedienfeld können Sie schnell eine oder mehrere Filmsequenzen für Ihre Szene einrichten.",
+                    "title": "Cutscene-Panel"
+                },
+                "step-1": {
+                    "content": "Um einen neuen Clip zu erstellen, klicken Sie auf die Schaltfläche <strong>Clip hinzufügen</strong>. \nDies erstellt einen neuen Clip und öffnet die Clip-Einstellungen.",
+                    "title": "Erstellen eines Clips"
+                },
+                "step-10": {
+                    "content": "Wenn Sie mit Ihrer Zwischensequenz fertig sind, können Sie sie abspielen, indem Sie auf die Schaltfläche <strong>Abspielen</strong> klicken. \nSie werden aufgefordert auszuwählen, welche Spieler die Zwischensequenz sehen können.",
+                    "title": "Spielen"
+                },
+                "step-2": {
+                    "content": "In diesem Abschnitt können Sie die Einstellungen für den aktuellen Clip vornehmen. \nSie können den Namen bearbeiten, den Clip abspielen oder löschen.",
+                    "title": "Clip-Einstellungen"
+                },
+                "step-3": {
+                    "content": "Um einen Keyframe hinzuzufügen, klicken Sie auf die Schaltfläche <strong>Keyframe hinzufügen</strong>. \nDadurch wird ein neuer Keyframe erstellt.<hr>Ein Keyframe ist ein Zeitpunkt, an dem die Kamera positioniert und gedreht wird. \nSie können so viele Keyframes hinzufügen, wie Sie möchten, um einen Film zu erstellen.",
+                    "title": "Keyframes hinzufügen"
+                },
+                "step-4": {
+                    "content": "Um die aktuelle Kameraposition und -drehung zu erfassen, klicken Sie auf die Schaltfläche <strong>Erfassen</strong>. \nDadurch werden die aktuelle Kameraposition und -rotation für den Keyframe gespeichert.",
+                    "title": "Keyframes erfassen"
+                },
+                "step-5": {
+                    "content": "In diesem Feld können Sie die Dauer des aktuellen Keyframes ändern. \nDies wirkt sich darauf aus, wie lange die Kamera braucht, um vom vorherigen Schlüsselbild zu diesem zu wechseln.<hr>Wenn das Feld <strong>Übergang</strong> auf <strong>Überblendung</strong> eingestellt ist, ist die Dauer gleich \ndie Zeit, die die Kamera zum Ein- und Ausblenden benötigt.",
+                    "title": "Dauer"
+                },
+                "step-6": {
+                    "content": "In diesem Feld können Sie die Zeit ändern, die die Kamera beim aktuellen Keyframe bleibt, bevor sie zum nächsten wechselt.",
+                    "title": "Anhalten für"
+                },
+                "step-7": {
+                    "content": "In diesem Feld können Sie den Übergangstyp ändern. \nSie können zwischen <strong>Kette</strong> und <strong>Cross-Fade</strong> wählen. \nChain bewegt die Kamera von einem Keyframe zum nächsten, Cross-Fade blendet die Kamera zwischen den Keyframes aus und ein.",
+                    "title": "Übergang"
+                },
+                "step-8": {
+                    "content": "In diesem Feld können Sie den Beschleunigungstyp ändern. \nWeitere Informationen zur Lockerung finden Sie <a href='https://easings.net/en'>hier</a>.",
+                    "title": "Lockerung"
+                },
+                "step-9": {
+                    "content": "Mit dieser Schaltfläche können Sie die Keyframe-Einstellungen für diesen Clip umschalten.",
+                    "title": "Bearbeiten"
+                },
+                "title": "Panels: Zwischensequenz"
+            },
+            "effect-browser": {
+                "description": "Diese Tour führt Sie durch das Effektfenster.",
+                "requires": "Sie müssen das 3D Canvas Mapmaking Pack installiert und das Effektfenster geöffnet haben, um diese Tour zu starten.",
+                "step-0": {
+                    "content": "In diesem Bedienfeld können Sie Effekte per Drag-and-Drop auf die Szene ziehen.<hr>Effekte sind Texturen, die als Abziehbilder projiziert werden. Sobald Sie sie platziert haben, sehen Sie einen roten Kegel, der die Projektionsrichtung anzeigt. \nDies ist nur für GMs sichtbar, während sie sich auf der Kachelebene befinden.",
+                    "title": "Effekt-Panel"
+                },
+                "step-1": {
+                    "content": "In diesem Feld können Sie die Skalierung der ausgewählten Effekte ändern.",
+                    "title": "Skala"
+                },
+                "step-2": {
+                    "content": "Sie können die Suchleiste verwenden, um bestimmte Effekte zu finden.",
+                    "title": "Suchleiste"
+                },
+                "step-3": {
+                    "content": "Diese Liste enthält alle Effekte, die Ihrer Suche entsprechen. \nZiehen Sie einen Effekt per Drag-and-Drop auf die Szene, um ihn zu platzieren.<hr>Wenn Sie über das <strong>Token Attacher</strong>-Modul verfügen, wird dieser durch das Ablegen eines Effekts auf einem Token an den Token angehängt.",
+                    "title": "Effektliste"
+                },
+                "title": "Bedienfelder: Effekte"
+            },
+            "material-browser": {
+                "description": "Diese Tour führt Sie durch das Material Panel.",
+                "requires": "Sie müssen das 3D Canvas Mapmaking Pack installiert und das Material Panel geöffnet haben, um diese Tour zu starten.",
+                "step-0": {
+                    "content": "In diesem Bereich können Sie Materialien auf ausgewählten Kacheln schnell durchsuchen und ändern.",
+                    "title": "Materialpanel"
+                },
+                "step-1": {
+                    "content": "Sie können die Suchleiste verwenden, um bestimmte Materialien zu finden.",
+                    "title": "Suchleiste"
+                },
+                "step-2": {
+                    "content": "In diesem Feld können Sie die Texturwiederholung der ausgewählten Kacheln ändern. \nDies wirkt sich auf die Kachelung der Textur auf der Kachel aus.",
+                    "title": "Textur wiederholen"
+                },
+                "step-3": {
+                    "content": "Diese Liste enthält alle Materialien, die Ihrer Suche entsprechen. \nKlicken Sie auf ein Material, um es auf alle ausgewählten Kacheln anzuwenden.",
+                    "title": "Materialliste"
+                },
+                "title": "Tafeln: Materialien"
+            },
+            "quick-environment": {
+                "description": "Diese Tour führt Sie durch das Umweltpanel.",
+                "requires": "Sie müssen das 3D Canvas Mapmaking Pack installiert und das Environment Panel geöffnet haben, um diese Tour zu starten.",
+                "step-0": {
+                    "content": "Mit diesem Bedienfeld können Sie mit wenigen Klicks schnell ein Szenengefühl einrichten.",
+                    "title": "Umweltpanel"
+                },
+                "step-1": {
+                    "content": "Stellen Sie die Uhrzeit im 24-Stunden-Format ein. \nDies wirkt sich auf Beleuchtung und Schatten aus. Sie können die Szeneneinstellungen für eine erweiterte Konfiguration aufrufen.",
+                    "title": "Uhrzeit"
+                },
+                "step-2": {
+                    "content": "Sie können das Wetter auf eine der Voreinstellungen einstellen oder zu den Szeneneinstellungen gehen, um mehrere und benutzerdefinierte Effekte zu erhalten.",
+                    "title": "Wetter"
+                },
+                "step-3": {
+                    "content": "Die Skybox beeinflusst nicht nur den Hintergrund der Szene, sondern auch die Beleuchtung. \nProbieren Sie selbst aus, wie verschiedene Skyboxen die Stimmung einer Szene drastisch verändern können.",
+                    "title": "Skybox"
+                },
+                "title": "Tafeln: Umwelt"
+            },
+            "quick-terrain": {
+                "description": "Diese Tour führt Sie durch das Terrain Panel.",
+                "requires": "Sie müssen das 3D Canvas Mapmaking Pack installiert und das Terrain Panel geöffnet haben, um diese Tour zu starten.",
+                "step-0": {
+                    "content": "Mit diesem Bedienfeld können Sie schnell ein Terrain einrichten, das Sie als Basis für Ihre Szene verwenden können.",
+                    "title": "Terrain-Panel"
+                },
+                "step-1": {
+                    "content": "In diesem Abschnitt können Sie zwischen einigen voreingestellten Themen für das Gelände wählen. \nVerwenden Sie die Schaltfläche Design anwenden, um das ausgewählte Design auf das aktuelle Terrain anzuwenden.",
+                    "title": "Thema"
+                },
+                "step-2": {
+                    "content": "In diesem Abschnitt können Sie zufällig ein Terrain generieren. Verwenden Sie das Dropdown-Menü, um zwischen verschiedenen Terraintypen zu wählen. \nMit der Schaltfläche Feinabstimmung können Sie die für das Gelände verwendete Heightmap manuell versetzen und skalieren.",
+                    "title": "Terrain"
+                },
+                "step-3": {
+                    "content": "Klicken Sie auf die verschiedenen Fluid-Schaltflächen, um eine Fluid-Kachel zu erstellen. \nBeachten Sie, dass die Flüssigkeit je nach Gelände möglicherweise skaliert oder neu positioniert werden muss. \nVerwenden Sie dazu bei Bedarf die Gizmo-Tools.",
+                    "title": "Flüssigkeiten"
+                },
+                "step-4": {
+                    "content": "Dieser Abschnitt enthält einige Werkzeuge, die Ihnen beim Gelände helfen. \nVerwenden Sie die Schaltfläche „Sperren/Entsperren“, um zu verhindern, dass das Gelände mit einem Linksklick ausgewählt wird, oder verwenden Sie die Schaltfläche „Raster“, um die Rasteranzeige auf dem Gelände umzuschalten.",
+                    "title": "Werkzeug"
+                },
+                "title": "Tafeln: Gelände"
+            },
+            "room-builder": {
+                "description": "Diese Tour führt Sie durch die Dungeons",
+                "requires": "Sie müssen das 3D Canvas Mapmaking Pack und die Dungeons installiert haben",
+                "step-0": {
+                    "content": "Mit diesem Bedienfeld können Sie Dungeons, Höhlen und Innenräume von Gebäuden erstellen.",
+                    "title": "Kerker"
+                },
+                "step-1": {
+                    "content": "Dieser Abschnitt enthält alle Werkzeuge, die Sie zum Erstellen Ihres Layouts benötigen.",
+                    "title": "Bauen"
+                },
+                "step-10": {
+                    "content": "Jetzt, da Sie wissen, wie man das Panel verwendet, können wir mit dem Bau beginnen! \nEs wird dringend empfohlen, auf einer ebenen Fläche zu bauen.",
+                    "title": "Lasst uns beginnen!"
+                },
+                "step-2": {
+                    "content": "In diesem Modus werden auf der Szene gezeichnete Formen dem Layout hinzugefügt",
+                    "title": "Hinzufügen"
+                },
+                "step-3": {
+                    "content": "In diesem Modus werden auf der Szene gezeichnete Formen vom Layout subtrahiert",
+                    "title": "Subtrahieren"
+                },
+                "step-4": {
+                    "content": "In diesem Modus können Sie Wandstücke schneiden, um Öffnungen zu erstellen",
+                    "title": "Messer"
+                },
+                "step-5": {
+                    "content": "Dieser Abschnitt bestimmt den Zeichenmodus<h3>Rechteck",
+                    "title": "Formen"
+                },
+                "step-6": {
+                    "content": "In diesem Feld können Sie den Wandtyp ändern. \n<strong>Glatt</strong> erstellt Innenwände, <strong>Rau</strong> erstellt höhlenähnliche Wände.",
+                    "title": "Wandtyp"
+                },
+                "step-7": {
+                    "content": "In diesem Abschnitt können Sie wählen, ob Sie Wände, Böden oder beides zeichnen möchten.",
+                    "title": "Wände"
+                },
+                "step-8": {
+                    "content": "In diesem Abschnitt können Sie das Thema für den Dungeon auswählen. \nSie können ein benutzerdefiniertes Design auswählen, indem Sie im Dropdown-Menü <strong>Benutzerdefiniert</strong> auswählen und dann Texturen für Wände und Böden auswählen.",
+                    "title": "Thema"
+                },
+                "step-9": {
+                    "content": "In diesem Abschnitt können Sie die Höhe und Dicke der Wände (in Pixel) ändern.",
+                    "title": "Maße"
+                },
+                "title": "Tafeln: Kerker"
             }
         },
         "units": {
@@ -1784,6 +2058,10 @@
             "content": "<h1>3D-Schnellstart!</h1> Willkommen bei 3D Canvas, dies ist ein Schnellstart-Tutorial, mit dem Sie Karten sofort und einfach erstellen können! \nKlicken Sie auf die Schaltfläche <b>Tour starten!</b>, um die Tour zu beginnen.<hr>",
             "starttour": "Tour starten!",
             "title": "Willkommen bei 3D Canvas"
+        },
+        "extrudeWalls": {
+            "content": "Dieser Prozess versucht, die Wände in der Szene in Kacheln umzuwandeln. \nBist du dir sicher, dass du weitermachen willst?",
+            "title": "Wände extrudieren"
         }
     }
 }

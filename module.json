@@ -37,6 +37,11 @@
       "path": "languages/es.json"
     },
     {
+      "lang": "pt-br",
+      "name": "Português (Brasil)",
+      "path": "languages/pt-br.json"
+    },
+    {
       "lang": "it",
       "name": "Italiano",
       "path": "languages/it.json"

@@ -70,7 +70,8 @@
             "preview3d": "Attiva la modalità 3D",
             "tips": {
                 "templatePlacement": "Posizionamento del modello 3D: rotellina del mouse per modificare l'elevazione. \nControlla la rotellina del mouse per ruotare. \nAlt Rotellina del mouse per inclinare."
-            }
+            },
+            "tile3dPolygon": "Disegna forma da estrudere"
         },
         "errors": {
             "3dnotactive": "Impossibile aprire il popout della tela, la modalità 3D non è attiva.",
@@ -196,7 +197,15 @@
                     "sphere": "Sfera",
                     "text": "Testo (usa il campo Modello 3D per il testo)",
                     "tube": "Tubo",
-                    "decal": "Decalcomania"
+                    "decal": "Decalcomania",
+                    "polygon": "Poligono",
+                    "polygonbevel": "Poligono (smusso)",
+                    "polygonbevelsolidify": "Poligono (solidificazione smusso)",
+                    "polygonbevelsolidifyjagged": "Poligono (curvo frastagliato)",
+                    "polygonbevelsolidifyjaggeddouble": "Poligono (doppio frastagliato)",
+                    "polygonbevelsolidifyjaggedstraight": "Poligono (retta frastagliata)",
+                    "polygonlathe": "Poligono (Tornio)",
+                    "polygonsolidify": "Poligono (solidificare)"
                 }
             },
             "dynaMeshResolution": {
@@ -565,7 +574,16 @@
             },
             "renderTable": {
                 "label": "Tabella di visualizzazione",
-                "notes": "Renderizza la tabella nella vista 3D."
+                "notes": "Renderizza la tabella nella vista 3D.",
+                "options": {
+                    "matblueprint": "Tappetino infinito (progetto)",
+                    "matcloth": "Tappetino Infinito (Tessuto)",
+                    "matcustom": "Tappetino infinito (personalizzato)",
+                    "matpaper": "Tappetino infinito (carta)",
+                    "matwood": "Tappetino Infinito (Legno)",
+                    "none": "Nessuno",
+                    "table": "Tabella (personalizzata)"
+                }
             },
             "rotateBase": {
                 "label": "Fissa la rotazione della base",
@@ -757,6 +775,34 @@
             },
             "highlightOnHover": {
                 "label": "Evidenzia al passaggio del mouse"
+            },
+            "advanced": {
+                "header": "Avanzate"
+            },
+            "aura": {
+                "header": "Aure"
+            },
+            "auraColor": {
+                "label": "Colore dell'aura"
+            },
+            "auraRange": {
+                "label": "Gamma dell'aura"
+            },
+            "doorAnimateAngle": {
+                "label": "Angolo di animazione della porta"
+            },
+            "doorStyle": {
+                "label": "Stile porta",
+                "options": {
+                    "animate": "Animato",
+                    "transparent": "Trasparente"
+                }
+            },
+            "particleGroundOffset": {
+                "label": "Scostamento del terreno"
+            },
+            "tableColor": {
+                "label": "Imbottitura Tinta"
             }
         },
         "keybindings": {
@@ -788,7 +834,8 @@
             "toggleMode": "Editor tessere: Ciclo stile riempimento",
             "toggleSelect": "Selezione di gruppo (tieni premuto durante il trascinamento)",
             "topdownView": "Vista telecamera dall'alto",
-            "translate": "Editor di tessere: Traduci"
+            "translate": "Editor di tessere: Traduci",
+            "removeWaypoint": "Rimuovi waypoint righello"
         },
         "macrodialog": {
             "cancel": "Annulla",
@@ -1154,7 +1201,8 @@
                 "hide": "Nascondi impostazioni avanzate",
                 "hint": "Mostra le impostazioni avanzate nei menu di configurazione per impostazione predefinita.",
                 "name": "Mostra sempre impostazioni avanzate",
-                "show": "Mostra impostazioni avanzate"
+                "show": "Mostra impostazioni avanzate",
+                "wiki": "Saperne di più"
             },
             "softShadows": {
                 "hint": "Abilita le ombre morbide a un costo minore in termini di prestazioni. \nRichiede aggiornamento.",
@@ -1221,6 +1269,10 @@
             "pingsound": {
                 "hint": "Il suono da riprodurre quando si esegue il ping di una posizione.",
                 "name": "Suono di ping"
+            },
+            "paddingAppearance": {
+                "hint": "L'aspetto predefinito del padding. \nQuesto può essere personalizzato anche per scena.",
+                "name": "Aspetto imbottito"
             }
         },
         "shaders": {
@@ -1381,7 +1433,8 @@
                 "centery": "Ancora Y",
                 "description": "Effetto di rotazione della trama, richiede una trama e alcune ripetizioni di trama per funzionare.",
                 "name": "Ruotare",
-                "speed": "Velocità"
+                "speed": "Velocità",
+                "offsetAngle": "Scostamento angolare"
             },
             "textureScroll": {
                 "description": "Semplice effetto di scorrimento delle texture simile al modulo 'Parallaxia'.",
@@ -1495,7 +1548,6 @@
                 "scaleHeight": "Altezza",
                 "scaleScale": "Scala delle tessere",
                 "scaleWidth": "Larghezza",
-                "select": "Tieni premuto F e trascina per selezionare, trascina a sinistra per rilasciare gli oggetti precedenti, trascina a destra per aggiungere alla selezione",
                 "tiltX": "Inclina X",
                 "tiltZ": "Inclina Y",
                 "title": "Controlli dell'editor delle tessere della tela di canapa 3D",
@@ -1764,7 +1816,230 @@
                     "content": "Quando hai finito di costruire la tua scena, facendo clic su questo pulsante unirai tutti i riquadri simili in un unico riquadro. \nCiò ridurrà il numero di riquadri nella scena e migliorerà le prestazioni.",
                     "title": "Unisci"
                 },
-                "title": "Intermedio: Asset Browser"
+                "title": "Intermedio: Asset Browser",
+                "step-8": {
+                    "content": "La scheda Utilità contiene scorciatoie rapide per azioni batch.",
+                    "title": "Utilità"
+                },
+                "step-9": {
+                    "content": "Quando hai finito di costruire la tua scena, usa il pulsante \"Unisci riquadri\" per unire tutti i riquadri simili in un unico riquadro per migliorare le prestazioni.",
+                    "title": "Ottimizzazione"
+                }
+            },
+            "asset-browser-paint": {
+                "description": "Questo tour ti guiderà attraverso la modalità di disegno del browser risorse.",
+                "requires": "Per iniziare questo tour, devi avere installato il pacchetto di creazione di mappe su tela 3D e aperto il browser delle risorse.",
+                "step-0": {
+                    "content": "La modalità Pittura ti consentirà di spargere rapidamente le tessere sulla scena.",
+                    "title": "Modalità pittura"
+                },
+                "step-1": {
+                    "content": "Per iniziare a dipingere, devi selezionare una o più risorse nel Browser risorse. \nFare clic su una risorsa per selezionarla o Ctrl Fare clic per selezionare più risorse.",
+                    "title": "Seleziona uno o più asset"
+                },
+                "step-2": {
+                    "content": "Dopo aver selezionato una o più risorse, vedrai una notifica nella parte inferiore della finestra.",
+                    "title": "Notifica di selezione"
+                },
+                "step-3": {
+                    "content": "Mentre lo strumento \"Posiziona riquadro\" è abilitato, puoi fare clic e trascinare sulla scena per disegnare un rettangolo. \nIl rettangolo verrà riempito con le risorse selezionate.",
+                    "title": "Pittura: Rettangolo"
+                },
+                "step-4": {
+                    "content": "Mentre lo strumento \"Poligono\" è abilitato, fai clic e trascina per avviare il poligono. \nTenendo premuto il pulsante sinistro del mouse, fare clic con il pulsante destro del mouse per aggiungere un punto. \nRilascia il pulsante sinistro del mouse una volta soddisfatto, se non chiudi gli asset della forma saranno sparsi sul segmento, altrimenti riempiranno l'area.",
+                    "title": "Pittura: Poligono"
+                },
+                "step-5": {
+                    "content": "Mentre lo strumento \"Seleziona\" è abilitato, tieni premuto Maiusc, quindi fai clic e trascina per posizionare le risorse sulla scena.",
+                    "title": "Pittura: a mano libera"
+                },
+                "title": "Pannello: Browser risorse - Pittura"
+            },
+            "cutscene-panel": {
+                "description": "Questo tour ti guiderà attraverso il pannello dei filmati.",
+                "requires": "Devi avere installato il 3D Canvas Mapmaking Pack e il pannello Cutscene aperto per iniziare questo tour.",
+                "step-0": {
+                    "content": "Questo pannello ti consente di configurare rapidamente uno o più filmati per la tua scena.",
+                    "title": "Pannello filmato"
+                },
+                "step-1": {
+                    "content": "Per creare una nuova clip, fai clic sul pulsante <strong>Aggiungi clip</strong>. \nQuesto creerà una nuova clip e aprirà le impostazioni della clip.",
+                    "title": "Creazione di una clip"
+                },
+                "step-10": {
+                    "content": "Una volta terminato il filmato, puoi riprodurlo facendo clic sul pulsante <strong>Riproduci</strong>. \nTi verrà chiesto di selezionare i giocatori che potranno vedere il filmato.",
+                    "title": "Giocare"
+                },
+                "step-2": {
+                    "content": "Questa sezione ti consentirà di configurare le impostazioni per la clip corrente. \nÈ possibile modificare il nome, riprodurre o eliminare la clip.",
+                    "title": "Impostazioni clip"
+                },
+                "step-3": {
+                    "content": "Per aggiungere un fotogramma chiave, fai clic sul pulsante <strong>Aggiungi fotogramma chiave</strong>. \nQuesto creerà un nuovo fotogramma chiave.<hr>Un fotogramma chiave è un punto nel tempo in cui la telecamera verrà posizionata e ruotata. \nPuoi aggiungere tutti i fotogrammi chiave che desideri per creare un filmato.",
+                    "title": "Aggiunta di fotogrammi chiave"
+                },
+                "step-4": {
+                    "content": "Per acquisire la posizione e la rotazione correnti della telecamera, fai clic sul pulsante <strong>Cattura</strong>. \nCiò memorizzerà la posizione e la rotazione correnti della telecamera per il fotogramma chiave.",
+                    "title": "Cattura di fotogrammi chiave"
+                },
+                "step-5": {
+                    "content": "Questo campo ti consentirà di modificare la durata del fotogramma chiave corrente. \nCiò influirà sul tempo impiegato dalla videocamera per spostarsi dal fotogramma chiave precedente a questo.<hr>Se il campo <strong>Transizione</strong> è impostato su <strong>Dissolvenza incrociata</strong>, la durata è \nil tempo necessario alla fotocamera per dissolvenza in apertura e in chiusura.",
+                    "title": "Durata"
+                },
+                "step-6": {
+                    "content": "Questo campo ti consentirà di modificare il tempo in cui la videocamera rimarrà nel fotogramma chiave corrente prima di passare a quello successivo.",
+                    "title": "Fermati per"
+                },
+                "step-7": {
+                    "content": "Questo campo ti permetterà di cambiare il tipo di transizione. \nPuoi scegliere tra <strong>Catena</strong> e <strong>Dissolvenza incrociata</strong>. \nChain farà muovere la telecamera da un fotogramma chiave all'altro, Cross-Fade farà sfumare la telecamera tra i fotogrammi chiave.",
+                    "title": "Transizione"
+                },
+                "step-8": {
+                    "content": "Questo campo ti consentirà di modificare il tipo di andamento. \nPuoi leggere ulteriori informazioni sull'easing <a href='https://easings.net/en'>qui</a>.",
+                    "title": "Facilità"
+                },
+                "step-9": {
+                    "content": "Questo pulsante ti consentirà di alternare le impostazioni dei fotogrammi chiave per questa clip.",
+                    "title": "Modificare"
+                },
+                "title": "Pannelli: filmato"
+            },
+            "effect-browser": {
+                "description": "Questo tour ti guiderà attraverso il pannello degli effetti.",
+                "requires": "Per iniziare questo tour devi avere installato il pacchetto di creazione di mappe su tela 3D e aperto il pannello degli effetti.",
+                "step-0": {
+                    "content": "Questo pannello ti consente di trascinare e rilasciare gli effetti sulla scena.<hr>Gli effetti sono trame proiettate come decalcomanie, una volta posizionati vedrai un cono rosso che indica la direzione di proiezione. \nQuesto è visibile solo ai GM mentre si trova sul Tile Layer.",
+                    "title": "Pannello degli effetti"
+                },
+                "step-1": {
+                    "content": "Questo campo ti permetterà di cambiare la scala degli effetti selezionati.",
+                    "title": "Scala"
+                },
+                "step-2": {
+                    "content": "Puoi utilizzare la barra di ricerca per trovare effetti specifici.",
+                    "title": "Barra di ricerca"
+                },
+                "step-3": {
+                    "content": "Questo elenco contiene tutti gli effetti che corrispondono alla tua ricerca. \nTrascina e rilascia un effetto sulla scena per posizionarlo.<hr>Se hai il modulo <strong>Token Attacher</strong>, il rilascio di un effetto su un token lo collegherà al token.",
+                    "title": "Elenco degli effetti"
+                },
+                "title": "Pannelli: Effetti"
+            },
+            "material-browser": {
+                "description": "Questo tour ti guiderà attraverso il pannello dei materiali.",
+                "requires": "Per iniziare questo tour devi avere installato il pacchetto di creazione di mappe su tela 3D e aperto il pannello dei materiali.",
+                "step-0": {
+                    "content": "Questo pannello consente di sfogliare e modificare rapidamente i materiali sui riquadri selezionati.",
+                    "title": "Pannello materiale"
+                },
+                "step-1": {
+                    "content": "Puoi utilizzare la barra di ricerca per trovare materiali specifici.",
+                    "title": "Barra di ricerca"
+                },
+                "step-2": {
+                    "content": "Questo campo ti consentirà di modificare la ripetizione della trama delle tessere selezionate. \nCiò influenzerà la piastrellatura della trama sulla piastrella.",
+                    "title": "Ripeti la trama"
+                },
+                "step-3": {
+                    "content": "Questo elenco contiene tutti i materiali che corrispondono alla tua ricerca. \nFare clic su un materiale per applicarlo a tutte le tessere selezionate.",
+                    "title": "Elenco materiali"
+                },
+                "title": "Pannelli: Materiali"
+            },
+            "quick-environment": {
+                "description": "Questo tour ti guiderà attraverso il pannello dell'ambiente.",
+                "requires": "Per iniziare questo tour, è necessario che sia installato il 3D Canvas Mapmaking Pack e che sia aperto il pannello dell'ambiente.",
+                "step-0": {
+                    "content": "Questo pannello ti consente di impostare rapidamente l'atmosfera di una scena con pochi clic.",
+                    "title": "Pannello Ambiente"
+                },
+                "step-1": {
+                    "content": "Impostare l'ora del giorno nel formato 24 ore. \nCiò influenzerà l'illuminazione e le ombre, puoi accedere alle impostazioni della scena per una configurazione più avanzata.",
+                    "title": "Ora del giorno"
+                },
+                "step-2": {
+                    "content": "Puoi impostare il tempo su uno dei preset o andare alle impostazioni della scena per effetti multipli e personalizzati.",
+                    "title": "Tempo atmosferico"
+                },
+                "step-3": {
+                    "content": "Lo skybox influenzerà non solo lo sfondo della scena ma anche l'illuminazione. \nProva tu stesso come diversi skybox possono alterare drasticamente l'atmosfera di una scena.",
+                    "title": "SkyBox"
+                },
+                "title": "Pannelli: Ambiente"
+            },
+            "quick-terrain": {
+                "description": "Questo tour ti guiderà attraverso il pannello del terreno.",
+                "requires": "Per iniziare questo tour devi avere installato il pacchetto di creazione di mappe su tela 3D e aperto il pannello del terreno.",
+                "step-0": {
+                    "content": "Questo pannello ti consente di impostare rapidamente un terreno da utilizzare come base per la tua scena.",
+                    "title": "Pannello del terreno"
+                },
+                "step-1": {
+                    "content": "In questa sezione puoi scegliere tra alcuni temi preimpostati per il terreno. \nUsa il pulsante Applica tema per applicare il tema selezionato al terreno attuale.",
+                    "title": "Tema"
+                },
+                "step-2": {
+                    "content": "Questa sezione ti consentirà di generare casualmente un terreno, usa il menu a discesa per scegliere tra diversi tipi di terreno. \nIl pulsante Fine Tune ti consentirà di compensare e ridimensionare manualmente la mappa di altezza utilizzata per il terreno.",
+                    "title": "Terreno"
+                },
+                "step-3": {
+                    "content": "Fare clic sui diversi pulsanti fluidi per creare una tessera fluida. \nTieni presente che, a seconda del terreno, il fluido potrebbe richiedere il ridimensionamento o il riposizionamento. \nUsa gli strumenti gizmo per farlo se necessario.",
+                    "title": "Fluidi"
+                },
+                "step-4": {
+                    "content": "Questa sezione contiene alcuni strumenti per aiutarti con il terreno. \nUsa il pulsante Blocca/Sblocca per evitare che il terreno venga selezionato con il clic sinistro o usa il pulsante Griglia per alternare la visualizzazione della griglia sul terreno.",
+                    "title": "Utensili"
+                },
+                "title": "Pannelli: Terreno"
+            },
+            "room-builder": {
+                "description": "Questo tour ti guiderà attraverso i sotterranei",
+                "requires": "Devi avere installato il 3D Canvas Mapmaking Pack e i Dungeon",
+                "step-0": {
+                    "content": "Questo pannello ti permette di creare dungeon, caverne e interni di edifici.",
+                    "title": "Sotterranei"
+                },
+                "step-1": {
+                    "content": "Questa sezione contiene tutti gli strumenti di cui avrai bisogno per costruire il tuo layout.",
+                    "title": "Costruire"
+                },
+                "step-10": {
+                    "content": "Ora che sai come usare il pannello, iniziamo a costruire! \nSi consiglia vivamente di costruire su una superficie piana.",
+                    "title": "Iniziamo!"
+                },
+                "step-2": {
+                    "content": "In questa modalità, le forme disegnate sulla scena verranno aggiunte al layout",
+                    "title": "Aggiungere"
+                },
+                "step-3": {
+                    "content": "In questa modalità, le forme disegnate sulla scena verranno sottratte dal layout",
+                    "title": "Sottrarre"
+                },
+                "step-4": {
+                    "content": "Mentre sei in questa modalità, puoi tagliare pezzi di muri per creare aperture",
+                    "title": "Coltello"
+                },
+                "step-5": {
+                    "content": "Questa sezione determinerà la modalità di disegno<h3>Rectangle",
+                    "title": "Forme"
+                },
+                "step-6": {
+                    "content": "Questo campo ti permetterà di cambiare il tipo di muro. \n<strong>Liscia</strong> creerà pareti simili a quelle di interni, <strong>Ruvida</strong> creerà pareti simili a caverne.",
+                    "title": "Tipo di muro"
+                },
+                "step-7": {
+                    "content": "Questa sezione ti permetterà di scegliere se vuoi disegnare muri, pavimenti o entrambi.",
+                    "title": "Muri"
+                },
+                "step-8": {
+                    "content": "Questa sezione ti permetterà di scegliere il tema del dungeon. \nPuoi selezionare un tema personalizzato scegliendo <strong>Personalizzato</strong> nel menu a discesa e quindi selezionando le trame per pareti e pavimenti.",
+                    "title": "Tema"
+                },
+                "step-9": {
+                    "content": "Questa sezione ti permetterà di modificare l'altezza e lo spessore dei muri (in pixel).",
+                    "title": "Dimensioni"
+                },
+                "title": "Pannelli: sotterranei"
             }
         },
         "units": {
@@ -1783,6 +2058,10 @@
             "content": "<h1>Avvio rapido 3D!</h1> Benvenuto in 3D Canvas, questo è un tutorial rapido per aiutarti a creare mappe subito e facilmente! \nFai clic sul pulsante <b>Avvia tour!</b> per iniziare il tour.<hr>",
             "starttour": "Inizia il giro!",
             "title": "Benvenuti in Tela 3D"
+        },
+        "extrudeWalls": {
+            "content": "Questo processo tenterà di trasformare i muri nella scena in tessere. \nSei sicuro di voler continuare?",
+            "title": "Estrudi muri"
         }
     }
 }

@@ -70,7 +70,8 @@
             "preview3d": "Basculer le mode 3D",
             "tips": {
                 "templatePlacement": "Placement du modèle 3D : molette de la souris pour modifier l'élévation. \nContrôlez la molette de la souris pour faire pivoter. \nAlt molette de la souris pour incliner."
-            }
+            },
+            "tile3dPolygon": "Dessiner la forme à extruder"
         },
         "errors": {
             "3dnotactive": "Impossible d'ouvrir la fenêtre contextuelle de la toile, le mode 3D n'est pas actif.",
@@ -196,7 +197,15 @@
                     "sphere": "Sphère",
                     "text": "Texte (Utiliser le champ Modèle 3D pour le texte)",
                     "tube": "Tube",
-                    "decal": "Décalque"
+                    "decal": "Décalque",
+                    "polygon": "Polygone",
+                    "polygonbevel": "Polygone (biseau)",
+                    "polygonbevelsolidify": "Polygone (biseau solidifié)",
+                    "polygonbevelsolidifyjagged": "Polygone (courbe irrégulière)",
+                    "polygonbevelsolidifyjaggeddouble": "Polygone (double dentelé)",
+                    "polygonbevelsolidifyjaggedstraight": "Polygone (Droit irrégulier)",
+                    "polygonlathe": "Polygone (tour)",
+                    "polygonsolidify": "Polygone (solidifier)"
                 }
             },
             "dynaMeshResolution": {
@@ -565,7 +574,16 @@
             },
             "renderTable": {
                 "label": "Tableau d'affichage",
-                "notes": "Effectuez le rendu de la table dans la vue 3D."
+                "notes": "Effectuez le rendu de la table dans la vue 3D.",
+                "options": {
+                    "matblueprint": "Tapis infini (plan)",
+                    "matcloth": "Tapis infini (Tissu)",
+                    "matcustom": "Tapis infini (personnalisé)",
+                    "matpaper": "Tapis Infini (Papier)",
+                    "matwood": "Tapis Infini (Bois)",
+                    "none": "Aucun",
+                    "table": "Tableau (personnalisé)"
+                }
             },
             "rotateBase": {
                 "label": "Corriger la rotation de la base",
@@ -757,6 +775,34 @@
             },
             "highlightOnHover": {
                 "label": "Mettre en surbrillance au survol"
+            },
+            "advanced": {
+                "header": "Avancé"
+            },
+            "aura": {
+                "header": "auras"
+            },
+            "auraColor": {
+                "label": "Couleur de l'aura"
+            },
+            "auraRange": {
+                "label": "Portée des auras"
+            },
+            "doorAnimateAngle": {
+                "label": "Angle d'animation de la porte"
+            },
+            "doorStyle": {
+                "label": "Style de porte",
+                "options": {
+                    "animate": "Animé",
+                    "transparent": "Transparent"
+                }
+            },
+            "particleGroundOffset": {
+                "label": "Décalage au sol"
+            },
+            "tableColor": {
+                "label": "Teinte de rembourrage"
             }
         },
         "keybindings": {
@@ -1155,7 +1201,8 @@
                 "hide": "Masquer les paramètres avancés",
                 "hint": "Afficher les paramètres avancés dans les menus de configuration par défaut.",
                 "name": "Toujours afficher les paramètres avancés",
-                "show": "Afficher les paramètres avancés"
+                "show": "Afficher les paramètres avancés",
+                "wiki": "Apprendre encore plus"
             },
             "softShadows": {
                 "hint": "Activez les ombres douces à un coût mineur en termes de performances. \nNécessite un rafraîchissement.",
@@ -1222,6 +1269,10 @@
             "pingsound": {
                 "hint": "Le son à jouer lors d'un ping sur un emplacement.",
                 "name": "Son de ping"
+            },
+            "paddingAppearance": {
+                "hint": "L'apparence par défaut du rembourrage. \nCela peut également être personnalisé par scène.",
+                "name": "Apparence du rembourrage"
             }
         },
         "shaders": {
@@ -1382,7 +1433,8 @@
                 "centery": "Ancre en Y",
                 "description": "Effet de rotation de texture, nécessite une texture et une répétition de texture pour fonctionner.",
                 "name": "Tourner",
-                "speed": "Vitesse"
+                "speed": "Vitesse",
+                "offsetAngle": "Décalage angulaire"
             },
             "textureScroll": {
                 "description": "Effet de défilement de texture simple similaire au module 'Parallaxia'.",
@@ -1496,7 +1548,6 @@
                 "scaleHeight": "Hauteur",
                 "scaleScale": "Échelle de tuile",
                 "scaleWidth": "Largeur",
-                "select": "Maintenez F et faites glisser pour sélectionner, Faites glisser vers la gauche pour libérer les objets précédents, Faites glisser vers la droite pour ajouter à la sélection",
                 "tiltX": "Inclinaison X",
                 "tiltZ": "Inclinaison Y",
                 "title": "Commandes de l'éditeur de tuiles de toile 3D",
@@ -1765,7 +1816,230 @@
                     "content": "Lorsque vous avez terminé de créer votre scène, cliquer sur ce bouton fusionnera toutes les tuiles similaires en une seule tuile. \nCela réduira le nombre de tuiles dans la scène et améliorera les performances.",
                     "title": "Fusionner"
                 },
-                "title": "Intermédiaire : Navigateur d'actifs"
+                "title": "Intermédiaire : Navigateur d'actifs",
+                "step-8": {
+                    "content": "L'onglet utilitaire contient des raccourcis rapides vers les actions par lots.",
+                    "title": "Utilitaire"
+                },
+                "step-9": {
+                    "content": "Lorsque vous avez terminé de créer votre scène, utilisez le bouton \"Fusionner les tuiles\" pour fusionner toutes les tuiles similaires en une seule tuile afin d'améliorer les performances.",
+                    "title": "Optimisation"
+                }
+            },
+            "asset-browser-paint": {
+                "description": "Cette visite guidée vous guidera à travers le mode de peinture du navigateur d'actifs.",
+                "requires": "Vous devez avoir installé le pack de cartographie 3D Canvas et ouvert le navigateur d'actifs pour commencer cette visite.",
+                "step-0": {
+                    "content": "Le mode Peinture vous permettra de disperser rapidement les tuiles sur la scène.",
+                    "title": "Mode peinture"
+                },
+                "step-1": {
+                    "content": "Pour commencer à peindre, vous devez sélectionner un ou plusieurs éléments dans le navigateur d'éléments. \nCliquez sur un actif pour le sélectionner ou Ctrl-clic pour sélectionner plusieurs actifs.",
+                    "title": "Sélectionnez un ou plusieurs Actifs"
+                },
+                "step-2": {
+                    "content": "Une fois que vous avez sélectionné un ou plusieurs actifs, vous verrez une notification en bas de la fenêtre.",
+                    "title": "Avis de sélection"
+                },
+                "step-3": {
+                    "content": "Lorsque l'outil \"Placer une tuile\" est activé, vous pouvez cliquer et faire glisser sur la scène pour dessiner un rectangle. \nLe rectangle sera rempli avec les actifs sélectionnés.",
+                    "title": "Peinture: Rectangle"
+                },
+                "step-4": {
+                    "content": "Lorsque l'outil \"Polygone\" est activé, cliquez et faites glisser pour démarrer le polygone. \nTout en maintenant le bouton gauche de la souris enfoncé, cliquez sur le bouton droit de la souris pour ajouter un point. \nRelâchez le bouton gauche de la souris une fois satisfait, si vous ne fermez pas les éléments de forme seront dispersés sur le segment, sinon ils rempliront la zone.",
+                    "title": "Peinture : Polygone"
+                },
+                "step-5": {
+                    "content": "Lorsque l'outil \"Sélectionner\" est activé, maintenez la touche Maj enfoncée, puis cliquez et faites glisser pour placer les éléments sur la scène.",
+                    "title": "Peinture : à main levée"
+                },
+                "title": "Panneau : Navigateur d'éléments - Peinture"
+            },
+            "cutscene-panel": {
+                "description": "Cette visite vous guidera à travers le panneau Cutscene.",
+                "requires": "Vous devez avoir installé le pack de cartographie 3D Canvas et ouvert le panneau Cutscene pour commencer cette visite.",
+                "step-0": {
+                    "content": "Ce panneau vous permet de configurer rapidement une ou plusieurs cinématiques pour votre scène.",
+                    "title": "Panneau cinématique"
+                },
+                "step-1": {
+                    "content": "Pour créer un nouveau clip, cliquez sur le bouton <strong>Ajouter un clip</strong>. \nCela créera un nouveau clip et ouvrira les paramètres du clip.",
+                    "title": "Création d'un extrait"
+                },
+                "step-10": {
+                    "content": "Une fois que vous avez terminé votre cinématique, vous pouvez la jouer en cliquant sur le bouton <strong>Jouer</strong>. \nVous serez invité à sélectionner les joueurs qui pourront voir la cinématique.",
+                    "title": "Jouer"
+                },
+                "step-2": {
+                    "content": "Cette section vous permettra de configurer les paramètres du clip actuel. \nVous pouvez modifier le nom, lire ou supprimer le clip.",
+                    "title": "Paramètres des clips"
+                },
+                "step-3": {
+                    "content": "Pour ajouter une image clé, cliquez sur le bouton <strong>Ajouter une image clé</strong>. \nCela créera une nouvelle image clé.<hr>Une image clé est un point dans le temps où la caméra sera positionnée et pivotée. \nVous pouvez ajouter autant d'images clés que vous le souhaitez pour créer une cinématique.",
+                    "title": "Ajout d'images clés"
+                },
+                "step-4": {
+                    "content": "Pour capturer la position et la rotation actuelles de la caméra, cliquez sur le bouton <strong>Capturer</strong>. \nCela stockera la position et la rotation actuelles de la caméra pour l'image clé.",
+                    "title": "Capturer des images clés"
+                },
+                "step-5": {
+                    "content": "Ce champ vous permettra de modifier la durée de l'image clé actuelle. \nCela affectera le temps que prendra la caméra pour passer de l'image clé précédente à celle-ci.<hr>Si le champ <strong>Transition</strong> est défini sur <strong>Cross-Fade</strong>, la durée est \nle temps qu'il faudra à la caméra pour s'éteindre et s'allumer.",
+                    "title": "Durée"
+                },
+                "step-6": {
+                    "content": "Ce champ vous permettra de modifier le temps pendant lequel la caméra restera sur l'image clé actuelle avant de passer à la suivante.",
+                    "title": "Arrêtez-vous pour"
+                },
+                "step-7": {
+                    "content": "Ce champ vous permettra de changer le type de transition. \nVous pouvez choisir entre <strong>Chain</strong> et <strong>Cross-Fade</strong>. \nLa chaîne fera passer la caméra d'une image clé à la suivante, le fondu enchaîné fera disparaître la caméra et entre les images clés.",
+                    "title": "Transition"
+                },
+                "step-8": {
+                    "content": "Ce champ vous permettra de changer le type d'easing. \nVous pouvez en savoir plus sur l'assouplissement <a href='https://easings.net/en'>ici</a>.",
+                    "title": "Assouplissement"
+                },
+                "step-9": {
+                    "content": "Ce bouton vous permettra de basculer les paramètres d'image clé pour ce clip.",
+                    "title": "Modifier"
+                },
+                "title": "Panneaux : cinématique"
+            },
+            "effect-browser": {
+                "description": "Cette visite guidée vous guidera à travers le panneau d'effets.",
+                "requires": "Vous devez avoir installé le pack de création de cartes sur toile 3D et ouvert le panneau d'effets pour commencer cette visite.",
+                "step-0": {
+                    "content": "Ce panneau vous permet de faire glisser et déposer des effets sur la scène.<hr>Les effets sont des textures projetées sous forme de décalques, une fois placés, vous verrez un cône rouge indiquant la direction de projection. \nCeci n'est visible que pour les MJ lorsqu'ils sont sur la couche de tuiles.",
+                    "title": "Panneau d'effet"
+                },
+                "step-1": {
+                    "content": "Ce champ vous permettra de modifier l'échelle des effets sélectionnés.",
+                    "title": "Escalader"
+                },
+                "step-2": {
+                    "content": "Vous pouvez utiliser la barre de recherche pour trouver des effets spécifiques.",
+                    "title": "Barre de recherche"
+                },
+                "step-3": {
+                    "content": "Cette liste contient tous les effets qui correspondent à votre recherche. \nFaites glisser et déposez un effet sur la scène pour le placer.<hr>Si vous avez le module <strong>Token Attacher</strong>, déposer un effet sur un jeton l'attachera au jeton.",
+                    "title": "Liste des effets"
+                },
+                "title": "Panneaux : effets"
+            },
+            "material-browser": {
+                "description": "Cette visite guidée vous guidera à travers le panneau des matériaux.",
+                "requires": "Vous devez avoir installé le pack de création de cartes sur toile 3D et ouvert le panneau des matériaux pour commencer cette visite.",
+                "step-0": {
+                    "content": "Ce panneau vous permet de parcourir et de modifier rapidement les matériaux sur les tuiles sélectionnées.",
+                    "title": "Panneau de matériau"
+                },
+                "step-1": {
+                    "content": "Vous pouvez utiliser la barre de recherche pour trouver des matériaux spécifiques.",
+                    "title": "Barre de recherche"
+                },
+                "step-2": {
+                    "content": "Ce champ vous permettra de modifier la répétition de texture des tuiles sélectionnées. \nCela affectera le carrelage de la texture sur le carreau.",
+                    "title": "Répétition de texture"
+                },
+                "step-3": {
+                    "content": "Cette liste contient tous les matériaux qui correspondent à votre recherche. \nCliquez sur un matériau pour l'appliquer à tous les carreaux sélectionnés.",
+                    "title": "Liste des matériaux"
+                },
+                "title": "Panneaux : Matériaux"
+            },
+            "quick-environment": {
+                "description": "Cette visite vous guidera à travers le panneau de l'environnement.",
+                "requires": "Vous devez avoir installé le pack de cartographie 3D Canvas et ouvert le panneau d'environnement pour commencer cette visite.",
+                "step-0": {
+                    "content": "Ce panneau vous permet de configurer rapidement une sensation de scène en quelques clics.",
+                    "title": "Panneau Environnement"
+                },
+                "step-1": {
+                    "content": "Réglez l'heure du jour au format 24 heures. \nCela affectera l'éclairage et les ombres, vous pouvez vous diriger vers les paramètres de scène pour une configuration plus avancée.",
+                    "title": "Moment de la journée"
+                },
+                "step-2": {
+                    "content": "Vous pouvez régler la météo sur l'un des préréglages ou vous diriger vers les paramètres de scène pour des effets multiples et personnalisés.",
+                    "title": "Temps"
+                },
+                "step-3": {
+                    "content": "La skybox affectera non seulement l'arrière-plan de la scène, mais également l'éclairage. \nEssayez par vous-même comment différentes skyboxes peuvent modifier radicalement l'ambiance d'une scène.",
+                    "title": "Skybox"
+                },
+                "title": "Panneaux : Environnement"
+            },
+            "quick-terrain": {
+                "description": "Cette visite vous guidera à travers le panneau du terrain.",
+                "requires": "Vous devez avoir installé le pack de création de cartes sur toile 3D et ouvert le panneau de terrain pour commencer cette visite.",
+                "step-0": {
+                    "content": "Ce panneau vous permet de configurer rapidement un terrain à utiliser comme base pour votre scène.",
+                    "title": "Panneau Terrain"
+                },
+                "step-1": {
+                    "content": "Dans cette section, vous pouvez choisir entre certains thèmes prédéfinis pour le terrain. \nUtilisez le bouton Appliquer le thème pour appliquer le thème sélectionné au terrain actuel.",
+                    "title": "Thème"
+                },
+                "step-2": {
+                    "content": "Cette section vous permettra de générer aléatoirement un terrain, utilisez la liste déroulante pour choisir entre différents types de terrain. \nLe bouton Fine Tune vous permettra de décaler et de mettre à l'échelle manuellement la carte de hauteur utilisée pour le terrain.",
+                    "title": "Terrain"
+                },
+                "step-3": {
+                    "content": "Cliquez sur les différents boutons fluides pour créer une tuile fluide. \nNotez qu'en fonction de votre terrain, le fluide peut nécessiter une mise à l'échelle ou un repositionnement. \nUtilisez les outils gizmo pour le faire si nécessaire.",
+                    "title": "Fluides"
+                },
+                "step-4": {
+                    "content": "Cette section contient quelques outils pour vous aider avec le terrain. \nUtilisez le bouton Verrouiller/Déverrouiller pour empêcher le terrain d'être sélectionné avec un clic gauche ou utilisez le bouton Grille pour basculer l'affichage de la grille sur le terrain.",
+                    "title": "Outils"
+                },
+                "title": "Panneaux : terrain"
+            },
+            "room-builder": {
+                "description": "Cette visite vous guidera à travers les donjons",
+                "requires": "Vous devez avoir installé le pack de création de cartes sur toile 3D et les donjons",
+                "step-0": {
+                    "content": "Ce panneau vous permet de créer des donjons, des grottes et des intérieurs de bâtiments.",
+                    "title": "Donjons"
+                },
+                "step-1": {
+                    "content": "Cette section contient tous les outils dont vous aurez besoin pour créer votre mise en page.",
+                    "title": "Construire"
+                },
+                "step-10": {
+                    "content": "Maintenant que vous savez utiliser le panneau, commençons à construire ! \nIl est fortement recommandé de construire sur une surface plane.",
+                    "title": "Commençons!"
+                },
+                "step-2": {
+                    "content": "Dans ce mode, les formes dessinées sur la scène seront ajoutées à la mise en page",
+                    "title": "Ajouter"
+                },
+                "step-3": {
+                    "content": "Dans ce mode, les formes dessinées sur la scène seront soustraites de la mise en page",
+                    "title": "Soustraire"
+                },
+                "step-4": {
+                    "content": "Dans ce mode, vous pouvez couper des morceaux de murs pour créer des ouvertures",
+                    "title": "Couteau"
+                },
+                "step-5": {
+                    "content": "Cette section déterminera le mode de dessin<h3>Rectangle",
+                    "title": "Formes"
+                },
+                "step-6": {
+                    "content": "Ce champ vous permettra de changer le type de mur. \n<strong>Lisse</strong> créera des murs de type intérieur, <strong>Rugueux</strong> créera des murs de type grotte.",
+                    "title": "Type de mur"
+                },
+                "step-7": {
+                    "content": "Cette section vous permettra de choisir si vous souhaitez dessiner des murs, des sols ou les deux.",
+                    "title": "Des murs"
+                },
+                "step-8": {
+                    "content": "Cette section vous permettra de choisir le thème du donjon. \nVous pouvez sélectionner un thème personnalisé en choisissant <strong>Personnalisé</strong> dans la liste déroulante, puis en sélectionnant des textures pour les murs et les sols.",
+                    "title": "Thème"
+                },
+                "step-9": {
+                    "content": "Cette section vous permettra de modifier la hauteur et l'épaisseur des murs (en pixels).",
+                    "title": "Dimensions"
+                },
+                "title": "Panneaux : Donjons"
             }
         },
         "units": {
@@ -1784,6 +2058,10 @@
             "content": "<h1>Démarrage rapide 3D !</h1> Bienvenue dans 3D Canevas, il s'agit d'un didacticiel de démarrage rapide pour vous permettre de créer des cartes immédiatement et facilement ! \nCliquez sur le bouton <b>Démarrer la visite !</b> pour commencer la visite.<hr>",
             "starttour": "Tour initial!",
             "title": "Bienvenue sur Toile 3D"
+        },
+        "extrudeWalls": {
+            "content": "Ce processus tentera de transformer les murs de la scène en tuiles. \nEs-tu sur de vouloir continuer?",
+            "title": "Extruder des murs"
         }
     }
 }
