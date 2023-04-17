@@ -89,6 +89,8 @@ export const AdvancedTileConfiguration = () => {
     });
 };
 
+//Mapmaking pack tours
+
 export const Tokens = () => {
     return new GenericTour("tokens", [`a[data-tab="levels-3d-preview"]`, `.form-group:has(label[for="model3d"])`, `.form-group:has(label[for="material"])`, `.form-group:has(label[for="color"])`, `.fa-regular.fa-person`, `#token-browser`], {
         moduleId: "levels-3d-preview",
@@ -108,7 +110,7 @@ export const Tokens = () => {
 };
 
 export const AssetBrowser = () => {
-    return new GenericTour("asset-browser", [`#asset-browser`, `#asset-browser #search`, `#asset-browser ol`, `#asset-browser #ab-randomization`, `#asset-browser #ab-placement`, `#asset-browser #ab-collision`, `#asset-browser #ab-painting`, `#asset-browser #ab-appearance`, `#asset-browser .tab-button[data-tab="utility"]`, `#asset-browser #ab-optimization`], {
+    return new GenericTour("asset-browser", [`#asset-browser .window-content`, `#asset-browser #search`, `#asset-browser ol`, `#asset-browser #ab-randomization`, `#asset-browser #ab-placement`, `#asset-browser #ab-collision`, `#asset-browser #ab-painting`, `#asset-browser #ab-appearance`, `#asset-browser .tab-button[data-tab="utility"]`, `#asset-browser #ab-optimization`], {
         moduleId: "levels-3d-preview",
         localizationRoot: "levels3dpreview.tours",
         display: true,
@@ -121,14 +123,134 @@ export const AssetBrowser = () => {
     });
 };
 
+export const AssetBrowserPaint = () => {
+    return new GenericTour("asset-browser-paint", [
+        `#asset-browser #ab-painting`,
+        `#asset-browser li`,
+        `#asset-browser #selected-notification`,
+        `.control-tool[data-tool="tile"]`,
+        `.control-tool[data-tool="tile3dPolygon"]`,
+        `.control-tool[data-tool="select"]`,
+    ], {
+        moduleId: "levels-3d-preview",
+        localizationRoot: "levels3dpreview.tours",
+        display: true,
+        restricted: true,
+        autoRegister: true,
+        requires: () => {
+            return game.modules.get("canvas3dcompendium")?.active && Object.values(ui.windows).find((window) => window instanceof game.Levels3DPreview.CONFIG.UI.AssetBrowser);
+        },
+        init: () => {
+            canvas.tiles.activate();
+            const w = Object.values(ui.windows).find((window) => window instanceof game.Levels3DPreview.CONFIG.UI.AssetBrowser)
+            w.element.find("li").each((i, e) => {
+                if(i < 3) e.classList.add("selected");
+            });
+            w.element.find("#selected-notification").show();
+        },
+    });
+};
+
+const Environment = () => { return new GenericTour("quick-environment", [
+    `#quick-environment .window-content`,
+    `#quick-environment fieldset:nth-child(1)`,
+    `#quick-environment fieldset:nth-child(2)`,
+    `#quick-environment fieldset:nth-child(3)`,
+],
+{moduleId: "levels-3d-preview",localizationRoot: "levels3dpreview.tours",display: true,restricted: false,autoRegister: true,        requires: () => {
+    return game.modules.get("canvas3dcompendium")?.active && Object.values(ui.windows).find((window) => window instanceof game.Levels3DPreview.CONFIG.UI.QuickEnvironment);
+    },
+    })
+}
+
+const Terrain = () => { return new GenericTour("quick-terrain", [
+    `#quick-terrain .window-content`,
+    `#quick-terrain fieldset:nth-child(1)`,
+    `#quick-terrain div fieldset:nth-child(1)`,
+    `#quick-terrain div fieldset:nth-child(2)`,
+    `#quick-terrain div fieldset:nth-child(3)`,
+],
+{moduleId: "levels-3d-preview",localizationRoot: "levels3dpreview.tours",display: true,restricted: false,autoRegister: true,        requires: () => {
+    return game.modules.get("canvas3dcompendium")?.active && Object.values(ui.windows).find((window) => window instanceof game.Levels3DPreview.CONFIG.UI.QuickTerrain);
+    },
+    })
+}
+
+const Material = () => { return new GenericTour("material-browser", [
+    `#material-browser .window-content`,
+    `#material-browser #search`,
+    `#material-browser .form-group`,
+    `#material-browser ol`,
+],
+{moduleId: "levels-3d-preview",localizationRoot: "levels3dpreview.tours",display: true,restricted: false,autoRegister: true,        requires: () => {
+    return game.modules.get("canvas3dcompendium")?.active && Object.values(ui.windows).find((window) => window instanceof game.Levels3DPreview.CONFIG.UI.MaterialBrowser);
+    },
+    })
+}
+
+const Effects = () => { return new GenericTour("effect-browser", [
+    `#effect-browser .window-content`, 
+    `#effect-browser #scale`,
+    `#effect-browser #search`,
+    `#effect-browser ol`,
+],
+{moduleId: "levels-3d-preview",localizationRoot: "levels3dpreview.tours",display: true,restricted: false,autoRegister: true,        requires: () => {
+    return game.modules.get("canvas3dcompendium")?.active && Object.values(ui.windows).find((window) => window instanceof game.Levels3DPreview.CONFIG.UI.EffectBrowser);
+    },
+    })
+}
+
+const Cutscene = () => { return new GenericTour("cutscene-panel", [
+    `#cutscene-panel .window-content`, 
+    `#cutscene-panel button[data-action="add-clip"]`,
+    `#cutscene-panel fieldset.clip div`,
+    `#cutscene-panel button[data-action="add-keyframe"]`,
+    `#cutscene-panel button[data-action="capture"]`,
+    `#cutscene-panel .form-group:has(input[name="time"])`,
+    `#cutscene-panel .form-group:has(input[name="hold"])`,
+    `#cutscene-panel .form-group:has(select[name="transition"])`,
+    `#cutscene-panel .form-group:has(select[name="easing"])`,
+    `#cutscene-panel button[data-action="edit"]`,
+    `#cutscene-panel button[data-action="play"]`,
+],
+{moduleId: "levels-3d-preview",localizationRoot: "levels3dpreview.tours",display: true,restricted: false,autoRegister: true,        requires: () => {
+    return game.modules.get("canvas3dcompendium")?.active && Object.values(ui.windows).find((window) => window instanceof game.Levels3DPreview.CONFIG.UI.CutscenePanel);
+    },
+    })
+}
+
+const RoomBuilder = () => { return new GenericTour("room-builder", [
+    `#room-builder .window-content`, 
+    `#room-builder fieldset:nth-child(1)`,
+    `#room-builder button[data-action="union"]`, 
+    `#room-builder button[data-action="subtract"]`,
+    `#room-builder button[data-action="knife"]`, 
+    `#room-builder .shapes`,
+    `#room-builder .roughness`, 
+    `#room-builder .entity`,
+    `#room-builder fieldset:nth-child(2)`,
+    `#room-builder fieldset:nth-child(3)`,
+    `#room-builder button[data-action="union"]`, 
+],
+{moduleId: "levels-3d-preview",localizationRoot: "levels3dpreview.tours",display: true,restricted: false,autoRegister: true,        requires: () => {
+    return game.modules.get("canvas3dcompendium")?.active && Object.values(ui.windows).find((window) => window instanceof game.Levels3DPreview.CONFIG.UI.RoomBuilder);
+},})}
+
 export const RegisterTours = () => {
     GettingStartedTour();
     First3DScene();
-    AssetBrowser();
     Tokens();
     First3DTile();
     SceneConfiguration();
     AdvancedTileConfiguration();
+    Environment();
+    Terrain();
+    AssetBrowser();
+    AssetBrowserPaint();
+    Material();
+    RoomBuilder();
+    Effects();
+    Cutscene();
 }
 
 const TourTemplate = () => { return new GenericTour("tour-id", [

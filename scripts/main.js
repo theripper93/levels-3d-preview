@@ -1332,7 +1332,7 @@ class Levels3DPreview {
         groundPosition.y = Ruler3D.unitsToPixels(canvas.primary.background.elevation);
         const d = centerPosition.distanceTo(groundPosition);
 
-        const origin = new THREE.Vector2(this.controls.target.y - 0.1, 0);
+        const origin = new THREE.Vector2(this.controls.target.y - 0.05, 0);
         const remote = new THREE.Vector2(0, d);
         const angleRadians = Math.atan2(remote.y - origin.y, remote.x - origin.x);
         this.controls.maxPolarAngle = angleRadians;

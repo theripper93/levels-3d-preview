@@ -1786,7 +1786,7 @@
                 }
             },
             "asset-browser": {
-                "title": "Intermediate: Asset Browser",
+                "title": "Panel: Asset Browser",
                 "description": "This tour will guide you through the Asset Browser advanced features.",
                 "requires": "You need to have the 3D Canvas Mapmaking Pack installed and the Asset Browser open to start this tour.",
                 "step-0": {
@@ -1828,6 +1828,221 @@
                 "step-9": {
                     "title": "Optimization",
                     "content": "When you are done building your scene, use the 'Merge Tiles' button to merge all the similar tiles into a single tile to improve performance."
+                }
+            },
+            "quick-environment": {
+                "title": "Panels: Environment",
+                "description": "This tour will guide you through the Environment Panel.",
+                "requires": "You need to have the 3D Canvas Mapmaking Pack installed and the Environment Panel open to start this tour.",
+                "step-0": {
+                    "title": "Environment Panel",
+                    "content": "This panel allows you to quickly setup a scene feel with a few clicks."
+                },
+                "step-1": {
+                    "title": "Time of Day",
+                    "content": "Set the time of day in the 24hrs format. This will affect lighting and shadows, you can head into the scene settings for a more advanced configuration."
+                },
+                "step-2": {
+                    "title": "Weather",
+                    "content": "You can set the weather to one of the presets or head to the scene settings for multiple and custom effects."
+                },
+                "step-3": {
+                    "title": "Skybox",
+                    "content": "The skybox will affect not only the backdrop of the scene but also the lighting. Try for yourself how different skyboxes can drastically alter a scene mood."
+                }
+            },
+            "quick-terrain": {
+                "title": "Panels: Terrain",
+                "description": "This tour will guide you through the Terrain Panel.",
+                "requires": "You need to have the 3D Canvas Mapmaking Pack installed and the Terrain Panel open to start this tour.",
+                "step-0": {
+                    "title": "Terrain Panel",
+                    "content": "This panel allows you to quickly setup a terrain to use as a base for your scene."
+                },
+                "step-1": {
+                    "title": "Theme",
+                    "content": "In this section you can chose between some preset themes for the terrain. Use the Apply Theme button to apply the selected theme to the current terrain."
+                },
+                "step-2": {
+                    "title": "Terrain",
+                    "content": "This section will let you randomly generate a terrain, use the dropdown to chose between different terrain types. The Fine Tune button will let you manually offset and scale the Heightmap used for the terrain."
+                },
+                "step-3":{
+                    "title": "Fluids",
+                    "content": "Click on the different fluid buttons to create a fluid tile. Note that depending on your terrain the fluid might require scaling or repositioning. Use the gizmo tools to do so if needed."
+                },
+                "step-4": {
+                    "title": "Tools",
+                    "content": "This section contains some tools to help you with the terrain. Use the Lock/Unlock button to prevent the terrain from beeing selected with left click or use the Grid button to toggle grid display on the terrain."
+                }
+            },
+            "material-browser": {
+                "title": "Panels: Materials",
+                "description": "This tour will guide you through the Material Panel.",
+                "requires": "You need to have the 3D Canvas Mapmaking Pack installed and the Material Panel open to start this tour.",
+                "step-0": {
+                    "title": "Material Panel",
+                    "content": "This panel allows you to quickly browse and change materials on selected tiles."
+                },
+                "step-1": {
+                    "title": "Search Bar",
+                    "content": "You can use the search bar to find specific materials."
+                },
+                "step-2": {
+                    "title": "Texture Repeat",
+                    "content": "This field will let you change the texture repeat of the selected tiles. This will affect the tiling of the texture on the tile."
+                },
+                "step-3": {
+                    "title": "Materials List",
+                    "content": "This list contains all the materials that match your search. Click on a material to apply it to all selected tiles."
+                }
+            },
+            "effect-browser": {
+                "title": "Panels: Effects",
+                "description": "This tour will guide you through the Effect Panel.",
+                "requires": "You need to have the 3D Canvas Mapmaking Pack installed and the Effect Panel open to start this tour.",
+                "step-0": {
+                    "title": "Effect Panel",
+                    "content": "This panel allows you to drag and drop effects onto the scene.<hr>Effects are textures projected as decals, once placed you will see a red cone indicating the projection direction. This is only visible to GMs while on the tile layer."
+                },
+                "step-1": {
+                    "title": "Scale",
+                    "content": "This field will let you change the scale of the selected effects."
+                },
+                "step-2": {
+                    "title": "Search Bar",
+                    "content": "You can use the search bar to find specific effects."
+                },
+                "step-3": {
+                    "title": "Effects List",
+                    "content": "This list contains all the effects that match your search. Drag and drop an effect onto the scene to place it.<hr>If you have the <strong>Token Attacher</strong> module, dropping an effect on a token will attach it to the token."
+                }
+            },
+            "cutscene-panel": {
+                "title": "Panels: Cutscene",
+                "description": "This tour will guide you through the Cutscene Panel.",
+                "requires": "You need to have the 3D Canvas Mapmaking Pack installed and the Cutscene Panel open to start this tour.",
+                "step-0": {
+                    "title": "Cutscene Panel",
+                    "content": "This panel allows you to quickly setup one or more cinematics for your scene."
+                },
+                "step-1": {
+                    "title": "Creating a Clip",
+                    "content": "To create a new clip, click on the <strong>Add Clip</strong> button. This will create a new clip and open the clip settings."
+                },
+                "step-2": {
+                    "title": "Clip Settings",
+                    "content": "This section will let you setup the settings for the current clip. You can edit the name, play or delete the clip."
+                },
+                "step-3": {
+                    "title": "Adding Keyframes",
+                    "content": "To add a keyframe, click on the <strong>Add Keyframe</strong> button. This will create a new keyframe.<hr>A Keyframe is a point in time where the camera will be positioned and rotated. You can add as many keyframes as you want to create a cinematic."
+                },
+                "step-4": {
+                    "title": "Capturing Keyframes",
+                    "content": "To capture the current camera position and rotation, click on the <strong>Capture</strong> button. This will store the current camera position and rotation for the keyframe."
+                },
+                "step-5": {
+                    "title": "Duration",
+                    "content": "This field will let you change the duration of the current keyframe. This will affect how long the camera will take to move from the previous keyframe to this one.<hr>If the <strong>Transition</strong> field is set to <strong>Cross-Fade</strong>, the duration is the time it will take for the camera to fade out and in."
+                },
+                "step-6": {
+                    "title": "Stop for",
+                    "content": "This field will let you change the time the camera will stay at the current keyframe before moving to the next one."
+                },
+                "step-7": {
+                    "title": "Transition",
+                    "content": "This field will let you change the transition type. You can chose between <strong>Chain</strong> and <strong>Cross-Fade</strong>. Chain will make the camera move from one keyframe to the next, Cross-Fade will make the camera fade out and in between keyframes."
+                },
+                "step-8": {
+                    "title": "Easing",
+                    "content": "This field will let you change the easing type. You can read more about easing <a href='https://easings.net/en'>here</a>."
+                },
+                "step-9": {
+                    "title": "Edit",
+                    "content": "This button will let you toggle the keyframe settings for this clip."
+                },
+                "step-10": {
+                    "title": "Play",
+                    "content": "Once you are done with your cutscene, you can play it by clicking on the <strong>Play</strong> button. You will be prompted to select which players will be able to see the cutscene."
+                }
+            },
+            "room-builder": {
+                "title": "Panels: Dungeons & Interiors",
+                "description": "This tour will guide you through the Dungeons & Interiors Panel.",
+                "requires": "You need to have the 3D Canvas Mapmaking Pack installed and the Dungeons & Interiors Panel open to start this tour.",
+                "step-0": {
+                    "title": "Dungeons & Interiors Panel",
+                    "content": "This panel allows you to create dungeons, caves and buildings interiors."
+                },
+                "step-1": {
+                    "title": "Build",
+                    "content": "This section contains all the tools you'll need to build your layout."
+                },
+                "step-2": {
+                    "title": "Add",
+                    "content": "While in this mode, shapes drawn on the scene will be added to the layout"
+                },
+                "step-3": {
+                    "title": "Subtract",
+                    "content": "While in this mode, shapes drawn on the scene will be subtracted from the layout"
+                },
+                "step-4": {
+                    "title": "Knife",
+                    "content": "While in this mode, you can cut pieces of walls to create openings"
+                },
+                "step-5": {
+                    "title": "Shapes",
+                    "content": "This section will determine the draw mode<h3>Rectangle & Ellipse</h3><p>While in this mode, click and drag on the scene to draw the shape, release once you are happy with it.</p><h3>Polygon & Spline</h3><p>While in this mode, click and drag to start the polygon. While holding left mouse button, click right mouse button to add a point. Release the left mouse button once satisfied, if you don't close the shape only a wall will be created.</p>"
+                },
+                "step-6": {
+                    "title": "Wall type",
+                    "content": "This field will let you change the wall type. <strong>Smooth</strong> will create interior-like walls, <strong>Rough</strong> will create cave-like walls."
+                },
+                "step-7": {
+                    "title": "Walls & Floors",
+                    "content": "This section will let you chose if you want to draw walls, floors or both."
+                },
+                "step-8": {
+                    "title": "Theme",
+                    "content": "This section will let you chose the theme for the dungeon. You can select a custom theme by chosing <strong>Custom</strong> in the dropdown and then selecting textures for walls and floors."
+                },
+                "step-9": {
+                    "title": "Dimensions",
+                    "content": "This section will let you change the height and thickness of the walls (in pixels)."
+                },
+                "step-10": {
+                    "title": "Let's Start!",
+                    "content": "Now that you know how to use the panel, let's start building! It's highly recommended to build on a flat surface."
+                }
+            },
+            "asset-browser-paint": {
+                "title": "Panel: Asset Browser - Painting",
+                "description": "This tour will guide you through the Asset Browser Painting mode.",
+                "requires": "You need to have the 3D Canvas Mapmaking Pack installed and the Asset Browser open to start this tour.",
+                "step-0": {
+                    "title": "Painting Mode",
+                    "content": "The Painting mode will let you scatter tiles on the scene quickly."
+                },
+                "step-1": {
+                    "title": "Select one or more Assets",
+                    "content": "To start painting, you need to select one or more assets in the Asset Browser. Click on an asset to select it or Ctrl+Click to select multiple assets."
+                },
+                "step-2": {
+                    "title": "Selection Notification",
+                    "content": "Once you have selected one or more assets, you will see a notification at the bottom of the window."
+                },
+                "step-3": {
+                    "title": "Painting: Rectangle",
+                    "content": "While the 'Place Tile' tool is enabled, you can click and drag on the scene to draw a rectangle. The rectangle will be filled with the selected assets."
+                },
+                "step-4": {
+                    "title": "Painting: Polygon",
+                    "content": "While the 'Polygon' tool is enabled, click and drag to start the polygon. While holding left mouse button, click right mouse button to add a point. Release the left mouse button once satisfied, if you don't close the shape assets will be scattered on the segment, otherwise they will fill the area."
+                },
+                "step-5": {
+                    "title": "Painting: Freehand",
+                    "content": "While the 'Select' tool is enabled, Hold Shift, then click and drag to place assets on the scene."
                 }
             }
         },
