@@ -63,8 +63,8 @@ export class CutsceneEngine{
     }
 
     update(delta) { 
-        delta*= 1000;
         if (!this._isPlaying) return;
+        delta*= 1000;
         if (this.cutscene.advanceTime(delta)) {
             this.stop();
         } else if (this.cutscene.currentKeyframe) {
@@ -81,13 +81,15 @@ class Cutscene{
         this.startCameraPosition = camera.position.clone();
         this.startControlsTarget = controls.target.clone();
         this.keyframes = data.keyframes;
+        this.immersive = data.immersive;
         this.initializeKeyframes();
-        this.fadeInOutDuration = this.keyframes[0]._time / 2;
-        this._currentKeyframe = -1;
-        this._fadeToBlack = this.fadeInOutDuration;
-        this._fadeFromBlack = this.fadeInOutDuration;
-        this._isFadingIn = true;
-        this.canvasEl.style.transition = `backdrop-filter ${this.fadeInOutDuration / 1000}s ease-in-out`;
+        this._currentKeyframe = 0;
+        if (this.immersive) {
+            $("#interface").fadeOut(this.keyframes[0].time/2);
+            Object.values(ui.windows).forEach((window) => {
+                window.element.closest(".window-app").fadeOut(this.keyframes[0].time/2);
+            });
+        }
     }
 
     get currentKeyframe() { 
@@ -104,25 +106,13 @@ class Cutscene{
             prevKeyframe = i;
             const isLast = i == this.keyframes.length - 1;
             const isFirst = i == 0;
-            keyframes.push(new CutsceneKeyframe(keyframe, initialPosition, initialTarget, isLast, isFirst ));
+            keyframes.push(new CutsceneKeyframe(keyframe, initialPosition, initialTarget, isLast, isFirst, this.immersive ));
         }
         this.keyframes = keyframes;
     }
 
     advanceTime(delta) {
-        if (this._fadeToBlack >= 0) { 
-            this.canvasEl.style.backdropFilter = `brightness(0)`;
-            this._fadeToBlack -= delta;
-            return false;
-        }
-        const currentKeyframe = this.keyframes[this._currentKeyframe];
-        if (this._fadeFromBlack >= 0) {
-            this._currentKeyframe = 0;
-            this.canvasEl.style.backdropFilter = `brightness(1)`;
-            this._fadeFromBlack -= delta;
-            return false;
-        }
-        if(currentKeyframe.advanceTime(delta)) {
+        if(this.currentKeyframe.advanceTime(delta)) {
             this._currentKeyframe++;
             if (this._currentKeyframe >= this.keyframes.length) {
                 this.onEnd();
@@ -135,12 +125,20 @@ class Cutscene{
     onEnd() {
         this.canvasEl.style.backdropFilter = "";
         this.canvasEl.style.transition = "";
+        if (this.immersive) {
+            $("#interface").fadeIn(200);
+            Object.values(ui.windows).forEach((window) => {
+                window.element.closest(".window-app").fadeIn(200);
+            });
+        }
     }
 }
 
 class CutsceneKeyframe{
-    constructor (data, initialPosition, initialTarget, isLast, isFirst) {
+    constructor (data, initialPosition, initialTarget, isLast, isFirst, immersive) {
         this.canvasEl = document.querySelector("#levels3d");
+        this.immersive = immersive;
+        this.caption = data.caption;
         this.animationTime = 0;
         this.isLast = isLast;
         this.isFirst = isFirst;
@@ -148,9 +146,10 @@ class CutsceneKeyframe{
         this.keyframes = [];
         this.hold = data.hold * 1000;
         this._time = data.time * 1000;
-        this.time = this.isFirst ? 0 : data.time * 1000;
+        this.time = data.time * 1000;
         this.easing = data.easing;
         this.transition = data.transition;
+        if(this.isFirst) this.transition = "fade";
         this.isJumpTransition = this.transition == "fade";
         if (this.isJumpTransition) this.canvasEl.style.transition = `backdrop-filter ${this._time / 2000}s ease-in-out`;
         this.finalPosition = new THREE.Vector3(data.position.x, data.position.y, data.position.z);
@@ -159,11 +158,15 @@ class CutsceneKeyframe{
         this.initialTarget = new THREE.Vector3(initialTarget.x, initialTarget.y, initialTarget.z);
         this.currentPosition = this.initialPosition.clone();
         this.currentTarget = this.initialTarget.clone();
+        if (this.isFirst) {
+            this.currentPosition = game.Levels3DPreview.camera.position.clone();
+            this.currentTarget = game.Levels3DPreview.controls.target.clone();
+        }
         this.easingFunction = easingFunctions[this.easing];
-
     }
 
     advanceTime(delta) {
+        if(!this.isJumpTransition) this.showCaption();
         if (this.animationTime < this.time) {
             this.animationTime += delta;
             if(this.isJumpTransition && this.animationTime <= this._time / 2) {
@@ -172,6 +175,7 @@ class CutsceneKeyframe{
             }
             this.updateVectors();
             if (this.isJumpTransition && this.animationTime > this._time / 2) {
+                this.showCaption();
                 this.canvasEl.style.backdropFilter = `brightness(1)`;
                 return false;
             }
@@ -190,6 +194,31 @@ class CutsceneKeyframe{
         const factor = this.easingFunction(Math.min(1,this.animationTime / this.time));
         this.currentPosition.lerpVectors(this.initialPosition, this.finalPosition, factor);
         this.currentTarget.lerpVectors(this.initialTarget, this.finalTarget, factor);
+    }
+
+    showCaption() {
+        if(!this.caption || this.captionEl) return;
+        const captionHtml = this.caption.includes("<") && this.caption.includes(">") ? this.caption : `<h1>${this.caption}</h1>`
+        const captionEl = document.createElement("div");
+        captionEl.classList.add("levels-3d-preview-caption");
+        captionEl.innerHTML = captionHtml;
+        document.querySelector(this.immersive ? "body" : "#ui-middle").appendChild(captionEl);
+        this.captionEl = captionEl;
+        setTimeout(() => {
+            this.captionEl.style.opacity = 1;
+        }, 50);
+        setTimeout(() => {
+            this.removeCaption();
+        }, 3000);
+    }
+
+    removeCaption() {
+        if (!this.captionEl) return;
+        //fade out
+        this.captionEl.style.opacity = 0;
+        setTimeout(() => {
+            this.captionEl.remove();
+        }, 500);
     }
 }
 
