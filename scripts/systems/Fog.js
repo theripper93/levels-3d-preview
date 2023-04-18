@@ -38,6 +38,7 @@ export class Fog {
         const texture = new THREE.Texture();
         forceTextureInitialization(texture);
         this.webglFogTexture = texture;
+
     }
 
     initPixiRT() {
@@ -60,7 +61,7 @@ export class Fog {
 
     async init() {
         this.blank = await new THREE.TextureLoader().loadAsync("modules/levels-3d-preview/assets/blankTex.jpg");
-        const base64 = this.generateTexture();
+        const base64 = await this.generateTexture();
         this.fogTexture = this._sharedContext ? base64 : await new THREE.TextureLoader().loadAsync(base64);
         this.sceneDimensions = [canvas.dimensions.width / factor, canvas.dimensions.height / factor];
         this.sceneOrigin = [canvas.dimensions.sceneX / factor, canvas.dimensions.sceneY / factor];
@@ -71,7 +72,7 @@ export class Fog {
         this.needsUpdate = false;
         if (this.fogTexture && !this._sharedContext) this.fogTexture.dispose();
         const isBlank = game.user.isGM && !canvas.effects?.visionSources?.size;
-        const base64 = isBlank ? this.blank : this.generateTexture();
+        const base64 = isBlank ? this.blank : await this.generateTexture();
         this.fogTexture = this._sharedContext || isBlank ? base64 : await new THREE.TextureLoader().loadAsync(base64);
         if (!this.fogTexture) return;
         this.fogTexture.minFilter = THREE.NearestFilter;
@@ -91,7 +92,7 @@ export class Fog {
         });
     }
 
-    generateTexture() {
+    async generateTexture() {
         const originalTint = canvas.fog.sprite.tint;
         canvas.fog.sprite.tint = 0x808080;
         if (canvas.scene.fogExploration) canvas.app.renderer.render(canvas.fog.sprite, { renderTexture: this.pixiRenderTexture, clear: true });
@@ -102,7 +103,7 @@ export class Fog {
             texProps.__webglTexture = Object.values(this.pixiRenderTexture.baseTexture._glTextures)[0]?.texture;
             return this.webglFogTexture;
         } else {
-            const base64 = canvas.app.renderer.extract.base64(this.pixiRenderTexture, "image/jpeg");
+            const base64 = await canvas.app.renderer.extract.base64(this.pixiRenderTexture, "image/jpeg");
             return base64;
         }
     }

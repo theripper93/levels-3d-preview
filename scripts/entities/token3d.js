@@ -1117,6 +1117,7 @@ export class Token3D {
     }
 
     async drawName() {
+        return;
         const name = this.token._drawNameplate();
         name.width *= 2;
         name.height *= 2;
@@ -1142,6 +1143,7 @@ export class Token3D {
     }
 
     async drawBars() {
+        return;
         if (!this.token?.bars || !this.token?.bars?.visible) return;
         const bar1 = this.token.bars["bar1"].clone();
         const bar2 = this.token.bars["bar2"].clone();
