@@ -3,7 +3,8 @@ import { factor } from "../main.js";
 import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from "../lib/three-mesh-bvh.js";
 import {mergeBufferGeometries, toTrianglesDrawMode, mergeVertices} from "../lib/BufferGeometryUtils.js";
 import {DecalGeometry} from "../lib/DecalGeometry.js";
-import { ImprovedNoise } from "../lib/imporovedNoise.js";
+import {ImprovedNoise} from "../lib/imporovedNoise.js";
+import { fbm3d } from "../lib/noiseFunctions.js";
 THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
 THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
 THREE.Mesh.prototype.raycast = acceleratedRaycast;
@@ -103,6 +104,66 @@ export class DynaMesh {
             curveSegments: this.resolution,
         });
         geometry.center();
+        return geometry;
+    }
+
+    _constructrock() { 
+        const geometry = new THREE.BoxGeometry(this.width, this.depth, this.height, Math.ceil((this.width / this._gridUnit) * this.resolution), Math.ceil((this.depth / this._gridUnit) * this.resolution), Math.ceil((this.height / this._gridUnit) * this.resolution));
+        const noise = new ImprovedNoise();
+        const position = geometry.attributes.position;
+        const vertex = new THREE.Vector3();
+        for (let i = 0; i < position.count; i++) {
+            vertex.fromBufferAttribute(position, i);
+            const offset = fbm3d(vertex.x, vertex.y, vertex.z, { octaves: 3, persistence: 0.5, lacunarity: 2.0, scale: 1, exponent: 2 });
+            vertex.multiplyScalar(1 + offset);
+            position.setXYZ(i, vertex.x, vertex.y, vertex.z);
+        }
+        position.needsUpdate = true;
+        return geometry;
+    }
+
+    _constructrocksphere() {
+        const geometry = new THREE.SphereGeometry(this._avgAll, Math.ceil((this._avgWidthHeight / this._gridUnit) * this.resolution), Math.ceil((this.depth / this._gridUnit) * this.resolution));
+        const position = geometry.attributes.position;
+        const vertex = new THREE.Vector3();
+        for (let i = 0; i < position.count; i++) {
+            vertex.fromBufferAttribute(position, i);
+            const offset = fbm3d(vertex.x, vertex.y, vertex.z, { octaves: 3, persistence: 0.5, lacunarity: 2.0, scale: this.resolution*4, exponent: 2 }) * 2;
+            vertex.multiplyScalar(1 + offset);
+            position.setXYZ(i, vertex.x, vertex.y, vertex.z);
+        }
+        position.needsUpdate = true;
+        geometry.computeVertexNormals();
+        return geometry;
+    }
+
+    _constructrockcone() { 
+        const geometry = new THREE.ConeGeometry(this._avgWidthHeight, this.depth, Math.ceil((this._avgWidthHeight / this._gridUnit) * this.resolution), Math.ceil((this.depth / this._gridUnit) * this.resolution), false);
+        const position = geometry.attributes.position;
+        const vertex = new THREE.Vector3();
+        for (let i = 0; i < position.count; i++) {
+            vertex.fromBufferAttribute(position, i);
+            const offset = fbm3d(vertex.x, vertex.y, vertex.z, { octaves: 3, persistence: 0.5, lacunarity: 2.0, scale: 2, exponent: 2 }) * 2;
+            vertex.multiplyScalar(1 + offset);
+            position.setXYZ(i, vertex.x, vertex.y, vertex.z);
+        }
+        position.needsUpdate = true;
+        geometry.computeVertexNormals();
+        return geometry;
+    }
+
+    _constructrockcylinder() {
+        const geometry = new THREE.CylinderGeometry(this._avgWidthHeight, this._avgWidthHeight, this.depth, Math.ceil((this._avgWidthHeight / this._gridUnit) * this.resolution), Math.ceil((this.depth / this._gridUnit) * this.resolution), false);
+        const position = geometry.attributes.position;
+        const vertex = new THREE.Vector3();
+        for (let i = 0; i < position.count; i++) {
+            vertex.fromBufferAttribute(position, i);
+            const offset = fbm3d(vertex.x, vertex.y, vertex.z, { octaves: 3, persistence: 0.5, lacunarity: 2.0, scale: 2, exponent: 2 }) * 2;
+            vertex.multiplyScalar(1 + offset);
+            position.setXYZ(i, vertex.x, vertex.y, vertex.z);
+        }
+        position.needsUpdate = true;
+        geometry.computeVertexNormals();
         return geometry;
     }
 
@@ -310,6 +371,45 @@ export class DynaMesh {
         return mergeBufferGeometries([geometry]);
     }
 
+    _constructpolygonchain() {
+        let chainLinkSize = 0.01;
+        if (this.text.includes("#")) {
+            const split = this.text.split("#");
+            chainLinkSize = Math.max(parseFloat(split[0])/100, chainLinkSize);
+            this.text = split[1];
+        }
+
+        const points = this.text.split(",").map((point) => parseInt(point) / factor);
+
+        const vector2Points = [];
+        for (let i = 0; i < points.length; i += 2) {
+            vector2Points.push(new THREE.Vector2(points[i], points[i + 1]));
+        }
+        const curve = new THREE.SplineCurve(vector2Points);
+        const totalLength = curve.getLength();
+        const chainLinkCount = Math.max(Math.floor(totalLength / chainLinkSize) * 1.2, 1);
+        const geometries = [];
+        for (let i = 0; i < chainLinkCount; i++) {
+            const geometry = new THREE.TorusGeometry(chainLinkSize / 2, chainLinkSize / 5, 8, 8)
+            const fac = (chainLinkSize / 2) / (chainLinkSize / 5);
+            geometry.scale(1, 0.3, 1/fac)
+            const isEven = i % 2 === 0;
+            geometry.rotateX(isEven ? Math.PI / 2 : 0);
+            const tangent = curve.getTangentAt(i / chainLinkCount);
+            const angle = Math.atan2(tangent.y, tangent.x);
+            geometry.rotateZ(angle);
+            const position = curve.getPointAt(i / chainLinkCount);
+            geometry.translate(position.x, position.y, 0);
+            geometries.push(geometry);
+        }
+        const geometry = mergeBufferGeometries(geometries);
+        geometry.rotateX(Math.PI / 2);
+        geometry.center();
+        return geometry;
+
+
+    }
+
     get _avgWidthHeight() {
         return ((this.width + this.height) / 2) * this.resolution;
     }
@@ -418,27 +518,6 @@ function solidifyPolygon(points, thickness) {
     return outerEdgePoints;
 
 
-}
-
-
-function _subdividePolygon(polygon, iterations = 1) {
-    const vec2Points = [];
-    for (let i = 0; i < polygon.length; i += 2) {
-        vec2Points.push(new THREE.Vector2(polygon[i], polygon[i + 1]));
-    }
-    const endPoint = [vec2Points[vec2Points.length - 1].x, vec2Points[vec2Points.length - 1].y];
-    const count = vec2Points.length;
-    const curve = new THREE.SplineCurve(vec2Points);
-    const points = curve.getPoints(count * (iterations + 1));
-    points.pop();
-    //remove first point
-    points.shift();
-    const subdividedPolygon = [vec2Points[0].x, vec2Points[0].y];
-    for (let i = 0; i < points.length; i += 1) {
-        subdividedPolygon.push(points[i].x, points[i].y);
-    }
-    subdividedPolygon.push(endPoint[0], endPoint[1]);
-    return subdividedPolygon;
 }
 
 function subdividePolygon(polygon, iterations = 1) {

@@ -47,7 +47,7 @@ export class Tile3D {
             await this.init();
         }
         if (this._destroyed) return;
-        this.initShaders();
+        await this.initShaders();
         this.setShading();
         this.setSides();
         this.setMRT();
@@ -1147,8 +1147,8 @@ export class Tile3D {
         return true;
     }
 
-    initShaders() {
-        this._parent.shaderHandler.applyShader(this.mesh, this, this.shaders);
+    async initShaders() {
+        await this._parent.shaderHandler.applyShader(this.mesh, this, this.shaders);
     }
 
     getNoise(x, y) {

@@ -88,7 +88,7 @@ export class Token3D {
         const token3d = this.gtflPath || this.imageTexture ? await this.loadModel() : this.draw();
         if (this.token.document.light.bright !== 0 || this.token.document.light.dim) this.loadLight();
         this._loaded = true;
-        this.initShaders();
+        await this.initShaders();
         this.animationHandler.init();
         return token3d;
     }
@@ -1372,8 +1372,8 @@ export class Token3D {
         this._parent.addToken(this.token);
     }
 
-    initShaders() {
-        this._parent.shaderHandler.applyShader(this.model, this, this.shaders);
+    async initShaders() {
+        await this._parent.shaderHandler.applyShader(this.model, this, this.shaders);
     }
 
     get h() {

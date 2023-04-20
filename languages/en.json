@@ -444,6 +444,10 @@
                     "billboard2": "Billboard (Cross)",
                     "text": "Text (Use 3D Model field for text)",
                     "decal": "Decal",
+                    "rock": "Rock (Cube)",
+                    "rocksphere": "Rock (Sphere)",
+                    "rockcylinder": "Rock (Cylinder)",
+                    "rockcone": "Rock (Cone)",
                     "polygon": "Polygon",
                     "polygonbevel": "Polygon (Bevel)",
                     "polygonsolidify": "Polygon (Solidify)",
@@ -452,6 +456,7 @@
                     "polygonbevelsolidifyjaggeddouble": "Polygon (Jagged Double)",
                     "polygonbevelsolidifyjaggedstraight": "Polygon (Jagged Straight)",
                     "polygonlathe": "Polygon (Lathe)",
+                    "polygonchain": "Polygon (Chain)",
                     "mapGen": "Map Generator"
                 }
             },
@@ -1453,7 +1458,8 @@
                 "name": "Grid",
                 "description": "Project the scene grid on this 3D Object. Only square grids are supported. This shader will use the grid color and opacity set in the scene settings.",
                 "normalCulling": "Normal Culling",
-                "heightCulling": "Height Culling"
+                "heightCulling": "Height Culling",
+                "showBounds": "Show Bounds"
             },
             "triplanar": {
                 "name": "Triplanar",

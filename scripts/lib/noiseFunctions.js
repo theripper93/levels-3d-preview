@@ -1,3 +1,7 @@
+import {ImprovedNoise} from "./imporovedNoise.js";
+
+const noise3d = new ImprovedNoise();
+
 // Ported from Stefan Gustavson's java implementation
 // http://staffwww.itn.liu.se/~stegu/simplexnoise/simplexnoise.pdf
 // Read Stefan's excellent paper for details on how this code works.
@@ -506,6 +510,27 @@ export function FractionalBrownianMotion(x, y, noiseFn, params){
 	return smoothClamp(total, params.flattening) * params.height;
 }
 
+export function fbm3d(x, y, z, params) {
+	const xs = x / params.scale;
+	const ys = y / params.scale;
+	const zs = z / params.scale;
+	const G = 2.0 ** (-params.persistence);
+	let amplitude = 1.0;
+	let frequency = 1.0;
+	let normalization = 0;
+	let total = 0;
+	for (let i = 0; i < params.octaves; i++) {
+		const noiseValue = noise3d.noise(xs * frequency, ys * frequency, zs * frequency) * 0.5 + 0.5;
+		total += noiseValue * amplitude;
+		normalization += amplitude;
+		amplitude *= G;
+		frequency *= params.lacunarity;
+	}
+	total /= normalization;
+	total = Math.pow(total, params.exponent);
+	return total;
+}
+
 function smoothClamp(x, num){
 	if(x < -num){
 		return lerp(x,-num, Math.abs(x+num));
@@ -521,4 +546,3 @@ function smoothClamp(x, num){
 function lerp(a, b, t){
 	return a + (b-a) * t;
 }
-

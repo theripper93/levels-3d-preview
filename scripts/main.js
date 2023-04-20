@@ -121,6 +121,7 @@ class Levels3DPreview {
         this.ClipNavigation = null;
         this.workers = new WorkerHandler();
         initSharing(this);
+        this.resizeCanvasToDisplaySize = debounce(this.resizeCanvasToDisplaySize, 500);
         this.debugMode = game.settings.get("levels-3d-preview", "debugMode");
         this.utils = {
             throttle,
@@ -422,7 +423,7 @@ class Levels3DPreview {
         this.renderer.setClearColor(0x999999, 1);
         this.renderer.shadowMap.type = game.settings.get("levels-3d-preview", "softShadows") ? THREE.PCFSoftShadowMap : THREE.PCFShadowMap;
 
-        this.renderer.debug.checkShaderErrors = false;
+        this.renderer.debug.checkShaderErrors = true;
 
         //composer
 
@@ -811,7 +812,7 @@ class Levels3DPreview {
                     bb: { depth: height, width: width, height: depth },
                     mesh: this.table,
                 },
-                { grid: { enabled: true } },
+                { grid: { enabled: true, showBounds:true } },
             );
         this.scene.add(plane);
     }
@@ -1049,17 +1050,24 @@ class Levels3DPreview {
         const canvas = this.renderer.domElement;
         const width = canvas.clientWidth;
         const height = canvas.clientHeight;
-        if (canvas.width !== width || canvas.height !== height) {
-            this.renderer.setSize(width, height, false);
-            this.composer.setSize(width, height, false);
-            this.camera.aspect = width / height;
-            this.camera.updateProjectionMatrix();
-            if (this.aaType == "fxaa") {
-                const pixelRatio = this.renderer.getPixelRatio();
-                this.aaShader.material.uniforms["resolution"].value.x = 1 / (canvas.clientWidth * pixelRatio);
-                this.aaShader.material.uniforms["resolution"].value.y = 1 / (canvas.clientHeight * pixelRatio);
-            }
+        this.renderer.setSize(width, height, false);
+        this.composer.setSize(width, height, false);
+        this.camera.aspect = width / height;
+        this.camera.updateProjectionMatrix();
+        if (this.aaType == "fxaa") {
+            const pixelRatio = this.renderer.getPixelRatio();
+            this.aaShader.material.uniforms["resolution"].value.x = 1 / (canvas.clientWidth * pixelRatio);
+            this.aaShader.material.uniforms["resolution"].value.y = 1 / (canvas.clientHeight * pixelRatio);
         }
+    }
+
+    checkAndResize() {
+        const innerWidth = window.innerWidth;
+        const innerHeight = window.innerHeight;
+        const changed = this._windowInnerWidth != innerWidth || this._windowInnerHeight != innerHeight;
+        if (changed) this.resizeCanvasToDisplaySize();
+        this._windowInnerWidth = innerWidth;
+        this._windowInnerHeight = innerHeight;
     }
 
     centerHUD() {
@@ -1175,6 +1183,7 @@ class Levels3DPreview {
                 const dist = this.interactionManager.findCameraLookatDistance();
                 this.bokeh.uniforms.focus.value = dist;
             }
+            this.checkAndResize();
             const tokensArray = Object.values(this.tokens);
             const length = Math.max(tokensArray.length, 100);
             const tokenPositionsArray = [new THREE.Vector4(0, 0, 0, tokensArray.length)];
@@ -1241,7 +1250,6 @@ class Levels3DPreview {
                 if (t3d) this.helpers.ruler3d.centerElement(e, t3d.head);
             });
             this.allignChatBubbles();
-            //this.resizeCanvasToDisplaySize(this);
             this.lights?.globalIllumination?.update(delta);
             this.weather?.update(delta);
             this.GameCamera.update(delta);
@@ -1275,6 +1283,7 @@ class Levels3DPreview {
             this.composer.render(time);
             if (this._firstFrame) {
                 this._firstFrame = false;
+                this.resizeCanvasToDisplaySize()
                 recomputeGravity();
                 Object.values(this.tokens).forEach((token) => {
                     token.forceDrawBars();
@@ -1855,9 +1864,7 @@ Hooks.on("ready", async () => {
 });
 
 window.addEventListener("resize", () => {
-    setTimeout(() => {
         if (game.Levels3DPreview?._active) game.Levels3DPreview.resizeCanvasToDisplaySize();
-    }, 200);
 });
 
 function updateTokenRotationCamera(token) {

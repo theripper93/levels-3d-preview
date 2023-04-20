@@ -194,11 +194,24 @@ export class ShaderHandler {
         this.shaders = [];
     }
 
-    applyShader(Object3D, entity3D, shaderParams) {
+    async preloadTextures(shaderParams) {
+        for (const [shaderName, shader] of Object.entries(shaderParams)) {
+            if (shader.enabled) {
+                for (const [key,value] of Object.entries(shader)) {
+                    if (key.toLowerCase().includes("texture")) {
+                        await game.Levels3DPreview.helpers.loadTexture(value);
+                    }
+                }
+            }
+        }
+    }
+
+    async applyShader(Object3D, entity3D, shaderParams) {
         const enableShaders = game.settings.get("levels-3d-preview", "enableShaders");
         if (!enableShaders) shaderParams = this.disablePerformanceHeavyShaders(shaderParams);
         const hasShaders = Object.values(shaderParams).some((v) => v.enabled);
         if (!hasShaders) return;
+        await this.preloadTextures(shaderParams);
         const commonParams = getSizesForShader(entity3D);
         commonParams.localSize = entity3D.isInstanced ? new THREE.Vector3(commonParams.mWidth * 0.3, commonParams.mDepth * 0.3, commonParams.mHeight * 0.3) : new THREE.Vector3(0.2, 0.2, 0.2);
         Object3D.traverse((child) => {
@@ -442,6 +455,12 @@ export const shaders = {
                     return (canvas.grid.grid._bounds?.minY ?? 0) / factor;
                 },
             },
+            sceneSize: {
+                type: "vec4",
+                value: () => { 
+                    return new THREE.Vector4(canvas.scene.dimensions.sceneWidth / factor, canvas.scene.dimensions.sceneHeight / factor, canvas.scene.dimensions.sceneX / factor, canvas.scene.dimensions.sceneY / factor);
+                },
+            }
         },
         varying: {
             shader_vPosition: {
@@ -912,6 +931,10 @@ export const shaders = {
                 min: 0,
                 max: 1,
             },
+            showBounds: {
+                type: "bool",
+                default: false,
+            },
         },
         varying: {
             height_percent: {
@@ -945,6 +968,22 @@ export const shaders = {
                 injectionPoint: "#include <dithering_fragment>",
                 shaderCode: `
                 if(grid_height_percent <= grid_heightCulling && abs(shader_vNormal.y) > grid_normalCulling){
+                    if(grid_showBounds){
+                       float thickness = 0.01 * 0.5;
+                        vec4 paddingRectOuter = vec4(0.0 - thickness, 0.0 - thickness, sceneSize.x + sceneSize.z * 2.0 + thickness, sceneSize.y + sceneSize.a * 2.0 + thickness);
+                        vec4 paddingRectInner = vec4(0.0 + thickness, 0.0 + thickness, sceneSize.x + sceneSize.z * 2.0 - thickness, sceneSize.y + sceneSize.a * 2.0 - thickness);
+
+                        vec4 sceneRectOuter = vec4(sceneSize.z - thickness, sceneSize.a - thickness, sceneSize.x + sceneSize.z + thickness, sceneSize.y + sceneSize.a + thickness);
+                        vec4 sceneRectInner = vec4(sceneSize.z + thickness, sceneSize.a + thickness, sceneSize.x + sceneSize.z - thickness, sceneSize.y + sceneSize.a - thickness);
+
+                        bool isPadding = (vWorldPositionFoW.x > paddingRectOuter.x && vWorldPositionFoW.x < paddingRectOuter.z && vWorldPositionFoW.z > paddingRectOuter.y && vWorldPositionFoW.z < paddingRectOuter.w) && (vWorldPositionFoW.x < paddingRectInner.x || vWorldPositionFoW.x > paddingRectInner.z || vWorldPositionFoW.z < paddingRectInner.y || vWorldPositionFoW.z > paddingRectInner.w);
+                        bool isScene = (vWorldPositionFoW.x > sceneRectOuter.x && vWorldPositionFoW.x < sceneRectOuter.z && vWorldPositionFoW.z > sceneRectOuter.y && vWorldPositionFoW.z < sceneRectOuter.w) && (vWorldPositionFoW.x < sceneRectInner.x || vWorldPositionFoW.x > sceneRectInner.z || vWorldPositionFoW.z < sceneRectInner.y || vWorldPositionFoW.z > sceneRectInner.w);
+
+
+                        if(isPadding || isScene){
+                            gl_FragColor.rgb = mix(gl_FragColor.rgb, gridColor, gridAlpha);
+                        }
+                    }
                     if(gridType == 1.0){
                         if( (mod(vWorldPositionFoW.x, gridSize) < 0.0015 || mod(vWorldPositionFoW.z, gridSize) < 0.0015)){
                             gl_FragColor.rgb = mix(gl_FragColor.rgb, gridColor, gridAlpha);
