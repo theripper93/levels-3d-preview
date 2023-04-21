@@ -298,7 +298,7 @@ Hooks.on("renderSceneConfig", (app,html)=>{
             type: "number",
             label: game.i18n.localize("levels3dpreview.flags.shadowBias.label"),
             notes: game.i18n.localize("levels3dpreview.flags.shadowBias.notes"),
-            default: -0.00018,
+            default: -0.000018,
             step: 0.000001,
         },
         header4: {

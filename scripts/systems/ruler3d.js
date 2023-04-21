@@ -10,6 +10,7 @@ export class Ruler3D {
         this.isDragRouler = game.modules.get("drag-ruler")?.active;
         this.isHoverDistance = game.modules.get("hover-distance")?.active;
         this.color = new THREE.Color(game.user.color);
+        this.closedPolygonColor = new THREE.Color("#ffffff");
         this.colorCache = {};
         const hsl = {};
         this.segments = [];
@@ -231,7 +232,7 @@ export class Ruler3D {
         }
 
         const geometry = new THREE.TubeGeometry(curve, this.template?.isPreview ? 64 : 1, this.lineRadius, 8);
-        const c = this.getColor(distance);
+        const c = this.getColor(distance, targetPos);
         this.roulerLineMaterial.color = c;
         this.dragRingMaterial.color = c;
         this.line = new THREE.Group();
@@ -265,7 +266,7 @@ export class Ruler3D {
         this._speedProvider = dragRuler.getRangesFromSpeedProvider(token);
     }
 
-    getColor(distance) {
+    getColor(distance, currentPos) {
         let color;
         if (this.token && this.isDragRouler) {
             const drColor = dragRuler?.getColorForDistanceAndToken(distance, this.token, this._speedProvider);
@@ -273,7 +274,16 @@ export class Ruler3D {
             color = new THREE.Color(drColor);
             this.colorCache[drColor] = color;
         }
-        return color ?? this.color;
+        let closedColor;
+        if (this.segments.length > 0) {
+            const firstPoint = this.segments[0].origin;
+            const currentPoint = currentPos;
+            const dist = firstPoint.distanceTo(currentPoint);
+            if(dist < 0.01) {
+                closedColor = this.closedPolygonColor;
+            }
+        }
+        return color ?? closedColor ?? this.color;
     }
 
     async createTile() { 
