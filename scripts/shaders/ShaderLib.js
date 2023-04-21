@@ -1408,7 +1408,7 @@ export const shaders = {
                 type: "float",
                 default: 0,
                 max: 1,
-                min: 0,
+                min: -1,
                 step: 0.01,
             },
             repeat: {
@@ -1476,12 +1476,25 @@ export const shaders = {
                 if(overlay_coveragePercent < 0.0 && inversePercent > (absCoverage)){
                     strength *= (1.0 - (inversePercent - absCoverage) * 20.0);
                 }
+                float overlaySmoothing = 0.3;
                 if(overlay_inclination > 0.0){
                     float o_normalY = max(0.0,shader_vNormal.y);
                     if(o_normalY < overlay_inclination){
-                        if(o_normalY > (overlay_inclination - 0.1)){
-                            float diff = o_normalY - (overlay_inclination - 0.1);
-                            strength *= (diff * 10.0);
+                        if(o_normalY > (overlay_inclination - overlaySmoothing)){
+                            float diff = o_normalY - (overlay_inclination - overlaySmoothing);
+                            strength *= (diff / overlaySmoothing);
+                        }else{
+                            strength = 0.0;
+                        }
+                    }
+                }
+                if(overlay_inclination < 0.0){
+                    float o_normalY = max(0.0,shader_vNormal.y);
+                    float absInclination = 1.0 - abs(overlay_inclination);
+                    if(o_normalY > absInclination){
+                        if(o_normalY < (absInclination + overlaySmoothing)){
+                            float diff = (absInclination + overlaySmoothing) - o_normalY;
+                            strength *= (diff / overlaySmoothing);
                         }else{
                             strength = 0.0;
                         }

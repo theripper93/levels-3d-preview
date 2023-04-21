@@ -177,6 +177,13 @@ export class Helpers {
                 const newGeo = mergeVertices(child.geometry, tol);
                 finalVertices += newGeo.attributes.position.count;
                 child.geometry = newGeo;
+                if (!child.children.length) {
+                    child.updateMatrix();
+                    child.geometry.applyMatrix4(child.matrix);
+                    child.position.set(0, 0, 0);
+                    child.rotation.set(0, 0, 0);
+                    child.scale.set(1, 1, 1);
+                }
             }
         });
 
