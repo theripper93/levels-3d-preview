@@ -738,6 +738,12 @@
             "transparency": {
                 "label": "Opacity"
             },
+            "transmission": {
+                "label": "Transmission"
+            },
+            "ior": {
+                "label": "IoR"
+            },
             "wallDepth": {
                 "label": "Wall Depth"
             },

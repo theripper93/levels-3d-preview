@@ -854,6 +854,22 @@ Hooks.on("renderTileConfig", (app,html)=>{
             max: 1,
             step: 0.01,
         },
+        transmission: {
+            type: "range",
+            label: game.i18n.localize("levels3dpreview.flags.transmission.label"),
+            default: -0.01,
+            min: -0.01,
+            max: 1,
+            step: 0.01,
+        },
+        ior: {
+            type: "range",
+            label: game.i18n.localize("levels3dpreview.flags.ior.label"),
+            default: -0.01,
+            min: -0.01,
+            max: 2.33,
+            step: 0.01,
+        },
         shading: {
             type: "select",
             label: game.i18n.localize("levels3dpreview.flags.shading.label"),
@@ -1152,7 +1168,7 @@ Hooks.on("renderTileConfig", (app,html)=>{
         firstOption.innerText = game.i18n.localize("levels3dpreview.flags.fillType.options.merged");
     }
 
-    const advancedSettings = ["doorAnimateAngle","doorStyle","castShadow", "displacementIntensity", "displacementMatrix", "dynaMeshResolution", "roughness", "metalness", "transparency", "sightMeshComplexity", "invertDisplacementMap", "sides", "flipY", "shading", "displacementMap", "autoCenter", "enableAnim", "animSpeed", "animIndex", "paused", "tiltX", "tiltZ", "randomSeed", "autoGround", "depth"];
+    const advancedSettings = ["transmission", "ior", "doorAnimateAngle","doorStyle","castShadow", "displacementIntensity", "displacementMatrix", "dynaMeshResolution", "roughness", "metalness", "transparency", "sightMeshComplexity", "invertDisplacementMap", "sides", "flipY", "shading", "displacementMap", "autoCenter", "enableAnim", "animSpeed", "animIndex", "paused", "tiltX", "tiltZ", "randomSeed", "autoGround", "depth"];
 
     injectAdvancedToggle(app,html,advancedSettings, injected);
 

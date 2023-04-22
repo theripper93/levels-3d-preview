@@ -11,10 +11,11 @@ THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
 THREE.Mesh.prototype.raycast = acceleratedRaycast;
 
 export class Tile3D {
-    constructor(tile, parent) {
+    constructor(tile, parent, fromUpdate = false) {
         this.tile = tile;
         this.placeable = tile;
         this._parent = parent;
+        this.fromUpdate = fromUpdate;
         this.isOverhead = this.tile.document.overhead;
         this.isAnimated = false;
         this.draggable = true;
@@ -47,6 +48,7 @@ export class Tile3D {
             await this.init();
         }
         if (this._destroyed) return;
+        this.setTransmissionIor();
         await this.initShaders();
         this.setShading();
         this.setSides();
@@ -56,6 +58,7 @@ export class Tile3D {
         this.setHidden();
         this.sendToWorker();
         this.updateControls();
+        this.popIn();
         setTimeout(() => {
             this.updateControls();
         }, 150);
@@ -66,6 +69,73 @@ export class Tile3D {
         }, 100);
         game.Levels3DPreview.outline?.toggleControlled(this.mesh, this.tile.controlled);
         return this;
+    }
+
+    async popIn() {
+        if (this.fromUpdate) return;
+        if (this.dynaMesh != "default") {
+            this.mesh.scale.set(1, 0, 1);
+            const animation = [
+                {
+                    parent: this.mesh.scale,
+                    attribute: "y",
+                    to: 1,
+                }
+            ];
+            CanvasAnimation.animate(animation, { duration: 400, easing: "easeOutCircle" });
+        } else {            
+            this.mesh.scale.set(0, 0, 0);
+            const animation = [
+                {
+                    parent: this.mesh.scale,
+                    attribute: "x",
+                    to: 1,
+                },
+                {
+                    parent: this.mesh.scale,
+                    attribute: "y",
+                    to: 1,
+                },
+                {
+                    parent: this.mesh.scale,
+                    attribute: "z",
+                    to: 1,
+                },
+            ];
+            CanvasAnimation.animate(animation, { duration: 400, easing: "easeOutCircle" });
+        }
+    }
+
+    async popOut() {
+        if (this.dynaMesh != "default") {
+            const animation = [
+                {
+                    parent: this.mesh.scale,
+                    attribute: "y",
+                    to: 0,
+                }
+            ];
+            await CanvasAnimation.animate(animation, {duration: 75, easing: "easeOutCircle"});
+        } else {
+            const animation = [
+                {
+                    parent: this.mesh.scale,
+                    attribute: "x",
+                    to: 0,
+                },
+                {
+                    parent: this.mesh.scale,
+                    attribute: "y",
+                    to: 0,
+                },
+                {
+                    parent: this.mesh.scale,
+                    attribute: "z",
+                    to: 0,
+                },
+            ];
+            await CanvasAnimation.animate(animation, {duration: 150, easing: "easeOutCircle"});
+        }
     }
 
     sendToWorker() {
@@ -936,6 +1006,51 @@ export class Tile3D {
         return;
     }
 
+    setTransmissionIor() {
+        const ior = this.tile.document.getFlag("levels-3d-preview", "ior") ?? -0.01;
+        const transmission = this.tile.document.getFlag("levels-3d-preview", "transmission") ?? -0.01;
+        if (ior === -0.01 || transmission === -0.01) return;
+        const convertToPhysical = (mat) => { 
+            const newMat = new THREE.MeshPhysicalMaterial({
+				color: 0xffffff,
+				transmission: 1,
+				opacity: 1,
+				metalness: 0,
+				roughness: 0,
+				ior: 1.5,
+				thickness: 0.01,
+				specularIntensity: 1,
+				specularColor: 0xffffff,
+				envMapIntensity: 1,
+				lightIntensity: 1,
+				exposure: 1
+			});
+            newMat.map = mat.map;
+            newMat.color = mat.color;
+            newMat.emissive = mat.emissive;
+            newMat.roughness = mat.roughness;
+            newMat.metalness = mat.metalness;
+
+
+            newMat.ior = ior;
+            newMat.transmission = transmission;
+            newMat.specularIntensity = 1;
+            return newMat;
+        };
+
+        this.mesh.traverse((child) => {
+            if (child.isMesh) {
+                if (child.material instanceof Array) {
+                    for(let i = 0; i < child.material.length; i++) {
+                        child.material[i] = convertToPhysical(child.material[i]);
+                    }
+                } else {
+                    child.material = convertToPhysical(child.material);
+                }
+            }
+        });
+    }
+
     setShading() {
         if (this.shading == "default") return;
         const flatShading = this.shading == "flat";
@@ -1269,11 +1384,12 @@ export class Tile3D {
         }
     }
 
-    destroy(isUpdate = false) {
+    async destroy(isUpdate = false) {
         this._destroyed = true;
         delete this._parent.tiles[this.tile.id];
         if (!isUpdate) this._parent.workers.removeMesh(this.tile.id);
         if (!this.mesh) return;
+        if(!isUpdate) await this.popOut();
         this.mesh.removeFromParent();
         this.mesh.traverse((child) => {
             if (child.isMesh) {
@@ -1739,7 +1855,7 @@ export class Tile3D {
                     const hadGravity = game.Levels3DPreview.tiles[tile.id]?.isGravity;
                     if (hasGravity && hadGravity) return recomputeGravityDebounced();
                     game.Levels3DPreview.tiles[tile.id]?.destroy(true);
-                    const newTile = new Tile3D(tile.object, game.Levels3DPreview);
+                    const newTile = new Tile3D(tile.object, game.Levels3DPreview, true);
                     game.Levels3DPreview.tiles[tile.id] = newTile;
                     newTile.load().then(() => {
                         if ("x" in updates || "y" in updates || hasFlag(updates)) {
@@ -1870,7 +1986,7 @@ export async function recomputeGravity() {
     for (let tile3d of tiles) {
         const gravity = tile3d.isGravity;
         if (!gravity) continue;
-        const newTile = new Tile3D(tile3d.placeable, game.Levels3DPreview);
+        const newTile = new Tile3D(tile3d.placeable, game.Levels3DPreview, true);
         await newTile.load();
         game.Levels3DPreview.tiles[tile3d.placeable.id] = newTile;
     }
