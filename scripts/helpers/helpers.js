@@ -40,6 +40,12 @@ export class Helpers {
         return texture;
     }
 
+    loadTextureSync(texturePath, options = {}) {
+        if (!texturePath) return null;
+        if (this.textureCache[texturePath] && !options.noCache) return this.textureCache[texturePath];
+        return new THREE.Texture();
+    }
+
     async getTexture(texturePath) {
         const extension = texturePath.split(".").pop();
         const isVideo = extension == "mp4" || extension == "webm" || extension == "ogg" || extension == "mov" || extension == "apng";

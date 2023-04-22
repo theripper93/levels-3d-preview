@@ -346,15 +346,12 @@ export class ShaderHandler {
                 let finalValue = paramValue;
                 if (isColor) finalValue = new THREE.Color(paramValue);
                 if (isTexture) {
-                    finalValue = null;
-                    game.Levels3DPreview.helpers.loadTexture(paramValue).then((texture) => {
-                        if (texture) {
-                            finalValue = texture;
-                            finalValue.wrapS = THREE.RepeatWrapping;
-                            finalValue.wrapT = THREE.RepeatWrapping;
-                            shader.uniforms[`${name + "_" + uniformName}`] = { value: finalValue };
-                        }
-                    });
+                    finalValue = game.Levels3DPreview.helpers.loadTextureSync(paramValue);
+                    if (finalValue) {                        
+                        finalValue.wrapS = THREE.RepeatWrapping;
+                        finalValue.wrapT = THREE.RepeatWrapping;
+                        shader.uniforms[`${name + "_" + uniformName}`] = { value: finalValue };
+                    }
                 }
                 if (isAngle) finalValue = Math.toRadians(paramValue);
                 shader.uniforms[`${name + "_" + uniformName}`] = { value: finalValue };

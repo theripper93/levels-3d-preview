@@ -71,8 +71,12 @@ export class Tile3D {
         return this;
     }
 
+    get isTerrain() {
+        return this.dynaMesh == "box" && this.displacementMap;
+    }
+
     async popIn() {
-        if (this.fromUpdate) return;
+        if (this.fromUpdate && !this.isTerrain) return;
         if (this.dynaMesh != "default") {
             this.mesh.scale.set(1, 0, 1);
             const animation = [
