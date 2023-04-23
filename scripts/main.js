@@ -1185,6 +1185,7 @@ class Levels3DPreview {
                 this.bokeh.uniforms.focus.value = dist;
             }
             this.checkAndResize();
+            this.grid?.updateGrid();
             const tokensArray = Object.values(this.tokens);
             const length = Math.max(tokensArray.length, 100);
             const tokenPositionsArray = [new THREE.Vector4(0, 0, 0, tokensArray.length)];

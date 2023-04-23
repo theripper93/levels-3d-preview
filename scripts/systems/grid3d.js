@@ -32,7 +32,7 @@ export class Grid3D {
 
     createBuildPlane() {
         const plane = new THREE.Mesh(new THREE.BoxGeometry(canvas.scene.dimensions.sceneWidth / factor, this.buildPlaneThickness, canvas.scene.dimensions.sceneHeight / factor), new THREE.MeshStandardMaterial({ color: "#fc03f4", transparent: true, opacity: 0.5 }));
-        plane.position.set(canvas.grid.width / factor / 2, -100000, canvas.grid.height / factor / 2);
+        plane.position.copy(game.Levels3DPreview.canvasCenter);
         plane.visible = false;
         this.secondaryGrid = plane;
         this.scene.add(plane);
@@ -49,10 +49,11 @@ export class Grid3D {
     }
 
     setPosition() {
+        this.secondaryGrid.visible = false;
+        this.secondaryGrid.position.y = -100000;
+        return;
         if (this.grid) this.grid.position.y = 0.001;
         if (this.secondaryGrid) {
-            this.secondaryGrid.visible = false;
-            this.secondaryGrid.position.y = -100000;
         }
     }
 
