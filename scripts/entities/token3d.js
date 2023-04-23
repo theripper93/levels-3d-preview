@@ -183,6 +183,28 @@ export class Token3D {
         model.children.forEach((c) => {
             c.position.y += groundOffset;
         });
+        model.traverse((child) => {
+            if (child.name === "eyeL") {
+                this.eyeL = child;
+                const point0 = new THREE.Vector3();
+                point0.fromBufferAttribute(child.geometry.attributes.position, 0);
+                this.eyeL.geometry.center();
+                const point1 = new THREE.Vector3();
+                point1.fromBufferAttribute(child.geometry.attributes.position, 0);
+                const offset = point0.sub(point1);
+                this.eyeL.position.add(offset);
+            }
+            if (child.name === "eyeR") {
+                this.eyeR = child;
+                const point0 = new THREE.Vector3();
+                point0.fromBufferAttribute(child.geometry.attributes.position, 0);
+                this.eyeR.geometry.center();
+                const point1 = new THREE.Vector3();
+                point1.fromBufferAttribute(child.geometry.attributes.position, 0);
+                const offset = point0.sub(point1);
+                this.eyeR.position.add(offset);
+            }
+        });
     }
 
     async loadModel() {
@@ -1281,6 +1303,8 @@ export class Token3D {
     }
 
     updateVisibility() {
+        this.eyeL?.lookAt(this._parent.camera.position);
+        this.eyeR?.lookAt(this._parent.camera.position);
         if (this.heightIndicator) this.heightIndicator.rotation.y += 0.01;
         if (!this._loaded || !this.mesh || !this.nameplate) return;
         this.mesh.visible = this.alwaysVisible || this.token.visible;

@@ -47,7 +47,8 @@ import { Ping } from "./entities/effects/ping.js";
 import {injectThreeModifications} from "./threejsmodifications.js";
 import {ActiveEffectEffect} from "./entities/effects/activeEffect.js";
 import {RangeRingEffect} from "./entities/effects/rangeRing.js";
-import { CutsceneEngine } from "./systems/cutsceneEngine.js";
+import {CutsceneEngine} from "./systems/cutsceneEngine.js";
+import { ImprovedNoise } from "./lib/imporovedNoise.js";
 import { registerWrappers } from "./wrappers.js";
 
 export const factor = 1000;
@@ -123,9 +124,6 @@ class Levels3DPreview {
         initSharing(this);
         this.resizeCanvasToDisplaySize = debounce(this.resizeCanvasToDisplaySize, 500);
         this.debugMode = game.settings.get("levels-3d-preview", "debugMode");
-        this.utils = {
-            throttle,
-        };
         this.CONFIG = {
             useMultithreading: true,
             entityClass: {
@@ -321,12 +319,16 @@ class Levels3DPreview {
             autoMergeTiles,
             unmergeTiles,
             debouncedReload: debounce(this.reload.bind(this), 300),
+            throttle,
             splitToChunks,
             extractPointsFromDrawing,
             extrudeWalls,
             TEXTURES: {
                 BLANK: new THREE.TextureLoader().load("modules/levels-3d-preview/assets/blankTex.jpg"),
             },
+            NOISE: {
+                ImprovedNoise,
+            }
         };
 
         Hooks.callAll("3DCanvasConfig", this.CONFIG);
@@ -346,7 +348,6 @@ class Levels3DPreview {
             },
             _lightIndex: 0,
         };
-        this.utils = {};
         this.walls = {};
         this.doors = {};
         this.tiles = {};
