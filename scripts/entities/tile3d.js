@@ -41,6 +41,7 @@ export class Tile3D {
     }
 
     async load() {
+        await this.preloadShaderTextures();
         if (this.gtflPath || this.dynaMesh != "default") {
             if (this.mergedMatrix) await this.initMerged();
             else this.fillType === "stretch" || this.fillType === "fit" ? await this.initModel() : await this.initInstanced();
@@ -49,7 +50,7 @@ export class Tile3D {
         }
         if (this._destroyed) return;
         this.setTransmissionIor();
-        await this.initShaders();
+        this.initShaders();
         this.setShading();
         this.setSides();
         this.setMRT();
@@ -1266,8 +1267,12 @@ export class Tile3D {
         return true;
     }
 
-    async initShaders() {
-        await this._parent.shaderHandler.applyShader(this.mesh, this, this.shaders);
+    initShaders() {
+        this._parent.shaderHandler.applyShader(this.mesh, this, this.shaders);
+    }
+
+    async preloadShaderTextures() { 
+        await this._parent.shaderHandler.preloadTextures(this.shaders);
     }
 
     getNoise(x, y) {

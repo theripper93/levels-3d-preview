@@ -191,6 +191,9 @@ export class Helpers {
     }
 
     applyTransforms(model) { 
+        const basePos = new THREE.Vector3(0, 0, 0);
+        const baseRot = new THREE.Euler(0, 0, 0);
+        const baseScale = new THREE.Vector3(1, 1, 1);
         const toMatrixProcess = [];
         model.traverse((child) => {
             if (child.isMesh) {
@@ -201,13 +204,13 @@ export class Helpers {
         });
         for (let i = 0; i < toMatrixProcess.length; i++) {
             const child = toMatrixProcess[i];
+            if(child.position.equals(basePos) && child.rotation.equals(baseRot) && child.scale.equals(baseScale)) continue;
             child.updateMatrix();
             child.geometry.applyMatrix4(child.matrix);
-            const newChild = new THREE.Mesh(child.geometry, child.material);
-            newChild.userData = {...child.userData}
-            delete child.userData;
-            child.parent.add(newChild);
-            child.parent.remove(child);
+            child.position.set(0, 0, 0);
+            child.rotation.set(0, 0, 0);
+            child.scale.set(1, 1, 1);
+            child.name = child.name.replace("_", "");
         }
     }
 

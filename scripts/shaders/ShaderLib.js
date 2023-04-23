@@ -206,12 +206,11 @@ export class ShaderHandler {
         }
     }
 
-    async applyShader(Object3D, entity3D, shaderParams) {
+    applyShader(Object3D, entity3D, shaderParams) {
         const enableShaders = game.settings.get("levels-3d-preview", "enableShaders");
         if (!enableShaders) shaderParams = this.disablePerformanceHeavyShaders(shaderParams);
         const hasShaders = Object.values(shaderParams).some((v) => v.enabled);
         if (!hasShaders) return;
-        await this.preloadTextures(shaderParams);
         const commonParams = getSizesForShader(entity3D);
         commonParams.localSize = entity3D.isInstanced ? new THREE.Vector3(commonParams.mWidth * 0.3, commonParams.mDepth * 0.3, commonParams.mHeight * 0.3) : new THREE.Vector3(0.2, 0.2, 0.2);
         Object3D.traverse((child) => {
@@ -351,6 +350,14 @@ export class ShaderHandler {
                         finalValue.wrapS = THREE.RepeatWrapping;
                         finalValue.wrapT = THREE.RepeatWrapping;
                         shader.uniforms[`${name + "_" + uniformName}`] = { value: finalValue };
+                    } else {
+                        game.Levels3DPreview.helpers.loadTexture(paramValue).then((texture) => {
+                            finalValue = texture;
+                            if(!finalValue) return;
+                            finalValue.wrapS = THREE.RepeatWrapping;
+                            finalValue.wrapT = THREE.RepeatWrapping;
+                            shader.uniforms[`${name + "_" + uniformName}`] = { value: finalValue };
+                        });
                     }
                 }
                 if (isAngle) finalValue = Math.toRadians(paramValue);
