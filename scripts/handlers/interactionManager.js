@@ -1290,6 +1290,7 @@ async function dropImage(event, data) {
     data.flags["levels-3d-preview"] = {
         imageTexture: data.texture.src,
         dynaMesh: "decal",
+        castShadow: false,
         shaders: data.shaderData,
         transparency: 0.99,
         collision: false,
