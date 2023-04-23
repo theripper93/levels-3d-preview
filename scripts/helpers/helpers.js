@@ -175,7 +175,7 @@ export class Helpers {
     simplifyGeometry(model, tol = 1e-4) {
         let originalVertices = 0;
         let finalVertices = 0;
-
+        const toMatrixProcess = [];
         model.traverse((child) => {
             if (child.isMesh) {
                 const count = child.geometry.attributes.position.count;
@@ -183,15 +183,22 @@ export class Helpers {
                 const newGeo = mergeVertices(child.geometry, tol);
                 finalVertices += newGeo.attributes.position.count;
                 child.geometry = newGeo;
+                child.updateMatrix();
                 if (!child.children.length) {
-                    child.updateMatrix();
-                    child.geometry.applyMatrix4(child.matrix);
-                    child.position.set(0, 0, 0);
-                    child.rotation.set(0, 0, 0);
-                    child.scale.set(1, 1, 1);
+                    toMatrixProcess.push(child);
                 }
             }
         });
+        for (let i = 0; i < toMatrixProcess.length; i++) {
+            const child = toMatrixProcess[i];
+            child.updateMatrix();
+            child.geometry.applyMatrix4(child.matrix);
+            const newChild = new THREE.Mesh(child.geometry, child.material);
+            newChild.userData = {...child.userData}
+            delete child.userData;
+            child.parent.add(newChild);
+            child.parent.remove(child);
+        }
 
         console.log(`3D Canvas | Simplified Geometry Vertices: ${originalVertices} -> ${finalVertices}`);
     }

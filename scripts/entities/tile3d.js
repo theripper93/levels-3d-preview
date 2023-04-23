@@ -1122,7 +1122,7 @@ export class Tile3D {
     }
 
     updateControls() {
-        if (!this.mesh.parent) return;
+        if (!this.mesh?.parent) return;
         const controls = this._parent.transformControls;
         const gizmoEnabled = this._parent.interactionManager._gizmoEnabled;
         if (!gizmoEnabled) {
