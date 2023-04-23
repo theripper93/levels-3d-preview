@@ -166,6 +166,7 @@ export class Helpers {
             delete this._loading[filePath];
             return output;
         }
+        this.applyTransforms(output.model);
         this.modelCache[modelPath] = output;
         THREE.Cache.remove(filePath);
         delete this._loading[filePath];
@@ -175,7 +176,6 @@ export class Helpers {
     simplifyGeometry(model, tol = 1e-4) {
         let originalVertices = 0;
         let finalVertices = 0;
-        const toMatrixProcess = [];
         model.traverse((child) => {
             if (child.isMesh) {
                 const count = child.geometry.attributes.position.count;
@@ -184,6 +184,16 @@ export class Helpers {
                 finalVertices += newGeo.attributes.position.count;
                 child.geometry = newGeo;
                 child.updateMatrix();
+            }
+        });
+
+        console.log(`3D Canvas | Simplified Geometry Vertices: ${originalVertices} -> ${finalVertices}`);
+    }
+
+    applyTransforms(model) { 
+        const toMatrixProcess = [];
+        model.traverse((child) => {
+            if (child.isMesh) {
                 if (!child.children.length) {
                     toMatrixProcess.push(child);
                 }
@@ -199,8 +209,6 @@ export class Helpers {
             child.parent.add(newChild);
             child.parent.remove(child);
         }
-
-        console.log(`3D Canvas | Simplified Geometry Vertices: ${originalVertices} -> ${finalVertices}`);
     }
 
     getSightMesh(mesh, complexity = 1) {
