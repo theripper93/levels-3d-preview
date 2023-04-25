@@ -170,7 +170,7 @@ class VineArm{
         if(this.generation == 0) this.vine.push(new THREE.Vector3(origin.x, origin.y, origin.z))
         this.vine.push(new THREE.Vector3(point.x, point.y, point.z))
         let growing = true;
-        for (let i = 0; i < 12; i++){
+        for (let i = 0; i < 12 * this.radius; i++){
             if(!growing) break;
             growing = this.grow();
         }

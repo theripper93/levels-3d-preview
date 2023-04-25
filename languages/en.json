@@ -445,6 +445,7 @@
                     "text": "Text (Use 3D Model field for text)",
                     "decal": "Decal",
                     "stairs": "Stairs",
+                    "vines": "Vines",
                     "rock": "Rock (Cube)",
                     "rocksphere": "Rock (Sphere)",
                     "rockcylinder": "Rock (Cylinder)",

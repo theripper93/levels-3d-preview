@@ -14,12 +14,3 @@ export function warpgateWrappers() {
     );
     
 }
-
-
-game.Levels3DPreview?._active && game.Levels3DPreview.CONFIG.entityClass.Template3D.drawPreview(templateData, false).then((response) => {
-    if (response) { 
-        doSomethingWithData()
-    } else {
-        cancel()
-    }
-});
