@@ -2,7 +2,8 @@ import * as THREE from "../lib/three.module.js";
 import { factor } from "../main.js";
 import { Ruler3D, RULER_TOKEN_OFFSET } from "../systems/ruler3d.js";
 import {GroupSelectHandler} from "./GroupSelectHandler.js";
-import { isLockedOnOrigin } from "../shaders/templateEffects.js";
+import {isLockedOnOrigin} from "../shaders/templateEffects.js";
+import { TileCreationQueue } from "./TileCreationQueue.js";
 import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from "../lib/three-mesh-bvh.js";
 THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
 THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
@@ -33,6 +34,7 @@ export class InteractionManager {
         this.forceSightCollisions = this.generateSightCollisions.bind(this);
         this.generateSightCollisions = debounce(this.generateSightCollisions.bind(this), 100);
         this._downId = null;
+        this.tileCreationQueue = new TileCreationQueue();
         //this.updateHoverObj = debounce(this.updateHoverObj.bind(this), 100);
     }
 
@@ -624,6 +626,7 @@ export class InteractionManager {
         return {
             object: parentInt ?? intersects[0].object,
             point: intersects[0].point,
+            intersect: intersects[0],
         };
     }
 

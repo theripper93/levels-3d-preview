@@ -33,3 +33,31 @@ function applyMatrixWorldToGeometryInstanced(mesh) {
     }
     return geometries;
 }
+
+function applyMatrixWorldToGeometry(mesh) {
+    if (mesh.isInstancedMesh) return applyMatrixWorldToGeometryInstanced(mesh)    
+    const geometry = mergeBufferGeometries([mesh.geometry.clone()]);
+    mesh.updateMatrixWorld(true,true)
+    geometry.applyMatrix4(mesh.matrixWorld);
+    const attributes = geometry.attributes;
+    for (const key in attributes) {
+        if (key != "position" && key != "uv" && key != "normal") {
+            delete attributes[key];
+        }
+    }
+    return [geometry];
+}
+
+export function meshesToSingleMesh(meshes) {
+    const geometries = [];
+    for (const mesh of meshes) {
+        mesh.traverse((m) => {
+            if (m.isMesh) {
+                geometries.push(...applyMatrixWorldToGeometry(m));
+            }
+        });
+    }
+    const mergedGeometry = mergeBufferGeometries(geometries);
+    const mergedMesh = new THREE.Mesh(mergedGeometry, new THREE.MeshBasicMaterial());
+    return mergedMesh;
+}

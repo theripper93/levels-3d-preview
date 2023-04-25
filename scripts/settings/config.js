@@ -766,6 +766,8 @@ Hooks.on("renderTileConfig", (app,html)=>{
                 billboard2: game.i18n.localize("levels3dpreview.flags.dynaMesh.options.billboard2"),
                 text: game.i18n.localize("levels3dpreview.flags.dynaMesh.options.text"),
                 decal: game.i18n.localize("levels3dpreview.flags.dynaMesh.options.decal"),
+                stairs: game.i18n.localize("levels3dpreview.flags.dynaMesh.options.stairs"),
+                vines: game.i18n.localize("levels3dpreview.flags.dynaMesh.options.vines"),
                 rock: game.i18n.localize("levels3dpreview.flags.dynaMesh.options.rock"),
                 rocksphere: game.i18n.localize("levels3dpreview.flags.dynaMesh.options.rocksphere"),
                 rockcylinder: game.i18n.localize("levels3dpreview.flags.dynaMesh.options.rockcylinder"),

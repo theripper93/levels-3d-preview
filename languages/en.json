@@ -444,6 +444,7 @@
                     "billboard2": "Billboard (Cross)",
                     "text": "Text (Use 3D Model field for text)",
                     "decal": "Decal",
+                    "stairs": "Stairs",
                     "rock": "Rock (Cube)",
                     "rocksphere": "Rock (Sphere)",
                     "rockcylinder": "Rock (Cylinder)",

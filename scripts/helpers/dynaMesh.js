@@ -4,7 +4,8 @@ import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from "../lib
 import {mergeBufferGeometries, toTrianglesDrawMode, mergeVertices} from "../lib/BufferGeometryUtils.js";
 import {DecalGeometry} from "../lib/DecalGeometry.js";
 import {ImprovedNoise} from "../lib/imporovedNoise.js";
-import { fbm3d } from "../lib/noiseFunctions.js";
+import {fbm3d} from "../lib/noiseFunctions.js";
+import { VineGeometry } from "./ProceduralVines.js";
 THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
 THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
 THREE.Mesh.prototype.raycast = acceleratedRaycast;
@@ -410,6 +411,80 @@ export class DynaMesh {
 
     }
 
+    _constructstairs() {
+        const params = this.text.split(",");
+        const hollow = params[1] === "hollow";
+        const stepsMultiParam = parseFloat(params[0])
+        const stepsMulti = isNaN(stepsMultiParam) ? 4 : stepsMultiParam || 4;
+        const gridSize = canvas.scene.dimensions.size / factor;
+        const nSteps = Math.ceil((this.depth / gridSize) * stepsMulti);
+        const stepHeight = this.depth / nSteps;
+        const stepWidth = this.width / nSteps;
+
+        if (this.width < gridSize) { 
+            const ladderPillarGeometry = new THREE.CylinderGeometry(this.width / 2, this.width / 2, this.depth, 8);
+            const ladderStepGeometry = new THREE.CylinderGeometry(this.width / 4, this.width / 4, this.height, 8);
+            ladderStepGeometry.rotateX(Math.PI / 2);
+            ladderStepGeometry.translate(0, 0, 0);
+            const geometries = [];
+
+            for (let i = 1; i < nSteps; i++) {
+                const ladderStep = ladderStepGeometry.clone();
+                ladderStep.translate(0, i * stepHeight, 0);
+                geometries.push(ladderStep);
+            }
+
+            const ladderPillar = ladderPillarGeometry.clone();
+            ladderPillar.translate(0 , this.depth / 2, - this.height/2);
+            geometries.push(ladderPillar);
+            const ladderPillar2 = ladderPillarGeometry.clone();
+            ladderPillar2.translate(0, this.depth / 2, this.height / 2);
+            geometries.push(ladderPillar2);
+
+            const geometry = mergeBufferGeometries(geometries);
+            geometry.center();
+            return geometry;
+
+
+
+
+        } else {            
+            const shape = new THREE.Shape();
+    
+            if (!hollow) {
+                shape.moveTo(this.width, this.depth);
+                shape.lineTo(this.width, 0);
+            }
+            for (let i = 0; i < nSteps; i++) {
+                shape.lineTo(i * stepWidth, i * stepHeight);
+                shape.lineTo(i * stepWidth, (i + 1) * stepHeight);
+            }
+            shape.lineTo(this.width, this.depth);
+    
+            const extrudeSettings = {
+                steps: 2,
+                depth: this.depth,
+                bevelEnabled: true,
+                bevelThickness: 0.011,
+                bevelSize: 0.01,
+                bevelOffset: 0,
+                bevelSegments: 3,
+            };
+    
+            const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+            geometry.center();
+            return mergeBufferGeometries([geometry]);
+        }
+
+    }
+
+    _constructvines() {
+        const vineData = JSON.parse(this.text.replaceAll("'", '"'));
+        const vineGeo = new VineGeometry(vineData, 0.002, this.resolution);
+        vineGeo.geometry.computeBoundingBox();
+        return vineGeo.geometry;
+    }
+
     get _avgWidthHeight() {
         return ((this.width + this.height) / 2) * this.resolution;
     }
@@ -593,3 +668,5 @@ function applyJagged(geometry, pixiP, scale = 10, strength = 1, curvature = 1, d
     geometry.attributes.position.needsUpdate = true;
     return geometry
 }
+
+

@@ -49,7 +49,8 @@ import {ActiveEffectEffect} from "./entities/effects/activeEffect.js";
 import {RangeRingEffect} from "./entities/effects/rangeRing.js";
 import {CutsceneEngine} from "./systems/cutsceneEngine.js";
 import { ImprovedNoise } from "./lib/imporovedNoise.js";
-import { registerWrappers } from "./wrappers.js";
+import {registerWrappers} from "./wrappers.js";
+import {ProceduralVines} from "./helpers/ProceduralVines.js";
 
 export const factor = 1000;
 injectFoWShaders(THREE);
@@ -145,6 +146,7 @@ class Levels3DPreview {
                 ActiveEffectEffect,
                 RangeRingEffect,
                 CutsceneEngine,
+                ProceduralVines,
             },
             INTERACTIONS: {
                 dropFunctions,

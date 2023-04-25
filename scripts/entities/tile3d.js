@@ -54,6 +54,7 @@ export class Tile3D {
         this.setShading();
         this.setSides();
         this.setMRT();
+        this.setVertexColors();
         this._loaded = true;
         this.elevation3d = this.mesh.position.y;
         this.setHidden();
@@ -1093,6 +1094,14 @@ export class Tile3D {
                     child.material.opacity = this.transparency;
                     child.material.alphaTest = 0.01;
                 }
+            }
+        });
+    }
+
+    setVertexColors() {
+        this.mesh.traverse((child) => {
+            if (child.isMesh && !(child.material instanceof Array) && child.geometry.attributes.color) {
+                child.material.vertexColors = true;
             }
         });
     }
