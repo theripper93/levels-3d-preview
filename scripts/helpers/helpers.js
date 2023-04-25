@@ -166,7 +166,7 @@ export class Helpers {
             delete this._loading[filePath];
             return output;
         }
-        this.applyTransforms(output.model);
+        if(!output?.object?.animations?.length)this.applyTransforms(output.model);
         this.modelCache[modelPath] = output;
         THREE.Cache.remove(filePath);
         delete this._loading[filePath];
@@ -205,13 +205,14 @@ export class Helpers {
         for (let i = 0; i < toMatrixProcess.length; i++) {
             const child = toMatrixProcess[i];
             if(child.position.equals(basePos) && child.rotation.equals(baseRot) && child.scale.equals(baseScale)) continue;
-            child.updateMatrix();
+            child.updateMatrix(true);
+            child.updateMatrixWorld(true);
             child.geometry.applyMatrix4(child.matrix);
             child.position.set(0, 0, 0);
             child.rotation.set(0, 0, 0);
             child.scale.set(1, 1, 1);
-            child.updateMatrix();
-            child.name = child.name.replace("_", "").replace("-", "");
+            child.updateMatrix(true);
+            child.updateMatrixWorld(true);
         }
     }
 

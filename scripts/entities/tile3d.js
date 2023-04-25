@@ -922,7 +922,6 @@ export class Tile3D {
                 model: mesh,
             };
         }
-
         const filePath = this.gtflPath;
         const extension = filePath?.split(".")?.pop()?.toLowerCase();
         const model = isMapgen ? await this.computeMapGen() : await game.Levels3DPreview.helpers.loadModel(this.gtflPath);
