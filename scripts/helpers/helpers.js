@@ -190,7 +190,7 @@ export class Helpers {
         console.log(`3D Canvas | Simplified Geometry Vertices: ${originalVertices} -> ${finalVertices}`);
     }
 
-    applyTransforms(model) { 
+    applyTransforms(model) {
         const basePos = new THREE.Vector3(0, 0, 0);
         const baseRot = new THREE.Euler(0, 0, 0);
         const baseScale = new THREE.Vector3(1, 1, 1);
@@ -210,7 +210,8 @@ export class Helpers {
             child.position.set(0, 0, 0);
             child.rotation.set(0, 0, 0);
             child.scale.set(1, 1, 1);
-            child.name = child.name.replace("_", "");
+            child.updateMatrix();
+            child.name = child.name.replace("_", "").replace("-", "");
         }
     }
 
