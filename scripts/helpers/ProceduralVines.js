@@ -27,7 +27,7 @@ export class ProceduralVines{
         const positionAttributes = geo.getAttribute("position");
         const normalAttributes = geo.getAttribute("normal");
         const count = positionAttributes.count;
-        const offsetScalar = 0.005;
+        const offsetScalar = 0.01;
         for (let i = 0; i < count; i++) {
             const x = positionAttributes.getX(i);
             const y = positionAttributes.getY(i);
@@ -214,7 +214,7 @@ class VineArm{
 function getClosestPoints(geometry, point, amount = 10) {
     const positionAttributes = geometry.getAttribute("position");
     const count = positionAttributes.count;
-    const allPoints = [];
+    let allPoints = [];
     for (let i = 0; i < count; i++) { 
         const x = positionAttributes.getX(i);
         const y = positionAttributes.getY(i);
@@ -222,6 +222,8 @@ function getClosestPoints(geometry, point, amount = 10) {
         allPoints.push(new THREE.Vector3(x, y, z));
     }
     allPoints.sort((a, b) => a.distanceTo(point) - b.distanceTo(point));
+    const minDistance = 0.05;
+    allPoints = allPoints.filter(p => p.distanceTo(point) > minDistance);
     const closestPoints = allPoints.slice(1, amount);
     return closestPoints;
 }

@@ -865,6 +865,24 @@
                 "label": "Blend"
             },
             "lightParticleEffect": {
+                "ParticleType": {
+                    "label": "Particle Preset",
+                    "options": {
+                        "custom": "Custom",
+                        "torch": "Torch",
+                        "magiccircle": "Magic Circle",
+                        "fire": "Fire",
+                        "vortex": "Vortex",
+                        "sparks": "Sparks",
+                        "holy": "Holy Light",
+                        "ghostly": "Ghostly Light",
+                        "fairy": "Fairy Dust",
+                        "smokecloud": "Smoke Cloud"
+                    }
+                },
+                "ParticleIntensity": {
+                    "label": "Intensity"
+                },
                 "ParticleSprite": {
                     "label": "Sprite"
                 },
@@ -872,7 +890,7 @@
                     "label": "Scale"
                 },
                 "ParticleEmitterSizeMultiplier": {
-                    "label": "Emitter Size Multiplier"
+                    "label": "Area Multiplier"
                 },
                 "ParticleColor": {
                     "label": "Starting Color"

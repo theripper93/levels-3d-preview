@@ -58,8 +58,7 @@
     "scripts/settings/settingsConfig.js"
   ],
   "scripts": [
-    "scripts/lib/injectConfig.js",
-    "scripts/lib/three-nebula.js"
+    "scripts/lib/injectConfig.js"
   ],
   "styles": [
     "styles/module.css",

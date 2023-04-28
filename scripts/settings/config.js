@@ -1322,8 +1322,12 @@ Hooks.on("renderNoteConfig", (app,html)=>{
     })
 })
 
-Hooks.on("renderAmbientLightConfig", (app,html)=>{
-    injectConfig.inject(app, html, {
+Hooks.on("renderAmbientLightConfig", (app, html) => {
+    
+
+    const particleTypes = Object.keys(game.Levels3DPreview.CONFIG.LightParticleSystems)
+
+    const injhtml = injectConfig.inject(app, html, {
         moduleId: "levels-3d-preview",
         tab: {
             name: "levels-3d-preview",
@@ -1357,6 +1361,19 @@ Hooks.on("renderAmbientLightConfig", (app,html)=>{
             type: "checkbox",
             label: game.i18n.localize("levels3dpreview.flags.lightParticleEffect.enableParticleHidden.label"),
             default: false,
+        },
+        ParticleType: {
+            type: "select",
+            label: game.i18n.localize("levels3dpreview.flags.lightParticleEffect.ParticleType.label"),
+            default: "custom",
+            options: Object.fromEntries(particleTypes.map((type) => [type, game.i18n.localize(`levels3dpreview.flags.lightParticleEffect.ParticleType.options.${type}`)])),
+        },
+        ParticleIntensity: {
+            type: "range",
+            label: game.i18n.localize("levels3dpreview.flags.lightParticleEffect.ParticleIntensity.label"),
+            default: 1,
+            min: 1,
+            max: 10,
         },
         ParticleSprite: {
             type: "filepicker",
@@ -1459,6 +1476,22 @@ Hooks.on("renderAmbientLightConfig", (app,html)=>{
             default: "#ffffff",
         },
     });
+
+    injhtml.on("change", "select[name='flags.levels-3d-preview.ParticleType']", (event) => {
+        const hide = event.target.value !== "custom";
+        const toHide = ["ParticleSprite", "ParticleAlphaStart", "ParticleAlphaEnd", "ParticleLife", "ParticleCount", "ParticleEmitTime", "ParticleForce", "ParticlePushX", "ParticlePushY", "ParticlePushZ", "ParticleGravity", "ParticleMass"];
+        for (const key of toHide) {
+            const el = injhtml.find(`[name='flags.levels-3d-preview.${key}']`);
+            if (hide) el.closest(".form-group").hide();
+            else el.closest(".form-group").show();
+        }
+        injhtml.find(`[name='flags.levels-3d-preview.ParticleIntensity']`).closest(".form-group").toggle(hide);
+        
+        app.setPosition({ height: "auto" });
+    });
+
+    injhtml.find("select[name='flags.levels-3d-preview.ParticleType']").trigger("change");
+    app.setPosition({ height: "auto" });
 })
 
 

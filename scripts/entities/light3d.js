@@ -234,7 +234,7 @@ export class Light3D {
         if (this.particleEffectId) Particle3D.stop(this.particleEffectId);
         if (this.light.document.hidden && !this.light.document.getFlag("levels-3d-preview", "enableParticleHidden")) return;
         const particleData = this.particleData;
-        this.particleEffect = new Particle3D("e");
+        this.particleEffect = new Particle3D(particleData.type);
         this.particleEffect
             .sprite(particleData.sprite)
             .scale(particleData.scale)
@@ -248,12 +248,14 @@ export class Light3D {
             .alpha(particleData.alphaStart, particleData.alphaEnd)
             .emitterSize(((Math.max(this.dim, this.bright) + 0.1) / canvas.scene.dimensions.distance) * Math.max(particleData.emitterScale, 0.000001))
             .push(particleData.push.dx, particleData.push.dy, particleData.push.dz)
+            .presetIntensity(particleData.presetIntensity)
             .to({ x: this.light.center.x, y: this.light.center.y, z: this.z });
         this.particleEffectId = this.particleEffect.start(false);
     }
 
     getParticleData() {
         return {
+            type: this.light.document.getFlag("levels-3d-preview", "ParticleType") ?? "custom",
             sprite: this.light.document.getFlag("levels-3d-preview", "ParticleSprite") ?? "",
             emitterScale: this.light.document.getFlag("levels-3d-preview", "ParticleEmitterSizeMultiplier") ?? 1,
             scale: this.light.document.getFlag("levels-3d-preview", "ParticleScale") ?? 1,
@@ -272,6 +274,7 @@ export class Light3D {
                 dy: this.light.document.getFlag("levels-3d-preview", "ParticlePushY") ?? 0,
                 dz: this.light.document.getFlag("levels-3d-preview", "ParticlePushZ") ?? 0,
             },
+            presetIntensity: this.light.document.getFlag("levels-3d-preview", "ParticleIntensity") ?? 1,
         };
     }
 

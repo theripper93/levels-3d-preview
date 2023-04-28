@@ -27,7 +27,7 @@ import { UnrealBloomPass } from "./lib/UnrealBloomPass.js";
 import { Fog, injectFoWShaders } from "./systems/Fog.js";
 import { Exporter } from "./helpers/exporter.js";
 import { turnStartMarker } from "./systems/turnStartMarker.js";
-import { ParticleSystem } from "./systems/particleSystem.js";
+import { ParticleEngine } from "./systems/particleSystem.js";
 import { Particle3D } from "./systems/particleSystem.js";
 import { defaultTokenAnimations } from "./handlers/tokenAnimationHandler.js";
 import { ClipNavigation, CLIP_NAVIGATION_BUTTONS } from "./apps/clipNavigation.js";
@@ -51,6 +51,7 @@ import {CutsceneEngine} from "./systems/cutsceneEngine.js";
 import { ImprovedNoise } from "./lib/imporovedNoise.js";
 import {registerWrappers} from "./wrappers.js";
 import {ProceduralVines} from "./helpers/ProceduralVines.js";
+import { LightParticleSystems } from "./systems/particleSystem.js";
 
 export const factor = 1000;
 injectFoWShaders(THREE);
@@ -126,6 +127,7 @@ class Levels3DPreview {
         this.resizeCanvasToDisplaySize = debounce(this.resizeCanvasToDisplaySize, 500);
         this.debugMode = game.settings.get("levels-3d-preview", "debugMode");
         this.CONFIG = {
+            LightParticleSystems,
             useMultithreading: true,
             entityClass: {
                 RangeFinder,
@@ -138,9 +140,8 @@ class Levels3DPreview {
                 Grid3D,
                 Cursors3D,
                 Particle3D,
-                ParticleSystem,
+                ParticleEngine,
                 turnStartMarker,
-                ParticleSystem,
                 Tile3D,
                 Ping,
                 ActiveEffectEffect,
@@ -492,7 +493,7 @@ class Levels3DPreview {
 
     initPS() {
         this.particleSystem?.destroy();
-        this.particleSystem = new ParticleSystem(this);
+        this.particleSystem = new ParticleEngine(this);
     }
 
     cacheLights(cacheSize) {
@@ -568,7 +569,7 @@ class Levels3DPreview {
             this.particleSystem._parent = this;
             this.particleSystem.move();
         } else {
-            this.particleSystem = new ParticleSystem(this);
+            this.particleSystem = new ParticleEngine(this);
         }
         this.transformControls?.dispose();
         this.transformControls = new TransformControls(this.camera, this.renderer.domElement);
