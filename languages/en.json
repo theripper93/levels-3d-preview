@@ -877,7 +877,11 @@
                         "holy": "Holy Light",
                         "ghostly": "Ghostly Light",
                         "fairy": "Fairy Dust",
-                        "smokecloud": "Smoke Cloud"
+                        "smokecloud": "Smoke Cloud",
+                        "mysteriouslights": "Mysterious Lights",
+                        "sunburst": "Sunburst",
+                        "tesla": "Tesla",
+                        "magicsphere": "Magic Sphere"
                     }
                 },
                 "ParticleIntensity": {
@@ -893,10 +897,10 @@
                     "label": "Area Multiplier"
                 },
                 "ParticleColor": {
-                    "label": "Starting Color"
+                    "label": "Color Primary"
                 },
                 "ParticleColor2": {
-                    "label": "Ending Color"
+                    "label": "Color Secondary"
                 },
                 "ParticleForce": {
                     "label": "Force"

@@ -3,7 +3,8 @@ import { ShaderConfig } from '../shaders/ShaderLib.js';
 import { RegisterTours } from '../tours/tours.js';
 import { MapGen } from '../apps/mapgen.js';
 import {promptForTour} from '../tours/toursHelpers.js';
-import { getTimeSyncDefault } from '../systems/globalIllumination.js';
+import {getTimeSyncDefault} from '../systems/globalIllumination.js';
+import { GradientPicker } from '../helpers/GradientPicker.js';
 
 Hooks.on("getSceneControlButtons", (buttons)=>{
     buttons.find(b => b.name === "token")?.tools?.push(
@@ -1366,7 +1367,7 @@ Hooks.on("renderAmbientLightConfig", (app, html) => {
             type: "select",
             label: game.i18n.localize("levels3dpreview.flags.lightParticleEffect.ParticleType.label"),
             default: "custom",
-            options: Object.fromEntries(particleTypes.map((type) => [type, game.i18n.localize(`levels3dpreview.flags.lightParticleEffect.ParticleType.options.${type}`)])),
+            options: Object.fromEntries(particleTypes.sort((a,b) => a.localeCompare(b)).map((type) => [type, game.i18n.localize(`levels3dpreview.flags.lightParticleEffect.ParticleType.options.${type}`)])),
         },
         ParticleIntensity: {
             type: "range",
@@ -1476,7 +1477,7 @@ Hooks.on("renderAmbientLightConfig", (app, html) => {
             default: "#ffffff",
         },
     });
-
+    const showSprite = ["mysteriouslights", "vortex", "sparks", "fairy","magicsphere"];
     injhtml.on("change", "select[name='flags.levels-3d-preview.ParticleType']", (event) => {
         const hide = event.target.value !== "custom";
         const toHide = ["ParticleSprite", "ParticleAlphaStart", "ParticleAlphaEnd", "ParticleLife", "ParticleCount", "ParticleEmitTime", "ParticleForce", "ParticlePushX", "ParticlePushY", "ParticlePushZ", "ParticleGravity", "ParticleMass"];
@@ -1484,6 +1485,7 @@ Hooks.on("renderAmbientLightConfig", (app, html) => {
             const el = injhtml.find(`[name='flags.levels-3d-preview.${key}']`);
             if (hide) el.closest(".form-group").hide();
             else el.closest(".form-group").show();
+            if(key === "ParticleSprite" && showSprite.includes(event.target.value)) el.closest(".form-group").show();
         }
         injhtml.find(`[name='flags.levels-3d-preview.ParticleIntensity']`).closest(".form-group").toggle(hide);
         
@@ -1491,6 +1493,12 @@ Hooks.on("renderAmbientLightConfig", (app, html) => {
     });
 
     injhtml.find("select[name='flags.levels-3d-preview.ParticleType']").trigger("change");
+
+    const color1 = injhtml.find("input[name='flags.levels-3d-preview.ParticleColor']")[0];
+    const color2 = injhtml.find("input[name='flags.levels-3d-preview.ParticleColor2']")[0];
+    const gradientPickerEl = GradientPicker.create(color1, color2);
+    injhtml.find("input[name='flags.levels-3d-preview.ParticleColor2']").closest(".form-group").after(gradientPickerEl);
+
     app.setPosition({ height: "auto" });
 })
 

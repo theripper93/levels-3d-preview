@@ -249,6 +249,7 @@ export class Light3D {
             .emitterSize(((Math.max(this.dim, this.bright) + 0.1) / canvas.scene.dimensions.distance) * Math.max(particleData.emitterScale, 0.000001))
             .push(particleData.push.dx, particleData.push.dy, particleData.push.dz)
             .presetIntensity(particleData.presetIntensity)
+            .applyPresetLightOffset(true)
             .to({ x: this.light.center.x, y: this.light.center.y, z: this.z });
         this.particleEffectId = this.particleEffect.start(false);
     }

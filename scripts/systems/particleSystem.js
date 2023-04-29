@@ -98,20 +98,24 @@ export class ParticleEngine {
 
     stopAll() {
         this.effects.forEach((effect) => {
-            this.disposeEffect(effect);
+            this.disposeEffect(effect, true);
         });
         this.effects.clear();
     }
 
-    disposeEffect(effect) {
+    disposeEffect(effect, force = false) {
         this.effects.delete(effect);
-        this.toCleanup.add(effect);
         effect.particleSystems.forEach((s) => {
             s.autoDestroy = true;
             s.looping = false;
             s.duration = 0;
             s.markForDestroy = true;
         });
+        if (force) {
+            this.scene.remove(effect.emitter);
+        } else {
+            this.toCleanup.add(effect);
+        }
     }
 
     cleanUpEffect(effect) {
@@ -323,6 +327,11 @@ export class Particle3D {
         return this;
     }
 
+    applyPresetLightOffset(value) {
+        this.params.applyPresetLightOffset = value;
+        return this;
+    }
+
     name(name) {
         this.params.name = name;
         return this;
@@ -487,6 +496,7 @@ class BaseParticleEffect {
             rotateTowards: false,
             rotation: [0, 0, 0],
             presetIntensity: 1,
+            applyPresetLightOffset: false,
         };
     }
 
@@ -506,6 +516,7 @@ class BaseParticleEffect {
                 tokenPos.y += game.Levels3DPreview.tokens[object.id].d * 0.66;
             }
             this._bottomTarget = game.Levels3DPreview.tokens[object.id].mesh.position.clone();
+            this._originalPosition = game.Levels3DPreview.tokens[object.id].mesh.position.clone();
             this._bottomTarget.y -= game.Levels3DPreview.tokens[object.id].d;
             return tokenPos;
         }
@@ -549,6 +560,13 @@ class BaseParticleEffect {
     }
 
     animate(delta) {
+    }
+}
+
+class BasePresetEffect extends BaseParticleEffect {
+    constructor (...args) {
+        super(...args);
+        if (this._originalPosition) this._target = this._originalPosition;
     }
 }
 
@@ -1053,7 +1071,7 @@ class BasicCustomParticle extends BaseParticleEffect {
 //Light particles
 
 
-class TorchParticle extends BaseParticleEffect {
+class TorchParticle extends BasePresetEffect {
     constructor (from, to, params) {
         super(from, to, params);
         this._dist = null;
@@ -1189,7 +1207,7 @@ class TorchParticle extends BaseParticleEffect {
     }
 }
 
-class FireParticle extends BaseParticleEffect {
+class FireParticle extends BasePresetEffect {
     constructor (from, to, params) {
         super(from, to, params);
         this._dist = null;
@@ -1322,7 +1340,7 @@ class FireParticle extends BaseParticleEffect {
     }
 }
 
-class MagicCircleParticle extends BaseParticleEffect {
+class MagicCircleParticle extends BasePresetEffect {
     constructor (from, to, params) {
         super(from, to, params);
         this._dist = null;
@@ -1377,7 +1395,7 @@ class MagicCircleParticle extends BaseParticleEffect {
         
         this.emitter.add(circleLines.emitter);
         this.emitter.position.copy(this._target);
-        this.emitter.position.y -= 0.1;
+        if(this.params.applyPresetLightOffset) this.emitter.position.y -= 0.1;
         this.particleSystems.push(circleLines);
     }
 
@@ -1392,7 +1410,7 @@ class MagicCircleParticle extends BaseParticleEffect {
     }
 }
 
-class VortexParticle extends BaseParticleEffect {
+class VortexParticle extends BasePresetEffect {
     constructor (from, to, params) {
         super(from, to, params);
         this._dist = null;
@@ -1404,7 +1422,7 @@ class VortexParticle extends BaseParticleEffect {
     async createEmitter() {
         this.emitter = new THREE.Group();
 
-        const emberMaterial = await this.getBasicMaterial("modules/levels-3d-preview/assets/particles/circle_05.png");
+        const emberMaterial = await this.getBasicMaterial();
 
 
         const circleLinesData = {
@@ -1457,7 +1475,7 @@ class VortexParticle extends BaseParticleEffect {
         this.emitter.add(circleLines.emitter);
         this.emitter.add(particles.emitter);
         this.emitter.position.copy(this._target);
-        this.emitter.position.y -= 0.1;
+        if(this.params.applyPresetLightOffset) this.emitter.position.y -= 0.1;
         this.particleSystems.push(circleLines,particles);
     }
 
@@ -1472,7 +1490,7 @@ class VortexParticle extends BaseParticleEffect {
     }
 }
 
-class SparksParticle extends BaseParticleEffect {
+class SparksParticle extends BasePresetEffect {
     constructor (from, to, params) {
         super(from, to, params);
         this._dist = null;
@@ -1493,7 +1511,7 @@ class SparksParticle extends BaseParticleEffect {
         const targetp = this._target.clone();
         targetp.y -= 99999;
         const collision = game.Levels3DPreview.interactionManager.computeSightCollisionFrom3DPositions(position, targetp, "collision", false, false, false, true);
-        const emberMaterial = await this.getBasicMaterial("modules/levels-3d-preview/assets/particles/circle_05.png");
+        const emberMaterial = await this.getBasicMaterial();
 
         const circleLinesData = {
             duration: 0.2,
@@ -1574,7 +1592,7 @@ class SparksParticle extends BaseParticleEffect {
     }
 }
 
-class HolyLightParticle extends BaseParticleEffect {
+class HolyLightParticle extends BasePresetEffect {
     constructor (from, to, params) {
         super(from, to, params);
         this._dist = null;
@@ -1661,7 +1679,7 @@ class HolyLightParticle extends BaseParticleEffect {
         this.emitter.add(circleLines.emitter);
         this.emitter.add(symbols.emitter);
         this.emitter.position.copy(this._target);
-        this.emitter.position.y -= 0.09;
+        if(this.params.applyPresetLightOffset) this.emitter.position.y -= 0.09;
         this.particleSystems.push(circleLines, symbols);
     }
 
@@ -1676,7 +1694,7 @@ class HolyLightParticle extends BaseParticleEffect {
     }
 }
 
-class GhostlyParticle extends BaseParticleEffect {
+class GhostlyParticle extends BasePresetEffect {
     constructor (from, to, params) {
         super(from, to, params);
         this._dist = null;
@@ -1734,7 +1752,7 @@ class GhostlyParticle extends BaseParticleEffect {
         
         this.emitter.add(symbols.emitter);
         this.emitter.position.copy(this._target);
-        this.emitter.position.y -= 0.09;
+        if(this.params.applyPresetLightOffset) this.emitter.position.y -= 0.09;
         this.particleSystems.push(symbols);
     }
 
@@ -1749,7 +1767,7 @@ class GhostlyParticle extends BaseParticleEffect {
     }
 }
 
-class FairyParticle extends BaseParticleEffect {
+class FairyParticle extends BasePresetEffect {
     constructor (from, to, params) {
         super(from, to, params);
         this._dist = null;
@@ -1760,7 +1778,7 @@ class FairyParticle extends BaseParticleEffect {
 
     async createEmitter() {
         this.emitter = new THREE.Group();
-        const emberMaterial = await this.getBasicMaterial("modules/levels-3d-preview/assets/particles/circle_05.png");
+        const emberMaterial = await this.getBasicMaterial();
 
         const circleLinesData = {
             duration: 0.2,
@@ -1817,7 +1835,7 @@ class FairyParticle extends BaseParticleEffect {
     }
 }
 
-class SmokeCloudParticle extends BaseParticleEffect {
+class SmokeCloudParticle extends BasePresetEffect {
     constructor (from, to, params) {
         super(from, to, params);
         this._dist = null;
@@ -1891,7 +1909,7 @@ class SmokeCloudParticle extends BaseParticleEffect {
     }
 }
 
-class EnergyFieldParticle extends BaseParticleEffect {
+class MysteriousLightsParticle extends BasePresetEffect {
     constructor (from, to, params) {
         super(from, to, params);
         this._dist = null;
@@ -1904,24 +1922,93 @@ class EnergyFieldParticle extends BaseParticleEffect {
 
         this.emitter = new THREE.Group();
 
-        const emberMaterial = await this.getBasicMaterial("modules/levels-3d-preview/assets/particles/circle_02.png");
+        const emberMaterial = await this.getBasicMaterial();
+
+        const particlesData = {
+            duration: 10,
+            looping: true,
+            startLife: new QUARKS.IntervalValue(1.5, 12.5),
+            startSpeed: new QUARKS.ConstantValue(0),
+            startSize: new QUARKS.ConstantValue(this.params.scale.start),
+            startColor: new QUARKS.ConstantColor(new THREE.Vector4(1, 1, 1, 1)),
+            worldSpace: false,
+            prewarm: true,
+            rendererEmitterSettings: {
+                startLength: new QUARKS.ConstantValue(80),
+            },
+            emissionOverTime: new QUARKS.ConstantValue(this.params.presetIntensity*25*this.params.emitterSize),
+            shape: new QUARKS.ConeEmitter({radius: this.params.emitterSize, angle: 0.001, thickness: 1}),
+            material: emberMaterial,
+            renderOrder: 2,
+            renderMode: QUARKS.RenderMode.BillBoard,
+        }
+
+
+        const particles = new QUARKS.ParticleSystem(particlesData);
+        
+
+        const gradient = new QUARKS.Gradient(
+            [
+                [new QUARKS.ColorRange(colorToVec4(this.params.color.start[0], 0), colorToVec4(this.params.color.start[0], 1)), 0],
+                [new QUARKS.ColorRange(colorToVec4(this.params.color.start[0], 1), colorToVec4(this.params.color.end[0], 1)), 0.114],
+                [new QUARKS.ColorRange(colorToVec4(this.params.color.end[0], 1), colorToVec4(this.params.color.end[0], 1)), 0.522],
+                [new QUARKS.ColorRange(colorToVec4(this.params.color.end[0], 0), colorToVec4(this.params.color.end[0], 0)),1],
+            ]
+            );
+        
+        particles.addBehavior(new QUARKS.ColorOverLife(gradient));
+        particles.addBehavior(new QUARKS.ApplyForce(new THREE.Vector3(0, 0, 1), new QUARKS.ConstantValue(0.01)));
+        particles.addBehavior(new QUARKS.OrbitOverLife(new QUARKS.ConstantValue(0.04), new THREE.Vector3(0, 0, 1)));
+        particles.addBehavior(new QUARKS.Noise(new THREE.Vector3(0.1, 0.01, 0.1), new THREE.Vector3(0.01, 0.01, 0.01)));
+        particles.emitter.rotation.x = -Math.PI / 2;
+        
+        this.emitter.add(particles.emitter);
+        this.emitter.position.copy(this._target);
+        if(this.params.applyPresetLightOffset) this.emitter.position.y -= 0.1;
+        this.particleSystems.push(particles);
+    }
+
+    animate(delta) {
+        this._duration -= delta;
+        if (this._duration <= 0) {
+            this._playOnEnd = true;
+            this.onEnd();
+            this._currentSpeed = 2;
+        }
+        return;
+    }
+}
+
+class SunburstParticle extends BasePresetEffect {
+    constructor (from, to, params) {
+        super(from, to, params);
+        this._dist = null;
+        this._speed = null;
+        this._origin = null;
+        this.isExplosion = true;
+    }
+
+    async createEmitter() {
+        this.emitter = new THREE.Group();
+        const rayMaterial = await this.getBasicMaterial("modules/levels-3d-preview/assets/particles/Rotated/muzzle_04_rotated.png");
+        const emberMaterial = await this.getBasicMaterial("modules/levels-3d-preview/assets/particles/circle_05.png");
 
         const circleLinesData = {
             duration: 0.2,
             looping: true,
-            startLife: new QUARKS.ConstantValue(10),
-            startSpeed: new QUARKS.ConstantValue(0),
-            startSize: new QUARKS.ConstantValue(this.params.emitterSize*2),
+            startLife: new QUARKS.ConstantValue(10*this.params.emitterSize),
+            startSpeed: new QUARKS.ConstantValue(0.1),
+            startSize: new QUARKS.ConstantValue(this.params.scale.start),
             startColor: new QUARKS.ConstantColor(new THREE.Vector4(1, 1, 1, 1)),
             worldSpace: false,
             rendererEmitterSettings: {
-                startLength: new QUARKS.ConstantValue(20),
+                startLength: new QUARKS.ConstantValue(200),
             },
-            emissionOverTime: new QUARKS.ConstantValue(this.params.presetIntensity*0.01),
-            shape: new QUARKS.PointEmitter({radius: this.params.emitterSize}),
-            material: emberMaterial,
+            emissionOverTime: new QUARKS.ConstantValue(this.params.presetIntensity*50*this.params.emitterSize),
+            shape: new QUARKS.PointEmitter(),
+            material: rayMaterial,
             renderOrder: 2,
-            renderMode: QUARKS.RenderMode.BillBoard,
+            renderMode: QUARKS.RenderMode.Trail,
         }
 
 
@@ -1932,24 +2019,216 @@ class EnergyFieldParticle extends BaseParticleEffect {
             [
                 [new QUARKS.ColorRange(colorToVec4(this.params.color.start[0], 0), colorToVec4(this.params.color.start[0], 1)), 0],
                 [new QUARKS.ColorRange(colorToVec4(this.params.color.start[0], 1), colorToVec4(this.params.color.end[0], 1)), 0.0314],
-                [new QUARKS.ColorRange(colorToVec4(this.params.color.end[0], 1), colorToVec4(this.params.color.end[0], 1)), 0.522],
-                [new QUARKS.ColorRange(colorToVec4(this.params.color.end[0], 1), colorToVec4(this.params.color.end[0], 1)),1],
+                [new QUARKS.ColorRange(colorToVec4(this.params.color.end[0], 1), new THREE.Vector4(0, 0, 0, 0)), 0.522],
+                [new QUARKS.ColorRange(new THREE.Vector4(0, 0, 0, 0), new THREE.Vector4(0, 0, 0, 0)),1],
             ]
             );
-            
         
         circleLines.addBehavior(new QUARKS.ColorOverLife(gradient));
-        circleLines.addBehavior(new QUARKS.SizeOverLife(new QUARKS.PiecewiseBezier([[new QUARKS.Bezier(0, 0.75, 0.95, 1), 0.75]])));
-
         circleLines.emitter.rotation.x = -Math.PI / 2;
+
+        const particles = circleLines.clone();
+
+        particles.material = emberMaterial;
+        //particles.renderMode = QUARKS.RenderMode.BillBoard;
+        particles.startSize = new QUARKS.ConstantValue(this.params.scale.start * 0.2);
         
         this.emitter.add(circleLines.emitter);
+        this.emitter.add(particles.emitter);
         this.emitter.position.copy(this._target);
-        this.particleSystems.push(circleLines);
+        this.particleSystems.push(circleLines,particles);
     }
 
     animate(delta) {
         this._duration -= delta;
+        if (this._duration <= 0) {
+            this._playOnEnd = true;
+            this.onEnd();
+            this._currentSpeed = 2;
+        }
+        return;
+    }
+}
+
+class TeslaParticle extends BasePresetEffect {
+    constructor (from, to, params) {
+        super(from, to, params);
+        this._dist = null;
+        this._speed = null;
+        this._origin = null;
+        this.isExplosion = true;
+    }
+
+    async createEmitter() {
+        this.emitter = new THREE.Group();
+        const rayMaterial = await this.getBasicMaterial("modules/levels-3d-preview/assets/particles/Rotated/spark_05_rotated.png");
+        const emberMaterial = await this.getBasicMaterial("modules/levels-3d-preview/assets/particles/Rotated/spark_06_rotated.png");
+        
+        const circleLinesData = {
+            duration: 0.25,
+            looping: true,
+            startLife: new QUARKS.ConstantValue(1*this.params.emitterSize),
+            startSpeed: new QUARKS.ConstantValue(2),
+            startSize: new QUARKS.ConstantValue(this.params.scale.start),
+            startColor: new QUARKS.ConstantColor(new THREE.Vector4(1, 1, 1, 1)),
+            worldSpace: false,
+            rendererEmitterSettings: {
+                startLength: new QUARKS.ConstantValue(200),
+            },
+            emissionBursts: [
+                {
+                    time: 0,
+                    count: 5,
+                    cycle: 1,
+                    interval: .21,
+                    probability: 0.1*this.params.presetIntensity,
+                },
+                {
+                    time: 0.05,
+                    count: 5,
+                    cycle: 1,
+                    interval: .21,
+                    probability: 0.1*this.params.presetIntensity,
+                },
+                {
+                    time: 0.1,
+                    count: 5,
+                    cycle: 1,
+                    interval: .21,
+                    probability: 0.1*this.params.presetIntensity,
+                },                {
+                    time: 0.15,
+                    count: 5,
+                    cycle: 1,
+                    interval: .21,
+                    probability: 0.1*this.params.presetIntensity,
+                },
+                {
+                    time: 0.2,
+                    count: 5,
+                    cycle: 1,
+                    interval: .21,
+                    probability: 0.1*this.params.presetIntensity,
+                },
+                {
+                    time: 0.25,
+                    count: 5,
+                    cycle: 1,
+                    interval: .21,
+                    probability: 0.1*this.params.presetIntensity,
+                },
+            ],
+            emissionOverTime: new QUARKS.ConstantValue(0),
+            shape: new QUARKS.PointEmitter(),
+            material: rayMaterial,
+            renderOrder: 2,
+            renderMode: QUARKS.RenderMode.Trail,
+        }
+
+        const circleLines = new QUARKS.ParticleSystem(circleLinesData);
+
+        const gradient = new QUARKS.Gradient(
+            [
+                [new QUARKS.ColorRange(colorToVec4(this.params.color.start[0], 0), colorToVec4(this.params.color.start[0], 1)), 0],
+                [new QUARKS.ColorRange(colorToVec4(this.params.color.start[0], 1), colorToVec4(this.params.color.end[0], 1)), 0.0314],
+                [new QUARKS.ColorRange(colorToVec4(this.params.color.end[0], 1), new THREE.Vector4(0, 0, 0, 0)), 0.522],
+                [new QUARKS.ColorRange(new THREE.Vector4(0, 0, 0, 0), new THREE.Vector4(0, 0, 0, 0)),1],
+            ]
+            );
+            const turbulence = new THREE.Vector3(0.5,0.5,0.5)
+        circleLines.addBehavior(new QUARKS.ColorOverLife(gradient));
+        circleLines.addBehavior(new QUARKS.Noise(turbulence, turbulence))
+
+
+        const particles = circleLines.clone();
+
+        particles.material = emberMaterial;
+        //particles.renderMode = QUARKS.RenderMode.BillBoard;
+        particles.startSize = new QUARKS.ConstantValue(this.params.scale.start * 0.2);
+        
+        this.emitter.add(circleLines.emitter);
+        this.emitter.add(particles.emitter);
+        this.emitter.position.copy(this._target);
+        this.particleSystems.push(circleLines,particles);
+    }
+
+    animate(delta) {
+        this._duration -= delta;
+        if (this._duration <= 0) {
+            this._playOnEnd = true;
+            this.onEnd();
+            this._currentSpeed = 2;
+        }
+        return;
+    }
+}
+
+class MagicSphereParticle extends BasePresetEffect {
+    constructor (from, to, params) {
+        super(from, to, params);
+        this._dist = null;
+        this._speed = null;
+        this._origin = null;
+        this.isExplosion = true;
+    }
+
+    async createEmitter() {
+        this.emitter = new THREE.Group();
+        const rayMaterial = await this.getBasicMaterial();
+
+        const circleLinesData = {
+            duration: 0.2,
+            looping: true,
+            startLife: new QUARKS.IntervalValue(3,5),
+            startSpeed: new QUARKS.ConstantValue(1),
+            startSize: new QUARKS.ConstantValue(this.params.scale.start),
+            startColor: new QUARKS.ConstantColor(new THREE.Vector4(1, 1, 1, 1)),
+            worldSpace: true,
+            rendererEmitterSettings: {
+                startLength: new QUARKS.ConstantValue(200),
+                followLocalOrigin: true,
+            },
+            emissionOverTime: new QUARKS.ConstantValue(this.params.presetIntensity*10*this.params.emitterSize),
+            shape: new QUARKS.DonutEmitter({radius: this.params.emitterSize, thickness: 1}),
+            material: rayMaterial,
+            renderOrder: 2,
+            renderMode: QUARKS.RenderMode.Trail,
+        }
+
+
+        const circleLines = new QUARKS.ParticleSystem(circleLinesData);
+        
+
+        const gradient = new QUARKS.Gradient(
+            [
+                [new QUARKS.ColorRange(colorToVec4(this.params.color.start[0], 0), colorToVec4(this.params.color.start[0], 1)), 0],
+                [new QUARKS.ColorRange(colorToVec4(this.params.color.start[0], 1), colorToVec4(this.params.color.end[0], 1)), 0.0314],
+                [new QUARKS.ColorRange(colorToVec4(this.params.color.end[0], 1), new THREE.Vector4(0, 0, 0, 0)), 0.522],
+                [new QUARKS.ColorRange(new THREE.Vector4(0, 0, 0, 0), new THREE.Vector4(0, 0, 0, 0)),1],
+            ]
+            );
+        
+        circleLines.addBehavior(new QUARKS.ColorOverLife(gradient));
+
+        const particles = circleLines.clone();
+        //particles.renderMode = QUARKS.RenderMode.BillBoard;
+        particles.startSize = new QUARKS.ConstantValue(this.params.scale.start * 0.2);
+        this._donut1 = circleLines.emitter;
+        this._donut2 = particles.emitter;
+        this.emitter.add(circleLines.emitter);
+        this.emitter.add(particles.emitter);
+        this.emitter.position.copy(this._target);
+        this.particleSystems.push(circleLines,particles);
+    }
+
+    animate(delta) {
+        this._duration -= delta;
+        const deltaSpeed = delta*2;
+        this._donut1.rotation.x += deltaSpeed;
+        this._donut2.rotation.x += deltaSpeed;
+        this._donut1.rotation.z += deltaSpeed;
+        this._donut2.rotation.z += deltaSpeed;
+
         if (this._duration <= 0) {
             this._playOnEnd = true;
             this.onEnd();
@@ -1987,5 +2266,8 @@ export const LightParticleSystems = {
     "ghostly": GhostlyParticle,
     "fairy": FairyParticle,
     "smokecloud": SmokeCloudParticle,
-    "energy": EnergyFieldParticle,
+    "mysteriouslights": MysteriousLightsParticle,
+    "sunburst": SunburstParticle,
+    "tesla": TeslaParticle,
+    "magicsphere": MagicSphereParticle,
 }
