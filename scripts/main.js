@@ -1869,7 +1869,8 @@ Hooks.on("ready", async () => {
 });
 
 window.addEventListener("resize", () => {
-        if (game.Levels3DPreview?._active) game.Levels3DPreview.resizeCanvasToDisplaySize();
+    if (game.Levels3DPreview?._active){ game.Levels3DPreview.resizeCanvasToDisplaySize();
+    setTimeout(() =>  game.Levels3DPreview?.resizeCanvasToDisplaySize(), 250);}
 });
 
 function updateTokenRotationCamera(token) {

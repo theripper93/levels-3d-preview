@@ -81,7 +81,8 @@ export class Fog {
 
     updateShaders() {
         if (!this._ready) return;
-        Object.values(this._parent.materialProgramCache).forEach((m) => {
+        const particleMaterials = this._parent.particleSystem.system.children.map(c => c.material)
+        Object.values(this._parent.materialProgramCache).concat(particleMaterials).forEach((m) => {
             m.uniforms.fogTexture = { value: this.fogTexture };
             m.uniforms.fogOverlay = { value: this._overlay };
             m.uniforms.useOverlay = { value: !!this._overlay };
@@ -135,7 +136,7 @@ export function injectFoWShaders(THREELIB) {
     uniform bool useOverlay;
     `;
 
-    THREELIB.ShaderChunk.begin_vertex += `
+    THREELIB.ShaderChunk.fog_vertex += `
     #ifdef USE_INSTANCING
         vWorldPositionFoW = (modelMatrix * (instanceMatrix * vec4( position , 1.0 ))).xyz;
     #else
