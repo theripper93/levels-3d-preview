@@ -4,24 +4,31 @@ export default function initTemplateEffects(){
     if (handler) {
         Hooks.on("preCreateMeasuredTemplate", (templateDocument) => {
             try {
-                if(game.settings.get("levels-3d-preview", "templateEffects")) handler(templateDocument)        
+                if(game.settings.get("levels-3d-preview", "templateEffects")) handler(templateDocument, true)        
             }catch (e) {
                 
             }
         })
+        Hooks.on("createMeasuredTemplate", (templateDocument) => {
+            try {
+                if(game.settings.get("levels-3d-preview", "templateEffects")) handler(templateDocument)        
+            }catch (e) {
+                
+            }
+        });
     }
 }
 
 const handlers = {
-    "dnd5e": (templateDocument) => {
+    "dnd5e": (templateDocument, preCreate = false) => {
         const effects = shaderData[game.system.id]
         const item = fromUuidSync(templateDocument.flags?.dnd5e?.origin)
-        if(!item?.system) return;
+        if (!item?.system) return;
+        const isInstant = !item.system.duration?.value
         const damageTypes = item.system.damage.parts.map(part => part[1])
-        let effect = effects[damageTypes[0]]
-        if(!effect) damageTypes.forEach(type => {if(effects[type]) effect = effects[type]})
-        if(!effect) effect = effects["default"];
-        applyEffect(templateDocument, effect)
+        const damageType = damageTypes.find(type => effects[type]) ?? "default"
+        if(isInstant && !preCreate) return playVFX(templateDocument, damageType);
+        if(preCreate) applyEffect(templateDocument, effect[damageType])
     },
     "pf2e": (templateDocument) => { 
         const effects = shaderData.dnd5e;
@@ -111,4 +118,84 @@ export function isLockedOnOrigin(item) {
         return isLocked ? token : false;
     }
     return false;
+}
+
+function playVFX(template,damageType) {
+    if (game.user.isGM) {
+        setTimeout(() => {
+            canvas.scene.deleteEmbeddedDocuments("MeasuredTemplate", [template.id]);
+        }, 100);
+    }
+
+    const shape = template.t;
+    const effect = new Particle3D(vfxTypes[damageType], false);
+    effect
+        .to(template)
+        .scale(vfxScale[shape])
+        .duration(3000)
+        .color(vfxColors[damageType][0], vfxColors[damageType][1])
+        .presetIntensity(vfxIntensity[shape][vfxTypes[damageType]])
+    .start(false)
+}
+
+const vfxColors = {
+    "acid": ["lime", "green"],
+    "bludgeoning": ["#c7c7c7", "#c7c7c7"],
+    "cold": ["lightblue", "blue"],
+    "fire": ["#ffcd42", "#ff7b00"],
+    "force": ["white", "magenta"],
+    "lightning": ["blue", "lightblue"],
+    "necrotic": ["grey", "purple"],
+    "piercing": ["#c7c7c7", "#c7c7c7"],
+    "poison": ["lightgreen", "green"],
+    "psychic": ["blue", "magenta"],
+    "radiant": ["white", "yellow"],
+    "slashing": ["#c7c7c7", "#c7c7c7"],
+    "thunder": ["lime", "orange"],
+}
+
+const vfxTypes = {
+    "acid": "directionalfire",
+    "bludgeoning": "directionalpoison",
+    "cold": "directionalfire",
+    "fire": "directionalfire",
+    "force": "directionalshock",
+    "lightning": "directionalshock",
+    "necrotic": "directionalpoison",
+    "piercing": "directionalpoison",
+    "poison": "directionalpoison",
+    "psychic": "directionalshock",
+    "radiant": "directionalfire",
+    "slashing": "directionalpoison",
+    "thunder": "directionalshock",
+}
+
+const vfxIntensity = {
+    "circle": {
+        "directionalfire": 8,
+        "directionalpoison": 8,
+        "directionalshock": 1,
+    },
+    "ray": {
+        "directionalfire": 8,
+        "directionalpoison": 8,
+        "directionalshock": 1,
+    },
+    "cone": {
+        "directionalfire": 10,
+        "directionalpoison": 8,
+        "directionalshock": 5,
+    },
+    "rect": {
+        "directionalfire": 8,
+        "directionalpoison": 8,
+        "directionalshock": 1,
+    },
+}
+
+const vfxScale = {
+    "circle": 6,
+    "ray": 2,
+    "cone": 3,
+    "rect": 6,
 }

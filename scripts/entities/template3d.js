@@ -311,6 +311,7 @@ export class Template3D {
         this._effectOrigin = effectOrigin;
         this._effectTarget = effectTarget;
         this._effectRadius = radius;
+        this._effectLength = radius;
         group.add(mesh);
         group.add(effectOrigin);
         group.add(effectTarget);
@@ -343,6 +344,7 @@ export class Template3D {
         effectTarget.position.set(width/2, height, depth/2);
         this._effectOrigin = effectOrigin;
         this._effectTarget = effectTarget;
+        this._effectLength = height;
         geometry.computeBoundingSphere();
         this._effectRadius = geometry.boundingSphere.radius;
         group.add(mesh);
@@ -374,6 +376,7 @@ export class Template3D {
         this._effectTarget = effectTarget;
         this._effectAngle = Math.toRadians(this.template.document.angle ?? CONFIG.MeasuredTemplate.defaults.angle);
         this._effectRadius = 0//0.0001;
+        this._effectLength = height;
         group.add(mesh);
         group.add(effectOrigin);
         group.add(effectTarget);
@@ -401,6 +404,7 @@ export class Template3D {
         this._effectOrigin = effectOrigin;
         this._effectTarget = effectTarget;
         this._effectRadius = radius;
+        this._effectLength = height;
         group.add(mesh);
         group.add(effectOrigin);
         group.add(effectTarget);
@@ -428,6 +432,7 @@ export class Template3D {
         this._effectOrigin = effectOrigin;
         this._effectTarget = effectTarget;
         this._effectRadius = Math.max(depth, height) / 2;
+        this._effectLength = width;
         group.add(mesh);
         group.add(effectOrigin);
         group.add(effectTarget);

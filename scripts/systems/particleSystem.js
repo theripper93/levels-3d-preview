@@ -2198,8 +2198,7 @@ class BaseTemplateEffect extends BaseParticleEffect {
         } else if (object instanceof MeasuredTemplate) {
             const template3d = game.Levels3DPreview.templates[object.id];
             this._target = template3d._effectOrigin.getWorldPosition(new THREE.Vector3());
-            const box3 = new THREE.Box3().setFromObject(template3d.mesh);
-            this._objectRadius = box3.getSize(new THREE.Vector3()).length() / 2;
+            this._objectRadius = template3d._effectLength*0.7;
             this._emitterRadius = template3d._effectRadius;
 
             switch (template3d._baseShape) {
@@ -2210,11 +2209,9 @@ class BaseTemplateEffect extends BaseParticleEffect {
                     break;
                 case "cone":
                     this._coneEmitterAngle = template3d._effectAngle * 0.5;
-                    this._objectRadius *= 1.2;
                     break;
                 case "ray":
                     this._coneEmitterAngle = 0;
-                    this._objectRadius *= 1.2;
                     break;
             }
             return template3d._effectTarget.getWorldPosition(new THREE.Vector3());;
@@ -2564,6 +2561,280 @@ class ConePoisonParticle extends BaseTemplateEffect{
     }
 }
 
+class ConeWaveParticle extends BaseTemplateEffect{
+    async createEmitter() {
+        this.emitter = new THREE.Group();
+
+        const wave = await this.getBasicMaterial("modules/levels-3d-preview/assets/particles/slash_05.png");
+
+        const effectSpeed = 2;
+        const lifeMultiplier = (this._objectRadius*5*0.5)/effectSpeed;
+
+        const fireGlowData = {
+            duration: 1,
+            looping: true,
+            startLife: new QUARKS.ConstantValue(0.5*lifeMultiplier*4),
+            startSpeed: new QUARKS.ConstantValue(effectSpeed*0.2),
+            startSize: new QUARKS.ConstantValue(this._coneEmitterAngle*3*this.params.scale.start),
+            startColor: new QUARKS.ConstantColor(colorToVec4(new THREE.Color("white"), 1)),
+            //startRotation: new QUARKS.ConstantValue(Math.PI),
+            speedFactor: 1.5,
+            worldSpace: false,
+            prewarm: false,
+            rendererEmitterSettings: {
+                startLength: new QUARKS.ConstantValue(20),
+            },
+            emissionOverTime: new QUARKS.ConstantValue(this.params.presetIntensity),
+        
+            shape: new QUARKS.ConeEmitter({radius: this._emitterRadius ?? this.params.emitterSize, angle: 0}),
+            material: wave,
+            renderMode: QUARKS.RenderMode.BillBoard,
+        }
+
+        const gradient = new QUARKS.Gradient(
+            [
+                [new QUARKS.ColorRange(colorToVec4(this.params.color.start[0], 0), colorToVec4(this.params.color.start[0], 0.3)), 0],
+                [new QUARKS.ColorRange(colorToVec4(this.params.color.start[0], 0.3), colorToVec4(this.params.color.end[0], 1)), 0.2314],
+                [new QUARKS.ColorRange(colorToVec4(this.params.color.end[0], 1), new THREE.Vector4(0, 0, 0, 0)), 0.522],
+                [new QUARKS.ColorRange(new THREE.Vector4(0, 0, 0, 0), new THREE.Vector4(0, 0, 0, 0)),1],
+            ]
+            );
+            
+        const fireGlow = new QUARKS.ParticleSystem(fireGlowData);
+        fireGlow.addBehavior(new QUARKS.ColorOverLife(gradient));
+        fireGlow.addBehavior(new QUARKS.SizeOverLife(new QUARKS.PiecewiseBezier([[new QUARKS.Bezier(0, 0.25, 0.75, 1), 0]])));
+        fireGlow.emitter.rotation.x = -Math.PI / 2;
+
+        
+        this.emitter.add(fireGlow.emitter);
+        this.emitter.position.copy(this._target);
+        this.particleSystems.push(fireGlow);
+        this.emitter.lookAt(this.lookAtTarget);
+        this.emitter.rotateOnAxis(new THREE.Vector3(1, 0, 0), Math.PI / 2);
+    }
+}
+
+class ConeFrostParticle extends BaseTemplateEffect{
+    async createEmitter() {
+        this.emitter = new THREE.Group();
+
+        const fireMaterial1 = await this.getBasicMaterial("modules/levels-3d-preview/assets/particles/flame_01.png", THREE.NormalBlending);
+        const fireMaterial1Add = await this.getBasicMaterial("modules/levels-3d-preview/assets/particles/scorch_02.png", THREE.AdditiveBlending);
+        const fireMaterial2 = await this.getBasicMaterial("modules/levels-3d-preview/assets/particles/Rotated/trace_01_rotated.png", THREE.NormalBlending);
+        const emberMaterial = await this.getBasicMaterial("modules/levels-3d-preview/assets/particles/circle_05.png");
+
+        const effectSpeed = 1;
+        const lifeMultiplier = (this._objectRadius*5*0.35)/effectSpeed;
+        const fire1Data = {
+            duration: 1,
+            looping: true,
+            startLife: new QUARKS.ConstantValue(0.75*lifeMultiplier),
+            startSpeed: new QUARKS.ConstantValue(effectSpeed),
+            startSize: new QUARKS.ConstantValue(this.params.scale.start*0.8),
+            startColor: new QUARKS.ConstantColor(colorToVec4(new THREE.Color("white"), 1)),
+            startRotation: new QUARKS.IntervalValue(0, Math.PI * 2),
+            worldSpace: false,
+            speedFactor: 1.5,
+            prewarm: false,
+            rendererEmitterSettings: {
+                startLength: new QUARKS.ConstantValue(20),
+            },
+            emissionOverTime: new QUARKS.ConstantValue(this.params.presetIntensity*8),
+        
+            shape: new QUARKS.ConeEmitter({radius: this._emitterRadius ?? this.params.emitterSize, angle: this._coneEmitterAngle}),
+            material: fireMaterial1,
+            renderOrder: 2,
+            renderMode: QUARKS.RenderMode.StretchedBillBoard,
+        };
+
+        const fireGlowData = {
+            duration: 1,
+            looping: true,
+            startLife: new QUARKS.ConstantValue(0.5*lifeMultiplier),
+            startSpeed: new QUARKS.ConstantValue(effectSpeed),
+            startSize: new QUARKS.ConstantValue(0.7*0.2*this.params.scale.start),
+            startColor: new QUARKS.ConstantColor(colorToVec4(new THREE.Color("white"), 1)),
+            //startRotation: new QUARKS.IntervalValue(0, Math.PI * 2),
+            speedFactor: 1.5,
+            worldSpace: false,
+            prewarm: false,
+            rendererEmitterSettings: {
+                startLength: new QUARKS.ConstantValue(20),
+            },
+            emissionOverTime: new QUARKS.ConstantValue(this.params.presetIntensity*18 - Math.min(7,lifeMultiplier*4)),
+        
+            shape: new QUARKS.ConeEmitter({radius: this._emitterRadius ?? this.params.emitterSize, angle: this._coneEmitterAngle}),
+            material: fireMaterial2,
+            renderOrder: 10,
+            renderMode: QUARKS.RenderMode.StretchedBillBoard,
+        }
+
+        const emberData = {
+            duration: 1,
+            looping: true,
+            startLife: new QUARKS.ConstantValue(0.55*lifeMultiplier),
+            startSpeed: new QUARKS.ConstantValue(effectSpeed),
+            startSize: new QUARKS.ConstantValue(0.4*this.params.scale.start),
+            startColor: new QUARKS.ConstantColor(colorToVec4(this.params.color.start[0], 0)),
+            startRotation: new QUARKS.IntervalValue(0, Math.PI * 2),
+            worldSpace: false,
+            speedFactor: 10.5,
+            prewarm: false,
+            rendererEmitterSettings: {
+                startLength: new QUARKS.ConstantValue(20),
+            },
+            emissionOverTime: new QUARKS.ConstantValue(this.params.presetIntensity*8),
+        
+            shape: new QUARKS.ConeEmitter({radius: this._emitterRadius ?? this.params.emitterSize*0.5, angle: this._coneEmitterAngle}),
+            material: emberMaterial,
+            renderOrder: 20,
+            renderMode: QUARKS.RenderMode.StretchedBillBoard,
+        }
+
+        const fire1 = new QUARKS.ParticleSystem(fire1Data);
+        
+        const gradient = new QUARKS.Gradient(
+            [
+                [new QUARKS.ColorRange(colorToVec4(this.params.color.start[0], 0), colorToVec4(this.params.color.start[0], 0.3)), 0],
+                [new QUARKS.ColorRange(colorToVec4(this.params.color.start[0], 0.3), colorToVec4(this.params.color.end[0], 1)), 0.2314],
+                [new QUARKS.ColorRange(colorToVec4(this.params.color.end[0], 1), new THREE.Vector4(0, 0, 0, 0)), 0.522],
+                [new QUARKS.ColorRange(new THREE.Vector4(0, 0, 0, 0), new THREE.Vector4(0, 0, 0, 0)),1],
+            ]
+        );
+            
+        fire1.addBehavior(new QUARKS.ColorOverLife(gradient));
+        fire1.addBehavior(new QUARKS.SizeOverLife(new QUARKS.PiecewiseBezier([[new QUARKS.Bezier(0, 1, 1, 1), 0]])));
+        fire1.addBehavior(new QUARKS.ApplyForce(new THREE.Vector3(0, 0, 1), new QUARKS.ConstantValue(0.03)));
+        fire1.emitter.rotation.x = -Math.PI / 2;
+        
+        const fire2 = fire1.clone();
+        fire2.material = fireMaterial1Add;
+        fire2.renderOrder = 4;
+        fire2.emitter.rotation.x = -Math.PI / 2;
+
+        const fireGlow = new QUARKS.ParticleSystem(fireGlowData);
+        fireGlow.addBehavior(new QUARKS.ApplyForce(new THREE.Vector3(0, 0, 1), new QUARKS.ConstantValue(0.10)));
+        fireGlow.addBehavior(new QUARKS.ColorOverLife(gradient));
+        fire1.addBehavior(new QUARKS.SizeOverLife(new QUARKS.PiecewiseBezier([[new QUARKS.Bezier(0.5, 0.55, 0.95, 1), 0.2]])));
+        fireGlow.emitter.rotation.x = -Math.PI / 2;
+
+        const ember = new QUARKS.ParticleSystem(emberData);
+        ember.addBehavior(new QUARKS.ApplyForce(new THREE.Vector3(0, 0, 1), new QUARKS.ConstantValue(0.05)));
+        ember.addBehavior(new QUARKS.SizeOverLife(new QUARKS.PiecewiseBezier([[new QUARKS.Bezier(0, 1, 1, 1), 0]])));
+        ember.emitter.rotation.x = -Math.PI / 2;
+
+        this.emitter.add(fire1.emitter);
+        this.emitter.add(fire2.emitter);
+        this.emitter.add(fireGlow.emitter);
+        this.emitter.add(ember.emitter);
+        this.emitter.position.copy(this._target);
+        this.particleSystems.push(fire1, fire2, fireGlow, ember);
+        this.emitter.lookAt(this.lookAtTarget);
+        this.emitter.rotateOnAxis(new THREE.Vector3(1, 0, 0), Math.PI / 2);
+    }
+}
+
+class ConeLaserParticle extends BaseTemplateEffect{
+    async createEmitter() {
+        this.emitter = new THREE.Group();
+
+        const fireMaterial1 = await this.getBasicMaterial("modules/levels-3d-preview/assets/particles/light_01.png", THREE.NormalBlending);
+        const fireMaterial1Core = await this.getBasicMaterial("modules/levels-3d-preview/assets/particles/light_01.png", THREE.AdditiveBlending);
+        
+        const fireMaterial2 = await this.getBasicMaterial("modules/levels-3d-preview/assets/particles/Rotated/trace_10_rotated.png", THREE.NormalBlending);
+        const corematerial = await this.getBasicMaterial("modules/levels-3d-preview/assets/particles/Rotated/trace_10_rotated.png");
+        
+        const effectSpeed = 0.1;
+        const lifeMultiplier = (this._objectRadius*7);
+        const fire1Data = {
+            duration: 1,
+            looping: true,
+            startLife: new QUARKS.ConstantValue(0.75*lifeMultiplier*0.05),
+            startSpeed: new QUARKS.ConstantValue(0),
+            startSize: new QUARKS.ConstantValue(this.params.scale.start*0.8),
+            startColor: new QUARKS.ConstantColor(colorToVec4(new THREE.Color("white"), 1)),
+            startRotation: new QUARKS.IntervalValue(0, Math.PI * 2),
+            worldSpace: false,
+            speedFactor: 1.5,
+            prewarm: false,
+            rendererEmitterSettings: {
+                startLength: new QUARKS.ConstantValue(80),
+            },
+            emissionOverTime: new QUARKS.ConstantValue(this.params.presetIntensity*8),
+        
+            shape: new QUARKS.ConeEmitter({radius: this._emitterRadius ?? this.params.emitterSize, angle: 0}),
+            material: fireMaterial1,
+            renderOrder: 2,
+            renderMode: QUARKS.RenderMode.BillBoard,
+        };
+
+        const fireGlowData = {
+            duration: 1,
+            looping: true,
+            startLife: new QUARKS.ConstantValue(0.5*lifeMultiplier),
+            startSpeed: new QUARKS.ConstantValue(effectSpeed),
+            startSize: new QUARKS.ConstantValue(0.7*this.params.scale.start),
+            startColor: new QUARKS.ConstantColor(colorToVec4(new THREE.Color("white"), 1)),
+            //startRotation: new QUARKS.IntervalValue(0, Math.PI * 2),
+            speedFactor: 1.5,
+            worldSpace: false,
+            prewarm: false,
+            rendererEmitterSettings: {
+                startLength: new QUARKS.ConstantValue(200),
+            },
+            emissionOverTime: new QUARKS.ConstantValue(this.params.presetIntensity),
+        
+            shape: new QUARKS.ConeEmitter({radius: this._emitterRadius ?? this.params.emitterSize, angle: 0}),
+            material: fireMaterial2,
+            renderOrder: 10,
+            renderMode: QUARKS.RenderMode.Trail,
+        }
+
+        const fire1 = new QUARKS.ParticleSystem(fire1Data);
+
+
+        const gradient2 = new QUARKS.Gradient(
+            [
+                [new QUARKS.ColorRange(colorToVec4(this.params.color.start[0], 1), colorToVec4(this.params.color.start[0], 1)), 0],
+                [new QUARKS.ColorRange(colorToVec4(this.params.color.start[0], 1), colorToVec4(this.params.color.end[0], 1)), 0.2314],
+                [new QUARKS.ColorRange(colorToVec4(this.params.color.end[0], 1), colorToVec4(this.params.color.end[0], 1)), 0.922],
+                [new QUARKS.ColorRange(colorToVec4(this.params.color.end[0], 1), colorToVec4(this.params.color.end[0], 1)),1],
+            ]
+        );
+            
+        fire1.addBehavior(new QUARKS.ColorOverLife(gradient2));
+        fire1.addBehavior(new QUARKS.SizeOverLife(new QUARKS.PiecewiseBezier([[new QUARKS.Bezier(0, 1, 1, 1), 0]])));
+        fire1.addBehavior(new QUARKS.ApplyForce(new THREE.Vector3(0, 0, 1), new QUARKS.ConstantValue(0.03)));
+        fire1.emitter.rotation.x = -Math.PI / 2;
+
+        const fire2 = fire1.clone();
+        fire2.material = fireMaterial1Core;
+        fire2.renderOrder = 15;
+        fire2.emitter.rotation.x = -Math.PI / 2;
+
+        const fireGlow = new QUARKS.ParticleSystem(fireGlowData);
+        fireGlow.addBehavior(new QUARKS.ApplyForce(new THREE.Vector3(0, 0, 1), new QUARKS.ConstantValue(0.10)));
+        fireGlow.addBehavior(new QUARKS.ColorOverLife(gradient2));
+        fireGlow.emitter.rotation.x = -Math.PI / 2;
+
+        const core = fireGlow.clone();
+        core.material = corematerial;
+        core.renderOrder = 20;
+        core.startSize = new QUARKS.ConstantValue(0.7 * this.params.scale.start * 0.5);
+        core.emitter.rotation.x = -Math.PI / 2;
+
+        this.emitter.add(fire1.emitter);
+        this.emitter.add(fire2.emitter);
+        this.emitter.add(fireGlow.emitter);
+        this.emitter.add(core.emitter);
+        //this.emitter.add(ember.emitter);
+        this.emitter.position.copy(this._target);
+        this.particleSystems.push(fire1, fireGlow, core, fire2);
+        this.emitter.lookAt(this.lookAtTarget);
+        this.emitter.rotateOnAxis(new THREE.Vector3(1, 0, 0), Math.PI / 2);
+    }
+}
+
 
 //Helpers
 
@@ -2604,4 +2875,7 @@ export const LightParticleSystems = {
     "directionalfire": ConeBreathParticle,
     "directionalshock": ConeShockParticle,
     "directionalpoison": ConePoisonParticle,
+    "directionalwave": ConeWaveParticle,
+    "directionalfrost": ConeFrostParticle,
+    "directionallaser": ConeLaserParticle,
 }
