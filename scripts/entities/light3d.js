@@ -250,7 +250,7 @@ export class Light3D {
             .push(particleData.push.dx, particleData.push.dy, particleData.push.dz)
             .presetIntensity(particleData.presetIntensity)
             .applyPresetLightOffset(true)
-            .to({ x: this.light.center.x, y: this.light.center.y, z: this.z });
+            .to(this.placeable);
         this.particleEffectId = this.particleEffect.start(false);
     }
 

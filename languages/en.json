@@ -882,7 +882,11 @@
                         "sunburst": "Sunburst",
                         "tesla": "Tesla",
                         "magicsphere": "Magic Sphere",
-                        "mist": "Mist"
+                        "mist": "Mist",
+                        "gravitywell": "Gravity Well",
+                        "directionalfire": "Flamethrower (Directional)",
+                        "directionalshock": "Electric Burst (Directional)",
+                        "directionalpoison": "Poison Cloud (Directional)"
                     }
                 },
                 "ParticleIntensity": {

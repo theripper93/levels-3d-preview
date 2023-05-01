@@ -304,7 +304,16 @@ export class Template3D {
         const group = new THREE.Group();
         this._makeCollisionMesh(sphereGeometry);
         group.add(this.collisionMesh);
+        const effectOrigin = new THREE.Object3D();
+        effectOrigin.position.set(0, 0, 0);
+        const effectTarget = new THREE.Object3D();
+        effectTarget.position.set(0, 0, 0);
+        this._effectOrigin = effectOrigin;
+        this._effectTarget = effectTarget;
+        this._effectRadius = radius;
         group.add(mesh);
+        group.add(effectOrigin);
+        group.add(effectTarget);
         return group;
     }
 
@@ -328,7 +337,17 @@ export class Template3D {
 
         mesh.position.set(width / 2, height / 2, depth / 2);
         const group = new THREE.Group();
+        const effectOrigin = new THREE.Object3D();
+        effectOrigin.position.set(width/2, 0, depth/2);
+        const effectTarget = new THREE.Object3D();
+        effectTarget.position.set(width/2, height, depth/2);
+        this._effectOrigin = effectOrigin;
+        this._effectTarget = effectTarget;
+        geometry.computeBoundingSphere();
+        this._effectRadius = geometry.boundingSphere.radius;
         group.add(mesh);
+        group.add(effectOrigin);
+        group.add(effectTarget);
         this._makeCollisionMesh(geometry, mesh);
         group.add(this.collisionMesh);
         return group;
@@ -338,8 +357,8 @@ export class Template3D {
         const vertexA = this.A;
         let vertexB = this.B;
         const height = vertexB.distanceTo(vertexA);
-        const angle = Math.toRadians(CONFIG.MeasuredTemplate.defaults.angle) / 2;
-        this.angle = CONFIG.MeasuredTemplate.defaults.angle;
+        const angle = Math.toRadians(this.template.document.angle ?? CONFIG.MeasuredTemplate.defaults.angle) / 2;
+        this.angle = this.template.document.angle ?? CONFIG.MeasuredTemplate.defaults.angle;
         const radius = (height / Math.cos(angle)) * Math.sin(angle); //height*Math.acos(angle)*2
         const group = new THREE.Group();
         const geometry = new THREE.ConeGeometry(radius, height, this.template?.document?.texture ? 256 : 24);
@@ -347,7 +366,17 @@ export class Template3D {
         //mesh.position.set(0, -height/2, 0)
         mesh.rotateZ(Math.PI / 2);
         mesh.translateY(-height / 2);
+        const effectOrigin = new THREE.Object3D();
+        effectOrigin.position.set(0, 0, 0);
+        const effectTarget = new THREE.Object3D();
+        effectTarget.position.set(height, 0, 0);
+        this._effectOrigin = effectOrigin;
+        this._effectTarget = effectTarget;
+        this._effectAngle = Math.toRadians(this.template.document.angle ?? CONFIG.MeasuredTemplate.defaults.angle);
+        this._effectRadius = 0//0.0001;
         group.add(mesh);
+        group.add(effectOrigin);
+        group.add(effectTarget);
         this._makeCollisionMesh(geometry, mesh);
         group.add(this.collisionMesh);
         const rotationAngle = Math.atan2(vertexB.z - vertexA.z, vertexB.x - vertexA.x);
@@ -365,7 +394,16 @@ export class Template3D {
         const mesh = this._makeMesh(geometry);
         mesh.position.set(0, height / 2, 0);
         const group = new THREE.Group();
+        const effectOrigin = new THREE.Object3D();
+        effectOrigin.position.set(0, 0, 0);
+        const effectTarget = new THREE.Object3D();
+        effectTarget.position.set(0, height, 0);
+        this._effectOrigin = effectOrigin;
+        this._effectTarget = effectTarget;
+        this._effectRadius = radius;
         group.add(mesh);
+        group.add(effectOrigin);
+        group.add(effectTarget);
         this._makeCollisionMesh(geometry, mesh);
         group.add(this.collisionMesh);
         return group;
@@ -383,7 +421,16 @@ export class Template3D {
         const mesh = this._makeMesh(geometry);
         mesh.position.set(width / 2, height / 2, 0);
         const group = new THREE.Group();
+        const effectOrigin = new THREE.Object3D();
+        effectOrigin.position.set(0, height / 2, 0);
+        const effectTarget = new THREE.Object3D();
+        effectTarget.position.set(width, height / 2, 0);
+        this._effectOrigin = effectOrigin;
+        this._effectTarget = effectTarget;
+        this._effectRadius = Math.max(depth, height) / 2;
         group.add(mesh);
+        group.add(effectOrigin);
+        group.add(effectTarget);
         this._makeCollisionMesh(geometry, mesh);
         group.add(this.collisionMesh);
         const rotationAngle = Math.atan2(vertexB.z - vertexA.z, vertexB.x - vertexA.x);
@@ -411,6 +458,7 @@ export class Template3D {
 
     _inferShape(template3dData) {
         let baseShape = this._getBaseShape();
+        this._baseShape = baseShape;
         if (!template3dData.special) {
             switch (baseShape) {
                 case "circle":

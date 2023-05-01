@@ -315,7 +315,7 @@ class Levels3DPreview {
                 },
             ],
             models: {
-                targetIndicator: "modules/levels-3d-preview/assets/targetIndicator.fbx",
+                targetIndicator: "modules/levels-3d-preview/assets/targetIndicator.glb",
                 effect: "modules/levels-3d-preview/assets/effect.glb",
             },
             textures: {
@@ -463,9 +463,12 @@ class Levels3DPreview {
         this.GameCamera = new GameCamera(this.camera, this.controls, this);
         //clipping
         this.renderer.localClippingEnabled = true;
-    }
 
+    }
+    
     async cacheModels() {
+        this.pmremGenerator = new THREE.PMREMGenerator(this.renderer);
+        this.pmremGenerator.compileEquirectangularShader();
         this.presetMaterialHandler = new PresetMaterialHandler(this.CONFIG.presetMaterials);
         this.models.target = await (await this.helpers.loadModel(this.CONFIG.models.targetIndicator)).model;
         this.models.target.children[0].material = new THREE.MeshBasicMaterial();
@@ -968,8 +971,6 @@ class Levels3DPreview {
 
     loadEXR(rootImage, enableFog) {
         this.isEXR = true;
-        const pmremGenerator = new THREE.PMREMGenerator(this.renderer);
-        pmremGenerator.compileEquirectangularShader();
         const _this = this;
         if (rootImage.toLowerCase().endsWith(".exr")) {
             new EXRLoader().setDataType(THREE.FloatType).load(rootImage, onLoaded);
@@ -980,7 +981,7 @@ class Levels3DPreview {
 
         function onLoaded(texture) {
             try {
-                let exrCubeRenderTarget = pmremGenerator.fromEquirectangular(texture);
+                let exrCubeRenderTarget = _this.pmremGenerator.fromEquirectangular(texture);
                 let newEnvMap = exrCubeRenderTarget ? exrCubeRenderTarget.texture : null;
                 _this.scene.environment = newEnvMap;
                 let background;
@@ -993,7 +994,6 @@ class Levels3DPreview {
                     _this.scene.userData.envRt = rt;
                 }
                 _this._envReady = true;
-                pmremGenerator.dispose();
             } catch (error) {
                 ui.notifications.error(`Error loading Skybox ${rootImage}`);
                 _this._envReady = true;
