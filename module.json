@@ -58,7 +58,6 @@
     "scripts/settings/settingsConfig.js"
   ],
   "scripts": [
-    "scripts/lib/injectConfig.js"
   ],
   "styles": [
     "styles/module.css",

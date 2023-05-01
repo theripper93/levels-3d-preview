@@ -4,7 +4,8 @@ import { RegisterTours } from '../tours/tours.js';
 import { MapGen } from '../apps/mapgen.js';
 import {promptForTour} from '../tours/toursHelpers.js';
 import {getTimeSyncDefault} from '../systems/globalIllumination.js';
-import { GradientPicker } from '../helpers/GradientPicker.js';
+import {GradientPicker} from '../helpers/GradientPicker.js';
+import { injectConfig } from '../lib/injectConfig.js';
 
 Hooks.on("getSceneControlButtons", (buttons)=>{
     buttons.find(b => b.name === "token")?.tools?.push(

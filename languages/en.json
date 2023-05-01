@@ -881,7 +881,8 @@
                         "mysteriouslights": "Mysterious Lights",
                         "sunburst": "Sunburst",
                         "tesla": "Tesla",
-                        "magicsphere": "Magic Sphere"
+                        "magicsphere": "Magic Sphere",
+                        "mist": "Mist"
                     }
                 },
                 "ParticleIntensity": {

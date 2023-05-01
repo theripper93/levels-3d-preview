@@ -2017,6 +2017,61 @@ class MagicSphereParticle extends BasePresetEffect {
     }
 }
 
+class MistParticle extends BasePresetEffect {
+    async createEmitter() {
+        this.emitter = new THREE.Group();
+
+        const symbolMaterial = await this.getBasicMaterial("modules/levels-3d-preview/assets/particles/mist_01.png", THREE.NormalBlending);
+        
+        const symbolsData = {
+            duration: 10,
+            looping: true,
+            startLife: new QUARKS.ConstantValue(20),
+            startSpeed: new QUARKS.ConstantValue(0),
+            startSize: new QUARKS.ConstantValue(this.params.scale.start),
+            startColor: new QUARKS.ConstantColor(new THREE.Vector4(1, 1, 1, 1)),
+            //startRotation: new QUARKS.IntervalValue(0, 2 * Math.PI),
+            worldSpace: false,
+            prewarm: true,
+            speedFactor: 100,
+            rendererEmitterSettings: {
+                startLength: new QUARKS.ConstantValue(400),
+            },
+            emissionOverTime: new QUARKS.ConstantValue(this.params.presetIntensity*4*this.params.emitterSize),
+            shape: new QUARKS.ConeEmitter({radius: this.params.emitterSize*0.8, angle: 0.001}),
+            material: symbolMaterial,
+            renderOrder: 2,
+            renderMode: QUARKS.RenderMode.StretchedBillBoard,
+        }
+
+        const gradient = new QUARKS.Gradient(
+            [
+                [new QUARKS.ColorRange(colorToVec4(this.params.color.start[0], 0), colorToVec4(this.params.color.start[0], 0)), 0],
+                [new QUARKS.ColorRange(colorToVec4(this.params.color.start[0], 0), colorToVec4(this.params.color.start[0], 1)), 0.314],
+                [new QUARKS.ColorRange(colorToVec4(this.params.color.start[0], 1), colorToVec4(this.params.color.end[0], 1)), 0.522],
+                [new QUARKS.ColorRange(colorToVec4(this.params.color.end[0], 1), new THREE.Vector4(0,0,0,0)), 0.71],
+                [new QUARKS.ColorRange(new THREE.Vector4(0,0,0,0), new THREE.Vector4(0,0,0,0)), 1],
+            ]
+            );
+
+        const symbols = new QUARKS.ParticleSystem(symbolsData);
+
+    
+            
+        symbols.addBehavior(new QUARKS.ColorOverLife(gradient));
+        symbols.addBehavior(new QUARKS.SizeOverLife(new QUARKS.PiecewiseBezier([[new QUARKS.Bezier(0.5, 0.55, 0.95, 1), 0.2]])));
+        symbols.addBehavior(new QUARKS.ApplyForce(new THREE.Vector3(0, 1, 0), new QUARKS.ConstantValue(0.00002)));
+        symbols.addBehavior(new QUARKS.OrbitOverLife(new QUARKS.ConstantValue(0.02), new THREE.Vector3(0, 0, 1)));
+        
+        symbols.emitter.rotation.x = -Math.PI / 2;
+        
+        
+        this.emitter.add(symbols.emitter);
+        this.emitter.position.copy(this._target);
+        this.particleSystems.push(symbols);
+    }
+}
+
 
 //Helpers
 
@@ -2049,4 +2104,5 @@ export const LightParticleSystems = {
     "sunburst": SunburstParticle,
     "tesla": TeslaParticle,
     "magicsphere": MagicSphereParticle,
+    "mist": MistParticle,
 }
