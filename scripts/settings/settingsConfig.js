@@ -43,6 +43,8 @@ class canvas3dConfig extends FormApplication{
 
 }
 
+export function registerSettings(){
+
 Hooks.once("canvasConfig", (canvasConfig) => {
   game.settings.register("levels-3d-preview", "resolutionMultiplier", {
       name: game.i18n.localize("levels3dpreview.settings.resolutionMultiplier.name"),
@@ -659,3 +661,5 @@ Hooks.once("ready", () => {
   }
 
 })
+
+}

@@ -51,12 +51,16 @@ import {CutsceneEngine} from "./systems/cutsceneEngine.js";
 import { ImprovedNoise } from "./lib/imporovedNoise.js";
 import {registerWrappers} from "./wrappers.js";
 import {ProceduralVines} from "./helpers/ProceduralVines.js";
-import { LightParticleSystems } from "./systems/particleSystem.js";
+import {LightParticleSystems} from "./systems/particleSystem.js";
+import {registerConfigs} from "./settings/config.js";
+import {registerSettings} from "./settings/settings.js";
 
 export const factor = 1000;
 injectFoWShaders(THREE);
 injectThreeModifications(THREE);
 
+registerConfigs();
+registerSettings();
 registerWrappers();
 Light3D.setHooks();
 Note3D.setHooks();
@@ -1869,8 +1873,14 @@ Hooks.on("ready", async () => {
 });
 
 window.addEventListener("resize", () => {
-    if (game.Levels3DPreview?._active){ game.Levels3DPreview.resizeCanvasToDisplaySize();
-    setTimeout(() =>  game.Levels3DPreview?.resizeCanvasToDisplaySize(), 250);}
+    if (game.Levels3DPreview?._active) {
+        game.Levels3DPreview.resizeCanvasToDisplaySize();
+        const miniCanvas = Object.values(ui.windows)?.find(w => w.id === "miniCanvas")
+        setTimeout(() => {
+            if (miniCanvas) miniCanvas.resize()
+        }, 100)
+        setTimeout(() => game.Levels3DPreview?.resizeCanvasToDisplaySize(), 250);
+    }
 });
 
 function updateTokenRotationCamera(token) {

@@ -53,9 +53,7 @@
     }
   ],
   "esmodules": [
-    "scripts/main.js",
-    "scripts/settings/config.js",
-    "scripts/settings/settingsConfig.js"
+    "scripts/main.js"
   ],
   "scripts": [
   ],
