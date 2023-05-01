@@ -53,7 +53,7 @@ import {registerWrappers} from "./wrappers.js";
 import {ProceduralVines} from "./helpers/ProceduralVines.js";
 import {LightParticleSystems} from "./systems/particleSystem.js";
 import {registerConfigs} from "./settings/config.js";
-import {registerSettings} from "./settings/settings.js";
+import {registerSettings} from "./settings/settingsConfig.js";
 
 export const factor = 1000;
 injectFoWShaders(THREE);
