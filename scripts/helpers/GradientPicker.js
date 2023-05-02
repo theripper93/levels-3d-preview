@@ -30,6 +30,9 @@ export class GradientPicker{
                 const index = event.currentTarget.dataset.index;
                 this.colorEl1.value = this.gradients[index].color1;
                 this.colorEl2.value = this.gradients[index].color2;
+                //trigger change event
+                this.colorEl1.dispatchEvent(new Event("change"), { bubbles: true });
+                this.colorEl2.dispatchEvent(new Event("change"), { bubbles: true });
             });
             div.appendChild(gradientEl);
         }

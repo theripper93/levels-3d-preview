@@ -868,25 +868,7 @@
                 "ParticleType": {
                     "label": "Particle Preset",
                     "options": {
-                        "custom": "Custom",
-                        "torch": "Torch",
-                        "magiccircle": "Magic Circle",
-                        "fire": "Fire",
-                        "vortex": "Vortex",
-                        "sparks": "Sparks",
-                        "holy": "Holy Light",
-                        "ghostly": "Ghostly Light",
-                        "fairy": "Fairy Dust",
-                        "smokecloud": "Smoke Cloud",
-                        "mysteriouslights": "Mysterious Lights",
-                        "sunburst": "Sunburst",
-                        "tesla": "Tesla",
-                        "magicsphere": "Magic Sphere",
-                        "mist": "Mist",
-                        "gravitywell": "Gravity Well",
-                        "directionalfire": "Flamethrower (Directional)",
-                        "directionalshock": "Electric Burst (Directional)",
-                        "directionalpoison": "Poison Cloud (Directional)"
+                        "optgroup": "Directional (Requires Emission Angle)"
                     }
                 },
                 "ParticleIntensity": {
@@ -1300,6 +1282,31 @@
             "background": "Background",
             "export": "Export",
             "cancel": "Cancel"
+        },
+        "particleSystems":{
+            "custom": "Custom",
+            "torch": "Torch",
+            "magiccircle": "Magic Circle",
+            "fire": "Fire",
+            "vortex": "Vortex",
+            "sparks": "Sparks",
+            "holy": "Holy Light",
+            "ghostly": "Ghostly Light",
+            "fairy": "Fairy Dust",
+            "smokecloud": "Smoke Cloud",
+            "mysteriouslights": "Mysterious Lights",
+            "sunburst": "Sunburst",
+            "tesla": "Tesla",
+            "magicsphere": "Magic Sphere",
+            "mist": "Mist",
+            "gravitywell": "Gravity Well",
+            "optgroup": "Directional (Requires Emission Angle)",
+            "directionalfire": "Flamethrower",
+            "directionalshock": "Electric Burst",
+            "directionalpoison": "Poison Cloud",
+            "directionalwave": "Wave",
+            "directionallaser": "Laser",
+            "directionalfrost": "Frost"
         },
         "macrodialog": {
             "title": "Export Particle Effect",

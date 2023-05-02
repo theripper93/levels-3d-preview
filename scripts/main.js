@@ -51,7 +51,7 @@ import {CutsceneEngine} from "./systems/cutsceneEngine.js";
 import { ImprovedNoise } from "./lib/imporovedNoise.js";
 import {registerWrappers} from "./wrappers.js";
 import {ProceduralVines} from "./helpers/ProceduralVines.js";
-import {LightParticleSystems} from "./systems/particleSystem.js";
+import {PARTICLE_SYSTEMS} from "./systems/particleSystem.js";
 import {registerConfigs} from "./settings/config.js";
 import {registerSettings} from "./settings/settingsConfig.js";
 
@@ -131,7 +131,7 @@ class Levels3DPreview {
         this.resizeCanvasToDisplaySize = debounce(this.resizeCanvasToDisplaySize, 500);
         this.debugMode = game.settings.get("levels-3d-preview", "debugMode");
         this.CONFIG = {
-            LightParticleSystems,
+            PARTICLE_SYSTEMS,
             useMultithreading: true,
             entityClass: {
                 RangeFinder,

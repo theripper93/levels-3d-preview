@@ -131,6 +131,7 @@ export class Light3D {
     }
 
     refresh() {
+        if (this.particleEffectId) Particle3D.stop(this.particleEffectId);
         const light = this.light;
         const tilt = Math.toRadians(light.document.getFlag("levels-3d-preview", "tilt") ?? 0);
         this.particleData = this.getParticleData();
@@ -374,7 +375,8 @@ export class Light3D {
     }
 
     static setHooks() {
-        Hooks.on("updateAmbientLight", (lightDocument) => {
+
+        function refreshOrUpdate(lightDocument) {
             if (game.Levels3DPreview?._active) {
                 const light3d = game.Levels3DPreview.lights.sceneLights[lightDocument.id];
                 if (!light3d) return;
@@ -382,12 +384,16 @@ export class Light3D {
                 const isLightPoint = light3d.isPointLight;
                 if (isDocumentPoint !== isLightPoint) {
                     light3d.destroy();
-                    game.Levels3DPreview.addLight(lightDocument.object);
+                    game.Levels3DPreview.addLight(lightDocument.object ?? lightDocument);
                     return;
                 }
                 game.Levels3DPreview.lights.sceneLights[lightDocument.id]?.refresh();
             }
-        });
+        }
+
+        Hooks.on("updateAmbientLight", refreshOrUpdate);
+
+        Hooks.on("refreshAmbientLight", refreshOrUpdate);
 
         Hooks.on("createAmbientLight", (lightDocument) => {
             if (game.Levels3DPreview?._active && lightDocument.object) game.Levels3DPreview.addLight(lightDocument.object);

@@ -1328,9 +1328,15 @@ export function registerConfigs() {
 
     Hooks.on("renderAmbientLightConfig", (app, html) => {
     
+        const PS = game.Levels3DPreview.CONFIG.PARTICLE_SYSTEMS;
 
-        const particleTypes = Object.keys(game.Levels3DPreview.CONFIG.LightParticleSystems)
-
+        const particleSelect = {
+            ...PS.getSelectOptions(PS.TARGET_ONLY_PRESET_SYSTEMS, {localize:true}),
+            optstart: {optgroup: {label: game.i18n.localize("levels3dpreview.flags.lightParticleEffect.ParticleType.options.optgroup"), start: true}},
+            ...PS.getSelectOptions(PS.TEMPLATE_PARTICLE_SYSTEMS, {localize:true}),
+            optend: {optgroup: { end: true}},
+        };
+        
         const injhtml = injectConfig.inject(app, html, {
             moduleId: "levels-3d-preview",
             tab: {
@@ -1370,7 +1376,7 @@ export function registerConfigs() {
                 type: "select",
                 label: game.i18n.localize("levels3dpreview.flags.lightParticleEffect.ParticleType.label"),
                 default: "custom",
-                options: Object.fromEntries(particleTypes.sort((a, b) => a.localeCompare(b)).map((type) => [type, game.i18n.localize(`levels3dpreview.flags.lightParticleEffect.ParticleType.options.${type}`)])),
+                options: particleSelect,
             },
             ParticleIntensity: {
                 type: "range",
@@ -1480,6 +1486,7 @@ export function registerConfigs() {
                 default: "#ffffff",
             },
         });
+        let firstChange = true;
         const showSprite = ["mysteriouslights", "vortex", "sparks", "fairy", "magicsphere"];
         injhtml.on("change", "select[name='flags.levels-3d-preview.ParticleType']", (event) => {
             const hide = event.target.value !== "custom";
@@ -1491,7 +1498,15 @@ export function registerConfigs() {
                 if (key === "ParticleSprite" && showSprite.includes(event.target.value)) el.closest(".form-group").show();
             }
             injhtml.find(`[name='flags.levels-3d-preview.ParticleIntensity']`).closest(".form-group").toggle(hide);
-        
+            if (!firstChange) {
+                const defaultValues = PS.getDefaultLightData(event.target.value);
+                const scaleInput = injhtml.find(`[name='flags.levels-3d-preview.ParticleScale']`);
+                const emitSizeInput = injhtml.find(`[name='flags.levels-3d-preview.ParticleEmitterSizeMultiplier']`);
+                scaleInput.val(defaultValues.scale);
+                emitSizeInput.val(defaultValues.emitterSize);
+            } else {
+                firstChange = false;
+            }
             app.setPosition({height: "auto"});
         });
 

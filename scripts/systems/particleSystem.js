@@ -45,12 +45,11 @@ export class ParticleEngine {
                 for (let target of to) {
                     if (tokenAnimation?.to && tokenAnimation.to.options.start) this.playTokenAnimation(tokenAnimation.to, target);
                     this.sleep(startAfter).then(async () => {
-                        const particleClass = getParticleClass(params.type);
+                        const particleClass = PARTICLE_SYSTEMS.getParticleClass(params.type);
                         const projectileEmitter = new particleClass(origin, target, params);
                         await projectileEmitter.init();
                         this.scene.add(projectileEmitter.emitter)
                         projectileEmitter.particleSystems.forEach((s) => this.system.addSystem(s));
-                        //projectileEmitter instanceof Object3DParticle ? this.scene.add(projectileEmitter.emitter) : this.system.addEmitter(projectileEmitter.emitter);
                         this.effects.add(projectileEmitter);
                     });
                 }
@@ -148,9 +147,19 @@ export class ParticleEngine {
 export class Particle3D {
     constructor(type, socket = true) {
         this.params = {};
-        this.params.type = type ?? "p";
+        this.params.type = type ?? "projectile";
+        this.params.type = this.shorthandCompatibility[this.params.type] ?? this.params.type;
         this.socket = socket;
         this.params.id = randomID(20);
+    }
+
+    get shorthandCompatibility() {
+        return {
+            "p": "projectile",
+            "e": "explosion",
+            "s": "sprite",
+            "e": "explosion",
+        }
     }
 
     fromObject(object) {
@@ -332,6 +341,11 @@ export class Particle3D {
         return this;
     }
 
+    coneAngle(angle) {
+        this.params.coneAngle = angle;
+        return this;
+    }
+
     applyPresetLightOffset(value) {
         this.params.applyPresetLightOffset = value;
         return this;
@@ -356,23 +370,27 @@ export class Particle3D {
 
     _validate() {
         //validate from\to
-        if (this.params.type !== "e" && this.params.type !== "explosion" && !Object.keys(LightParticleSystems).includes(this.params.type)) {
-            if (!this._from || !this._to || this._from.length === 0 || this._to.length === 0) {
-                ui.notifications.error(game.i18n.localize("levels3dpreview.errors.particleSystem.fromto"));
-                return false;
-            }
-        } else {
-            if (!this._to || !this._to.length) {
-                ui.notifications.error(game.i18n.localize("levels3dpreview.errors.particleSystem.fromto"));
-                return false;
-            }
+        const hasFrom = this._from && this._from.length;
+        const hasTo = this._to && this._to.length;
+        if ((!hasFrom && !hasTo) || !hasTo) {
+            ui.notifications.error(game.i18n.localize("levels3dpreview.errors.particleSystem.fromto"));
+            return false;
         }
+
+        const requiresSourceTarget = PARTICLE_SYSTEMS.requiresSourceTarget(this.params.type);
+        
+        if(requiresSourceTarget && (!hasFrom || !hasTo)){
+            ui.notifications.error(game.i18n.localize("levels3dpreview.errors.particleSystem.fromto"));
+            return false;
+        }
+        
         //validate type
-        const types = ["p", "e", "s", "r", "projectile", "explosion", "ray", "sprite"].concat(Object.keys(LightParticleSystems));
+        const types = Object.keys(PARTICLE_SYSTEMS.ALL_PARTICLE_SYSTEMS);
         if (!types.includes(this.params.type)) {
             ui.notifications.error(game.i18n.localize("levels3dpreview.errors.particleSystem.type").replace("%type%", this.params.type) + types.join(", "));
             return false;
         }
+
         return true;
     }
 
@@ -398,6 +416,15 @@ class BaseParticleEffect {
         this._time = 0;
         this._currentSpeed = 0;
         this.particleSystems = [];
+    }
+
+    
+    static get DEFAULT_SCALE() {
+        return 1;
+    }
+
+    static get DEFAULT_EMITTER_SIZE() {
+        return 1;
     }
 
     get rendererScale() {
@@ -504,6 +531,7 @@ class BaseParticleEffect {
             presetIntensity: 1,
             applyPresetLightOffset: false,
             onCenter: false,
+            coneAngle: 0,
         };
     }
 
@@ -1096,6 +1124,15 @@ class BasicCustomParticle extends BaseParticleEffect {
 
 
 class TorchParticle extends BasePresetEffect {
+
+    static get DEFAULT_SCALE() {
+        return 0.3;
+    }
+
+    static get DEFAULT_EMITTER_SIZE() {
+        return 0;
+    }
+
     async createEmitter() {
         this.emitter = new THREE.Group();
 
@@ -1214,6 +1251,15 @@ class TorchParticle extends BasePresetEffect {
 }
 
 class FireParticle extends BasePresetEffect {
+
+    static get DEFAULT_SCALE() {
+        return 1;
+    }
+
+    static get DEFAULT_EMITTER_SIZE() {
+        return 0;
+    }
+
     async createEmitter() {
         this.emitter = new THREE.Group();
 
@@ -1329,6 +1375,15 @@ class FireParticle extends BasePresetEffect {
 }
 
 class MagicCircleParticle extends BasePresetEffect {
+
+    static get DEFAULT_SCALE() {
+        return 1;
+    }
+
+    static get DEFAULT_EMITTER_SIZE() {
+        return 1;
+    }
+
     async createEmitter() {
         this.emitter = new THREE.Group();
 
@@ -1376,6 +1431,15 @@ class MagicCircleParticle extends BasePresetEffect {
 }
 
 class VortexParticle extends BasePresetEffect {
+
+    static get DEFAULT_SCALE() {
+        return 0.1;
+    }
+
+    static get DEFAULT_EMITTER_SIZE() {
+        return 1;
+    }
+
     async createEmitter() {
         this.emitter = new THREE.Group();
 
@@ -1438,6 +1502,15 @@ class VortexParticle extends BasePresetEffect {
 }
 
 class SparksParticle extends BasePresetEffect {
+
+    static get DEFAULT_SCALE() {
+        return 0.1;
+    }
+
+    static get DEFAULT_EMITTER_SIZE() {
+        return 0;
+    }
+
     async createEmitter() {
 
         while (!game.Levels3DPreview._ready) { 
@@ -1522,6 +1595,15 @@ class SparksParticle extends BasePresetEffect {
 }
 
 class HolyLightParticle extends BasePresetEffect {
+
+    static get DEFAULT_SCALE() {
+        return 1;
+    }
+
+    static get DEFAULT_EMITTER_SIZE() {
+        return 1;
+    }
+
     async createEmitter() {
         this.emitter = new THREE.Group();
 
@@ -1606,6 +1688,15 @@ class HolyLightParticle extends BasePresetEffect {
 }
 
 class GhostlyParticle extends BasePresetEffect {
+
+    static get DEFAULT_SCALE() {
+        return 1;
+    }
+
+    static get DEFAULT_EMITTER_SIZE() {
+        return 1;
+    }
+
     async createEmitter() {
         this.emitter = new THREE.Group();
 
@@ -1659,6 +1750,15 @@ class GhostlyParticle extends BasePresetEffect {
 }
 
 class FairyParticle extends BasePresetEffect {
+
+    static get DEFAULT_SCALE() {
+        return 0.05;
+    }
+
+    static get DEFAULT_EMITTER_SIZE() {
+        return 1;
+    }
+
     async createEmitter() {
         this.emitter = new THREE.Group();
         const emberMaterial = await this.getBasicMaterial();
@@ -1709,6 +1809,15 @@ class FairyParticle extends BasePresetEffect {
 }
 
 class SmokeCloudParticle extends BasePresetEffect {
+
+    static get DEFAULT_SCALE() {
+        return 5;
+    }
+
+    static get DEFAULT_EMITTER_SIZE() {
+        return 1;
+    }
+
     async createEmitter() {
         this.emitter = new THREE.Group();
 
@@ -1765,6 +1874,15 @@ class SmokeCloudParticle extends BasePresetEffect {
 }
 
 class MysteriousLightsParticle extends BasePresetEffect {
+
+    static get DEFAULT_SCALE() {
+        return 0.3;
+    }
+
+    static get DEFAULT_EMITTER_SIZE() {
+        return 1;
+    }
+
     async createEmitter() {
 
         this.emitter = new THREE.Group();
@@ -1817,6 +1935,15 @@ class MysteriousLightsParticle extends BasePresetEffect {
 }
 
 class SunburstParticle extends BasePresetEffect {
+
+    static get DEFAULT_SCALE() {
+        return 0.1;
+    }
+
+    static get DEFAULT_EMITTER_SIZE() {
+        return 1;
+    }
+
     async createEmitter() {
         this.emitter = new THREE.Group();
         const rayMaterial = await this.getBasicMaterial("modules/levels-3d-preview/assets/particles/circle_05.png");
@@ -1873,6 +2000,15 @@ class SunburstParticle extends BasePresetEffect {
 }
 
 class TeslaParticle extends BasePresetEffect {
+
+    static get DEFAULT_SCALE() {
+        return 0.5;
+    }
+
+    static get DEFAULT_EMITTER_SIZE() {
+        return 1;
+    }
+
     async createEmitter() {
         this.emitter = new THREE.Group();
         const rayMaterial = await this.getBasicMaterial("modules/levels-3d-preview/assets/particles/Rotated/spark_05_rotated.png");
@@ -1967,6 +2103,15 @@ class TeslaParticle extends BasePresetEffect {
 }
 
 class MagicSphereParticle extends BasePresetEffect {
+
+    static get DEFAULT_SCALE() {
+        return 0.1;
+    }
+
+    static get DEFAULT_EMITTER_SIZE() {
+        return 1;
+    }
+
     async createEmitter() {
         this.emitter = new THREE.Group();
         const rayMaterial = await this.getBasicMaterial();
@@ -2027,6 +2172,15 @@ class MagicSphereParticle extends BasePresetEffect {
 }
 
 class MistParticle extends BasePresetEffect {
+
+    static get DEFAULT_SCALE() {
+        return 5;
+    }
+
+    static get DEFAULT_EMITTER_SIZE() {
+        return 1;
+    }
+
     async createEmitter() {
         this.emitter = new THREE.Group();
 
@@ -2082,6 +2236,15 @@ class MistParticle extends BasePresetEffect {
 }
 
 class GravityWellParticle extends BasePresetEffect {
+
+    static get DEFAULT_SCALE() {
+        return 0.5;
+    }
+
+    static get DEFAULT_EMITTER_SIZE() {
+        return 1;
+    }
+
     async createEmitter() {
         this.emitter = new THREE.Group();
 
@@ -2175,15 +2338,14 @@ class GravityWellParticle extends BasePresetEffect {
     }
 }
 
-// Template Effects
+// Directional Effects
 
-class BaseTemplateEffect extends BaseParticleEffect {
+class BaseDirectionalEffect extends BaseParticleEffect {
     constructor (...args) {
         super(...args);
         this.lookAtTarget = this.inferLookAt();
         this._dist = null;
         this._speed = null;
-        this._origin = null;
         this.isTemplate = true;
     }
 
@@ -2216,7 +2378,9 @@ class BaseTemplateEffect extends BaseParticleEffect {
             }
             return template3d._effectTarget.getWorldPosition(new THREE.Vector3());;
         } else {
-            return null;
+            this._coneEmitterAngle = this.params.coneAngle;
+            this._objectRadius = this._origin.distanceTo(this._target);
+            this._emitterRadius = this.params.emitterSize;
         }
     }
 
@@ -2231,7 +2395,16 @@ class BaseTemplateEffect extends BaseParticleEffect {
     }
 }
 
-class ConeBreathParticle extends BaseTemplateEffect{
+class DirectionalBreathParticle extends BaseDirectionalEffect{
+
+    static get DEFAULT_SCALE() {
+        return 2;
+    }
+
+    static get DEFAULT_EMITTER_SIZE() {
+        return 0;
+    }
+
     async createEmitter() {
         this.emitter = new THREE.Group();
 
@@ -2352,7 +2525,16 @@ class ConeBreathParticle extends BaseTemplateEffect{
     }
 }
 
-class ConeShockParticle extends BaseTemplateEffect{
+class DirectionalShockParticle extends BaseDirectionalEffect{
+    
+    static get DEFAULT_SCALE() {
+        return 1;
+    }
+
+    static get DEFAULT_EMITTER_SIZE() {
+        return 0;
+    }
+
     async createEmitter() {
         this.emitter = new THREE.Group();
         const rayMaterial = await this.getBasicMaterial("modules/levels-3d-preview/assets/particles/Rotated/spark_05_rotated.png");
@@ -2453,7 +2635,16 @@ class ConeShockParticle extends BaseTemplateEffect{
     }
 }
 
-class ConePoisonParticle extends BaseTemplateEffect{
+class DirectionalPoisonParticle extends BaseDirectionalEffect{
+    
+    static get DEFAULT_SCALE() {
+        return 4;
+    }
+
+    static get DEFAULT_EMITTER_SIZE() {
+        return 0;
+    }
+
     async createEmitter() {
         this.emitter = new THREE.Group();
 
@@ -2561,7 +2752,16 @@ class ConePoisonParticle extends BaseTemplateEffect{
     }
 }
 
-class ConeWaveParticle extends BaseTemplateEffect{
+class DirectionalWaveParticle extends BaseDirectionalEffect{
+    
+    static get DEFAULT_SCALE() {
+        return 6;
+    }
+
+    static get DEFAULT_EMITTER_SIZE() {
+        return 0;
+    }
+
     async createEmitter() {
         this.emitter = new THREE.Group();
 
@@ -2614,7 +2814,16 @@ class ConeWaveParticle extends BaseTemplateEffect{
     }
 }
 
-class ConeFrostParticle extends BaseTemplateEffect{
+class DirectionalFrostParticle extends BaseDirectionalEffect{
+    
+    static get DEFAULT_SCALE() {
+        return 3;
+    }
+
+    static get DEFAULT_EMITTER_SIZE() {
+        return 0;
+    }
+
     async createEmitter() {
         this.emitter = new THREE.Group();
 
@@ -2734,7 +2943,16 @@ class ConeFrostParticle extends BaseTemplateEffect{
     }
 }
 
-class ConeLaserParticle extends BaseTemplateEffect{
+class DirectionalLaserParticle extends BaseDirectionalEffect{
+    
+    static get DEFAULT_SCALE() {
+        return 0.5;
+    }
+
+    static get DEFAULT_EMITTER_SIZE() {
+        return 0;
+    }
+
     async createEmitter() {
         this.emitter = new THREE.Group();
 
@@ -2836,23 +3054,28 @@ class ConeLaserParticle extends BaseTemplateEffect{
 }
 
 
-//Helpers
-
-const getParticleClass = (type) => {
-    if(type === "projectile" || type === "p") return ProjectileParticle;
-    else if (type === "ray" || type === "r") return RayParticle;
-    else if (type === "explosion" || type === "e") return ExplosionParticle;
-    else if (type === "sprite" || type === "s") return Object3DParticle;
-    else if (LightParticleSystems[type]) return LightParticleSystems[type];
-    return ProjectileParticle;
-}
 
 const colorToVec4 = (color, alpha) => {
     return new THREE.Vector4(color.r, color.g, color.b, alpha);
 }
 
+const ProjectilesParticleSystems = {
+    "projectile": ProjectileParticle,
+}
 
-export const LightParticleSystems = {
+const RaysParticleSystems = {
+    "ray": RayParticle,
+}
+
+const ExplosionsParticleSystems = {
+    "explosion": ExplosionParticle,
+}
+
+const SpritesParticleSystems = {
+    "sprite": Object3DParticle,
+}
+
+const TargetOnlyPresetSystems = {
     "custom": BasicCustomParticle,
     "torch": TorchParticle,
     "fire": FireParticle,
@@ -2869,13 +3092,109 @@ export const LightParticleSystems = {
     "magicsphere": MagicSphereParticle,
     "mist": MistParticle,
     "gravitywell": GravityWellParticle,
+}
 
+const DirectionalParticleSystems = {
+    "directionalfire": DirectionalBreathParticle,
+    "directionalshock": DirectionalShockParticle,
+    "directionalpoison": DirectionalPoisonParticle,
+    "directionalwave": DirectionalWaveParticle,
+    "directionalfrost": DirectionalFrostParticle,
+    "directionallaser": DirectionalLaserParticle,
+};
 
-    //Directional
-    "directionalfire": ConeBreathParticle,
-    "directionalshock": ConeShockParticle,
-    "directionalpoison": ConePoisonParticle,
-    "directionalwave": ConeWaveParticle,
-    "directionalfrost": ConeFrostParticle,
-    "directionallaser": ConeLaserParticle,
+export class PARTICLE_SYSTEMS{
+
+    static get CONSTS() {
+        return {
+            TargetOnlyPresetSystems,
+            ProjectilesParticleSystems,
+            RaysParticleSystems,
+            ExplosionsParticleSystems,
+            SpritesParticleSystems,
+            LightParticleSystems,
+            DirectionalParticleSystems,
+        }
+    }
+
+    static get TARGET_ONLY_PRESET_SYSTEMS() {
+        return {
+            ...TargetOnlyPresetSystems,
+        }
+    }
+
+    static get LIGHT_PARTICLE_SYSTEMS() {
+        return {
+            ...TargetOnlyPresetSystems,
+            ...DirectionalParticleSystems,
+        }
+    }
+
+    static get TARGET_ONLY_PARTICLE_SYSTEMS() {
+        return {
+            ...TargetOnlyPresetSystems,
+            ...ExplosionsParticleSystems,
+        }
+    }
+
+    static get SOURCE_TARGET_PARTICLE_SYSTEMS() {
+        return {
+            ...ProjectilesParticleSystems,
+            ...RaysParticleSystems,
+            ...SpritesParticleSystems,
+        }
+    }
+
+    static get TEMPLATE_PARTICLE_SYSTEMS() {
+        return {
+            ...DirectionalParticleSystems,
+        }
+    }
+
+    static get ALL_PARTICLE_SYSTEMS() {
+        return {
+            ...TargetOnlyPresetSystems,
+            ...ProjectilesParticleSystems,
+            ...RaysParticleSystems,
+            ...ExplosionsParticleSystems,
+            ...SpritesParticleSystems,
+            ...DirectionalParticleSystems,
+        }
+    }
+
+    static getLocalizationKeys(systems) {
+        const key = "levels3dpreview.particleSystems.";
+        if(typeof systems === "string") return key + systems;
+        else if (Array.isArray(systems)) return systems.map(s => key + s);
+        else if (typeof systems === "object") return Object.keys(systems).map(s => key + s);
+    }
+
+    static localize(systems) {
+        const keys = this.getLocalizationKeys(systems);
+        if(Array.isArray(keys)) return keys.map(k => game.i18n.localize(k));
+        else return game.i18n.localize(keys);
+    }
+
+    static getSelectOptions(systems, options = {localize: false}) {
+        systems = systems instanceof Object ? Object.keys(systems) : systems;
+        const { localize } = options;
+        const obj = Object.fromEntries(systems.map(k => [k, localize ? this.localize(k) : this.getLocalizationKeys(k)]));
+        return Object.fromEntries(Object.entries(obj).sort((a, b) => a[1].localeCompare(b[1])));
+    }
+
+    static requiresSourceTarget(system) {
+        return Object.keys(this.SOURCE_TARGET_PARTICLE_SYSTEMS).includes(system);
+    }
+
+    static getParticleClass(type) {
+        return this.ALL_PARTICLE_SYSTEMS[type];
+    }
+
+    static getDefaultLightData(system) {
+        const systemClass = this.getParticleClass(system);
+        return {
+            scale: systemClass.DEFAULT_SCALE,
+            emitterSize: systemClass.DEFAULT_EMITTER_SIZE,
+        }
+    }
 }
