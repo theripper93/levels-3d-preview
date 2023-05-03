@@ -219,6 +219,7 @@ export const defaultTokenAnimations = {
         id: "swipe",
         icon: "icons/svg/stoned.svg",
         resetTime: 200,
+        particleDelay: 300,
         animation: [
             {
                 position: (box3, size, center, initialData) => {
