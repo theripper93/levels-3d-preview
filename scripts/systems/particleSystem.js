@@ -255,8 +255,8 @@ export class Particle3D {
         end = end ?? start;
         start = start instanceof Array ? start : [start];
         end = end instanceof Array ? end : [end];
-        start = start.map((c) => new THREE.Color(c));
-        end = end.map((c) => new THREE.Color(c));
+        //start = start.map((c) => new THREE.Color(c));
+        //end = end.map((c) => new THREE.Color(c));
         this.params.color = { start, end };
         return this;
     }
@@ -412,7 +412,9 @@ class BaseParticleEffect {
         this.from = from;
         this.to = to;
         this._missScale = 1;
-        this.params = { ...this.defaultSettings, ...params };
+        this.params = {...this.defaultSettings, ...params};
+        this.params.color.start = this.params.color.start.map(c => new THREE.Color(c));
+        this.params.color.end = this.params.color.end.map(c => new THREE.Color(c));
         this._origin = this.inferPosition(from);
         this._target = this.inferPosition(to, true);
         this._duration = this.params.duration;
@@ -545,8 +547,8 @@ class BaseParticleEffect {
             },
             gravity: 0,
             color: {
-                start: "#ff4d00",
-                end: "#ffff00",
+                start: ["#ff4d00"],
+                end: ["#ffff00"],
             },
             radial: {
                 angle: 0,
@@ -1910,13 +1912,13 @@ class MagicCircleParticle extends BasePresetEffect {
         const circleLinesData = {
             duration: 10,
             looping: true,
-            startLife: new QUARKS.ConstantValue(18),
-            startSpeed: new QUARKS.ConstantValue(0),
+            startLife: new QUARKS.ConstantValue(40*this.params.emitterSize),
+            startSpeed: new QUARKS.ConstantValue(0.01),
             startSize: new QUARKS.ConstantValue(this.params.scale.start),
             startColor: new QUARKS.ConstantColor(new THREE.Vector4(1, 1, 1, 1)),
             worldSpace: false,
             prewarm: false,
-            speedFactor: 100 / (this.params.scale.start*10),
+            speedFactor: 1000*this.params.emitterSize,
             emissionOverTime: new QUARKS.ConstantValue(this.params.presetIntensity*2.5*this.params.emitterSize),
             shape: new QUARKS.ConeEmitter({radius: this.params.emitterSize, angle: 0.001}),
             material: emberMaterial,
@@ -1937,13 +1939,13 @@ class MagicCircleParticle extends BasePresetEffect {
             );
         circleLines.addBehavior(new QUARKS.ColorOverLife(gradient));
         circleLines.addBehavior(new QUARKS.SizeOverLife(new QUARKS.PiecewiseBezier([[new QUARKS.Bezier(0, 0, 0.95, 1), 0]])));
-        circleLines.addBehavior(new QUARKS.ApplyForce(new THREE.Vector3(0, 0, 1), new QUARKS.ConstantValue(0.01)));
+        //circleLines.addBehavior(new QUARKS.ApplyForce(new THREE.Vector3(0, 0, 1), new QUARKS.ConstantValue(0.01)));
         circleLines.emitter.rotation.x = -Math.PI / 2;
         circleLines.emitter.position.y-=0.02;
         
         this.emitter.add(circleLines.emitter);
         this.emitter.position.copy(this._target);
-        if(this.params.applyPresetLightOffset) this.emitter.position.y -= 0.2;
+        //if(this.params.applyPresetLightOffset) this.emitter.position.y -= 0.2;
         this.particleSystems.push(circleLines);
     }
 }

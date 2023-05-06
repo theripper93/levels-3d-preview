@@ -9,7 +9,8 @@ export class Light3D {
         this._parent = parent;
         this.isToken = isToken;
         this._useHelper = game.user.isGM && game.settings.get("levels-3d-preview", "lightHelpers");
-        this.animationFn = () => {};
+        this.animationFn = () => { };
+        this.refresh = debounce(this.refresh.bind(this), 100);
         if (!this.isToken) {
             this.embeddedName = this.light.document.documentName;
             this.draggable = true;
@@ -131,7 +132,7 @@ export class Light3D {
     }
 
     refresh() {
-        if (this.particleEffectId) Particle3D.stop(this.particleEffectId);
+        game.Levels3DPreview.particleSystem.stop(this.particleEffectId);
         const light = this.light;
         const tilt = Math.toRadians(light.document.getFlag("levels-3d-preview", "tilt") ?? 0);
         this.particleData = this.getParticleData();
@@ -229,14 +230,18 @@ export class Light3D {
         if (isSpotLight) cache.spot.push(this.light3d);
         else cache.point.push(this.light3d);
     }
+    
+    get particleEffectId() {
+        return "Light." + this.light.id;
+    }
 
     initParticle() {
         if (!game.settings.get("levels-3d-preview", "enableEffects")) return;
-        if (this.particleEffectId) Particle3D.stop(this.particleEffectId);
         if (this.light.document.hidden && !this.light.document.getFlag("levels-3d-preview", "enableParticleHidden")) return;
         const particleData = this.particleData;
         this.particleEffect = new Particle3D(particleData.type);
         this.particleEffect
+            .name(this.particleEffectId)
             .sprite(particleData.sprite)
             .scale(particleData.scale)
             .color(particleData.color.split(","), particleData.color2 ? particleData.color2.split(",") : undefined)
@@ -252,7 +257,7 @@ export class Light3D {
             .presetIntensity(particleData.presetIntensity)
             .applyPresetLightOffset(true)
             .to(this.placeable);
-        this.particleEffectId = this.particleEffect.start(false);
+        this.particleEffect.start(false);
     }
 
     getParticleData() {

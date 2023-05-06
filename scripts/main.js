@@ -128,7 +128,6 @@ class Levels3DPreview {
         this.ClipNavigation = null;
         this.workers = new WorkerHandler();
         initSharing(this);
-        this.resizeCanvasToDisplaySize = debounce(this.resizeCanvasToDisplaySize, 500);
         this.debugMode = game.settings.get("levels-3d-preview", "debugMode");
         this.CONFIG = {
             PARTICLE_SYSTEMS,
@@ -1055,27 +1054,17 @@ class Levels3DPreview {
     }
 
     resizeCanvasToDisplaySize() {
-        const canvas = this.renderer.domElement;
-        const width = canvas.clientWidth;
-        const height = canvas.clientHeight;
+        const width = window.innerWidth;
+        const height = window.innerHeight;
         this.renderer.setSize(width, height, false);
         this.composer.setSize(width, height, false);
         this.camera.aspect = width / height;
         this.camera.updateProjectionMatrix();
         if (this.aaType == "fxaa") {
             const pixelRatio = this.renderer.getPixelRatio();
-            this.aaShader.material.uniforms["resolution"].value.x = 1 / (canvas.clientWidth * pixelRatio);
-            this.aaShader.material.uniforms["resolution"].value.y = 1 / (canvas.clientHeight * pixelRatio);
+            this.aaShader.material.uniforms["resolution"].value.x = 1 / (width * pixelRatio);
+            this.aaShader.material.uniforms["resolution"].value.y = 1 / (height * pixelRatio);
         }
-    }
-
-    checkAndResize() {
-        const innerWidth = window.innerWidth;
-        const innerHeight = window.innerHeight;
-        const changed = this._windowInnerWidth != innerWidth || this._windowInnerHeight != innerHeight;
-        if (changed) this.resizeCanvasToDisplaySize();
-        this._windowInnerWidth = innerWidth;
-        this._windowInnerHeight = innerHeight;
     }
 
     centerHUD() {
@@ -1191,7 +1180,6 @@ class Levels3DPreview {
                 const dist = this.interactionManager.findCameraLookatDistance();
                 this.bokeh.uniforms.focus.value = dist;
             }
-            this.checkAndResize();
             this.grid?.updateGrid();
             const tokensArray = Object.values(this.tokens);
             const length = Math.max(tokensArray.length, 100);
