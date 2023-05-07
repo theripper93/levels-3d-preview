@@ -1306,7 +1306,16 @@
             "directionalpoison": "Poison Cloud",
             "directionalwave": "Wave",
             "directionallaser": "Laser",
-            "directionalfrost": "Frost"
+            "directionalfrost": "Frost",
+            "projectile": "Projectile",
+            "blackdart": "Black Dart",
+            "shotgun": "Shotgun",
+            "earthprojectile": "Earth Projectile",
+            "earthexplosion": "Earth Explosion",
+            "ray": "Ray",
+            "explosion" : "Explosion",
+            "sprite" : "3D Model",
+            "slash" : "Slash"
         },
         "macrodialog": {
             "title": "Export Particle Effect",
