@@ -1284,6 +1284,12 @@
             "cancel": "Cancel"
         },
         "particleSystems":{
+            "optgroup-projectiles": "Projectiles",
+            "optgroup-rays": "Rays",
+            "optgroup-sprites": "Objects",
+            "optgroup-directional": "Directional",
+            "optgroup-explosions": "Explosions",
+            "optgroup-targetonly": "On Target",
             "custom": "Custom",
             "torch": "Torch",
             "magiccircle": "Magic Circle",
@@ -1313,6 +1319,8 @@
             "earthprojectile": "Earth Projectile",
             "earthexplosion": "Earth Explosion",
             "ray": "Ray",
+            "voidray": "Void Ray",
+            "runicray": "Runic Ray",
             "explosion" : "Explosion",
             "sprite" : "3D Model",
             "slash" : "Slash"

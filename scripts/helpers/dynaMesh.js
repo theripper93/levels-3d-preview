@@ -183,6 +183,11 @@ export class DynaMesh {
     }
 
     _constructpolygonbevel() {
+        if (this.text.includes("#")){
+            const split = this.text.split("#");
+            this.bevelSett = JSON.parse((split[0] || "{}").replace(/(['"])?([a-z0-9A-Z_]+)(['"])?:/g, '"$2": '));
+            this.text = split[1];
+        }
         const points = this.text.split(",").map((point) => parseInt(point) / factor);
         const shape = new THREE.Shape();
         shape.moveTo(points[0], points[1]);
@@ -198,7 +203,9 @@ export class DynaMesh {
             bevelSize: 0.01,
             bevelOffset: 0,
             bevelSegments: 3,
+            ...this.bevelSett,
         };
+        
         const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
         geometry.rotateX(Math.PI / 2);
         geometry.center();
