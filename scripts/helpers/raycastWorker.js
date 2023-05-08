@@ -129,11 +129,11 @@ self.onconnect = function (e) {
                     const x = origin.x + radius * Math.cos(a);
                     const y = origin.y + radius * Math.sin(a);
                     const currentTime = performance.now() - perf;
-                    if (currentTime > 16) { 
+                    if (currentTime > 160) { 
                         polygonPoints.push(Math.round(origin.x), Math.round(origin.y));
                         continue;
                     }
-                    const collision = computeSightCollision({ x: origin.x, y: origin.y, z: z }, { x: x, y: y, z: z });
+                    const collision = computeSightCollision({ x: origin.x, y: origin.y, z: z }, { x: x, y: y, z: z }, radius);
                     if (collision) {
                         polygonPoints.push(Math.round(collision.x * factor), Math.round(collision.z * factor));
                     } else {
@@ -168,16 +168,16 @@ function removeMeshFromScene(id) {
 
 
 
-function computeSightCollision(v1, v2) {
+function computeSightCollision(v1, v2, radius) {
     const factor = 1000;
         const origin =  new THREE.Vector3(v1.x/factor, v1.z, v1.y/factor) //Ruler3D.posCanvasTo3d(v1);
         const target = new THREE.Vector3(v2.x / factor, v2.z, v2.y / factor);
-        return computeSightCollisionFrom3DPositions(origin, target);
+        return computeSightCollisionFrom3DPositions(origin, target, radius / factor);
     }
 
-function computeSightCollisionFrom3DPositions(origin, target) {
+function computeSightCollisionFrom3DPositions(origin, target, radius) {
     const direction = target.clone().sub(origin).normalize();
-    const distance = Infinity;
+    const distance = radius;
     raycaster.far = Infinity;
     raycaster.set(origin, direction);
     let collisions = raycaster.intersectObjects([mergedMesh, ...scene._doors], false);

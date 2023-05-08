@@ -10,7 +10,7 @@ export class Light3D {
         this.isToken = isToken;
         this._useHelper = game.user.isGM && game.settings.get("levels-3d-preview", "lightHelpers");
         this.animationFn = () => { };
-        this.refresh = debounce(this.refresh.bind(this), 100);
+        //this.refresh = debounce(this.refresh.bind(this), 100);
         if (!this.isToken) {
             this.embeddedName = this.light.document.documentName;
             this.draggable = true;

@@ -1321,6 +1321,7 @@
             "ray": "Ray",
             "voidray": "Void Ray",
             "runicray": "Runic Ray",
+            "runicshot": "Runic Shot",
             "explosion" : "Explosion",
             "sprite" : "3D Model",
             "slash" : "Slash"

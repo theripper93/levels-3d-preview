@@ -892,6 +892,14 @@ export class InteractionManager {
             }
         });
         this.clone = entity3D.mesh.clone();
+        const lights = [];
+        this.clone.traverse((child) => {
+            //remove all lights from clone
+            if (child.type === "PointLight" || child.type === "DirectionalLight") {
+                lights.push(child);
+            }
+        });
+        lights.forEach((light) => light.removeFromParent());
         this.clone.userData.original = entity3D;
         this.clone.head = entity3D.head;
         this.clone.mid = entity3D.mid;
