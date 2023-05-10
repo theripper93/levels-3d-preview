@@ -42,7 +42,6 @@ import { WorkerHandler } from "./helpers/workers.js";
 import { miniCanvas } from "./apps/minicanvas.js";
 import { throttle, sleep } from "./helpers/utils.js";
 import { BokehPass } from "./lib/BokehPass.js";
-import {VFXSystem} from "./systems/vfx.js";
 import { Ping } from "./entities/effects/ping.js";
 import {injectThreeModifications} from "./threejsmodifications.js";
 import {ActiveEffectEffect} from "./entities/effects/activeEffect.js";
@@ -384,7 +383,6 @@ class Levels3DPreview {
         this.animationMixers = [];
         this.clock = new THREE.Clock();
         this.loader = new this.CONFIG.LOADERS.GLTFLoader();
-        this.vfx = new VFXSystem(this);
         this.FBXLoader = new FBXLoader();
         this._active = false;
         this._ready = false;
@@ -548,7 +546,6 @@ class Levels3DPreview {
         this.composer.addPass(this.renderPass);
         this.outline = new OutlineHandler(this);
         this.initAA();
-        this.vfx.init();
         if (canvas.scene.getFlag("levels-3d-preview", "bloom")) {
             this.bloomPass = this.bloomPass ?? new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
             this.bloomPass.threshold = canvas.scene.getFlag("levels-3d-preview", "bloomThreshold") ?? 0;
@@ -1250,7 +1247,6 @@ class Levels3DPreview {
             this.lights?.globalIllumination?.update(delta);
             this.weather?.update(delta);
             this.GameCamera.update(delta);
-            this.vfx?.update(delta);
             this.pings.forEach((ping) => {
                 ping.update(delta);
             });

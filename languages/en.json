@@ -1324,7 +1324,8 @@
             "runicshot": "Runic Shot",
             "explosion" : "Explosion",
             "sprite" : "3D Model",
-            "slash" : "Slash"
+            "slash" : "Slash",
+            "json": "Custom (JSON)"
         },
         "macrodialog": {
             "title": "Export Particle Effect",

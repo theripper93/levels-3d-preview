@@ -69,8 +69,7 @@ export function registerWrappers() {
                 }
                 return;
             }
-            if (!game.Levels3DPreview?.object3dSight || !game.Levels3DPreview?.fogExploration || this.config.source.object instanceof Scene || this.config.type === "universal") return;
-            debugger
+            if (!game.Levels3DPreview?.object3dSight || !game.Levels3DPreview?.fogExploration || this.config.source.object instanceof Scene || this.config.type === "universal") return;    
             const id = this.config.type + "." + this.config.source.object.id;
             const worker = game.Levels3DPreview.workers;
             this.points = [0, 0, 0, 0, 0, 0, 0, 0];

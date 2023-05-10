@@ -63,7 +63,7 @@ self.onconnect = function (e) {
                 mesh.traverse((child) => {
                     if (child.name == "sightMesh") boxes.push(child);
                     if (child.isMesh) {
-                        if (child.visible == false) boxes.push(child);
+                        //if (child.visible == false) boxes.push(child);
                         if (!message.hasTags) {
                             child.userData.sight = message.sight;
                         }

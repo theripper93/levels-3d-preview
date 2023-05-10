@@ -1386,7 +1386,8 @@ export function registerConfigs() {
                 max: 10,
             },
             ParticleSprite: {
-                type: "filepicker",
+                type: "filepicker.any",
+                fpTypes: [".png", ".jpg", ".jpeg", ".webp", ".svg", ".webm", ".mp4", ".gif", ".PNG", ".JPG", ".JPEG", ".WEBP", ".SVG", ".WEBM", ".MP4", ".GIF", "JSON", "json"],
                 label: game.i18n.localize("levels3dpreview.flags.lightParticleEffect.ParticleSprite.label"),
                 default: "modules/levels-3d-preview/assets/particles/emberssmall.png",
             },
@@ -1487,7 +1488,7 @@ export function registerConfigs() {
             },
         });
         let firstChange = true;
-        const showSprite = ["mysteriouslights", "vortex", "sparks", "fairy", "magicsphere"];
+        const showSprite = ["mysteriouslights", "vortex", "sparks", "fairy", "magicsphere","json"];
         injhtml.on("change", "select[name='flags.levels-3d-preview.ParticleType']", (event) => {
             const hide = event.target.value !== "custom";
             const toHide = ["ParticleSprite", "ParticleAlphaStart", "ParticleAlphaEnd", "ParticleLife", "ParticleCount", "ParticleEmitTime", "ParticleForce", "ParticlePushX", "ParticlePushY", "ParticlePushZ", "ParticleGravity", "ParticleMass"];

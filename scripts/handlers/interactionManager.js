@@ -81,7 +81,7 @@ export class InteractionManager {
         const tiles = tileQuadtree.length ? tileQuadtree : Object.values(this._parent.tiles);
         const walls = wallsQuadtree.length ? wallsQuadtree : Object.values(this._parent.walls);
         for (let tile of tiles) {
-            if (!tile?.mesh?.visible) continue;
+            if (!tile || tile?.document?.hidden/*!tile?.mesh?.visible**/) continue;
             const mesh = tile.sightMesh ?? tile.mesh;
             if (tile.hasTags) {
                 mesh.traverse((o) => {

@@ -10,6 +10,7 @@ export class Light3D {
         this.isToken = isToken;
         this._useHelper = game.user.isGM && game.settings.get("levels-3d-preview", "lightHelpers");
         this.animationFn = () => { };
+        this.refreshDebounced = debounce(this.refresh.bind(this), 100);
         //this.refresh = debounce(this.refresh.bind(this), 100);
         if (!this.isToken) {
             this.embeddedName = this.light.document.documentName;
@@ -392,7 +393,7 @@ export class Light3D {
                     game.Levels3DPreview.addLight(lightDocument.object ?? lightDocument);
                     return;
                 }
-                game.Levels3DPreview.lights.sceneLights[lightDocument.id]?.refresh();
+                game.Levels3DPreview.lights.sceneLights[lightDocument.id]?.refreshDebounced();
             }
         }
 

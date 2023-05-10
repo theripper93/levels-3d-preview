@@ -14,6 +14,7 @@ export class Tile3D {
     constructor(tile, parent, fromUpdate = false) {
         this.tile = tile;
         this.placeable = tile;
+        this.document = tile.document;
         this._parent = parent;
         this.fromUpdate = fromUpdate;
         this.isOverhead = this.tile.document.overhead;
