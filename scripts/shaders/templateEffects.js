@@ -4,14 +4,14 @@ export default function initTemplateEffects(){
     if (handler) {
         Hooks.on("preCreateMeasuredTemplate", (templateDocument) => {
             try {
-                if(game.settings.get("levels-3d-preview", "templateEffects")) handler(templateDocument, true)        
+                if(game.Levels3DPreview._active && game.settings.get("levels-3d-preview", "templateEffects")) handler(templateDocument, true)        
             }catch (e) {
                 
             }
         })
         Hooks.on("createMeasuredTemplate", (templateDocument) => {
             try {
-                if(game.settings.get("levels-3d-preview", "templateEffects")) handler(templateDocument)        
+                if(game.Levels3DPreview._active && game.settings.get("levels-3d-preview", "templateEffects")) handler(templateDocument)        
             }catch (e) {
                 
             }
