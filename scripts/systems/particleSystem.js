@@ -540,7 +540,7 @@ class BaseParticleEffect {
 
     autoSize() {
         if (!this.params.autoSize) return;
-        const hasSource = !!this.from && !(this instanceof BasePresetEffect)
+        const hasSource = !!this.from && !(this instanceof BasePresetEffect) && !(this instanceof ExplosionParticle)
         let autosizeTarget;
         if (!hasSource) {
             const target = this.to;
@@ -553,8 +553,8 @@ class BaseParticleEffect {
         }
         const scale = (Math.max(autosizeTarget.document.width, autosizeTarget.document.height) * canvas.grid.size) / factor;
         this.params.scale.start = scale * this.AUTO_SIZE_FACTORS.scale;
-        this.params.scale.end = scale * this.AUTO_SIZE_FACTORS.scale;
-        this.params.emitterSize = hasSource ? 0.00001 : scale * this.AUTO_SIZE_FACTORS.emitterSize;
+        //this.params.scale.end = scale * this.AUTO_SIZE_FACTORS.scale;
+        this.params.emitterSize = scale * this.AUTO_SIZE_FACTORS.emitterSize;
     }
 
     miss() {
@@ -811,7 +811,7 @@ class ProjectileParticle extends BaseParticleEffect {
     get AUTO_SIZE_FACTORS() {
         return {
             scale: 1.6,
-            emitterSize: 0.0001,
+            emitterSize: 0.1,
         }
     }
 
@@ -861,7 +861,7 @@ class ProjectileParticle extends BaseParticleEffect {
             
             emissionOverDistance: new QUARKS.ConstantValue(this.params.rate.particles * 5),
         
-            shape: new QUARKS.SphereEmitter({radius: Math.max(0.01, this.params.emitterSize)}),
+            shape: new QUARKS.PointEmitter({radius: Math.max(0.01, this.params.emitterSize)}),
             material: await this.getBasicMaterial(),
             renderOrder: 2,
             renderMode: QUARKS.RenderMode.Trail,
@@ -914,7 +914,7 @@ class ProjectileParticle extends BaseParticleEffect {
 
         const trail = new QUARKS.ParticleSystem(trailData);
 
-        trail.addBehavior(new QUARKS.SizeOverLife(new QUARKS.PiecewiseBezier([[new QUARKS.Bezier(1, 0.95, 0.75, 0), this.params.scale.end]])));
+        trail.addBehavior(new QUARKS.SizeOverLife(new QUARKS.PiecewiseBezier([[new QUARKS.Bezier(1, 0.95, 0.75, 0), 0]])));
         trail.addBehavior(new QUARKS.ColorOverLife(new QUARKS.ColorRange(colorToVec4(this.params.color.start[0],this.params.alpha.start), colorToVec4(this.params.color.end[0],this.params.alpha.end))));
         trail.addBehavior(new QUARKS.ApplyForce(new THREE.Vector3(this.params.push.dx, this.params.push.dz - this.params.gravity*10, this.params.push.dy), new QUARKS.ConstantValue(1)));
         trail.addBehavior(new QUARKS.TurbulenceField(turbulence, 1, turbulence, turbulence));
@@ -964,6 +964,14 @@ class ProjectileParticle extends BaseParticleEffect {
 }
 
 class BlackDart extends ProjectileParticle{
+
+    get AUTO_SIZE_FACTORS() {
+        return {
+            scale: 2,
+            emitterSize: 0.01,
+        }
+    }
+
     async createEmitter() {
         this.emitter = new THREE.Group();
         const trailData = {
@@ -974,7 +982,7 @@ class BlackDart extends ProjectileParticle{
             startSize: new QUARKS.ConstantValue(this.params.scale.start*0.5*0.5),
             startColor: new QUARKS.ConstantColor(colorToVec4(new THREE.Color("white"),1)),
             worldSpace: true,
-            prewarm: false,
+            prewarm: true,
 
             rendererEmitterSettings: {
                 startLength: new QUARKS.ConstantValue(30),
@@ -984,63 +992,36 @@ class BlackDart extends ProjectileParticle{
             
             emissionOverDistance: new QUARKS.ConstantValue(this.params.rate.particles * 5),
         
-            shape: new QUARKS.SphereEmitter({radius: Math.max(0.01, this.params.emitterSize)}),
+            shape: new QUARKS.PointEmitter({radius: Math.max(0.01, this.params.emitterSize)}),
             material: await this.getBasicMaterial(),
             renderOrder: 4,
             renderMode: QUARKS.RenderMode.Trail,
         };
 
-        const sphereData = {
-            duration: 1,
-            looping: true,
-            startLife: new QUARKS.IntervalValue(this.params.life.min*0.1, this.params.life.max*0.1),
-            startSpeed: new QUARKS.ConstantValue(0),
-            startSize: new QUARKS.ConstantValue(this.params.scale.start*0.4),
-            startColor: new QUARKS.ConstantColor(colorToVec4(new THREE.Color("white"),1)),
-            worldSpace: true,
-            prewarm: false,
-            
-            rendererEmitterSettings: {
-                startLength: new QUARKS.ConstantValue(30),
-                
-                followLocalOrigin: true
-            },
-            followLocalOrigin: true,
-            
-            emissionOverDistance: new QUARKS.ConstantValue(this.params.rate.particles * 5),
-        
-            shape: new QUARKS.SphereEmitter({radius: this.params.emitterSize}),
-            material: await this.getBasicMaterial(),
-            renderOrder: 5,
-            renderMode: QUARKS.RenderMode.BillBoard,
-        };
-
-
         const turbulence = new THREE.Vector3(10,10,10)
 
         const trail = new QUARKS.ParticleSystem(trailData);
 
+        const blackTrail = new QUARKS.ParticleSystem(trailData);
+
         trail.addBehavior(new QUARKS.SizeOverLife(new QUARKS.PiecewiseBezier([[new QUARKS.Bezier(1, 0.95, 0.75, 0), this.params.scale.end]])));
         trail.addBehavior(new QUARKS.ApplyForce(new THREE.Vector3(this.params.push.dx, this.params.push.dz - this.params.gravity*10, this.params.push.dy), new QUARKS.ConstantValue(1)));
         trail.addBehavior(new QUARKS.TurbulenceField(turbulence, 1, turbulence, turbulence));
-        const blackTrail = trail.clone();
         trail.addBehavior(new QUARKS.ColorOverLife(new QUARKS.ColorRange(colorToVec4(this.params.color.start[0], this.params.alpha.start), colorToVec4(this.params.color.end[0], this.params.alpha.end))));
         blackTrail.startColor = new QUARKS.ConstantColor(colorToVec4(new THREE.Color("black"), 1));
         blackTrail.material = await this.getBasicMaterial(null, THREE.NormalBlending);
         blackTrail.startSize = new QUARKS.ConstantValue(this.params.scale.start * 0.5 * 0.3)
-        blackTrail.shape = new QUARKS.PointEmitter();
         blackTrail.renderOrder = 10
-        const tip = new QUARKS.ParticleSystem(sphereData);
-        
-        tip.addBehavior(new QUARKS.SizeOverLife(new QUARKS.PiecewiseBezier([[new QUARKS.Bezier(1, 0.95, 0.75, 0), this.params.scale.end]])));
-        tip.addBehavior(new QUARKS.ColorOverLife(new QUARKS.ColorRange(colorToVec4(this.params.color.start[0],this.params.alpha.start), colorToVec4(this.params.color.end[0],this.params.alpha.end))));
-        tip.addBehavior(new QUARKS.ApplyForce(new THREE.Vector3(this.params.push.dx, this.params.push.dz - this.params.gravity*10, this.params.push.dy), new QUARKS.ConstantValue(1)));
+
+        blackTrail.addBehavior(new QUARKS.SizeOverLife(new QUARKS.PiecewiseBezier([[new QUARKS.Bezier(1, 0.95, 0.75, 0), this.params.scale.end]])));
+        blackTrail.addBehavior(new QUARKS.ApplyForce(new THREE.Vector3(this.params.push.dx, this.params.push.dz - this.params.gravity*10, this.params.push.dy), new QUARKS.ConstantValue(1)));
+        blackTrail.addBehavior(new QUARKS.TurbulenceField(turbulence, 1, turbulence, turbulence));
+ 
         
         this.emitter.add(trail.emitter);
-        this.emitter.add(tip.emitter);
         this.emitter.add(blackTrail.emitter);
         this.emitter.position.copy(this._origin);
-        this.particleSystems.push(trail, tip, blackTrail);
+        this.particleSystems.push(trail, blackTrail);
     }
 }
 
@@ -1049,7 +1030,15 @@ class Shotgun extends ProjectileParticle {
     constructor (...args) {
         super(...args);
         this._lightLifeMax = this.params.life.max*0.5;
-        this._lightLife = this.params.life.max*0.5;
+        this._lightLife = this.params.life.max * 0.5;
+        this._duration = this.params.life.max;
+    }
+
+    get AUTO_SIZE_FACTORS() {
+        return {
+            scale: 0.2,
+            emitterSize: 0,
+        }
     }
 
     async createEmitter() {
@@ -1110,8 +1099,9 @@ class Shotgun extends ProjectileParticle {
         if(this._lightLife > 0 )this._lightLife -= delta;
         if(this._light) this.animateLight(delta);
         this._time += delta;
+        this._duration -= delta;
         this._currentSpeed = this._time * this._speed;
-        if (this._currentSpeed > 1) {
+        if (this._currentSpeed > 1 || this._duration < 0) {
             this._playOnEnd = true;
             this.onEnd();
             return;
@@ -1297,7 +1287,7 @@ class RunicShot extends ProjectileParticle {
         this._origin.add(frontPos);
         this._dist = this._origin.distanceTo(this._target);
         this._speed = (this.params.speed / this._dist / (factor / 100)) * ParticleEngine.getScale();
-        this._duration = Math.max(this.params.duration, this.params.life.max);
+        this._duration = Math.max(this.params.duration, 0);
         this._effectDelay = this._duration;
         this._initialEffectDelay = this._duration; 
         this.isProjectile = true;
@@ -1593,16 +1583,16 @@ class ExplosionParticle extends BaseParticleEffect {
 
 class SlashParticle extends ExplosionParticle{
 
-    async autoSize() {
+    autoSize() {
         const from = this.from;
-        if (from instanceof Token) {
-            const size = Math.max(from.document.width, from.document.height);
-            this.params.emitterSize = 0.7 * size * (canvas.grid.size / factor)
-        }
+        if (!(from instanceof Token)) return;
+        const size = Math.max(from.document.width, from.document.height) * (canvas.grid.size / factor);
+        this.params.emitterSize = 0.7 * size;
+        if (!this.params.autoSize) return;
+        this.params.scale.start = 0.7;
     }
 
     async createEmitter() {
-        await this.autoSize();
         
         this.emitter = new THREE.Group();
         const trailData = {
@@ -1774,6 +1764,13 @@ class EarthExplosion extends ExplosionParticle {
         super(...args);
         this._origin = this._originBottom
         this._target = this._targetBottom
+    }
+
+    get AUTO_SIZE_FACTORS() {
+        return {
+            scale: 2,
+            emitterSize: 4,
+        }
     }
 
     async createEmitter() {
@@ -1948,7 +1945,7 @@ class MagicBurst extends ExplosionParticle {
             }],*/
             emissionOverTime: new QUARKS.ConstantValue(this.params.rate.particles*25),
         
-            shape: new QUARKS.SphereEmitter({radius: this.params.emitterSize}),
+            shape: new QUARKS.SphereEmitter({radius: this.params.emitterSize*0.1}),
             material: await this.getBasicMaterial("modules/levels-3d-preview/assets/particles/flame2x2.png"),
             startTileIndex: new QUARKS.IntervalValue(0, 3),
             uTileCount: 2,
@@ -2073,8 +2070,8 @@ class RayParticle extends BaseParticleEffect {
 
     get AUTO_SIZE_FACTORS() {
         return {
-            scale: 1.0,
-            emitterSize: 0.0001,
+            scale: 0.3,
+            emitterSize: 1,
         }
     }
 
@@ -2085,7 +2082,7 @@ class RayParticle extends BaseParticleEffect {
             looping: true,
             startLife: new QUARKS.ConstantValue(Math.max(this.params.life.max,this.params.duration)),
             startSpeed: new QUARKS.ConstantValue(0),
-            startSize: new QUARKS.ConstantValue(this.params.scale.start*0.5*0.5),
+            startSize: new QUARKS.ConstantValue(this.params.scale.start),
             startColor: new QUARKS.ConstantColor(colorToVec4(new THREE.Color("white"),1)),
             worldSpace: true,
             prewarm: true,
@@ -2098,9 +2095,9 @@ class RayParticle extends BaseParticleEffect {
             
             emissionOverDistance: new QUARKS.ConstantValue(1),
         
-            shape: new QUARKS.SphereEmitter({radius: Math.max(0.01, this.params.emitterSize)}),
+            shape: new QUARKS.PointEmitter({radius: this.params.emitterSize}),
             material: await this.getBasicMaterial(),
-            renderOrder: 2,
+            renderOrder: 20,
             renderMode: QUARKS.RenderMode.Trail,
         };
 
@@ -2139,9 +2136,11 @@ class RayParticle extends BaseParticleEffect {
         mainBeam.addBehavior(new QUARKS.ApplyForce(new THREE.Vector3(this.params.push.dx, this.params.push.dz - this.params.gravity*10, this.params.push.dy), new QUARKS.ConstantValue(1)));
         
         const subBeamData = {...mainBeamData};
-        subBeamData.startSize = new QUARKS.ConstantValue(1 * 0.5 * 0.5 * 0.25);
+        subBeamData.startSize = new QUARKS.ConstantValue(this.params.scale.start*0.4);
         subBeamData.shape = new QUARKS.PointEmitter();
         subBeamData.emissionOverTime = new QUARKS.ConstantValue(0.1);
+        subBeamData.material = await this.getBasicMaterial(null, THREE.NormalBlending);
+        subBeamData.renderOrder = 10;
 
         const subBeam1 = new QUARKS.ParticleSystem(subBeamData);
         const subBeam2 = new QUARKS.ParticleSystem(subBeamData);
@@ -2154,7 +2153,7 @@ class RayParticle extends BaseParticleEffect {
             subBeam.addBehavior(new QUARKS.ColorOverLife(new QUARKS.ColorRange(colorToVec4(this.params.color.start[0],this.params.alpha.start), colorToVec4(this.params.color.end[0],this.params.alpha.end))));
         });
 
-        const subBeamDist = Math.max(0.01, Math.max(0.01,this.params.emitterSize)*this.params.scale.start)*2;
+        const subBeamDist = Math.max(0.001, this.params.emitterSize)*this.params.scale.start*8;
 
         subBeam1.emitter.position.set(subBeamDist, 0, 0);
         subBeam2.emitter.position.set(-subBeamDist, 0, 0);
@@ -2189,10 +2188,8 @@ class RayParticle extends BaseParticleEffect {
     animate(delta) {
         super.animate(delta);
         this._duration -= delta;
-        if (this.subBeamGroup) {
+        if (this.subBeamGroup && this._currentSpeed < 1) {
             this.subBeamGroup.rotation.y += delta * 20;
-            const sbScale = (0.5 - Math.abs(Math.min(1,this._currentSpeed) - 0.5))*2;
-            this.subBeamGroup.scale.set(sbScale,sbScale,sbScale)
         }
         if (this._duration <= 0) {
             this._playOnEnd = true;
@@ -3886,6 +3883,13 @@ class BaseDirectionalEffect extends BaseParticleEffect {
         this._dist = null;
         this._speed = null;
         this.isTemplate = true;
+    }
+
+    get AUTO_SIZE_FACTORS() {
+        return {
+            scale: this.constructor.DEFAULT_SCALE,
+            emitterSize: this.constructor.DEFAULT_EMITTER_SIZE,
+        }
     }
 
     inferLookAt() {

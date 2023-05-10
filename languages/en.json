@@ -1325,6 +1325,7 @@
             "explosion" : "Explosion",
             "sprite" : "3D Model",
             "slash" : "Slash",
+            "magicburst" : "Magic Burst",
             "json": "Custom (JSON)"
         },
         "macrodialog": {
