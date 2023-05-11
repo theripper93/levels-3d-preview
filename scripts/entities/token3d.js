@@ -667,8 +667,9 @@ export class Token3D {
                 z: 0,
             };
             const mesh = targetModel.clone();
+            debugger;
             mesh.children[0].material = new THREE.MeshPhongMaterial({ color: color, emissive: color, emissiveIntensity: 0.8 });
-            mesh.scale.set(this.targetSize / 100, this.targetSize / 100, this.targetSize / 100);
+            mesh.scale.set(this.targetSize , this.targetSize , this.targetSize );
             mesh.position.set(position.x, position.y, position.z);
             this.targetContainer.add(mesh);
             positionOffset += this.targetSize * 2.5;

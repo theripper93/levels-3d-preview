@@ -507,6 +507,7 @@ class BaseParticleEffect {
         this._time = 0;
         this._currentSpeed = 0;
         this.particleSystems = [];
+        this._toDispose = [];
     }
 
     addLight(){}
@@ -540,7 +541,8 @@ class BaseParticleEffect {
 
     autoSize() {
         if (!this.params.autoSize) return;
-        const hasSource = !!this.from && !(this instanceof BasePresetEffect) && !(this instanceof ExplosionParticle)
+        let hasSource = !!this.from && !(this instanceof BasePresetEffect) && !(this instanceof ExplosionParticle)
+        if(!!this.from && this.AUTO_SIZE_FACTORS.preferSource) hasSource = true;
         let autosizeTarget;
         if (!hasSource) {
             const target = this.to;
@@ -594,8 +596,12 @@ class BaseParticleEffect {
 
     async getBasicMaterial(filePath, blending = THREE.AdditiveBlending) {
         const path = filePath ?? this.params.sprite;
+        const extension = path.split(".").pop();
+        const isVideo = extension == "mp4" || extension == "webm" || extension == "ogg" || extension == "mov" || extension == "apng";
+        
+
         const key = `${path}${blending}`;
-        if (materialCache[key]) return materialCache[key];
+        if (materialCache[key] && !isVideo) return materialCache[key];
         
         const tex = await game.Levels3DPreview.helpers.loadTexture(path);
         if (tex.image?.currentTime) tex.image.currentTime = 0;
@@ -608,7 +614,7 @@ class BaseParticleEffect {
         });
 
         materialCache[key] = material;
-
+        if(isVideo) this._toDispose.push(material);
         return material;
     }
 
@@ -736,8 +742,13 @@ class BaseParticleEffect {
         this.params.onEnd?.forEach((e) => {
             const p3d = new Particle3D().fromObject(e);
             if (!p3d._to) p3d.to(this.to);
-            if (!p3d._from) p3d.from(this.from);
+            const isTargetOnly = Object.keys(PARTICLE_SYSTEMS.TARGET_ONLY_PARTICLE_SYSTEMS).includes(p3d.params.type);
+            if (!p3d._from && !isTargetOnly) p3d.from(this.from);
             p3d.start(false);
+        });
+        this._toDispose.forEach((e) => {
+            e.map.dispose();
+            e.dispose()
         });
     }
 
@@ -1434,8 +1445,13 @@ class RunicShot extends ProjectileParticle {
             renderMode: QUARKS.RenderMode.Mesh,
         };
 
+        
+        this._duration = runeData.material?.map?.image?.duration ?? this._duration;
+        this._effectDelay = this._duration;
+        this._initialEffectDelay = this._duration;
 
-     const rune = new QUARKS.ParticleSystem(runeData);
+
+        const rune = new QUARKS.ParticleSystem(runeData);
 
        const piecewise = new QUARKS.PiecewiseBezier([[new QUARKS.Bezier(0,0.10016666412353516,1.4605379065236666,1.4785303661534257),0],[new QUARKS.Bezier(1.4785303661534257,1.5032568879077353,1.538933101357817,1.524796690915664),0.10799999237060547],[new QUARKS.Bezier(1.524796690915664,1.5362982459717474,0.06126674613115683,0.0016847146160523171),0.9267499923706055]]);
 
@@ -1456,9 +1472,9 @@ class RunicShot extends ProjectileParticle {
     animate(delta) {
         if(this._effectDelay > 0) this._effectDelay -= delta;
         if(this._effectDelay > 0) return;
-        super.animate(delta);
         this._duration -= delta;
         if (!this.animationPath) return;
+        this.animateLight(delta);
         this._time += delta;
         this._currentSpeed = this._time * this._speed;
         if (this._currentSpeed > 1) {
@@ -1492,7 +1508,7 @@ class ExplosionParticle extends BaseParticleEffect {
 
         const mainExplosionData = {
             duration: 1,
-            looping: true,
+            looping: false,
             startLife: new QUARKS.IntervalValue(this.params.life.min, this.params.life.max),
             startSpeed: new QUARKS.ConstantValue(this.params.force/30),
             startSize: new QUARKS.ConstantValue(this.params.scale.start),
@@ -1512,7 +1528,7 @@ class ExplosionParticle extends BaseParticleEffect {
 
         const innerFlashData = {
             duration: 1,
-            looping: true,
+            looping: false,
             startLife: new QUARKS.IntervalValue(this.params.life.min, this.params.life.max),
             startSpeed: new QUARKS.ConstantValue(this.params.force/9),
             startSize: new QUARKS.IntervalValue(this.params.scale.start/5, this.params.scale.start/10),
@@ -1578,6 +1594,199 @@ class ExplosionParticle extends BaseParticleEffect {
             this._currentSpeed = 2;
         }
         return;
+    }
+}
+
+class JB2AExplosion extends ExplosionParticle {
+
+    constructor (...args) {
+        super(...args);
+        this._lightTime = 0.3;
+        this._initialLightTime = 0.3;
+    }
+
+    get AUTO_SIZE_FACTORS() {
+        return {
+            scale: 2,
+            emitterSize: 4,
+        }
+    }
+
+    addLight() {
+        const light = ParticleEngine.getLightInstance();
+        if (light) {
+            this._light = light;
+            this._lightIntensity = 10;
+            light.decay = 2;
+            light.intensity = 0;
+            light.distance = 5;
+            light.color = this.params.color.start[0];
+            light.position.set(0,0,0);
+            this.emitter.add(light);
+        }
+    }
+
+    animateLight(delta) {
+        super.animateLight(delta);
+        this._light.intensity = this._lightIntensity * this._lightPiecewise.genValue(this._lightTime / this._initialLightTime);
+    }
+
+    async createEmitter() {
+        this.emitter = new THREE.Group();
+
+        const burstData = {
+            duration: 1,
+            looping: false,
+            startLife: new QUARKS.ConstantValue(0.2),
+            startSpeed: new QUARKS.ConstantValue(0),
+            startSize: new QUARKS.ConstantValue(this.params.scale.start),
+            startColor: new QUARKS.ConstantColor(colorToVec4(new THREE.Color("white"), 1)),
+            startRotation: new QUARKS.IntervalValue(0, Math.PI * 2),
+            worldSpace: false,
+            prewarm: false,
+            rendererEmitterSettings: {
+                followLocalOrigin: true
+            },
+            emissionBursts: [
+                {
+                time: 0.01,
+                count: 1,
+                cycle: 1,
+                interval: 0,
+                probability: 1,
+            }],
+            emissionOverTime: new QUARKS.ConstantValue(0),
+        
+            shape: new QUARKS.PointEmitter({radius: this.params.emitterSize}),
+            material: await this.getBasicMaterial(null, THREE.AdditiveBlending),
+            renderOrder: 1,
+            renderMode: QUARKS.RenderMode.BillBoard,
+        };
+
+        this._duration = burstData.material?.map?.image?.duration ?? this._duration;
+
+        burstData.startLife = new QUARKS.ConstantValue(this._duration);
+
+        this._material = burstData.material;
+        const burst = new QUARKS.ParticleSystem(burstData);
+        //burst.addBehavior(new QUARKS.ColorOverLife(new QUARKS.ColorRange(colorToVec4(this.params.color.start[0], 1,2), colorToVec4(this.params.color.end[0], 0, 2))));
+        
+        this.emitter.add(burst.emitter);
+        this.emitter.position.copy(this._target);
+        this.particleSystems.push(burst);
+    }
+
+    animate(delta) {
+        if (this._lightTime > 0) this._lightTime -= delta;
+        super.animate(delta);
+    }
+}
+
+class CastingSign extends ExplosionParticle {
+
+    constructor (...args) {
+        super(...args);
+        this._lightTime = 0.3;
+        this._initialLightTime = 0.3;
+    }
+
+    get AUTO_SIZE_FACTORS() {
+        return {
+            scale: 0.85,
+            emitterSize: 4,
+            preferSource: true,
+        }
+    }
+
+    addLight() {
+        const light = ParticleEngine.getLightInstance();
+        if (light) {
+            this._light = light;
+            this._lightIntensity = 10;
+            light.decay = 2;
+            light.intensity = 0;
+            light.distance = 5;
+            light.color = this.params.color.start[0];
+            light.position.set(0,0,0);
+            this.emitter.add(light);
+        }
+    }
+
+    animateLight(delta) {
+        super.animateLight(delta);
+        this._light.intensity = this._lightIntensity * this._lightPiecewise.genValue(this._lightTime / this._initialLightTime);
+    }
+
+    async createEmitter() {
+        this.emitter = new THREE.Group();
+
+        const burstData = {
+            duration: 1,
+            looping: false,
+            startLife: new QUARKS.ConstantValue(this.params.duration*1.5),
+            startSpeed: new QUARKS.ConstantValue(0),
+            startSize: new QUARKS.ConstantValue(this.params.scale.start),
+            startColor: new QUARKS.ConstantColor(colorToVec4(new THREE.Color("white"),1)),
+            startRotation: new QUARKS.IntervalValue(0, 2*Math.PI),
+            worldSpace: true,
+            prewarm: true,
+            instancingGeometry: new THREE.PlaneGeometry(1,1),
+            
+            emissionBursts: [
+                {
+                    time: 0,
+                    count: 1,
+                    cycleCount: 1,
+                    interval: 0,
+                    probability: 0,
+                },
+                {
+                    time: 0.01,
+                    count: 1,
+                    cycleCount: 1,
+                    interval: 0,
+                    probability: 1,
+                }
+            ],
+            
+            emissionOverTime: new QUARKS.ConstantValue(0),
+        
+            shape: new QUARKS.ConeEmitter({radius: 0.000000001, angle: 0.000001}),
+            material: await this.getBasicMaterial(),
+            renderOrder: 10,
+            renderMode: QUARKS.RenderMode.Mesh,
+        };
+
+
+
+        this._duration = burstData.material?.map?.image?.duration ?? this._duration;
+        this._lightTime = this._duration;
+        this._initialLightTime = this._duration;
+
+        this.isAAnimated = burstData.material?.map?.image?.duration;
+
+        burstData.startLife = new QUARKS.ConstantValue(this._duration);
+
+        this._material = burstData.material;
+        const burst = new QUARKS.ParticleSystem(burstData);
+        burst.emitter.rotation.x = Math.PI / 2;
+        burst.emitter.position.y = 0.001;
+        if (!this.isAAnimated) {
+            const piecewise = new QUARKS.PiecewiseBezier([[new QUARKS.Bezier(0,0.10016666412353516,1.4605379065236666,1.4785303661534257),0],[new QUARKS.Bezier(1.4785303661534257,1.5032568879077353,1.538933101357817,1.524796690915664),0.10799999237060547],[new QUARKS.Bezier(1.524796690915664,1.5362982459717474,0.06126674613115683,0.0016847146160523171),0.9267499923706055]]);
+
+            burst.addBehavior(new QUARKS.SizeOverLife(piecewise));
+            burst.addBehavior(new QUARKS.ColorOverLife(new QUARKS.ColorRange(colorToVec4(this.params.color.start[0], 1), colorToVec4(this.params.color.end[0], 1))));
+        }
+        burst.addBehavior(new QUARKS.Rotation3DOverLife(new QUARKS.AxisAngleGenerator(new THREE.Vector3(0,0,1) , new QUARKS.ConstantValue(this.params.speed), true)));
+        
+        this.emitter.add(burst.emitter);
+        this.emitter.position.copy(this._originBottom ?? this._targetBottom);
+        this.particleSystems.push(burst);
+    }
+
+    animate(delta) {
+        if (this._lightTime > 0) this._lightTime -= delta;
+        super.animate(delta);
     }
 }
 
@@ -2329,6 +2538,12 @@ class RunicRay extends RayParticle {
             renderOrder: 10,
             renderMode: QUARKS.RenderMode.Mesh,
         };
+
+        
+        
+        this._duration = runeData.material?.map?.image?.duration ?? this._duration;
+        this._effectDelay = this._duration*0.5;
+        this._initialEffectDelay = this._duration;
 
 
         const mainBeam = new QUARKS.ParticleSystem(mainBeamData);
@@ -4626,6 +4841,8 @@ const ExplosionsParticleSystems = {
     "earthexplosion": EarthExplosion,
     "slash": SlashParticle,
     "magicburst": MagicBurst,
+    "jb2aexplosion": JB2AExplosion,
+    "castingsign": CastingSign,
 }
 
 const SpritesParticleSystems = {

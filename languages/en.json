@@ -1326,7 +1326,9 @@
             "sprite" : "3D Model",
             "slash" : "Slash",
             "magicburst" : "Magic Burst",
-            "json": "Custom (JSON)"
+            "json": "Custom (JSON)",
+            "jb2aexplosion": "Explosion (JB2A Animated)",
+            "castingsign": "Ritual"
         },
         "macrodialog": {
             "title": "Export Particle Effect",
