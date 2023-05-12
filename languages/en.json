@@ -1330,6 +1330,7 @@
             "jb2aexplosion": "Explosion (JB2A Animated)",
             "jb2aexplosionnolight": "Explosion (JB2A Animated, No Light)",
             "arrow" : "Arrow",
+            "bolt": "Bolt",
             "magicarrow" : "Magic Arrow",
             "bullet" : "Bullet",
             "castingsign": "Ritual"

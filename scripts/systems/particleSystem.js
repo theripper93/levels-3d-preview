@@ -1239,6 +1239,70 @@ class Arrow extends ProjectileParticle{
     }
 }
 
+class Bolt extends ProjectileParticle{
+
+    get AUTO_SIZE_FACTORS() {
+        return {
+            scale: 1,
+            emitterSize: 0.01,
+        }
+    }
+
+    addLight() { }
+
+    animateLight() { }
+
+    async createEmitter() {
+
+        const arrowModel = await this.getMesh("modules/levels-3d-preview/assets/particles/models/bolt_particle.glb", false);
+
+        arrowModel.scale.setScalar(this.params.scale.start);
+
+       this.emitter = new THREE.Group();
+
+        const trailData = {
+            duration: 1,
+            looping: true,
+            startLife: new QUARKS.IntervalValue(this.params.life.min, this.params.life.max),
+            startSpeed: new QUARKS.ConstantValue(0),
+            startSize: new QUARKS.ConstantValue(this.params.scale.start*0.5*0.5*0.1),
+            startColor: new QUARKS.ConstantColor(colorToVec4(new THREE.Color("white"),1)),
+            worldSpace: true,
+            prewarm: true,
+
+            rendererEmitterSettings: {
+                startLength: new QUARKS.ConstantValue(10),
+                followLocalOrigin: true,
+            },
+            
+            emissionOverDistance: new QUARKS.ConstantValue(this.params.rate.particles * 5),
+        
+            shape: new QUARKS.ConeEmitter({radius: 0.0001, angle: Math.PI / 4}),
+            material: await this.getBasicMaterial(),
+            renderOrder: 4,
+            renderMode: QUARKS.RenderMode.Trail,
+        };
+
+        const trail = new QUARKS.ParticleSystem(trailData);
+        trail.addBehavior(new QUARKS.SizeOverLife(new QUARKS.PiecewiseBezier([[new QUARKS.Bezier(1, 0.95, 0.75, 0), this.params.scale.end]])));
+        trail.addBehavior(new QUARKS.ColorOverLife(new QUARKS.ColorRange(colorToVec4(this.params.color.start[0], this.params.alpha.start), colorToVec4(this.params.color.end[0], this.params.alpha.end))));
+        
+        //trail.emitter.position.z = -size.z / 3;
+        
+        this.emitter.add(trail.emitter);
+        this._arrow = arrowModel;
+        this._persistObjects.push(arrowModel);
+        this.emitter.add(arrowModel);
+        this.emitter.position.copy(this._origin);
+        this.particleSystems.push(trail);
+    }
+
+    animate(delta) {
+        this._arrow.rotation.z += delta * 10;
+        super.animate(delta);
+    }
+}
+
 class Bullet extends ProjectileParticle{
 
     get AUTO_SIZE_FACTORS() {
@@ -5163,6 +5227,7 @@ const ProjectilesParticleSystems = {
     "blackdart": BlackDart,
     "runicshot": RunicShot,
     "arrow": Arrow,
+    "bolt": Bolt,
     "magicarrow": MagicArrow,
     "bullet": Bullet,
     "shotgun": Shotgun,
