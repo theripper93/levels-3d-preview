@@ -1286,6 +1286,8 @@ class Levels3DPreview {
             this.composer.render(time);
             if (this._firstFrame) {
                 this._firstFrame = false;
+                this.workers._waitingForInit = true;
+                Object.values(this.tiles).forEach(t => t.sendToWorker())
                 this.resizeCanvasToDisplaySize()
                 recomputeGravity();
                 Object.values(this.tokens).forEach((token) => {

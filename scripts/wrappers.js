@@ -62,7 +62,7 @@ export function registerWrappers() {
     
         function _computePolygonMultithreaded(wrapped, ...args) {
             wrapped(...args);
-            if (!game.Levels3DPreview?._ready || !game.Levels3DPreview?._active) {
+            if (!game.Levels3DPreview?._ready || !game.Levels3DPreview?._active || !game.Levels3DPreview?.workers?._visionReady) {
                 const object3dSight = canvas.scene.getFlag("levels-3d-preview", "object3dSight") ?? false;
                 if (object3dSight) {
                     this.points = [0, 0, 0, 0, 0, 0, 0, 0];

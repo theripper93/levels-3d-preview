@@ -5,6 +5,8 @@ export class WorkerHandler {
         this.callbacks = {};
         this._lastResults = {};
         this._lastKnownValid = {};
+        this._visionReady = false;
+        this._waitingForInit = false;
         this.initRaycastWorker();
     }
 
@@ -31,6 +33,7 @@ export class WorkerHandler {
                 }
             }
             if (e.data.type == "refresh") {
+                if(this._waitingForInit) this._visionReady = true;
                 this.refresh();
             }
             if (e.data.type == "error") {
@@ -54,8 +57,8 @@ export class WorkerHandler {
                 const mesh = new THREE.ObjectLoader().parse(e.data.data.g);
                 mesh.name = "shadowWorld";
                 game.Levels3DPreview.scene.add(mesh);
-            }
-            */
+            }*/
+            
         };
     }
 
@@ -105,6 +108,8 @@ export class WorkerHandler {
     clearMeshes() {
         if (!this.raycastWorker) return;
         this.raycastWorker.port.postMessage({ type: "clear" });
+        this._visionReady = false;
+        this._waitingForInit = false;
         this.callbacks = {};
         this._lastResults = {};
         this._lastKnownValid = {};

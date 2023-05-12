@@ -237,7 +237,7 @@ function applyMatrixWorldToGeometry(mesh) {
 }
 
 function applyMatrixWorldToGeometryInstanced(mesh) { 
-    const geometry = toTrianglesDrawMode(mesh.geometry.clone());
+    const geometry = mesh.geometry.clone()//toTrianglesDrawMode(mesh.geometry.clone());
     mesh.updateMatrixWorld(true, true);
     const attributes = geometry.attributes;
     for (const key in attributes) {

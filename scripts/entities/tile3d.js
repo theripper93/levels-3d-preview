@@ -147,11 +147,18 @@ export class Tile3D {
 
     sendToWorker() {
         let dontSend = false;
+        const scene = this._parent.scene;
+        const currentParent = this.mesh.parent;
+        const currentPosition = this.mesh.position.clone();
+        const worldPosition = this.mesh.getWorldPosition(new THREE.Vector3());
+        this.mesh.position.copy(worldPosition);
+        if(currentParent !== scene) scene.add(this.mesh);
         if ((!this.sight && !this.hasTags) || this.dynaMesh == "decal" || !this._parent?.workers?.enabled) dontSend = true;
         if (!this.sight && this._parent?.workers?.enabled) return this._parent.workers.removeMesh(this.tile.id);
         if (dontSend) return;
         if (this.sightMesh) this.sightMesh.name = "sightMesh";
         this.mesh.traverse((o) => {
+            o.updateMatrix();
             o.updateMatrixWorld();
         });
         this.mesh.updateMatrixWorld();
@@ -167,6 +174,8 @@ export class Tile3D {
             isOpen: this.isOpen,
         };
         this._parent.workers.addMesh(data);
+        currentParent.add(this.mesh);
+        this.mesh.position.copy(currentPosition);
     }
 
     initRandom() {
