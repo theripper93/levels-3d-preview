@@ -1,0 +1,11 @@
+Model Information:
+* title:	Bullet 045 (HQ)
+* source:	https://sketchfab.com/3d-models/bullet-045-hq-938eafe6131d400db324f13e67364466
+* author:	MyNameIsVoo (https://sketchfab.com/mynameisvoo)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Bullet 045 (HQ)" (https://sketchfab.com/3d-models/bullet-045-hq-938eafe6131d400db324f13e67364466) by MyNameIsVoo (https://sketchfab.com/mynameisvoo) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

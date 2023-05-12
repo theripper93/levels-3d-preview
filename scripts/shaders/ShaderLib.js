@@ -636,8 +636,8 @@ export const shaders = {
         ],
         fragmentShader: [
             {
-                mode: SHADERS_CONSTS.APPEND,
-                injectionPoint: "#include <dithering_fragment>",
+                mode: SHADERS_CONSTS.PREPEND,
+                injectionPoint: "#include <fog_fragment>",
                 shaderCode: `
                 if(wind_ground_blend_percent < wind_ground_blend && wind_ground_blend > 0.0) {
                     float ground_blend_factor = 1.0 - wind_ground_blend_percent / wind_ground_blend;
@@ -842,8 +842,8 @@ export const shaders = {
         ],
         fragmentShader: [
             {
-                mode: SHADERS_CONSTS.APPEND,
-                injectionPoint: "#include <dithering_fragment>",
+                mode: SHADERS_CONSTS.PREPEND,
+                injectionPoint: "#include <fog_fragment>",
                 shaderCode: `
                 if(ocean_foam){
                     gl_FragColor.rgb = mix(gl_FragColor.rgb, vec3(1.0, 1.0, 1.0), ocean_foam_factor * 0.5);
@@ -968,8 +968,8 @@ export const shaders = {
         ],
         fragmentShader: [
             {
-                mode: SHADERS_CONSTS.APPEND,
-                injectionPoint: "#include <dithering_fragment>",
+                mode: SHADERS_CONSTS.PREPEND,
+                injectionPoint: "#include <fog_fragment>",
                 shaderCode: `
                 if(grid_height_percent <= grid_heightCulling && abs(shader_vNormal.y) > grid_normalCulling){
                     if(grid_showBounds){
@@ -1136,8 +1136,8 @@ export const shaders = {
         vertexShader: [],
         fragmentShader: [
             {
-                mode: SHADERS_CONSTS.APPEND,
-                injectionPoint: "#include <dithering_fragment>",
+                mode: SHADERS_CONSTS.PREPEND,
+                injectionPoint: "#include <fog_fragment>",
                 shaderCode: `
                 vec2 noiseSampler = shader_vUv;
                 #ifdef USE_UV
@@ -1199,8 +1199,8 @@ export const shaders = {
         vertexShader: [],
         fragmentShader: [
             {
-                mode: SHADERS_CONSTS.APPEND,
-                injectionPoint: "#include <dithering_fragment>",
+                mode: SHADERS_CONSTS.PREPEND,
+                injectionPoint: "#include <fog_fragment>",
                 shaderCode: `
                 vec2 noiseSampler = shader_vUv;
                 #ifdef USE_UV
@@ -1259,8 +1259,8 @@ export const shaders = {
         vertexShader: [],
         fragmentShader: [
             {
-                mode: SHADERS_CONSTS.APPEND,
-                injectionPoint: "#include <dithering_fragment>",
+                mode: SHADERS_CONSTS.PREPEND,
+                injectionPoint: "#include <fog_fragment>",
                 shaderCode: `
                 vec3 noiseVec = vWorldPositionFoW;          
                 
@@ -1309,8 +1309,8 @@ export const shaders = {
         vertexShader: [],
         fragmentShader: [
             {
-                mode: SHADERS_CONSTS.APPEND,
-                injectionPoint: "#include <dithering_fragment>",
+                mode: SHADERS_CONSTS.PREPEND,
+                injectionPoint: "#include <fog_fragment>",
                 shaderCode: `
                 vec3 noiseSampler = vWorldPositionFoW;
                 vec3 c1 = oil_color*0.1;
@@ -1368,8 +1368,8 @@ export const shaders = {
         vertexShader: [],
         fragmentShader: [
             {
-                mode: SHADERS_CONSTS.APPEND,
-                injectionPoint: "#include <dithering_fragment>",
+                mode: SHADERS_CONSTS.PREPEND,
+                injectionPoint: "#include <fog_fragment>",
                 shaderCode: `
                 float colorwarp_time_fac = 1.0;
                 float noise = colorwarp_flicker ? noise(vec2(time*0.05, time*0.05)) : 1.0;
@@ -1959,8 +1959,8 @@ export const shaders = {
         ],
         fragmentShader: [
             {
-                mode: SHADERS_CONSTS.APPEND,
-                injectionPoint: "#include <dithering_fragment>",
+                mode: SHADERS_CONSTS.PREPEND,
+                injectionPoint: "#include <fog_fragment>",
                 shaderCode: `
                 float sound_fac = ((sound.x + sound.y + sound.z - 3.0)/3.0);
                 if(sound_chroma){

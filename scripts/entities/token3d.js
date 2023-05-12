@@ -197,6 +197,7 @@ export class Token3D {
         }
 
         await this.setMaterial(model);
+        await this.setPortrait(model);
         //Apply rotation
         model.rotation.set(this.rotationX + model.rotation._x, this.rotationY + model.rotation._y, this.rotationZ + model.rotation._z);
         //Calculate scale
@@ -376,6 +377,25 @@ export class Token3D {
                 if (child.isMesh) {
                     child.material = material;
                 }
+            });
+        }
+    }
+
+    async setPortrait(model) {
+        let portraitMesh = null;
+        if (model.children?.length) {
+            model.traverse((child) => {
+                if (child.isMesh) {
+                    if (child.name === "portrait-target") {
+                        portraitMesh = child;
+                    }
+                }
+            });
+        }
+        if (portraitMesh) {
+            const text = await this._parent.helpers.loadTexture(this.token.actor?.img ?? this.token.texture.src);
+            portraitMesh.material = new THREE.MeshStandardMaterial({
+                map: text,
             });
         }
     }

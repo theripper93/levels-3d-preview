@@ -1328,6 +1328,10 @@
             "magicburst" : "Magic Burst",
             "json": "Custom (JSON)",
             "jb2aexplosion": "Explosion (JB2A Animated)",
+            "jb2aexplosionnolight": "Explosion (JB2A Animated, No Light)",
+            "arrow" : "Arrow",
+            "magicarrow" : "Magic Arrow",
+            "bullet" : "Bullet",
             "castingsign": "Ritual"
         },
         "macrodialog": {

@@ -33,7 +33,8 @@ import { defaultTokenAnimations } from "./handlers/tokenAnimationHandler.js";
 import { ClipNavigation, CLIP_NAVIGATION_BUTTONS } from "./apps/clipNavigation.js";
 import { presetMaterials, PresetMaterialHandler, populateScene } from "./helpers/presetMaterials.js";
 import { FXAAShader } from "./lib/FXAA.js";
-import { SMAAPass } from "./lib/SMAAPass.js";
+import {SMAAPass} from "./lib/SMAAPass.js";
+import { RenderPixelatedPass } from "./lib/RendererPixelPass.js";
 import { ShaderPass } from "./lib/ShaderPass.js";
 import { OutlineHandler } from "./handlers/OutlineHandler.js";
 import { ShaderHandler, shaders } from "./shaders/ShaderLib.js";
@@ -541,11 +542,20 @@ class Levels3DPreview {
         this.composer.removePass(this.renderPass);
         this.composer.removePass(this.bloomPass);
         this.composer.removePass(this.bokeh);
+        this.composer.removePass(this.pixelPass);
         this.bokeh = null;
         this.renderPass = new RenderPass(this.scene, this.camera);
         this.composer.addPass(this.renderPass);
         this.outline = new OutlineHandler(this);
         this.initAA();
+
+        if (canvas.scene.getFlag("levels-3d-preview", "pixel")){            
+            this.pixelPass = new RenderPixelatedPass(6, this.scene, this.camera);
+            this.pixelPass.depthEdgeStrength = 1;
+            this.pixelPass.normalEdgeStrength = 0;
+            this.composer.addPass(this.pixelPass);
+        }
+
         if (canvas.scene.getFlag("levels-3d-preview", "bloom")) {
             this.bloomPass = this.bloomPass ?? new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
             this.bloomPass.threshold = canvas.scene.getFlag("levels-3d-preview", "bloomThreshold") ?? 0;
