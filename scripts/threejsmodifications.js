@@ -171,4 +171,17 @@ export function injectThreeModifications(THREE) {
             return values;
         }
     };
+
+    THREE.Triangle.prototype.setFromAttributeAndIndices = function ( attribute, i0, i1, i2 ) {
+
+		this.a.fromBufferAttribute( attribute, i0 );
+		this.b.fromBufferAttribute( attribute, i1 );
+		this.c.fromBufferAttribute( attribute, i2 );
+
+		return this;
+
+	}
+
+
+
 }

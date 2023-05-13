@@ -415,6 +415,11 @@ export class Particle3D {
         return this;
     }
 
+    meshSurface(value = true) {
+        this.params.meshSurface = value;
+        return this;
+    }
+
     presetIntensity(intensity) {
         this.params.presetIntensity = intensity;
         return this;
@@ -497,6 +502,7 @@ class BaseParticleEffect {
         this._lightPiecewise = new QUARKS.PiecewiseBezier([[new QUARKS.Bezier(0,1,1,0),0]]);
         this._missScale = 1;
         this.params = {...this.defaultSettings, ...params};
+        this.setMeshSurface();
         this.autoSize();
         this.params.color.start = this.params.color.start.map(c => new THREE.Color(c));
         this.params.color.end = this.params.color.end.map(c => new THREE.Color(c));
@@ -538,8 +544,20 @@ class BaseParticleEffect {
     async init() {
         this.createAnimationPath();
         await this.createEmitter();
+        if (this.params.meshSurface) {
+            this.resetMatrix(this.emitter);
+            this.emitter.traverse(o => {
+                this.resetMatrix(o);
+            });
+        }
         this.addLight();
         this.attach();
+    }
+
+    resetMatrix(object33d) {
+        object33d.position.set(0, 0, 0);
+        object33d.rotation.set(0, 0, 0);
+        object33d.scale.set(1, 1, 1);
     }
 
     autoSize() {
@@ -575,6 +593,7 @@ class BaseParticleEffect {
         const origin = this.params.rotateTowards ? this._target : this._origin;
         const target = this.params.rotateTowards ? this._bottomTarget : this._target;
         if(!target || !origin) return;
+        if(this.params.rotateTowards) target.y -= 1;
         for (let i = 0, l = this.params.arc; i < l; i++) {
             const t = (i + 2) / (l + 2);
             const point = origin.clone();
@@ -622,7 +641,7 @@ class BaseParticleEffect {
     }
 
     async getMesh(filePath, basicMaterial = true) {
-        const model = await game.Levels3DPreview.helpers.loadModel(filePath);
+        const model = await game.Levels3DPreview.helpers.loadModel(filePath ?? this.params.sprite);
         let mesh;
         if (model) {
             model.scene.traverse((child) => {
@@ -639,6 +658,16 @@ class BaseParticleEffect {
                 fog: true,
         });
         return mesh;
+    }
+
+    setMeshSurface() {
+        if(!this.params.meshSurface) return;
+        if (!(this.to instanceof Tile)) return;
+        const tile3d = game.Levels3DPreview.tiles[this.to.id];
+
+        const mergedGeometry = tile3d.getMergedGeometry();
+        const shape = new QUARKS.MeshSurfaceEmitter(mergedGeometry)
+        this._meshSurface = shape;
     }
 
     async getCollision() {
@@ -917,7 +946,7 @@ class ProjectileParticle extends BaseParticleEffect {
             
             emissionOverDistance: new QUARKS.ConstantValue(this.params.rate.particles * 5),
         
-            shape: new QUARKS.PointEmitter({radius: Math.max(0.01, this.params.emitterSize)}),
+            shape: this._meshSurface ?? new QUARKS.PointEmitter({radius: Math.max(0.01, this.params.emitterSize)}),
             material: await this.getBasicMaterial(),
             renderOrder: 2,
             renderMode: QUARKS.RenderMode.Trail,
@@ -942,7 +971,7 @@ class ProjectileParticle extends BaseParticleEffect {
             
             emissionOverDistance: new QUARKS.ConstantValue(this.params.rate.particles * 5),
         
-            shape: new QUARKS.SphereEmitter({radius: this.params.emitterSize}),
+            shape: this._meshSurface ?? new QUARKS.SphereEmitter({radius: this.params.emitterSize}),
             material: await this.getBasicMaterial(),
             renderOrder: 2,
             renderMode: QUARKS.RenderMode.BillBoard,
@@ -960,7 +989,7 @@ class ProjectileParticle extends BaseParticleEffect {
             
             emissionOverDistance: new QUARKS.ConstantValue(this.params.rate.particles * 50),
         
-            shape: new QUARKS.ConeEmitter({radius: this.params.emitterSize, angle: Math.PI/2}),
+            shape: this._meshSurface ?? new QUARKS.ConeEmitter({radius: this.params.emitterSize, angle: Math.PI/2}),
             material: await this.getBasicMaterial(),
             renderOrder: 20,
             renderMode: QUARKS.RenderMode.BillBoard,
@@ -1048,7 +1077,7 @@ class BlackDart extends ProjectileParticle{
             
             emissionOverDistance: new QUARKS.ConstantValue(this.params.rate.particles * 5),
         
-            shape: new QUARKS.PointEmitter({radius: Math.max(0.01, this.params.emitterSize)}),
+            shape: this._meshSurface ?? new QUARKS.PointEmitter({radius: Math.max(0.01, this.params.emitterSize)}),
             material: await this.getBasicMaterial(),
             renderOrder: 4,
             renderMode: QUARKS.RenderMode.Trail,
@@ -1115,7 +1144,7 @@ class MagicArrow extends ProjectileParticle{
             
             emissionOverDistance: new QUARKS.ConstantValue(this.params.rate.particles * 5 * this.params.speed),
         
-            shape: new QUARKS.ConeEmitter({radius: 0.0001, angle: Math.PI / 16}),
+            shape: this._meshSurface ?? new QUARKS.ConeEmitter({radius: 0.0001, angle: Math.PI / 16}),
             material: await this.getBasicMaterial(),
             renderOrder: 4,
             renderMode: QUARKS.RenderMode.BillBoard,
@@ -1138,7 +1167,7 @@ class MagicArrow extends ProjectileParticle{
             
             emissionOverDistance: new QUARKS.ConstantValue(this.params.rate.particles * 5),
         
-            shape: new QUARKS.ConeEmitter({radius: 0.0001, angle: Math.PI / 4}),
+            shape: this._meshSurface ?? new QUARKS.ConeEmitter({radius: 0.0001, angle: Math.PI / 4}),
             material: await this.getBasicMaterial(),
             renderOrder: 4,
             renderMode: QUARKS.RenderMode.Trail,
@@ -1213,7 +1242,7 @@ class Arrow extends ProjectileParticle{
             
             emissionOverDistance: new QUARKS.ConstantValue(this.params.rate.particles * 5),
         
-            shape: new QUARKS.ConeEmitter({radius: 0.0001, angle: Math.PI / 4}),
+            shape: this._meshSurface ?? new QUARKS.ConeEmitter({radius: 0.0001, angle: Math.PI / 4}),
             material: await this.getBasicMaterial(),
             renderOrder: 4,
             renderMode: QUARKS.RenderMode.Trail,
@@ -1277,7 +1306,71 @@ class Bolt extends ProjectileParticle{
             
             emissionOverDistance: new QUARKS.ConstantValue(this.params.rate.particles * 5),
         
-            shape: new QUARKS.ConeEmitter({radius: 0.0001, angle: Math.PI / 4}),
+            shape: this._meshSurface ?? new QUARKS.ConeEmitter({radius: 0.0001, angle: Math.PI / 4}),
+            material: await this.getBasicMaterial(),
+            renderOrder: 4,
+            renderMode: QUARKS.RenderMode.Trail,
+        };
+
+        const trail = new QUARKS.ParticleSystem(trailData);
+        trail.addBehavior(new QUARKS.SizeOverLife(new QUARKS.PiecewiseBezier([[new QUARKS.Bezier(1, 0.95, 0.75, 0), this.params.scale.end]])));
+        trail.addBehavior(new QUARKS.ColorOverLife(new QUARKS.ColorRange(colorToVec4(this.params.color.start[0], this.params.alpha.start), colorToVec4(this.params.color.end[0], this.params.alpha.end))));
+        
+        //trail.emitter.position.z = -size.z / 3;
+        
+        this.emitter.add(trail.emitter);
+        this._arrow = arrowModel;
+        this._persistObjects.push(arrowModel);
+        this.emitter.add(arrowModel);
+        this.emitter.position.copy(this._origin);
+        this.particleSystems.push(trail);
+    }
+
+    animate(delta) {
+        this._arrow.rotation.z += delta * 10;
+        super.animate(delta);
+    }
+}
+
+class Javelin extends ProjectileParticle{
+
+    get AUTO_SIZE_FACTORS() {
+        return {
+            scale: 1,
+            emitterSize: 0.01,
+        }
+    }
+
+    addLight() { }
+
+    animateLight() { }
+
+    async createEmitter() {
+
+        const arrowModel = await this.getMesh("modules/levels-3d-preview/assets/particles/models/javelin_particle.glb", false);
+
+        arrowModel.scale.setScalar(this.params.scale.start);
+
+       this.emitter = new THREE.Group();
+
+        const trailData = {
+            duration: 1,
+            looping: true,
+            startLife: new QUARKS.IntervalValue(this.params.life.min, this.params.life.max),
+            startSpeed: new QUARKS.ConstantValue(0),
+            startSize: new QUARKS.ConstantValue(this.params.scale.start*0.5*0.5*0.1),
+            startColor: new QUARKS.ConstantColor(colorToVec4(new THREE.Color("white"),1)),
+            worldSpace: true,
+            prewarm: true,
+
+            rendererEmitterSettings: {
+                startLength: new QUARKS.ConstantValue(10),
+                followLocalOrigin: true,
+            },
+            
+            emissionOverDistance: new QUARKS.ConstantValue(this.params.rate.particles * 5),
+        
+            shape: this._meshSurface ?? new QUARKS.ConeEmitter({radius: 0.0001, angle: Math.PI / 4}),
             material: await this.getBasicMaterial(),
             renderOrder: 4,
             renderMode: QUARKS.RenderMode.Trail,
@@ -1341,7 +1434,7 @@ class Bullet extends ProjectileParticle{
             
             emissionOverDistance: new QUARKS.ConstantValue(this.params.rate.particles * 5),
         
-            shape: new QUARKS.ConeEmitter({radius: 0.0001, angle: Math.PI / 4}),
+            shape: this._meshSurface ?? new QUARKS.ConeEmitter({radius: 0.0001, angle: Math.PI / 4}),
             material: await this.getBasicMaterial(),
             renderOrder: 4,
             renderMode: QUARKS.RenderMode.Trail,
@@ -1366,6 +1459,220 @@ class Bullet extends ProjectileParticle{
     }
 }
 
+class Swing extends ProjectileParticle{
+
+    constructor (...args) {
+        super(...args);
+        this.params.rotateTowards = true;
+        this._maxduration = this.params.duration;
+    }
+
+    get AUTO_SIZE_FACTORS() {
+        return {
+            scale: 1,
+            emitterSize: 0.01,
+        }
+    }
+
+    addLight() { }
+
+    animateLight() { }
+
+    async createEmitter() {
+
+        const model = await this.getMesh(null, false);
+
+        model.scale.setScalar(this.params.scale.start);
+        const box3 = new THREE.Box3().setFromObject(model)
+        const weaponModel = new THREE.Group();
+        weaponModel.add(model);
+        const outerGroup = new THREE.Group();
+        outerGroup.add(weaponModel);
+        outerGroup.rotation.z = -Math.PI / 2 + Math.random() * (Math.PI);
+        
+       this.emitter = new THREE.Group();
+
+        const trailData = {
+            duration: 1,
+            looping: true,
+            startLife: new QUARKS.IntervalValue(0.5, 0.7),
+            startSpeed: new QUARKS.ConstantValue(0),
+            startSize: new QUARKS.ConstantValue(this.params.scale.start*0.33),
+            startColor: new QUARKS.ConstantColor(colorToVec4(new THREE.Color("white"),1)),
+            worldSpace: true,
+            prewarm: false,
+
+            rendererEmitterSettings: {
+                startLength: new QUARKS.ConstantValue(30),
+                followLocalOrigin: true,
+            },
+            
+            emissionOverDistance: new QUARKS.ConstantValue(this.params.rate.particles * 5),
+        
+            shape: this._meshSurface ?? new QUARKS.SphereEmitter({radius: this.params.scale.start*0.1}),
+            material: await this.getBasicMaterial("modules/levels-3d-preview/assets/particles/flame_02.png"),
+            renderOrder: 4,
+            renderMode: QUARKS.RenderMode.Trail,
+        };
+
+        const trail = new QUARKS.ParticleSystem(trailData);
+        trail.addBehavior(new QUARKS.SizeOverLife(new QUARKS.PiecewiseBezier([[new QUARKS.Bezier(1, 0.95, 0.75, 0), this.params.scale.end]])));
+        trail.addBehavior(new QUARKS.ColorOverLife(new QUARKS.ColorRange(colorToVec4(this.params.color.start[0], this.params.alpha.start), colorToVec4(this.params.color.end[0], this.params.alpha.end))));
+        
+        this._sizePiecewise = new QUARKS.PiecewiseBezier([[new QUARKS.Bezier(0,0.10016666412353516,1.4605379065236666,1.4785303661534257),0],[new QUARKS.Bezier(1.4785303661534257,1.5032568879077353,1.538933101357817,1.524796690915664),0.10799999237060547],[new QUARKS.Bezier(1.524796690915664,1.5362982459717474,0.06126674613115683,0.0016847146160523171),0.9267499923706055]]);
+        this._rotationPiecewise = new QUARKS.PiecewiseBezier([[new QUARKS.Bezier(0.1, 0.2, 0.3, 1), 0]]);
+        //trail.emitter.position.z = -size.z / 3;
+        trail.emitter.position.y = box3.max.y * 0.9;
+        weaponModel.add(trail.emitter);
+        this._weaponModel = weaponModel;
+        this._trail = trail;
+        this.emitter.add(outerGroup);
+        this.emitter.position.copy(this._origin);
+        this.emitter.lookAt(this._target);
+        this.particleSystems.push(trail);
+    }
+
+    animate(delta) {
+        if (!this.animationPath) return;
+        this._time += delta;
+        this._currentSpeed = this._time * this._speed;
+        this._duration -= delta;
+        if (this._duration < 0) {
+            this.ended = true;
+            return;
+        }
+        if (this._currentSpeed > 1 && !this._prematureEnding) {
+            this._prematureEnding = true;
+            this._playOnEnd = true;
+            this.onEnd();
+            this.ended = false;
+        }
+        this._weaponModel.scale.setScalar(this._sizePiecewise.genValue(1 - (this._duration / this._maxduration)));
+        this._trail.paused = this._weaponModel.scale.x < 0.9 && this._currentSpeed < 1;
+        if (this._currentSpeed > 1) {
+            this._trail.looping = false;
+            this._trail.duration = 0;
+            this._trail.emissionOverDistance = new QUARKS.ConstantValue(0);
+            this.emitter.attach(this._trail.emitter);
+        }
+        const point = this._origin; //this._origin.clone().lerp(this._target, this._currentSpeed);
+        if(this._currentSpeed < 1) {
+            this.emitter.position.copy(point);
+            this._weaponModel.rotation.x = -Math.PI/3 + this._rotationPiecewise.genValue(this._currentSpeed) * Math.PI*0.8;
+        }
+    }
+}
+
+class Thrust extends ProjectileParticle{
+
+    constructor (...args) {
+        super(...args);
+        this.params.rotateTowards = true;
+        this._maxduration = this.params.duration;
+    }
+
+    get AUTO_SIZE_FACTORS() {
+        return {
+            scale: 1,
+            emitterSize: 0.01,
+        }
+    }
+
+    addLight() { }
+
+    animateLight() { }
+
+    async createEmitter() {
+
+        const model = await this.getMesh(null, false);
+
+        model.scale.setScalar(this.params.scale.start);
+        const box3 = new THREE.Box3().setFromObject(model)
+        const size = box3.getSize(new THREE.Vector3());
+        this._moveAmount = size.y * 0.5;
+        const weaponModel = new THREE.Group();
+        weaponModel.add(model);
+        weaponModel.rotation.x = Math.PI/2;
+        weaponModel.rotation.y = Math.random() * Math.PI * 2;
+        const outerGroup = new THREE.Group();
+        outerGroup.add(weaponModel);
+        //outerGroup.rotation.z = -Math.PI / 2 + Math.random() * (Math.PI);
+        
+       this.emitter = new THREE.Group();
+
+        const trailData = {
+            duration: 1,
+            looping: true,
+            startLife: new QUARKS.IntervalValue(0.5, 0.7),
+            startSpeed: new QUARKS.ConstantValue(0),
+            startSize: new QUARKS.ConstantValue(this.params.scale.start*0.33),
+            startColor: new QUARKS.ConstantColor(colorToVec4(new THREE.Color("white"),1)),
+            worldSpace: true,
+            prewarm: false,
+
+            rendererEmitterSettings: {
+                startLength: new QUARKS.ConstantValue(30),
+                followLocalOrigin: true,
+            },
+            
+            emissionOverDistance: new QUARKS.ConstantValue(this.params.rate.particles * 5),
+        
+            shape: this._meshSurface ?? new QUARKS.SphereEmitter({radius: this.params.scale.start*0.1}),
+            material: await this.getBasicMaterial("modules/levels-3d-preview/assets/particles/flame_02.png"),
+            renderOrder: 4,
+            renderMode: QUARKS.RenderMode.Trail,
+        };
+
+        const trail = new QUARKS.ParticleSystem(trailData);
+        trail.addBehavior(new QUARKS.SizeOverLife(new QUARKS.PiecewiseBezier([[new QUARKS.Bezier(1, 0.95, 0.75, 0), this.params.scale.end]])));
+        trail.addBehavior(new QUARKS.ColorOverLife(new QUARKS.ColorRange(colorToVec4(this.params.color.start[0], this.params.alpha.start), colorToVec4(this.params.color.end[0], this.params.alpha.end))));
+        
+        this._sizePiecewise = new QUARKS.PiecewiseBezier([[new QUARKS.Bezier(0,0.10016666412353516,1.4605379065236666,1.4785303661534257),0],[new QUARKS.Bezier(1.4785303661534257,1.5032568879077353,1.538933101357817,1.524796690915664),0.10799999237060547],[new QUARKS.Bezier(1.524796690915664,1.5362982459717474,0.06126674613115683,0.0016847146160523171),0.9267499923706055]]);
+        this._rotationPiecewise = new QUARKS.PiecewiseBezier([[new QUARKS.Bezier(0.1, 0.2, 0.3, 1), 0]]);
+        //trail.emitter.position.z = -size.z / 3;
+        trail.emitter.position.y = box3.max.y * 0.9;
+        weaponModel.add(trail.emitter);
+        this._weaponModel = weaponModel;
+        this._trail = trail;
+        this.emitter.add(outerGroup);
+        const randomAngle = Math.random() * Math.PI * 2;
+        this._origin.x += Math.cos(randomAngle) * this.params.scale.start * 0.5;
+        this._origin.z += Math.sin(randomAngle) * this.params.scale.start * 0.5;
+        this.emitter.position.copy(this._origin);
+        this.emitter.lookAt(this._target);
+        this.particleSystems.push(trail);
+    }
+
+    animate(delta) {
+        if (!this.animationPath) return;
+        this._time += delta;
+        this._currentSpeed = this._time * this._speed;
+        this._duration -= delta;
+        if (this._duration < 0) {
+            this.ended = true;
+            return;
+        }
+        if (this._currentSpeed > 1 && !this._prematureEnding) {
+            this._prematureEnding = true;
+            this._playOnEnd = true;
+            this.onEnd();
+            this.ended = false;
+        }
+        this._weaponModel.scale.setScalar(this._sizePiecewise.genValue(1 - (this._duration / this._maxduration)));
+        this._trail.paused = this._weaponModel.scale.x < 0.9 && this._currentSpeed < 1;
+        if (this._currentSpeed > 1) {
+            this._trail.looping = false;
+            this._trail.duration = 0;
+            this._trail.emissionOverDistance = new QUARKS.ConstantValue(0);
+            this.emitter.attach(this._trail.emitter);
+        }
+        const point = this._origin; //this._origin.clone().lerp(this._target, this._currentSpeed);
+        if(this._currentSpeed < 1) {
+            this.emitter.position.copy(point);
+            this._weaponModel.position.z = -this._moveAmount + this._moveAmount*this._rotationPiecewise.genValue(this._currentSpeed);
+        }
+    }
+}
 class Shotgun extends ProjectileParticle {
 
     constructor (...args) {
@@ -1412,7 +1719,7 @@ class Shotgun extends ProjectileParticle {
 
             emissionOverTime: new QUARKS.ConstantValue(0),
         
-            shape: new QUARKS.ConeEmitter({radius: 0.00001, angle: Math.PI/12}),
+            shape: this._meshSurface ?? new QUARKS.ConeEmitter({radius: 0.00001, angle: Math.PI/12}),
             material: await this.getBasicMaterial(),
             renderOrder: 5,
             renderMode: QUARKS.RenderMode.StretchedBillBoard,
@@ -1490,7 +1797,7 @@ class EarthProjectile extends ProjectileParticle {
             
             emissionOverTime: new QUARKS.ConstantValue(this.params.rate.particles),
         
-            shape: new QUARKS.ConeEmitter({radius: 0, angle: Math.PI / 2}),
+            shape: this._meshSurface ?? new QUARKS.ConeEmitter({radius: 0, angle: Math.PI / 2}),
             material: rock1Mesh.material,
             renderOrder: 2,
             renderMode: QUARKS.RenderMode.Mesh,
@@ -1544,7 +1851,7 @@ class EarthProjectile extends ProjectileParticle {
                 },
             ],
         
-            shape: new QUARKS.DonutEmitter({radius: this.params.scale.start*0.3, angle: Math.PI / 2}),
+            shape: this._meshSurface ?? new QUARKS.DonutEmitter({radius: this.params.scale.start*0.3, angle: Math.PI / 2}),
             material: smokeNormal,
             startTileIndex: new QUARKS.IntervalValue(0, 8),
             uTileCount: 3,
@@ -1667,7 +1974,7 @@ class RunicShot extends ProjectileParticle {
             
             emissionOverDistance: new QUARKS.ConstantValue(this.params.rate.particles * 5),
         
-            shape: new QUARKS.PointEmitter({radius: Math.max(0.01, this.params.emitterSize)}),
+            shape: this._meshSurface ?? new QUARKS.PointEmitter({radius: Math.max(0.01, this.params.emitterSize)}),
             material: await this.getBasicMaterial("modules/levels-3d-preview/assets/particles/circle_05.png"),
             renderOrder: 2,
             renderMode: QUARKS.RenderMode.Trail,
@@ -1692,7 +1999,7 @@ class RunicShot extends ProjectileParticle {
             
             emissionOverDistance: new QUARKS.ConstantValue(this.params.rate.particles * 5),
         
-            shape: new QUARKS.SphereEmitter({radius: this.params.emitterSize}),
+            shape: this._meshSurface ?? new QUARKS.SphereEmitter({radius: this.params.emitterSize}),
             material: await this.getBasicMaterial("modules/levels-3d-preview/assets/particles/circle_05.png"),
             renderOrder: 2,
             renderMode: QUARKS.RenderMode.BillBoard,
@@ -1710,7 +2017,7 @@ class RunicShot extends ProjectileParticle {
             
             emissionOverDistance: new QUARKS.ConstantValue(this.params.rate.particles * 50),
         
-            shape: new QUARKS.SphereEmitter({radius: this.params.emitterSize, angle: Math.PI/2}),
+            shape: this._meshSurface ?? new QUARKS.SphereEmitter({radius: this.params.emitterSize, angle: Math.PI/2}),
             material: await this.getBasicMaterial("modules/levels-3d-preview/assets/particles/circle_05.png"),
             renderOrder: 20,
             renderMode: QUARKS.RenderMode.BillBoard,
@@ -1769,7 +2076,7 @@ class RunicShot extends ProjectileParticle {
             
             emissionOverTime: new QUARKS.ConstantValue(0),
         
-            shape: new QUARKS.ConeEmitter({radius: 0.000000001, angle: 0.000001}),
+            shape: this._meshSurface ?? new QUARKS.ConeEmitter({radius: 0.000000001, angle: 0.000001}),
             material: await this.getBasicMaterial(),
             renderOrder: 10,
             renderMode: QUARKS.RenderMode.Mesh,
@@ -1853,7 +2160,7 @@ class ExplosionParticle extends BaseParticleEffect {
             },
             emissionOverTime: new QUARKS.ConstantValue(this.params.rate.particles * 5),
         
-            shape: new QUARKS.SphereEmitter({radius: this.params.emitterSize}),
+            shape: this._meshSurface ?? new QUARKS.SphereEmitter({radius: this.params.emitterSize}),
             material: await this.getBasicMaterial(),
             renderOrder: 2,
             renderMode: QUARKS.RenderMode.BillBoard,
@@ -1880,7 +2187,7 @@ class ExplosionParticle extends BaseParticleEffect {
                 probability: 1,
             }],
         
-            shape: new QUARKS.SphereEmitter({radius: this.params.emitterSize/4}),
+            shape: this._meshSurface ?? new QUARKS.SphereEmitter({radius: this.params.emitterSize/4}),
             material: await this.getBasicMaterial("modules/levels-3d-preview/assets/particles/circle_05.png"),
             renderOrder: 2,
             renderMode: QUARKS.RenderMode.Trail,
@@ -1990,7 +2297,7 @@ class JB2AExplosion extends ExplosionParticle {
             }],
             emissionOverTime: new QUARKS.ConstantValue(0),
         
-            shape: new QUARKS.PointEmitter({radius: this.params.emitterSize}),
+            shape: this._meshSurface ?? new QUARKS.PointEmitter({radius: this.params.emitterSize}),
             material: await this.getBasicMaterial(null, THREE.AdditiveBlending),
             renderOrder: 1,
             renderMode: QUARKS.RenderMode.BillBoard,
@@ -2061,7 +2368,7 @@ class JB2AExplosionNoLight extends ExplosionParticle {
             }],
             emissionOverTime: new QUARKS.ConstantValue(0),
         
-            shape: new QUARKS.PointEmitter({radius: this.params.emitterSize}),
+            shape: this._meshSurface ?? new QUARKS.PointEmitter({radius: this.params.emitterSize}),
             material: await this.getBasicMaterial(null, THREE.AdditiveBlending),
             renderOrder: 1,
             renderMode: QUARKS.RenderMode.BillBoard,
@@ -2150,7 +2457,7 @@ class CastingSign extends ExplosionParticle {
             
             emissionOverTime: new QUARKS.ConstantValue(0),
         
-            shape: new QUARKS.ConeEmitter({radius: 0.000000001, angle: 0.000001}),
+            shape: this._meshSurface ?? new QUARKS.ConeEmitter({radius: 0.000000001, angle: 0.000001}),
             material: await this.getBasicMaterial(),
             renderOrder: 10,
             renderMode: QUARKS.RenderMode.Mesh,
@@ -2181,6 +2488,277 @@ class CastingSign extends ExplosionParticle {
         this.emitter.add(burst.emitter);
         this.emitter.position.copy(this._originBottom ?? this._targetBottom);
         this.particleSystems.push(burst);
+    }
+
+    animate(delta) {
+        if (this._lightTime > 0) this._lightTime -= delta;
+        super.animate(delta);
+    }
+}
+
+class Lightning extends ExplosionParticle {
+
+    constructor (...args) {
+        super(...args);
+        this._lightTime = 0.3;
+        this._initialLightTime = 0.3;
+    }
+
+    get AUTO_SIZE_FACTORS() {
+        return {
+            scale: 0.85,
+            emitterSize: 1,
+        }
+    }
+
+    addLight() {
+        const light = ParticleEngine.getLightInstance();
+        if (light) {
+            this._light = light;
+            this._lightIntensity = 10;
+            light.decay = 2;
+            light.intensity = 0;
+            light.distance = 5;
+            light.color = this.params.color.start[0];
+            light.position.set(0,0,0);
+            this.emitter.add(light);
+        }
+    }
+
+    animateLight(delta) {
+        super.animateLight(delta);
+        this._light.intensity = this._lightIntensity * this._lightPiecewise.genValue(this._lightTime / this._initialLightTime);
+    }
+
+    async createEmitter() {
+        this.emitter = new THREE.Group();
+
+        const plane = new THREE.PlaneGeometry(1,5);
+
+        const burstData = {
+            duration: 1,
+            looping: false,
+            startLife: new QUARKS.ConstantValue(this.params.duration*1.5),
+            startSpeed: new QUARKS.ConstantValue(0),
+            startSize: new QUARKS.ConstantValue(this.params.scale.start*2),
+            startColor: new QUARKS.ConstantColor(colorToVec4(new THREE.Color("white"), 1)),
+            startRotation: new QUARKS.EulerGenerator(new QUARKS.ConstantValue(0), new QUARKS.IntervalValue(0, 2 * Math.PI), new QUARKS.ConstantValue(0)),
+            worldSpace: false,
+            prewarm: false,
+            instancingGeometry: new THREE.PlaneGeometry(1,1),
+            
+            
+            emissionOverTime: new QUARKS.ConstantValue(this.params.rate.particles/5),
+        
+            shape: this._meshSurface ?? new QUARKS.ConeEmitter({radius: 0.000000001, angle: 0.000001}),
+            material: await this.getBasicMaterial("modules/levels-3d-preview/assets/particles/spark_02.png"),
+            renderOrder: 10,
+            renderMode: QUARKS.RenderMode.Mesh,
+        };
+
+        const bangData = {
+            duration: 1,
+            looping: false,
+            startLife: new QUARKS.ConstantValue(0.2),
+            startSpeed: new QUARKS.ConstantValue(0),
+            startSize: new QUARKS.ConstantValue(8 * this.params.scale.start),
+            startColor: new QUARKS.ConstantColor(colorToVec4(new THREE.Color("white"), 1)),
+            startRotation: new QUARKS.IntervalValue(0, Math.PI * 2),
+            worldSpace: false,
+            prewarm: false,
+            rendererEmitterSettings: {
+                followLocalOrigin: true
+            },
+            emissionBursts: [
+                {
+                time: 0.01,
+                count: 1,
+                cycle: 1,
+                interval: 0,
+                probability: 1,
+            }],
+            emissionOverTime: new QUARKS.ConstantValue(0),
+        
+            shape: this._meshSurface ?? new QUARKS.PointEmitter({radius: this.params.emitterSize}),
+            material: await this.getBasicMaterial("modules/levels-3d-preview/assets/particles/spark_02.png"),
+            renderOrder: 1,
+            renderMode: QUARKS.RenderMode.BillBoard,
+        };
+
+        const lightningData = {
+            duration: 1,
+            looping: false,
+            startLife: new QUARKS.IntervalValue(0.1, 0.2),
+            startSpeed: new QUARKS.ConstantValue(10),
+            startSize: new QUARKS.ConstantValue(this.params.scale.start*4),
+            startColor: new QUARKS.ConstantColor(colorToVec4(new THREE.Color("white"),1)),
+            startRotation: new QUARKS.EulerGenerator(new QUARKS.ConstantValue(Math.PI/2), new QUARKS.IntervalValue(0, 2*Math.PI), new QUARKS.ConstantValue(0)),
+            worldSpace: true,
+            prewarm: true,
+            instancingGeometry: plane,
+            
+            emissionBursts: [
+                {
+                    time: 0,
+                    count: 1,
+                    cycleCount: 1,
+                    interval: 0,
+                    probability: 0,
+                },
+                {
+                    time: 0.01,
+                    count: 0,
+                    cycleCount: 1,
+                    interval: 0,
+                    probability: 1,
+                }
+            ],
+            
+            emissionOverTime: new QUARKS.ConstantValue(this.params.rate.particles*2),
+        
+            shape: this._meshSurface ?? new QUARKS.ConeEmitter({radius: this.params.emitterSize * 0.2, angle: 0.000001}),
+            material: await this.getBasicMaterial("modules/levels-3d-preview/assets/particles/lightning_4x4.png"),
+            uTileCount: 2,
+            vTileCount: 2,
+            startTileIndex: new QUARKS.IntervalValue(0, 3),
+            renderOrder: 10,
+            renderMode: QUARKS.RenderMode.Mesh,
+        };
+
+        const lightningData2 = {
+            duration: 1,
+            looping: false,
+            startLife: new QUARKS.IntervalValue(0.1, 0.2),
+            startSpeed: new QUARKS.ConstantValue(0.5),
+            startSize: new QUARKS.IntervalValue(this.params.scale.start*2 ,this.params.scale.start*3),
+            startColor: new QUARKS.ConstantColor(colorToVec4(new THREE.Color("white"),1)),
+            startRotation: new QUARKS.IntervalValue(0, 2*Math.PI),
+            worldSpace: false,
+            prewarm: false,
+            speedFactor: 0.5,
+
+            rendererEmitterSettings: {
+                startLength: new QUARKS.ConstantValue(100),
+            },
+            
+            emissionBursts: [
+                {
+                    time: 0,
+                    count: 1,
+                    cycleCount: 1,
+                    interval: 0,
+                    probability: 0,
+                },
+                {
+                    time: 0.01,
+                    count: 0,
+                    cycleCount: 1,
+                    interval: 0,
+                    probability: 1,
+                }
+            ],
+            
+            emissionOverTime: new QUARKS.ConstantValue(this.params.rate.particles),
+        
+            shape: this._meshSurface ?? new QUARKS.ConeEmitter({radius: 0.0001, angle: Math.PI/4}),
+            material: await this.getBasicMaterial("modules/levels-3d-preview/assets/particles/spark_02.png"),
+            renderOrder: 10,
+            renderMode: QUARKS.RenderMode.BillBoard,
+        };
+
+        const innerFlashData = {
+            duration: 1,
+            looping: false,
+            startLife: new QUARKS.IntervalValue(0.4, 0.6),
+            startSpeed: new QUARKS.IntervalValue(0.3,0.6),
+            startSize: new QUARKS.IntervalValue(0.02, 0.04),
+            startColor: new QUARKS.ConstantColor(colorToVec4(new THREE.Color("white"), 0.7)),
+            startRotation: new QUARKS.IntervalValue(0, 2*Math.PI),
+            worldSpace: false,
+            prewarm: false,
+            rendererEmitterSettings: {
+                startLength: new QUARKS.ConstantValue(10),
+            },
+            emissionOverTime: new QUARKS.ConstantValue(0),
+            emissionBursts: [{
+                time: 0,
+                count: this.params.rate.particles*5,
+                cycle: 1,
+                interval: 0.01,
+                probability: 1,
+            }],
+        
+            shape: this._meshSurface ?? new QUARKS.SphereEmitter({radius: this.params.emitterSize}),
+            material: await this.getBasicMaterial("modules/levels-3d-preview/assets/particles/trace_04.png"),
+            renderOrder: 4,
+            renderMode: QUARKS.RenderMode.BillBoard,
+        };
+
+
+        this._duration = burstData.material?.map?.image?.duration ?? this._duration;
+        this._lightTime = this._duration;
+        this._initialLightTime = this._duration;
+
+        this.isAAnimated = burstData.material?.map?.image?.duration;
+
+        const gradient = new QUARKS.Gradient(
+            [
+                [new QUARKS.ColorRange(colorToVec4(this.params.color.start[0], 1), colorToVec4(this.params.color.start[0], 1)), 0],
+                [new QUARKS.ColorRange(colorToVec4(this.params.color.start[0], 1), colorToVec4(this.params.color.end[0], 1)), 0.314],
+                [new QUARKS.ColorRange(colorToVec4(this.params.color.end[0], 1), colorToVec4(this.params.color.end[0], 0)), 0.822],
+                [new QUARKS.ColorRange(colorToVec4(this.params.color.end[0], 0), colorToVec4(this.params.color.end[0], 0)),1],
+            ]
+        );
+        
+        const gradient2 = new QUARKS.Gradient(
+            [
+                [new QUARKS.ColorRange(colorToVec4(this.params.color.start[0], 1), colorToVec4(this.params.color.start[0], 0)), 0],
+                [new QUARKS.ColorRange(colorToVec4(this.params.color.start[0], 0), colorToVec4(this.params.color.end[0], 1)), 0.314],
+                [new QUARKS.ColorRange(colorToVec4(this.params.color.end[0], 1), colorToVec4(this.params.color.end[0], 0)), 0.822],
+                [new QUARKS.ColorRange(colorToVec4(this.params.color.end[0], 0), colorToVec4(this.params.color.end[0], 0)),1],
+            ]
+        );
+        
+        burstData.startLife = new QUARKS.ConstantValue(this._duration);
+
+        this._material = burstData.material;
+        const burst = new QUARKS.ParticleSystem(burstData);
+        burst.emitter.rotation.x = - Math.PI / 2;
+        burst.emitter.position.y = 0.001
+        const piecewise = new QUARKS.PiecewiseBezier([[new QUARKS.Bezier(0,0.10016666412353516,1.4605379065236666,1.4785303661534257),0],[new QUARKS.Bezier(1.4785303661534257,1.5032568879077353,1.538933101357817,1.524796690915664),0.10799999237060547],[new QUARKS.Bezier(1.524796690915664,1.5362982459717474,0.06126674613115683,0.0016847146160523171),0.9267499923706055]]);
+
+        burst.addBehavior(new QUARKS.SizeOverLife(new QUARKS.PiecewiseBezier([[new QUARKS.Bezier(0, 0.95, 0.95, 1), 0]])));
+        burst.addBehavior(new QUARKS.ColorOverLife(gradient));
+        //burst.addBehavior(new QUARKS.Rotation3DOverLife(new QUARKS.AxisAngleGenerator(new THREE.Vector3(0,0,1) , new QUARKS.ConstantValue(this.params.speed), true)));
+        
+
+        const lightning = new QUARKS.ParticleSystem(lightningData);
+        lightning.addBehavior(new QUARKS.ColorOverLife(gradient));
+
+        const lighting2 = new QUARKS.ParticleSystem(lightningData2);
+        lighting2.addBehavior(new QUARKS.ColorOverLife(gradient));
+        lighting2.emitter.rotation.x = - Math.PI / 2;
+      
+        lightning.emitter.rotation.x = Math.PI / 2;
+        lightning.emitter.position.y = this.params.scale.start * 2 * 5 + 1;
+
+        const bang = new QUARKS.ParticleSystem(bangData);
+        bang.emitter.rotation.x = Math.PI / 2;
+        bang.addBehavior(new QUARKS.ColorOverLife(gradient));
+        bang.addBehavior(new QUARKS.SizeOverLife(new QUARKS.PiecewiseBezier([[new QUARKS.Bezier(0, 0.95, 0.95, 1), 0]])));
+        
+        const flash = new QUARKS.ParticleSystem(innerFlashData)
+        flash.emitter.rotation.x = Math.PI / 2;
+        flash.addBehavior(new QUARKS.ColorOverLife(gradient2));
+        flash.addBehavior(new QUARKS.SpeedOverLife(new QUARKS.PiecewiseBezier([[new QUARKS.Bezier(1, 0, 0, 0), 0]])));
+
+        this.emitter.add(burst.emitter);
+        this.emitter.add(lightning.emitter);
+        this.emitter.add(lighting2.emitter);
+        this.emitter.add(bang.emitter);
+        this.emitter.add(flash.emitter);
+        this.emitter.position.copy(this._targetBottom);
+        this.particleSystems.push(burst, lightning, lighting2, bang, flash);
     }
 
     animate(delta) {
@@ -2229,7 +2807,7 @@ class SlashParticle extends ExplosionParticle{
 
             emissionOverTime: new QUARKS.ConstantValue(0),
         
-            shape: new QUARKS.DonutEmitter({radius: 1, arc: 0.000001, thickness: 1}),
+            shape: this._meshSurface ?? new QUARKS.DonutEmitter({radius: 1, arc: 0.000001, thickness: 1}),
             material: await this.getBasicMaterial(),
             renderOrder: 2,
             renderMode: QUARKS.RenderMode.Trail,
@@ -2262,7 +2840,7 @@ class SlashParticle extends ExplosionParticle{
 
             emissionOverTime: new QUARKS.ConstantValue(0),
         
-            shape: new QUARKS.PointEmitter(),
+            shape: this._meshSurface ?? new QUARKS.PointEmitter(),
             material: await this.getBasicMaterial("modules/levels-3d-preview/assets/particles/star_07.png"),
             renderOrder: 2,
             renderMode: QUARKS.RenderMode.BillBoard,
@@ -2294,7 +2872,7 @@ class SlashParticle extends ExplosionParticle{
 
             emissionOverTime: new QUARKS.ConstantValue(0),
         
-            shape: new QUARKS.ConeEmitter({radius: 0.1, angle: Math.PI/2}),
+            shape: this._meshSurface ?? new QUARKS.ConeEmitter({radius: 0.1, angle: Math.PI/2}),
             material: await this.getBasicMaterial(),
             renderOrder: 5,
             renderMode: QUARKS.RenderMode.Trail,
@@ -2409,7 +2987,7 @@ class EarthExplosion extends ExplosionParticle {
             }],
             emissionOverTime: new QUARKS.ConstantValue(0),
         
-            shape: new QUARKS.ConeEmitter({radius: 0, angle: Math.PI / 2}),
+            shape: this._meshSurface ?? new QUARKS.ConeEmitter({radius: 0, angle: Math.PI / 2}),
             material: rock1Mesh.material,
             renderOrder: 2,
             renderMode: QUARKS.RenderMode.Mesh,
@@ -2458,7 +3036,7 @@ class EarthExplosion extends ExplosionParticle {
                 },
             ],
         
-            shape: new QUARKS.DonutEmitter({radius: 0, angle: Math.PI / 2}),
+            shape: this._meshSurface ?? new QUARKS.DonutEmitter({radius: 0, angle: Math.PI / 2}),
             material: smokeNormal,
             startTileIndex: new QUARKS.IntervalValue(0, 8),
             uTileCount: 3,
@@ -2553,7 +3131,7 @@ class MagicBurst extends ExplosionParticle {
             }],*/
             emissionOverTime: new QUARKS.ConstantValue(this.params.rate.particles*25),
         
-            shape: new QUARKS.SphereEmitter({radius: this.params.emitterSize*0.1}),
+            shape: this._meshSurface ?? new QUARKS.SphereEmitter({radius: this.params.emitterSize*0.1}),
             material: await this.getBasicMaterial("modules/levels-3d-preview/assets/particles/flame2x2.png"),
             startTileIndex: new QUARKS.IntervalValue(0, 3),
             uTileCount: 2,
@@ -2585,7 +3163,7 @@ class MagicBurst extends ExplosionParticle {
             }],
             emissionOverTime: new QUARKS.ConstantValue(0),
         
-            shape: new QUARKS.PointEmitter({radius: this.params.emitterSize}),
+            shape: this._meshSurface ?? new QUARKS.PointEmitter({radius: this.params.emitterSize}),
             material: await this.getBasicMaterial("modules/levels-3d-preview/assets/particles/light_03.png"),
             renderOrder: 1,
             renderMode: QUARKS.RenderMode.BillBoard,
@@ -2612,7 +3190,7 @@ class MagicBurst extends ExplosionParticle {
                 probability: 1,
             }],
         
-            shape: new QUARKS.SphereEmitter({radius: this.params.emitterSize}),
+            shape: this._meshSurface ?? new QUARKS.SphereEmitter({radius: this.params.emitterSize}),
             material: await this.getBasicMaterial("modules/levels-3d-preview/assets/particles/emberssmall.png"),
             renderOrder: 4,
             renderMode: QUARKS.RenderMode.Trail,
@@ -2666,6 +3244,133 @@ class MagicBurst extends ExplosionParticle {
         super.animate(delta);
     }
 }
+class StarBurst extends ExplosionParticle {
+
+    constructor (...args) {
+        super(...args);
+        this._lightTime = 0.3;
+        this._initialLightTime = 0.3;
+    }
+
+    addLight() {
+        const light = ParticleEngine.getLightInstance();
+        if (light) {
+            this._light = light;
+            this._lightIntensity = 10;
+            light.decay = 2;
+            light.intensity = 0;
+            light.distance = 5;
+            light.color = this.params.color.start[0];
+            light.position.set(0,0,0);
+            this.emitter.add(light);
+        }
+    }
+
+    animateLight(delta) {
+        super.animateLight(delta);
+        this._light.intensity = this._lightIntensity * this._lightPiecewise.genValue(this._lightTime / this._initialLightTime);
+    }
+
+    async createEmitter() {
+        this.emitter = new THREE.Group();
+
+        const burstData = {
+            duration: 1,
+            looping: false,
+            startLife: new QUARKS.ConstantValue(0.2),
+            startSpeed: new QUARKS.ConstantValue(0),
+            startSize: new QUARKS.ConstantValue(this.params.emitterSize),
+            startColor: new QUARKS.ConstantColor(colorToVec4(new THREE.Color("white"), 1)),
+            startRotation: new QUARKS.IntervalValue(0, Math.PI * 2),
+            worldSpace: false,
+            prewarm: false,
+            rendererEmitterSettings: {
+                followLocalOrigin: true
+            },
+            emissionBursts: [
+                {
+                time: 0.01,
+                count: 1,
+                cycle: 1,
+                interval: 0,
+                probability: 1,
+            }],
+            emissionOverTime: new QUARKS.ConstantValue(0),
+        
+            shape: this._meshSurface ?? new QUARKS.PointEmitter({radius: this.params.emitterSize}),
+            material: await this.getBasicMaterial("modules/levels-3d-preview/assets/particles/light_02.png"),
+            renderOrder: 1,
+            renderMode: QUARKS.RenderMode.BillBoard,
+        };
+
+        const innerFlashData = {
+            duration: 1,
+            looping: false,
+            startLife: new QUARKS.IntervalValue(1.4, 1.6),
+            startSpeed: new QUARKS.IntervalValue(0.2*this.params.emitterSize,0.4*this.params.emitterSize),
+            startSize: new QUARKS.IntervalValue(0.01, 0.02),
+            startColor: new QUARKS.ConstantColor(colorToVec4(new THREE.Color("white"),1)),
+            worldSpace: false,
+            prewarm: false,
+            rendererEmitterSettings: {
+                startLength: new QUARKS.ConstantValue(10),
+            },
+            emissionOverTime: new QUARKS.ConstantValue(0),
+            emissionBursts: [{
+                time: 0,
+                count: this.params.rate.particles*25,
+                cycle: 1,
+                interval: 0.01,
+                probability: 1,
+            }],
+        
+            shape: this._meshSurface ?? new QUARKS.DonutEmitter({radius: 0.001, angle: Math.PI / 2}),
+            material: await this.getBasicMaterial("modules/levels-3d-preview/assets/particles/star_08.png"),
+            renderOrder: 4,
+            renderMode: QUARKS.RenderMode.Trail,
+        };
+
+        const innerGlowData = {...innerFlashData}
+        innerGlowData.startSpeed = new QUARKS.ConstantValue(this.params.force / 5);
+        innerGlowData.startSize = new QUARKS.IntervalValue(this.params.scale.start / 10, this.params.scale.start / 20);
+        innerGlowData.shape= this._meshSurface ?? new QUARKS.DonutEmitter({radius: 0.001, angle: Math.PI / 2});
+        innerGlowData.renderMode = QUARKS.RenderMode.BillBoard;
+        
+
+
+    const innerFlash = new QUARKS.ParticleSystem(innerFlashData);
+       innerFlash.addBehavior(new QUARKS.ColorOverLife(new QUARKS.ColorRange(colorToVec4(this.params.color.start[0], 1,2), colorToVec4(this.params.color.end[0], 1, 2))));
+        innerFlash.addBehavior(new QUARKS.SpeedOverLife(new QUARKS.PiecewiseBezier([[new QUARKS.Bezier(1, 0.1, 0.05, 0), 0]])));
+        innerFlash.addBehavior(new QUARKS.RotationOverLife(new QUARKS.IntervalValue(0, 0.5 * Math.PI), true));
+        innerFlash.addBehavior(new QUARKS.OrbitOverLife( new QUARKS.IntervalValue(1,2), new THREE.Vector3(0, 0, 1)));
+        
+        innerFlash.emitter.rotation.x = Math.PI / 2;
+
+        const burst = new QUARKS.ParticleSystem(burstData);
+        burst.addBehavior(new QUARKS.ColorOverLife(new QUARKS.ColorRange(colorToVec4(this.params.color.start[0], 1,2), colorToVec4(this.params.color.end[0], 0, 2))));
+        burst.addBehavior(new QUARKS.SizeOverLife(new QUARKS.PiecewiseBezier([[new QUARKS.Bezier(0, 0.95, 0.95, 1), 0]])));
+        burst.addBehavior(new QUARKS.RotationOverLife(new QUARKS.IntervalValue(0, 0.5 * Math.PI), true));
+        
+        const burst2 = burst.clone();
+        burst2.material = await this.getBasicMaterial("modules/levels-3d-preview/assets/particles/star_09.png");
+        burst2.startLife = new QUARKS.ConstantValue(0.7);
+
+        this.emitter.add(innerFlash.emitter);
+        this.emitter.add(burst.emitter);
+        this.emitter.add(burst2.emitter);
+        //this.emitter.add(innerGlow.emitter);
+        this.emitter.position.copy(this._target);
+        this.particleSystems.push(innerFlash);
+        this.particleSystems.push(burst);
+        this.particleSystems.push(burst2);
+        //this.particleSystems.push(innerGlow);
+    }
+
+    animate(delta) {
+        if (this._lightTime > 0) this._lightTime -= delta;
+        super.animate(delta);
+    }
+}
 
 class RayParticle extends BaseParticleEffect {
     constructor (from, to, params) {
@@ -2703,7 +3408,7 @@ class RayParticle extends BaseParticleEffect {
             
             emissionOverDistance: new QUARKS.ConstantValue(1),
         
-            shape: new QUARKS.PointEmitter({radius: this.params.emitterSize}),
+            shape: this._meshSurface ?? new QUARKS.PointEmitter({radius: this.params.emitterSize}),
             material: await this.getBasicMaterial(),
             renderOrder: 20,
             renderMode: QUARKS.RenderMode.Trail,
@@ -2730,7 +3435,7 @@ class RayParticle extends BaseParticleEffect {
             
             emissionOverTime: new QUARKS.ConstantValue(this.params.rate.particles),
         
-            shape: new QUARKS.SphereEmitter({radius: this.params.emitterSize}),
+            shape: this._meshSurface ?? new QUARKS.SphereEmitter({radius: this.params.emitterSize}),
             material: await this.getBasicMaterial(),
             renderOrder: 2,
             renderMode: QUARKS.RenderMode.BillBoard,
@@ -2868,7 +3573,7 @@ class RunicRay extends RayParticle {
             
             emissionOverDistance: new QUARKS.ConstantValue(1),
         
-            shape: new QUARKS.SphereEmitter({radius: Math.max(0.01, this.params.emitterSize)}),
+            shape: this._meshSurface ?? new QUARKS.SphereEmitter({radius: Math.max(0.01, this.params.emitterSize)}),
             material: await this.getBasicMaterial("modules/levels-3d-preview/assets/particles/circle_05.png"),
             renderOrder: 2,
             renderMode: QUARKS.RenderMode.Trail,
@@ -2895,7 +3600,7 @@ class RunicRay extends RayParticle {
             
             emissionOverDistance: new QUARKS.ConstantValue(this.params.rate.particles),
         
-            shape: new QUARKS.SphereEmitter({radius: this.params.emitterSize}),
+            shape: this._meshSurface ?? new QUARKS.SphereEmitter({radius: this.params.emitterSize}),
             material: await this.getBasicMaterial("modules/levels-3d-preview/assets/particles/spark_02.png"),
             renderOrder: 2,
             renderMode: QUARKS.RenderMode.BillBoard,
@@ -2932,7 +3637,7 @@ class RunicRay extends RayParticle {
             
             emissionOverTime: new QUARKS.ConstantValue(0),
         
-            shape: new QUARKS.ConeEmitter({radius: 0.000000001, angle: 0.000001}),
+            shape: this._meshSurface ?? new QUARKS.ConeEmitter({radius: 0.000000001, angle: 0.000001}),
             material: await this.getBasicMaterial(),
             renderOrder: 10,
             renderMode: QUARKS.RenderMode.Mesh,
@@ -3035,7 +3740,7 @@ class VoidRay extends BaseParticleEffect {
             
             emissionOverDistance: new QUARKS.ConstantValue(1),
         
-            shape: new QUARKS.PointEmitter(),
+            shape: this._meshSurface ?? new QUARKS.PointEmitter(),
             material: await this.getBasicMaterial(),
             renderOrder: 2,
             renderMode: QUARKS.RenderMode.Trail,
@@ -3059,7 +3764,7 @@ class VoidRay extends BaseParticleEffect {
             
             emissionOverDistance: new QUARKS.ConstantValue(1),
         
-            shape: new QUARKS.PointEmitter(),
+            shape: this._meshSurface ?? new QUARKS.PointEmitter(),
             material: await this.getBasicMaterial(null, THREE.NormalBlending),
             renderOrder: 5,
             renderMode: QUARKS.RenderMode.Trail,
@@ -3119,6 +3824,13 @@ class Object3DParticle extends BaseParticleEffect {
         this._speed = (this.params.speed / this._dist / (factor / 100)) * ParticleEngine.getScale();
         this.isSprite = true;
         this.sprite = true;
+    }
+
+    get AUTO_SIZE_FACTORS() {
+        return {
+            scale: 1,
+            emitterSize: 0.01,
+        }
     }
 
     async createEmitter() {
@@ -3218,7 +3930,7 @@ class BasicCustomParticle extends BaseParticleEffect {
             },
             emissionOverTime: new QUARKS.ConstantValue(this.params.rate.particles * 5),
         
-            shape: new QUARKS.SphereEmitter({radius: this.params.emitterSize}),
+            shape: this._meshSurface ?? new QUARKS.SphereEmitter({radius: this.params.emitterSize}),
             material: await this.getBasicMaterial(),
             renderOrder: 2,
             renderMode: QUARKS.RenderMode.BillBoard,
@@ -3286,7 +3998,7 @@ class TorchParticle extends BasePresetEffect {
             },
             emissionOverTime: new QUARKS.ConstantValue(this.params.presetIntensity*8),
         
-            shape: new QUARKS.ConeEmitter({radius: this.params.emitterSize, angle: Math.PI/10}),
+            shape: this._meshSurface ?? new QUARKS.ConeEmitter({radius: this.params.emitterSize, angle: Math.PI/10}),
             material: fireMaterial1,
             renderOrder: 2,
             renderMode: QUARKS.RenderMode.BillBoard,
@@ -3307,7 +4019,7 @@ class TorchParticle extends BasePresetEffect {
             },
             emissionOverTime: new QUARKS.ConstantValue(this.params.presetIntensity*18),
         
-            shape: new QUARKS.ConeEmitter({radius: this.params.emitterSize, angle: Math.PI/10}),
+            shape: this._meshSurface ?? new QUARKS.ConeEmitter({radius: this.params.emitterSize, angle: Math.PI/10}),
             material: fireMaterial2,
             startTileIndex: new QUARKS.IntervalValue(0, 3),
             uTileCount: 2,
@@ -3332,7 +4044,7 @@ class TorchParticle extends BasePresetEffect {
             },
             emissionOverTime: new QUARKS.ConstantValue(this.params.presetIntensity*8),
         
-            shape: new QUARKS.ConeEmitter({radius: this.params.emitterSize+this.params.scale.start*0.2, angle: Math.PI/20}),
+            shape: this._meshSurface ?? new QUARKS.ConeEmitter({radius: this.params.emitterSize+this.params.scale.start*0.2, angle: Math.PI/20}),
             material: emberMaterial,
             renderOrder: 10,
             renderMode: QUARKS.RenderMode.StretchedBillBoard,
@@ -3415,7 +4127,7 @@ class FireParticle extends BasePresetEffect {
             },
             emissionOverTime: new QUARKS.ConstantValue(this.params.presetIntensity*8),
         
-            shape: new QUARKS.ConeEmitter({radius: this.params.emitterSize, angle: Math.PI/10}),
+            shape: this._meshSurface ?? new QUARKS.ConeEmitter({radius: this.params.emitterSize, angle: Math.PI/10}),
             material: fireMaterial1,
             renderOrder: 2,
             renderMode: QUARKS.RenderMode.BillBoard,
@@ -3436,7 +4148,7 @@ class FireParticle extends BasePresetEffect {
             },
             emissionOverTime: new QUARKS.ConstantValue(this.params.presetIntensity*8 - Math.min(7,lifeMultiplier*4)),
         
-            shape: new QUARKS.ConeEmitter({radius: this.params.emitterSize, angle: Math.PI/10}),
+            shape: this._meshSurface ?? new QUARKS.ConeEmitter({radius: this.params.emitterSize, angle: Math.PI/10}),
             material: fireMaterial2,
             startTileIndex: new QUARKS.IntervalValue(0, 7),
             uTileCount: 3,
@@ -3461,7 +4173,7 @@ class FireParticle extends BasePresetEffect {
             },
             emissionOverTime: new QUARKS.ConstantValue(this.params.presetIntensity*8),
         
-            shape: new QUARKS.ConeEmitter({radius: this.params.emitterSize+0.05, angle: Math.PI/20}),
+            shape: this._meshSurface ?? new QUARKS.ConeEmitter({radius: this.params.emitterSize+0.05, angle: Math.PI/20}),
             material: emberMaterial,
             renderOrder: 10,
             renderMode: QUARKS.RenderMode.StretchedBillBoard,
@@ -3535,7 +4247,7 @@ class MagicCircleParticle extends BasePresetEffect {
             prewarm: false,
             speedFactor: 1000*this.params.emitterSize,
             emissionOverTime: new QUARKS.ConstantValue(this.params.presetIntensity*2.5*this.params.emitterSize),
-            shape: new QUARKS.ConeEmitter({radius: this.params.emitterSize, angle: 0.001}),
+            shape: this._meshSurface ?? new QUARKS.ConeEmitter({radius: this.params.emitterSize, angle: 0.001}),
             material: emberMaterial,
             renderOrder: 2,
             renderMode: QUARKS.RenderMode.StretchedBillBoard,
@@ -3594,7 +4306,7 @@ class VortexParticle extends BasePresetEffect {
                 startLength: new QUARKS.ConstantValue(80),
             },
             emissionOverTime: new QUARKS.ConstantValue(this.params.presetIntensity*25*this.params.emitterSize),
-            shape: new QUARKS.DonutEmitter({radius: this.params.emitterSize, angle: 0.001, thickness: 1}),
+            shape: this._meshSurface ?? new QUARKS.DonutEmitter({radius: this.params.emitterSize, angle: 0.001, thickness: 1}),
             material: emberMaterial,
             renderOrder: 2,
             renderMode: QUARKS.RenderMode.Trail,
@@ -3674,7 +4386,7 @@ class SparksParticle extends BasePresetEffect {
                 },
             ],
             emissionOverTime: new QUARKS.ConstantValue(this.params.presetIntensity*0),
-            shape: new QUARKS.ConeEmitter({radius: this.params.emitterSize, angle: Math.PI/2}),
+            shape: this._meshSurface ?? new QUARKS.ConeEmitter({radius: this.params.emitterSize, angle: Math.PI/2}),
             material: emberMaterial,
             renderOrder: 2,
             renderMode: QUARKS.RenderMode.Trail,
@@ -3750,7 +4462,7 @@ class HolyLightParticle extends BasePresetEffect {
                 startLength: new QUARKS.ConstantValue(400),
             },
             emissionOverTime: new QUARKS.ConstantValue(this.params.presetIntensity),
-            shape: new QUARKS.ConeEmitter({radius: this.params.emitterSize, angle: 0.001}),
+            shape: this._meshSurface ?? new QUARKS.ConeEmitter({radius: this.params.emitterSize, angle: 0.001}),
             material: emberMaterial,
             renderOrder: 2,
             renderMode: QUARKS.RenderMode.Trail,
@@ -3771,7 +4483,7 @@ class HolyLightParticle extends BasePresetEffect {
                 startLength: new QUARKS.ConstantValue(400),
             },
             emissionOverTime: new QUARKS.ConstantValue(this.params.presetIntensity),
-            shape: new QUARKS.ConeEmitter({radius: this.params.emitterSize*0.8, angle: 0.001}),
+            shape: this._meshSurface ?? new QUARKS.ConeEmitter({radius: this.params.emitterSize*0.8, angle: 0.001}),
             material: symbolMaterial,
             renderOrder: 2,
             renderMode: QUARKS.RenderMode.Trail,
@@ -3841,7 +4553,7 @@ class GhostlyParticle extends BasePresetEffect {
                 startLength: new QUARKS.ConstantValue(400),
             },
             emissionOverTime: new QUARKS.ConstantValue(this.params.presetIntensity*15*this.params.emitterSize),
-            shape: new QUARKS.ConeEmitter({radius: this.params.emitterSize*0.8, angle: 0.001}),
+            shape: this._meshSurface ?? new QUARKS.ConeEmitter({radius: this.params.emitterSize*0.8, angle: 0.001}),
             material: symbolMaterial,
             renderOrder: 2,
             renderMode: QUARKS.RenderMode.Trail,
@@ -3901,7 +4613,7 @@ class FairyParticle extends BasePresetEffect {
                 startLength: new QUARKS.ConstantValue(20),
             },
             emissionOverTime: new QUARKS.ConstantValue(this.params.presetIntensity*20*this.params.emitterSize),
-            shape: new QUARKS.SphereEmitter({radius: this.params.emitterSize}),
+            shape: this._meshSurface ?? new QUARKS.SphereEmitter({radius: this.params.emitterSize}),
             material: emberMaterial,
             renderOrder: 2,
             renderMode: QUARKS.RenderMode.Trail,
@@ -3963,7 +4675,7 @@ class SmokeCloudParticle extends BasePresetEffect {
                 startLength: new QUARKS.ConstantValue(400),
             },
             emissionOverTime: new QUARKS.ConstantValue(this.params.presetIntensity*15*this.params.emitterSize),
-            shape: new QUARKS.ConeEmitter({radius: this.params.emitterSize, angle: 0.001}),
+            shape: this._meshSurface ?? new QUARKS.ConeEmitter({radius: this.params.emitterSize, angle: 0.001}),
             material: symbolMaterial,
             renderOrder: 2,
             renderMode: QUARKS.RenderMode.BillBoard,
@@ -4028,7 +4740,7 @@ class MysteriousLightsParticle extends BasePresetEffect {
                 startLength: new QUARKS.ConstantValue(80),
             },
             emissionOverTime: new QUARKS.ConstantValue(this.params.presetIntensity*25*this.params.emitterSize),
-            shape: new QUARKS.ConeEmitter({radius: this.params.emitterSize, angle: 0.001, thickness: 1}),
+            shape: this._meshSurface ?? new QUARKS.ConeEmitter({radius: this.params.emitterSize, angle: 0.001, thickness: 1}),
             material: emberMaterial,
             renderOrder: 2,
             renderMode: QUARKS.RenderMode.BillBoard,
@@ -4089,7 +4801,7 @@ class SunburstParticle extends BasePresetEffect {
                 startLength: new QUARKS.ConstantValue(200),
             },
             emissionOverTime: new QUARKS.ConstantValue(this.params.presetIntensity*50/Math.max(1,this.params.emitterSize*10)),
-            shape: new QUARKS.PointEmitter(),
+            shape: this._meshSurface ?? new QUARKS.PointEmitter(),
             material: rayMaterial,
             renderOrder: 2,
             renderMode: QUARKS.RenderMode.StretchedBillBoard,
@@ -4195,7 +4907,7 @@ class TeslaParticle extends BasePresetEffect {
                 },
             ],
             emissionOverTime: new QUARKS.ConstantValue(0),
-            shape: new QUARKS.PointEmitter(),
+            shape: this._meshSurface ?? new QUARKS.PointEmitter(),
             material: rayMaterial,
             renderOrder: 2,
             renderMode: QUARKS.RenderMode.Trail,
@@ -4255,7 +4967,7 @@ class MagicSphereParticle extends BasePresetEffect {
                 followLocalOrigin: true,
             },
             emissionOverTime: new QUARKS.ConstantValue(this.params.presetIntensity*2),
-            shape: new QUARKS.DonutEmitter({radius: this.params.emitterSize, thickness: 1}),
+            shape: this._meshSurface ?? new QUARKS.DonutEmitter({radius: this.params.emitterSize, thickness: 1}),
             material: rayMaterial,
             renderOrder: 2,
             renderMode: QUARKS.RenderMode.Trail,
@@ -4328,7 +5040,7 @@ class MistParticle extends BasePresetEffect {
                 startLength: new QUARKS.ConstantValue(400),
             },
             emissionOverTime: new QUARKS.ConstantValue(this.params.presetIntensity*4*this.params.emitterSize),
-            shape: new QUARKS.ConeEmitter({radius: this.params.emitterSize*0.8, angle: 0.001}),
+            shape: this._meshSurface ?? new QUARKS.ConeEmitter({radius: this.params.emitterSize*0.8, angle: 0.001}),
             material: symbolMaterial,
             renderOrder: 2,
             renderMode: QUARKS.RenderMode.StretchedBillBoard,
@@ -4398,7 +5110,7 @@ class GravityWellParticle extends BasePresetEffect {
                 startLength: new QUARKS.ConstantValue(80),
             },
             emissionOverTime: new QUARKS.ConstantValue(this.params.presetIntensity*15*this.params.emitterSize),
-            shape: new QUARKS.DonutEmitter({radius: this.params.emitterSize, angle: 0.001, thickness: 1}),
+            shape: this._meshSurface ?? new QUARKS.DonutEmitter({radius: this.params.emitterSize, angle: 0.001, thickness: 1}),
             material: emberMaterial,
             renderOrder: 2,
             startTileIndex: new QUARKS.IntervalValue(0, 8),
@@ -4592,7 +5304,7 @@ class DirectionalBreathParticle extends BaseDirectionalEffect{
             },
             emissionOverTime: new QUARKS.ConstantValue(this.params.presetIntensity*8),
         
-            shape: new QUARKS.ConeEmitter({radius: this._emitterRadius ?? this.params.emitterSize, angle: this._coneEmitterAngle}),
+            shape: this._meshSurface ?? new QUARKS.ConeEmitter({radius: this._emitterRadius ?? this.params.emitterSize, angle: this._coneEmitterAngle}),
             material: fireMaterial1,
             renderOrder: 2,
             renderMode: QUARKS.RenderMode.BillBoard,
@@ -4614,7 +5326,7 @@ class DirectionalBreathParticle extends BaseDirectionalEffect{
             },
             emissionOverTime: new QUARKS.ConstantValue(this.params.presetIntensity*18 - Math.min(7,lifeMultiplier*4)),
         
-            shape: new QUARKS.ConeEmitter({radius: this._emitterRadius ?? this.params.emitterSize, angle: this._coneEmitterAngle}),
+            shape: this._meshSurface ?? new QUARKS.ConeEmitter({radius: this._emitterRadius ?? this.params.emitterSize, angle: this._coneEmitterAngle}),
             material: fireMaterial2,
             startTileIndex: new QUARKS.IntervalValue(0, 3),
             uTileCount: 2,
@@ -4638,7 +5350,7 @@ class DirectionalBreathParticle extends BaseDirectionalEffect{
             },
             emissionOverTime: new QUARKS.ConstantValue(this.params.presetIntensity*8),
         
-            shape: new QUARKS.ConeEmitter({radius: this._emitterRadius ?? this.params.emitterSize*0.5, angle: this._coneEmitterAngle}),
+            shape: this._meshSurface ?? new QUARKS.ConeEmitter({radius: this._emitterRadius ?? this.params.emitterSize*0.5, angle: this._coneEmitterAngle}),
             material: emberMaterial,
             renderOrder: 10,
             renderMode: QUARKS.RenderMode.BillBoard,
@@ -4761,7 +5473,7 @@ class DirectionalShockParticle extends BaseDirectionalEffect{
                 },
             ],
             emissionOverTime: new QUARKS.ConstantValue(0),
-            shape: new QUARKS.ConeEmitter({radius: this._emitterRadius ?? this.params.emitterSize, angle: this._coneEmitterAngle}),
+            shape: this._meshSurface ?? new QUARKS.ConeEmitter({radius: this._emitterRadius ?? this.params.emitterSize, angle: this._coneEmitterAngle}),
             material: rayMaterial,
             renderOrder: 2,
             renderMode: QUARKS.RenderMode.Trail,
@@ -4830,7 +5542,7 @@ class DirectionalPoisonParticle extends BaseDirectionalEffect{
             },
             emissionOverTime: new QUARKS.ConstantValue(this.params.presetIntensity*8),
         
-            shape: new QUARKS.ConeEmitter({radius: this._emitterRadius ?? this.params.emitterSize, angle: this._coneEmitterAngle}),
+            shape: this._meshSurface ?? new QUARKS.ConeEmitter({radius: this._emitterRadius ?? this.params.emitterSize, angle: this._coneEmitterAngle}),
             material: smokeNormal,
             startTileIndex: new QUARKS.IntervalValue(0, 8),
             uTileCount: 3,
@@ -4855,7 +5567,7 @@ class DirectionalPoisonParticle extends BaseDirectionalEffect{
             },
             emissionOverTime: new QUARKS.ConstantValue(this.params.presetIntensity*18 - Math.min(7,lifeMultiplier*4)),
         
-            shape: new QUARKS.ConeEmitter({radius: this._emitterRadius ?? this.params.emitterSize, angle: this._coneEmitterAngle*2}),
+            shape: this._meshSurface ?? new QUARKS.ConeEmitter({radius: this._emitterRadius ?? this.params.emitterSize, angle: this._coneEmitterAngle*2}),
             material: smokeNormal,
             startTileIndex: new QUARKS.IntervalValue(0, 8),
             uTileCount: 3,
@@ -4948,7 +5660,7 @@ class DirectionalWaveParticle extends BaseDirectionalEffect{
             },
             emissionOverTime: new QUARKS.ConstantValue(this.params.presetIntensity),
         
-            shape: new QUARKS.ConeEmitter({radius: this._emitterRadius ?? this.params.emitterSize, angle: 0}),
+            shape: this._meshSurface ?? new QUARKS.ConeEmitter({radius: this._emitterRadius ?? this.params.emitterSize, angle: 0}),
             material: wave,
             renderMode: QUARKS.RenderMode.BillBoard,
         }
@@ -5012,7 +5724,7 @@ class DirectionalFrostParticle extends BaseDirectionalEffect{
             },
             emissionOverTime: new QUARKS.ConstantValue(this.params.presetIntensity*8),
         
-            shape: new QUARKS.ConeEmitter({radius: this._emitterRadius ?? this.params.emitterSize, angle: this._coneEmitterAngle}),
+            shape: this._meshSurface ?? new QUARKS.ConeEmitter({radius: this._emitterRadius ?? this.params.emitterSize, angle: this._coneEmitterAngle}),
             material: fireMaterial1,
             renderOrder: 2,
             renderMode: QUARKS.RenderMode.StretchedBillBoard,
@@ -5034,7 +5746,7 @@ class DirectionalFrostParticle extends BaseDirectionalEffect{
             },
             emissionOverTime: new QUARKS.ConstantValue(this.params.presetIntensity*18 - Math.min(7,lifeMultiplier*4)),
         
-            shape: new QUARKS.ConeEmitter({radius: this._emitterRadius ?? this.params.emitterSize, angle: this._coneEmitterAngle}),
+            shape: this._meshSurface ?? new QUARKS.ConeEmitter({radius: this._emitterRadius ?? this.params.emitterSize, angle: this._coneEmitterAngle}),
             material: fireMaterial2,
             renderOrder: 10,
             renderMode: QUARKS.RenderMode.StretchedBillBoard,
@@ -5056,7 +5768,7 @@ class DirectionalFrostParticle extends BaseDirectionalEffect{
             },
             emissionOverTime: new QUARKS.ConstantValue(this.params.presetIntensity*8),
         
-            shape: new QUARKS.ConeEmitter({radius: this._emitterRadius ?? this.params.emitterSize*0.5, angle: this._coneEmitterAngle}),
+            shape: this._meshSurface ?? new QUARKS.ConeEmitter({radius: this._emitterRadius ?? this.params.emitterSize*0.5, angle: this._coneEmitterAngle}),
             material: emberMaterial,
             renderOrder: 20,
             renderMode: QUARKS.RenderMode.StretchedBillBoard,
@@ -5142,7 +5854,7 @@ class DirectionalLaserParticle extends BaseDirectionalEffect{
             },
             emissionOverTime: new QUARKS.ConstantValue(this.params.presetIntensity*8),
         
-            shape: new QUARKS.ConeEmitter({radius: this._emitterRadius ?? this.params.emitterSize, angle: 0}),
+            shape: this._meshSurface ?? new QUARKS.ConeEmitter({radius: this._emitterRadius ?? this.params.emitterSize, angle: 0}),
             material: fireMaterial1,
             renderOrder: 2,
             renderMode: QUARKS.RenderMode.BillBoard,
@@ -5164,7 +5876,7 @@ class DirectionalLaserParticle extends BaseDirectionalEffect{
             },
             emissionOverTime: new QUARKS.ConstantValue(this.params.presetIntensity),
         
-            shape: new QUARKS.ConeEmitter({radius: this._emitterRadius ?? this.params.emitterSize, angle: 0}),
+            shape: this._meshSurface ?? new QUARKS.ConeEmitter({radius: this._emitterRadius ?? this.params.emitterSize, angle: 0}),
             material: fireMaterial2,
             renderOrder: 10,
             renderMode: QUARKS.RenderMode.Trail,
@@ -5228,6 +5940,7 @@ const ProjectilesParticleSystems = {
     "runicshot": RunicShot,
     "arrow": Arrow,
     "bolt": Bolt,
+    "javelin": Javelin,
     "magicarrow": MagicArrow,
     "bullet": Bullet,
     "shotgun": Shotgun,
@@ -5247,10 +5960,17 @@ const ExplosionsParticleSystems = {
     "jb2aexplosion": JB2AExplosion,
     "jb2aexplosionnolight": JB2AExplosionNoLight,
     "castingsign": CastingSign,
+    "lightning": Lightning,
+    "starburst": StarBurst,
 }
 
 const SpritesParticleSystems = {
     "sprite": Object3DParticle,
+    "swing": Swing,
+    "thrust": Thrust,
+    "thrustswing": () => {
+        return Math.random() > 0.5 ? Thrust : Swing;
+    },
 }
 
 const TargetOnlyPresetSystems = {
@@ -5383,7 +6103,8 @@ export class PARTICLE_SYSTEMS{
     }
 
     static getParticleClass(type) {
-        return this.ALL_PARTICLE_SYSTEMS[type];
+        const pClass = this.ALL_PARTICLE_SYSTEMS[type]
+        return typeof pClass === "function" ? pClass : pClass();
     }
 
     static getDefaultLightData(system) {

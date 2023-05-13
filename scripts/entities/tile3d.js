@@ -5,7 +5,7 @@ import { Ruler3D } from "../systems/ruler3d.js";
 import { factor } from "../main.js";
 import { DynaMesh } from "../helpers/dynaMesh.js";
 import {computeBoundsTree, disposeBoundsTree, acceleratedRaycast} from "../lib/three-mesh-bvh.js";
-import { getMergedMeshFromInstanced } from "../helpers/geometryUtils.js";
+import { getMergedMeshFromInstanced, meshesToSingleMesh } from "../helpers/geometryUtils.js";
 THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
 THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
 THREE.Mesh.prototype.raycast = acceleratedRaycast;
@@ -143,6 +143,13 @@ export class Tile3D {
             ];
             await CanvasAnimation.animate(animation, {duration: 150, easing: "easeOutCircle"});
         }
+    }
+
+    getMergedGeometry() {
+        if (this._mergedGeometry) return this._mergedGeometry;
+        const mergedMesh = meshesToSingleMesh([this.mesh.children[0]])
+        this._mergedGeometry = mergedMesh.geometry;
+        return this._mergedGeometry;
     }
 
     sendToWorker() {

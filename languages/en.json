@@ -1331,8 +1331,14 @@
             "jb2aexplosionnolight": "Explosion (JB2A Animated, No Light)",
             "arrow" : "Arrow",
             "bolt": "Bolt",
+            "javelin" : "Javelin",
             "magicarrow" : "Magic Arrow",
             "bullet" : "Bullet",
+            "swing" : "Swing (3D Object)",
+            "thrust" : "Thrust (3D Object)",
+            "thrustswing" : "Swing/Thrust (3D Object)",
+            "starburst" : "Starburst",
+            "lightning" : "Lightning",
             "castingsign": "Ritual"
         },
         "macrodialog": {
