@@ -78,6 +78,7 @@ export class Token3D {
         this.standupFace = game.settings.get("levels-3d-preview", "standupFace");
         this.wasFreeMode = this.token.document.getFlag("levels-3d-preview", "wasFreeMode") ?? false;
         this.removeBase = this.token.document.getFlag("levels-3d-preview", "removeBase") ?? true;
+        this.attachments = this.token.document.getFlag("levels-3d-preview", "attachments") ?? [];
         if (this.faceCameraOption !== "0") this.standupFace = this.faceCameraOption == "1" ? true : false;
         this.enableReticule = game.settings.get("levels-3d-preview", "enableReticule");
     }
@@ -294,6 +295,7 @@ export class Token3D {
         this.mesh.add(this.effectsContainer);
         this.border = new THREE.Group();
         this.mesh.add(this.border);
+        await this.loadAttachments(this.model);
         //this.setUpProne();
         this.drawBorder();
         this.drawName();
@@ -302,6 +304,20 @@ export class Token3D {
         this.reDraw(true);
         this.setPosition();
         return this;
+    }
+
+    async loadAttachments(object) {
+        for (const attachment of this.attachments) {
+            if(attachment.hidden) continue;
+            const attachmentModel = await game.Levels3DPreview.helpers.loadModel(attachment.src);
+            const attachmentObject = attachmentModel.scene;
+            const matrix = new THREE.Matrix4();
+            matrix.fromArray(attachment.matrix);
+            attachmentObject.applyMatrix4(matrix);
+            if(attachmentObject) {
+                object.add(attachmentObject);
+            }
+        }
     }
 
     async setMaterial(model) {
@@ -687,7 +703,6 @@ export class Token3D {
                 z: 0,
             };
             const mesh = targetModel.clone();
-            debugger;
             mesh.children[0].material = new THREE.MeshPhongMaterial({ color: color, emissive: color, emissiveIntensity: 0.8 });
             mesh.scale.set(this.targetSize , this.targetSize , this.targetSize );
             mesh.position.set(position.x, position.y, position.z);

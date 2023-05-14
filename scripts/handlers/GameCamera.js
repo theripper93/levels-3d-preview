@@ -152,6 +152,9 @@ export class GameCamera {
         const collision = this._parent.interactionManager.computeSightCollisionFrom3DPositions(this.camera.position, target, "sight");
         this._parent.interactionManager.sightRaycaster.near = prevNear;
         if (collision) {
+            collision.point.y = Math.max(collision.point.y, 0);
+        }
+        if (collision) {
             this.controls.target = collision;
         } else {
             this.controls.target = target;

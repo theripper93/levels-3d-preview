@@ -8,7 +8,7 @@ import { Ruler3D } from "./systems/ruler3d.js";
 import { Light3D } from "./entities/light3d.js";
 import { Wall3D } from "./entities/wall3d.js";
 import { initSharing, setSharingHooks } from "./apps/sharing.js";
-import { Tile3D, recomputeGravity, autoMergeTiles, unmergeTiles, splitToChunks, extractPointsFromDrawing, extrudeWalls } from "./entities/tile3d.js";
+import { Tile3D, recomputeGravity, autoMergeTiles, unmergeTiles, splitToChunks, extractPointsFromDrawing, extrudeWalls, attachTileToToken } from "./entities/tile3d.js";
 import { Note3D } from "./entities/note3d.js";
 import { Grid3D } from "./systems/grid3d.js";
 import { RangeFinder } from "./systems/rangeFinder.js";
@@ -33,7 +33,7 @@ import { defaultTokenAnimations } from "./handlers/tokenAnimationHandler.js";
 import { ClipNavigation, CLIP_NAVIGATION_BUTTONS } from "./apps/clipNavigation.js";
 import { presetMaterials, PresetMaterialHandler, populateScene } from "./helpers/presetMaterials.js";
 import { FXAAShader } from "./lib/FXAA.js";
-import {SMAAPass} from "./lib/SMAAPass.js";
+import { SMAAPass } from "./lib/SMAAPass.js";
 import { RenderPixelatedPass } from "./lib/RendererPixelPass.js";
 import { ShaderPass } from "./lib/ShaderPass.js";
 import { OutlineHandler } from "./handlers/OutlineHandler.js";
@@ -44,16 +44,16 @@ import { miniCanvas } from "./apps/minicanvas.js";
 import { throttle, sleep } from "./helpers/utils.js";
 import { BokehPass } from "./lib/BokehPass.js";
 import { Ping } from "./entities/effects/ping.js";
-import {injectThreeModifications} from "./threejsmodifications.js";
-import {ActiveEffectEffect} from "./entities/effects/activeEffect.js";
-import {RangeRingEffect} from "./entities/effects/rangeRing.js";
-import {CutsceneEngine} from "./systems/cutsceneEngine.js";
+import { injectThreeModifications } from "./threejsmodifications.js";
+import { ActiveEffectEffect } from "./entities/effects/activeEffect.js";
+import { RangeRingEffect } from "./entities/effects/rangeRing.js";
+import { CutsceneEngine } from "./systems/cutsceneEngine.js";
 import { ImprovedNoise } from "./lib/imporovedNoise.js";
-import {registerWrappers} from "./wrappers.js";
-import {ProceduralVines} from "./helpers/ProceduralVines.js";
-import {PARTICLE_SYSTEMS} from "./systems/particleSystem.js";
-import {registerConfigs} from "./settings/config.js";
-import {registerSettings} from "./settings/settingsConfig.js";
+import { registerWrappers } from "./wrappers.js";
+import { ProceduralVines } from "./helpers/ProceduralVines.js";
+import { PARTICLE_SYSTEMS } from "./systems/particleSystem.js";
+import { registerConfigs } from "./settings/config.js";
+import { registerSettings } from "./settings/settingsConfig.js";
 
 export const factor = 1000;
 injectFoWShaders(THREE);
@@ -329,12 +329,13 @@ class Levels3DPreview {
             splitToChunks,
             extractPointsFromDrawing,
             extrudeWalls,
+            attachTileToToken,
             TEXTURES: {
                 BLANK: new THREE.TextureLoader().load("modules/levels-3d-preview/assets/blankTex.jpg"),
             },
             NOISE: {
                 ImprovedNoise,
-            }
+            },
         };
 
         Hooks.callAll("3DCanvasConfig", this.CONFIG);
@@ -395,7 +396,7 @@ class Levels3DPreview {
         this.socket.register("syncClipNavigator", this.helpers.syncClipNavigator);
         this.socket.register("playTokenAnimationSocket", this.helpers.playTokenAnimationSocket);
         this.socket.register("dispatchPing", this.helpers.dispatchPing);
-        this.socket.register("playCutscene", this.cutsceneSocket)
+        this.socket.register("playCutscene", this.cutsceneSocket);
         this.exporter = new Exporter(this);
         this.init3d();
     }
@@ -461,9 +462,8 @@ class Levels3DPreview {
         this.GameCamera = new GameCamera(this.camera, this.controls, this);
         //clipping
         this.renderer.localClippingEnabled = true;
-
     }
-    
+
     async cacheModels() {
         this.pmremGenerator = new THREE.PMREMGenerator(this.renderer);
         this.pmremGenerator.compileEquirectangularShader();
@@ -506,9 +506,9 @@ class Levels3DPreview {
         this.lights.lightCache.spot = [];
 
         cacheSize = cacheSize ?? game.settings.get("levels-3d-preview", "lightCacheSize");
-        
-        if (!game.user.isGM) cacheSize = Math.min(cacheSize, 4)
-        
+
+        if (!game.user.isGM) cacheSize = Math.min(cacheSize, 4);
+
         for (let i = 0; i < cacheSize; i++) {
             const pointLight = new THREE.PointLight(0xffffff, 0.0001, 0.0001, 2);
             pointLight.position.set(-100, -100, -100);
@@ -549,7 +549,7 @@ class Levels3DPreview {
         this.outline = new OutlineHandler(this);
         this.initAA();
 
-        if (canvas.scene.getFlag("levels-3d-preview", "pixel")){            
+        if (canvas.scene.getFlag("levels-3d-preview", "pixel")) {
             this.pixelPass = new RenderPixelatedPass(6, this.scene, this.camera);
             this.pixelPass.depthEdgeStrength = 1;
             this.pixelPass.normalEdgeStrength = 0;
@@ -785,7 +785,7 @@ class Levels3DPreview {
         const tableTex = canvas.scene.getFlag("levels-3d-preview", "tableTex") ?? "";
         if (tableOption == "none" || !tableOption) return;
         //make a plane and apply a texture
-        const isMat = tableOption.includes("mat")
+        const isMat = tableOption.includes("mat");
         const width = isMat ? 1000 : canvas.scene.dimensions.width / this.factor;
         const height = isMat ? 1000 : canvas.scene.dimensions.height / this.factor;
         const center = this.canvasCenter;
@@ -798,8 +798,8 @@ class Levels3DPreview {
         for (let i = 0; i < uvAttribute.count; i++) {
             let u = uvAttribute.getX(i);
             let v = uvAttribute.getY(i);
-            u *= repeat * Math.round((width / canvas.scene.dimensions.size) * this.factor) / 10;
-            v *= repeat * Math.round((height / canvas.scene.dimensions.size) * this.factor) / 10;
+            u *= (repeat * Math.round((width / canvas.scene.dimensions.size) * this.factor)) / 10;
+            v *= (repeat * Math.round((height / canvas.scene.dimensions.size) * this.factor)) / 10;
             uvAttribute.setXY(i, u, v);
         }
         if (textureMat.image) {
@@ -829,7 +829,7 @@ class Levels3DPreview {
                     bb: { depth: height, width: width, height: depth },
                     mesh: this.table,
                 },
-                { grid: { enabled: true, showBounds:true } },
+                { grid: { enabled: true, showBounds: true } },
             );
         this.scene.add(plane);
     }
@@ -1287,8 +1287,8 @@ class Levels3DPreview {
             if (this._firstFrame) {
                 this._firstFrame = false;
                 this.workers._waitingForInit = true;
-                Object.values(this.tiles).forEach(t => t.sendToWorker())
-                this.resizeCanvasToDisplaySize()
+                Object.values(this.tiles).forEach((t) => t.sendToWorker());
+                this.resizeCanvasToDisplaySize();
                 recomputeGravity();
                 Object.values(this.tokens).forEach((token) => {
                     token.forceDrawBars();
@@ -1691,15 +1691,15 @@ class Levels3DPreview {
         });
     }
 
-    cutsceneSocket({userIds, sceneId, cutsceneId}) {
-        if(canvas.scene.id !== sceneId || (userIds?.length && !userIds.includes(game.user.id))) return;
-        game.Levels3DPreview.cutsceneEngine.play(cutsceneId)
+    cutsceneSocket({ userIds, sceneId, cutsceneId }) {
+        if (canvas.scene.id !== sceneId || (userIds?.length && !userIds.includes(game.user.id))) return;
+        game.Levels3DPreview.cutsceneEngine.play(cutsceneId);
     }
 
     particleSocket(...args) {
         game.Levels3DPreview.particleSystem.resolveSocket(...args);
     }
-    
+
     Particle3DStop(...args) {
         game.Levels3DPreview.particleSystem.stop(...args);
     }
@@ -1773,9 +1773,7 @@ Hooks.on("updateScene", (scene, updates) => {
         canvas.draw();
         return;
     }
-    if(        "enableFog" in flags ||
-    "fogColor" in flags ||
-    "fogDistance" in flags) game.Levels3DPreview.setFog();
+    if ("enableFog" in flags || "fogColor" in flags || "fogDistance" in flags) game.Levels3DPreview.setFog();
     game.Levels3DPreview.grid.setVisibility();
     if (
         //do reload
@@ -1861,8 +1859,8 @@ Hooks.on("preUpdateToken", (token, updates) => {
 Hooks.on("ready", async () => {
     const html = await renderTemplate("modules/levels-3d-preview/templates/loadingScreen.hbs", { isGM: game.user.isGM });
     const div = $(`<div class="levels-3d-preview-loading-screen">${html}</div>`);
-    div.on("click", "#close-loading-screen", () => { 
-        game.Levels3DPreview.CONFIG.UI.CLIP_NAVIGATION.BUTTONS.find((b) => (b.id === "clip-navigation-controls")).callback();
+    div.on("click", "#close-loading-screen", () => {
+        game.Levels3DPreview.CONFIG.UI.CLIP_NAVIGATION.BUTTONS.find((b) => b.id === "clip-navigation-controls").callback();
     });
     div.hide();
     $("#ui-top").after(div);
@@ -1871,10 +1869,10 @@ Hooks.on("ready", async () => {
 window.addEventListener("resize", () => {
     if (game.Levels3DPreview?._active) {
         game.Levels3DPreview.resizeCanvasToDisplaySize();
-        const miniCanvas = Object.values(ui.windows)?.find(w => w.id === "miniCanvas")
+        const miniCanvas = Object.values(ui.windows)?.find((w) => w.id === "miniCanvas");
         setTimeout(() => {
-            if (miniCanvas) miniCanvas.resize()
-        }, 100)
+            if (miniCanvas) miniCanvas.resize();
+        }, 100);
         setTimeout(() => game.Levels3DPreview?.resizeCanvasToDisplaySize(), 250);
     }
 });

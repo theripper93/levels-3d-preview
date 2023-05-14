@@ -728,6 +728,11 @@
             "shader": {
                 "header": "Shaders"
             },
+            "attachments": {
+                "header": "Attachments",
+                "filename": "Attachment Name",
+                "info": "Tile %s attatched to Token "
+            },
             "wallOpacity": {
                 "label": "Opacity"
             },

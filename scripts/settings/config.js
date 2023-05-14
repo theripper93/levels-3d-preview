@@ -718,6 +718,10 @@ export function registerConfigs() {
                     label: game.i18n.localize("levels3dpreview.flags.offsetZ.label"),
                     default: 0,
                 },
+                headerAttach: {
+                    type: "custom",
+                    html: `<h3 class="form-header" id="attachment-config"><i class="fas fas fa-link"></i> ${game.i18n.localize("levels3dpreview.flags.attachments.header")}</h3><div>`,
+                },
                 header1: {
                     type: "custom",
                     html: `<h3 class="form-header" id="shader-config"><i class="fas fa-magic"></i> ${game.i18n.localize("levels3dpreview.flags.shader.header")}</h3><div>`,
@@ -725,6 +729,47 @@ export function registerConfigs() {
             },
             app.token,
         );
+
+        const attachmentHeader = html.find(`#attachment-config`);
+
+        const attachments = app.object.getFlag("levels-3d-preview", "attachments") || [];
+
+        //create a 2 column table with filename, delete button and hide button
+
+        const table = $(`<table class="levels-3d-preview-attachments"><thead><tr><th>${game.i18n.localize("levels3dpreview.flags.attachments.filename")}</th><th></th></tr></thead><tbody></tbody></table>`);
+
+        const tbody = table.find("tbody");
+        
+        attachments.forEach((attachment, index) => {
+            const fileName = attachment.src.split("/").pop().split(".").shift();
+            //create row with deletee and hide button
+            const row = $(`<tr><td>${fileName}</td><td style="display:flex;"><button class="levels-3d-preview-togglehide-attachment" data-index="${index}"><i class="fas ${attachment.hidden ? "fa-eye-slash" : "fa-eye"}"></i></button><button class="levels-3d-preview-delete-attachment" data-index="${index}"><i class="fas fa-trash"></i></button></td></tr>`);
+            
+            //const row = $(`<tr><td>${fileName}</td><td><button class="levels-3d-preview-delete-attachment" data-index="${index}"><i class="fas fa-trash"></i></button></td></tr>`);
+            tbody.append(row);
+        });
+
+        //delete button
+        table.find(".levels-3d-preview-delete-attachment").click((event) => {
+            event.preventDefault();
+            const index = parseInt(event.currentTarget.dataset.index);
+            const attachments = app.object.getFlag("levels-3d-preview", "attachments") || [];
+            attachments.splice(index, 1);
+            app.object.setFlag("levels-3d-preview", "attachments", attachments);
+        });
+        //hide button
+        table.find(".levels-3d-preview-togglehide-attachment").click((event) => {
+            event.preventDefault();
+            const index = parseInt(event.currentTarget.dataset.index);
+            const attachments = app.object.getFlag("levels-3d-preview", "attachments") || [];
+            attachments[index].hidden = !attachments[index].hidden;
+            app.object.setFlag("levels-3d-preview", "attachments", attachments);
+        });
+        if (attachments.length > 0) {
+            attachmentHeader.after(table);
+        } else {
+            attachmentHeader.remove();
+        }
 
         const advancedSettings = ["stem", "imageTexture", "baseColor", "disableBase", "removeBase", "solidBaseMode", "animIndex", "animSpeed", "faceCamera", "autoCenter", "rotationX", "rotationY", "rotationZ", "offsetX", "offsetY", "offsetZ"];
         ShaderConfig.injectButton(app, html, html.find(`#shader-config`));
