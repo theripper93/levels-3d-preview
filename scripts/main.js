@@ -452,6 +452,7 @@ class Levels3DPreview {
         this.controls = new OrbitControls(this.camera, this.renderer.domElement);
         this.controls.listenToKeyEvents(document);
         this.controls.keyPanSpeed = 35;
+        this.controls._lockZero = game.settings.get("levels-3d-preview", "cameralockzero");
         game.settings.get("levels-3d-preview", "cameralockzero") && this.controls.addEventListener("change", this._onCameraChange.bind(this));
         this.ruler = new Ruler3D(this);
         this.interactionManager = new InteractionManager(this);

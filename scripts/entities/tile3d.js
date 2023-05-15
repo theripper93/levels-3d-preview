@@ -158,11 +158,11 @@ export class Tile3D {
         const currentParent = this.mesh.parent;
         const currentPosition = this.mesh.position.clone();
         const worldPosition = this.mesh.getWorldPosition(new THREE.Vector3());
-        this.mesh.position.copy(worldPosition);
         if (currentParent !== scene) scene.add(this.mesh);
         if ((!this.sight && !this.hasTags) || this.dynaMesh == "decal" || !this._parent?.workers?.enabled) dontSend = true;
         if (!this.sight && this._parent?.workers?.enabled) return this._parent.workers.removeMesh(this.tile.id);
         if (dontSend) return;
+        this.mesh.position.copy(worldPosition);
         if (this.sightMesh) this.sightMesh.name = "sightMesh";
         this.mesh.traverse((o) => {
             o.updateMatrix();
@@ -734,6 +734,7 @@ export class Tile3D {
                 //generate instanceed
                 const instancedMesh = new THREE.InstancedMesh(child.geometry, child.material, count);
                 const positionsArray = new Float32Array(count);
+                const depthArray = new Float32Array(count);
                 instancedMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
                 let i = 0;
                 let j = 0;
@@ -759,6 +760,7 @@ export class Tile3D {
                         //dummy.scale.set(randomScale*child.scale.x*scaleFit,randomDepth*randomScale*child.scale.y*scaleFit*this.yScale,randomScale*child.scale.z*scaleFit);
                         dummy.rotation.set(dummy.rotation.x, dummy.rotation.y + randomRotation, dummy.rotation.z);
                         positionsArray[j] = -999999999999999;
+                        depthArray[j] = 0;
                         if (this.enableGravity !== "none") {
                             const realTarget = dummy.position.clone();
                             realTarget.add(new THREE.Vector3(-this.width / 2 + gridX / 2 + this.center.x, 0 + this.center.y, -this.height / 2 + gridZ / 2 + this.center.z));
@@ -792,6 +794,7 @@ export class Tile3D {
                     }
                 }
                 instancedMesh.geometry.setAttribute("shader_instance_position", new THREE.InstancedBufferAttribute(positionsArray, 1, false));
+                instancedMesh.geometry.setAttribute("shader_instance_depth", new THREE.InstancedBufferAttribute(depthArray, 1, false));
                 instancedMesh.instanceMatrix.needsUpdate = true;
                 if (this.randomColor) instancedMesh.instanceColor.needsUpdate = true;
                 instancedMesh.position.set(-this.width / 2 + gridX / 2, 0, -this.height / 2 + gridZ / 2);
@@ -852,11 +855,15 @@ export class Tile3D {
         const avgWidth = mergedMatrix.reduce((a, b) => a + b.width, 0) / count;
         const avgHeight = mergedMatrix.reduce((a, b) => a + b.height, 0) / count;
         const avgDepth = mergedMatrix.reduce((a, b) => a + b.depth, 0) / count;
-        this.instancedBBSize = new THREE.Vector3(avgWidth / 2, avgDepth / 2, avgHeight / 2);
+        this.instancedBBSize = new THREE.Vector3(avgWidth, avgDepth, avgHeight);
 
         for (const obj of objectsToInstanciate) {
+            obj.geometry.computeBoundingBox();
+            const objBB = obj.geometry.boundingBox;
+            const geoSizeY = objBB.max.y - objBB.min.y;
             const instancedMesh = new THREE.InstancedMesh(obj.geometry, obj.material, count);
             const positionsArray = new Float32Array(count);
+            const depthArray = new Float32Array(count);
 
             for (let i = 0; i < count; i++) {
                 const matrix = mergedMatrix[i];
@@ -867,6 +874,8 @@ export class Tile3D {
                 const newDepth = newSize.max.y - newSize.min.y;
                 object.rotation.copy(new THREE.Euler(Math.toRadians(matrix.tiltX), Math.toRadians(-matrix.rotation), Math.toRadians(matrix.tiltZ)));
                 object.position.copy(new THREE.Vector3(matrix.x + newWidth / 2, matrix.z, matrix.y + newHeight / 2));
+                const size = new THREE.Box3().setFromObject(object);
+                const bottom = new THREE.Vector3(0, size.min.y, 0);
                 obj.getWorldPosition(dummy.position);
                 obj.getWorldQuaternion(dummy.quaternion);
                 obj.getWorldScale(dummy.scale);
@@ -876,12 +885,14 @@ export class Tile3D {
                 dummy.updateMatrix();
                 const world = new THREE.Vector3();
                 dummy.getWorldPosition(world);
-                positionsArray[i] = world.y;
+                positionsArray[i] = bottom.y;
+                depthArray[i] = size.max.y - size.min.y;
                 instancedMesh.setMatrixAt(i, dummy.matrix);
                 instancedMesh.setColorAt(i, new THREE.Color(matrix.color ?? "#ffffff"));
             }
 
             instancedMesh.geometry.setAttribute("shader_instance_position", new THREE.InstancedBufferAttribute(positionsArray, 1, false));
+            instancedMesh.geometry.setAttribute("shader_instance_depth", new THREE.InstancedBufferAttribute(depthArray, 1, false));
             instancedMesh.instanceMatrix.needsUpdate = true;
             instancedMesh.geometry.computeBoundsTree();
             instancedMesh.castShadow = this.castShadow;

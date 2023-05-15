@@ -140,6 +140,7 @@ self.onconnect = function (e) {
                         polygonPoints.push(Math.round(x), Math.round(y));
                     }
                 }
+                if(config.hasLimitedAngle) polygonPoints.push(Math.round(origin.x), Math.round(origin.y));
                 port.postMessage({ type: "polygon", time: performance.now() - perf, polygonPoints: polygonPoints, id: message.id, callbackId: message.callbackId });
             }
         } catch (error) {

@@ -230,9 +230,10 @@ export class ShaderHandler {
     }
 
     buildShader(mesh, shaderParams, commonParams, entity3D) {
+        const shaderKey = Object.keys(shaderParams).filter((k) => shaderParams[k].enabled).join("_");
         const _onBeforeCompile = (shader) => {
             shader.entity3D = entity3D;
-            this.injectShaders(shader, commonParams);
+            this.injectShaders(shader, commonParams, shaderParams);
             shader.uniforms.bevelSize = { value: mesh.material?.userData?.bevelSize || -9999 };
             shader.uniforms.tex_repeat = { value: mesh.material?.userData?.tex_repeat || 1 };
             shader.uniforms.mDepth = { value: commonParams.mDepth };
@@ -245,7 +246,7 @@ export class ShaderHandler {
         };
         mesh.material.onBeforeCompile = _onBeforeCompile;
         mesh.material.customProgramCacheKey = () => {
-            return `${mesh.material.type}_canvas3dcustomshader`;
+            return `${mesh.material.type}${shaderKey}`;
         };
 
         mesh.customDepthMaterial = new THREE.MeshDepthMaterial({
@@ -254,15 +255,17 @@ export class ShaderHandler {
             map: mesh.material.alphaTest ? mesh.material.map : null,
             onBeforeCompile: _onBeforeCompile,
             customProgramCacheKey: () => {
-                return `${mesh.material.type}_canvas3dcustomshader_depth`;
+                return `${mesh.material.type}${shaderKey}_depth`;
             },
         });
     }
 
-    injectShaders(shader, commonParams) {
-        shader.vertexShader = "attribute float shader_instance_position;\nattribute float shader_random_rotation;\nuniform float tex_repeat;\nattribute float shader_cell_size;\nuniform float bevelSize;\n" + shader.vertexShader;
-        shader.vertexShader = noiseShaders.snoise + "\n" + shader.vertexShader;
-        shader.fragmentShader = noiseShaders.snoise + "\n" + shader.fragmentShader;
+    injectShaders(shader, commonParams, shaderParams) {
+        shader.vertexShader = "attribute float shader_instance_depth;\nattribute float shader_instance_position;\nattribute float shader_random_rotation;\nuniform float tex_repeat;\nattribute float shader_cell_size;\nuniform float bevelSize;\n" + shader.vertexShader;
+        if (Object.keys(shaderParams).some((k) => this.shaderLib[k].useNoise)){     
+            shader.vertexShader = noiseShaders.snoise + "\n" + shader.vertexShader;
+            shader.fragmentShader = noiseShaders.snoise + "\n" + shader.fragmentShader;
+        }
         shader.vertexShader = shader.vertexShader.replace("#include <fog_vertex>", "shader_vPosition = vec3(transformed);\nshader_vUv = ( uvTransform * vec3( uv, 1 ) ).xy;\nshader_vNormal = normal;\n#include <fog_vertex>");
         shader.vertexShader = shader.vertexShader.replace("#include <uv_pars_vertex>", "#include <uv_pars_vertex>\n #ifdef USE_UV\n#else\nuniform mat3 uvTransform;\n#endif");
         shader.vertexShader = shader.vertexShader.replace(
@@ -293,6 +296,7 @@ export class ShaderHandler {
         `,
         );
         for (const [shaderId, shaderConfig] of Object.entries(this.shaderLib)) {
+            if(!shaderParams[shaderId]?.enabled && shaderId !== "defaults") continue;
             const { vertexShader, fragmentShader, uniforms, varying } = shaderConfig;
             let uniformsVarying = `uniform bool ${shaderId + "_enabled"};`;
             for (const [name, value] of Object.entries(varying)) {
@@ -588,17 +592,21 @@ export const shaders = {
                 mode: SHADERS_CONSTS.APPEND,
                 injectionPoint: "#include <begin_vertex>",
                 shaderCode: `
-                float currentY = vWorldPositionFoW.y;//(modelMatrix * vec4( transformed, 1.0 )).y;
                 float useY = yPos;
+                float useDepth = mDepth;
                 mat4 current_matrix = modelMatrix;
                 #ifdef USE_INSTANCING
-                    current_matrix = instanceMatrix;
-                    if(shader_instance_position > -999999999999999.0) {
-                        useY = shader_instance_position;
+                current_matrix = instanceMatrix;
+                if(shader_instance_position > -999999999999999.0) {
+                    useY = shader_instance_position;
+                    if(shader_instance_depth > 0.0){
+                        useDepth = shader_instance_depth;
                     }
+                }
                 #endif
+                float currentY = (current_matrix * vec4( transformed, 1.0 )).y;
                 float currentYDelta = currentY - useY;
-                wind_ground_blend_percent = max(0.0, currentYDelta / mDepth);
+                wind_ground_blend_percent = max(0.0, currentYDelta / useDepth);
                 float windFactor = 0.0;
                 vec2 windOffset = vec2(0.0);
 
@@ -620,8 +628,8 @@ export const shaders = {
                 }
 
 
-                if (currentYDelta > mDepth*wind_affect_model) {
-                    windFactor = (currentYDelta - mDepth*wind_affect_model) / (mDepth*wind_affect_model);
+                if (currentYDelta > useDepth*wind_affect_model) {
+                    windFactor = (currentYDelta - useDepth*wind_affect_model) / (useDepth*wind_affect_model);
                     if(wind_convoluted) {
                         windFactor = (sin(time*wind_speed + transformed.x + transformed.z) + wind_intensity) * windFactor;
                     }else{
@@ -649,6 +657,7 @@ export const shaders = {
     },
     distortion: {
         icon: `<i class="fas fa-wave-square"></i>`,
+        useNoise: true,
         uniforms: {
             speed: {
                 type: "float",
@@ -739,6 +748,7 @@ export const shaders = {
     },
     ocean: {
         icon: `<i class="fas fa-fish"></i>`,
+        useNoise: true,
         uniforms: {
             speed: {
                 type: "float",
@@ -1108,6 +1118,7 @@ export const shaders = {
     },
     fire: {
         icon: `<i class="fas fa-fire"></i>`,
+        useNoise: true,
         uniforms: {
             speed: {
                 type: "float",
@@ -1167,6 +1178,7 @@ export const shaders = {
     },
     ice: {
         icon: `<i class="fas fa-icicles"></i>`,
+        useNoise: true,
         uniforms: {
             speed: {
                 type: "float",
@@ -1231,6 +1243,7 @@ export const shaders = {
     },
     lightning: {
         icon: `<i class="fas fa-bolt"></i>`,
+        useNoise: true,
         uniforms: {
             speed: {
                 type: "float",
@@ -1281,6 +1294,7 @@ export const shaders = {
     },
     oil: {
         icon: `<i class="fas fa-tint"></i>`,
+        useNoise: true,
         uniforms: {
             speed: {
                 type: "float",
@@ -1336,6 +1350,7 @@ export const shaders = {
     },
     colorwarp: {
         icon: `<i class="fas fa-palette"></i>`,
+        useNoise: true,
         uniforms: {
             speed: {
                 type: "float",
@@ -1466,7 +1481,7 @@ export const shaders = {
                 injectionPoint: "#include <map_fragment>",
                 shaderCode: `
                 #ifdef USE_UV
-                float percent = textureGradient_height_percent;
+                float percent = overlay_height_percent;
                 float absCoverage = abs(overlay_coveragePercent);
                 float inversePercent = 1.0 - percent;
                 if(

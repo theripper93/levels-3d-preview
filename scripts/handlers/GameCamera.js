@@ -151,14 +151,9 @@ export class GameCamera {
         this._parent.interactionManager.sightRaycaster.near = 0.25;
         const collision = this._parent.interactionManager.computeSightCollisionFrom3DPositions(this.camera.position, target, "sight");
         this._parent.interactionManager.sightRaycaster.near = prevNear;
-        if (collision) {
-            collision.point.y = Math.max(collision.point.y, 0);
-        }
-        if (collision) {
-            this.controls.target = collision;
-        } else {
-            this.controls.target = target;
-        }
+        let targetPoint = collision || target;
+        if (this.controls._lockZero) targetPoint.y = Math.max(targetPoint.y, 0);
+        this.controls.target = targetPoint;
     }
 
     keepInBounds() {
