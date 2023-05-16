@@ -147,10 +147,19 @@ export class GameCamera {
     onChangeFreeCamera() {
         if (!this._parent._active) return;
         const target = this.camera.position.clone().add(this.camera.getWorldDirection(new THREE.Vector3()).multiplyScalar(3));
-        const prevNear = this._parent.interactionManager.sightRaycaster.near;
-        this._parent.interactionManager.sightRaycaster.near = 0.25;
-        const collision = this._parent.interactionManager.computeSightCollisionFrom3DPositions(this.camera.position, target, "sight");
-        this._parent.interactionManager.sightRaycaster.near = prevNear;
+        const collisions = this._parent.interactionManager.computeSightCollisionFrom3DPositions(this.camera.position, target, "sight", false, false, false, true) || [];
+        let collision = null;
+        for (const c of collisions) {
+            let entity3D = c.object.userData.entity3D;
+            if (!entity3D) c.object.traverseAncestors((a) => {
+                if (a.userData.entity3D) entity3D = a.userData.entity3D;
+            });
+            const isBox = entity3D?.cameraCollision;
+            if (!isBox && c.distance < 0.25) continue;
+            collision = c.point;
+            break;
+        }
+        
         let targetPoint = collision || target;
         if (this.controls._lockZero) targetPoint.y = Math.max(targetPoint.y, 0);
         this.controls.target = targetPoint;
