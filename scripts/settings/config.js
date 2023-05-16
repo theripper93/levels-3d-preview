@@ -957,6 +957,11 @@ export function registerConfigs() {
                 label: game.i18n.localize("levels3dpreview.flags.autoGround.label"),
                 default: false,
             },
+            maxInstances: {
+                type: "number",
+                label: game.i18n.localize("levels3dpreview.flags.maxInstances.label"),
+                default: 0 ,
+            },
             enableAnim: {
                 type: "checkbox",
                 label: game.i18n.localize("levels3dpreview.flags.enableAnim.label"),
