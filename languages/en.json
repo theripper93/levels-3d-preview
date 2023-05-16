@@ -722,6 +722,9 @@
             "randomSeed": {
                 "label": "Random Seed"
             },
+            "maxInstances": {
+                "label": "Max Instances"
+            },
             "tiling": {
                 "label": "Tiling Options"
             },
