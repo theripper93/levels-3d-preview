@@ -27,7 +27,7 @@ export class Tile3D {
             x: this.tile.document.x + Math.abs(this.tile.document.width) / 2,
             y: this.tile.document.y + Math.abs(this.tile.document.height) / 2,
         };
-        this.center = Ruler3D.posCanvasTo3d({ x: this.center2d.x, y: this.center2d.y, z: this.bottom });
+        this.center = Ruler3D.posCanvasTo3d({x: this.center2d.x, y: this.center2d.y, z: this.bottom});
         this.texture = this.tile.document.texture.src;
         this.opacity = this.tile.document.alpha;
         this.width = Math.abs(this.tile.document.width / factor);
@@ -61,11 +61,11 @@ export class Tile3D {
         this.setHidden();
         this.sendToWorker();
         this.updateControls();
-        this.popIn();
         setTimeout(() => {
             this.updateControls();
         }, 150);
         if (this.tile.controlled) this._parent.interactionManager.setControlledGroup(this);
+        this.popIn();
         setTimeout(() => {
             this.setUpDoors();
             this.setupDoor(true);
@@ -79,7 +79,7 @@ export class Tile3D {
     }
 
     async popIn() {
-        if (this.fromUpdate && !this.isTerrain) return;
+        if (this.fromUpdate) return;
         if (this.dynaMesh != "default") {
             this.mesh.scale.set(1, 0, 1);
             const animation = [

@@ -247,11 +247,11 @@ export class InteractionManager {
         if (this._gizmoEnabled) controls.attach(controlledGroup);
         for (let placeable of canvas.activeLayer?.controlled) {
             const tile3d = this._parent.tiles[placeable.id];
-            if (!tile3d) continue;
+            if (!tile3d?.mesh) continue;
             const mesh = tile3d.mesh;
-            const offsetPos = mesh.position.clone().sub(controlledGroup.position);
-            mesh.position.copy(offsetPos);
-            controlledGroup.add(mesh);
+            canvas.activeLayer.controlled.length == 1 && mesh.rotation ? controlledGroup.rotation.copy(mesh.rotation) : controlledGroup.rotation.set(0, 0, 0);
+            console.log(mesh.rotation.x, mesh.rotation.y, mesh.rotation.z);
+            controlledGroup.attach(mesh);
         }
     }
 
@@ -269,11 +269,8 @@ export class InteractionManager {
     }
 
     removeFromcontrolledGroup(object3d) {
-        const controlledGroup = this._parent.controlledGroup;
         const mesh = object3d.mesh;
-        const offset = mesh.position.clone().sub(controlledGroup.position.clone().multiplyScalar(-1));
-        mesh.position.copy(offset);
-        this._parent.scene.add(mesh);
+        this._parent.scene.attach(mesh);
     }
 
     controlledGroupSetPosition() {
@@ -289,7 +286,7 @@ export class InteractionManager {
         for (let placeable of canvas.activeLayer?.controlled) {
             const tile3d = this._parent.tiles[placeable.id];
             if (!tile3d) continue;
-            const pos = tile3d.mesh.position;
+            const pos = tile3d.mesh?.position ?? tile3d.center;
             if (!maxX || pos.x > maxX) maxX = pos.x;
             if (!maxY || pos.y > maxY) maxY = pos.y;
             if (!maxZ || pos.z > maxZ) maxZ = pos.z;
