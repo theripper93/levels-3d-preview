@@ -807,7 +807,7 @@ class BaseParticleEffect {
         this.params.onEnd?.forEach((e) => {
             const p3d = new Particle3D().fromObject(e);
             if (!p3d._to) p3d.to(this.to);
-            p3d.params.impactPoint = {x: this.emitter.position.x, y: this.emitter.position.y, z: this.emitter.position.z}
+            if(this.constructor instanceof ProjectileParticle) p3d.params.impactPoint = {x: this.emitter.position.x, y: this.emitter.position.y, z: this.emitter.position.z}
             const isTargetOnly = Object.keys(PARTICLE_SYSTEMS.TARGET_ONLY_PARTICLE_SYSTEMS).includes(p3d.params.type);
             if (!p3d._from && !isTargetOnly) p3d.from(this.from);
             p3d.start(false);
@@ -6104,7 +6104,7 @@ export class PARTICLE_SYSTEMS{
 
     static getParticleClass(type) {
         const pClass = this.ALL_PARTICLE_SYSTEMS[type]
-        return typeof pClass === "function" ? pClass : pClass();
+        return typeof pClass === "function" ? pClass() : pClass;
     }
 
     static getDefaultLightData(system) {
