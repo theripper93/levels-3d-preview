@@ -6104,7 +6104,7 @@ export class PARTICLE_SYSTEMS{
 
     static getParticleClass(type) {
         const pClass = this.ALL_PARTICLE_SYSTEMS[type]
-        return typeof pClass === "function" ? pClass() : pClass;
+        return pClass instanceof BaseParticleEffect ? pClass : pClass();
     }
 
     static getDefaultLightData(system) {
