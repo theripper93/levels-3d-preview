@@ -28,7 +28,7 @@ const handlers = {
         const damageTypes = item.system.damage.parts.map(part => part[1])
         const damageType = damageTypes.find(type => effects[type]) ?? "default"
         if(isInstant && !preCreate) return playVFX(templateDocument, damageType);
-        if(preCreate) applyEffect(templateDocument, effect[damageType])
+        if(preCreate && !isInstant) applyEffect(templateDocument, effects[damageType])
     },
     "pf2e": (templateDocument) => { 
         const effects = shaderData.dnd5e;
