@@ -38,6 +38,8 @@ export class Tile3D {
         this.mirrorY = this.tile.document.height < 0;
         this.rotSign = ((this.tile.document.width / Math.abs(this.tile.document.width)) * this.tile.document.height) / Math.abs(this.tile.document.height);
         this.getFlags();
+        this.particleData = this.getParticleData();
+        game.Levels3DPreview.particleSystem.stop(this.particleEffectId);
         this.initRandom();
     }
 
@@ -71,6 +73,7 @@ export class Tile3D {
             this.setupDoor(true);
         }, 100);
         game.Levels3DPreview.outline?.toggleControlled(this.mesh, this.tile.controlled);
+        if(this.particleData.type != "none") this.initParticle();
         return this;
     }
 
@@ -183,6 +186,41 @@ export class Tile3D {
         this._parent.workers.addMesh(data);
         currentParent.add(this.mesh);
         this.mesh.position.copy(currentPosition);
+    }
+
+    get particleEffectId() {
+        return "Tile." + this.document.id;
+    }
+
+    initParticle() {
+        if (!game.settings.get("levels-3d-preview", "enableEffects")) return;
+        if (this.document.hidden && !this.document.getFlag("levels-3d-preview", "enableParticleHidden")) return;
+        const size = (Math.max(this.width, this.height) * factor) / canvas.grid.size;
+        const particleData = this.particleData;
+        this.particleEffect = new Particle3D(particleData.type);
+        this.particleEffect
+            .name(this.particleEffectId)
+            .sprite(particleData.sprite)
+            .scale(particleData.scale)
+            .color(particleData.color.split(","), particleData.color2 ? particleData.color2.split(",") : undefined)
+            .duration(Infinity)
+            .presetIntensity(particleData.presetIntensity)
+            .emitterSize(size)
+            .meshSurface()
+            .to(this.placeable);
+        this.particleEffect.start(false);
+    }
+
+    getParticleData() {
+        return {
+            type: this.document.getFlag("levels-3d-preview", "ParticleType") ?? "custom",
+            sprite: this.document.getFlag("levels-3d-preview", "ParticleSprite") ?? "",
+            emitterScale: 1,
+            scale: this.document.getFlag("levels-3d-preview", "ParticleScale") ?? 1,
+            color: this.document.getFlag("levels-3d-preview", "ParticleColor") ?? "#ffffff",
+            color2: this.document.getFlag("levels-3d-preview", "ParticleColor2") ?? "#ffffff",
+            presetIntensity: this.document.getFlag("levels-3d-preview", "ParticleIntensity") ?? 1,
+        };
     }
 
     initRandom() {

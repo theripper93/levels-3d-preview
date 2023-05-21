@@ -782,6 +782,13 @@ export function registerConfigs() {
         try {
             meshStats = game.Levels3DPreview.tiles[app.object.id]?.getMeshStats();
         } catch (e) { }
+
+        const PS = game.Levels3DPreview.CONFIG.PARTICLE_SYSTEMS;
+
+        const particleSelect = {
+            none: game.i18n.localize("levels3dpreview.flags.particlePreset.options.none"),
+            ...PS.getSelectOptions(PS.TILE_PARTICLE_SYSTEMS, {localize:true}),
+        };
     
         const injected = injectConfig.inject(app, html, {
             moduleId: "levels-3d-preview",
@@ -1148,6 +1155,52 @@ export function registerConfigs() {
                 type: "custom",
                 html: `<h3 class="form-header" id="shader-config"><i class="fas fa-magic"></i> ${game.i18n.localize("levels3dpreview.flags.shader.header")}</h3><div>`,
             },
+            partHeader: {
+                type: "custom",
+                html: `<h3 class="form-header"><i class="fas fa-fire"></i> ${game.i18n.localize("levels3dpreview.flags.lightParticleEffect.header.title")}</h3><div>`,
+            },
+            ParticleType: {
+                type: "select",
+                label: game.i18n.localize("levels3dpreview.flags.lightParticleEffect.ParticleType.label"),
+                default: "none",
+                options: particleSelect,
+            },
+            enableParticleHidden: {
+                type: "checkbox",
+                label: game.i18n.localize("levels3dpreview.flags.lightParticleEffect.enableParticleHidden.label"),
+                default: false,
+            },
+            ParticleIntensity: {
+                type: "range",
+                label: game.i18n.localize("levels3dpreview.flags.lightParticleEffect.ParticleIntensity.label"),
+                default: 1,
+                min: 0.1,
+                max: 10,
+                step: 0.1,
+            },
+            ParticleSprite: {
+                type: "filepicker.any",
+                fpTypes: [".png", ".jpg", ".jpeg", ".webp", ".svg", ".webm", ".mp4", ".gif", ".PNG", ".JPG", ".JPEG", ".WEBP", ".SVG", ".WEBM", ".MP4", ".GIF", "JSON", "json"],
+                label: game.i18n.localize("levels3dpreview.flags.lightParticleEffect.ParticleSprite.label"),
+                default: "modules/levels-3d-preview/assets/particles/emberssmall.png",
+            },
+            ParticleScale: {
+                type: "number",
+                label: game.i18n.localize("levels3dpreview.flags.lightParticleEffect.ParticleScale.label"),
+                units: game.i18n.localize("levels3dpreview.units.gu"),
+                default: 1,
+                step: 0.000001,
+            },
+            ParticleColor: {
+                type: "color",
+                label: game.i18n.localize("levels3dpreview.flags.lightParticleEffect.ParticleColor.label"),
+                default: "#ffffff",
+            },
+            ParticleColor2: {
+                type: "color",
+                label: game.i18n.localize("levels3dpreview.flags.lightParticleEffect.ParticleColor2.label"),
+                default: "#ffffff",
+            },
             header2: {
                 type: "custom",
                 html: `<h3 class="form-header"><i class="fas fa-mountain"></i></i> ${game.i18n.localize("levels3dpreview.flags.noise.header")}</h3><div>`,
@@ -1253,6 +1306,41 @@ export function registerConfigs() {
         mapGenBtn.on("click", (e) => {
             new MapGen(app.object).render(true);
         });
+
+        let firstChange = true;
+        const color1 = injected.find("input[name='flags.levels-3d-preview.ParticleColor']")[0];
+        const color2 = injected.find("input[name='flags.levels-3d-preview.ParticleColor2']")[0];
+        const gradientPickerEl = GradientPicker.create(color1, color2);
+        injected.find("input[name='flags.levels-3d-preview.ParticleColor2']").closest(".form-group").after(gradientPickerEl);
+        const showSprite = ["mysteriouslights", "vortex", "sparks", "fairy", "magicsphere", "json"];
+        const particleFlags = ["ParticleIntensity", "ParticleSprite", "ParticleScale", "ParticleColor", "ParticleColor2", "enableParticleHidden"];
+        injected.on("change", "select[name='flags.levels-3d-preview.ParticleType']", (event) => {
+
+            const hideAll = event.target.value === "none";
+            particleFlags.forEach((flag) => {
+                const input = injected.find(`[name='flags.levels-3d-preview.${flag}']`);
+                input.closest(".form-group").toggle(!hideAll);
+            });
+
+            $(gradientPickerEl).toggle(!hideAll);
+
+            const sprite = injected.find(`[name='flags.levels-3d-preview.ParticleSprite']`);
+            sprite.closest(".form-group").toggle(!hideAll && showSprite.includes(event.target.value))
+            if (!firstChange) {
+                const defaultValues = PS.getDefaultLightData(event.target.value);
+                const scaleInput = injected.find(`[name='flags.levels-3d-preview.ParticleScale']`);
+                const emitSizeInput = injected.find(`[name='flags.levels-3d-preview.ParticleEmitterSizeMultiplier']`);
+                scaleInput.val(defaultValues.scale);
+                emitSizeInput.val(defaultValues.emitterSize);
+            } else {
+                firstChange = false;
+            }
+            app.setPosition({height: "auto"});
+        });
+
+        injected.find("select[name='flags.levels-3d-preview.ParticleType']").trigger("change");
+
+        
 
         app.setPosition({height: "auto"});
     })
@@ -1432,8 +1520,9 @@ export function registerConfigs() {
                 type: "range",
                 label: game.i18n.localize("levels3dpreview.flags.lightParticleEffect.ParticleIntensity.label"),
                 default: 1,
-                min: 1,
+                min: 0.1,
                 max: 10,
+                step: 0.1,
             },
             ParticleSprite: {
                 type: "filepicker.any",

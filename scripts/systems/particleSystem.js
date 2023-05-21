@@ -545,7 +545,7 @@ class BaseParticleEffect {
         this.createAnimationPath();
         await this.createEmitter();
         if (this.params.meshSurface) {
-            this.resetMatrix(this.emitter);
+            //this.resetMatrix(this.emitter);
             this.emitter.traverse(o => {
                 this.resetMatrix(o);
             });
@@ -666,7 +666,9 @@ class BaseParticleEffect {
         const tile3d = game.Levels3DPreview.tiles[this.to.id];
 
         const mergedGeometry = tile3d.getMergedGeometry();
+        mergedGeometry.computeBoundingBox();
         const shape = new QUARKS.MeshSurfaceEmitter(mergedGeometry)
+        this._meshCenter = mergedGeometry.boundingBox.getCenter(new THREE.Vector3());
         this._meshSurface = shape;
     }
 
@@ -2890,7 +2892,7 @@ class SlashParticle extends ExplosionParticle{
         );
 
         trail.addBehavior(new QUARKS.SizeOverLife(new QUARKS.PiecewiseBezier([[new QUARKS.Bezier(0, 0.5, 0.5, 0), 0]])));
-        trail.addBehavior(new QUARKS.OrbitOverLife( new QUARKS.ConstantValue(30), new THREE.Vector3(0, 0, 1)));
+        trail.addBehavior(new QUARKS.OrbitOverLife( new QUARKS.ConstantValue(30), this._meshCenter ?? new THREE.Vector3(0, 0, 1)));
         
         
         trail.addBehavior(new QUARKS.ColorOverLife(gradient));
@@ -2902,7 +2904,7 @@ class SlashParticle extends ExplosionParticle{
         
         const trail2 = new QUARKS.ParticleSystem(trailData);
         trail2.addBehavior(new QUARKS.SizeOverLife(new QUARKS.PiecewiseBezier([[new QUARKS.Bezier(0, 0.5, 0.5, 0), 0]])));
-        trail2.addBehavior(new QUARKS.OrbitOverLife( new QUARKS.ConstantValue(30), new THREE.Vector3(0, 0, 1)));
+        trail2.addBehavior(new QUARKS.OrbitOverLife( new QUARKS.ConstantValue(30), this._meshCenter ?? new THREE.Vector3(0, 0, 1)));
         
         trail2.material = await this.getBasicMaterial(null, THREE.NormalBlending);
         trail2.renderOrder = 0;
@@ -3212,7 +3214,7 @@ class MagicBurst extends ExplosionParticle {
         mainExplosion.addBehavior(new QUARKS.ColorOverLife(new QUARKS.ColorRange(colorToVec4(this.params.color.start[0],2), colorToVec4(this.params.color.end[0],2))));
         mainExplosion.addBehavior(new QUARKS.TurbulenceField(turbulence, new QUARKS.ConstantValue(10), turbulence, turbulence));
         mainExplosion.addBehavior(new QUARKS.RotationOverLife(new QUARKS.IntervalValue(0, 0.5 * Math.PI), true));
-        mainExplosion.addBehavior(new QUARKS.OrbitOverLife( new QUARKS.ConstantValue(1), new THREE.Vector3(0, 0, 1)));
+        mainExplosion.addBehavior(new QUARKS.OrbitOverLife( new QUARKS.ConstantValue(1), this._meshCenter ?? new THREE.Vector3(0, 0, 1)));
         mainExplosion.addBehavior(new QUARKS.SizeOverLife(new QUARKS.PiecewiseBezier([[new QUARKS.Bezier(1, 0.95, 0.95, 0), 0]])));
 
         const innerFlash = new QUARKS.ParticleSystem(innerFlashData);
@@ -3342,7 +3344,7 @@ class StarBurst extends ExplosionParticle {
        innerFlash.addBehavior(new QUARKS.ColorOverLife(new QUARKS.ColorRange(colorToVec4(this.params.color.start[0], 1,2), colorToVec4(this.params.color.end[0], 1, 2))));
         innerFlash.addBehavior(new QUARKS.SpeedOverLife(new QUARKS.PiecewiseBezier([[new QUARKS.Bezier(1, 0.1, 0.05, 0), 0]])));
         innerFlash.addBehavior(new QUARKS.RotationOverLife(new QUARKS.IntervalValue(0, 0.5 * Math.PI), true));
-        innerFlash.addBehavior(new QUARKS.OrbitOverLife( new QUARKS.IntervalValue(1,2), new THREE.Vector3(0, 0, 1)));
+        innerFlash.addBehavior(new QUARKS.OrbitOverLife( new QUARKS.IntervalValue(1,2), this._meshCenter ?? new THREE.Vector3(0, 0, 1)));
         
         innerFlash.emitter.rotation.x = Math.PI / 2;
 
@@ -4331,12 +4333,12 @@ class VortexParticle extends BasePresetEffect {
             
         circleLines.addBehavior(new QUARKS.ColorOverLife(gradient));
         circleLines.addBehavior(new QUARKS.ApplyForce(new THREE.Vector3(0, 0, 1), new QUARKS.ConstantValue(0.4)));
-        circleLines.addBehavior(new QUARKS.OrbitOverLife(new QUARKS.ConstantValue(1), new THREE.Vector3(0, 0, 1)));
+        circleLines.addBehavior(new QUARKS.OrbitOverLife(new QUARKS.ConstantValue(1), this._meshCenter ?? new THREE.Vector3(0, 0, 1)));
         circleLines.emitter.rotation.x = -Math.PI / 2;
 
         particles.addBehavior(new QUARKS.ColorOverLife(gradient));
         particles.addBehavior(new QUARKS.ApplyForce(new THREE.Vector3(0, 0, 1), new QUARKS.ConstantValue(0.4)));
-        particles.addBehavior(new QUARKS.OrbitOverLife(new QUARKS.ConstantValue(0.4), new THREE.Vector3(0, 0, 1)));
+        particles.addBehavior(new QUARKS.OrbitOverLife(new QUARKS.ConstantValue(0.4), this._meshCenter ?? new THREE.Vector3(0, 0, 1)));
         particles.emitter.rotation.x = -Math.PI / 2;
         
 
@@ -4514,7 +4516,7 @@ class HolyLightParticle extends BasePresetEffect {
         circleLines.addBehavior(new QUARKS.ColorOverLife(gradient));
         circleLines.addBehavior(new QUARKS.SizeOverLife(new QUARKS.PiecewiseBezier([[new QUARKS.Bezier(0.5, 0.55, 0.95, 1), 0.2]])));
         //circleLines.addBehavior(new QUARKS.ApplyForce(new THREE.Vector3(0, 0, 1), new QUARKS.ConstantValue(0.02)));
-        circleLines.addBehavior(new QUARKS.OrbitOverLife(new QUARKS.ConstantValue(1), new THREE.Vector3(0, 0, 1)));
+        circleLines.addBehavior(new QUARKS.OrbitOverLife(new QUARKS.ConstantValue(1), this._meshCenter ?? new THREE.Vector3(0, 0, 1)));
         circleLines.emitter.rotation.x = -Math.PI / 2;
         
         this.emitter.add(circleLines.emitter);
@@ -4576,7 +4578,7 @@ class GhostlyParticle extends BasePresetEffect {
         symbols.addBehavior(new QUARKS.ColorOverLife(gradient));
         symbols.addBehavior(new QUARKS.SizeOverLife(new QUARKS.PiecewiseBezier([[new QUARKS.Bezier(0.5, 0.55, 0.95, 1), 0.2]])));
         symbols.addBehavior(new QUARKS.ApplyForce(new THREE.Vector3(0, 0, 1), new QUARKS.ConstantValue(0.02)));
-        symbols.addBehavior(new QUARKS.OrbitOverLife(new QUARKS.ConstantValue(0.2), new THREE.Vector3(0, 0, 1)));
+        symbols.addBehavior(new QUARKS.OrbitOverLife(new QUARKS.ConstantValue(0.2), this._meshCenter ??  new THREE.Vector3(0, 0, 1)));
         symbols.emitter.rotation.x = -Math.PI / 2;
         
         
@@ -4635,7 +4637,7 @@ class FairyParticle extends BasePresetEffect {
         const turbulence = new THREE.Vector3(0.1,0.01,0.1)
         
         circleLines.addBehavior(new QUARKS.ColorOverLife(gradient));
-        circleLines.addBehavior(new QUARKS.OrbitOverLife(new QUARKS.ConstantValue(1), new THREE.Vector3(0, 0, 1)));
+        circleLines.addBehavior(new QUARKS.OrbitOverLife(new QUARKS.ConstantValue(1), this._meshCenter ?? new THREE.Vector3(0, 0, 1)));
         //circleLines.addBehavior(new QUARKS.TurbulenceField(turbulence, new QUARKS.ConstantValue(10), turbulence, turbulence));
         circleLines.addBehavior(new QUARKS.Noise(turbulence,turbulence))
         circleLines.emitter.rotation.x = -Math.PI / 2;
@@ -4669,7 +4671,7 @@ class SmokeCloudParticle extends BasePresetEffect {
             startSize: new QUARKS.ConstantValue(this.params.scale.start),
             startColor: new QUARKS.ConstantColor(new THREE.Vector4(1, 1, 1, 1)),
             startRotation: new QUARKS.IntervalValue(0, 2 * Math.PI),
-            worldSpace: false,
+            worldSpace: true,
             prewarm: false,
             rendererEmitterSettings: {
                 startLength: new QUARKS.ConstantValue(400),
@@ -4697,9 +4699,9 @@ class SmokeCloudParticle extends BasePresetEffect {
             
         symbols.addBehavior(new QUARKS.ColorOverLife(gradient));
         symbols.addBehavior(new QUARKS.SizeOverLife(new QUARKS.PiecewiseBezier([[new QUARKS.Bezier(0.5, 0.55, 0.95, 1), 0.2]])));
-        symbols.addBehavior(new QUARKS.OrbitOverLife(new QUARKS.ConstantValue(0.05), new THREE.Vector3(0, 0, 1)));
+        //symbols.addBehavior(new QUARKS.OrbitOverLife(new QUARKS.ConstantValue(0.05), this._meshCenter ?? new THREE.Vector3(0, 0, 1)));
         symbols.addBehavior(new QUARKS.Noise(new THREE.Vector3(0.1, 0.01, 0.1), new THREE.Vector3(0.01, 0.01, 0.01)));
-        symbols.addBehavior(new QUARKS.ApplyForce(new THREE.Vector3(0, 0, 1), new QUARKS.ConstantValue(0.02)));
+        symbols.addBehavior(new QUARKS.ApplyForce(new THREE.Vector3(0, 1, 0), new QUARKS.ConstantValue(0.02)));
         symbols.addBehavior(new QUARKS.RotationOverLife(new QUARKS.ConstantValue(0.1)));
         symbols.emitter.rotation.x = -Math.PI / 2;
         
@@ -4761,7 +4763,7 @@ class MysteriousLightsParticle extends BasePresetEffect {
         
         particles.addBehavior(new QUARKS.ColorOverLife(gradient));
         particles.addBehavior(new QUARKS.ApplyForce(new THREE.Vector3(0, 0, 1), new QUARKS.ConstantValue(0.01)));
-        particles.addBehavior(new QUARKS.OrbitOverLife(new QUARKS.ConstantValue(0.04), new THREE.Vector3(0, 0, 1)));
+        particles.addBehavior(new QUARKS.OrbitOverLife(new QUARKS.ConstantValue(0.04), this._meshCenter ?? new THREE.Vector3(0, 0, 1)));
         particles.addBehavior(new QUARKS.Noise(new THREE.Vector3(0.1, 0.01, 0.1), new THREE.Vector3(0.01, 0.01, 0.01)));
         particles.emitter.rotation.x = -Math.PI / 2;
         
@@ -5032,7 +5034,6 @@ class MistParticle extends BasePresetEffect {
             startSpeed: new QUARKS.ConstantValue(0),
             startSize: new QUARKS.ConstantValue(this.params.scale.start),
             startColor: new QUARKS.ConstantColor(new THREE.Vector4(1, 1, 1, 1)),
-            //startRotation: new QUARKS.IntervalValue(0, 2 * Math.PI),
             worldSpace: false,
             prewarm: false,
             speedFactor: 100,
@@ -5063,10 +5064,76 @@ class MistParticle extends BasePresetEffect {
         symbols.addBehavior(new QUARKS.ColorOverLife(gradient));
         symbols.addBehavior(new QUARKS.SizeOverLife(new QUARKS.PiecewiseBezier([[new QUARKS.Bezier(0.5, 0.55, 0.95, 1), 0.2]])));
         symbols.addBehavior(new QUARKS.ApplyForce(new THREE.Vector3(0, 1, 0), new QUARKS.ConstantValue(0.00002)));
-        symbols.addBehavior(new QUARKS.OrbitOverLife(new QUARKS.ConstantValue(0.02), new THREE.Vector3(0, 0, 1)));
+        !this._meshCenter && symbols.addBehavior(new QUARKS.OrbitOverLife(new QUARKS.ConstantValue(0.02), this._meshCenter ?? new THREE.Vector3(0, 0, 1)));
         
         symbols.emitter.rotation.x = -Math.PI / 2;
         
+        
+        this.emitter.add(symbols.emitter);
+        this.emitter.position.copy(this._target);
+        this.particleSystems.push(symbols);
+    }
+}
+
+class Mist2Particle extends BasePresetEffect {
+
+    static get DEFAULT_SCALE() {
+        return 1;
+    }
+
+    static get DEFAULT_EMITTER_SIZE() {
+        return 1;
+    }
+
+    async createEmitter() {
+        this.emitter = new THREE.Group();
+
+        const symbolMaterial = await this.getBasicMaterial("modules/levels-3d-preview/assets/particles/smoke9x9.png", THREE.NormalBlending);
+        
+        const symbolsData = {
+            duration: 10,
+            looping: true,
+            startLife: new QUARKS.ConstantValue(20),
+            startSpeed: new QUARKS.ConstantValue(0),
+            startSize: new QUARKS.ConstantValue(this.params.scale.start),
+            startColor: new QUARKS.ConstantColor(new THREE.Vector4(1, 1, 1, 0.1)),
+            worldSpace: false,
+            prewarm: false,
+            speedFactor: 100,
+            rendererEmitterSettings: {
+                startLength: new QUARKS.ConstantValue(400),
+            },
+            emissionOverTime: new QUARKS.ConstantValue((this.params.presetIntensity*20*this.params.emitterSize) / this.params.scale.start),
+            shape: this._meshSurface ?? new QUARKS.ConeEmitter({radius: this.params.emitterSize*0.8, angle: 0.001}),
+            material: symbolMaterial,
+            renderOrder: 2,
+            uTileCount: 3,
+            vTileCount: 3,
+            startTileIndex: new QUARKS.IntervalValue(0, 7),
+            renderMode: QUARKS.RenderMode.BillBoard,
+        }
+
+        const gradient = new QUARKS.Gradient(
+            [
+                [new QUARKS.ColorRange(colorToVec4(this.params.color.start[0], 0), colorToVec4(this.params.color.start[0], 0)), 0],
+                [new QUARKS.ColorRange(colorToVec4(this.params.color.start[0], 0), colorToVec4(this.params.color.start[0], 1)), 0.314],
+                [new QUARKS.ColorRange(colorToVec4(this.params.color.start[0], 1), colorToVec4(this.params.color.end[0], 1)), 0.522],
+                [new QUARKS.ColorRange(colorToVec4(this.params.color.end[0], 1), new THREE.Vector4(0,0,0,0)), 0.71],
+                [new QUARKS.ColorRange(new THREE.Vector4(0,0,0,0), new THREE.Vector4(0,0,0,0)), 1],
+            ]
+            );
+
+        const symbols = new QUARKS.ParticleSystem(symbolsData);
+
+    
+            
+        symbols.addBehavior(new QUARKS.ColorOverLife(gradient));
+        symbols.addBehavior(new QUARKS.SizeOverLife(new QUARKS.PiecewiseBezier([[new QUARKS.Bezier(0.5, 0.55, 0.95, 1), 0.2]])));
+        symbols.addBehavior(new QUARKS.ApplyForce(new THREE.Vector3(0, 1, 0), new QUARKS.ConstantValue(0.00002)));
+        !this._meshCenter && symbols.addBehavior(new QUARKS.OrbitOverLife(new QUARKS.ConstantValue(0.02), this._meshCenter ?? new THREE.Vector3(0, 0, 1)));
+        
+        symbols.emitter.rotation.x = -Math.PI / 2;
+        this.emitter.scale.y = 0.2;
         
         this.emitter.add(symbols.emitter);
         this.emitter.position.copy(this._target);
@@ -5141,14 +5208,14 @@ class GravityWellParticle extends BasePresetEffect {
             );
             
         circleLines.addBehavior(new QUARKS.ColorOverLife(gradient));
-        circleLines.addBehavior(new QUARKS.OrbitOverLife(new QUARKS.ConstantValue(orbitMultiplier), new THREE.Vector3(0, 0, 1)));
+        circleLines.addBehavior(new QUARKS.OrbitOverLife(new QUARKS.ConstantValue(orbitMultiplier), this._meshCenter ?? new THREE.Vector3(0, 0, 1)));
         circleLines.addBehavior(new QUARKS.GravityForce(new THREE.Vector3(0, 0, 0), 0.3*gravityStrength));
         circleLines.addBehavior(new QUARKS.SizeOverLife(new QUARKS.PiecewiseBezier([[new QUARKS.Bezier(0, 0.75, 0.75, 0), 0]])));
         circleLines.emitter.rotation.x = -Math.PI / 2;
 
         particles.addBehavior(new QUARKS.ColorOverLife(gradient));
         particles.addBehavior(new QUARKS.GravityForce(new THREE.Vector3(0, 0, -this.params.emitterSize / 4), 0.1*gravityStrength));
-        particles.addBehavior(new QUARKS.OrbitOverLife(new QUARKS.ConstantValue(0.3), new THREE.Vector3(0, 0, 1)));
+        particles.addBehavior(new QUARKS.OrbitOverLife(new QUARKS.ConstantValue(0.3), this._meshCenter ?? new THREE.Vector3(0, 0, 1)));
         particles.addBehavior(new QUARKS.SizeOverLife(new QUARKS.PiecewiseBezier([[new QUARKS.Bezier(0, 0.75, 0.75, 0), 0]])));
         
         particles.emitter.rotation.x = -Math.PI / 2;
@@ -5989,8 +6056,25 @@ const TargetOnlyPresetSystems = {
     "tesla": TeslaParticle,
     "magicsphere": MagicSphereParticle,
     "mist": MistParticle,
+    "mist2": Mist2Particle,
     "gravitywell": GravityWellParticle,
     "json": JSONParticle,
+}
+
+const TileParticleSystems = {
+    "torch": TorchParticle,
+    "fire": FireParticle,
+    "magiccircle": MagicCircleParticle,
+    "sparks": SparksParticle,
+    "holy": HolyLightParticle,
+    "ghostly": GhostlyParticle,
+    "smokecloud": SmokeCloudParticle,
+    "mysteriouslights": MysteriousLightsParticle,
+    "sunburst": SunburstParticle,
+    "tesla": TeslaParticle,
+    "mist": MistParticle,
+    "mist2": Mist2Particle,
+    "gravitywell": GravityWellParticle,
 }
 
 const DirectionalParticleSystems = {
@@ -6013,12 +6097,19 @@ export class PARTICLE_SYSTEMS{
             SpritesParticleSystems,
             LightParticleSystems,
             DirectionalParticleSystems,
+            TileParticleSystems,
         }
     }
 
     static get TARGET_ONLY_PRESET_SYSTEMS() {
         return {
             ...TargetOnlyPresetSystems,
+        }
+    }
+
+    static get TILE_PARTICLE_SYSTEMS() {
+        return {
+            ...TileParticleSystems,
         }
     }
 
@@ -6104,7 +6195,7 @@ export class PARTICLE_SYSTEMS{
 
     static getParticleClass(type) {
         const pClass = this.ALL_PARTICLE_SYSTEMS[type]
-        return pClass instanceof BaseParticleEffect ? pClass : pClass();
+        return pClass// instanceof BaseParticleEffect ? pClass : pClass();
     }
 
     static getDefaultLightData(system) {

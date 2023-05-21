@@ -919,7 +919,7 @@
                     "label": "Enable Particle Effect"
                 },
                 "enableParticleHidden": {
-                    "label": "Enable Particle Effect when the Light is Disabled."
+                    "label": "Enable Particle Effect when Hidden/Disabled."
                 },
                 "ParticleAlphaStart": {
                     "label": "Starting Opacity"
@@ -1313,6 +1313,7 @@
             "tesla": "Tesla",
             "magicsphere": "Magic Sphere",
             "mist": "Mist",
+            "mist2": "Mist 2",
             "gravitywell": "Gravity Well",
             "optgroup": "Directional (Requires Emission Angle)",
             "directionalfire": "Flamethrower",
