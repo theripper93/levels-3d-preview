@@ -213,7 +213,7 @@ export class Tile3D {
 
     getParticleData() {
         return {
-            type: this.document.getFlag("levels-3d-preview", "ParticleType") ?? "custom",
+            type: this.document.getFlag("levels-3d-preview", "ParticleType") ?? "none",
             sprite: this.document.getFlag("levels-3d-preview", "ParticleSprite") ?? "",
             emitterScale: 1,
             scale: this.document.getFlag("levels-3d-preview", "ParticleScale") ?? 1,

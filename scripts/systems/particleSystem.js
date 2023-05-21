@@ -617,7 +617,7 @@ class BaseParticleEffect {
     }
 
     async getBasicMaterial(filePath, blending = THREE.AdditiveBlending) {
-        const path = filePath ?? this.params.sprite;
+        const path = filePath || this.params.sprite || this.defaultSettings.sprite;
         const extension = path.split(".").pop();
         const isVideo = extension == "mp4" || extension == "webm" || extension == "ogg" || extension == "mov" || extension == "apng";
         

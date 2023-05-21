@@ -160,6 +160,7 @@ class Levels3DPreview {
             },
             LOADERS: {
                 GLTFLoader,
+                EXRLoader,
             },
             shaders: {
                 ShaderHandler,
