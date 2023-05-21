@@ -153,8 +153,16 @@ export function injectFoWShaders(THREELIB) {
             vec4 overlayTexel = texture( fogOverlay, vec2(sceneX * overlayRepeat.x, sceneY * overlayRepeat.y) );
             gl_FragColor = mix(gl_FragColor, overlayTexel, 1.0 - fogTexel.r);
         }else{
+            float originalAlpha = gl_FragColor.a;
             gl_FragColor = mix( vec4(0.0, 0.0, 0.0, 1.0), gl_FragColor, fogTexel.r );
+            gl_FragColor.a = originalAlpha;
         }
     }
     ` + THREELIB.ShaderChunk.fog_fragment;
 }
+
+
+/*
+
+
+*/
