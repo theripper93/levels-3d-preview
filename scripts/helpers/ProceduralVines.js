@@ -134,6 +134,9 @@ export class ProceduralVines{
             y: offset.z * factor,
             width: width * factor,
             height: height * factor,
+            texture: {
+                src: "modules/levels-3d-preview/assets/blank.webp",
+            },
             flags: {
                 "levels-3d-preview": {
                     dynaMesh: "vines",

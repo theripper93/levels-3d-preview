@@ -2465,6 +2465,9 @@ export function extractPointsFromDrawing() {
         const tileData = {
             x: drawing.x,
             y: drawing.y,
+            texture: {
+                src: "modules/levels-3d-preview/assets/blank.webp",
+            },
             width: maxX,
             height: maxY,
             flags: {
@@ -2584,6 +2587,9 @@ function extrudeWallGroup(walls, top, bottom) {
             y: topLeft.y,
             width: width,
             height: height,
+            texture: {
+                src: "modules/levels-3d-preview/assets/blank.webp",
+            },
             flags: {
                 "levels-3d-preview": {
                     dynaMesh: "polygonbevelsolidify",

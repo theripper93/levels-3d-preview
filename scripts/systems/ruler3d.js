@@ -313,6 +313,9 @@ export class Ruler3D {
             height: Math.max(height, 10),
             x: minX * factor,
             y: minY * factor,
+            texture: {
+                src: "modules/levels-3d-preview/assets/blank.webp",
+            },
             flags: {
                 "levels-3d-preview": {
                     depth: Math.max(depth, 50),

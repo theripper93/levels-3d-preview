@@ -179,7 +179,7 @@ export class Template3D {
                 width: width,
                 height: height,
                 texture: {
-                    img: "modules/levels-3d-preview/assets/blank.webp",
+                    src: "modules/levels-3d-preview/assets/blank.webp",
                 },
                 overhead: true,
                 x: x,
