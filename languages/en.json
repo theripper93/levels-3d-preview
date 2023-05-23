@@ -215,6 +215,10 @@
                 "label": "Max Elevation",
                 "notes": "Maximum allowed elevation for tokens on this scene."
             },
+            "positional": {
+                "label": "3D Canvas: Positional Audio",
+                "notes": "Ease the volume of this sound based on distance from the camera. Requires 'Volume Easing' to be enabled."
+            },
             "doorType":{
                 "options": {
                     "none": "None",

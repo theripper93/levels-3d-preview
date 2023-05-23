@@ -1464,6 +1464,19 @@ export function registerConfigs() {
         })
     })
 
+    Hooks.on("renderAmbientSoundConfig", (app, html) => {
+        injectConfig.inject(app, html, {
+            "moduleId": "levels-3d-preview",
+            "inject": 'input[name="easing"]',
+            "positional": {
+                type: "checkbox",
+                label: game.i18n.localize("levels3dpreview.flags.positional.label"),
+                notes: game.i18n.localize("levels3dpreview.flags.positional.notes"),
+                default: false,
+            }
+        })
+    })
+
     Hooks.on("renderAmbientLightConfig", (app, html) => {
     
         const PS = game.Levels3DPreview.CONFIG.PARTICLE_SYSTEMS;

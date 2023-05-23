@@ -11,7 +11,7 @@ export class WorkerHandler {
     }
 
     get enabled() {
-        return game.Levels3DPreview?.CONFIG?.useMultithreading && game.Levels3DPreview?.object3dSight && game.Levels3DPreview?.fogExploration;
+        return game.Levels3DPreview?.CONFIG?.useMultithreading && game.Levels3DPreview?.object3dSight;// && game.Levels3DPreview?.fogExploration;
     }
 
     initRaycastWorker() {

@@ -3,9 +3,9 @@ import { factor } from "../main.js";
 import { sleep } from "../helpers/utils.js";
 import { Light3D } from "./light3d.js";
 import { TokenAnimationHandler } from "../handlers/tokenAnimationHandler.js";
-import {computeBoundsTree, disposeBoundsTree, acceleratedRaycast} from "../lib/three-mesh-bvh.js";
-import {heightHighlightShaderMaterial, radialGradientShaderMaterial} from "../shaders/shaderMaterials.js";
-import {ActiveEffectEffect} from "./effects/activeEffect.js";
+import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from "../lib/three-mesh-bvh.js";
+import { heightHighlightShaderMaterial, radialGradientShaderMaterial } from "../shaders/shaderMaterials.js";
+import { ActiveEffectEffect } from "./effects/activeEffect.js";
 import { RangeRingEffect } from "./effects/rangeRing.js";
 THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
 THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
@@ -308,13 +308,13 @@ export class Token3D {
 
     async loadAttachments(object) {
         for (const attachment of this.attachments) {
-            if(attachment.hidden) continue;
+            if (attachment.hidden) continue;
             const attachmentModel = await game.Levels3DPreview.helpers.loadModel(attachment.src);
             const attachmentObject = attachmentModel.scene;
             const matrix = new THREE.Matrix4();
             matrix.fromArray(attachment.matrix);
             attachmentObject.applyMatrix4(matrix);
-            if(attachmentObject) {
+            if (attachmentObject) {
                 object.add(attachmentObject);
             }
         }
@@ -704,7 +704,7 @@ export class Token3D {
             };
             const mesh = targetModel.clone();
             mesh.children[0].material = new THREE.MeshPhongMaterial({ color: color, emissive: color, emissiveIntensity: 0.8 });
-            mesh.scale.set(this.targetSize , this.targetSize , this.targetSize );
+            mesh.scale.set(this.targetSize, this.targetSize, this.targetSize);
             mesh.position.set(position.x, position.y, position.z);
             this.targetContainer.add(mesh);
             positionOffset += this.targetSize * 2.5;

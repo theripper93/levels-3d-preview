@@ -17,6 +17,7 @@ export function registerWrappers() {
         libWrapper.register("levels-3d-preview", "PlaceablesLayer.prototype.pasteObjects", pasteObjects, "WRAPPER");
         libWrapper.register("levels-3d-preview", "ClockwiseSweepPolygon.prototype._compute", computePolygonDispatch, "MIXED");
         libWrapper.register("levels-3d-preview", "Scenes.prototype.preload", preload3D, "OVERRIDE");
+        libWrapper.register("levels-3d-preview", "SoundsLayer.prototype.refresh", refreshAudioListener, "MIXED");
         //game.Levels3DPreview.raycastWorker = raycastWorker;
         Hooks.on("refreshToken", (token) => {
             Token3DSetPosition.bind(token)();
@@ -27,6 +28,63 @@ export function registerWrappers() {
         
         if (CONFIG.MeasuredTemplate.objectClass.prototype.drawPreview) libWrapper.register("levels-3d-preview", "CONFIG.MeasuredTemplate.objectClass.prototype.drawPreview", drawPreview, "MIXED");
     
+        function refreshAudioListener(wrapped, ...args) {
+            if (!game.Levels3DPreview?._active) return wrapped(...args);
+            const options = args[0];
+
+            if ( !this.placeables.length ) return;
+            if ( game.audio.locked ) {
+              return game.audio.pending.push(() => this.refresh(options));
+            }
+            let listeners = canvas.tokens.controlled.map(t => t.center);
+            if ( !listeners.length && !game.user.isGM ) listeners = canvas.tokens.placeables.reduce((arr, t) => {
+              if ( t.actor?.isOwner && t.isVisible ) arr.push(t.center);
+              return arr;
+            }, []);
+
+            function _syncPositions(listeners, options) {
+                if ( !this.placeables.length || game.audio.locked ) return;
+                const sounds = {};
+                for (let sound of this.placeables) {
+                    const useCameraDist = sound.document.flags["levels-3d-preview"]?.positional ?? false;
+                  const p = sound.document.path;
+                  const r = sound.radius;
+                  if ( !p ) continue;
+            
+                  // Track one audible object per unique sound path
+                  if ( !(p in sounds) ) sounds[p] = {path: p, audible: false, volume: 0, sound};
+                  const s = sounds[p];
+                  if ( !sound.isAudible ) continue; // The sound may not be currently audible
+            
+                  // Determine whether the sound is audible, and its greatest audible volume
+                    if (useCameraDist) {
+                        s.audible = true;
+                        const sound3d = game.Levels3DPreview.sounds[sound.id];
+                        const distance = sound3d.mesh.position.distanceTo(game.Levels3DPreview.camera.position) * game.Levels3DPreview.factor;
+                        let volume = sound.document.volume;
+                        if ( sound.document.easing ) volume *= this._getEasingVolume(distance, r);
+                        if ( !s.volume || (volume > s.volume) ) s.volume = volume;
+                    } else {                        
+                        for ( let l of listeners ) {
+                          if ( !sound.source.active || !sound.source.los?.contains(l.x, l.y) ) continue;
+                          s.audible = true;
+                          const distance = Math.hypot(l.x - sound.x, l.y - sound.y);
+                          let volume = sound.document.volume;
+                          if ( sound.document.easing ) volume *= this._getEasingVolume(distance, r);
+                          if ( !s.volume || (volume > s.volume) ) s.volume = volume;
+                        }
+                  }
+                }
+            
+                // For each audible sound, sync at the target volume
+                for ( let s of Object.values(sounds) ) {
+                  s.sound.sync(s.audible, s.volume, options);
+                }
+              }
+
+            _syncPositions.bind(this)(listeners, options)
+        }
+
         async function showBouncingText(wrapped, ...args) {
             wrapped(...args);
             if (!game.Levels3DPreview?._active || game.settings.get("core", "scrollingStatusText") !== true || !this.visible) return null;

@@ -9,7 +9,7 @@ export class Light3D {
         this._parent = parent;
         this.isToken = isToken;
         this._useHelper = game.user.isGM && game.settings.get("levels-3d-preview", "lightHelpers");
-        this.animationFn = () => { };
+        this.animationFn = () => {};
         this.refreshDebounced = debounce(this.refresh.bind(this), 100);
         //this.refresh = debounce(this.refresh.bind(this), 100);
         if (!this.isToken) {
@@ -44,7 +44,7 @@ export class Light3D {
         let light;
         if (isSpotLight && cache.spot.length) {
             light = cache.spot.pop();
-        }else if (!isSpotLight && cache.point.length) {
+        } else if (!isSpotLight && cache.point.length) {
             light = cache.point.pop();
         } else {
             light = isSpotLight ? new THREE.SpotLight() : new THREE.PointLight();
@@ -128,7 +128,7 @@ export class Light3D {
             });
         }
         const res = await canvas.scene.updateEmbeddedDocuments("AmbientLight", updates);
-        if(!res.length) this.refresh();
+        if (!res.length) this.refresh();
         return true;
     }
 
@@ -208,7 +208,7 @@ export class Light3D {
             else this.lightHelper.cone.lookAt(this.light3d.target.position);
             this.lightHelper.userData.ignoreHover = true;
             this.lightHelper.userData.interactive = false;
-            this.lightHelper.traverse((o) => { 
+            this.lightHelper.traverse((o) => {
                 o.userData.ignoreHover = true;
                 o.userData.interactive = false;
             });
@@ -231,7 +231,7 @@ export class Light3D {
         if (isSpotLight) cache.spot.push(this.light3d);
         else cache.point.push(this.light3d);
     }
-    
+
     get particleEffectId() {
         return "Light." + this.light.id;
     }
@@ -381,7 +381,6 @@ export class Light3D {
     }
 
     static setHooks() {
-
         function refreshOrUpdate(lightDocument) {
             if (game.Levels3DPreview?._active) {
                 const light3d = game.Levels3DPreview.lights.sceneLights[lightDocument.id];

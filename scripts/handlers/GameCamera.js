@@ -142,6 +142,9 @@ export class GameCamera {
             this.setHeight();
             this.keepInBounds();
         }
+        canvas.perception.update({
+            refreshSounds: true,
+        }, true);
     }
 
     onChangeFreeCamera() {
@@ -161,7 +164,7 @@ export class GameCamera {
         }
         
         let targetPoint = collision || target;
-        if (this.controls._lockZero) targetPoint.y = Math.max(targetPoint.y, 0);
+        //if (this.controls._lockZero) targetPoint.y = Math.max(targetPoint.y, 0);
         this.controls.target = targetPoint;
     }
 

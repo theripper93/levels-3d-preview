@@ -6,6 +6,7 @@ import { GLTFLoader } from "./lib/GLTFLoader.js";
 import { Token3D } from "./entities/token3d.js";
 import { Ruler3D } from "./systems/ruler3d.js";
 import { Light3D } from "./entities/light3d.js";
+import { Sound3D } from "./entities/sound3d.js";
 import { Wall3D } from "./entities/wall3d.js";
 import { initSharing, setSharingHooks } from "./apps/sharing.js";
 import { Tile3D, recomputeGravity, autoMergeTiles, unmergeTiles, splitToChunks, extractPointsFromDrawing, extrudeWalls, attachTileToToken } from "./entities/tile3d.js";
@@ -63,6 +64,7 @@ registerConfigs();
 registerSettings();
 registerWrappers();
 Light3D.setHooks();
+Sound3D.setHooks();
 Note3D.setHooks();
 Token3D.setHooks();
 Wall3D.setHooks();
@@ -359,6 +361,7 @@ class Levels3DPreview {
         this.walls = {};
         this.doors = {};
         this.tiles = {};
+        this.sounds = {};
         this.templates = {};
         this.notes = {};
         this.pings = new Set();
@@ -369,6 +372,8 @@ class Levels3DPreview {
             template: new THREE.TextureLoader().load("icons/svg/explosion.svg"),
             lightOn: new THREE.TextureLoader().load("icons/svg/light.svg"),
             lightOff: new THREE.TextureLoader().load("icons/svg/light-off.svg"),
+            soundOn: new THREE.TextureLoader().load("icons/svg/sound.svg"),
+            soundOff: new THREE.TextureLoader().load("icons/svg/sound-off.svg"),
             indicator: {
                 //aoRM: new THREE.TextureLoader().load("modules/levels-3d-preview/assets/DefaultMaterial_occlusionRoughnessMetallic.png"),
                 normal: new THREE.TextureLoader().load("modules/levels-3d-preview/assets/DefaultMaterial_normal.webp", (texture) => {
@@ -386,6 +391,7 @@ class Levels3DPreview {
         this.animationMixers = [];
         this.clock = new THREE.Clock();
         this.loader = new this.CONFIG.LOADERS.GLTFLoader();
+        this.audioLoader = new THREE.AudioLoader();
         this.FBXLoader = new FBXLoader();
         this._active = false;
         this._ready = false;
@@ -412,6 +418,9 @@ class Levels3DPreview {
         this.camera.position.set(8, 2, 8).setLength(8);
         this.camera.zoom = 1;
         this.camera.updateProjectionMatrix();
+
+        this.listener = new THREE.AudioListener();
+        this.camera.add(this.listener);
 
         this.scene = new THREE.Scene();
         this.material = new THREE.MeshNormalMaterial();
@@ -640,6 +649,7 @@ class Levels3DPreview {
         this.isLevels && this.createFloors(this.level);
         this.createWalls(this.level);
         this.createSceneLights();
+        this.createSceneSounds();
         this.createNotes();
         this.createBoard();
         this.createTable();
@@ -840,6 +850,17 @@ class Levels3DPreview {
         for (let light of canvas.lighting.placeables) {
             this.addLight(light);
         }
+    }
+
+    createSceneSounds() {
+        for (let sound of canvas.sounds.placeables) {
+            this.addSound(sound);
+        }
+    }
+
+    addSound(sound) {
+        this.sounds[sound.id]?.destroy();
+        this.sounds[sound.id] = new Sound3D(sound, this);
     }
 
     addLight(light) {
@@ -1057,6 +1078,7 @@ class Levels3DPreview {
         this.lights.sceneLights = {};
         this.lights._lightIndex = 0;
         this.tiles = {};
+        this.sounds = {};
         this.notes = {};
         this.templates = {};
         this.cursors.clear();
@@ -1239,6 +1261,10 @@ class Levels3DPreview {
             Object.values(this.lights.sceneLights).forEach((light) => {
                 light.updateHandle();
                 light.update(time);
+            });
+            Object.values(this.sounds).forEach((sound) => {
+                sound.update(time);
+                sound.updateHandle();
             });
             Object.values(this.notes).forEach((note) => {
                 note.updateVisibility();

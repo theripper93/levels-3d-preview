@@ -213,7 +213,7 @@ export class InteractionManager {
     }
 
     get allowedRulerDrag() {
-        return ["MeasuredTemplate", "AmbientLight", "Tile"];
+        return ["MeasuredTemplate", "AmbientLight", "Tile", "AmbientSound"];
     }
 
     _onTransformStart(event) {

@@ -15,6 +15,9 @@ export class Template3D {
         } else if (this.template.t === "tile") {
             this.template.t = "rect";
             this.isTile = true;
+        } else if (this.template.t === "sound") {
+            this.template.t = "circle";
+            this.isSound = true;
         }
         this.embeddedName = "MeasuredTemplate";
         this.placeable = template;
@@ -161,6 +164,23 @@ export class Template3D {
                 },
             };
             canvas.scene.createEmbeddedDocuments("AmbientLight", [lightData]);
+            return this.destroy();
+        }
+
+        if (this.isSound) {
+            const soundData = {
+                radius: this.distance,
+                x: origin2d.x,
+                y: origin2d.y,
+                flags: {
+                    levels: {
+                        rangeBottom: parseFloat((origin2d.z + 0.1).toFixed(2)),
+                        rangeTop: parseFloat((origin2d.z + 0.1).toFixed(2)),
+                    },
+                },
+            };
+            const sounds = await canvas.scene.createEmbeddedDocuments("AmbientSound", [soundData]);
+            sounds[0].sheet.render(true);
             return this.destroy();
         }
 
