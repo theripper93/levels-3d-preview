@@ -307,8 +307,12 @@ export const CLIP_NAVIGATION_BUTTONS = [
             const fogDistance = (canvas.scene.getFlag("levels-3d-preview", "fogDistance") ?? 3000) / factor;
             if (fogDistance == game.Levels3DPreview.scene.fog?.far) {
                 game.Levels3DPreview.scene.fog.far = 3000;
+                game.Levels3DPreview.camera.far = 100;
+                game.Levels3DPreview.camera.updateProjectionMatrix()
             } else {
                 game.Levels3DPreview.scene.fog.far = fogDistance;
+                game.Levels3DPreview.camera.far = fogDistance;
+                game.Levels3DPreview.camera.updateProjectionMatrix()
             }
             $(e.currentTarget).toggleClass("clip-navigation-enabled", game.Levels3DPreview.scene.fog.far == fogDistance);
         },

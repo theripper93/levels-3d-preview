@@ -13062,7 +13062,7 @@ const UniformsLib = {
 		overlayRepeat : { value: new Vector2( 1, 1 ) },
 		useOverlay : { value: false },
 		sceneOrigin : { value: new Vector2() },
-		sceneDimensions : { value: new Vector2() },
+		sceneDimensions: {value: new Vector2()},
 
 	},
 
@@ -24412,8 +24412,8 @@ function WebGLMaterials( properties ) {
 				uvScaleMap.updateMatrix();
 
 			}
-
-			uniforms.uvTransform.value.copy( uvScaleMap.matrix );
+			//#MODIFIED EDITED
+			uniforms.uvTransform.value.copy( material.userData.uvMatrix ?? uvScaleMap.matrix );
 
 		}
 

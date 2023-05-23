@@ -278,7 +278,7 @@ export class Helpers {
     }
 
     async getPBRMat(texturePath, options = {}) {
-        if (this.materialCache[texturePath] && !options.noMatCache) return this.materialCache[texturePath];
+        if (this.materialCache[texturePath] && !options.noMatCache) return options.getMatClone ? this.materialCache[texturePath].clone() : this.materialCache[texturePath];
         let path = texturePath;
         const folder = path.split("/").slice(0, -1).join("/");
         const extension = path.split(".").pop();

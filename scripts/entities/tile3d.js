@@ -53,6 +53,7 @@ export class Tile3D {
         }
         if (this._destroyed) return;
         this.setTransmissionIor();
+        this.setRepeat();
         this.initShaders();
         this.setShading();
         this.setSides();
@@ -184,8 +185,8 @@ export class Tile3D {
             isOpen: this.isOpen,
         };
         this._parent.workers.addMesh(data);
-        currentParent.add(this.mesh);
         this.mesh.position.copy(currentPosition);
+        currentParent?.add(this.mesh);
     }
 
     get particleEffectId() {
@@ -1189,7 +1190,7 @@ export class Tile3D {
         let textureOrMat = null;
         let isPBR = null;
         if (!texture) return { textureOrMat, isPBR };
-        textureOrMat = await this._parent.helpers.autodetectTextureOrMaterial(texture, { noMatCache: true, noCache: this.flipY || this.repeatTexture, doubleSided: this.doubleSided, ...options });
+        textureOrMat = await this._parent.helpers.autodetectTextureOrMaterial(texture, { getMatClone: true, noCache: this.flipY, doubleSided: this.doubleSided, ...options });
         isPBR = this._parent.helpers.isPBR(texture);
         if (isPBR) {
             Object.values(textureOrMat).forEach((v) => this.setTexture(v));
@@ -1233,8 +1234,23 @@ export class Tile3D {
         if (!this.repeatTexture || !tex?.image) return;
         tex.wrapS = THREE.RepeatWrapping;
         tex.wrapT = THREE.RepeatWrapping;
-        tex.repeat.set(this.textureRepeat, this.textureRepeat);
+        //tex.repeat.set(this.textureRepeat, this.textureRepeat);
         return;
+    }
+
+    setRepeat() {
+        const uvMatrix = new THREE.Matrix3().set(this.textureRepeat, 0, 0, 0, this.textureRepeat, 0, 0, 0, 1);
+        this.mesh.traverse((child) => {
+            if (child.isMesh) {
+                if (child.material instanceof Array) {
+                    child.material.forEach((m) => {
+                        m.userData.uvMatrix = uvMatrix;
+                    });
+                } else {
+                    child.material.userData.uvMatrix = uvMatrix;
+                }
+            }
+        });
     }
 
     setTransmissionIor() {

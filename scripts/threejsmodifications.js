@@ -180,8 +180,5 @@ export function injectThreeModifications(THREE) {
 
 		return this;
 
-	}
-
-
-
+    }
 }
