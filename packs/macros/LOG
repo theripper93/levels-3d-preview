@@ -1,0 +1,8 @@
+2023/06/01-14:42:55.663 8f0 Recovering log #15
+2023/06/01-14:42:55.667 8f0 Delete type=0 #15
+2023/06/01-14:42:55.667 8f0 Delete type=3 #14
+2023/06/01-14:59:13.142 35cc Level-0 table #19: started
+2023/06/01-14:59:13.142 35cc Level-0 table #19: 0 bytes OK
+2023/06/01-14:59:13.143 35cc Delete type=0 #17
+2023/06/01-14:59:13.144 35cc Manual compaction at level-0 from '!macros!DfdMdWjCoFCoGCFx' @ 72057594037927935 : 1 .. '!macros!reNcJJjUam4mfomu' @ 0 : 0; will stop at (end)
+2023/06/01-14:59:13.144 35cc Manual compaction at level-1 from '!macros!DfdMdWjCoFCoGCFx' @ 72057594037927935 : 1 .. '!macros!reNcJJjUam4mfomu' @ 0 : 0; will stop at (end)

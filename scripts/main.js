@@ -413,7 +413,7 @@ class Levels3DPreview {
     }
 
     init3d() {
-        this._sharedContext = game.settings.get("levels-3d-preview", "sharedContext");
+        this._sharedContext = false;//game.settings.get("levels-3d-preview", "sharedContext");
         this.camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.01, 100);
         this.camera.position.set(8, 2, 8).setLength(8);
         this.camera.zoom = 1;
