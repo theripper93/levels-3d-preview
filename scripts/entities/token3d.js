@@ -41,6 +41,7 @@ export class Token3D {
         this._baseColor = new THREE.Color(this.baseColor);
         this.forceDrawBars = this.drawBars;
         this.drawBars = debounce(this.drawBars, 100);
+        this.drawName = debounce(this.drawName, 100);
         this.drawHeightIndicatorDebounced = debounce(this.drawHeightIndicator, 100);
         this.animationHandler = new TokenAnimationHandler(this);
     }
@@ -1153,12 +1154,15 @@ export class Token3D {
     }
 
     async drawName() {
-        const name = this.token._drawNameplate();
-        name.width *= 2;
-        name.height *= 2;
+        const name = this.token.nameplate;
+        const currentParent = name.parent;
+
+        /*name.width *= 2;
+        name.height *= 2;*/
         const container = new PIXI.Container();
+        container.scale.set(2, 2);
         container.addChild(name);
-        const base64 = canvas.app.renderer.extract.base64(container);
+        const base64 = await canvas.app.renderer.extract.base64(container);
         const spriteMaterial = new THREE.SpriteMaterial({
             map: await new THREE.TextureLoader().loadAsync(base64),
             transparent: true,
@@ -1170,11 +1174,16 @@ export class Token3D {
         this.nameplate = sprite;
         this.nameplate.userData.ignoreIntersect = true;
         this.nameplate.userData.ignoreHover = true;
-        const width = (0.5 * name.width) / this.factor;
-        const height = (0.5 * name.height) / this.factor;
+        const width = (name.width) / this.factor;
+        const height = (name.height) / this.factor;
         this.nameplate.scale.set(width, height, 1);
         this.nameplate.position.set(0, this.d + height / 2 + 0.042, 0);
         this.mesh.add(this.nameplate);
+        //reset name as it was changed
+        //name.width /= 2;
+        //name.height /= 2;
+        if (currentParent) currentParent.addChild(name);
+
     }
 
     async drawBars() {
@@ -1185,7 +1194,7 @@ export class Token3D {
         container.addChild(bar1);
         container.addChild(bar2);
         bar2.position.set(0, bar1.height + 3);
-        const base64 = canvas.app.renderer.extract.base64(container);
+        const base64 = await canvas.app.renderer.extract.base64(container);
         const spriteMaterial = new THREE.SpriteMaterial({
             map: await new THREE.TextureLoader().loadAsync(base64),
             transparent: true,
@@ -1445,6 +1454,7 @@ export class Token3D {
     }
 
     static setHooks() {
+
         Hooks.on("updateToken", (tokenDocument, updates) => {
             if (!game.Levels3DPreview._active) return;
             const token = tokenDocument.object;

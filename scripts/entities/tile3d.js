@@ -434,7 +434,6 @@ export class Tile3D {
             this._parent.interactionManager?.buildCollisionGeos();
             canvas.perception.update(
                 {
-                    forceUpdateFog: true,
                     initializeLighting: true,
                     initializeSounds: true,
                     initializeVision: true,
@@ -519,7 +518,6 @@ export class Tile3D {
             this._parent.interactionManager?.generateSightCollisions();
             canvas.perception.update(
                 {
-                    forceUpdateFog: true,
                     initializeLighting: true,
                     initializeSounds: true,
                     initializeVision: true,

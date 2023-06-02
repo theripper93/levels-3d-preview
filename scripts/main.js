@@ -1596,7 +1596,6 @@ class Levels3DPreview {
 
         canvas.perception.update(
             {
-                forceUpdateFog: true,
                 initializeLighting: true,
                 initializeSounds: true,
                 initializeVision: true,

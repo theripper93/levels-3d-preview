@@ -66,7 +66,6 @@ export class WorkerHandler {
         if (!this.enabled) return;
         canvas.perception.update(
             {
-                forceUpdateFog: true,
                 initializeLighting: true,
                 initializeSounds: true,
                 initializeVision: true,
