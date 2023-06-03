@@ -85,7 +85,7 @@ export class Tile3D {
     async popIn() {
         if (this.fromUpdate && !this.isTerrain) return;
         if (this.dynaMesh != "default") {
-            this.mesh.scale.set(1, 0, 1);
+            this.mesh.scale.set(1, 0.0001, 1);
             const animation = [
                 {
                     parent: this.mesh.scale,
@@ -95,7 +95,7 @@ export class Tile3D {
             ];
             CanvasAnimation.animate(animation, { duration: 400, easing: "easeOutCircle" });
         } else {
-            this.mesh.scale.set(0, 0, 0);
+            this.mesh.scale.set(0.0001, 0.0001, 0.0001);
             const animation = [
                 {
                     parent: this.mesh.scale,
@@ -1381,6 +1381,7 @@ export class Tile3D {
     }
 
     updateFromTransform() {
+        debugger
         const controls = this._parent.transformControls;
         controls.detach();
         this.updatePositionFrom3D(true);

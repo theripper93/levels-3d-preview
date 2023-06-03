@@ -75,9 +75,17 @@ export class Helpers {
 
         function resolveMetadata(video) {
             return new Promise((resolve) => {
-                video.onloadedmetadata = () => {
+                function resolveListener() {
+                    video.removeEventListener("loadedmetadata", resolveListener);
+                    video.removeEventListener("loadeddata", resolveListener);
+                    video.removeEventListener("play", resolveListener);
                     resolve(video);
-                };
+                }
+                video.addEventListener("loadedmetadata", resolveListener);
+                video.addEventListener("loadeddata", resolveListener);
+                video.addEventListener("play", resolveListener);
+
+
             });
         }
     }

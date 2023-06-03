@@ -295,6 +295,7 @@ export class InteractionManager {
             if (!minZ || pos.z < minZ) minZ = pos.z;
         }
 
+        if(maxX === undefined || maxY === undefined || maxZ === undefined || minX === undefined || minY === undefined || minZ === undefined) return false;
         const center = new THREE.Vector3((maxX + minX) / 2, (maxY + minY) / 2, (maxZ + minZ) / 2);
         controlledGroup.position.copy(center);
         return true;
@@ -1255,10 +1256,10 @@ export const dropFunctions = {
         }
         return await canvas.scene.createEmbeddedDocuments("Tile", [
             {
-                x: snapped ? snapped.x : data.x - width / 2,
-                y: snapped ? snapped.y : data.y - height / 2,
-                width: width,
-                height: height,
+                x: Math.round(snapped ? snapped.x : data.x - width / 2),
+                y: Math.round(snapped ? snapped.y : data.y - height / 2),
+                width: Math.round(width),
+                height: Math.round(height),
                 img: "modules/levels-3d-preview/assets/blank.webp",
                 overhead: canvas.activeLayer?.name !== "BackgroundLayer",
                 flags: data.flags,

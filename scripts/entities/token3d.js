@@ -19,7 +19,7 @@ export class Token3D {
         this.token = tokenDocument;
         this.type = "Token";
         this.embeddedName = "Token";
-        this.placeable = tokenDocument;
+        this.placeable = this.token;
         this._shaderSize = Math.max(this.token.document.width, this.token.document.height);
         this.isOwner = this.token.isOwner;
         this._parent = parent;
@@ -852,8 +852,12 @@ export class Token3D {
         );
     }
 
+    get hidden() {
+        return this.token.document.hidden && !this.token.hasPreview;
+    }
+
     updateHiden() {
-        if (!game.user.isGM && this.token.document.hidden) return;
+        if (!game.user.isGM && this.hidden) return;
         if (!this.originalMatData) {
             this.originalMatData = {};
             this.model.traverse((child) => {
@@ -868,9 +872,9 @@ export class Token3D {
                 }
             });
         }
-        const hidden = this.token.document.hidden; // || this.hasClone;
+        const hidden = this.hidden; // || this.hasClone;
         if (this._hidden === hidden) return;
-        this._hidden = this.token.document.hidden; // || this.hasClone;
+        this._hidden = this.hidden; // || this.hasClone;
         this.model.traverse((child) => {
             if (child.isMesh) {
                 if (hidden) {
@@ -1328,7 +1332,7 @@ export class Token3D {
     updateVisibility() {
         if (this.heightIndicator) this.heightIndicator.rotation.y += 0.01;
         if (!this._loaded || !this.mesh || !this.nameplate) return;
-        this.mesh.visible = this.alwaysVisible || this.token.visible;
+        this.mesh.visible = this.alwaysVisible || this.token.visible || this.token.hasPreview;
         this.nameplate.visible = this.token.nameplate?.visible;
         if (this.bars) this.bars.visible = this.token?.bars?.visible;
     }
@@ -1369,6 +1373,7 @@ export class Token3D {
 
     _onClickRight(e) {
         const event = {
+            stopPropagation: () => {},
             data: {
                 originalEvent: e,
             },
@@ -1378,6 +1383,7 @@ export class Token3D {
 
     _onClickLeft2(e) {
         const event = {
+            stopPropagation: () => {},
             data: {
                 originalEvent: e,
             },
@@ -1387,6 +1393,7 @@ export class Token3D {
 
     _onClickRight2(e) {
         const event = {
+            stopPropagation: () => {},
             data: {
                 originalEvent: e,
             },

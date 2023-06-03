@@ -134,7 +134,7 @@ export class Light3D {
 
     refresh() {
         game.Levels3DPreview.particleSystem.stop(this.particleEffectId);
-        const light = this.light;
+        const light = this.light.hasPreview ? this.light._preview : this.light;
         const tilt = Math.toRadians(light.document.getFlag("levels-3d-preview", "tilt") ?? 0);
         this.particleData = this.getParticleData();
         this.animColors = {
@@ -213,7 +213,7 @@ export class Light3D {
                 o.userData.interactive = false;
             });
         }
-        if (this.light.document.getFlag("levels-3d-preview", "enableParticle")) this.initParticle();
+        if (light.document.getFlag("levels-3d-preview", "enableParticle")) this.initParticle();
     }
 
     update(delta) {
@@ -262,27 +262,28 @@ export class Light3D {
     }
 
     getParticleData() {
+        const light = this.light.hasPreview ? this.light._preview : this.light;
         return {
-            type: this.light.document.getFlag("levels-3d-preview", "ParticleType") ?? "custom",
-            sprite: this.light.document.getFlag("levels-3d-preview", "ParticleSprite") ?? "",
-            emitterScale: this.light.document.getFlag("levels-3d-preview", "ParticleEmitterSizeMultiplier") ?? 1,
-            scale: this.light.document.getFlag("levels-3d-preview", "ParticleScale") ?? 1,
-            color: this.light.document.getFlag("levels-3d-preview", "ParticleColor") ?? "#ffffff",
-            color2: this.light.document.getFlag("levels-3d-preview", "ParticleColor2") ?? "#ffffff",
-            force: this.light.document.getFlag("levels-3d-preview", "ParticleForce") ?? 0,
-            gravity: this.light.document.getFlag("levels-3d-preview", "ParticleGravity") ?? 1,
-            life: this.light.document.getFlag("levels-3d-preview", "ParticleLife") ?? 1000,
-            count: this.light.document.getFlag("levels-3d-preview", "ParticleCount") ?? 5,
-            emitTime: this.light.document.getFlag("levels-3d-preview", "ParticleEmitTime") ?? 1,
-            mass: this.light.document.getFlag("levels-3d-preview", "ParticleMass") ?? 1000,
-            alphaStart: this.light.document.getFlag("levels-3d-preview", "ParticleAlphaStart") ?? 0,
-            alphaEnd: this.light.document.getFlag("levels-3d-preview", "ParticleAlphaEnd") ?? 1,
+            type: light.document.getFlag("levels-3d-preview", "ParticleType") ?? "custom",
+            sprite: light.document.getFlag("levels-3d-preview", "ParticleSprite") ?? "",
+            emitterScale: light.document.getFlag("levels-3d-preview", "ParticleEmitterSizeMultiplier") ?? 1,
+            scale: light.document.getFlag("levels-3d-preview", "ParticleScale") ?? 1,
+            color: light.document.getFlag("levels-3d-preview", "ParticleColor") ?? "#ffffff",
+            color2: light.document.getFlag("levels-3d-preview", "ParticleColor2") ?? "#ffffff",
+            force: light.document.getFlag("levels-3d-preview", "ParticleForce") ?? 0,
+            gravity: light.document.getFlag("levels-3d-preview", "ParticleGravity") ?? 1,
+            life: light.document.getFlag("levels-3d-preview", "ParticleLife") ?? 1000,
+            count: light.document.getFlag("levels-3d-preview", "ParticleCount") ?? 5,
+            emitTime: light.document.getFlag("levels-3d-preview", "ParticleEmitTime") ?? 1,
+            mass: light.document.getFlag("levels-3d-preview", "ParticleMass") ?? 1000,
+            alphaStart: light.document.getFlag("levels-3d-preview", "ParticleAlphaStart") ?? 0,
+            alphaEnd: light.document.getFlag("levels-3d-preview", "ParticleAlphaEnd") ?? 1,
             push: {
-                dx: this.light.document.getFlag("levels-3d-preview", "ParticlePushX") ?? 0,
-                dy: this.light.document.getFlag("levels-3d-preview", "ParticlePushY") ?? 0,
-                dz: this.light.document.getFlag("levels-3d-preview", "ParticlePushZ") ?? 0,
+                dx: light.document.getFlag("levels-3d-preview", "ParticlePushX") ?? 0,
+                dy: light.document.getFlag("levels-3d-preview", "ParticlePushY") ?? 0,
+                dz: light.document.getFlag("levels-3d-preview", "ParticlePushZ") ?? 0,
             },
-            presetIntensity: this.light.document.getFlag("levels-3d-preview", "ParticleIntensity") ?? 1,
+            presetIntensity: light.document.getFlag("levels-3d-preview", "ParticleIntensity") ?? 1,
         };
     }
 
