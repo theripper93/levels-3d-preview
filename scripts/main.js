@@ -54,7 +54,8 @@ import { registerWrappers } from "./wrappers.js";
 import { ProceduralVines } from "./helpers/ProceduralVines.js";
 import { PARTICLE_SYSTEMS } from "./systems/particleSystem.js";
 import { registerConfigs } from "./settings/config.js";
-import { registerSettings } from "./settings/settingsConfig.js";
+import {registerSettings} from "./settings/settingsConfig.js";
+import { WaveFunctionSolver } from "./generators/WaveFunctionCollapse.js";
 
 export const factor = 1000;
 injectFoWShaders(THREE);
@@ -333,6 +334,7 @@ class Levels3DPreview {
             extractPointsFromDrawing,
             extrudeWalls,
             attachTileToToken,
+            WaveFunctionSolver,
             TEXTURES: {
                 BLANK: new THREE.TextureLoader().load("modules/levels-3d-preview/assets/blankTex.jpg"),
             },

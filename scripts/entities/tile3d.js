@@ -684,7 +684,11 @@ export class Tile3D {
         this.mesh.userData.draggable = true;
         if (this._destroyed) return;
         container.traverse((child) => {
-            if (child.geometry) child.geometry.computeBoundsTree();
+            try {
+                if (child.geometry) child.geometry.computeBoundsTree();
+            } catch (e) {
+                console.error(e);
+            }
         });
         this._parent.scene.add(container);
         this.initBoundingBox();
@@ -1210,7 +1214,11 @@ export class Tile3D {
             if (child.isMesh) {
                 child.castShadow = this.castShadow;
                 child.receiveShadow = true;
-                child.geometry.computeBoundsTree();
+                try {
+                    child.geometry.computeBoundsTree();
+                }catch(e){
+                    console.error("Failed to compute bounds tree for tile: " + this.tile.id + " Error: " + e);
+                }
 
                 if (child.material instanceof Array) {
                     for (let i = 0; i < child.material.length; i++) {
