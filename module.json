@@ -109,6 +109,18 @@
         "type": "module",
         "compatibility": {}
       }
+    ],
+    "recommends": [
+      {
+        "id": "canvas3dcompendium",
+        "type": "module",
+        "compatibility": {}
+      },
+      {
+        "id": "canvas3dtokencompendium",
+        "type": "module",
+        "compatibility": {}
+      }
     ]
   },
   "compatibility": {
