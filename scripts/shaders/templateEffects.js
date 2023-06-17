@@ -122,7 +122,7 @@ export function isLockedOnOrigin(item) {
 
 function playVFX(template,damageType) {
     if (game.user.isGM) {
-        setTimeout(() => {
+        setTimeout(() => {   
             canvas.scene.deleteEmbeddedDocuments("MeasuredTemplate", [template.id]);
         }, 100);
     }

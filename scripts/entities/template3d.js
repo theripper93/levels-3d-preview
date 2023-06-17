@@ -255,8 +255,10 @@ export class Template3D {
         if (this._destroyed) return;
         this._destroyed = true;
         if (this.isPreview) {
+            setTimeout(() => {
             this.initialLayer?.activate();
-            this.actorSheet?.maximize();
+                this.actorSheet?.maximize();
+            }, 500);
         }
         this.scene.remove(this.mesh);
         delete this._parent.templates[this.template.id];

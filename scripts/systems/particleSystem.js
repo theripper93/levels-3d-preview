@@ -2304,7 +2304,7 @@ class JB2AExplosion extends ExplosionParticle {
             renderOrder: 1,
             renderMode: QUARKS.RenderMode.BillBoard,
         };
-
+        debugger;
         this._duration = burstData.material?.map?.image?.duration ?? this._duration;
 
         burstData.startLife = new QUARKS.ConstantValue(this._duration);
