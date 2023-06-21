@@ -123,14 +123,14 @@ export function registerWrappers() {
             if (!game.Levels3DPreview?._ready || !game.Levels3DPreview?._active || !game.Levels3DPreview?.workers?._visionReady) {
                 const object3dSight = canvas.scene.getFlag("levels-3d-preview", "object3dSight") ?? false;
                 if (object3dSight) {
-                    this.points = [0, 0, 0, 0, 0, 0, 0, 0];
+                    this.points = [0, -1, 1, -1, 1, 1, 0, 1];
                 }
                 return;
             }
             if (!game.Levels3DPreview?.object3dSight || !game.Levels3DPreview?.fogExploration || this.config.source.object instanceof Scene || this.config.type === "universal") return;    
             const id = this.config.type + "." + this.config.source.object.id;
             const worker = game.Levels3DPreview.workers;
-            this.points = [0, 0, 0, 0, 0, 0, 0, 0];
+            this.points = [0, -1, 1, -1, 1, 1, 0, 1];
             const lastComputed = worker.getLastComputed(id);
             if(lastComputed) this.points = lastComputed;
             const lastRaycast = worker.getLastRaycast(id);
@@ -173,7 +173,7 @@ export function registerWrappers() {
             if (!game.Levels3DPreview?._ready || !game.Levels3DPreview?._active) {
                 const object3dSight = canvas.scene.getFlag("levels-3d-preview", "object3dSight") ?? false;
                 if (object3dSight) {
-                    this.points = [0, 0, 0, 0, 0, 0, 0, 0];
+                    this.points = [0, -1, 1, -1, 1, 1, 0, 1];
                 }
                 return;
             }
