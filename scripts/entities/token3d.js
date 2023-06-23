@@ -846,8 +846,9 @@ export class Token3D {
         // dnd5e, dnd4e, sfrpg, dsa5, cyberpunk2020, shadowrun5e, swade, wfrp4e, ...
         return (
             token.actor?.effects.some((e) => {
-                const flag = e.getFlag("core", "statusId");
-                return flag && proneIds.some((id) => flag.toLowerCase().includes(id));
+                const statuses = e.statuses;
+                
+                return proneIds.some((id) => statuses.has(id));
             }) ?? false
         );
     }
@@ -902,7 +903,7 @@ export class Token3D {
         if (!this.effectsContainer) return;
         this.updateHiden();
         const oldProne = this.isProne ? true : false;
-        const defeated = this.token?.actor?.effects.some((e) => e.getFlag("core", "statusId") === CONFIG.specialStatusEffects.DEFEATED) || this.token?.combatant?.defeated;
+        const defeated = this.token?.actor?.effects.some((e) => e.statuses.has(CONFIG.specialStatusEffects.DEFEATED)) || this.token?.combatant?.defeated;
         this.isProne = defeated || this.isTokenProne ? true : false;
         if (oldProne !== this.isProne) this.toggleProne();
         const tokenEffects = this.token.document.effects;

@@ -7,7 +7,9 @@ export class Fog {
         this._ready = false;
         this._overlay = null;
         this.overlayRepeat = new THREE.Vector2(1, 1);
-        this.debouncedUpdate = !this._sharedContext ? debounce(this.updateTexture, 300) : this.updateTexture;
+        this.debouncedUpdate = this.updateTexture;// !this._sharedContext ? debounce(this.updateTexture, 300) : this.updateTexture;
+        this.extractor ??= new TextureExtractor(canvas.app.renderer, {callerName: "FogExtractorCanvas3D", controlHash: true});
+        this.extractor.reset();
         this.initTexture();
         this.initPixiRT();
         this.initOverlay();
@@ -42,7 +44,7 @@ export class Fog {
 
     initPixiRT() {
         const fowQuality = game.settings.get("levels-3d-preview", "fowQuality");
-        const fogTexResolution = canvas.fog.resolution.resolution * fowQuality;
+        const fogTexResolution = canvas.effects.visibility.textureConfiguration.resolution * fowQuality;
         this.pixiRenderTexture = PIXI.RenderTexture.create({ width: canvas.dimensions.width, height: canvas.dimensions.height, resolution: this._sharedContext ? fogTexResolution : 0.1 });
     }
 
@@ -103,7 +105,14 @@ export class Fog {
             texProps.__webglTexture = Object.values(this.pixiRenderTexture.baseTexture._glTextures)[0]?.texture;
             return this.webglFogTexture;
         } else {
-            const base64 = await canvas.app.renderer.extract.base64(this.pixiRenderTexture, "image/jpeg");
+            const base64 = await this.extractor.extract({
+                texture: this.pixiRenderTexture,
+                compression: TextureExtractor.COMPRESSION_MODES.BASE64,
+                type: "image/webp",
+                quality: 1.0,
+                debug: false
+              });
+            //const base64 = await canvas.app.renderer.extract.base64(this.pixiRenderTexture, "image/jpeg");
             return base64;
         }
     }

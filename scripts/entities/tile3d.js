@@ -1389,7 +1389,6 @@ export class Tile3D {
     }
 
     updateFromTransform() {
-        debugger
         const controls = this._parent.transformControls;
         controls.detach();
         this.updatePositionFrom3D(true);

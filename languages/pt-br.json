@@ -231,7 +231,14 @@
                     "polygonsolidify": "Polígono (Solidificar)",
                     "sphere": "Esfera",
                     "text": "Texto (use o campo Modelo 3D para texto)",
-                    "tube": "Tubo"
+                    "tube": "Tubo",
+                    "polygonchain": "Polígono (cadeia)",
+                    "rock": "Rocha (Cubo)",
+                    "rockcone": "Rocha (cone)",
+                    "rockcylinder": "Rocha (cilindro)",
+                    "rocksphere": "Rocha (Esfera)",
+                    "stairs": "Escadaria",
+                    "vines": "videiras"
                 }
             },
             "dynaMeshResolution": {
@@ -416,6 +423,15 @@
                 "header": {
                     "notes": "O efeito de partícula a ser usado para a luz.",
                     "title": "Efeito de partícula"
+                },
+                "ParticleIntensity": {
+                    "label": "Intensidade"
+                },
+                "ParticleType": {
+                    "label": "predefinição de partícula",
+                    "options": {
+                        "optgroup": "Direcional (requer ângulo de emissão)"
+                    }
                 }
             },
             "lockCamera": {
@@ -807,6 +823,24 @@
             },
             "yScale": {
                 "label": "Escala Y"
+            },
+            "attachments": {
+                "filename": "Nome do anexo",
+                "header": "Anexos",
+                "info": "Bloco %s anexado ao token"
+            },
+            "ior": {
+                "label": "Eu ou"
+            },
+            "maxInstances": {
+                "label": "Máximo de Instâncias"
+            },
+            "positional": {
+                "label": "Tela 3D: Áudio posicional",
+                "notes": "Diminua o volume desse som com base na distância da câmera. \nRequer 'Volume Easing' para ser ativado."
+            },
+            "transmission": {
+                "label": "Transmissão"
             }
         },
         "keybindings": {
@@ -1352,7 +1386,8 @@
                 "description": "Projete a grade da cena neste objeto 3D. \nApenas grades quadradas são suportadas. \nEste sombreador usará a cor da grade e a opacidade definidas nas configurações da cena.",
                 "heightCulling": "Seleção de Altura",
                 "name": "Grade",
-                "normalCulling": "Seleção normal"
+                "normalCulling": "Seleção normal",
+                "showBounds": "Mostrar Limites"
             },
             "ice": {
                 "blendMode": "Misturar Misturar",
@@ -1502,6 +1537,25 @@
                 "reactive": "Reativo",
                 "reactive_intensity": "Intensidade Reativa",
                 "speed": "Velocidade"
+            },
+            "splatMap": {
+                "color0": "Cor R",
+                "color1": "cor G",
+                "color2": "Cor B",
+                "color3": "Cor A",
+                "description": "Mapa Splat. \nRequer uma textura para ser definida. \nEste é um shader avançado. \nMapeia os canais RGBA da textura Splat Map para 4 texturas diferentes.",
+                "name": "Splat Map",
+                "repeat0": "Repetir R",
+                "repeat1": "Repetir G",
+                "repeat2": "Repetir B",
+                "repeat3": "Repita A",
+                "repeatSplatMap": "Repetição do mapa splat",
+                "textureDiffuse0": "Textura R",
+                "textureDiffuse1": "Textura G",
+                "textureDiffuse2": "Textura B",
+                "textureDiffuse3": "Textura A",
+                "textureSplatMap": "Splat Map",
+                "useAlpha": "Usar canal alfa"
             }
         },
         "sharing": {
@@ -2054,6 +2108,65 @@
             "ok": "Liberar",
             "opencompendium": "Começando",
             "title": "Bem-vindo ao Canvas 3D"
+        },
+        "particleSystems": {
+            "arrow": "Seta",
+            "blackdart": "dardo preto",
+            "bolt": "Parafuso",
+            "bullet": "Bala",
+            "castingsign": "Ritual",
+            "custom": "Personalizado",
+            "directionalfire": "lança-chamas",
+            "directionalfrost": "geada",
+            "directionallaser": "Laser",
+            "directionalpoison": "Nuvem Venenosa",
+            "directionalshock": "explosão elétrica",
+            "directionalwave": "Aceno",
+            "earthexplosion": "Explosão da Terra",
+            "earthprojectile": "Projétil de Terra",
+            "explosion": "Explosão",
+            "fairy": "Pó de fada",
+            "fire": "Fogo",
+            "ghostly": "luz fantasmagórica",
+            "gravitywell": "poço de gravidade",
+            "holy": "Santa Luz",
+            "javelin": "Dardo",
+            "jb2aexplosion": "Explosão (animação JB2A)",
+            "jb2aexplosionnolight": "Explosão (animação JB2A, sem luz)",
+            "json": "Personalizado (JSON)",
+            "lightning": "Raio",
+            "magicarrow": "Flecha Mágica",
+            "magicburst": "explosão mágica",
+            "magiccircle": "círculo mágico",
+            "magicsphere": "Esfera Mágica",
+            "mist": "Névoa",
+            "mist2": "Névoa 2",
+            "mysteriouslights": "luzes misteriosas",
+            "optgroup": "Direcional (requer ângulo de emissão)",
+            "optgroup-directional": "Direcional",
+            "optgroup-explosions": "Explosões",
+            "optgroup-projectiles": "Projéteis",
+            "optgroup-rays": "raios",
+            "optgroup-sprites": "Objetos",
+            "optgroup-targetonly": "No alvo",
+            "projectile": "Projétil",
+            "ray": "Raio",
+            "runicray": "raio rúnico",
+            "runicshot": "Tiro Rúnico",
+            "shotgun": "Espingarda",
+            "slash": "Golpear",
+            "smokecloud": "nuvem de fumaça",
+            "sparks": "Faíscas",
+            "sprite": "Modelo 3D",
+            "starburst": "Starburst",
+            "sunburst": "reluzente",
+            "swing": "Balanço (objeto 3D)",
+            "tesla": "tesla",
+            "thrust": "Impulso (Objeto 3D)",
+            "thrustswing": "Giro/impulso (objeto 3D)",
+            "torch": "Tocha",
+            "voidray": "raio vazio",
+            "vortex": "Vórtice"
         }
     }
 }

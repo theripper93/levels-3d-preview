@@ -381,8 +381,8 @@ export class Template3D {
         const vertexA = this.A;
         let vertexB = this.B;
         const height = vertexB.distanceTo(vertexA);
-        const angle = Math.toRadians(this.template.document.angle ?? CONFIG.MeasuredTemplate.defaults.angle) / 2;
-        this.angle = this.template.document.angle ?? CONFIG.MeasuredTemplate.defaults.angle;
+        const angle = Math.toRadians(this.template?.document?.angle ?? CONFIG.MeasuredTemplate.defaults.angle) / 2;
+        this.angle = this.template?.document?.angle ?? CONFIG.MeasuredTemplate.defaults.angle;
         const radius = (height / Math.cos(angle)) * Math.sin(angle); //height*Math.acos(angle)*2
         const group = new THREE.Group();
         const geometry = new THREE.ConeGeometry(radius, height, this.template?.document?.texture ? 256 : 24);
@@ -396,7 +396,7 @@ export class Template3D {
         effectTarget.position.set(height, 0, 0);
         this._effectOrigin = effectOrigin;
         this._effectTarget = effectTarget;
-        this._effectAngle = Math.toRadians(this.template.document.angle ?? CONFIG.MeasuredTemplate.defaults.angle);
+        this._effectAngle = Math.toRadians(this.template?.document?.angle ?? CONFIG.MeasuredTemplate.defaults.angle);
         this._effectRadius = 0//0.0001;
         this._effectLength = height;
         group.add(mesh);

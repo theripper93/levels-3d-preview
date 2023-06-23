@@ -205,7 +205,14 @@
                     "polygonbevelsolidifyjaggeddouble": "Многоугольник (зубчатый двойной)",
                     "polygonbevelsolidifyjaggedstraight": "Многоугольник (зубчатая прямая)",
                     "polygonlathe": "Полигон (токарный станок)",
-                    "polygonsolidify": "Многоугольник (затвердевание)"
+                    "polygonsolidify": "Многоугольник (затвердевание)",
+                    "polygonchain": "Полигон (цепочка)",
+                    "rock": "Рок (Куб)",
+                    "rockcone": "Рок (Конус)",
+                    "rockcylinder": "Рок (цилиндр)",
+                    "rocksphere": "Рок (Сфера)",
+                    "stairs": "Лестница",
+                    "vines": "лозы"
                 }
             },
             "dynaMeshResolution": {
@@ -387,6 +394,15 @@
                 "header": {
                     "notes": "Эффект частиц, используемый для света.",
                     "title": "Эффект частиц"
+                },
+                "ParticleIntensity": {
+                    "label": "Интенсивность"
+                },
+                "ParticleType": {
+                    "label": "Предустановка частиц",
+                    "options": {
+                        "optgroup": "Направленный (требуется угол излучения)"
+                    }
                 }
             },
             "lockCamera": {
@@ -803,6 +819,24 @@
             },
             "tableColor": {
                 "label": "Оттенок обивки"
+            },
+            "attachments": {
+                "filename": "Имя вложения",
+                "header": "Вложения",
+                "info": "Плитка %s прикреплена к токену"
+            },
+            "ior": {
+                "label": "ИО"
+            },
+            "maxInstances": {
+                "label": "Максимальное количество экземпляров"
+            },
+            "positional": {
+                "label": "3D Canvas: позиционное аудио",
+                "notes": "Уменьшите громкость этого звука в зависимости от расстояния до камеры. \nТребуется включить «Уменьшение громкости»."
+            },
+            "transmission": {
+                "label": "Передача инфекции"
             }
         },
         "keybindings": {
@@ -1344,7 +1378,8 @@
                 "description": "Спроецируйте сетку сцены на этот 3D-объект. \nПоддерживаются только квадратные сетки. \nЭтот шейдер будет использовать цвет сетки и непрозрачность, установленные в настройках сцены.",
                 "heightCulling": "Отбор высоты",
                 "name": "Сетка",
-                "normalCulling": "Нормальная отбраковка"
+                "normalCulling": "Нормальная отбраковка",
+                "showBounds": "Показать границы"
             },
             "ice": {
                 "blendMode": "Смешивание",
@@ -1494,6 +1529,25 @@
                 "reactive": "реактивный",
                 "reactive_intensity": "Реактивная интенсивность",
                 "speed": "Скорость"
+            },
+            "splatMap": {
+                "color0": "Цвет Р",
+                "color1": "Цвет G",
+                "color2": "Цвет Б",
+                "color3": "Цвет А",
+                "description": "Сплат Карта. \nТребуется установить текстуру. \nЭто продвинутый шейдер. \nСопоставляет каналы RGBA текстуры Splat Map с 4 различными текстурами.",
+                "name": "Карта Сплат",
+                "repeat0": "Повторить R",
+                "repeat1": "Повторить G",
+                "repeat2": "Повтор Б",
+                "repeat3": "Повторить А",
+                "repeatSplatMap": "Повтор карты Splat",
+                "textureDiffuse0": "Текстура Р",
+                "textureDiffuse1": "Текстура G",
+                "textureDiffuse2": "Текстура Б",
+                "textureDiffuse3": "Текстура А",
+                "textureSplatMap": "Карта Сплат",
+                "useAlpha": "Использовать альфа-канал"
             }
         },
         "sharing": {
@@ -2062,6 +2116,65 @@
         "extrudeWalls": {
             "content": "Этот процесс попытается преобразовать стены в сцене в плитки. \nВы уверены что хотите продолжить?",
             "title": "Выдавливание стен"
+        },
+        "particleSystems": {
+            "arrow": "Стрелка",
+            "blackdart": "Черный дротик",
+            "bolt": "Болт",
+            "bullet": "Пуля",
+            "castingsign": "Ритуал",
+            "custom": "Обычай",
+            "directionalfire": "Огнемет",
+            "directionalfrost": "Мороз",
+            "directionallaser": "Лазер",
+            "directionalpoison": "Ядовитое облако",
+            "directionalshock": "Электрический взрыв",
+            "directionalwave": "Волна",
+            "earthexplosion": "Взрыв Земли",
+            "earthprojectile": "Земляной снаряд",
+            "explosion": "Взрыв",
+            "fairy": "Волшебной пыли",
+            "fire": "Огонь",
+            "ghostly": "Призрачный свет",
+            "gravitywell": "гравитационный колодец",
+            "holy": "Святой Свет",
+            "javelin": "Копье",
+            "jb2aexplosion": "Взрыв (анимационный JB2A)",
+            "jb2aexplosionnolight": "Взрыв (анимация JB2A, без света)",
+            "json": "Пользовательский (JSON)",
+            "lightning": "Молния",
+            "magicarrow": "Волшебная стрела",
+            "magicburst": "Магический взрыв",
+            "magiccircle": "Магический круг",
+            "magicsphere": "Магическая сфера",
+            "mist": "Туман",
+            "mist2": "Туман 2",
+            "mysteriouslights": "Таинственные огни",
+            "optgroup": "Направленный (требуется угол излучения)",
+            "optgroup-directional": "Направленный",
+            "optgroup-explosions": "Взрывы",
+            "optgroup-projectiles": "Снаряды",
+            "optgroup-rays": "Лучи",
+            "optgroup-sprites": "Объекты",
+            "optgroup-targetonly": "На цели",
+            "projectile": "Снаряд",
+            "ray": "Рэй",
+            "runicray": "Рунический луч",
+            "runicshot": "Рунический выстрел",
+            "shotgun": "Дробовик",
+            "slash": "Слэш",
+            "smokecloud": "Облако дыма",
+            "sparks": "Искры",
+            "sprite": "3D модель",
+            "starburst": "Звездообразование",
+            "sunburst": "солнечные лучи",
+            "swing": "Качели (3D-объект)",
+            "tesla": "Тесла",
+            "thrust": "Тяга (3D-объект)",
+            "thrustswing": "Поворот/тяга (3D-объект)",
+            "torch": "Факел",
+            "voidray": "Луч Пустоты",
+            "vortex": "Вихрь"
         }
     }
 }

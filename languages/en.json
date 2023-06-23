@@ -1643,6 +1643,26 @@
                 "add_blend": "Additive Blending",
                 "mult_blend": "Multiply Blending"
             },
+            "splatMap": {
+                "name": "Splat Map",
+                "description": "Splat Map. Requires a texture to be set. This is an advanced shader. Maps the RGBA channels of the Splat Map texture to 4 different textures.",
+                "textureSplatMap": "Splat Map",
+                "repeatSplatMap": "Splat Map Repeat",
+                "useAlpha": "Use Alpha Channel",
+                "textureDiffuse0": "Texture R",
+                "color0": "Color R",
+                "repeat0": "Repeat R",
+                "textureDiffuse1": "Texture G",
+                "color1": "Color G",
+                "repeat1": "Repeat G",
+                "textureDiffuse2": "Texture B",
+                "color2": "Color B",
+                "repeat2": "Repeat B",
+                "textureDiffuse3": "Texture A",
+                "color3": "Color A",
+                "repeat3": "Repeat A"
+
+            },
             "textureGradient": {
                 "name": "Gradient",
                 "description": "Texture Gradient. Requires a texture to be set. Map texture to elevation or inclination.\nWhen using Inclination, 1 corresponds to a flat surface, 0 to a vertical surface.",

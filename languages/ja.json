@@ -463,6 +463,15 @@
                 },
                 "ParticleEmitterSizeMultiplier": {
                     "label": "エミッタ サイズ乗数"
+                },
+                "ParticleIntensity": {
+                    "label": "強度"
+                },
+                "ParticleType": {
+                    "label": "パーティクルプリセット",
+                    "options": {
+                        "optgroup": "指向性 (放射角度が必要)"
+                    }
                 }
             },
             "autoGround": {
@@ -528,7 +537,14 @@
                     "polygonbevelsolidifyjaggeddouble": "多角形（ギザギザ二重）",
                     "polygonbevelsolidifyjaggedstraight": "多角形（ギザギザ直線）",
                     "polygonlathe": "ポリゴン（旋盤）",
-                    "polygonsolidify": "ポリゴン（立体化）"
+                    "polygonsolidify": "ポリゴン（立体化）",
+                    "polygonchain": "ポリゴン（チェーン）",
+                    "rock": "ロック(キューブ)",
+                    "rockcone": "ロック（コーン）",
+                    "rockcylinder": "岩（円柱）",
+                    "rocksphere": "岩(球体)",
+                    "stairs": "階段",
+                    "vines": "ブドウの木"
                 }
             },
             "dynaMeshResolution": {
@@ -791,6 +807,24 @@
             },
             "tableColor": {
                 "label": "パディングティント"
+            },
+            "attachments": {
+                "filename": "添付ファイル名",
+                "header": "添付ファイル",
+                "info": "タイル %s がトークンにアタッチされました"
+            },
+            "ior": {
+                "label": "IoR"
+            },
+            "maxInstances": {
+                "label": "最大インスタンス数"
+            },
+            "positional": {
+                "label": "3D キャンバス: 位置オーディオ",
+                "notes": "カメラからの距離に応じてこの音の音量を下げます。 \n「ボリュームイージング」を有効にする必要があります。"
+            },
+            "transmission": {
+                "label": "伝染 ; 感染"
             }
         },
         "settings": {
@@ -1337,7 +1371,8 @@
                 "description": "この 3D オブジェクトにシーン グリッドを投影します。\n正方形のグリッドのみがサポートされています。\nこのシェーダは、シーン設定で設定されたグリッド カラーと不透明度を使用します。",
                 "heightCulling": "高さカリング",
                 "name": "グリッド",
-                "normalCulling": "通常のカリング"
+                "normalCulling": "通常のカリング",
+                "showBounds": "境界を表示"
             },
             "ice": {
                 "blendMode": "ミックスブレンド",
@@ -1506,6 +1541,25 @@
                 "orbit_speed": "軌道速度",
                 "pivot_speed": "ピボット速度",
                 "radius": "軌道半径"
+            },
+            "splatMap": {
+                "color0": "カラーR",
+                "color1": "カラーG",
+                "color2": "カラーB",
+                "color3": "カラーA",
+                "description": "スプラットマップ。\nテクスチャを設定する必要があります。\nこれは高度なシェーダーです。 \nSplat Map テクスチャの RGBA チャネルを 4 つの異なるテクスチャにマッピングします。",
+                "name": "スプラットマップ",
+                "repeat0": "リピートR",
+                "repeat1": "リピートG",
+                "repeat2": "リピートB",
+                "repeat3": "Aを繰り返す",
+                "repeatSplatMap": "スプラットマップリピート",
+                "textureDiffuse0": "テクスチャR",
+                "textureDiffuse1": "テクスチャーG",
+                "textureDiffuse2": "テクスチャB",
+                "textureDiffuse3": "テクスチャA",
+                "textureSplatMap": "スプラットマップ",
+                "useAlpha": "アルファチャンネルを使用する"
             }
         },
         "sharing": {
@@ -2062,6 +2116,65 @@
         "extrudeWalls": {
             "content": "このプロセスは、シーン内の壁をタイルに変換しようとします。\n続行してもよろしいですか？",
             "title": "壁を押し出す"
+        },
+        "particleSystems": {
+            "arrow": "矢印",
+            "blackdart": "ブラックダーツ",
+            "bolt": "ボルト",
+            "bullet": "銃弾",
+            "castingsign": "儀式",
+            "custom": "カスタム",
+            "directionalfire": "火炎放射器",
+            "directionalfrost": "霜",
+            "directionallaser": "レーザ",
+            "directionalpoison": "ポイズンクラウド",
+            "directionalshock": "電気バースト",
+            "directionalwave": "波",
+            "earthexplosion": "地球爆発",
+            "earthprojectile": "地球の発射体",
+            "explosion": "爆発",
+            "fairy": "フェアリーダスト",
+            "fire": "火",
+            "ghostly": "幽霊のような光",
+            "gravitywell": "重力井戸",
+            "holy": "聖なる光",
+            "javelin": "やり投げ",
+            "jb2aexplosion": "エクスプロージョン (JB2A アニメーション)",
+            "jb2aexplosionnolight": "爆発 (JB2A アニメーション、ライトなし)",
+            "json": "カスタム (JSON)",
+            "lightning": "雷",
+            "magicarrow": "マジックアロー",
+            "magicburst": "マジックバースト",
+            "magiccircle": "魔法陣",
+            "magicsphere": "マジックスフィア",
+            "mist": "靄",
+            "mist2": "ミスト2",
+            "mysteriouslights": "不思議な光",
+            "optgroup": "指向性 (放射角度が必要)",
+            "optgroup-directional": "指向性",
+            "optgroup-explosions": "爆発",
+            "optgroup-projectiles": "発射物",
+            "optgroup-rays": "光線",
+            "optgroup-sprites": "オブジェクト",
+            "optgroup-targetonly": "狙い通り",
+            "projectile": "発射物",
+            "ray": "レイ",
+            "runicray": "ルーン・レイ",
+            "runicshot": "ルーンショット",
+            "shotgun": "ショットガン",
+            "slash": "スラッシュ",
+            "smokecloud": "スモーククラウド",
+            "sparks": "スパークス",
+            "sprite": "3Dモデル",
+            "starburst": "スターバースト",
+            "sunburst": "サンバースト",
+            "swing": "スイング（3Dオブジェクト）",
+            "tesla": "テスラ",
+            "thrust": "推力（3Dオブジェクト）",
+            "thrustswing": "スイング・スラスト（3Dオブジェクト）",
+            "torch": "松明",
+            "voidray": "ボイド・レイ",
+            "vortex": "ボルテックス"
         }
     }
 }

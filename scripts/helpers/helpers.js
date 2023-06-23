@@ -77,9 +77,21 @@ export class Helpers {
             return new Promise((resolve) => {
                 function resolveListener() {
                     video.removeEventListener("canplay", resolveListener);
+                    video.removeEventListener("error", resolveListener);
+                    video.removeEventListener("loadeddata", resolveListener);
+                    video.removeEventListener("loadedmetadata", resolveListener);
                     resolve(video);
                 }
                 video.addEventListener("canplay", resolveListener);
+                video.addEventListener("error", resolveListener);
+                video.addEventListener("loadeddata", resolveListener);
+                video.addEventListener("loadedmetadata", resolveListener);
+
+                if (video.readyState >= 2) resolve(video);
+
+                setTimeout(() => {
+                    resolve(video);
+                }, 10000);
 
 
             });

@@ -132,9 +132,7 @@ export class WaveFunctionSolver{
             if (entropy === lowestEntropy) {
                 lowestEntropyCells.push({x, y, z});
             }
-            if(lowestEntropy === Infinity) debugger;
         });
-        if(!lowestEntropyCells.length) debugger;
         return lowestEntropyCells[Math.floor(Math.random() * lowestEntropyCells.length)];
     }
 

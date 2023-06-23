@@ -192,6 +192,13 @@ export class ShaderHandler {
     constructor() {
         this.shaderLib = game.Levels3DPreview.CONFIG.shaders.shaders;
         this.shaders = [];
+        this._sceneUniformsNeedUpdate = true;
+        this._sceneReadyHook = Hooks.on("canvasReady", () => {
+            this._sceneUniformsNeedUpdate = true;
+        });
+        this._sceneUpdateHook = Hooks.on("updateScene", () => {
+            this._sceneUniformsNeedUpdate = true;
+        });
     }
 
     async preloadTextures(shaderParams) {
@@ -377,8 +384,23 @@ export class ShaderHandler {
             shader.uniforms.yPos.value = getYpos(shader.entity3D);
             shader.uniforms.tokens.value = tokens;
             shader.uniforms.sound.value = sound;
+            if (this._sceneUniformsNeedUpdate) {
+                shader.uniforms.sceneSize.value = shaders.defaults.uniforms.sceneSize.value();
+                shader.uniforms.gridSize.value = shaders.defaults.uniforms.gridSize.value();
+                shader.uniforms.gridMinX.value = shaders.defaults.uniforms.gridMinX.value();
+                shader.uniforms.gridMinY.value = shaders.defaults.uniforms.gridMinY.value();
+                shader.uniforms.gridType.value = shaders.defaults.uniforms.gridType.value();
+                shader.uniforms.gridAlpha.value = shaders.defaults.uniforms.gridAlpha.value();
+                shader.uniforms.gridColor.value = shaders.defaults.uniforms.gridColor.value();
+            }
             return true;
         });
+        this._sceneUniformsNeedUpdate = false;
+    }
+
+    dispose() {
+        Hooks.off("canvasReady", this._sceneReadyHook);
+        Hooks.off("updateScene", this._sceneUpdateHook);
     }
 }
 
@@ -1761,7 +1783,113 @@ export const shaders = {
             },
         ],
     },
-
+    splatMap: {
+        icon: '<i class="fa-solid fa-splotch"></i>',
+        uniforms: {
+            textureSplatMap: {
+                type: "sampler2D",
+                default: null,
+            },
+            repeatSplatMap: {
+                type: "float",
+                default: 1,
+            },
+            useAlpha: {
+                type: "bool",
+                default: false,
+            },
+            textureDiffuse0: {
+                type: "sampler2D",
+                default: null,
+            },
+            color0: {
+                type: "vec3",
+                default: "#ffffff",
+            },
+            repeat0: {
+                type: "float",
+                default: 1,
+            },
+            textureDiffuse1: {
+                type: "sampler2D",
+                default: null,
+            },
+            color1: {
+                type: "vec3",
+                default: "#ffffff",
+            },
+            repeat1: {
+                type: "float",
+                default: 1,
+            },
+            textureDiffuse2: {
+                type: "sampler2D",
+                default: null,
+            },
+            color2: {
+                type: "vec3",
+                default: "#ffffff",
+            },
+            repeat2: {
+                type: "float",
+                default: 1,
+            },
+            textureDiffuse3: {
+                type: "sampler2D",
+                default: null,
+            },
+            color3: {
+                type: "vec3",
+                default: "#ffffff",
+            },
+            repeat3: {
+                type: "float",
+                default: 1,
+            },
+        },
+        varying: {
+        },
+        vertexShader: [
+        ],
+        fragmentShader: [
+            {
+                mode: SHADERS_CONSTS.APPEND,
+                injectionPoint: "#include <map_fragment>",
+                shaderCode: `
+                #ifdef USE_UV
+                vec4 splatMapTexture = texture( splatMap_textureSplatMap, vUv * splatMap_repeatSplatMap );
+                float splatR = splatMapTexture.r;
+                float splatG = splatMapTexture.g;
+                float splatB = splatMapTexture.b;
+                float splatA = splatMapTexture.a;
+                vec4 finalColor = texelColor;
+                if(splatR > 0.0){
+                    vec4 R_CHANNEL_TEX = texture( splatMap_textureDiffuse0, vUv * splatMap_repeat0 );
+                    R_CHANNEL_TEX.rgb *= splatMap_color0;
+                    finalColor = mix(finalColor, R_CHANNEL_TEX, splatR);
+                }
+                if(splatG > 0.0){
+                    vec4 G_CHANNEL_TEX = texture( splatMap_textureDiffuse1, vUv * splatMap_repeat1 );
+                    G_CHANNEL_TEX.rgb *= splatMap_color1;
+                    finalColor = mix(finalColor, G_CHANNEL_TEX, splatG);
+                }
+                if(splatB > 0.0){
+                    vec4 B_CHANNEL_TEX = texture( splatMap_textureDiffuse2, vUv * splatMap_repeat2 );
+                    B_CHANNEL_TEX.rgb *= splatMap_color2;
+                    finalColor = mix(finalColor, B_CHANNEL_TEX, splatB);
+                }
+                if(splatMap_useAlpha && splatA > 0.0){
+                    vec4 A_CHANNEL_TEX = texture( splatMap_textureDiffuse3, vUv * splatMap_repeat3 );
+                    A_CHANNEL_TEX.rgb *= splatMap_color3;
+                    finalColor = mix(finalColor, A_CHANNEL_TEX, splatA);
+                }
+                texelColor = finalColor;
+                diffuseColor = texelColor;
+                #endif
+                `,
+            },
+        ],
+    },
     textureGradient: {
         icon: '<i class="fa-solid fa-grate-droplet"></i>',
         uniforms: {

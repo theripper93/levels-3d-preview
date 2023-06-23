@@ -205,7 +205,14 @@
                     "polygonbevelsolidifyjaggeddouble": "Poligono (doppio frastagliato)",
                     "polygonbevelsolidifyjaggedstraight": "Poligono (retta frastagliata)",
                     "polygonlathe": "Poligono (Tornio)",
-                    "polygonsolidify": "Poligono (solidificare)"
+                    "polygonsolidify": "Poligono (solidificare)",
+                    "polygonchain": "Poligono (Catena)",
+                    "rock": "Roccia (cubo)",
+                    "rockcone": "Roccia (cono)",
+                    "rockcylinder": "Roccia (cilindro)",
+                    "rocksphere": "Roccia (Sfera)",
+                    "stairs": "Scale",
+                    "vines": "Viti"
                 }
             },
             "dynaMeshResolution": {
@@ -387,6 +394,15 @@
                 "header": {
                     "notes": "L'effetto particella da utilizzare per la luce.",
                     "title": "Effetto particellare"
+                },
+                "ParticleIntensity": {
+                    "label": "Intensità"
+                },
+                "ParticleType": {
+                    "label": "Particella preimpostata",
+                    "options": {
+                        "optgroup": "Direzionale (richiede angolo di emissione)"
+                    }
                 }
             },
             "lockCamera": {
@@ -803,6 +819,24 @@
             },
             "tableColor": {
                 "label": "Imbottitura Tinta"
+            },
+            "attachments": {
+                "filename": "Nome dell'allegato",
+                "header": "Allegati",
+                "info": "Tile %s allegato al token"
+            },
+            "ior": {
+                "label": "IoR"
+            },
+            "maxInstances": {
+                "label": "Numero massimo di istanze"
+            },
+            "positional": {
+                "label": "Tela 3D: audio posizionale",
+                "notes": "Abbassa il volume di questo suono in base alla distanza dalla videocamera. \nRichiede l'attivazione di \"Volume Easing\"."
+            },
+            "transmission": {
+                "label": "Trasmissione"
             }
         },
         "keybindings": {
@@ -1325,7 +1359,8 @@
                 "description": "Proietta la griglia della scena su questo oggetto 3D. \nSono supportate solo griglie quadrate. \nQuesto shader utilizzerà il colore della griglia e l'opacità impostati nelle impostazioni della scena.",
                 "heightCulling": "Abbattimento dell'altezza",
                 "name": "Griglia",
-                "normalCulling": "Abbattimento normale"
+                "normalCulling": "Abbattimento normale",
+                "showBounds": "Mostra limiti"
             },
             "ice": {
                 "blendMode": "Mescolare la miscelazione",
@@ -1494,6 +1529,25 @@
                 "orbit_speed": "Velocità dell'orbita",
                 "pivot_speed": "Velocità di rotazione",
                 "radius": "Raggio dell'orbita"
+            },
+            "splatMap": {
+                "color0": "Colore r",
+                "color1": "Colore G",
+                "color2": "Colore B",
+                "color3": "Colore A",
+                "description": "Mappa Splat. \nRichiede l'impostazione di una texture. \nQuesto è uno shader avanzato. \nAssocia i canali RGBA della texture Splat Map a 4 texture diverse.",
+                "name": "Mappa Splat",
+                "repeat0": "Ripeti R",
+                "repeat1": "Ripeti G",
+                "repeat2": "Ripeti B",
+                "repeat3": "Ripeti A",
+                "repeatSplatMap": "Ripeti mappa splat",
+                "textureDiffuse0": "Trama R",
+                "textureDiffuse1": "Trama G",
+                "textureDiffuse2": "Trama B",
+                "textureDiffuse3": "Trama A",
+                "textureSplatMap": "Mappa Splat",
+                "useAlpha": "Usa il canale alfa"
             }
         },
         "sharing": {
@@ -2062,6 +2116,65 @@
         "extrudeWalls": {
             "content": "Questo processo tenterà di trasformare i muri nella scena in tessere. \nSei sicuro di voler continuare?",
             "title": "Estrudi muri"
+        },
+        "particleSystems": {
+            "arrow": "Freccia",
+            "blackdart": "Dardo Nero",
+            "bolt": "Bullone",
+            "bullet": "Proiettile",
+            "castingsign": "Rituale",
+            "custom": "Costume",
+            "directionalfire": "Lanciafiamme",
+            "directionalfrost": "Gelo",
+            "directionallaser": "Laser",
+            "directionalpoison": "Nube Velenosa",
+            "directionalshock": "Scoppio elettrico",
+            "directionalwave": "Onda",
+            "earthexplosion": "Esplosione terrestre",
+            "earthprojectile": "Proiettile terrestre",
+            "explosion": "Esplosione",
+            "fairy": "Polvere di fata",
+            "fire": "Fuoco",
+            "ghostly": "Luce spettrale",
+            "gravitywell": "Gravità Bene",
+            "holy": "Luce sacra",
+            "javelin": "Giavellotto",
+            "jb2aexplosion": "Esplosione (animazione JB2A)",
+            "jb2aexplosionnolight": "Esplosione (JB2A animato, senza luce)",
+            "json": "Personalizzato (JSON)",
+            "lightning": "Fulmine",
+            "magicarrow": "Freccia magica",
+            "magicburst": "Esplosione magica",
+            "magiccircle": "Cerchio magico",
+            "magicsphere": "Sfera magica",
+            "mist": "Nebbia",
+            "mist2": "Nebbia 2",
+            "mysteriouslights": "Luci misteriose",
+            "optgroup": "Direzionale (richiede angolo di emissione)",
+            "optgroup-directional": "Direzionale",
+            "optgroup-explosions": "Esplosioni",
+            "optgroup-projectiles": "Proiettili",
+            "optgroup-rays": "Raggi",
+            "optgroup-sprites": "Oggetti",
+            "optgroup-targetonly": "Sull'obiettivo",
+            "projectile": "Proiettile",
+            "ray": "Raggio",
+            "runicray": "raggio runico",
+            "runicshot": "Colpo runico",
+            "shotgun": "Fucile da caccia",
+            "slash": "Barra",
+            "smokecloud": "Nuvola di fumo",
+            "sparks": "Scintille",
+            "sprite": "Modello 3D",
+            "starburst": "Esplosione di stelle",
+            "sunburst": "Sprazzo di sole",
+            "swing": "Altalena (Oggetto 3D)",
+            "tesla": "Tesla",
+            "thrust": "Spinta (Oggetto 3D)",
+            "thrustswing": "Oscillazione/spinta (oggetto 3D)",
+            "torch": "Torcia",
+            "voidray": "Raggio Vuoto",
+            "vortex": "Vortice"
         }
     }
 }

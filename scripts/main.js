@@ -415,7 +415,7 @@ class Levels3DPreview {
     }
 
     init3d() {
-        this._sharedContext = false;//game.settings.get("levels-3d-preview", "sharedContext");
+        this._sharedContext = game.settings.get("levels-3d-preview", "sharedContext");
         this.camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.01, 100);
         this.camera.position.set(8, 2, 8).setLength(8);
         this.camera.zoom = 1;
@@ -548,7 +548,10 @@ class Levels3DPreview {
         this.firstPersonMode = false;
         this._prevCameraPos = null;
         this.clear3Dscene();
+        const toPreserve = this.shaderHandler?.shaders?.filter((s) => s.entity3D?.mesh?.userData?.isBackground || s.entity3D?.mesh?.isTable) ?? [];
+        this.shaderHandler?.dispose();
         this.shaderHandler = new ShaderHandler(this);
+        this.shaderHandler.shaders.push(...toPreserve);
         this.scene = new THREE.Scene();
         this.scene.background = new THREE.Color(canvas.scene.backgroundColor ?? 0xffffff);
         this.rangeFinderMode = game.settings.get("levels-3d-preview", "rangeFinder");
@@ -836,6 +839,7 @@ class Levels3DPreview {
         this.table.renderOrder = -1e20;
         this.table.material.polygonOffset = true;
         this.table.material.polygonOffsetFactor = 10;
+        this.table.isTable = true;
         if (canvas.scene.grid.type > 0)
             this.shaderHandler.applyShader(
                 this.table,
