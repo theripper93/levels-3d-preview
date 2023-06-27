@@ -27,7 +27,7 @@ export class Tile3D {
             x: this.tile.document.x + Math.abs(this.tile.document.width) / 2,
             y: this.tile.document.y + Math.abs(this.tile.document.height) / 2,
         };
-        this.center = Ruler3D.posCanvasTo3d({x: this.center2d.x, y: this.center2d.y, z: this.bottom});
+        this.center = Ruler3D.posCanvasTo3d({ x: this.center2d.x, y: this.center2d.y, z: this.bottom });
         this.texture = this.tile.document.texture.src;
         this.opacity = this.tile.document.alpha;
         this.width = Math.abs(this.tile.document.width / factor);
@@ -74,7 +74,7 @@ export class Tile3D {
             this.setupDoor(true);
         }, 100);
         game.Levels3DPreview.outline?.toggleControlled(this.mesh, this.tile.controlled);
-        if(this.particleData.type != "none") this.initParticle();
+        if (this.particleData.type != "none") this.initParticle();
         return this;
     }
 
@@ -838,16 +838,15 @@ export class Tile3D {
                         if (useCulling) {
                             const world = dummy.getWorldPosition(new THREE.Vector3());
                             //world.sub(new THREE.Vector3(-this.width / 2 + gridX / 2, 0, -this.height / 2 + gridZ / 2)).sub(this.center)
-                            instanceData.push({worldPosition: world , matrix: dummy.matrix.clone(), color: color ?? "#ffffff", bottom: positionsArray[j], depth: depthArray[j]});
-                        } 
-                        
-                
+                            instanceData.push({ worldPosition: world, matrix: dummy.matrix.clone(), color: color ?? "#ffffff", bottom: positionsArray[j], depth: depthArray[j] });
+                        }
+
                         if (j > maxInstances) {
                             i++;
                             j++;
                             continue;
                         }
-                        if(color) instancedMesh.setColorAt(j, color);
+                        if (color) instancedMesh.setColorAt(j, color);
                         instancedMesh.setMatrixAt(j, dummy.matrix);
                         i++;
                         j++;
@@ -924,7 +923,7 @@ export class Tile3D {
             obj.geometry.computeBoundingBox();
             const objBB = obj.geometry.boundingBox;
             const geoSizeY = objBB.max.y - objBB.min.y;
-            const instancedMesh = new THREE.InstancedMesh(obj.geometry, obj.material, maxInstances, );
+            const instancedMesh = new THREE.InstancedMesh(obj.geometry, obj.material, maxInstances);
             const positionsArray = new Float32Array(maxInstances);
             const depthArray = new Float32Array(maxInstances);
 
@@ -952,9 +951,9 @@ export class Tile3D {
                 dummy.updateMatrix();
                 const world = new THREE.Vector3();
                 dummy.getWorldPosition(world);
-                if(useCulling) instanceData.push({ worldPosition: world, matrix: dummy.matrix.clone(), color: matrix.color ?? "#ffffff", bottom: bottom.y, depth: size.max.y - size.min.y });
-                
-                if(count > maxInstances) continue;
+                if (useCulling) instanceData.push({ worldPosition: world, matrix: dummy.matrix.clone(), color: matrix.color ?? "#ffffff", bottom: bottom.y, depth: size.max.y - size.min.y });
+
+                if (count > maxInstances) continue;
                 positionsArray[i] = bottom.y;
                 depthArray[i] = size.max.y - size.min.y;
                 instancedMesh.setMatrixAt(i, dummy.matrix);
@@ -994,13 +993,13 @@ export class Tile3D {
             for (let i = 0; i < dLength; i++) {
                 data[i].distSquared = Math.round(data[i].worldPosition.distanceToSquared(this._parent.camera.position));
             }
-            
+
             data.sort((a, b) => a.distSquared - b.distSquared);
             let currentInstanceIndex = 0;
             const positionsArray = new Float32Array(this.maxInstances);
             const depthArray = new Float32Array(this.maxInstances);
             for (let i = 0; i < data.length; i++) {
-                if(currentInstanceIndex >= this.maxInstances) break;
+                if (currentInstanceIndex >= this.maxInstances) break;
                 const d = data[i];
                 mesh.setMatrixAt(currentInstanceIndex, d.matrix);
                 mesh.setColorAt(currentInstanceIndex, new THREE.Color(d.color));
@@ -1216,7 +1215,7 @@ export class Tile3D {
                 child.receiveShadow = true;
                 try {
                     child.geometry.computeBoundsTree();
-                }catch(e){
+                } catch (e) {
                     console.error("Failed to compute bounds tree for tile: " + this.tile.id + " Error: " + e);
                 }
 
@@ -1692,13 +1691,7 @@ export class Tile3D {
             const point = Ruler3D.pos3DToCanvas(e.position3D);
             if (this.tile.document.checkClick) this.tile.document.checkClick(point, "click");
         } else {
-            const event = {
-                stopPropagation: () => {},
-                data: {
-                    originalEvent: e,
-                },
-            };
-            this.tile._onClickLeft(event);
+            this.tile._onClickLeft(e);
         }
     }
 
@@ -1709,14 +1702,8 @@ export class Tile3D {
             const point = Ruler3D.pos3DToCanvas(e.position3D);
             if (this.tile.document.checkClick) this.tile.document.checkClick(point, "dblclick");
         } else {
-            const event = {
-                stopPropagation: () => {},
-                data: {
-                    originalEvent: e,
-                },
-            };
-            this.tile._onClickLeft(event);
-            this.tile._onClickLeft2(event);
+            this.tile._onClickLeft(e);
+            this.tile._onClickLeft2(e);
         }
     }
 
@@ -1737,23 +1724,13 @@ export class Tile3D {
             }
         }
         if (canvas.activeLayer.options.objectClass.embeddedName !== "Tile") return;
-        const event = {
-            stopPropagation: () => {},
-            data: {
-                originalEvent: e,
-            },
-        };
+        const event = e;
         this.tile._onClickRight(event);
     }
 
     _onClickRight2(e) {
         if (canvas.activeLayer.options.objectClass.embeddedName !== "Tile") return;
-        const event = {
-            stopPropagation: () => {},
-            data: {
-                originalEvent: e,
-            },
-        };
+        const event = e;
         this.tile._onClickRight2(event);
     }
 
@@ -1774,12 +1751,7 @@ export class Tile3D {
             }
             return;
         }
-        const event = {
-            stopPropagation: () => {},
-            data: {
-                originalEvent: e,
-            },
-        };
+        const event = e;
         this.placeable._onHoverIn(event);
         this._parent.setCursor("pointer");
     }
@@ -1790,12 +1762,7 @@ export class Tile3D {
                 game.Levels3DPreview.outline.toggleHovered(this.mesh, false, 1);
             }
         }
-        const event = {
-            stopPropagation: () => {},
-            data: {
-                originalEvent: e,
-            },
-        };
+        const event = e;
         this.placeable._onHoverOut(event);
         this._parent.setCursor("auto");
     }

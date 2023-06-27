@@ -289,45 +289,25 @@ export class Light3D {
 
     _onClickLeft(e) {
         if (canvas.activeLayer.options.objectClass.embeddedName !== "AmbientLight") return;
-        const event = {
-            stopPropagation: () => {},
-            data: {
-                originalEvent: e,
-            },
-        };
+        const event = e;
         this.light._onClickLeft(event);
     }
 
     _onClickLeft2(e) {
         if (canvas.activeLayer.options.objectClass.embeddedName !== "AmbientLight") return;
-        const event = {
-            stopPropagation: () => {},
-            data: {
-                originalEvent: e,
-            },
-        };
+        const event = e;
         this.light._onClickLeft2(event);
     }
 
     _onClickRight(e) {
         if (canvas.activeLayer.options.objectClass.embeddedName !== "AmbientLight") return;
-        const event = {
-            stopPropagation: () => {},
-            data: {
-                originalEvent: e,
-            },
-        };
+        const event = e;
         this.light._onClickRight(event);
     }
 
     _onClickRight2(e) {
         if (canvas.activeLayer.options.objectClass.embeddedName !== "AmbientLight") return;
-        const event = {
-            stopPropagation: () => {},
-            data: {
-                originalEvent: e,
-            },
-        };
+        const event = e;
         this.light._onClickRight2(event);
     }
 

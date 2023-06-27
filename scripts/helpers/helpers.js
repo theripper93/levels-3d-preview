@@ -31,6 +31,7 @@ export class Helpers {
     async loadTexture(texturePath, options = {}) {
         if (!texturePath) return null;
         if (this.textureCache[texturePath] && !options.noCache) return this.textureCache[texturePath];
+        texturePath = this.testSequencer(texturePath);
         const texture = await this.getTexture(texturePath);
         texture.encoding = options.linear ? THREE.LinearEncoding : THREE.sRGBEncoding;
         texture.wrapS = THREE.RepeatWrapping;
@@ -40,6 +41,19 @@ export class Helpers {
         return texture;
     }
 
+    testSequencer(texturePath) {
+        const extension = texturePath.split(".").pop().toLowerCase();
+        const isValidExtension = Object.keys(CONST.IMAGE_FILE_EXTENSIONS).includes(extension) || Object.keys(CONST.VIDEO_FILE_EXTENSIONS).includes(extension);
+        if (!isValidExtension && window.Sequencer) {
+            let sequencerFiles = window.Sequencer.Database.getEntry(texturePath, {softFail: true})
+            if (!sequencerFiles) return texturePath;
+            sequencerFiles = Array.isArray(sequencerFiles) ? sequencerFiles : [sequencerFiles];
+            const file = sequencerFiles[Math.floor(Math.random() * sequencerFiles.length)];
+            return file.file;
+        }
+        return texturePath;
+    }
+
     loadTextureSync(texturePath, options = {}) {
         if (!texturePath) return null;
         if (this.textureCache[texturePath] && !options.noCache) return this.textureCache[texturePath];
@@ -47,8 +61,10 @@ export class Helpers {
     }
 
     async getTexture(texturePath) {
-        const extension = texturePath.split(".").pop();
-        const isVideo = extension == "mp4" || extension == "webm" || extension == "ogg" || extension == "mov" || extension == "apng";
+        const extension = (texturePath.split(".").pop()).toLowerCase();
+        const isVideo = Object.keys(CONST.VIDEO_FILE_EXTENSIONS).includes(extension);
+        const isImage = Object.keys(CONST.IMAGE_FILE_EXTENSIONS).includes(extension);
+        
         if (isVideo) {
             let video;
             video = document.createElement("video");

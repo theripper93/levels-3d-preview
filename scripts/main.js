@@ -877,6 +877,7 @@ class Levels3DPreview {
     }
 
     createFloors() {
+        if(!canvas.tiles.placeables.length) this.workers._visionReady = true;
         for (let tile of canvas.tiles.placeables) {
             if (this.isLevels) {
                 const bottom = tile.document.flags.levels?.rangeBottom ?? -Infinity;

@@ -138,8 +138,8 @@ export class Ruler3D {
     set origin(position) {
         const pos = Ruler3D.useSnapped() ? Ruler3D.snapped3DPosition(position) : position;
         
-        this._origin = pos;
         this.token = game.Levels3DPreview?.interactionManager?.draggable?.userData?.entity3D?.token;
+        this._origin = this.token ? position : pos;
         this.cacheSpeedProvider(this.token);
         this.updateVisibility();
         if (!this.line) return;
@@ -186,14 +186,7 @@ export class Ruler3D {
 
     getTargetPos() {
         const isToken = this._object?.userData?.entity3D?.token;
-        let useTopLeft = false;
-        if (isToken) { 
-            const width = isToken.document.width;
-            const height = isToken.document.height;
-            const isEven = (width % 2 === 0) && (height % 2 === 0);
-            if(isEven) useTopLeft = true;
-        }
-        const pos = Ruler3D.useSnapped() ? Ruler3D.snapped3DPosition(this._object.position, useTopLeft, isToken) : this._object.position.clone();
+        const pos = Ruler3D.useSnapped() ? Ruler3D.snapped3DPosition(this._object.position, isToken) : this._object.position.clone();
         if (isToken) pos.y -= RULER_TOKEN_OFFSET;
         return pos;
     }
@@ -348,15 +341,15 @@ export class Ruler3D {
     async executeMovement(token) {
         const token3D = this._parent.tokens[token.id];
         const origin = Ruler3D.pos3DToCanvas(this.segments[0].origin);
-        const startPosition = { x: token.document.x + (token.document.width / 2 * canvas.grid.size), y: token.document.y + (token.document.height / 2 * canvas.grid.size), elevation: token.document.elevation };
+        const startPosition = { x: token.center.x, y: token.center.y, elevation: token.document.elevation };
         const offset = { x: origin.x - startPosition.x, y: origin.y - startPosition.y, elevation: origin.z - startPosition.elevation };
 
         // Iterate over each measured segment
         let priorDest = undefined;
         for (const segment of this.segments) {
             const dest = Ruler3D.pos3DToCanvas(segment.target);
-            dest.x -= token.document.width * canvas.grid.size / 2 + offset.x;
-            dest.y -= token.document.height * canvas.grid.size / 2 + offset.y;
+            dest.x -= token.w / 2 + offset.x;
+            dest.y -= token.h / 2 + offset.y;
             dest.x = Math.round(dest.x);
             dest.y = Math.round(dest.y);
             dest.elevation = dest.z + offset.elevation;
@@ -441,14 +434,13 @@ export class Ruler3D {
         return Math.round(number / multiple) * multiple;
     }
 
-    static snapped3DPosition(position, useTopLeft = false, isToken = false) {
+    static snapped3DPosition(position, isToken = false) {
         const canvasPosition = Ruler3D.pos3DToCanvas(position);
         let snappedCenterPos;
-        if (useTopLeft) {
-            snappedCenterPos = {x: Ruler3D.roundToMultiple(canvasPosition.x, canvas.grid.size), y: Ruler3D.roundToMultiple(canvasPosition.y, canvas.grid.size)};
-        } else if (isToken) {
-            const [x, y] = canvas.grid.getCenter(canvasPosition.x, canvasPosition.y);
-            snappedCenterPos = {x: x, y: y};
+        if (isToken) {
+            snappedCenterPos = canvas.grid.getSnappedPosition(canvasPosition.x-isToken.w / 2, canvasPosition.y-isToken.h / 2, 1, {token: isToken});
+            snappedCenterPos.x += isToken.w / 2;
+            snappedCenterPos.y += isToken.h / 2;
         } else {
             snappedCenterPos = canvas.grid.getSnappedPosition(canvasPosition.x, canvasPosition.y, 2);
         }

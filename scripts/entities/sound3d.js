@@ -32,7 +32,7 @@ export class Sound3D {
             });
             this.mesh.add(this.sound3d);
         }*/
-        if(game.user.isGM) this.createHandle();
+        if (game.user.isGM) this.createHandle();
         this.refresh();
     }
 
@@ -112,7 +112,7 @@ export class Sound3D {
             });
         }
         const res = await canvas.scene.updateEmbeddedDocuments("AmbientSound", updates);
-        if(!res.length) this.refresh();
+        if (!res.length) this.refresh();
         return true;
     }
 
@@ -134,11 +134,11 @@ export class Sound3D {
             this.mesh.remove(this.soundHelper);
             this.soundHelper?.geometry.dispose();
             this.soundHelper?.material.dispose();
-            this.soundHelper = new THREE.Mesh(new THREE.SphereGeometry(this.radius, 16, 16), new THREE.MeshBasicMaterial({ color: new THREE.Color("white"), wireframe: true, }));
+            this.soundHelper = new THREE.Mesh(new THREE.SphereGeometry(this.radius, 16, 16), new THREE.MeshBasicMaterial({ color: new THREE.Color("white"), wireframe: true }));
             this.mesh.add(this.soundHelper);
             this.soundHelper.userData.ignoreHover = true;
             this.soundHelper.userData.interactive = false;
-            this.soundHelper.traverse((o) => { 
+            this.soundHelper.traverse((o) => {
                 o.userData.ignoreHover = true;
                 o.userData.interactive = false;
             });
@@ -146,8 +146,7 @@ export class Sound3D {
         this.mesh.position.set(position.x, position.y, position.z);
     }
 
-    update(delta) {
-    }
+    update(delta) {}
 
     destroy() {
         this._parent.scene.remove(this.mesh);
@@ -158,45 +157,25 @@ export class Sound3D {
 
     _onClickLeft(e) {
         if (canvas.activeLayer.options.objectClass.embeddedName !== "AmbientSound") return;
-        const event = {
-            stopPropagation: () => {},
-            data: {
-                originalEvent: e,
-            },
-        };
+        const event = e;
         this.sound._onClickLeft(event);
     }
 
     _onClickLeft2(e) {
         if (canvas.activeLayer.options.objectClass.embeddedName !== "AmbientSound") return;
-        const event = {
-            stopPropagation: () => {},
-            data: {
-                originalEvent: e,
-            },
-        };
+        const event = e;
         this.sound._onClickLeft2(event);
     }
 
     _onClickRight(e) {
         if (canvas.activeLayer.options.objectClass.embeddedName !== "AmbientSound") return;
-        const event = {
-            stopPropagation: () => {},
-            data: {
-                originalEvent: e,
-            },
-        };
+        const event = e;
         this.sound._onClickRight(event);
     }
 
     _onClickRight2(e) {
         if (canvas.activeLayer.options.objectClass.embeddedName !== "AmbientSound") return;
-        const event = {
-            stopPropagation: () => {},
-            data: {
-                originalEvent: e,
-            },
-        };
+        const event = e;
         this.sound._onClickRight2(event);
     }
 
@@ -210,9 +189,7 @@ export class Sound3D {
         this.placeable._onHoverOut(e);
     }
 
-
     static setHooks() {
-
         function refreshOrUpdate(soundDocument) {
             if (game.Levels3DPreview?._active) {
                 const sound3d = game.Levels3DPreview.sounds[soundDocument.id];

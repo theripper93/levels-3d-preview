@@ -847,7 +847,7 @@ export class Token3D {
         return (
             token.actor?.effects.some((e) => {
                 const statuses = e.statuses;
-                
+
                 return proneIds.some((id) => statuses.has(id));
             }) ?? false
         );
@@ -1179,8 +1179,8 @@ export class Token3D {
         this.nameplate = sprite;
         this.nameplate.userData.ignoreIntersect = true;
         this.nameplate.userData.ignoreHover = true;
-        const width = (name.width) / this.factor;
-        const height = (name.height) / this.factor;
+        const width = name.width / this.factor;
+        const height = name.height / this.factor;
         this.nameplate.scale.set(width, height, 1);
         this.nameplate.position.set(0, this.d + height / 2 + 0.042, 0);
         this.mesh.add(this.nameplate);
@@ -1188,7 +1188,6 @@ export class Token3D {
         //name.width /= 2;
         //name.height /= 2;
         if (currentParent) currentParent.addChild(name);
-
     }
 
     async drawBars() {
@@ -1363,42 +1362,22 @@ export class Token3D {
     }
 
     _onClickLeft(e) {
-        const event = {
-            stopPropagation: () => {},
-            data: {
-                originalEvent: e,
-            },
-        };
+        const event = e;
         this.token._onClickLeft(event);
     }
 
     _onClickRight(e) {
-        const event = {
-            stopPropagation: () => {},
-            data: {
-                originalEvent: e,
-            },
-        };
+        const event = e;
         this.token._onClickRight(event);
     }
 
     _onClickLeft2(e) {
-        const event = {
-            stopPropagation: () => {},
-            data: {
-                originalEvent: e,
-            },
-        };
+        const event = e;
         this.token._onClickLeft2(event);
     }
 
     _onClickRight2(e) {
-        const event = {
-            stopPropagation: () => {},
-            data: {
-                originalEvent: e,
-            },
-        };
+        const event = e;
         this.token._onClickRight2(event);
     }
 
@@ -1462,7 +1441,6 @@ export class Token3D {
     }
 
     static setHooks() {
-
         Hooks.on("updateToken", (tokenDocument, updates) => {
             if (!game.Levels3DPreview._active) return;
             const token = tokenDocument.object;

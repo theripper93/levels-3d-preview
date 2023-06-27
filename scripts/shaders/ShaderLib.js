@@ -476,13 +476,13 @@ export const shaders = {
             gridMinX: {
                 type: "float",
                 value: () => {
-                    return (canvas.grid.grid._bounds?.minX ?? 0) / factor;
+                    return 0;//(canvas.grid.grid._bounds?.minX ?? 0) / factor;
                 },
             },
             gridMinY: {
                 type: "float",
                 value: () => {
-                    return (canvas.grid.grid._bounds?.minY ?? 0) / factor;
+                    return 0;//(canvas.grid.grid._bounds?.minY ?? 0) / factor;
                 },
             },
             sceneSize: {
@@ -958,7 +958,7 @@ export const shaders = {
             normalCulling: {
                 type: "float",
                 default: 0.0,
-                min: 0.01,
+                min: 0.0,
                 max: 0.99,
             },
             heightCulling: {
@@ -1032,13 +1032,13 @@ export const shaders = {
                         vec2 misteryAdjustment = vec2(0.0, 0.0);
 
                         if(gridType == 2.0){
-                            misteryAdjustment = vec2(0.96 * 0.5*gridSize/1.7320508, gridSize * 1.02);
+                            misteryAdjustment = vec2( gridSize*0.5 + 0.96 * 0.5*gridSize/1.7320508, gridSize * 1.02);
                         }else if(gridType == 3.0){
-                            misteryAdjustment = vec2(1.02 * 1.7320508 * gridSize, gridSize * 1.02);
+                            misteryAdjustment = vec2( gridSize*0.5 + 1.02 * 1.7320508 * gridSize, gridSize * 1.02);
                         }else if(gridType == 4.0){
-                            misteryAdjustment = vec2(gridSize * 1.02, 0.96 * 0.5*gridSize/1.7320508);
+                            misteryAdjustment = vec2(gridSize * 1.02, gridSize*0.5 +  0.96 * 0.5*gridSize/1.7320508);
                         }else if(gridType == 5.0){
-                            misteryAdjustment = vec2(gridSize * 1.02, 1.02 * 1.7320508 * gridSize);
+                            misteryAdjustment = vec2(gridSize * 1.02, gridSize*0.5 + 1.02 * 1.7320508 * gridSize);
                         }
                         
                         vec2 u = vec2(vWorldPositionFoW.x, vWorldPositionFoW.z) + gridOffset + misteryAdjustment;
