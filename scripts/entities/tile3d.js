@@ -1539,6 +1539,8 @@ export class Tile3D {
             if (c.isMesh) {
                 c.geometry = c.geometry.clone();
                 const positionAttributes = c.geometry.getAttribute("position");
+                //const uvAttributes = c.geometry.getAttribute("uv");
+                //const normals = c.geometry.getAttribute("normal");
                 const count = positionAttributes.count;
                 const maxX = c.geometry.boundingBox.max.x;
                 const minX = c.geometry.boundingBox.min.x;
@@ -1546,6 +1548,18 @@ export class Tile3D {
                 const minZ = c.geometry.boundingBox.min.z;
                 const minY = c.geometry.boundingBox.min.y;
                 for (let i = 0; i < count; i++) {
+
+                    /*const normal = new THREE.Vector3(normals.getX(i), normals.getY(i), normals.getZ(i));
+                    const d = 1 - this.getPixel(this.displacementMap, uvAttributes.getX(i), uvAttributes.getY(i)).r / 255;
+                    const position = new THREE.Vector3(positionAttributes.getX(i), positionAttributes.getY(i), positionAttributes.getZ(i));
+                    const disp = normal.multiplyScalar(d * this.displacementIntensity);
+                    position.add(disp);
+                    positionAttributes.setX(i, position.x);
+                    positionAttributes.setY(i, position.y);
+                    positionAttributes.setZ(i, position.z);
+                    continue;*/
+
+
                     const x = positionAttributes.getX(i);
                     const z = positionAttributes.getZ(i);
                     //if(x===maxX || x===minX || z===maxZ || z===minZ) continue;

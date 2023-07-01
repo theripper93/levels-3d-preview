@@ -18,6 +18,7 @@ export function registerWrappers() {
         libWrapper.register("levels-3d-preview", "ClockwiseSweepPolygon.prototype._compute", computePolygonDispatch, "MIXED");
         libWrapper.register("levels-3d-preview", "Scenes.prototype.preload", preload3D, "OVERRIDE");
         libWrapper.register("levels-3d-preview", "SoundsLayer.prototype.refresh", refreshAudioListener, "MIXED");
+        libWrapper.register("levels-3d-preview", "canvas.app.renderer.events.pointer.getLocalPosition", pointerPositionWrapper, "MIXED");
         //game.Levels3DPreview.raycastWorker = raycastWorker;
         Hooks.on("refreshToken", (token) => {
             Token3DSetPosition.bind(token)();
@@ -28,6 +29,11 @@ export function registerWrappers() {
         
         if (CONFIG.MeasuredTemplate.objectClass.prototype.drawPreview) libWrapper.register("levels-3d-preview", "CONFIG.MeasuredTemplate.objectClass.prototype.drawPreview", drawPreview, "MIXED");
     
+        function pointerPositionWrapper(wrapped, ...args) {
+            if (game.Levels3DPreview?._active) return game.canvas3D.interactionManager.canvas2dMousePosition;
+            return wrapped(...args);
+        }
+
         function refreshAudioListener(wrapped, ...args) {
             if (!game.Levels3DPreview?._active) return wrapped(...args);
             const options = args[0];

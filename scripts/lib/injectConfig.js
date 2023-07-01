@@ -14,6 +14,8 @@ export const injectConfig = {
         }else{
             injectPoint = data.inject;
         }
+        const parentForm = html.closest(".app");
+        html = parentForm.length ? parentForm : html;
         injectPoint = injectPoint ? $(injectPoint) : (data.tab ? html.find("form > .tab").last() : html.find(".form-group").last());
         let injectHtml = "";
         for(const [k,v] of Object.entries(data)){
