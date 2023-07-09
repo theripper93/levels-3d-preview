@@ -39,6 +39,9 @@ export class WeatherSystem {
             case "hail":
                 this.particleSystem = new BasicDirectionalEffect(WeatherPresets.getHailPreset());
                 break;
+            case "sand":
+                this.particleSystem = new BasicDirectionalEffect(WeatherPresets.getSandPreset());
+                break;
             case "leaves":
                 this.particleSystem = new BasicDirectionalEffect(WeatherPresets.getLeavesPreset());
                 break;
@@ -765,6 +768,21 @@ class WeatherPresets {
             randomScale: true,
             texture: "modules/levels-3d-preview/assets/particles/emberssmall.png",
             blending: THREE.AdditiveBlending,
+        };
+    }
+    static getSandPreset() {
+        return {
+            density: 2000,
+            size: 0.002,
+            color: "#f26202",
+            opacity: 1,
+            velocity: 0.00007,
+            direction: Math.toRadians(180),
+            speed: 0.01,
+            randomRotation: true,
+            randomScale: true,
+            texture: "modules/levels-3d-preview/assets/particles/dirt_01.png,modules/levels-3d-preview/assets/particles/dirt_02.png,modules/levels-3d-preview/assets/particles/dirt_03.png",
+            blending: THREE.NormalBlending,
         };
     }
     static getLeavesPreset() {

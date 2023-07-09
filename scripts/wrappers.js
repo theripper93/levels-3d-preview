@@ -108,7 +108,7 @@ export function registerWrappers() {
             game.Levels3DPreview.helpers.ruler3d.centerElement(bouncingText, token3D.head);
             bouncingText.addClass("scrolling-text");
             bouncingText.css({
-                transform: `translateY(${textData?.direction == 1 ? "+" : "-"}100%)`,
+                transform: `translateY(${textData?.direction == 1 ? "+" : "-"}${textData.distance ?? 100}%)`,
             });
             setTimeout(() => {
                 bouncingText.remove();

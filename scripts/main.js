@@ -1804,7 +1804,7 @@ Hooks.on("updateScene", (scene, updates) => {
     const flags = updates.flags ? updates.flags["levels-3d-preview"] : undefined;
     if (!flags) return;
     if ("object3dSight" in flags) {
-        canvas.draw();
+        game.Levels3DPreview.reload();
         return;
     }
     if ("enableFog" in flags || "fogColor" in flags || "fogDistance" in flags) game.Levels3DPreview.setFog();

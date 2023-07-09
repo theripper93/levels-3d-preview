@@ -62,7 +62,7 @@ export class Token3D {
         this.offsetX = this.token.document.getFlag("levels-3d-preview", "offsetX") ?? 0;
         this.offsetY = this.token.document.getFlag("levels-3d-preview", "offsetY") ?? 0;
         //this.offsetY += this.solidBaseMode === "ontop" ? this.baseDepth*factor : 0;
-        this.rotateIndicator = game.settings.get("levels-3d-preview", "rotateIndicator"); //!this.token.document.lockRotation;
+        this.rotateIndicator = game.settings.get("levels-3d-preview", "rotateIndicator");
         this.offsetZ = this.token.document.getFlag("levels-3d-preview", "offsetZ") ?? 0;
         this.scale = this.token.document.getFlag("levels-3d-preview", "scale") ?? 1;
         this.enableAnim = this.token.document.getFlag("levels-3d-preview", "enableAnim") ?? true;

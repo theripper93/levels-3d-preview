@@ -164,10 +164,11 @@ export class Helpers {
         try {
             if (extension == "gltf" || extension == "glb" || extension.startsWith("[heroforge]")) {
                 const object = await game.Levels3DPreview.loader.loadAsync(filePath);
+                const scene = object.scene || object.scenes[0];
                 output = {
                     object: object,
-                    scene: object.scene,
-                    model: object.scene,
+                    scene: scene,
+                    model: scene,
                     isGltf: true,
                 };
             } else if (extension == "fbx") {
