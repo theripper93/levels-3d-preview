@@ -1159,13 +1159,21 @@ export class Token3D {
     }
 
     async drawName() {
-        const name = this.token.nameplate;
-        const currentParent = name.parent;
+        
+        const drawName = () => {
+            const style = this.token._getTextStyle();
+            const name = new PreciseText(this.token.document.name, style);
+            name.anchor.set(0.5, 0);
+            name.position.set(this.token.w / 2, this.token.h + 2);
+            return name;
+        }
+        const name = drawName();
 
         /*name.width *= 2;
         name.height *= 2;*/
         const container = new PIXI.Container();
         container.scale.set(2, 2);
+        name.visible = true;
         container.addChild(name);
         const base64 = await canvas.app.renderer.extract.base64(container);
         const spriteMaterial = new THREE.SpriteMaterial({
@@ -1187,13 +1195,14 @@ export class Token3D {
         //reset name as it was changed
         //name.width /= 2;
         //name.height /= 2;
-        if (currentParent) currentParent.addChild(name);
     }
 
     async drawBars() {
-        if (!this.token?.bars || !this.token?.bars?.visible) return;
+        if (!this.token?.bars) return;
         const bar1 = this.token.bars["bar1"].clone();
         const bar2 = this.token.bars["bar2"].clone();
+        bar1.visible = true;
+        bar2.visible = true;
         const container = new PIXI.Container();
         container.addChild(bar1);
         container.addChild(bar2);
@@ -1441,6 +1450,15 @@ export class Token3D {
     }
 
     static setHooks() {
+
+        Hooks.on("refreshToken", (token, renderFlags) => {
+            if (!game.Levels3DPreview?._active) return;
+            const token3d = game.Levels3DPreview.tokens[token.id]
+            if (renderFlags.refreshNameplate) token3d.drawName()
+            if (renderFlags.refreshBars) token3d.drawBars()
+            if (renderFlags.refreshEffects) token3d.drawEffects()
+        })
+
         Hooks.on("updateToken", (tokenDocument, updates) => {
             if (!game.Levels3DPreview._active) return;
             const token = tokenDocument.object;

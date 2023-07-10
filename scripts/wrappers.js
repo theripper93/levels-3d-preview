@@ -8,8 +8,6 @@ export function registerWrappers() {
         //Register Core Wrappers
 
         libWrapper.register("levels-3d-preview", "ClientKeybindings.prototype._handleMovement", _handleMovement, "MIXED");
-        libWrapper.register("levels-3d-preview", "CONFIG.Token.objectClass.prototype.drawBars", drawBars, "WRAPPER");
-        libWrapper.register("levels-3d-preview", "CONFIG.Token.objectClass.prototype.drawEffects", drawEffects, "WRAPPER");
         libWrapper.register("levels-3d-preview", "InterfaceCanvasGroup.prototype.createScrollingText", showBouncingText, "WRAPPER");
         libWrapper.register("levels-3d-preview", "TokenLayer.prototype.cycleTokens", cycleTokens, "WRAPPER");
         libWrapper.register("levels-3d-preview", "Canvas.prototype.animatePan", animatePan, "WRAPPER");
@@ -291,16 +289,6 @@ export function registerWrappers() {
             if (game.Levels3DPreview._active && game.Levels3DPreview.fogExploration) {
                 game.Levels3DPreview.fogExploration.needsUpdate = true;
             }
-        }
-    
-        async function drawEffects(wrapped, ...args) {
-            await wrapped(...args);
-            if (game.Levels3DPreview._active && game.Levels3DPreview.tokens[this.id]) game.Levels3DPreview.tokens[this.id].drawEffects();
-        }
-    
-        function drawBars(wrapped, ...args) {
-            wrapped(...args);
-            if (game.Levels3DPreview._active && game.Levels3DPreview.tokens[this.id]) game.Levels3DPreview.tokens[this.id].drawBars();
         }
     
         function drawPreview(wrapped, ...args) {
