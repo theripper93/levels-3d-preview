@@ -9,6 +9,7 @@ export class Ruler3D {
         this._distanceOffset = 0;
         this.isDragRouler = game.modules.get("drag-ruler")?.active;
         this.isHoverDistance = game.modules.get("hover-distance")?.active;
+        this.useRaycastRuler = game.settings.get("levels-3d-preview", "useRaycastRuler");
         this.color = new THREE.Color(game.user.color);
         this.closedPolygonColor = new THREE.Color("#ffffff");
         this.colorCache = {};
@@ -97,6 +98,7 @@ export class Ruler3D {
     }
 
     set object(value) {
+        this._points = null;
         if (!value) {
             //this.clearSegments();  
             const isToken = this.isToken;
@@ -154,15 +156,53 @@ export class Ruler3D {
         return !!this._object?.userData?.entity3D?.token;
     }
 
-    updateVisibility() {}
+    updateVisibility() { }
+    
+    pointsArrayToSegments(points) {
+        const segments = [];
+        const empty = new THREE.Group();
+
+        const maxPoints = Math.max(2,this._curveLength ? Math.ceil(this._curveLength / 0.2) : 10);
+
+        if (points.length > maxPoints) {
+            const pointsPerSegment = Math.ceil(points.length / maxPoints);
+            const newPoints = [];
+            for (let i = 0; i < points.length; i++) {
+                if (i % pointsPerSegment === 0) {
+                    newPoints.push(points[i]);
+                }
+            }
+            points = newPoints;
+        }
+
+
+        points.forEach((p) => p.y += RULER_TOKEN_OFFSET);
+        points[points.length - 1] = this.getTargetPos().clone();
+        points[0] = this._origin.clone();
+        for(let i = 0; i < points.length-1; i++) {
+            const isLast = i === points.length - 2;
+            const segment = new RulerSegment(this, this.isToken, isLast);
+            segment.origin = points[i];
+            segment.target = points[i + 1];
+            segment._distance = parseFloat(Ruler3D.measureDistance(segment.origin, segment.target));
+            segments.push(segment);
+        }
+        return segments;
+    }
 
     addSegment() {
-        if(!this._object) return;
-        const segment = new RulerSegment(this, this.isToken);
-        this.segments.push(segment);
+        if (!this._object) return;
+        if (this.isToken && this._points?.length) {
+            const pointSegments = this.pointsArrayToSegments(this._points);
+            this.segments.push(...pointSegments);
+            this._distanceOffset += pointSegments.reduce((a, b) => a + b._distance, 0);
+        } else {            
+            const segment = new RulerSegment(this, this.isToken);
+            this.segments.push(segment);
+            this._distanceOffset += segment._distance;
+        }
         this.origin = this.getTargetPos().clone();
-        this._distanceOffset += segment._distance;
-        return segment;
+        //return segment;
     }
 
     removeSegment() {
@@ -201,8 +241,10 @@ export class Ruler3D {
         const targetPos = this.getTargetPos();
         const hasChanged = !this._prevPosition || targetPos.distanceTo(this._prevPosition) > 0.01;
         this._prevPosition = targetPos.clone();
+        const useRaycastPoints = this.useRaycastRuler && this._points?.length && isToken && !this._object?.userData?.entity3D?.wasFreeMode;
         if (isToken) {
-            if(hasChanged) this._object.userData.entity3D.drawHeightIndicatorDebounced();
+            if (hasChanged) this._object.userData.entity3D.drawHeightIndicatorDebounced();
+            this._parent.workers.updateRulerPoints([this._origin, targetPos]);
             //this.dragRing.scale.x = isToken.document.width;
             //this.dragRing.scale.z = isToken.document.height;
         }
@@ -220,11 +262,15 @@ export class Ruler3D {
             const bezCtrlg = midcurve.clone();
             curve = new THREE.QuadraticBezierCurve3(this._origin, bezCtrlg, targetPos);
             midcurve = curve.getPoint(0.5);
-        } else {
+        } else if(!useRaycastPoints) {
             curve = new THREE.LineCurve3(this._origin, targetPos);
+        } else {
+            const points = this._points;
+            curve = new THREE.CatmullRomCurve3(points);
+            this._curveLength = curve.getLength();
         }
 
-        const geometry = new THREE.TubeGeometry(curve, this.template?.isPreview ? 64 : 1, this.lineRadius, 8);
+        const geometry = new THREE.TubeGeometry(curve, this.template?.isPreview || useRaycastPoints ? 64 : 1, this.lineRadius, 8);
         const c = this.getColor(distance, targetPos);
         this.roulerLineMaterial.color = c;
         this.dragRingMaterial.color = c;
@@ -233,7 +279,7 @@ export class Ruler3D {
         this.lineOuter.userData.ignoreHover = true;
         this.line.add(this.lineOuter);
         if (!this.template?.isPreview) {
-            const geometry2 = new THREE.TubeGeometry(curve, this.template?.isPreview ? 64 : 1, this.lineRadius / 5, 8);
+            const geometry2 = new THREE.TubeGeometry(curve, this.template?.isPreview || useRaycastPoints ? 64 : 1, this.lineRadius / 5, 8);
             this.lineInner = new THREE.Mesh(geometry2, this.roulerLineMaterial);
             this.lineInner.userData.ignoreHover = true;
             this.lineInner.renderOrder = 1e20;
@@ -334,7 +380,8 @@ export class Ruler3D {
         for (const token of canvas.tokens.controlled) {
             promises.push(this.executeMovement(token));
         }
-        await Promise.all(promises);
+        for(const p of promises) await p;
+        //await Promise.all(promises);
         this.clearSegments();
     }
 
@@ -506,7 +553,7 @@ export class Ruler3D {
 
 
 class RulerSegment {
-    constructor(ruler3d, isToken) {
+    constructor(ruler3d, isToken, addToScene = true) {
         this.sphere1 = ruler3d.sphere1.clone();
         this.sphere2 = ruler3d.sphere2.clone();
         this.line = ruler3d.line.clone();
@@ -514,7 +561,7 @@ class RulerSegment {
         this.target = ruler3d.getTargetPos().clone();
         this._parent = ruler3d._parent;
         this._distance = ruler3d.getCurrentDistance();
-        this.addToScene();
+        if(addToScene) this.addToScene();
     }
 
     get scene() {

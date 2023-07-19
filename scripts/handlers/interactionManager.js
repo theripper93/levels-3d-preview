@@ -576,6 +576,7 @@ export class InteractionManager {
         if (!event) return;
         if (intersect?.point) {
             this.canvas2dMousePosition = Ruler3D.pos3DToCanvas(intersect.point);
+            canvas.mousePosition = this.canvas2dMousePosition;
             this.canvas3dMousePosition = intersect.point;
         }
         if (object && object?.userData?.entity3D?.placeable) {

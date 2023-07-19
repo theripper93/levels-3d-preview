@@ -12,6 +12,7 @@ const scene = new THREE.Scene();
 
 scene.tiles = {};
 scene.doors = {};
+scene._doors = [];
 
 function computeDoors() {
     const group = new THREE.Group();
@@ -143,6 +144,11 @@ self.onconnect = function (e) {
                 if(config.hasLimitedAngle) polygonPoints.push(Math.round(origin.x), Math.round(origin.y));
                 port.postMessage({ type: "polygon", time: performance.now() - perf, polygonPoints: polygonPoints, id: message.id, callbackId: message.callbackId });
             }
+
+            if (message.type == "ruler") {
+                const points = message.points;
+                getRulerPoints(points);
+            }
         } catch (error) {
             port.postMessage({ type: "error", error: error });
         }
@@ -176,7 +182,7 @@ function computeSightCollision(v1, v2, radius) {
         return computeSightCollisionFrom3DPositions(origin, target, radius / factor);
     }
 
-function computeSightCollisionFrom3DPositions(origin, target, radius) {
+function computeSightCollisionFrom3DPositions(origin, target, radius, addDirection = true) {
     const direction = target.clone().sub(origin).normalize();
     const distance = radius;
     raycaster.far = Infinity;
@@ -185,7 +191,7 @@ function computeSightCollisionFrom3DPositions(origin, target, radius) {
     if (!collisions.length) return false;
     const collision = collisions[0];
     if (collision.distance > distance) return false;
-    return collision.point.add(direction.multiplyScalar(0.025));
+    return addDirection ? collision.point.add(direction.multiplyScalar(0.025)) : collision.point;
 }
 
 
@@ -261,4 +267,53 @@ function applyMatrixWorldToGeometryInstanced(mesh) {
         geometries.push(worldSpaceGeometry);
     }
     return geometries;
+}
+
+function getRulerPoints(points) {
+    const rulerPoints = [];
+
+    const origin = new THREE.Vector3(points[0].x, points[0].y, points[0].z);
+    const target = new THREE.Vector3(points[1].x, points[1].y, points[1].z);
+
+    const curve = new THREE.LineCurve3(origin, target);
+    const length = curve.getLength();
+    const subdivisionSize = 0.01;
+    const nPoints = Math.ceil(length / subdivisionSize);
+    const points3D = curve.getPoints(nPoints)
+    points3D.forEach((point) => {
+        point.y += 0.1;
+    });
+
+    //raycast all points
+    for (const point of points3D) {
+        const downPoint = point.clone();
+        downPoint.y -= 10000;
+        const collisionPoint = point.clone();
+        const previousPoint = rulerPoints[rulerPoints.length - 1];
+        if(previousPoint && previousPoint.y > collisionPoint.y) collisionPoint.y = previousPoint.y+ 0.1;
+        const newPoint = computeSightCollisionFrom3DPositions(collisionPoint, downPoint, Infinity, false);
+        if (newPoint) {
+            rulerPoints.push(newPoint);
+        } else {
+            point.y -= 0.1;
+            rulerPoints.push(point);
+        }
+    }
+
+    //Loop points and remove all points that have a y value within 0.001 of the next point
+
+    for (let i = 0; i < rulerPoints.length - 1; i++) {
+        const point = rulerPoints[i];
+        const nextPoint = rulerPoints[i + 1];
+        if (Math.abs(point.y - nextPoint.y) < 0.001) {
+            rulerPoints.splice(i, 1);
+            i--;
+        }
+    }
+
+    rulerPoints.forEach((point) => { point.y += 0.001; });
+
+    _port.postMessage({ type: "rulerPoints", points: rulerPoints });
+
+
 }

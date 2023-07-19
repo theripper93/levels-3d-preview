@@ -193,6 +193,17 @@ export class Helpers {
         let isSkinned = false;
         output.model.traverse((child) => {
             if (child instanceof THREE.SkinnedMesh) isSkinned = true;
+            if (child.isMesh && child.material) {
+                const material = child.material;
+                if ((material.alphaTest || material.transparent) && (material.map || material.alphaMap)) {
+                    child.customDepthMaterial = new THREE.MeshDepthMaterial({
+                        depthPacking: THREE.RGBADepthPacking,
+                        alphaTest: material.alphaTest,
+                        map: material.map || material.alphaMap,
+                    });
+                }
+
+            }
         });
         this.simplifyGeometry(output.model);
         if (isSkinned) {
@@ -297,6 +308,7 @@ export class Helpers {
     cloneMesh(mesh) {
         const clone = mesh.clone(false);
         clone.material = this.cloneMaterial(mesh.material);
+        clone.customDepthMaterial = mesh.customDepthMaterial;
         return clone;
     }
 

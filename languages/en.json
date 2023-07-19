@@ -957,6 +957,10 @@
                     "always": "Always"
                 }
             },
+            "useRaycastRuler": {
+                "name": "EXPERIMENTAL: Adaptive Ruler",
+                "hint": "When this setting is enabled, the ruler will stick to the terrain below it as long as the token is not flying"
+            },
             "resolutionMultiplier": {
                 "name": "Resolution Multiplier",
                 "hint": "WARNING: Changing this setting will also affect the resolution of the 2D View. Requires Refresh."
