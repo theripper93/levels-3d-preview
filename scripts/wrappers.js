@@ -70,13 +70,13 @@ export function registerWrappers() {
                         if ( !s.volume || (volume > s.volume) ) s.volume = volume;
                     } else {                        
                         for ( let l of listeners ) {
-                          if ( !sound.source.active || !sound.source.los?.contains(l.x, l.y) ) continue;
-                          s.audible = true;
-                          const distance = Math.hypot(l.x - sound.x, l.y - sound.y);
-                          let volume = sound.document.volume;
-                          if ( sound.document.easing ) volume *= this._getEasingVolume(distance, r);
-                          if ( !s.volume || (volume > s.volume) ) s.volume = volume;
-                        }
+                            if ( !sound.source.active || !sound.source.shape?.contains(l.x, l.y) ) continue;
+                            s.audible = true;
+                            const distance = Math.hypot(l.x - sound.x, l.y - sound.y);
+                            let volume = sound.document.volume;
+                            if ( sound.document.easing ) volume *= this._getEasingVolume(distance, r);
+                            if ( !s.volume || (volume > s.volume) ) s.volume = volume;
+                          }
                   }
                 }
             
