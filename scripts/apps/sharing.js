@@ -22,8 +22,7 @@ export function initSharing(canvas3d) {
         buttonContainer.appendChild(button);
     });
 
-    Hooks.on("getSidebarDirectoryEntryContext", (directory, buttons) => {
-        if (directory !== ui.sidebar.tabs.scenes.element) return;
+     Hooks.on("getSceneDirectoryEntryContext", (directory, buttons) => {
         buttons.push({
             name: "levels3dpreview.sharing.contextbutton",
             icon: '<i class="fa-solid fa-cube"></i>',
@@ -136,7 +135,7 @@ async function starMap(id) {
 class ShareMap extends FormApplication {
     constructor(scene) {
         super();
-        this.scene = scene;
+        this.scene = scene ?? canvas.scene;
     }
 
     static get defaultOptions() {
@@ -285,18 +284,28 @@ class MapBrowser extends Application {
 
     _getHeaderButtons() {
         const buttons = super._getHeaderButtons();
-        buttons.unshift({
-            label: "",
-            class: "info",
-            icon: "fas fa-info-circle",
-            onclick: () => {
-                //open url
-                const link = document.createElement("a");
-                link.href = "https://wiki.theripper93.com/levels-3d-preview/communitymaps";
-                link.target = "_blank";
-                link.click();
+        buttons.unshift(
+            {
+                label: "Share Map",
+                class: "share",
+                icon: "fas fa-share-alt",
+                onclick: () => {
+                    new ShareMap().render(true);
+                },
             },
-        });
+            {
+                label: "",
+                class: "info",
+                icon: "fas fa-info-circle",
+                onclick: () => {
+                    //open url
+                    const link = document.createElement("a");
+                    link.href = "https://wiki.theripper93.com/levels-3d-preview/communitymaps";
+                    link.target = "_blank";
+                    link.click();
+                },
+            },
+        );
         return buttons;
     }
 
@@ -376,12 +385,11 @@ class MapBrowser extends Application {
             const packInFilter = packs.length == 0 || cardpacks.every((p) => packs.includes(p));
             if (!packInFilter) card.style.display = "none";
             else {
-                
                 let tags = "";
                 try {
                     (card.querySelectorAll(".tdc-pack") ?? []).forEach((t) => (tags += t.innerText.toLowerCase()));
                 } catch (error) {}
-    
+
                 card.style.display = name.includes(search) || author.includes(search) || description.includes(search) || tags.includes(search) ? "flex" : "none";
             }
         });

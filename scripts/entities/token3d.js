@@ -6,7 +6,8 @@ import { TokenAnimationHandler } from "../handlers/tokenAnimationHandler.js";
 import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from "../lib/three-mesh-bvh.js";
 import { heightHighlightShaderMaterial, radialGradientShaderMaterial } from "../shaders/shaderMaterials.js";
 import { ActiveEffectEffect } from "./effects/activeEffect.js";
-import { RangeRingEffect } from "./effects/rangeRing.js";
+import {RangeRingEffect} from "./effects/rangeRing.js";
+import { imageTo3d } from "../helpers/imageTo3D.js";
 THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
 THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
 THREE.Mesh.prototype.raycast = acceleratedRaycast;
@@ -127,6 +128,18 @@ export class Token3D {
 
     async getModel() {
         if (!this.gtflPath) {
+            if (!this.standupFace) {                
+                const standup3d = await imageTo3d(this.texture.image);
+                this.standUp = true;
+                this.standUpMesh = standup3d;
+                this.pathTraced = true;
+                return {
+                    object: standup3d,
+                    scene: standup3d,
+                    model: standup3d,
+                }
+            }
+
             const texture = this.texture;
             texture.encoding = THREE.sRGBEncoding;
             const geometry = new THREE.PlaneGeometry((texture.image?.width || texture.image?.videoWidth || 1) / 1000, (texture.image?.height || texture.image?.videoHeight || 1) / 1000);
@@ -359,18 +372,12 @@ export class Token3D {
         }
 
         if (materialType === "texcol") {
-            if (model.material) {
-                if (this.color) model.material.color = new THREE.Color(this.color);
-                model.material.map = this.texture;
-            }
-            if (model.children?.length) {
                 model.traverse((child) => {
                     if (child.isMesh) {
                         if (this.color) child.material.color = new THREE.Color(this.color);
                         child.material.map = this.texture;
                     }
                 });
-            }
             return;
         }
 
@@ -385,17 +392,28 @@ export class Token3D {
             alphaTest: this._parent._fullTransparency ? 0.01 : 0.99,
         };
 
-        const material = materialType === "basic" ? new THREE.MeshBasicMaterial(matData) : new THREE.MeshStandardMaterial(matData);
-        if (model.material) {
-            model.material = material;
+        if (this.pathTraced) {
+            delete matData.transparent;
+            delete matData.alphaTest;
+            this.texture.wrapS = THREE.ClampToEdgeWrapping;
+            this.texture.wrapT = THREE.ClampToEdgeWrapping;
+            this.texture.repeat.set(1, 1);
         }
-        if (model.children?.length) {
+
+        const material = materialType === "basic" ? new THREE.MeshBasicMaterial(matData) : new THREE.MeshStandardMaterial(matData);
+
+        if (this.pathTraced) {
+            const customBlendMap = "#ifdef USE_MAP\n\tvec4 texelColor = texture2D( map, vUv );\n\ttexelColor = mapTexelToLinear( texelColor );\n\tdiffuseColor.rgb = mix(diffuseColor.rgb, texelColor.rgb, texelColor.a);\n#endif";
+            material.onBeforeCompile = (shader) => {
+                shader.fragmentShader = shader.fragmentShader.replace("#include <map_fragment>", customBlendMap)
+            };
+        }
+
             model.traverse((child) => {
                 if (child.isMesh) {
                     child.material = material;
                 }
             });
-        }
     }
 
     async setPortrait(model) {

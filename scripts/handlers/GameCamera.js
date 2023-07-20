@@ -82,8 +82,8 @@ export class GameCamera {
 
     computeBounds() {
         const dimensions = canvas.scene.dimensions;
-        const minBounds = new THREE.Vector3(dimensions.sceneX / factor, -100000, dimensions.sceneY / factor);
-        const maxBounds = new THREE.Vector3((dimensions.sceneWidth + dimensions.sceneX) / factor, 100000, (dimensions.sceneHeight + dimensions.sceneY) / factor);
+        const minBounds = new THREE.Vector3(0, -100000, 0);//new THREE.Vector3(dimensions.sceneX / factor, -100000, dimensions.sceneY / factor);
+        const maxBounds = new THREE.Vector3((dimensions.sceneWidth + dimensions.sceneX*2) / factor, 100000, (dimensions.sceneHeight + dimensions.sceneY*2) / factor);
         const box = new THREE.Box3(minBounds, maxBounds);
         this._bounds = box;
     }
@@ -116,7 +116,7 @@ export class GameCamera {
         this.controls.minDistance = this.CONSTS.MINDIST;
         this.controls.maxDistance = this.CONSTS.MAXDIST;
         this.controls.screenSpacePanning = false;
-        const squares = Math.max(canvas.scene.dimensions.sceneWidth, canvas.scene.dimensions.sceneHeight) / canvas.scene.dimensions.size;
+        const squares = 2 * Math.max(canvas.scene.dimensions.sceneWidth, canvas.scene.dimensions.sceneHeight) / canvas.scene.dimensions.size;
         this.CONSTS.MAXDIST = Math.sqrt(squares / 100) * 0.7 + 1;
     }
 

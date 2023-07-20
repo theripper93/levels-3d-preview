@@ -250,6 +250,10 @@ export class ShaderHandler {
 
             this.setUniforms(shader, shaderParams);
             this.shaders.push(shader);
+            if (entity3D.pathTraced) {
+                const customBlendMap = "#ifdef USE_MAP\n\tvec4 texelColor = texture2D( map, vUv );\n\ttexelColor = mapTexelToLinear( texelColor );\n\tdiffuseColor.rgb = mix(diffuseColor.rgb, texelColor.rgb, texelColor.a);\n#endif";
+                shader.fragmentShader = shader.fragmentShader.replace("#include <map_fragment>", customBlendMap)
+            }
         };
         mesh.material.onBeforeCompile = _onBeforeCompile;
         mesh.material.customProgramCacheKey = () => {
