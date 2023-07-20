@@ -5,14 +5,15 @@ import {mergeBufferGeometries, toTrianglesDrawMode, mergeVertices} from "../lib/
 import {DecalGeometry} from "../lib/DecalGeometry.js";
 import {ImprovedNoise} from "../lib/imporovedNoise.js";
 import {fbm3d} from "../lib/noiseFunctions.js";
-import { VineGeometry } from "./ProceduralVines.js";
+import {VineGeometry} from "./ProceduralVines.js";
+import { imageTo3d } from "./imageTo3D.js";
 THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
 THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
 THREE.Mesh.prototype.raycast = acceleratedRaycast;
 
 let font = null;
 export class DynaMesh {
-    constructor(type, { width = 1, height = 1, depth = 1, resolution = 1, text = "", decalData = {} }) {
+    constructor(type, { width = 1, height = 1, depth = 1, resolution = 1, text = "", decalData = {}, image = null }) {
         this.type = type;
         this.width = width;
         this.height = height;
@@ -20,6 +21,7 @@ export class DynaMesh {
         this.resolution = resolution;
         this.text = text;
         this.decalData = decalData;
+        this.image = image;
     }
 
     async create() {
@@ -490,6 +492,17 @@ export class DynaMesh {
         const vineGeo = new VineGeometry(vineData, 0.002, this.resolution);
         vineGeo.geometry.computeBoundingBox();
         return vineGeo.geometry;
+    }
+
+    async _constructpaper() {
+        if (!this.image) {
+            ui.notifications.error("ERROR: Paper Cutout dynamesh requires an image to be set in the texture field.")
+            return this._constructbox();
+        }
+        
+        const texture = await game.Levels3DPreview.helpers.loadTexture(this.image);
+        const paperStyle = await imageTo3d(texture.image, true);
+        return paperStyle;        
     }
 
     get _avgWidthHeight() {

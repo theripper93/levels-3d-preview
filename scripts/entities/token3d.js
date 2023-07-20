@@ -1028,6 +1028,8 @@ export class Token3D {
             const offsetMesh = base.children.find((child) => child.name == "base");
             base.traverse((child) => {
                 if (child.isMesh) {
+                    child.castShadow = true;
+                    child.receiveShadow = true;
                     if (child == offsetMesh) {
                         if ((child.material.color.r = 1 && child.material.color.g == 1 && child.material.color.b == 1)) {
                             child.material.color = new THREE.Color(this.baseColor);

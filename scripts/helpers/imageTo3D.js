@@ -4,12 +4,11 @@ const pathCache = {};
 
 const loading = new Set();
 
-export async function imageTo3d(image, MAX_SIDE = 64, ALPHA_THRESHOLD = 1) {
+export async function imageTo3d(image, returnGeometry = false, MAX_SIDE = 64, ALPHA_THRESHOLD = 1) {
     if (loading.has(image.src)) {
         while (loading.has(image.src)) {
             await new Promise((resolve) => setTimeout(resolve, 100));
         }
-
     } else {
         loading.add(image.src);
     }
@@ -51,16 +50,16 @@ export async function imageTo3d(image, MAX_SIDE = 64, ALPHA_THRESHOLD = 1) {
         const extrudeSettings = {
             steps: 1,
             depth: MAX_SIDE / 64,
-          bevelEnabled: true,
-          bevelThickness: 0.1 * bevelRatio,
-          bevelSize: 2 * bevelRatio,
+            bevelEnabled: true,
+            bevelThickness: 0.1 * bevelRatio,
+            bevelSize: 2 * bevelRatio,
         };
         geometry = new THREE.ExtrudeBufferGeometry(shape, extrudeSettings);
 
         //uv mapping
         const uvAttribute = geometry.getAttribute("uv");
         const positionAttribute = geometry.getAttribute("position");
-      const positionArrayCount = positionAttribute.count;
+        const positionArrayCount = positionAttribute.count;
         const width = w;
         const height = h;
         //inflate along normals
@@ -79,14 +78,20 @@ export async function imageTo3d(image, MAX_SIDE = 64, ALPHA_THRESHOLD = 1) {
 
         pathCache[image.src] = geometry;
     }
+    if (returnGeometry) {
+        loading.delete(image.src);
+        return geometry.clone();
+    }
     const mesh = new THREE.Mesh(geometry.clone(), new THREE.MeshBasicMaterial());
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
     const group = new THREE.Group();
     group.add(mesh);
     loading.delete(image.src);
     return group;
 }
 
-function getSimplifiedSize(image,MAX_SIDE = 64) {    
+function getSimplifiedSize(image, MAX_SIDE = 64) {
     const maxDimension = Math.max(image.width, image.height);
     const newMaxDimension = Math.min(maxDimension, MAX_SIDE);
     const scale = newMaxDimension / maxDimension;
@@ -96,8 +101,7 @@ function getSimplifiedSize(image,MAX_SIDE = 64) {
 }
 
 function getOutline(image, w, h, alphaThreshold = 200) {
-
-    const alphaChannel = getImageData(image,alphaThreshold, w-2, h-2);
+    const alphaChannel = getImageData(image, alphaThreshold, w - 2, h - 2);
     //const simplified = simplifyImage(alphaChannel, image.width, image.height, 0.5)
     const path = extractExternalContour(alphaChannel, w, h);
     return path;
@@ -107,13 +111,13 @@ const canvas = document.createElement("canvas");
 const ctx = canvas.getContext("2d");
 
 function getImageData(image, alphaThreshold = 200, width, height) {
-    canvas.width = width+2;
-    canvas.height = height+2;
+    canvas.width = width + 2;
+    canvas.height = height + 2;
     const w = canvas.width;
     const h = canvas.height;
 
-    ctx.drawImage(image, 1, 1, w-2, h-2);
-    
+    ctx.drawImage(image, 1, 1, w - 2, h - 2);
+
     const imageData = ctx.getImageData(0, 0, w, h);
     const data = imageData.data;
     //return only the alpha channel
@@ -128,111 +132,107 @@ function getImageData(image, alphaThreshold = 200, width, height) {
 function extractContour(imageData, width, height) {
     // Function to get the index in the 1D array for given x and y coordinates
     function getIndex(x, y) {
-      return (y * width + x);
+        return y * width + x;
     }
-  
+
     // Function to check if a pixel is non-transparent
     function isNonTransparent(x, y) {
-      const index = getIndex(x, y);
-      return imageData[index] > 0; // Alpha channel (A) value is greater than 0
+        const index = getIndex(x, y);
+        return imageData[index] > 0; // Alpha channel (A) value is greater than 0
     }
-  
+
     // Extract the contour lines
     const contourLines = [];
-  
+
     // Traverse all pixels and find non-transparent pixels with at least one transparent neighbor
     for (let x = 0; x < width; x++) {
-      for (let y = 0; y < height; y++) {
-        if (isNonTransparent(x, y)) { // Check if the pixel is non-transparent
-          let hasTransparentNeighbor = false;
-  
-          // Check if any of the four neighbors is transparent
-          if (!isNonTransparent(x + 1, y) || !isNonTransparent(x - 1, y) ||
-              !isNonTransparent(x, y + 1) || !isNonTransparent(x, y - 1)) {
-            hasTransparentNeighbor = true;
-          }
-  
-          if (hasTransparentNeighbor) {
-            // Add the contour point
-            contourLines.push([[x, y]]);
-          }
+        for (let y = 0; y < height; y++) {
+            if (isNonTransparent(x, y)) {
+                // Check if the pixel is non-transparent
+                let hasTransparentNeighbor = false;
+
+                // Check if any of the four neighbors is transparent
+                if (!isNonTransparent(x + 1, y) || !isNonTransparent(x - 1, y) || !isNonTransparent(x, y + 1) || !isNonTransparent(x, y - 1)) {
+                    hasTransparentNeighbor = true;
+                }
+
+                if (hasTransparentNeighbor) {
+                    // Add the contour point
+                    contourLines.push([[x, y]]);
+                }
+            }
         }
-      }
     }
-  
+
     return contourLines;
 }
 
 function extractExternalContour(alphaArray, width, height) {
-
-
     // Function to get the index in the 1D array for given x and y coordinates
     function getIndex(x, y) {
-      return y * width + x;
+        return y * width + x;
     }
-  
+
     // Function to flood-fill an area with a specific value
     function floodFill(x, y, fillValue) {
-      const stack = [[x, y]];
-  
-      while (stack.length) {
-        const [currentX, currentY] = stack.pop();
-  
-        if (currentX >= 0 && currentX < width && currentY >= 0 && currentY < height) {
-          const currentIndex = getIndex(currentX, currentY);
-          if (alphaArray[currentIndex] == 0) { // Check if the pixel is non-transparent
-            alphaArray[currentIndex] = fillValue;
-  
-            stack.push([currentX + 1, currentY]);
-            stack.push([currentX - 1, currentY]);
-            stack.push([currentX, currentY + 1]);
-            stack.push([currentX, currentY - 1]);
-          }
+        const stack = [[x, y]];
+
+        while (stack.length) {
+            const [currentX, currentY] = stack.pop();
+
+            if (currentX >= 0 && currentX < width && currentY >= 0 && currentY < height) {
+                const currentIndex = getIndex(currentX, currentY);
+                if (alphaArray[currentIndex] == 0) {
+                    // Check if the pixel is non-transparent
+                    alphaArray[currentIndex] = fillValue;
+
+                    stack.push([currentX + 1, currentY]);
+                    stack.push([currentX - 1, currentY]);
+                    stack.push([currentX, currentY + 1]);
+                    stack.push([currentX, currentY - 1]);
+                }
+            }
         }
-      }
     }
 
     const FILL_VALUE = 128;
-  
+
     // Step 1: Find the first pixel below the alpha threshold to start the flood fill
     let startX = -1;
     let startY = -1;
     for (let x = 0; x < width; x++) {
-      for (let y = 0; y < height; y++) {
-        if (alphaArray[getIndex(x, y)] <= 0) {
-          startX = x;
-          startY = y;
-          break;
+        for (let y = 0; y < height; y++) {
+            if (alphaArray[getIndex(x, y)] <= 0) {
+                startX = x;
+                startY = y;
+                break;
+            }
         }
-      }
-      if (startX !== -1) break;
+        if (startX !== -1) break;
     }
-  
+
     if (startX === -1) {
-      // No pixel found below the alpha threshold, return empty contour
-      return [];
+        // No pixel found below the alpha threshold, return empty contour
+        return [];
     }
-  
+
     // Step 2: Flood fill the image with a specific value (-1)
     floodFill(startX, startY, FILL_VALUE);
 
-
-  
     // Step 3: Set all values that are not -1 in the original array to 255
     for (let i = 0; i < alphaArray.length; i++) {
-      if (alphaArray[i] === FILL_VALUE) {
-        alphaArray[i] = 0;
-      } else {
-        alphaArray[i] = 255;
-      }
+        if (alphaArray[i] === FILL_VALUE) {
+            alphaArray[i] = 0;
+        } else {
+            alphaArray[i] = 255;
+        }
     }
 
-
     //drawDebugContext(alphaArray, width, height);
-  
+
     return extractContour(alphaArray, width, height);
-  }
-  
+}
+
 function drawDebugContext(alphaArray, width, height) {
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
@@ -254,7 +254,4 @@ function drawDebugContext(alphaArray, width, height) {
     canvas.style.top = "0px";
     canvas.style.left = "0px";
     canvas.style.zIndex = "1000";
-
-
-
-  }
+}
