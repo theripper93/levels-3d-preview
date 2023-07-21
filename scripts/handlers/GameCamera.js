@@ -100,6 +100,9 @@ export class GameCamera {
     }
 
     setInitalParams() {
+        const minAzimuthSett = game.settings.get("levels-3d-preview", "gameCameraMinAzimuth");
+        const maxAzimuthSett = game.settings.get("levels-3d-preview", "gameCameraMaxAzimuth");
+        const isInfinity = minAzimuthSett == -180 && maxAzimuthSett == 180;
         this.CONFIG = {
             minPolarAngle: Math.toRadians(game.settings.get("levels-3d-preview", "gameCameraMinAngle") ?? 45),
             maxPolarAngle: Math.toRadians(game.settings.get("levels-3d-preview", "gameCameraMaxAngle") ?? 45),
@@ -107,6 +110,8 @@ export class GameCamera {
             maxPolarAngleRegular: Math.toRadians(game.settings.get("levels-3d-preview", "gameCameraMaxAngle") ?? 45),
             minPolarAngleTopDown: 0.1,
             maxPolarAngleTopDown: 0.1,
+            minAzimuthAngle: isInfinity ? -Infinity : minAzimuthSett / 180 * Math.PI,
+            maxAzimuthAngle: isInfinity ? Infinity : maxAzimuthSett / 180 * Math.PI,
             clipping: game.settings.get("levels-3d-preview", "gameCameraClipping"),
         };
         if (!this.CONFIG.clipping) this.camera.near = 0.1;
@@ -115,8 +120,10 @@ export class GameCamera {
         this.controls.maxPolarAngle = this.CONFIG.maxPolarAngle;
         this.controls.minDistance = this.CONSTS.MINDIST;
         this.controls.maxDistance = this.CONSTS.MAXDIST;
+        this.controls.minAzimuthAngle = this.CONFIG.minAzimuthAngle;
+        this.controls.maxAzimuthAngle = this.CONFIG.maxAzimuthAngle;
         this.controls.screenSpacePanning = false;
-        const squares = 2 * Math.max(canvas.scene.dimensions.sceneWidth, canvas.scene.dimensions.sceneHeight) / canvas.scene.dimensions.size;
+        const squares = game.settings.get("levels-3d-preview", "gameCameraMaxZoom") * 2 * Math.max(canvas.scene.dimensions.sceneWidth, canvas.scene.dimensions.sceneHeight) / canvas.scene.dimensions.size;
         this.CONSTS.MAXDIST = Math.sqrt(squares / 100) * 0.7 + 1;
     }
 
@@ -125,6 +132,8 @@ export class GameCamera {
         this.controls.maxPolarAngle = Math.PI;
         this.controls.minDistance = 0.1;
         this.controls.maxDistance = 20;
+        this.controls.minAzimuthAngle = -Infinity;
+        this.controls.maxAzimuthAngle = Infinity;
         this.controls.screenSpacePanning = game.settings.get("levels-3d-preview", "screenspacepanning");
     }
 
@@ -183,6 +192,8 @@ export class GameCamera {
         if (!this.enabled) return;
         this.controls.minPolarAngle = this.CONFIG.minPolarAngle;
         this.controls.maxPolarAngle = this.CONFIG.maxPolarAngle;
+        this.controls.minAzimuthAngle = this.CONFIG.minAzimuthAngle;
+        this.controls.maxAzimuthAngle = this.CONFIG.maxAzimuthAngle;
         this.controls.screenSpacePanning = false;
         this._lastTarget = this._detectedTarget;
         this._detectedTarget = this.detectTargetPosition();

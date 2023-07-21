@@ -1034,11 +1034,23 @@
             },
             "gameCameraMinAngle": {
                 "name": "Min Angle",
-                "hint": "The minimum angle the camera can be rotated to."
+                "hint": "The minimum angle (vertical rotation) the camera can be rotated to."
             },
             "gameCameraMaxAngle": {
                 "name": "Max Angle",
-                "hint": "The maximum angle the camera can be rotated to."
+                "hint": "The maximum angle (vertical rotation) the camera can be rotated to."
+            },
+            "gameCameraMinAzimuth": {
+                "name": "Min Azimuth",
+                "hint": "The minimum azimuth (horizontal rotation) the camera can be rotated to."
+            },
+            "gameCameraMaxAzimuth": {
+                "name": "Max Azimuth",
+                "hint": "The maximum azimuth (horizontal rotation) the camera can be rotated to."
+            },
+            "gameCameraMaxZoom": {
+                "name": "Max Zoom",
+                "hint": "The maximum zoom level the camera can be set to. Higher values will zoom out more."
             },
             "gameCameraClipping": {
                 "name": "Clipping",
