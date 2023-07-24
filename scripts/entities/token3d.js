@@ -324,7 +324,12 @@ export class Token3D {
         for (const attachment of this.attachments) {
             if (attachment.hidden) continue;
             const attachmentModel = await game.Levels3DPreview.helpers.loadModel(attachment.src);
-            const attachmentObject = attachmentModel.scene;
+            const attachmentObject = attachmentModel?.scene;
+            if (!attachmentObject) {
+                const err = game.i18n.localize("levels3dpreview.errors.attachmentNotFound").replace("%token%", this.token?.document?.name).replace("%attachment%", attachment.src);
+                ui.notifications.error(err);
+                continue;
+            }
             const matrix = new THREE.Matrix4();
             matrix.fromArray(attachment.matrix);
             attachmentObject.applyMatrix4(matrix);

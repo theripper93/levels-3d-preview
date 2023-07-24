@@ -44,6 +44,7 @@
             "initfailed": "3D Canvas: Initialization failed. This can be a caching issue, try CTRL+F5 to refresh the page. Make also sure you have an Active scene. Alternativelly 3D Canvas or one of it's dependencies might be out of date or corrupted. Make sure the modules are up to date and try a reinstall if everything else fails.",
             "noActiveScene": "3D Canvas: No Active Scene found. A scene has been activated automatically, please Reload the page.",
             "noScenes": "3D Canvas: No Scenes found. The default scene has been created, please Reload the page.",
+            "attachmentNotFound": "3D Canvas: Attachment not found. Token: %token% | Attachment: %attachment%",
             "gamecameradisabled": "3D Canvas: Disabling Game Camera - Game Camera is enabled but 'Use 3D Geometry for sight calculations' is disabled.",
             "filenotsupported": "File format not supported or missing",
             "toofarfromdoor": "Your Token is too far to open the door",
