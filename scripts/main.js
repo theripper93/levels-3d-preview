@@ -80,6 +80,17 @@ setSharingHooks();
 globalThis.Particle3D = Particle3D;
 
 Hooks.once("ready", () => {
+    if (!game.scenes.active) {
+        const scene = Array.from(game.scenes)[0];
+        if (scene) {
+            scene.activate();
+            ui.notifications.error(game.i18n.localize("levels3dpreview.errors.noActiveScene"), { permanent: true });
+        } else {
+            NewUserExperience.prototype._createDefaultScene();
+            ui.notifications.error(game.i18n.localize("levels3dpreview.errors.noScenes"), { permanent: true });
+        }
+        return;
+    }
     try {
         game.Levels3DPreview = new Levels3DPreview();
         Object.defineProperty(game, "canvas3D", {
