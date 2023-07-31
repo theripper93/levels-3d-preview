@@ -306,6 +306,15 @@ export class ShaderHandler {
         }
         `,
         );
+        shader.fragmentShader = `
+        vec4 getMappedTexel( sampler2D tex, vec2 uv ) {
+            vec4 texelColor = texture2D( tex, uv );
+            texelColor.r = pow((texelColor.r + 0.055) / 1.055, 2.4);
+            texelColor.g = pow((texelColor.g + 0.055) / 1.055, 2.4);
+            texelColor.b = pow((texelColor.b + 0.055) / 1.055, 2.4);
+            return texelColor;
+        }
+        ` + shader.fragmentShader;
         for (const [shaderId, shaderConfig] of Object.entries(this.shaderLib)) {
             if(!shaderParams[shaderId]?.enabled && shaderId !== "defaults") continue;
             const { vertexShader, fragmentShader, uniforms, varying } = shaderConfig;
@@ -361,9 +370,10 @@ export class ShaderHandler {
                 if (isColor) finalValue = new THREE.Color(paramValue);
                 if (isTexture) {
                     finalValue = game.Levels3DPreview.helpers.loadTextureSync(paramValue);
-                    if (finalValue) {                        
+                    if (finalValue) {    
                         finalValue.wrapS = THREE.RepeatWrapping;
                         finalValue.wrapT = THREE.RepeatWrapping;
+                        if(value.flipY !== undefined) finalValue.flipY = value.flipY;
                         shader.uniforms[`${name + "_" + uniformName}`] = { value: finalValue };
                     } else {
                         game.Levels3DPreview.helpers.loadTexture(paramValue).then((texture) => {
@@ -371,6 +381,7 @@ export class ShaderHandler {
                             if(!finalValue) return;
                             finalValue.wrapS = THREE.RepeatWrapping;
                             finalValue.wrapT = THREE.RepeatWrapping;
+                            if(value.flipY !== undefined) finalValue.flipY = value.flipY;
                             shader.uniforms[`${name + "_" + uniformName}`] = { value: finalValue };
                         });
                     }
@@ -1553,7 +1564,7 @@ export const shaders = {
                 overlay_vUv = mat2(cos(overlay_rotation_angle), -sin(overlay_rotation_angle), sin(overlay_rotation_angle), cos(overlay_rotation_angle)) * overlay_vUv;
                 overlay_vUv += rotation_center;
 
-                vec4 overlayTexture = texture( overlay_textureDiffuse, overlay_vUv );
+                vec4 overlayTexture = sRGBToLinear(texture( overlay_textureDiffuse, overlay_vUv ));
                 if(overlay_black_alpha && overlayTexture.rgb == vec3(0.0)){}
                 else{
                     float black_alpha = overlay_black_alpha ? (overlayTexture.r + overlayTexture.g + overlayTexture.b) / 3.0 : 1.0;
@@ -1793,6 +1804,7 @@ export const shaders = {
             textureSplatMap: {
                 type: "sampler2D",
                 default: null,
+                flipY: false,
             },
             repeatSplatMap: {
                 type: "float",
@@ -1861,34 +1873,33 @@ export const shaders = {
                 injectionPoint: "#include <map_fragment>",
                 shaderCode: `
                 #ifdef USE_UV
-                vec4 splatMapTexture = texture( splatMap_textureSplatMap, vUv * splatMap_repeatSplatMap );
+                vec4 splatMapTexture = sRGBToLinear(texture( splatMap_textureSplatMap, vUv * splatMap_repeatSplatMap ));
                 float splatR = splatMapTexture.r;
                 float splatG = splatMapTexture.g;
                 float splatB = splatMapTexture.b;
                 float splatA = splatMapTexture.a;
-                vec4 finalColor = texelColor;
+                vec4 finalColor = diffuseColor;
                 if(splatR > 0.0){
-                    vec4 R_CHANNEL_TEX = texture( splatMap_textureDiffuse0, vUv * splatMap_repeat0 );
+                    vec4 R_CHANNEL_TEX = sRGBToLinear(texture( splatMap_textureDiffuse0, vUv * splatMap_repeat0 ));
                     R_CHANNEL_TEX.rgb *= splatMap_color0;
                     finalColor = mix(finalColor, R_CHANNEL_TEX, splatR);
                 }
                 if(splatG > 0.0){
-                    vec4 G_CHANNEL_TEX = texture( splatMap_textureDiffuse1, vUv * splatMap_repeat1 );
+                    vec4 G_CHANNEL_TEX = sRGBToLinear(texture( splatMap_textureDiffuse1, vUv * splatMap_repeat1 ));
                     G_CHANNEL_TEX.rgb *= splatMap_color1;
                     finalColor = mix(finalColor, G_CHANNEL_TEX, splatG);
                 }
                 if(splatB > 0.0){
-                    vec4 B_CHANNEL_TEX = texture( splatMap_textureDiffuse2, vUv * splatMap_repeat2 );
+                    vec4 B_CHANNEL_TEX = sRGBToLinear(texture( splatMap_textureDiffuse2, vUv * splatMap_repeat2 ));
                     B_CHANNEL_TEX.rgb *= splatMap_color2;
                     finalColor = mix(finalColor, B_CHANNEL_TEX, splatB);
                 }
                 if(splatMap_useAlpha && splatA > 0.0){
-                    vec4 A_CHANNEL_TEX = texture( splatMap_textureDiffuse3, vUv * splatMap_repeat3 );
+                    vec4 A_CHANNEL_TEX = sRGBToLinear(texture( splatMap_textureDiffuse3, vUv * splatMap_repeat3 ));
                     A_CHANNEL_TEX.rgb *= splatMap_color3;
                     finalColor = mix(finalColor, A_CHANNEL_TEX, splatA);
                 }
-                texelColor = finalColor;
-                diffuseColor = texelColor;
+                diffuseColor = finalColor;
                 #endif
                 `,
             },
@@ -2017,13 +2028,13 @@ export const shaders = {
                 vec4 finalColor = texelColor;
                 if(percent >= textureGradient_tex0Begin && percent <= (textureGradient_tex1Begin + blend) && textureGradient_texCount > 0.0){
                     vec2 textureGradient_vUv = vec2(vUv.x, vUv.y) * (textureGradient_repeat0);
-                    vec4 textureGradientTexture = texture( textureGradient_textureDiffuse0, textureGradient_vUv );
+                    vec4 textureGradientTexture = sRGBToLinear(texture( textureGradient_textureDiffuse0, textureGradient_vUv ));
                     textureGradientTexture.rgb *= textureGradient_color0;
                     finalColor = mix(finalColor, textureGradientTexture, textureGradientTexture.a);
                 }
                 if(percent >= (textureGradient_tex1Begin - blend) && textureGradient_texCount > 1.0){
                     vec2 textureGradient_vUv = vec2(vUv.x, vUv.y) * (textureGradient_repeat1);
-                    vec4 textureGradientTexture = texture( textureGradient_textureDiffuse1, textureGradient_vUv );
+                    vec4 textureGradientTexture = sRGBToLinear(texture( textureGradient_textureDiffuse1, textureGradient_vUv ));
                     textureGradientTexture.rgb *= textureGradient_color1;
                     float fac = 1.0;
                     if(percent <= textureGradient_tex1Begin){
@@ -2033,7 +2044,7 @@ export const shaders = {
                 }
                 if(percent >= (textureGradient_tex2Begin - blend) && textureGradient_texCount > 2.0){
                     vec2 textureGradient_vUv = vec2(vUv.x, vUv.y) * (textureGradient_repeat2);
-                    vec4 textureGradientTexture = texture( textureGradient_textureDiffuse2, textureGradient_vUv );
+                    vec4 textureGradientTexture = sRGBToLinear(texture( textureGradient_textureDiffuse2, textureGradient_vUv ));
                     textureGradientTexture.rgb *= textureGradient_color2;
                     float fac = 1.0;
                     if(percent <= textureGradient_tex2Begin){
@@ -2043,7 +2054,7 @@ export const shaders = {
                 }
                 if(percent >= (textureGradient_tex3Begin - blend) && textureGradient_texCount > 3.0){
                     vec2 textureGradient_vUv = vec2(vUv.x, vUv.y) * (textureGradient_repeat3);
-                    vec4 textureGradientTexture = texture( textureGradient_textureDiffuse3, textureGradient_vUv );
+                    vec4 textureGradientTexture = sRGBToLinear(texture( textureGradient_textureDiffuse3, textureGradient_vUv ));
                     textureGradientTexture.rgb *= textureGradient_color3;
                     float fac = 1.0;
                     if(percent <= textureGradient_tex3Begin){

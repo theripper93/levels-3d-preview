@@ -288,6 +288,10 @@ export class GameCamera {
     }
 
     detectTargetPosition() {
+        if (this._forceTarget) {
+            const token3D = this._parent.tokens[this._forceTarget];
+            if (token3D) return token3D;
+        }
         let tokenId;
         if (game.combat?.started) {
             const tokenplaceable = canvas.tokens.get(game.combat.current?.tokenId);
