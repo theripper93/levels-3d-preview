@@ -32,6 +32,12 @@ export const injectConfig = {
                             <input type="text" name="${flag}" value="${flagValue}" placeholder="${v.placeholder || ""}">${notes}
                     </div>`;
                     break;
+                case "textarea":
+                    injectHtml += `<div class="form-group">
+                        <label for="${k}">${v.label || ""}</label>
+                            <textarea name="${flag}" placeholder="${v.placeholder || ""}">${flagValue}</textarea>${notes}
+                    </div>`;
+                    break;
                 case "number":
                     injectHtml += `<div class="form-group">
                         <label for="${k}">${v.label || ""}</label>

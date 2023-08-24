@@ -1265,7 +1265,7 @@ class Levels3DPreview {
             });
             Object.values(this.tiles).forEach((tile) => {
                 if (tile) {
-                    tile.updateVisibility(time);
+                    tile._onAnimationLoop(delta);
                     if (tile.mixer && !tile.paused) {
                         tile.mixer.update(delta);
                     }

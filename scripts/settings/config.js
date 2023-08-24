@@ -102,6 +102,12 @@ export function registerConfigs() {
                 label: game.i18n.localize("levels3dpreview.flags.enableRuler.label"),
                 default: true,
             },
+            enableAnimationScripts: {
+                type: "checkbox",
+                label: game.i18n.localize("levels3dpreview.flags.enableAnimationScripts.label"),
+                notes: game.i18n.localize("levels3dpreview.flags.enableAnimationScripts.notes"),
+                default: true,
+            },
             initialposition: {
                 type: "custom",
                 html: `
@@ -488,7 +494,7 @@ export function registerConfigs() {
         })
         html.find(`select[name="flags.levels-3d-preview.particlePreset"]`).trigger("change");
 
-        const advancedSettings = ["mirrorLevels", "sunDistance", "sunTilt", "renderTable", "tableTex", "tableColor", "enableGameCamera", "maxElevation", "enableRuler", "lockCamera", "skybox", "enableFog", "fogColor", "fogDistance", "sceneTint", "timeSync", "shadowBias", "showSceneWalls", "showSceneDoors", "showSceneFloors", "renderSceneLights"];
+        const advancedSettings = ["enableAnimationScripts", "mirrorLevels", "sunDistance", "sunTilt", "renderTable", "tableTex", "tableColor", "enableGameCamera", "maxElevation", "enableRuler", "lockCamera", "skybox", "enableFog", "fogColor", "fogDistance", "sceneTint", "timeSync", "shadowBias", "showSceneWalls", "showSceneDoors", "showSceneFloors", "renderSceneLights"];
         const other = [html.find("#levels3dpreview-visibility")];
         const bloomFlags = ["bloomThreshold", "bloomStrength", "bloomRadius"];
         const filterFlags = ["filterStrength", "filterCustom"];
@@ -1087,6 +1093,11 @@ export function registerConfigs() {
                 max: 180,
                 step: 1,
             },
+            onAnimation: {
+                type: "textarea",
+                label: game.i18n.localize("levels3dpreview.flags.onAnimation.label"),
+                default: "",
+            },
             header3: {
                 type: "custom",
                 html: `<h3 class="form-header"><i class="fas fa-th"></i> ${game.i18n.localize("levels3dpreview.flags.fillType.header")}</h3><div>`,
@@ -1280,7 +1291,7 @@ export function registerConfigs() {
             firstOption.innerText = game.i18n.localize("levels3dpreview.flags.fillType.options.merged");
         }
 
-        const advancedSettings = ["transmission", "ior", "doorAnimateAngle", "doorStyle", "castShadow", "displacementIntensity", "displacementMatrix", "dynaMeshResolution", "roughness", "metalness", "transparency", "sightMeshComplexity", "invertDisplacementMap", "sides", "flipY", "shading", "displacementMap", "autoCenter", "enableAnim", "animSpeed", "animIndex", "paused", "tiltX", "tiltZ", "randomSeed", "autoGround", "depth"];
+        const advancedSettings = ["onAnimation", "transmission", "ior", "doorAnimateAngle", "doorStyle", "castShadow", "displacementIntensity", "displacementMatrix", "dynaMeshResolution", "roughness", "metalness", "transparency", "sightMeshComplexity", "invertDisplacementMap", "sides", "flipY", "shading", "displacementMap", "autoCenter", "enableAnim", "animSpeed", "animIndex", "paused", "tiltX", "tiltZ", "randomSeed", "autoGround", "depth"];
 
         injectAdvancedToggle(app, html, advancedSettings, injected);
 

@@ -347,6 +347,10 @@
             "enableRuler": {
                 "label": "Enable Ruler"
             },
+            "enableAnimationScripts": {
+                "label": "Enable Animation Scripts",
+                "notes": "WARNING: Make sure you trust the source of the scene, this can be potentially used to run malicious code. Enable the execution of animation scripts for tiles."
+            },
             "enableFogOfWar": {
                 "label": "Enable Fog of War (Performance Heavy)",
                 "notes": "Performance Heavy. This option will enable Fog of War in 3D, if 'Use 3D Geometry for Sight calculations' is enabled, Fog of War will be calculated based on 3D Geometry (it will still be two dimensional)."
@@ -493,6 +497,9 @@
             },
             "wallSidesTint": {
                 "label": "Sides Tint"
+            },
+            "onAnimation": {
+                "label": "Animation Function"
             },
             "fillType": {
                 "header": "Tiling",

@@ -39,6 +39,7 @@ export class Tile3D {
         this.rotSign = ((this.tile.document.width / Math.abs(this.tile.document.width)) * this.tile.document.height) / Math.abs(this.tile.document.height);
         this.getFlags();
         this.particleData = this.getParticleData();
+        this.onAnimation = this.setupAnimationFunction();
         game.Levels3DPreview.particleSystem.stop(this.particleEffectId);
         this.initRandom();
     }
@@ -76,6 +77,7 @@ export class Tile3D {
         }, 100);
         game.Levels3DPreview.outline?.toggleControlled(this.mesh, this.tile.controlled);
         if (this.particleData.type != "none") this.initParticle();
+        if(this.onAnimation && this.mesh.children[0]) this.onAnimation = this.onAnimation.bind(this.mesh.children[0])
         return this;
     }
 
@@ -225,6 +227,13 @@ export class Tile3D {
         };
     }
 
+    setupAnimationFunction() {
+        const functionText = this.onAnimation;
+        if (!functionText) return null;
+        const fn = new Function("delta", "tile3d", functionText);
+        return fn;
+    }
+
     initRandom() {
         let seed = "";
         for (let c of this.randomSeed) {
@@ -337,6 +346,8 @@ export class Tile3D {
         this.mergedMatrix = this.tile.document.getFlag("levels-3d-preview", "mergedMatrix") ?? null;
         this.originalDimensions = this.tile.document.getFlag("levels-3d-preview", "originalDimensions") ?? null;
         this.highlightOnHover = this.tile.document.getFlag("levels-3d-preview", "highlightOnHover") ?? false;
+        const enableAnimationScripts = canvas.scene.getFlag("levels-3d-preview", "enableAnimationScripts") ?? true;
+        this.onAnimation = enableAnimationScripts ? this.tile.document.getFlag("levels-3d-preview", "onAnimation") ?? "" : "";
         this.isDoor = this.doorType != 0;
         this.isSecret = this.doorType == 2;
         this.isOpen = this.doorState == 1;
@@ -1472,6 +1483,17 @@ export class Tile3D {
                     child.material.needsUpdate = true;
                 }
             });
+        }
+    }
+
+    _onAnimationLoop(delta) {
+        this.updateVisibility(delta);
+        if (this.onAnimation) {
+            try {
+                this.onAnimation(delta);
+            } catch (e) {
+                console.error(e);
+            }
         }
     }
 
