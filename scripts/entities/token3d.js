@@ -88,6 +88,7 @@ export class Token3D {
     async load() {
         if (!this.gtflPath && !this.imageTexture) this.imageTexture = this.token.document.texture.src;
         this.texture = await this._parent.helpers.loadTexture(this.imageTexture); //this.loadTexture();
+        if(!this.texture?.image) this.texture = await this._parent.helpers.loadTexture(CONST.DEFAULT_TOKEN);
         const token3d = this.gtflPath || this.imageTexture ? await this.loadModel() : this.draw();
         if (this.token.document.light.bright !== 0 || this.token.document.light.dim) this.loadLight();
         this._loaded = true;
@@ -128,7 +129,7 @@ export class Token3D {
 
     async getModel() {
         if (!this.gtflPath) {
-            if (!this.standupFace) {                
+            if (!this.standupFace && this.texture.image) {                
                 const standup3d = await imageTo3d(this.texture.image);
                 this.standUp = true;
                 this.standUpMesh = standup3d;
