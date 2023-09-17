@@ -3309,7 +3309,7 @@ class Vector3 {
 	set( x, y, z ) {
 
 		if ( z === undefined ) z = this.z; // sprite.scale.set(x,y)
-
+		
 		this.x = x;
 		this.y = y;
 		this.z = z;
@@ -6124,7 +6124,6 @@ const _quaternion$3 = /*@__PURE__*/ new Quaternion();
 class Euler {
 
 	constructor( x = 0, y = 0, z = 0, order = Euler.DefaultOrder ) {
-
 		this._x = x;
 		this._y = y;
 		this._z = z;
@@ -6209,7 +6208,7 @@ class Euler {
 		this._y = euler._y;
 		this._z = euler._z;
 		this._order = euler._order;
-
+		
 		this._onChangeCallback();
 
 		return this;
@@ -13046,7 +13045,7 @@ const ShaderChunk = {
 const UniformsLib = {
 
 	common: {
-
+//@MODIFIED
 		diffuse: { value: new Color( 0xffffff ) },
 		opacity: { value: 1.0 },
 
@@ -13062,7 +13061,7 @@ const UniformsLib = {
 		overlayRepeat : { value: new Vector2( 1, 1 ) },
 		useOverlay : { value: false },
 		sceneOrigin : { value: new Vector2() },
-		sceneDimensions : { value: new Vector2() },
+		sceneDimensions: {value: new Vector2()},
 
 	},
 
@@ -24412,8 +24411,8 @@ function WebGLMaterials( properties ) {
 				uvScaleMap.updateMatrix();
 
 			}
-
-			uniforms.uvTransform.value.copy( uvScaleMap.matrix );
+			//#MODIFIED EDITED
+			uniforms.uvTransform.value.copy( material.userData.uvMatrix ?? uvScaleMap.matrix );
 
 		}
 

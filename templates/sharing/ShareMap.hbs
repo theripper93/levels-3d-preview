@@ -1,0 +1,39 @@
+<form action="submit">
+    <div class="form-group">
+        <label for="name">{{localize "levels3dpreview.sharing.sharemap.name"}}</label>
+        <input type="text" name="name" disabled value="{{scene.name}}">
+    </div>
+    <div class="form-group">
+        <label for="secret">{{localize "levels3dpreview.sharing.sharemap.secret"}}</label>
+        <input type="text" name="secret" value="{{secret}}">
+        <p class="notes">{{localize "levels3dpreview.sharing.sharemap.secretinfo"}}</p>
+    </div>
+    <div class="form-group">
+        <label for="author">{{localize "levels3dpreview.sharing.sharemap.author"}}</label>
+        <input type="text" name="author" value="{{user.name}}">
+    </div>
+    <div class="form-group">
+        <label for="assetpacks">{{localize "levels3dpreview.sharing.sharemap.assetpacks"}}</label>
+        <select multiple name="assetpacks" style="max-height: 4rem;">
+            {{#each assetpacks}}
+                <option value="{{id}}" {{#if selected}}selected=""{{/if}}>{{name}}</option>
+            {{/each}}
+        </select>
+        <p class="notes">{{localize "levels3dpreview.sharing.sharemap.assetinfo"}}</p>
+    </div>
+    <div class="form-group">
+        <label for="image">{{localize "levels3dpreview.sharing.sharemap.image"}}</label>
+        <input type="text" name="image" value="" placeholder="{{localize "levels3dpreview.sharing.sharemap.imageplaceholder"}}">
+            <p class="notes">{{localize "levels3dpreview.sharing.sharemap.imageinfo"}}</p>
+    </div>
+    <div class="form-group">
+        <label for="description">{{localize "levels3dpreview.sharing.sharemap.description"}}</label>
+        <textarea name="description" rows="3"></textarea>
+    </div>
+        <div class="form-group">
+        <label for="description">{{localize "levels3dpreview.sharing.sharemap.preview"}}</label>
+         <div class="image-preview" style="border-radius: 5px; margin-bottom: 0.2rem ; padding: 0.3rem; background-size: cover; width: 100%; aspect-ratio: 16 / 9; background-image: url('https://developers.elementor.com/docs/assets/img/elementor-placeholder-image.png');"></div>
+    </div>
+    <p class="notes">{{localize "levels3dpreview.sharing.sharemap.agreement"}}</p>
+   <button type="submit"><i class="fa-duotone fa-share-from-square"></i> {{localize "levels3dpreview.sharing.sharemap.share"}}</button>
+</form>

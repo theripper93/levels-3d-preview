@@ -1,0 +1,31 @@
+<form action="">
+    <div class="tdc-navbar">
+    <input type="text" placeholder="{{localize "levels3dpreview.sharing.mapbrowser.search"}}">
+    <button id="tdc-sort-newest" {{#if sortNewest}}class="active"{{/if}} >Newest</button>
+    <button id="tdc-sort-popular" {{#unless sortNewest}}class="active"{{/unless}}>Popular</button>
+    </div>
+    <div class="tdc-filters">
+        {{#each packs}}
+            <button class="tdc-filter {{#if installed}}active{{/if}}" data-filter="{{id}}">{{name}}</button>
+        {{/each}}
+    </div>
+    <div class="tdc-map-list">
+        {{#each maps}}
+            <div class="tdc-map-card" data-mapid="{{id}}" data-name="{{name}}" style="background-image: linear-gradient(transparent, black), url('{{image}}');">
+                <h3 style="margin: 0;">{{name}}</h3>
+                <span style="font-size: small;">by {{author}}</span>
+                <div class="tdc-btn-container">
+                <button {{#if starred}}style="pointer-events: none"{{/if}} class="tdc-map-star {{#if notStarOwned}}not-starred{{/if}}" data-mapid="{{id}}"><i class="{{#if starred}}fa-solid{{else}}fa-regular{{/if}} fa-heart"></i></button>
+                <span class="tdc-star-count">{{stars}}</span>
+                <button class="tdc-map-download" data-thumb="{{image}}" data-mapid="{{id}}"><i class="fa-duotone fa-cloud-arrow-down fa-swap-opacity"></i></button>
+                </div>
+                <p>{{description}}</p>
+                <div class="tdc-pack-container">
+                {{#each assetpacks}}
+                 <span data-pack="{{id}}" class="tdc-pack {{#unless installed}}missing{{/unless}}">{{name}}</span>
+                {{/each}}
+                </div>
+            </div>
+        {{/each}}
+    </div>
+</form>

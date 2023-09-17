@@ -2,7 +2,7 @@
 //License: MIT
 //Documentation: https://github.com/theripper93/injectConfig
 
-var injectConfig = {
+export const injectConfig = {
     inject: function injectConfig(app,html,data,object){
         this._generateTabStruct(app,html,data,object);
         const tabSize = data.tab?.width ?? 100;
@@ -14,7 +14,9 @@ var injectConfig = {
         }else{
             injectPoint = data.inject;
         }
-        injectPoint = injectPoint ? $(injectPoint) : (data.tab ? html.find(".tab").last() : html.find(".form-group").last());
+        const parentForm = html.closest(".app");
+        html = parentForm.length ? parentForm : html;
+        injectPoint = injectPoint ? $(injectPoint) : (data.tab ? html.find("form > .tab").last() : html.find(".form-group").last());
         let injectHtml = "";
         for(const [k,v] of Object.entries(data)){
             if(k === "moduleId" || k === "inject" || k === "tab") continue;
@@ -28,6 +30,12 @@ var injectConfig = {
                     injectHtml += `<div class="form-group">
                         <label for="${k}">${v.label || ""}</label>
                             <input type="text" name="${flag}" value="${flagValue}" placeholder="${v.placeholder || ""}">${notes}
+                    </div>`;
+                    break;
+                case "textarea":
+                    injectHtml += `<div class="form-group">
+                        <label for="${k}">${v.label || ""}</label>
+                            <textarea name="${flag}" placeholder="${v.placeholder || ""}">${flagValue}</textarea>${notes}
                     </div>`;
                     break;
                 case "number":

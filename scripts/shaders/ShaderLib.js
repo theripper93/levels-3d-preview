@@ -2,7 +2,7 @@ import * as THREE from "../lib/three.module.js";
 import { factor } from "../main.js";
 import { noiseShaders } from "./noise.js";
 
-export class ShaderConfig extends FormApplication{
+export class ShaderConfig extends FormApplication {
     constructor(document) {
         super();
         this.document = document;
@@ -16,18 +16,18 @@ export class ShaderConfig extends FormApplication{
             template: `modules/levels-3d-preview/templates/ShaderConfig.hbs`,
             width: 335,
             closeOnSubmit: true,
-            tabs: [{ navSelector: ".tabs", contentSelector: ".content"}],
-            filepickers: []
+            tabs: [{ navSelector: ".tabs", contentSelector: ".content" }],
+            filepickers: [],
         });
     }
 
     getData() {
         const shaderData = this.document?.getFlag("levels-3d-preview", "shaders") ?? {};
         const finalData = {};
-        for( const [k,v] of Object.entries(game.Levels3DPreview.CONFIG.shaders.shaders) ){
-            if(k == "defaults") continue;
+        for (const [k, v] of Object.entries(game.Levels3DPreview.CONFIG.shaders.shaders)) {
+            if (k == "defaults") continue;
             const uniforms = v.uniforms;
-            if(!shaderData[k]) shaderData[k] = {};
+            if (!shaderData[k]) shaderData[k] = {};
             finalData[k] = {
                 title: game.i18n.localize(`levels3dpreview.shaders.${k}.name`),
                 description: game.i18n.localize(`levels3dpreview.shaders.${k}.description`),
@@ -40,8 +40,8 @@ export class ShaderConfig extends FormApplication{
                 value: shaderData[k].enabled ?? false,
                 title: game.i18n.localize("levels3dpreview.shaders.config.enabled"),
                 isField: true,
-            }
-            for( const [k2,v2] of Object.entries(uniforms) ){
+            };
+            for (const [k2, v2] of Object.entries(uniforms)) {
                 const uniData = {
                     isField: true,
                     type: v2.type,
@@ -52,14 +52,14 @@ export class ShaderConfig extends FormApplication{
                     isSlider: v2.type == "float" && v2.min != undefined && v2.max != undefined,
                     min: v2.min,
                     max: v2.max,
-                    step: Math.min(((v2.min ?? 0) + (v2.max ?? 0)) / 100, 1),
+                    step: v2.step ?? Math.min(((v2.min ?? 0) + (v2.max ?? 0)) / 100, 1),
                     value: shaderData[k][k2] ?? v2.default,
-                    title: game.i18n.localize(`levels3dpreview.shaders.${k}.${k2}`)
-                }
+                    title: game.i18n.localize(`levels3dpreview.shaders.${k}.${k2}`),
+                };
                 finalData[k][k2] = uniData;
             }
         }
-        return {shaders: finalData};
+        return { shaders: finalData };
     }
 
     _getHeaderButtons(...args) {
@@ -80,14 +80,14 @@ export class ShaderConfig extends FormApplication{
     async activateListeners(html) {
         super.activateListeners(html);
         html[0].closest("#levels-3d-preview-shader-config").querySelector(".autosave").classList.toggle("active", this.autoSave);
-        html.on("click", ".item", (e)=>{
-            this.setPosition({height:"auto"})
-        })
-        html.on("click", "#apply", (e)=>{
+        html.on("click", ".item", (e) => {
+            this.setPosition({ height: "auto" });
+        });
+        html.on("click", "#apply", (e) => {
             e.preventDefault();
-            this._onSubmit(e, {preventClose: true, preventRender: true});
-        })
-        html.on("click", "#tomacro", (e)=>{
+            this._onSubmit(e, { preventClose: true, preventRender: true });
+        });
+        html.on("click", "#tomacro", (e) => {
             e.preventDefault();
             Dialog.prompt({
                 title: game.i18n.localize("levels3dpreview.shaders.config.macro.title"),
@@ -97,10 +97,9 @@ export class ShaderConfig extends FormApplication{
                     const macroEnabled = html.find("#macro-enabled").prop("checked");
                     const macroPlayers = html.find("#macro-players").prop("checked");
                     let macroData = foundry.utils.expandObject(this._getSubmitData());
-                    if(macroEnabled) {
-                        
-                        for( const [k,v] of Object.entries(macroData) ){
-                            if(!v.enabled) delete macroData[k];
+                    if (macroEnabled) {
+                        for (const [k, v] of Object.entries(macroData)) {
+                            if (!v.enabled) delete macroData[k];
                         }
                     }
                     const shaderData = JSON.stringify(macroData);
@@ -119,7 +118,7 @@ export class ShaderConfig extends FormApplication{
                         });
                     })
                     canvas.scene.updateEmbeddedDocuments(canvas.activeLayer.options.objectClass.embeddedName, updates);
-                    `
+                    `;
                     Macro.create({
                         command: macroContent,
                         img: "icons/svg/acid.svg",
@@ -128,7 +127,7 @@ export class ShaderConfig extends FormApplication{
                         ownership: {
                             default: macroPlayers ? 2 : 0,
                         },
-                    })
+                    });
                     ui.notifications.notify(game.i18n.localize("levels3dpreview.shaders.config.macro.created").replace("%s", macroName));
                 },
                 render: (html) => {
@@ -145,27 +144,25 @@ export class ShaderConfig extends FormApplication{
                     <label>${game.i18n.localize("levels3dpreview.shaders.config.macro.players")}</label>
                         <input style="justify-self: end;" type="checkbox" id="macro-players">
                     </div>
-                  `
+                  `;
                     $(html[0]).append(input);
-                }
+                },
             });
-            
-        })
-        html.on("change", (e)=>{
-            if(this.autoSave)
-            this.debouncedSubmit(e, {preventClose: true, preventRender: true});
-        })        
+        });
+        html.on("change", (e) => {
+            if (this.autoSave) this.debouncedSubmit(e, { preventClose: true, preventRender: true });
+        });
     }
 
     debouncedSubmit = debounce(this._onSubmit.bind(this), 400);
 
     setPosition(...args) {
         super.setPosition(...args);
-        if(!this.activatedInitialTab) {
+        if (!this.activatedInitialTab) {
             this.activatedInitialTab = true;
             const tabId = $(this.element).find(".shader-tab-enabled").first().data("tab");
-            if(tabId) this.activateTab(tabId);
-            this.setPosition({height: "auto"});
+            if (tabId) this.activateTab(tabId);
+            this.setPosition({ height: "auto" });
         }
     }
 
@@ -174,7 +171,7 @@ export class ShaderConfig extends FormApplication{
         return await this.document.setFlag("levels-3d-preview", "shaders", formData);
     }
 
-    static injectButton(app, html, element){
+    static injectButton(app, html, element) {
         $(element).after(`
         <div class="form-group submenu">
             <label>${game.i18n.localize("levels3dpreview.shaders.config.label")}</label>
@@ -184,54 +181,84 @@ export class ShaderConfig extends FormApplication{
             </button>
             <p class="notes">${game.i18n.localize("levels3dpreview.shaders.config.notes")}</p>
         </div>`);
-        html.on("click", "button[data-key='shader-config']", (e)=>{
+        html.on("click", "button[data-key='shader-config']", (e) => {
             e.preventDefault();
             new ShaderConfig(app.object).render(true);
-        })
+        });
     }
-
 }
 
-export class ShaderHandler{
-
-    constructor(){
+export class ShaderHandler {
+    constructor() {
         this.shaderLib = game.Levels3DPreview.CONFIG.shaders.shaders;
         this.shaders = [];
+        this._sceneUniformsNeedUpdate = true;
+        this._sceneReadyHook = Hooks.on("canvasReady", () => {
+            this._sceneUniformsNeedUpdate = true;
+        });
+        this._sceneUpdateHook = Hooks.on("updateScene", () => {
+            this._sceneUniformsNeedUpdate = true;
+        });
     }
 
-    applyShader(Object3D, entity3D, shaderParams){
+    async preloadTextures(shaderParams) {
+        for (const [shaderName, shader] of Object.entries(shaderParams)) {
+            if (shader.enabled) {
+                for (const [key,value] of Object.entries(shader)) {
+                    if (key.toLowerCase().includes("texture")) {
+                        await game.Levels3DPreview.helpers.loadTexture(value);
+                    }
+                }
+            }
+        }
+    }
+
+    applyShader(Object3D, entity3D, shaderParams) {
         const enableShaders = game.settings.get("levels-3d-preview", "enableShaders");
-        if(!enableShaders) return;
-        const preapplyShaders = game.settings.get("levels-3d-preview", "preapplyShaders");
-        const hasShaders = Object.values(shaderParams).some(v => v.enabled);
-        if(!hasShaders && !preapplyShaders) return;
+        if (!enableShaders) shaderParams = this.disablePerformanceHeavyShaders(shaderParams);
+        const hasShaders = Object.values(shaderParams).some((v) => v.enabled);
+        if (!hasShaders) return;
         const commonParams = getSizesForShader(entity3D);
-        commonParams.localSize = entity3D.isInstanced ? new THREE.Vector3(commonParams.mWidth*0.3, commonParams.mDepth*0.3, commonParams.mHeight*0.3) : new THREE.Vector3(0.2, 0.2, 0.2);
-        Object3D.traverse(child => {
-            if(child.isMesh && !child.userData?.noShaders){
+        commonParams.localSize = entity3D.isInstanced ? new THREE.Vector3(commonParams.mWidth * 0.3, commonParams.mDepth * 0.3, commonParams.mHeight * 0.3) : new THREE.Vector3(0.2, 0.2, 0.2);
+        Object3D.traverse((child) => {
+            if (child.isMesh && !child.userData?.noShaders) {
+                if(!child.material.map) child.material.map = game.Levels3DPreview.UTILS.TEXTURES.BLANK
                 this.buildShader(child, shaderParams, commonParams, entity3D);
             }
-        })
+        });
     }
 
-    buildShader(mesh, shaderParams, commonParams, entity3D){
+    disablePerformanceHeavyShaders(shaderParams){
+        const perfHeavy = ["ice", "fire", "oil", "lightning"];
+        perfHeavy.forEach((shader) => { 
+            delete shaderParams[shader];
+        });
+        return shaderParams;
+    }
+
+    buildShader(mesh, shaderParams, commonParams, entity3D) {
+        const shaderKey = Object.keys(shaderParams).filter((k) => shaderParams[k].enabled).join("_");
         const _onBeforeCompile = (shader) => {
             shader.entity3D = entity3D;
-            this.injectShaders(shader, commonParams);
-            shader.uniforms.bevelSize = {value: mesh.material?.userData?.bevelSize || -9999};
+            this.injectShaders(shader, commonParams, shaderParams);
+            shader.uniforms.bevelSize = { value: mesh.material?.userData?.bevelSize || -9999 };
             shader.uniforms.tex_repeat = { value: mesh.material?.userData?.tex_repeat || 1 };
-            shader.uniforms.mDepth = {value: commonParams.mDepth};
-            shader.uniforms.mWidth = {value: commonParams.mWidth};
-            shader.uniforms.mHeight = {value: commonParams.mHeight};
-            shader.uniforms.localSize = {value: commonParams.localSize};
+            shader.uniforms.mDepth = { value: commonParams.mDepth };
+            shader.uniforms.mWidth = { value: commonParams.mWidth };
+            shader.uniforms.mHeight = { value: commonParams.mHeight };
+            shader.uniforms.localSize = { value: commonParams.localSize };
 
             this.setUniforms(shader, shaderParams);
             this.shaders.push(shader);
-        }
-        mesh.material.onBeforeCompile = _onBeforeCompile
+            if (entity3D.pathTraced) {
+                const customBlendMap = "#ifdef USE_MAP\n\tvec4 texelColor = texture2D( map, vUv );\n\ttexelColor = mapTexelToLinear( texelColor );\n\tdiffuseColor.rgb = mix(diffuseColor.rgb, texelColor.rgb, texelColor.a);\n#endif";
+                shader.fragmentShader = shader.fragmentShader.replace("#include <map_fragment>", customBlendMap)
+            }
+        };
+        mesh.material.onBeforeCompile = _onBeforeCompile;
         mesh.material.customProgramCacheKey = () => {
-            return `${mesh.material.type}_canvas3dcustomshader`
-        }
+            return `${mesh.material.type}${shaderKey}`;
+        };
 
         mesh.customDepthMaterial = new THREE.MeshDepthMaterial({
             depthPacking: THREE.RGBADepthPacking,
@@ -239,19 +266,22 @@ export class ShaderHandler{
             map: mesh.material.alphaTest ? mesh.material.map : null,
             onBeforeCompile: _onBeforeCompile,
             customProgramCacheKey: () => {
-                return `${mesh.material.type}_canvas3dcustomshader_depth`
-            }
-        })
+                return `${mesh.material.type}${shaderKey}_depth`;
+            },
+        });
     }
 
-    injectShaders(shader, commonParams){
-        shader.vertexShader = "attribute float shader_instance_position;\nattribute float shader_random_rotation;\nuniform float tex_repeat;\nattribute float shader_cell_size;\nuniform float bevelSize;\n" + shader.vertexShader;
-        shader.vertexShader = noiseShaders.snoise + "\n" + shader.vertexShader;
-        shader.fragmentShader = noiseShaders.snoise + "\n" + shader.fragmentShader;
+    injectShaders(shader, commonParams, shaderParams) {
+        shader.vertexShader = "attribute float shader_instance_depth;\nattribute float shader_instance_position;\nattribute float shader_random_rotation;\nuniform float tex_repeat;\nattribute float shader_cell_size;\nuniform float bevelSize;\n" + shader.vertexShader;
+        if (Object.keys(shaderParams).some((k) => this.shaderLib[k].useNoise)){     
+            shader.vertexShader = noiseShaders.snoise + "\n" + shader.vertexShader;
+            shader.fragmentShader = noiseShaders.snoise + "\n" + shader.fragmentShader;
+        }
         shader.vertexShader = shader.vertexShader.replace("#include <fog_vertex>", "shader_vPosition = vec3(transformed);\nshader_vUv = ( uvTransform * vec3( uv, 1 ) ).xy;\nshader_vNormal = normal;\n#include <fog_vertex>");
         shader.vertexShader = shader.vertexShader.replace("#include <uv_pars_vertex>", "#include <uv_pars_vertex>\n #ifdef USE_UV\n#else\nuniform mat3 uvTransform;\n#endif");
-        shader.vertexShader = shader.vertexShader.replace("#include <begin_vertex>",
-        `#include <begin_vertex>
+        shader.vertexShader = shader.vertexShader.replace(
+            "#include <begin_vertex>",
+            `#include <begin_vertex>
         #ifdef USE_UV
         vUv *= tex_repeat;
         #endif
@@ -274,22 +304,33 @@ export class ShaderHandler{
             transformed.y = transformed.y - (bevelSize - bevelSize/shader_cell_size);
         }
         }
-        `);
-        for(const [shaderId, shaderConfig] of Object.entries(this.shaderLib)){
-            const {vertexShader, fragmentShader, uniforms, varying} = shaderConfig;
+        `,
+        );
+        shader.fragmentShader = `
+        vec4 getMappedTexel( sampler2D tex, vec2 uv ) {
+            vec4 texelColor = texture2D( tex, uv );
+            texelColor.r = pow((texelColor.r + 0.055) / 1.055, 2.4);
+            texelColor.g = pow((texelColor.g + 0.055) / 1.055, 2.4);
+            texelColor.b = pow((texelColor.b + 0.055) / 1.055, 2.4);
+            return texelColor;
+        }
+        ` + shader.fragmentShader;
+        for (const [shaderId, shaderConfig] of Object.entries(this.shaderLib)) {
+            if(!shaderParams[shaderId]?.enabled && shaderId !== "defaults") continue;
+            const { vertexShader, fragmentShader, uniforms, varying } = shaderConfig;
             let uniformsVarying = `uniform bool ${shaderId + "_enabled"};`;
-            for(const [name, value] of Object.entries(varying)){
-                uniformsVarying += `varying ${value.type} ${(shaderId == "defaults" ? name : shaderId + "_" + name)};\n`;
-                shader.uniforms[(shaderId == "defaults" ? name : shaderId + "_" + name)] = {value: shaderId == "defaults" ? commonParams[name] ?? (typeof value.value == "function" ? value.value() : value.value) : value.default};
+            for (const [name, value] of Object.entries(varying)) {
+                uniformsVarying += `varying ${value.type} ${shaderId == "defaults" ? name : shaderId + "_" + name};\n`;
+                shader.uniforms[shaderId == "defaults" ? name : shaderId + "_" + name] = { value: shaderId == "defaults" ? commonParams[name] ?? (typeof value.value == "function" ? value.value() : value.value) : value.default };
             }
-            for(const [name, value] of Object.entries(uniforms)){
-                uniformsVarying += `uniform ${value.type} ${(shaderId == "defaults" ? name : shaderId + "_" + name)};\n`;
-                shader.uniforms[(shaderId == "defaults" ? name : shaderId + "_" + name)] = {value: shaderId == "defaults" ? commonParams[name] ?? (typeof value.value == "function" ? value.value() : value.value) : value.default};
+            for (const [name, value] of Object.entries(uniforms)) {
+                uniformsVarying += `uniform ${value.type} ${shaderId == "defaults" ? name : shaderId + "_" + name};\n`;
+                shader.uniforms[shaderId == "defaults" ? name : shaderId + "_" + name] = { value: shaderId == "defaults" ? commonParams[name] ?? (typeof value.value == "function" ? value.value() : value.value) : value.default };
             }
-            for(const vertex of vertexShader){
+            for (const vertex of vertexShader) {
                 shader.vertexShader = this.injectString(vertex, shader.vertexShader, shaderId);
             }
-            for(const fragment of fragmentShader){
+            for (const fragment of fragmentShader) {
                 shader.fragmentShader = this.injectString(fragment, shader.fragmentShader, shaderId);
             }
             shader.vertexShader = uniformsVarying + shader.vertexShader;
@@ -297,12 +338,12 @@ export class ShaderHandler{
         }
     }
 
-    injectString(inject, shader, shaderId){
+    injectString(inject, shader, shaderId) {
         const mode = inject.mode ?? SHADERS_CONSTS.APPEND;
         const injectionPoint = inject.injectionPoint;
         const originalShaderCode = inject.shaderCode;
         const shaderCode = inject.noConditional ? `\n${originalShaderCode}\n` : `if(${shaderId + "_enabled"}){\n${originalShaderCode}\n}`;
-        switch(mode){
+        switch (mode) {
             case SHADERS_CONSTS.APPEND:
                 shader = shader.replace(injectionPoint, injectionPoint + "\n" + shaderCode);
                 break;
@@ -316,43 +357,65 @@ export class ShaderHandler{
         return shader;
     }
 
-    setUniforms(shader, shaderParams){
-        for(const [name, shaderData] of Object.entries(this.shaderLib)){
-            if(name === "defaults") continue;
-            shader.uniforms[`${name + "_enabled"}`] = {value: shaderParams[name]?.enabled ? true : false};
-            for(const [uniformName, value] of Object.entries(shaderData.uniforms)){
+    setUniforms(shader, shaderParams) {
+        for (const [name, shaderData] of Object.entries(this.shaderLib)) {
+            if (name === "defaults") continue;
+            shader.uniforms[`${name + "_enabled"}`] = { value: shaderParams[name]?.enabled ? true : false };
+            for (const [uniformName, value] of Object.entries(shaderData.uniforms)) {
                 const paramValue = shaderParams[name]?.[uniformName] ?? value.default;
                 const isColor = uniformName.toLowerCase().includes("color");
                 const isTexture = uniformName.toLowerCase().includes("texture");
                 const isAngle = uniformName.toLowerCase().includes("direction") || uniformName.toLowerCase().includes("angle");
                 let finalValue = paramValue;
-                if(isColor) finalValue = new THREE.Color(paramValue);
-                if(isTexture) {
-                    finalValue = null;
-                    game.Levels3DPreview.helpers.loadTexture(paramValue).then(texture => {
-                        if(texture){
+                if (isColor) finalValue = new THREE.Color(paramValue);
+                if (isTexture) {
+                    finalValue = game.Levels3DPreview.helpers.loadTextureSync(paramValue);
+                    if (finalValue) {    
+                        finalValue.wrapS = THREE.RepeatWrapping;
+                        finalValue.wrapT = THREE.RepeatWrapping;
+                        if(value.flipY !== undefined) finalValue.flipY = value.flipY;
+                        shader.uniforms[`${name + "_" + uniformName}`] = { value: finalValue };
+                    } else {
+                        game.Levels3DPreview.helpers.loadTexture(paramValue).then((texture) => {
                             finalValue = texture;
+                            if(!finalValue) return;
                             finalValue.wrapS = THREE.RepeatWrapping;
                             finalValue.wrapT = THREE.RepeatWrapping;
-                            shader.uniforms[`${name + "_" + uniformName}`] = {value: finalValue};
-                        }
-                    })
+                            if(value.flipY !== undefined) finalValue.flipY = value.flipY;
+                            shader.uniforms[`${name + "_" + uniformName}`] = { value: finalValue };
+                        });
+                    }
                 }
-                if(isAngle) finalValue = Math.toRadians(paramValue);
-                shader.uniforms[`${name + "_" + uniformName}`] = {value: finalValue};
+                if (isAngle) finalValue = Math.toRadians(paramValue);
+                shader.uniforms[`${name + "_" + uniformName}`] = { value: finalValue };
             }
         }
     }
 
-    updateShaders(delta, tokens, sound){
-        this.shaders = this.shaders.filter(shader => {
-            if(shader.entity3D._destroyed) return false;
-            shader.uniforms.time.value = delta/100;
+    updateShaders(delta, tokens, sound) {
+        this.shaders = this.shaders.filter((shader) => {
+            if (shader.entity3D._destroyed) return false;
+            shader.uniforms.time.value = delta / 100;
             shader.uniforms.yPos.value = getYpos(shader.entity3D);
             shader.uniforms.tokens.value = tokens;
             shader.uniforms.sound.value = sound;
+            if (this._sceneUniformsNeedUpdate) {
+                shader.uniforms.sceneSize.value = shaders.defaults.uniforms.sceneSize.value();
+                shader.uniforms.gridSize.value = shaders.defaults.uniforms.gridSize.value();
+                shader.uniforms.gridMinX.value = shaders.defaults.uniforms.gridMinX.value();
+                shader.uniforms.gridMinY.value = shaders.defaults.uniforms.gridMinY.value();
+                shader.uniforms.gridType.value = shaders.defaults.uniforms.gridType.value();
+                shader.uniforms.gridAlpha.value = shaders.defaults.uniforms.gridAlpha.value();
+                shader.uniforms.gridColor.value = shaders.defaults.uniforms.gridColor.value();
+            }
             return true;
         });
+        this._sceneUniformsNeedUpdate = false;
+    }
+
+    dispose() {
+        Hooks.off("canvasReady", this._sceneReadyHook);
+        Hooks.off("updateScene", this._sceneUpdateHook);
     }
 }
 
@@ -360,124 +423,130 @@ export const SHADERS_CONSTS = {
     REPLACE: "replace",
     APPEND: "append",
     PREPEND: "prepend",
-}
+};
 
 export const shaders = {
-    "defaults": {
+    defaults: {
         uniforms: {
             time: {
                 type: "float",
-                value: 0
+                value: 0,
             },
-            tokens:{
+            tokens: {
                 type: "vec4[100]",
-                value: new Float32Array(100*4),
+                value: new Float32Array(100 * 4),
             },
             sound: {
                 type: "vec3",
-                value: new THREE.Vector3(1,1,1)
+                value: new THREE.Vector3(1, 1, 1),
             },
             mDepth: {
                 type: "float",
-                value: 0
+                value: 0,
             },
             mWidth: {
                 type: "float",
-                value: 0
+                value: 0,
             },
             mHeight: {
                 type: "float",
-                value: 0
+                value: 0,
             },
             yPos: {
                 type: "float",
-                value: 0
+                value: 0,
             },
             localSize: {
                 type: "vec3",
-                value: new THREE.Vector3(0, 0, 0)
+                value: new THREE.Vector3(0, 0, 0),
             },
             textureRepeat: {
                 type: "float",
-                value: 1
+                value: 1,
             },
             gridColor: {
                 type: "vec3",
                 value: () => {
                     return new THREE.Color(canvas.scene.grid.color);
-                }
+                },
             },
             gridAlpha: {
                 type: "float",
                 value: () => {
                     return canvas.scene.grid.alpha;
-                }
+                },
             },
             gridSize: {
                 type: "float",
                 value: () => {
-                    return canvas.scene.grid.size/factor;
-                }
+                    return canvas.scene.grid.size / factor;
+                },
             },
             gridType: {
                 type: "float",
                 value: () => {
                     return canvas.scene.grid.type;
-                }
+                },
             },
             gridMinX: {
                 type: "float",
                 value: () => {
-                    return canvas.grid.grid._bounds.minX/factor;
-                }
+                    return 0;//(canvas.grid.grid._bounds?.minX ?? 0) / factor;
+                },
             },
             gridMinY: {
                 type: "float",
                 value: () => {
-                    return canvas.grid.grid._bounds.minY/factor;
-                }
+                    return 0;//(canvas.grid.grid._bounds?.minY ?? 0) / factor;
+                },
             },
+            sceneSize: {
+                type: "vec4",
+                value: () => { 
+                    return new THREE.Vector4(canvas.scene.dimensions.sceneWidth / factor, canvas.scene.dimensions.sceneHeight / factor, canvas.scene.dimensions.sceneX / factor, canvas.scene.dimensions.sceneY / factor);
+                },
+            }
         },
         varying: {
-            "shader_vPosition": {
+            shader_vPosition: {
                 type: "vec3",
-                value: new THREE.Vector3(0, 0, 0)
+                value: new THREE.Vector3(0, 0, 0),
             },
-            "shader_vUv": {
+            shader_vUv: {
                 type: "vec2",
-                value: new THREE.Vector2(0, 0)
+                value: new THREE.Vector2(0, 0),
             },
-            "shader_vNormal": {
+            shader_vNormal: {
                 type: "vec3",
-                value: new THREE.Vector3(0, 0, 0)
-            }
+                value: new THREE.Vector3(0, 0, 0),
+            },
         },
         vertexShader: [],
         fragmentShader: [],
     },
-    "idle": {
+    idle: {
         icon: `<i class="fas fa-walking"></i>`,
         uniforms: {
-            "speed": {
+            speed: {
                 type: "float",
                 default: 0.1,
             },
-            "direction": {
+            direction: {
                 type: "float",
                 default: 0,
                 min: 0,
                 max: 360,
             },
-            "intensity": {
+            intensity: {
                 type: "float",
                 default: 0.3,
             },
-            "affect_model": {
+            affect_model: {
                 type: "float",
                 default: 0.7,
                 min: 0.01,
                 max: 1,
-            }
+            },
         },
         varying: {},
         vertexShader: [
@@ -496,75 +565,85 @@ export const shaders = {
                     idleOffset = vec3(idleFactor * idle_intensity_final * cos(idle_direction) * localSize.x, idleFactor *  idle_intensity_final * cos(sin(idle_direction)) * localSize.y, idleFactor *  idle_intensity_final * sin(idle_direction) * localSize.z);
                 }
                 transformed = vec3( transformed.x + idleOffset.x, transformed.y + idleOffset.y, transformed.z + idleOffset.z );
-                `
-            }
+                `,
+            },
         ],
         fragmentShader: [],
     },
-    "wind": {
+    wind: {
         icon: `<i class="fas fa-wind"></i>`,
         uniforms: {
-            "speed": {
+            speed: {
                 type: "float",
                 default: 0.1,
             },
-            "direction": {
+            direction: {
                 type: "float",
                 default: 0,
                 min: 0,
                 max: 360,
             },
-            "intensity": {
+            intensity: {
                 type: "float",
                 default: 0.5,
             },
-            "affect_model": {
+            affect_model: {
                 type: "float",
                 default: 0.5,
                 min: 0.01,
                 max: 1,
             },
-            "convoluted": {
+            convoluted: {
                 type: "bool",
                 default: false,
             },
-            "reactive": {
+            reactive: {
                 type: "bool",
                 default: false,
             },
-            "ground_blend": {
+            reactive_intensity: {
+                type: "float",
+                default: 1.0,
+                min: 0.01,
+                max: 10,
+            },
+            ground_blend: {
                 type: "float",
                 default: 0,
                 min: 0,
                 max: 1,
             },
-            "ground_color": {
+            ground_color: {
                 type: "vec3",
-                default: "#ffffff"
-            }
+                default: "#ffffff",
+            },
         },
         varying: {
-            "ground_blend_percent": {
+            ground_blend_percent: {
                 type: "float",
-                value: 0
-            }
+                value: 0,
+            },
         },
         vertexShader: [
             {
                 mode: SHADERS_CONSTS.APPEND,
                 injectionPoint: "#include <begin_vertex>",
                 shaderCode: `
-                float currentY = vWorldPositionFoW.y;//(modelMatrix * vec4( transformed, 1.0 )).y;
                 float useY = yPos;
+                float useDepth = mDepth;
                 mat4 current_matrix = modelMatrix;
                 #ifdef USE_INSTANCING
-                    current_matrix = instanceMatrix;
-                    if(shader_instance_position > -999999999999999.0) {
-                        useY = shader_instance_position;
+                current_matrix = instanceMatrix;
+                if(shader_instance_position > -999999999999999.0) {
+                    useY = shader_instance_position;
+                    if(shader_instance_depth > 0.0){
+                        useDepth = shader_instance_depth;
                     }
+                }
                 #endif
+                float currentY = (current_matrix * vec4( transformed, 1.0 )).y;
                 float currentYDelta = currentY - useY;
-                wind_ground_blend_percent = max(0.0, currentYDelta / mDepth);
+                wind_ground_blend_percent = max(0.0, currentYDelta / useDepth);
                 float windFactor = 0.0;
                 vec2 windOffset = vec2(0.0);
 
@@ -580,14 +659,14 @@ export const shaders = {
                         vec3 dir = normalize(diff.xyz);
                         float maxDist = tokens[i].w * gridSize * 1.1;
                         if(distance < maxDist) {
-                            windOffset += dir.xz * (maxDist / distance) * gridSize * 10.0 * wind_ground_blend_percent;//(1.0 - distance / mDepth) * tokens[i].w;
+                            windOffset += wind_reactive_intensity * (dir.xz * (maxDist / distance) * gridSize * wind_ground_blend_percent);
                         }
                     }
                 }
 
 
-                if (currentYDelta > mDepth*wind_affect_model) {
-                    windFactor = (currentYDelta - mDepth*wind_affect_model) / (mDepth*wind_affect_model);
+                if (currentYDelta > useDepth*wind_affect_model) {
+                    windFactor = (currentYDelta - useDepth*wind_affect_model) / (useDepth*wind_affect_model);
                     if(wind_convoluted) {
                         windFactor = (sin(time*wind_speed + transformed.x + transformed.z) + wind_intensity) * windFactor;
                     }else{
@@ -597,43 +676,44 @@ export const shaders = {
                 }
                 
                 transformed = vec3( transformed.x + windOffset.x, transformed.y, transformed.z + windOffset.y );
-                `
-            }
+                `,
+            },
         ],
         fragmentShader: [
             {
-                mode: SHADERS_CONSTS.APPEND,
-                injectionPoint: "#include <dithering_fragment>",
+                mode: SHADERS_CONSTS.PREPEND,
+                injectionPoint: "#include <fog_fragment>",
                 shaderCode: `
                 if(wind_ground_blend_percent < wind_ground_blend && wind_ground_blend > 0.0) {
                     float ground_blend_factor = 1.0 - wind_ground_blend_percent / wind_ground_blend;
                     gl_FragColor.rgb = mix(gl_FragColor.rgb, wind_ground_color, ground_blend_factor);
                 }
-                `
-            }
+                `,
+            },
         ],
     },
-    "distortion": {
+    distortion: {
         icon: `<i class="fas fa-wave-square"></i>`,
+        useNoise: true,
         uniforms: {
-            "speed": {
+            speed: {
                 type: "float",
                 default: 0.1,
             },
-            "direction": {
+            direction: {
                 type: "float",
                 default: 0,
                 min: 0,
                 max: 360,
             },
-            "intensity": {
+            intensity: {
                 type: "float",
                 default: 0.1,
             },
-            "convoluted": {
+            convoluted: {
                 type: "bool",
                 default: false,
-            }
+            },
         },
         varying: {},
         vertexShader: [
@@ -654,29 +734,29 @@ export const shaders = {
                         displaceOffset.y = 0.0;
                     }
                 }
-                transformed = vec3( transformed.x + displaceOffset.x, transformed.y + displaceOffset.y, transformed.z + displaceOffset.z );`
-            }
+                transformed = vec3( transformed.x + displaceOffset.x, transformed.y + displaceOffset.y, transformed.z + displaceOffset.z );`,
+            },
         ],
         fragmentShader: [],
     },
-    "water": {
+    water: {
         icon: `<i class="fas fa-water"></i>`,
         uniforms: {
-            "speed": {
+            speed: {
                 type: "float",
                 default: 0.1,
             },
-            "direction": {
+            direction: {
                 type: "float",
                 default: 45,
                 min: 0,
                 max: 360,
             },
-            "wave_height": {
+            wave_height: {
                 type: "float",
                 default: 0.3,
             },
-            "wave_amplitude": {
+            wave_amplitude: {
                 type: "float",
                 default: 5,
             },
@@ -698,71 +778,72 @@ export const shaders = {
                         yDisplace = 0.0;
                     }
                 }
-                transformed = vec3( transformed.x, transformed.y + yDisplace, transformed.z);`
-            }
+                transformed = vec3( transformed.x, transformed.y + yDisplace, transformed.z);`,
+            },
         ],
         fragmentShader: [],
     },
-    "ocean": {
+    ocean: {
         icon: `<i class="fas fa-fish"></i>`,
+        useNoise: true,
         uniforms: {
-            "speed": {
+            speed: {
                 type: "float",
                 default: 0.1,
             },
-            "scale": {
+            scale: {
                 type: "float",
                 default: 1,
             },
-            "waveA_wavelength": {
+            waveA_wavelength: {
                 type: "float",
                 default: 0.6,
             },
-            "waveA_steepness": {
+            waveA_steepness: {
                 type: "float",
                 default: 0.3,
                 min: 0.01,
                 max: 1,
             },
-            "waveA_direction": {
+            waveA_direction: {
                 type: "float",
                 default: 90,
                 min: 0,
                 max: 360,
             },
-            "waveB_wavelength": {
+            waveB_wavelength: {
                 type: "float",
                 default: 0.3,
             },
-            "waveB_steepness": {
+            waveB_steepness: {
                 type: "float",
                 default: 0.25,
                 min: 0.01,
                 max: 1,
             },
-            "waveB_direction": {
+            waveB_direction: {
                 type: "float",
                 default: 260,
                 min: 0,
                 max: 360,
             },
-            "waveC_wavelength": {
+            waveC_wavelength: {
                 type: "float",
                 default: 0.2,
             },
-            "waveC_steepness": {
+            waveC_steepness: {
                 type: "float",
                 default: 0.35,
                 min: 0.01,
                 max: 1,
             },
-            "waveC_direction": {
+            waveC_direction: {
                 type: "float",
                 default: 180,
                 min: 0,
                 max: 360,
             },
-            "foam": {
+            foam: {
                 type: "bool",
                 default: false,
             },
@@ -772,10 +853,10 @@ export const shaders = {
             },*/
         },
         varying: {
-            "foam_factor": {
+            foam_factor: {
                 type: "float",
                 default: 0.0,
-            }
+            },
         },
         vertexShader: [
             {
@@ -803,41 +884,113 @@ export const shaders = {
                     ocean_foam_factor = pow(ocean_normal.y, 4.0);
                 }
                 transformed = p;
-                `
-            }
+                `,
+            },
         ],
         fragmentShader: [
             {
-                mode: SHADERS_CONSTS.APPEND,
-                injectionPoint: "#include <dithering_fragment>",
+                mode: SHADERS_CONSTS.PREPEND,
+                injectionPoint: "#include <fog_fragment>",
                 shaderCode: `
                 if(ocean_foam){
                     gl_FragColor.rgb = mix(gl_FragColor.rgb, vec3(1.0, 1.0, 1.0), ocean_foam_factor * 0.5);
                 }
-                `
-            }
+                `,
+            },
         ],
     },
-    "grid": {
+    orbit: {
+        icon: `<i class="fa-regular fa-planet-ringed"></i>`,
+        uniforms: {
+            orbit_speed: {
+                type: "float",
+                default: 0.1,
+            },
+            radius: {
+                type: "float",
+                default: 1,
+            },
+            pivot_speed: {
+                type: "float",
+                default: 0.1,
+            },
+        },
+        varying: {},
+        vertexShader: [
+            {
+                mode: SHADERS_CONSTS.APPEND,
+                injectionPoint: "#include <begin_vertex>",
+                shaderCode: `
+                    float orbit_timeSpeed = time * orbit_orbit_speed;
+                    float pivot_timeSpeed = time * orbit_pivot_speed;
+                    
+                    mat4 pivot = mat4(
+                        cos(pivot_timeSpeed), 0, sin(pivot_timeSpeed), 0,
+                        0, 1, 0, 0,
+                        -sin(pivot_timeSpeed), 0, cos(pivot_timeSpeed), 0,
+                        0, 0, 0, 1
+                    );
+                    transformed = (pivot * vec4(transformed, 1)).xyz;
+
+                    float radius = orbit_radius;
+                    float x = radius * cos(orbit_timeSpeed) + transformed.x;
+                    float z = radius * sin(orbit_timeSpeed) + transformed.z;
+                    transformed = vec3(x, transformed.y, z);
+                `,
+            },
+        ],
+        fragmentShader: [],
+    },
+    bounce: {
+        icon: `<i class="fa-solid fa-reel"></i>`,
+        uniforms: {
+            speed: {
+                type: "float",
+                default: 0.1,
+            },
+            strength: {
+                type: "float",
+                default: 1,
+            },
+        },
+        varying: {},
+        vertexShader: [
+            {
+                mode: SHADERS_CONSTS.APPEND,
+                injectionPoint: "#include <begin_vertex>",
+                shaderCode: `
+                    float bounce_timeSpeed = time * bounce_speed;
+                    float bounce = sin(bounce_timeSpeed) * bounce_strength;
+                    transformed = vec3(transformed.x, transformed.y + bounce, transformed.z);
+                `,
+            },
+        ],
+        fragmentShader: [],
+    },
+    grid: {
         icon: `<i class="fas fa-grid"></i>`,
         uniforms: {
-            "normalCulling": {
+            normalCulling: {
                 type: "float",
                 default: 0.0,
-                min: 0.01,
+                min: 0.0,
                 max: 0.99,
             },
-            "heightCulling": {
+            heightCulling: {
                 type: "float",
                 default: 1,
                 min: 0,
                 max: 1,
             },
+            showBounds: {
+                type: "bool",
+                default: false,
+            },
         },
         varying: {
-            "height_percent": {
+            height_percent: {
                 type: "float",
-            }
+            },
         },
         vertexShader: [
             {
@@ -857,15 +1010,31 @@ export const shaders = {
                 }else{
                     grid_height_percent = 0.0;
                 }
-                `
-            }
+                `,
+            },
         ],
         fragmentShader: [
             {
-                mode: SHADERS_CONSTS.APPEND,
-                injectionPoint: "#include <dithering_fragment>",
+                mode: SHADERS_CONSTS.PREPEND,
+                injectionPoint: "#include <fog_fragment>",
                 shaderCode: `
                 if(grid_height_percent <= grid_heightCulling && abs(shader_vNormal.y) > grid_normalCulling){
+                    if(grid_showBounds){
+                       float thickness = 0.01 * 0.5;
+                        vec4 paddingRectOuter = vec4(0.0 - thickness, 0.0 - thickness, sceneSize.x + sceneSize.z * 2.0 + thickness, sceneSize.y + sceneSize.a * 2.0 + thickness);
+                        vec4 paddingRectInner = vec4(0.0 + thickness, 0.0 + thickness, sceneSize.x + sceneSize.z * 2.0 - thickness, sceneSize.y + sceneSize.a * 2.0 - thickness);
+
+                        vec4 sceneRectOuter = vec4(sceneSize.z - thickness, sceneSize.a - thickness, sceneSize.x + sceneSize.z + thickness, sceneSize.y + sceneSize.a + thickness);
+                        vec4 sceneRectInner = vec4(sceneSize.z + thickness, sceneSize.a + thickness, sceneSize.x + sceneSize.z - thickness, sceneSize.y + sceneSize.a - thickness);
+
+                        bool isPadding = (vWorldPositionFoW.x > paddingRectOuter.x && vWorldPositionFoW.x < paddingRectOuter.z && vWorldPositionFoW.z > paddingRectOuter.y && vWorldPositionFoW.z < paddingRectOuter.w) && (vWorldPositionFoW.x < paddingRectInner.x || vWorldPositionFoW.x > paddingRectInner.z || vWorldPositionFoW.z < paddingRectInner.y || vWorldPositionFoW.z > paddingRectInner.w);
+                        bool isScene = (vWorldPositionFoW.x > sceneRectOuter.x && vWorldPositionFoW.x < sceneRectOuter.z && vWorldPositionFoW.z > sceneRectOuter.y && vWorldPositionFoW.z < sceneRectOuter.w) && (vWorldPositionFoW.x < sceneRectInner.x || vWorldPositionFoW.x > sceneRectInner.z || vWorldPositionFoW.z < sceneRectInner.y || vWorldPositionFoW.z > sceneRectInner.w);
+
+
+                        if(isPadding || isScene){
+                            gl_FragColor.rgb = mix(gl_FragColor.rgb, gridColor, gridAlpha);
+                        }
+                    }
                     if(gridType == 1.0){
                         if( (mod(vWorldPositionFoW.x, gridSize) < 0.0015 || mod(vWorldPositionFoW.z, gridSize) < 0.0015)){
                             gl_FragColor.rgb = mix(gl_FragColor.rgb, gridColor, gridAlpha);
@@ -878,13 +1047,13 @@ export const shaders = {
                         vec2 misteryAdjustment = vec2(0.0, 0.0);
 
                         if(gridType == 2.0){
-                            misteryAdjustment = vec2(0.96 * 0.5*gridSize/1.7320508, gridSize * 1.02);
+                            misteryAdjustment = vec2( gridSize*0.5 + 0.96 * 0.5*gridSize/1.7320508, gridSize * 1.02);
                         }else if(gridType == 3.0){
-                            misteryAdjustment = vec2(1.02 * 1.7320508 * gridSize, gridSize * 1.02);
+                            misteryAdjustment = vec2( gridSize*0.5 + 1.02 * 1.7320508 * gridSize, gridSize * 1.02);
                         }else if(gridType == 4.0){
-                            misteryAdjustment = vec2(gridSize * 1.02, 0.96 * 0.5*gridSize/1.7320508);
+                            misteryAdjustment = vec2(gridSize * 1.02, gridSize*0.5 +  0.96 * 0.5*gridSize/1.7320508);
                         }else if(gridType == 5.0){
-                            misteryAdjustment = vec2(gridSize * 1.02, 1.02 * 1.7320508 * gridSize);
+                            misteryAdjustment = vec2(gridSize * 1.02, gridSize*0.5 + 1.02 * 1.7320508 * gridSize);
                         }
                         
                         vec2 u = vec2(vWorldPositionFoW.x, vWorldPositionFoW.z) + gridOffset + misteryAdjustment;
@@ -900,27 +1069,27 @@ export const shaders = {
                         gl_FragColor.rgb = mix(gl_FragColor.rgb, gridColor , smoothstep(0.0, 0.0, eDist - 0.5 + 0.01) * gridAlpha);     
                     }
                 }
-                `
-            }
+                `,
+            },
         ],
     },
-    "textureScroll": {
+    textureScroll: {
         icon: `<i class="fas fa-angle-double-right"></i>`,
         uniforms: {
             speedX: {
                 type: "float",
-                default: 0.01
+                default: 0.01,
             },
             speedY: {
                 type: "float",
-                default: 0.01
+                default: 0.01,
             },
             direction: {
                 type: "float",
                 default: 0,
                 min: 0,
                 max: 360,
-            }
+            },
         },
         varying: {},
         vertexShader: [
@@ -932,17 +1101,23 @@ export const shaders = {
                 vUv.x += time * textureScroll_speedX * cos(textureScroll_direction);
                 vUv.y += time * textureScroll_speedY * sin(textureScroll_direction);
                 #endif
-                `
-            }
+                `,
+            },
         ],
-        fragmentShader: []
+        fragmentShader: [],
     },
-    "textureRotate": {
+    textureRotate: {
         icon: `<i class="fas fa-sync-alt"></i>`,
         uniforms: {
             speed: {
                 type: "float",
-                default: 0.1
+                default: 0.1,
+            },
+            offsetAngle: {
+                type: "float",
+                default: 0,
+                min: 0,
+                max: 360,
             },
             centerx: {
                 type: "float",
@@ -969,21 +1144,22 @@ export const shaders = {
                 float textureRotate_r = distance(vUv, textureRotate_center);
                 vec2 textureRotate_vUv = (vUv - textureRotate_center) / textureRotate_center_uv;
                 float textureRotate_angle = atan(textureRotate_vUv.y, textureRotate_vUv.x);
-                textureRotate_angle = textureRotate_angle + time * 0.1 * textureRotate_speed;
+                textureRotate_angle = textureRotate_angle + time * 0.1 * textureRotate_speed + textureRotate_offsetAngle;
                 vec2 textureRotate_newUv = vec2(cos(textureRotate_angle), sin(textureRotate_angle)) * textureRotate_r;
                 vUv = (textureRotate_newUv) + textureRotate_center;
                 #endif
-                `
-            }
+                `,
+            },
         ],
-        fragmentShader: []
+        fragmentShader: [],
     },
-    "fire": {
+    fire: {
         icon: `<i class="fas fa-fire"></i>`,
+        useNoise: true,
         uniforms: {
             speed: {
                 type: "float",
-                default: 0.1
+                default: 0.1,
             },
             intensity: {
                 type: "float",
@@ -993,28 +1169,29 @@ export const shaders = {
             },
             scale: {
                 type: "float",
-                default: 1
+                default: 1,
             },
             color: {
                 type: "vec3",
-                default: "#ff9500"
+                default: "#ff9500",
             },
             blendMode: {
                 type: "bool",
-                default: false
+                default: false,
             },
         },
         varying: {},
         vertexShader: [],
         fragmentShader: [
             {
-                mode: SHADERS_CONSTS.APPEND,
-                injectionPoint: "#include <dithering_fragment>",
+                mode: SHADERS_CONSTS.PREPEND,
+                injectionPoint: "#include <fog_fragment>",
                 shaderCode: `
                 vec2 noiseSampler = shader_vUv;
                 #ifdef USE_UV
                     noiseSampler = vec2(vUv);
                 #endif
+                noiseSampler /= 2.0;
                 vec3 c1 = fire_color*0.1;
                 vec3 c2 = fire_color*0.7;
                 vec3 c3 = fire_color*0.2;
@@ -1032,52 +1209,53 @@ export const shaders = {
                 }else{
                     gl_FragColor.rgb += (fire_finalColor.rgb * fire_intensity);
                 }
-                `
-            }
-
+                `,
+            },
         ],
-
     },
-    "ice": {
+    ice: {
         icon: `<i class="fas fa-icicles"></i>`,
+        useNoise: true,
         uniforms: {
             speed: {
                 type: "float",
-                default: 0.1
+                default: 0.1,
             },
             intensity: {
                 type: "float",
                 min: 0.01,
                 max: 2,
+                default: 1,
             },
             grain: {
                 type: "float",
-                default: 0.5
+                default: 0.5,
             },
             scale: {
                 type: "float",
-                default: 1
+                default: 1,
             },
             color: {
                 type: "vec3",
-                default: "#abe5e8"
+                default: "#abe5e8",
             },
             blendMode: {
                 type: "bool",
-                default: false
+                default: false,
             },
         },
         varying: {},
         vertexShader: [],
         fragmentShader: [
             {
-                mode: SHADERS_CONSTS.APPEND,
-                injectionPoint: "#include <dithering_fragment>",
+                mode: SHADERS_CONSTS.PREPEND,
+                injectionPoint: "#include <fog_fragment>",
                 shaderCode: `
                 vec2 noiseSampler = shader_vUv;
                 #ifdef USE_UV
                     noiseSampler = vec2(vUv);
                 #endif
+                noiseSampler /= 2.0;
                 vec3 c1 = ice_color*0.1;
                 vec3 c2 = ice_color*0.7;
                 vec3 c3 = ice_color*0.2;
@@ -1096,45 +1274,45 @@ export const shaders = {
                 }else{
                     gl_FragColor.rgb += (ice_finalColor.rgb * ice_intensity);
                     }
-                `
-            }
-
+                `,
+            },
         ],
-
     },
-    "lightning": {
+    lightning: {
         icon: `<i class="fas fa-bolt"></i>`,
+        useNoise: true,
         uniforms: {
             speed: {
                 type: "float",
-                default: 0.1
+                default: 0.1,
             },
             intensity: {
                 type: "float",
                 min: 0.01,
                 max: 2,
+                default: 0.5,
             },
             scale: {
                 type: "float",
-                default: 1
+                default: 1,
             },
             color: {
                 type: "vec3",
-                default: "#0037ff"
+                default: "#0037ff",
             },
             blendMode: {
                 type: "bool",
-                default: true
+                default: false,
             },
         },
         varying: {},
         vertexShader: [],
         fragmentShader: [
             {
-                mode: SHADERS_CONSTS.APPEND,
-                injectionPoint: "#include <dithering_fragment>",
+                mode: SHADERS_CONSTS.PREPEND,
+                injectionPoint: "#include <fog_fragment>",
                 shaderCode: `
-                vec3 noiseVec = shader_vPosition;          
+                vec3 noiseVec = vWorldPositionFoW;          
                 
                 vec3 lightning_final_color = vec3( 0.0 );
                 for( int i = 0; i < 5; ++i ) {
@@ -1147,16 +1325,17 @@ export const shaders = {
                 }else{
                     gl_FragColor.rgb += lightning_final_color * lightning_intensity;
                 }
-                `
-            }
+                `,
+            },
         ],
     },
-    "oil": {
+    oil: {
         icon: `<i class="fas fa-tint"></i>`,
+        useNoise: true,
         uniforms: {
             speed: {
                 type: "float",
-                default: 0.1
+                default: 0.02,
             },
             intensity: {
                 type: "float",
@@ -1166,25 +1345,25 @@ export const shaders = {
             },
             scale: {
                 type: "float",
-                default: 1
+                default: 5,
             },
             color: {
                 type: "vec3",
-                default: "#00ff00"
+                default: "#00ff00",
             },
             blendMode: {
                 type: "bool",
-                default: false
+                default: false,
             },
         },
         varying: {},
         vertexShader: [],
         fragmentShader: [
             {
-                mode: SHADERS_CONSTS.APPEND,
-                injectionPoint: "#include <dithering_fragment>",
+                mode: SHADERS_CONSTS.PREPEND,
+                injectionPoint: "#include <fog_fragment>",
                 shaderCode: `
-                vec3 noiseSampler = shader_vPosition;
+                vec3 noiseSampler = vWorldPositionFoW;
                 vec3 c1 = oil_color*0.1;
                 vec3 c2 = oil_color*0.7;
                 vec3 c3 = oil_color*0.2;
@@ -1202,18 +1381,17 @@ export const shaders = {
                 }else{
                     gl_FragColor.rgb += (oil_finalColor.rgb * oil_intensity);
                 }
-                `
-            }
-
+                `,
+            },
         ],
-
     },
-    "colorwarp": {
+    colorwarp: {
         icon: `<i class="fas fa-palette"></i>`,
+        useNoise: true,
         uniforms: {
             speed: {
                 type: "float",
-                default: 0.1
+                default: 0.1,
             },
             glow: {
                 type: "float",
@@ -1229,7 +1407,7 @@ export const shaders = {
             },
             flicker: {
                 type: "bool",
-                default: false
+                default: false,
             },
             animate_range: {
                 type: "float",
@@ -1242,8 +1420,8 @@ export const shaders = {
         vertexShader: [],
         fragmentShader: [
             {
-                mode: SHADERS_CONSTS.APPEND,
-                injectionPoint: "#include <dithering_fragment>",
+                mode: SHADERS_CONSTS.PREPEND,
+                injectionPoint: "#include <fog_fragment>",
                 shaderCode: `
                 float colorwarp_time_fac = 1.0;
                 float noise = colorwarp_flicker ? noise(vec2(time*0.05, time*0.05)) : 1.0;
@@ -1254,12 +1432,238 @@ export const shaders = {
                 if(colorwarp_hue_angle > 0.0){
                     gl_FragColor.rgb = hueShift(gl_FragColor.rgb, ((colorwarp_hue_angle * (1.0 - colorwarp_animate_range)) + (colorwarp_hue_angle * colorwarp_animate_range) * colorwarp_time_fac));
                 }
-                `
-            }
-
+                `,
+            },
         ],
     },
-    "triplanar": {
+    overlay: {
+        icon: '<i class="fas fa-images"></i>',
+        uniforms: {
+            textureDiffuse: {
+                type: "sampler2D",
+                default: null,
+            },
+            color: {
+                type: "vec3",
+                default: "#ffffff",
+            },
+            strength: {
+                type: "float",
+                default: 1,
+                max: 1,
+                min: 0,
+            },
+            coveragePercent: {
+                type: "float",
+                default: 1,
+                max: 1,
+                min: -1,
+                step: 0.01,
+            },
+            inclination: {
+                type: "float",
+                default: 0,
+                max: 1,
+                min: -1,
+                step: 0.01,
+            },
+            repeat: {
+                type: "float",
+                default: 1,
+            },
+            rotation_angle: {
+                type: "float",
+                default: 0,
+            },
+            offsetX: {
+                type: "float",
+                default: 0,
+            },
+            offsetY: {
+                type: "float",
+                default: 0,
+            },
+            black_alpha: {
+                type: "bool",
+                default: false,
+            },
+            add_blend: {
+                type: "bool",
+                default: false,
+            },
+            mult_blend: {
+                type: "bool",
+                default: false,
+            },
+        },
+        varying: {
+            height_percent: {
+                type: "float",
+            },
+        },
+        vertexShader: [
+            {
+                mode: SHADERS_CONSTS.APPEND,
+                injectionPoint: "#include <begin_vertex>",
+                shaderCode: `
+                float currentY = (modelMatrix * vec4( transformed, 1.0 )).y;
+                float currentYDelta = (currentY - yPos) / mDepth;
+                overlay_height_percent = clamp(currentYDelta, 0.0, 1.0);
+                `,
+            },
+        ],
+        fragmentShader: [
+            {
+                mode: SHADERS_CONSTS.APPEND,
+                injectionPoint: "#include <map_fragment>",
+                shaderCode: `
+                #ifdef USE_UV
+                float percent = overlay_height_percent;
+                float absCoverage = abs(overlay_coveragePercent);
+                float inversePercent = 1.0 - percent;
+                if(
+                    (overlay_coveragePercent > 0.0 && percent < (overlay_coveragePercent + 0.05)) ||
+                    (overlay_coveragePercent < 0.0 && inversePercent < (absCoverage + 0.05))
+                ){
+                float strength = overlay_strength;
+                if(overlay_coveragePercent > 0.0 && percent > (overlay_coveragePercent)){
+                    strength *= (1.0 - (percent - overlay_coveragePercent) * 20.0);
+                }
+                if(overlay_coveragePercent < 0.0 && inversePercent > (absCoverage)){
+                    strength *= (1.0 - (inversePercent - absCoverage) * 20.0);
+                }
+                float overlaySmoothing = 0.3;
+                if(overlay_inclination > 0.0){
+                    float o_normalY = max(0.0,shader_vNormal.y);
+                    if(o_normalY < overlay_inclination){
+                        if(o_normalY > (overlay_inclination - overlaySmoothing)){
+                            float diff = o_normalY - (overlay_inclination - overlaySmoothing);
+                            strength *= (diff / overlaySmoothing);
+                        }else{
+                            strength = 0.0;
+                        }
+                    }
+                }
+                if(overlay_inclination < 0.0){
+                    float o_normalY = max(0.0,shader_vNormal.y);
+                    float absInclination = 1.0 - abs(overlay_inclination);
+                    if(o_normalY > absInclination){
+                        if(o_normalY < (absInclination + overlaySmoothing)){
+                            float diff = (absInclination + overlaySmoothing) - o_normalY;
+                            strength *= (diff / overlaySmoothing);
+                        }else{
+                            strength = 0.0;
+                        }
+                    }
+                }
+                vec2 overlay_vUv = vec2(vUv.x, vUv.y) * (overlay_repeat);
+                overlay_vUv.x += overlay_offsetX;
+                overlay_vUv.y += overlay_offsetY;
+                vec2 rotation_center = vec2(0.5, 0.5);
+                overlay_vUv -= rotation_center;
+                overlay_vUv = mat2(cos(overlay_rotation_angle), -sin(overlay_rotation_angle), sin(overlay_rotation_angle), cos(overlay_rotation_angle)) * overlay_vUv;
+                overlay_vUv += rotation_center;
+
+                vec4 overlayTexture = sRGBToLinear(texture( overlay_textureDiffuse, overlay_vUv ));
+                if(overlay_black_alpha && overlayTexture.rgb == vec3(0.0)){}
+                else{
+                    float black_alpha = overlay_black_alpha ? (overlayTexture.r + overlayTexture.g + overlayTexture.b) / 3.0 : 1.0;
+                    if(black_alpha > 0.1) black_alpha *= 3.0;
+                    black_alpha = clamp(black_alpha, 0.0, 1.0);
+                    if(overlay_add_blend){
+                        overlayTexture.rgb *= overlay_color;
+                        texelColor += overlayTexture*strength*black_alpha;
+                    }else if(overlay_mult_blend){
+                        overlayTexture.rgb *= overlay_color;
+                        texelColor *= overlayTexture*strength*black_alpha;
+                    }else{
+                        overlayTexture.rgb *= overlay_color;
+                        texelColor = mix( texelColor, overlayTexture, strength*black_alpha*overlayTexture.a );
+                    }
+
+                }
+                diffuseColor = texelColor;
+                }
+                #endif
+                `,
+            },
+        ],
+    },
+    colorswap: {
+        icon: `<i class="fa-solid fa-fill-drip"></i>`,
+        uniforms: {
+            sourceColor1: {
+                type: "vec3",
+                default: "#ff0000",
+            },
+            targetColor1: {
+                type: "vec3",
+                default: "#0000ff",
+            },
+            threshold1: {
+                type: "float",
+                default: 0.4,
+                min: 0,
+                max: 1,
+            },
+            sourceColor2: {
+                type: "vec3",
+                default: "#ff0000",
+            },
+            targetColor2: {
+                type: "vec3",
+                default: "#0000ff",
+            },
+            threshold2: {
+                type: "float",
+                default: 0,
+                min: 0,
+                max: 1,
+            },
+            sourceColor3: {
+                type: "vec3",
+                default: "#ff0000",
+            },
+            targetColor3: {
+                type: "vec3",
+                default: "#0000ff",
+            },
+            threshold3: {
+                type: "float",
+                default: 0,
+                min: 0,
+                max: 1,
+            },
+        },
+        varying: {},
+        vertexShader: [],
+        fragmentShader: [
+            {
+                mode: SHADERS_CONSTS.APPEND,
+                injectionPoint: "#include <map_fragment>",
+                shaderCode: `
+                #ifdef USE_UV
+                if(colorswap_threshold1 > 0.0 && distance(texelColor.rgb, colorswap_sourceColor1.rgb) < colorswap_threshold1*1.732){
+                    float gray = 0.21 * texelColor.r + 0.71 * texelColor.g + 0.07 * texelColor.b;
+                    texelColor = vec4(gray * colorswap_targetColor1, texelColor.a);
+                    diffuseColor = texelColor;
+                }
+                else if(colorswap_threshold2 > 0.0 && distance(texelColor.rgb, colorswap_sourceColor2.rgb) < colorswap_threshold2*1.732){
+                    float gray = 0.21 * texelColor.r + 0.71 * texelColor.g + 0.07 * texelColor.b;
+                    texelColor = vec4(gray * colorswap_targetColor2, texelColor.a);
+                    diffuseColor = texelColor;
+                }
+                else if(colorswap_threshold3 > 0.0 && distance(texelColor.rgb, colorswap_sourceColor3.rgb) < colorswap_threshold3*1.732){
+                    float gray = 0.21 * texelColor.r + 0.71 * texelColor.g + 0.07 * texelColor.b;
+                    texelColor = vec4(gray * colorswap_targetColor3, texelColor.a);
+                    diffuseColor = texelColor;
+                }
+                #endif
+                `,
+            },
+        ],
+    },
+    triplanar: {
         icon: `<i class="fas fa-cube"></i>`,
         uniforms: {
             roughnessAdjust: {
@@ -1275,7 +1679,7 @@ export const shaders = {
             vUvTri: {
                 type: "vec3",
                 default: new THREE.Vector3(0, 0, 0),
-            }
+            },
         },
         vertexShader: [
             {
@@ -1285,7 +1689,7 @@ export const shaders = {
                 vec4 worldPosition2 = modelMatrix * vec4( position, 1.0 );
                 triplanar_wNormal = normalize( mat3( modelMatrix[0].xyz, modelMatrix[1].xyz, modelMatrix[2].xyz ) * normal );
                 triplanar_vUvTri = worldPosition2.xyz;
-                `
+                `,
             },
         ],
         fragmentShader: [
@@ -1308,7 +1712,7 @@ export const shaders = {
                     triUV.z = pos.xy;
                     return triUV;
                 }
-                `
+                `,
             },
             {
                 mode: SHADERS_CONSTS.APPEND,
@@ -1324,7 +1728,7 @@ export const shaders = {
                 vec4 texelColor3 = mapTexelToLinear( gammaCorrectedColor );
                 diffuseColor = texelColor3;
                 #endif
-                `
+                `,
             },
             {
                 mode: SHADERS_CONSTS.APPEND,
@@ -1341,7 +1745,7 @@ export const shaders = {
                     vec4 texelColorR = mapTexelToLinear( gammaCorrectedColorR );
                     roughnessFactor *= texelColorR.g * triplanar_roughnessAdjust;
                 #endif
-                `
+                `,
             },
             {
                 mode: SHADERS_CONSTS.REPLACE,
@@ -1390,107 +1794,312 @@ export const shaders = {
                 #elif defined( USE_BUMPMAP )
                     normal = perturbNormalArb( -vViewPosition, normal, dHdxy_fwd() );
                 #endif
-    `
-            }
-        ]
+    `,
+            },
+        ],
     },
-    "overlay": {
-        icon: '<i class="fas fa-images"></i>',
+    splatMap: {
+        icon: '<i class="fa-solid fa-splotch"></i>',
         uniforms: {
-            "textureDiffuse": {
+            textureSplatMap: {
                 type: "sampler2D",
-                default: null
+                default: null,
+                flipY: false,
             },
-            "color": {
+            repeatSplatMap: {
+                type: "float",
+                default: 1,
+            },
+            useAlpha: {
+                type: "bool",
+                default: false,
+            },
+            textureDiffuse0: {
+                type: "sampler2D",
+                default: null,
+            },
+            color0: {
                 type: "vec3",
-                default: "#ffffff"
+                default: "#ffffff",
             },
-            "strength": {
-                type: "float",
-                default: 1,
-                max: 1,
-                min: 0
-            },
-            "repeat": {
+            repeat0: {
                 type: "float",
                 default: 1,
             },
-            "black_alpha": {
-                type: "bool",
-                default: false,
+            textureDiffuse1: {
+                type: "sampler2D",
+                default: null,
             },
-            "add_blend": {
-                type: "bool",
-                default: false,
+            color1: {
+                type: "vec3",
+                default: "#ffffff",
             },
-            "mult_blend": {
-                type: "bool",
-                default: false,
-            }
+            repeat1: {
+                type: "float",
+                default: 1,
+            },
+            textureDiffuse2: {
+                type: "sampler2D",
+                default: null,
+            },
+            color2: {
+                type: "vec3",
+                default: "#ffffff",
+            },
+            repeat2: {
+                type: "float",
+                default: 1,
+            },
+            textureDiffuse3: {
+                type: "sampler2D",
+                default: null,
+            },
+            color3: {
+                type: "vec3",
+                default: "#ffffff",
+            },
+            repeat3: {
+                type: "float",
+                default: 1,
+            },
         },
-        varying: {},
-        vertexShader: [],
+        varying: {
+        },
+        vertexShader: [
+        ],
         fragmentShader: [
             {
                 mode: SHADERS_CONSTS.APPEND,
-                injectionPoint: "#include <dithering_fragment>",
+                injectionPoint: "#include <map_fragment>",
                 shaderCode: `
                 #ifdef USE_UV
-                vec2 overlay_vUv = vec2(vUv.x, vUv.y) * (overlay_repeat);
-                vec4 overlayTexture = texture( overlay_textureDiffuse, overlay_vUv );
-                if(overlay_black_alpha && overlayTexture.rgb == vec3(0.0)){}
-                else{
-                    float black_alpha = overlay_black_alpha ? (overlayTexture.r + overlayTexture.g + overlayTexture.b) / 3.0 : 1.0;
-                    if(black_alpha > 0.1) black_alpha *= 3.0;
-                    black_alpha = clamp(black_alpha, 0.0, 1.0);
-                    if(overlay_add_blend){
-                        overlayTexture.rgb *= overlay_color;
-                        gl_FragColor += overlayTexture*overlay_strength*black_alpha; //mix( gl_FragColor, overlayTexture, overlay_strength );
-                    }else if(overlay_mult_blend){
-                        overlayTexture.rgb *= overlay_color;
-                        gl_FragColor *= overlayTexture*overlay_strength*black_alpha;
-                    }else{
-                        overlayTexture.rgb *= overlay_color;
-                        gl_FragColor = mix( gl_FragColor, overlayTexture, overlay_strength*black_alpha*overlayTexture.a );
-                    }
-
+                vec4 splatMapTexture = sRGBToLinear(texture( splatMap_textureSplatMap, vUv * splatMap_repeatSplatMap ));
+                float splatR = splatMapTexture.r;
+                float splatG = splatMapTexture.g;
+                float splatB = splatMapTexture.b;
+                float splatA = splatMapTexture.a;
+                vec4 finalColor = diffuseColor;
+                if(splatR > 0.0){
+                    vec4 R_CHANNEL_TEX = sRGBToLinear(texture( splatMap_textureDiffuse0, vUv * splatMap_repeat0 ));
+                    R_CHANNEL_TEX.rgb *= splatMap_color0;
+                    finalColor = mix(finalColor, R_CHANNEL_TEX, splatR);
                 }
+                if(splatG > 0.0){
+                    vec4 G_CHANNEL_TEX = sRGBToLinear(texture( splatMap_textureDiffuse1, vUv * splatMap_repeat1 ));
+                    G_CHANNEL_TEX.rgb *= splatMap_color1;
+                    finalColor = mix(finalColor, G_CHANNEL_TEX, splatG);
+                }
+                if(splatB > 0.0){
+                    vec4 B_CHANNEL_TEX = sRGBToLinear(texture( splatMap_textureDiffuse2, vUv * splatMap_repeat2 ));
+                    B_CHANNEL_TEX.rgb *= splatMap_color2;
+                    finalColor = mix(finalColor, B_CHANNEL_TEX, splatB);
+                }
+                if(splatMap_useAlpha && splatA > 0.0){
+                    vec4 A_CHANNEL_TEX = sRGBToLinear(texture( splatMap_textureDiffuse3, vUv * splatMap_repeat3 ));
+                    A_CHANNEL_TEX.rgb *= splatMap_color3;
+                    finalColor = mix(finalColor, A_CHANNEL_TEX, splatA);
+                }
+                diffuseColor = finalColor;
                 #endif
-                `
-            }
-        ]
+                `,
+            },
+        ],
     },
-    "sound": {
-        icon: `<i class="fas fa-music"></i>`,
+    textureGradient: {
+        icon: '<i class="fa-solid fa-grate-droplet"></i>',
         uniforms: {
-            "intensity": {
+            texCount: {
+                type: "float",
+                default: 1,
+                min: 1,
+                max: 4,
+                step: 1,
+            },
+            smoothing: {
+                type: "float",
+                default: 0.1,
+                min: 0,
+                max: 0.25,
+            },
+            useNormals: {
+                type: "bool",
+                default: false,
+            },
+            tex0Begin: {
+                type: "float",
+                default: 0,
+                min: 0,
+                max: 1,
+            },
+            tex1Begin: {
+                type: "float",
+                default: 0.25,
+                min: 0,
+                max: 1,
+            },
+            tex2Begin: {
+                type: "float",
+                default: 0.5,
+                min: 0,
+                max: 1,
+            },
+            tex3Begin: {
+                type: "float",
+                default: 0.75,
+                min: 0,
+                max: 1,
+            },
+            textureDiffuse0: {
+                type: "sampler2D",
+                default: null,
+            },
+            color0: {
+                type: "vec3",
+                default: "#ffffff",
+            },
+            repeat0: {
                 type: "float",
                 default: 1,
             },
-            "glow": {
-                type: "bool",
-                default: false,
+            textureDiffuse1: {
+                type: "sampler2D",
+                default: null,
             },
-            "chroma": {
-                type: "bool",
-                default: false,
+            color1: {
+                type: "vec3",
+                default: "#ffffff",
             },
-            "croma_offset_angle": {
+            repeat1: {
                 type: "float",
-                default: 0,
-                min:0,
-                max:360,
+                default: 1,
             },
-            "flat_bottom": {
-                type: "bool",
-                default: true,
-            }
+            textureDiffuse2: {
+                type: "sampler2D",
+                default: null,
+            },
+            color2: {
+                type: "vec3",
+                default: "#ffffff",
+            },
+            repeat2: {
+                type: "float",
+                default: 1,
+            },
+            textureDiffuse3: {
+                type: "sampler2D",
+                default: null,
+            },
+            color3: {
+                type: "vec3",
+                default: "#ffffff",
+            },
+            repeat3: {
+                type: "float",
+                default: 1,
+            },
         },
         varying: {
-            "ground_blend_percent": {
+            height_percent: {
                 type: "float",
-                value: 0
-            }
+            },
+        },
+        vertexShader: [
+            {
+                mode: SHADERS_CONSTS.APPEND,
+                injectionPoint: "#include <begin_vertex>",
+                shaderCode: `
+                float currentY = (modelMatrix * vec4( transformed, 1.0 )).y;
+                float currentYDelta = (currentY - yPos) / mDepth;
+                textureGradient_height_percent = clamp(currentYDelta, 0.0, 1.0);
+                `,
+            },
+        ],
+        fragmentShader: [
+            {
+                mode: SHADERS_CONSTS.APPEND,
+                injectionPoint: "#include <map_fragment>",
+                shaderCode: `
+                #ifdef USE_UV
+                float percent = textureGradient_height_percent;
+                if(textureGradient_useNormals){
+                    percent = max(0.0,shader_vNormal.y);
+                }
+                float blend = textureGradient_smoothing;
+                vec4 finalColor = texelColor;
+                if(percent >= textureGradient_tex0Begin && percent <= (textureGradient_tex1Begin + blend) && textureGradient_texCount > 0.0){
+                    vec2 textureGradient_vUv = vec2(vUv.x, vUv.y) * (textureGradient_repeat0);
+                    vec4 textureGradientTexture = sRGBToLinear(texture( textureGradient_textureDiffuse0, textureGradient_vUv ));
+                    textureGradientTexture.rgb *= textureGradient_color0;
+                    finalColor = mix(finalColor, textureGradientTexture, textureGradientTexture.a);
+                }
+                if(percent >= (textureGradient_tex1Begin - blend) && textureGradient_texCount > 1.0){
+                    vec2 textureGradient_vUv = vec2(vUv.x, vUv.y) * (textureGradient_repeat1);
+                    vec4 textureGradientTexture = sRGBToLinear(texture( textureGradient_textureDiffuse1, textureGradient_vUv ));
+                    textureGradientTexture.rgb *= textureGradient_color1;
+                    float fac = 1.0;
+                    if(percent <= textureGradient_tex1Begin){
+                        fac = (percent - (textureGradient_tex1Begin - blend)) / (blend);
+                    }
+                    finalColor = mix(finalColor, textureGradientTexture, textureGradientTexture.a*fac);
+                }
+                if(percent >= (textureGradient_tex2Begin - blend) && textureGradient_texCount > 2.0){
+                    vec2 textureGradient_vUv = vec2(vUv.x, vUv.y) * (textureGradient_repeat2);
+                    vec4 textureGradientTexture = sRGBToLinear(texture( textureGradient_textureDiffuse2, textureGradient_vUv ));
+                    textureGradientTexture.rgb *= textureGradient_color2;
+                    float fac = 1.0;
+                    if(percent <= textureGradient_tex2Begin){
+                        fac = (percent - (textureGradient_tex2Begin - blend)) / (blend);
+                    }
+                    finalColor = mix(finalColor, textureGradientTexture, textureGradientTexture.a*fac);
+                }
+                if(percent >= (textureGradient_tex3Begin - blend) && textureGradient_texCount > 3.0){
+                    vec2 textureGradient_vUv = vec2(vUv.x, vUv.y) * (textureGradient_repeat3);
+                    vec4 textureGradientTexture = sRGBToLinear(texture( textureGradient_textureDiffuse3, textureGradient_vUv ));
+                    textureGradientTexture.rgb *= textureGradient_color3;
+                    float fac = 1.0;
+                    if(percent <= textureGradient_tex3Begin){
+                        fac = (percent - (textureGradient_tex3Begin - blend)) / (blend);
+                    }
+                    finalColor = mix(finalColor, textureGradientTexture, textureGradientTexture.a*fac);
+                }
+                texelColor = finalColor;
+                diffuseColor = texelColor;
+                #endif
+                `,
+            },
+        ],
+    },
+    sound: {
+        icon: `<i class="fas fa-music"></i>`,
+        uniforms: {
+            intensity: {
+                type: "float",
+                default: 1,
+            },
+            glow: {
+                type: "bool",
+                default: false,
+            },
+            chroma: {
+                type: "bool",
+                default: false,
+            },
+            croma_offset_angle: {
+                type: "float",
+                default: 0,
+                min: 0,
+                max: 360,
+            },
+            flat_bottom: {
+                type: "bool",
+                default: true,
+            },
+        },
+        varying: {
+            ground_blend_percent: {
+                type: "float",
+                value: 0,
+            },
         },
         vertexShader: [
             {
@@ -1503,13 +2112,13 @@ export const shaders = {
                     float delta_y = transformed.y - original_transformed.y;
                     transformed.y += abs(delta_y);
                 }
-                `
-            }
+                `,
+            },
         ],
         fragmentShader: [
             {
-                mode: SHADERS_CONSTS.APPEND,
-                injectionPoint: "#include <dithering_fragment>",
+                mode: SHADERS_CONSTS.PREPEND,
+                injectionPoint: "#include <fog_fragment>",
                 shaderCode: `
                 float sound_fac = ((sound.x + sound.y + sound.z - 3.0)/3.0);
                 if(sound_chroma){
@@ -1519,37 +2128,36 @@ export const shaders = {
                 if(sound_glow){
                     gl_FragColor.rgb *= (1.0 + sound_fac);
                 }
-                `
-            }
+                `,
+            },
         ],
     },
+};
 
-}
-
-function getSizesForShader(entity3D){
-    if(entity3D.isInstanced){
+function getSizesForShader(entity3D) {
+    if (entity3D.isInstanced) {
         return {
-            mDepth : entity3D.instancedBBSize.y,
-            mWidth : entity3D.instancedBBSize.x,
-            mHeight : entity3D.instancedBBSize.z,
-            yPos : entity3D.mesh.position.y - entity3D.instancedBBSize.y / 2,
-            textureRepeat : entity3D.textureRepeat ?? 1,
-        }
-    }else{
+            mDepth: entity3D.instancedBBSize.y,
+            mWidth: entity3D.instancedBBSize.x,
+            mHeight: entity3D.instancedBBSize.z,
+            yPos: entity3D.mesh.position.y - entity3D.instancedBBSize.y / 2,
+            textureRepeat: entity3D.textureRepeat ?? 1,
+        };
+    } else {
         const model = entity3D.mesh;
         return {
-            mDepth : entity3D.bb.depth,
-            mWidth : entity3D.bb.width,
-            mHeight : entity3D.bb.height,
-            yPos : (model.position.y - entity3D.bb.depth / 2),
-            textureRepeat : entity3D.textureRepeat ?? 1,
-        }
+            mDepth: entity3D.bb.depth,
+            mWidth: entity3D.bb.width,
+            mHeight: entity3D.bb.height,
+            yPos: model.position.y - entity3D.bb.depth / 2,
+            textureRepeat: entity3D.textureRepeat ?? 1,
+        };
     }
 }
 
 let yPosV3 = new THREE.Vector3();
 
-function getYpos(entity3D){
+function getYpos(entity3D) {
     return entity3D.mesh.getWorldPosition(yPosV3).y;
 }
 
@@ -1598,7 +2206,6 @@ void main() {
 }
 */
 
-
 /*
 #define FLAT_TOP_HEXAGON
 
@@ -1643,5 +2250,3 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
 
 }
 */
-
-

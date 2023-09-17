@@ -113,7 +113,12 @@ class TourEnhanced extends Tour{
         Object.values(ui.windows).find(w => w instanceof ToursManagement)?.maximize();
     }
 
-    async _renderStep(...args){
+    async next(fromFadeElement = false) { 
+        if (!fromFadeElement) $(this.fadeElement)?.click()
+        else await super.next();
+    }
+
+    async _renderStep(...args) {
         await super._renderStep(...args);
         this.overlayElement.style.zIndex = "calc(var(--z-index-tooltip) - 3)";
         $(this.fadeElement).on("click", async ()=>{
@@ -122,13 +127,13 @@ class TourEnhanced extends Tour{
             const timeout = 5000;
             let currentWait = 0;
             $(this.currentStep.selector)[0]?.click()
-            if(!nextStep) return this.next();
+            if(!nextStep) return this.next(true);
             await wait(100);
             while(!$(nextStep.selector + ":visible").length && currentWait < timeout) {
                 await wait(50);
                 currentWait += 50;
             }
-            this.next();
+            this.next(true);
          });
     }
 

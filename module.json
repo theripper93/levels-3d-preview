@@ -2,7 +2,7 @@
   "title": "3D Canvas",
   "id": "levels-3d-preview",
   "description": "Bring your games to the 3rd dimension!",
-  "version": "4.3.3",
+  "version": "5.3.9",
   "authors": [
     {
       "name": "theripper93",
@@ -20,43 +20,43 @@
       "lang": "ja",
       "name": "日本語",
       "path": "languages/ja.json"
+    },
+    {
+      "lang": "de",
+      "name": "Deutsch",
+      "path": "languages/de.json"
+    },
+    {
+      "lang": "fr",
+      "name": "Français",
+      "path": "languages/fr.json"
+    },
+    {
+      "lang": "es",
+      "name": "Español",
+      "path": "languages/es.json"
+    },
+    {
+      "lang": "pt-br",
+      "name": "Português (Brasil)",
+      "path": "languages/pt-br.json"
+    },
+    {
+      "lang": "it",
+      "name": "Italiano",
+      "path": "languages/it.json"
     }
   ],
   "esmodules": [
-    "scripts/main.js",
-    "scripts/clipNavigation.js",
-    "scripts/lib/OrbitControls.js",
-    "scripts/lib/GLTFLoader.js",
-    "scripts/lib/mersenneTwister.js",
-    "scripts/entities/token3d.js",
-    "scripts/entities/ruler3d.js",
-    "scripts/entities/light3d.js",
-    "scripts/entities/wall3d.js",
-    "scripts/entities/tile3d.js",
-    "scripts/entities/cursors.js",
-    "scripts/entities/rangeFinder.js",
-    "scripts/lib/fflate.module.js",
-    "scripts/lib/NURBSCurve.js",
-    "scripts/lib/FBXLoader.js",
-    "scripts/lib/NUBSUtils.js",
-    "scripts/config.js",
-    "scripts/helpers/globalIllumination.js",
-    "scripts/helpers/interactionManager.js",
-    "scripts/helpers/pixilayer.js",
-    "scripts/helpers/helpers.js",
-    "scripts/helpers/Fog.js",
-    "scripts/settingsConfig.js"
+    "scripts/main.js"
   ],
   "scripts": [
-    "scripts/wrappers.js",
-    "scripts/lib/injectConfig.js",
-    "scripts/minicanvas.js",
-    "scripts/lib/three-nebula.js"
   ],
   "styles": [
     "styles/module.css",
     "styles/loadingScreen.css",
-    "styles/mapgen.css"
+    "styles/mapgen.css",
+    "styles/sharing.css"
   ],
   "packs": [
     {
@@ -104,10 +104,22 @@
         "type": "module",
         "compatibility": {}
       }
+    ],
+    "recommends": [
+      {
+        "id": "canvas3dcompendium",
+        "type": "module",
+        "compatibility": {}
+      },
+      {
+        "id": "canvas3dtokencompendium",
+        "type": "module",
+        "compatibility": {}
+      }
     ]
   },
   "compatibility": {
-    "minimum": "10",
-    "verified": "10"
+    "minimum": "11",
+    "verified": "11"
   }
 }

@@ -61,6 +61,7 @@
 .levels-3d-preview-loading-screen .tutorial-container{
     display: flex;
     flex-direction: column;
+    position: relative;
 }
 
 .levels-3d-preview-loading-screen .controls-container{
@@ -131,3 +132,21 @@
     from {transform: translateX(-20%);}
     to {transform: translateX(20%);}
   }
+
+#close-loading-screen{
+    position: absolute;
+    right: 0;
+    background-color: var(--color-text-hyperlink);
+    aspect-ratio: 1;
+    height: 1rem;
+    display: flex;
+    border-radius: 50%;
+    text-align: center;
+    align-content: center;
+    align-items: center;
+    justify-content: center;
+        pointer-events: all;
+    cursor: pointer;
+    box-shadow: 0px 0px 5px 1px black;
+    border: 1px solid rgba(255, 255, 255, 0.327);
+}

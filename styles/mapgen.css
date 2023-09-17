@@ -124,3 +124,9 @@ flex-direction: column;
     border-top-left-radius: 0;
     z-index: 999999;
 }
+
+#mapgen .tmc-icon{
+    width: 1rem;
+    border: none;
+    transform: translateY(2px);
+}

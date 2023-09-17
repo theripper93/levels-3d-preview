@@ -1,19 +1,8 @@
 <div id="clip-navigation">
   <div id="clip-navigation-btns">
-    <i class="fas fa-video" id="clip-navigation-camera" data-tooltip="{{localize "levels3dpreview.clipNavigator.cameraToToken"}}"></i>
-    <i class="fas fa-street-view{{#if autoMode}} clip-navigation-enabled{{/if}}" id="clip-navigation-automode" data-tooltip="{{localize "levels3dpreview.clipNavigator.automode"}}"></i>
-    {{#if isGC}}
-      <i class="fas fa-lock" id="clip-navigation-lock" data-tooltip="{{localize "levels3dpreview.clipNavigator.lockon"}}"></i>
-    {{/if}}
-    {{#if isGM}}
-      {{#if isGC}}
-        <i class="fas fa-location-arrow" id="game-camera-toggle" data-tooltip="{{localize "levels3dpreview.clipNavigator.gamecamera"}}"></i>
-      {{/if}}
-      <i class="fas fa-random" id="clip-navigation-sync" data-tooltip="{{localize "levels3dpreview.clipNavigator.sync"}}"></i>
-      <i class="fas fa-low-vision" id="clip-navigation-wireframe" data-tooltip="{{localize "levels3dpreview.clipNavigator.wireframe"}}"></i>    
-    {{/if}}
-    <i class="fas fa-question" id="clip-navigation-controls" data-tooltip="{{localize "levels3dpreview.clipNavigator.controls"}}"></i>
-    <i class="fas fa-cog" id="clip-navigation-performance" data-tooltip="{{localize "levels3dpreview.clipNavigator.performance"}}"></i>
+    {{#each buttons}}
+      <i class="{{icon}} clip-navigation-btn" id="{{id}}" data-tooltip="{{localize name}}"></i>
+    {{/each}}
   </div>
   <div id="clip-navigation-range">
   {{#if showRange}}

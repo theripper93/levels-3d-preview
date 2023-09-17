@@ -1,5 +1,14 @@
 {
+    "i18n-ally.keystyle": "nested",
+    "i18n-ally.extract.autoDetect": true,
+    "i18n-ally.dirStructure": "auto",
     "i18n-ally.localesPaths": [
         "languages"
+    ],
+    "i18n-ally.enabledFrameworks": [
+        "i18next"
+    ],
+    "cSpell.words": [
+        "Cutscene"
     ]
 }
