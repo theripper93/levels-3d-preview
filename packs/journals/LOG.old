@@ -1,3 +1,5 @@
-2023/09/04-11:54:08.988 63ec Recovering log #861
-2023/09/04-11:54:08.992 63ec Delete type=0 #861
-2023/09/04-11:54:08.992 63ec Delete type=3 #860
+2023/10/08-18:12:39.728 d08 Log #865: 0 ops saved to Table #866 OK
+2023/10/08-18:12:39.730 d08 Archiving C:\Users\tspla\AppData\Local\FoundryVTT\Data\modules\levels-3d-preview\packs\journals/000865.log: OK
+2023/10/08-18:12:39.737 d08 Table #5: 3 entries OK
+2023/10/08-18:12:39.742 d08 Archiving C:\Users\tspla\AppData\Local\FoundryVTT\Data\modules\levels-3d-preview\packs\journals/MANIFEST-000864: OK
+2023/10/08-18:12:39.745 d08 **** Repaired leveldb C:\Users\tspla\AppData\Local\FoundryVTT\Data\modules\levels-3d-preview\packs\journals; recovered 1 files; 2002 bytes. Some data may have been lost. ****

@@ -17,6 +17,7 @@ export function registerWrappers() {
         libWrapper.register("levels-3d-preview", "Scenes.prototype.preload", preload3D, "OVERRIDE");
         libWrapper.register("levels-3d-preview", "SoundsLayer.prototype.refresh", refreshAudioListener, "MIXED");
         libWrapper.register("levels-3d-preview", "canvas.app.renderer.events.pointer.getLocalPosition", pointerPositionWrapper, "MIXED");
+        libWrapper.register("levels-3d-preview", "ControlsLayer.prototype.handlePing", HandlePing, "WRAPPER");
         //game.Levels3DPreview.raycastWorker = raycastWorker;
         Hooks.on("refreshToken", (token) => {
             Token3DSetPosition.bind(token)();
@@ -27,6 +28,25 @@ export function registerWrappers() {
         
         if (CONFIG.MeasuredTemplate.objectClass.prototype.drawPreview) libWrapper.register("levels-3d-preview", "CONFIG.MeasuredTemplate.objectClass.prototype.drawPreview", drawPreview, "MIXED");
     
+        async function HandlePing(wrapped, ...args) {
+            if (!game.Levels3DPreview?._active) return wrapped(...args);
+            const [user, position, options] = args;
+            if (!canvas.ready || (canvas.scene?.id !== options.scene) || !position) return wrapped(...args);
+            const token = canvas.tokens.placeables.find((t) => t.center.x == position.x && t.center.y == position.y);
+            if(!token) return wrapped(...args);
+            const color = user.color;
+            const size = Math.max(token.document.width, token.document.height);
+            const pos3d = game.Levels3DPreview.tokens[token.id].mesh.position.clone();
+            if (options.pull && game.user == user) {
+                if (game.Levels3DPreview.interactionManager.isCameraLocked) return;
+                const cameraPosition = game.Levels3DPreview.camera.position.clone();
+                const cameraLookat = pos3d.clone();
+                game.Levels3DPreview.helpers.focusCameraToPosition(cameraPosition, cameraLookat);
+            }
+            game.Levels3DPreview.helpers.dispatchPing({position: pos3d, color: color, size: size});
+            return wrapped(...args);
+        }
+
         function pointerPositionWrapper(wrapped, ...args) {
             if (game.Levels3DPreview?._active) return game.canvas3D.interactionManager.canvas2dMousePosition;
             return wrapped(...args);
