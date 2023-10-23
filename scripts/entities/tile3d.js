@@ -11,7 +11,7 @@ THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
 THREE.Mesh.prototype.raycast = acceleratedRaycast;
 
 export class Tile3D {
-    constructor(tile, parent, fromUpdate = false) {
+    constructor(tile, parent, fromUpdate = false, displacementCanvas = null) {
         this.tile = tile;
         this.placeable = tile;
         this.document = tile.document;
@@ -20,6 +20,7 @@ export class Tile3D {
         this.isOverhead = this.tile.document.overhead;
         this.isAnimated = false;
         this.draggable = true;
+        this.displacementCanvas = displacementCanvas;
         this.embeddedName = "Tile";
         this.bottom = tile.document.flags?.levels?.rangeBottom ?? canvas.primary.background.elevation;
         this.shaders = [];
@@ -313,6 +314,7 @@ export class Tile3D {
         this.invertDisplacementMap = this.tile.document.getFlag("levels-3d-preview", "invertDisplacementMap") ?? false;
         this.displacementIntensity = this.tile.document.getFlag("levels-3d-preview", "displacementIntensity") ?? 1;
         this.displacementMatrix = this.tile.document.getFlag("levels-3d-preview", "displacementMatrix") ?? "0,0,1,1";
+        if(this.displacementCanvas) this.displacementMatrix = "0,0,1,1";
         this.fillType = this.tile.document.getFlag("levels-3d-preview", "fillType") ?? "stretch";
         this.scale = this.tile.document.getFlag("levels-3d-preview", "tileScale") ?? 1;
         this.yScale = this.tile.document.getFlag("levels-3d-preview", "yScale") ?? 1;
@@ -589,8 +591,11 @@ export class Tile3D {
         const model = await this.getModel();
         const { textureOrMat, isPBR } = await this.getTextureOrMat();
         if (this.displacementMap) {
-            const tex = await this._parent.helpers.loadTexture(this.displacementMap);
-            this.displacementMap = this.getDisplacementData(tex.image);
+            if (this.displacementCanvas) this.displacementMap = this.getDisplacementData(this.displacementCanvas);
+            else {
+                const tex = await this._parent.helpers.loadTexture(this.displacementMap);
+                this.displacementMap = this.getDisplacementData(tex.image);
+            }
             this.applyDisplacement(model.scene);
         }
         const object = this.dynamesh === "decal" ? model.scene : game.Levels3DPreview.helpers.groundModel(model.scene, this.autoGround, this.autoCenter);
@@ -1646,6 +1651,7 @@ export class Tile3D {
     getDisplacementData(image) {
         if (!image) return false;
         if (game.Levels3DPreview._heightmapCache[image?.src]) return game.Levels3DPreview._heightmapCache[image.src];
+        if(image == this.displacementCanvas) return this.displacementCanvas.getContext("2d").getImageData(0, 0, this.displacementCanvas.width, this.displacementCanvas.height);
         var canvas = document.createElement("canvas");
         canvas.width = image.width;
         canvas.height = image.height;

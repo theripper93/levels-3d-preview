@@ -1,5 +1,7 @@
-2023/10/08-18:12:39.790 2034 Log #865: 0 ops saved to Table #866 OK
-2023/10/08-18:12:39.792 2034 Archiving C:\Users\tspla\AppData\Local\FoundryVTT\Data\modules\levels-3d-preview\packs\macros/000865.log: OK
-2023/10/08-18:12:39.804 2034 Table #5: 9 entries OK
-2023/10/08-18:12:39.807 2034 Archiving C:\Users\tspla\AppData\Local\FoundryVTT\Data\modules\levels-3d-preview\packs\macros/MANIFEST-000864: OK
-2023/10/08-18:12:39.810 2034 **** Repaired leveldb C:\Users\tspla\AppData\Local\FoundryVTT\Data\modules\levels-3d-preview\packs\macros; recovered 1 files; 3506 bytes. Some data may have been lost. ****
+2023/10/17-07:26:59.751 de0 Recovering log #881
+2023/10/17-07:26:59.751 de0 Delete type=0 #881
+2023/10/17-07:26:59.751 de0 Delete type=3 #880
+2023/10/17-07:27:43.504 5674 Level-0 table #885: started
+2023/10/17-07:27:43.505 5674 Level-0 table #885: 0 bytes OK
+2023/10/17-07:27:43.507 5674 Delete type=0 #883
+2023/10/17-07:27:43.508 5674 Manual compaction at level-0 from '!macros!DfdMdWjCoFCoGCFx' @ 72057594037927935 : 1 .. '!macros!reNcJJjUam4mfomu' @ 0 : 0; will stop at (end)

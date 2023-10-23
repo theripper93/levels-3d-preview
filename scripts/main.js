@@ -96,6 +96,9 @@ Hooks.once("ready", () => {
         Object.defineProperty(game, "canvas3D", {
             get: () => game.Levels3DPreview,
         });
+        Object.defineProperty(window, "canvas3D", {
+            get: () => game.Levels3DPreview,
+        })
     } catch (e) {
         ui.notifications.error(game.i18n.localize("levels3dpreview.errors.initfailed"));
         console.error(game.i18n.localize("levels3dpreview.errors.initfailed"), e);
