@@ -127,7 +127,7 @@ export class GlobalIllumination {
 
     static setHooks() {
         Hooks.on("updateScene", (scene, updates) => {
-            if (!game.user.isGM) return;
+            //if (!game.user.isGM) return;
             if (updates.flags && updates.flags["levels-3d-preview"] && game.Levels3DPreview._active) {
                 game.Levels3DPreview.lights.globalIllumination.setTarget();
             }
