@@ -19,10 +19,6 @@ export function registerWrappers() {
         libWrapper.register("levels-3d-preview", "canvas.app.renderer.events.pointer.getLocalPosition", pointerPositionWrapper, "MIXED");
         libWrapper.register("levels-3d-preview", "ControlsLayer.prototype.handlePing", HandlePing, "WRAPPER");
         //game.Levels3DPreview.raycastWorker = raycastWorker;
-        Hooks.on("refreshToken", (token) => {
-            Token3DSetPosition.bind(token)();
-            reDraw.bind(token)();
-        });
         
         if (game[game.system.id]?.canvas?.AbilityTemplate?.prototype?.drawPreview) libWrapper.register("levels-3d-preview", `game.${game.system.id}.canvas.AbilityTemplate.prototype.drawPreview`, drawPreview, "MIXED");
         
@@ -423,19 +419,6 @@ export function registerWrappers() {
             const nX = Math.round(Math.sin(fAngle));
             const nY = Math.round(-Math.cos(fAngle));
             return { x: nX, y: nY };
-        }
-    
-        function Token3DSetPosition() {
-            if (game.Levels3DPreview?._active) {
-                const token3D = game.Levels3DPreview.tokens[this.id];
-                if (token3D) {
-                    token3D.setPositionFrom2D();
-                }
-                if (token3D && token3D.fallbackAnimation) {
-                    token3D.isAnimating = false;
-                    token3D.setPosition();
-                }
-            }
         }
     
         function cycleTokens(wrapped, ...args) {

@@ -36,7 +36,7 @@ export class WorkerHandler {
                 if(this._waitingForInit) this._visionReady = true;
                 this.refresh();
             }
-            if (e.data.type == "rulerPoints") {
+            if (e.data.type == "rulerPoints" && game.Levels3DPreview.ruler.useRaycastRuler) {
                 game.Levels3DPreview.ruler._points = e.data.points.length > 2 ? e.data.points.map((p) => new THREE.Vector3(p.x, p.y, p.z)) : 0;
             }
             if (e.data.type == "error") {

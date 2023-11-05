@@ -244,7 +244,7 @@ export class Ruler3D {
         const useRaycastPoints = this.useRaycastRuler && this._points?.length && isToken && !this._object?.userData?.entity3D?.wasFreeMode;
         if (isToken) {
             if (hasChanged) this._object.userData.entity3D.drawHeightIndicatorDebounced();
-            this._parent.workers.updateRulerPoints([this._origin, targetPos]);
+            if (this.useRaycastRuler) this._parent.workers.updateRulerPoints([this._origin, targetPos]);
             //this.dragRing.scale.x = isToken.document.width;
             //this.dragRing.scale.z = isToken.document.height;
         }
@@ -394,6 +394,8 @@ export class Ruler3D {
         // Iterate over each measured segment
         let priorDest = undefined;
         for (const segment of this.segments) {
+            const isLast = segment === this.segments[this.segments.length - 1];
+            token3D.rulerOffset = isLast ? 0 : RULER_TOKEN_OFFSET;
             const dest = Ruler3D.pos3DToCanvas(segment.target);
             dest.x -= token.w / 2 + offset.x;
             dest.y -= token.h / 2 + offset.y;
