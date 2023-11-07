@@ -640,7 +640,7 @@ export class Token3D {
 
         const rotations = {
             x: 0,
-            y: -token.mesh.rotation,
+            y: -token.mesh?.rotation ?? -Math.toRadians(token.document?.rotation ?? 0),
             z: 0,
         };
         mesh.rotation.set(rotations.x, rotations.y, rotations.z);
