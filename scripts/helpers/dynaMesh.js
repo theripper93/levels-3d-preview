@@ -11,9 +11,11 @@ THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
 THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
 THREE.Mesh.prototype.raycast = acceleratedRaycast;
 
-let font = null;
+const defaultFont = "modules/levels-3d-preview/assets/helvetiker.json";
+
+const fonts = {};
 export class DynaMesh {
-    constructor(type, { width = 1, height = 1, depth = 1, resolution = 1, text = "", decalData = {}, image = null }) {
+    constructor(type, { width = 1, height = 1, depth = 1, resolution = 1, text = "", decalData = {}, image = null, font = "modules/levels-3d-preview/assets/helvetiker.json" }) {
         this.type = type;
         this.width = width;
         this.height = height;
@@ -22,6 +24,7 @@ export class DynaMesh {
         this.text = text;
         this.decalData = decalData;
         this.image = image;
+        this.font = font || defaultFont;
     }
 
     async create() {
@@ -40,7 +43,13 @@ export class DynaMesh {
             console.error(`DynaMesh: ${this.type} is not a valid type`);
             this.type = "box";
         }
-        return this[`_construct${this.type}`]();
+        try {
+            return this[`_construct${this.type}`]();
+        } catch {
+            console.error(`DynaMesh: Failed to construct ${this.type} geometry. Using box instead.`);
+            this.type = "box";
+            return this[`_construct${this.type}`]();
+        }
     }
 
     _constructbillboard() {
@@ -99,7 +108,7 @@ export class DynaMesh {
     }
 
     async _constructtext() {
-        if (!font) font = await loadTextFont();
+        const font = fonts[this.font] || (fonts[this.font] = await loadTextFont(this.font));
         const geometry = new THREE.TextGeometry(this.text, {
             font: font,
             size: (this.width + this.depth) / 2,
@@ -529,10 +538,15 @@ export class DynaMesh {
     }
 }
 
-async function loadTextFont() {
-    const loader = new THREE.FontLoader();
-    font = await loader.loadAsync("modules/levels-3d-preview/assets/helvetiker.json");
-    return font;
+async function loadTextFont(fontPath) {
+    try {        
+        const loader = new THREE.FontLoader();
+        const font = await loader.loadAsync(fontPath || defaultFont);
+        return font;
+    } catch (error) {
+        ui.notifications.error(`ERROR: Could not load font ${fontPath}. Using default font instead.`);
+        return await loadTextFont(defaultFont);
+    }
 }
 
 

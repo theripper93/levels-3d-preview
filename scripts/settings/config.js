@@ -857,6 +857,11 @@ export function registerConfigs() {
                 max: 10,
                 step: 0.1,
             },
+            font: {
+                type: "filepicker.any",
+                fpTypes: [".json"],
+                label: game.i18n.localize("levels3dpreview.flags.font.label"),
+            },
             imageTexture: {
                 type: "filepicker",
                 label: game.i18n.localize("levels3dpreview.flags.imageTexture.label"),
@@ -1291,7 +1296,7 @@ export function registerConfigs() {
             firstOption.innerText = game.i18n.localize("levels3dpreview.flags.fillType.options.merged");
         }
 
-        const advancedSettings = ["onAnimation", "transmission", "ior", "doorAnimateAngle", "doorStyle", "castShadow", "displacementIntensity", "displacementMatrix", "dynaMeshResolution", "roughness", "metalness", "transparency", "sightMeshComplexity", "invertDisplacementMap", "sides", "flipY", "shading", "displacementMap", "autoCenter", "enableAnim", "animSpeed", "animIndex", "paused", "tiltX", "tiltZ", "randomSeed", "autoGround", "depth"];
+        const advancedSettings = ["font", "onAnimation", "transmission", "ior", "doorAnimateAngle", "doorStyle", "castShadow", "displacementIntensity", "displacementMatrix", "dynaMeshResolution", "roughness", "metalness", "transparency", "sightMeshComplexity", "invertDisplacementMap", "sides", "flipY", "shading", "displacementMap", "autoCenter", "enableAnim", "animSpeed", "animIndex", "paused", "tiltX", "tiltZ", "randomSeed", "autoGround", "depth"];
 
         injectAdvancedToggle(app, html, advancedSettings, injected);
 

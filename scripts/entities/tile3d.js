@@ -291,6 +291,7 @@ export class Tile3D {
         this.shaders = this.tile.document.getFlag("levels-3d-preview", "shaders") ?? {};
         this.dynaMesh = this.tile.document.getFlag("levels-3d-preview", "dynaMesh") ?? "default";
         if (this.dynaMesh === "decal") this.isGravity = true;
+        this.font = this.tile.document.getFlag("levels-3d-preview", "font") ?? "";
         this.dynaMeshResolution = this.tile.document.getFlag("levels-3d-preview", "dynaMeshResolution") ?? 1;
         this.sightMeshComplexity = this.tile.document.getFlag("levels-3d-preview", "sightMeshComplexity") ?? 1;
         this.roughness = this.tile.document.getFlag("levels-3d-preview", "roughness") ?? -0.01;
@@ -1158,7 +1159,7 @@ export class Tile3D {
                     decalData = { mesh: mesh, position: intersect.point, rotation: dummy.rotation };
                 }
             }
-            const dynamesh = new DynaMesh(this.dynaMesh, { image: this.imageTexture, text: this.gtflPath, width: this.width, height: this.height, depth: this.depth, resolution: this.dynaMeshResolution, decalData });
+            const dynamesh = new DynaMesh(this.dynaMesh, { font: this.font, image: this.imageTexture, text: this.gtflPath, width: this.width, height: this.height, depth: this.depth, resolution: this.dynaMeshResolution, decalData });
             if(this.dynaMesh =="paper") this.pathTraced = true;
             const mesh = await dynamesh.create();
             return {

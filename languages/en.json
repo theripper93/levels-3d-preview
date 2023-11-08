@@ -419,6 +419,9 @@
                 "button": "Capture Camera View",
                 "buttondel": "Clear Stored Camera View"
             },
+            "font": {
+                "label": "Font"
+            },
             "wallFloorAlpha": {
                 "label": "Wall/Floor Alpha"
             },
