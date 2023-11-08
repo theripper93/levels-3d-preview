@@ -121,12 +121,18 @@ export function registerWrappers() {
             });
             game.Levels3DPreview.helpers.ruler3d.centerElement(bouncingText, token3D.head);
             bouncingText.addClass("scrolling-text");
-            bouncingText.css({
-                transform: `translateY(${textData?.direction == 1 ? "+" : "-"}${textData.distance ?? 100}%)`,
-            });
+            if (textData?.direction <= CONST.TEXT_ANCHOR_POINTS.TOP) {                
+                bouncingText.css({
+                    transform: `translateY(${textData?.direction == CONST.TEXT_ANCHOR_POINTS.BOTTOM ? "+" : "-"}${textData.distance ?? 100}%)`,
+                });
+            } else {
+                bouncingText.css({
+                    transform: `translateX(${textData?.direction == CONST.TEXT_ANCHOR_POINTS.RIGHT ? "+" : "-"}${textData.distance ?? 100}%)`,
+                });
+            }
             setTimeout(() => {
                 bouncingText.remove();
-            }, 2500);
+            }, textData.duration ?? 2000);
         }
     
         function computePolygonDispatch(wrapped, ...args) { 

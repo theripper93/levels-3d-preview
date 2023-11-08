@@ -1494,7 +1494,7 @@ export class Token3D {
             const token3d = game.Levels3DPreview.tokens[token.id]
             if (renderFlags.refreshNameplate) token3d.drawName()
             if (renderFlags.refreshBars) token3d.drawBars()
-            if (renderFlags.refreshEffects) token3d.drawEffects()
+            if (renderFlags.redrawEffects || renderFlags.refreshEffects) token3d.drawEffects()
             token3d.setPosition();
         })
 
