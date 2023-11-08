@@ -111,28 +111,64 @@ export function registerWrappers() {
             const tokenId = canvas.tokens.placeables.find((t) => t.center.x == args[0].x && t.center.y == args[0].y)?.id;
             const token3D = game.Levels3DPreview.tokens[tokenId];
             if (!token3D) return null;
-            const bouncingText = $(`<div id="levels3d-ruler-text" data-tokenid="${tokenId}">${args[1]}</div>`);
-            $("body").append(bouncingText);
+            const divContainer = document.createElement("div");
+            divContainer.innerHTML = `<div id="levels3d-ruler-text" data-tokenid="${tokenId}">${args[1]}</div>`;
+            const bouncingText = divContainer.firstElementChild;
+            document.body.appendChild(bouncingText);
             const textData = args[2];
+            const duration = Math.max(600, textData.duration ?? 2000);
             const color = textData?.fill ? PIXI.utils.hex2string(textData.fill) : "white";
-            bouncingText.css({
-                color: color,
-                "font-size": textData.fontSize + "px",
-            });
+            bouncingText.style.color = color;
+            bouncingText.style.fontSize = textData.fontSize + "px";
+            
             game.Levels3DPreview.helpers.ruler3d.centerElement(bouncingText, token3D.head);
-            bouncingText.addClass("scrolling-text");
-            if (textData?.direction <= CONST.TEXT_ANCHOR_POINTS.TOP) {                
-                bouncingText.css({
-                    transform: `translateY(${textData?.direction == CONST.TEXT_ANCHOR_POINTS.BOTTOM ? "+" : "-"}${textData.distance ?? 100}%)`,
-                });
+            bouncingText.classList.add("scrolling-text");
+            bouncingText.style.transition = `opacity 0.4s ease-in-out ${duration / 1000}s, transform ${duration / 1000}s ease-out`
+
+            let translationTransform = "";
+            if (textData?.direction <= CONST.TEXT_ANCHOR_POINTS.TOP) {
+                translationTransform = `translateY(${textData?.direction == CONST.TEXT_ANCHOR_POINTS.BOTTOM ? "+" : "-"}${textData.distance ?? 100}%)`
             } else {
-                bouncingText.css({
-                    transform: `translateX(${textData?.direction == CONST.TEXT_ANCHOR_POINTS.RIGHT ? "+" : "-"}${textData.distance ?? 100}%)`,
-                });
+                translationTransform = `translateX(${textData?.direction == CONST.TEXT_ANCHOR_POINTS.RIGHT ? "+" : "-"}${textData.distance ?? 100}%)`
             }
-            setTimeout(() => {
-                bouncingText.remove();
-            }, textData.duration ?? 2000);
+
+            //scale in
+            bouncingText.animate(
+                [
+                    { transform: "scale(0)" },
+                    { transform: "scale(1)" },
+                ],
+                {
+                    duration: 200,
+                    easing: "ease-out",
+                    fill: "forwards",
+                }
+            ).onfinish = () => {
+                bouncingText.animate(
+                    [
+                        {transform: "translate(0, 0)"},
+                        {transform: translationTransform},
+                    ],
+                    {
+                        duration: duration - 600,
+                        easing: "ease-in-out",
+                        fill: "forwards",
+                    }
+                ).onfinish = () => {
+                    bouncingText.animate(
+                        [
+                            { opacity: 1 },
+                            { opacity: 0 },
+                        ],
+                        {
+                            duration: 400,
+                            easing: "ease-in-out",
+                            fill: "forwards",
+                        }
+                    ).onfinish = () => bouncingText.remove();
+                }
+            }
+
         }
     
         function computePolygonDispatch(wrapped, ...args) { 
