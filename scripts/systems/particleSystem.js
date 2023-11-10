@@ -586,6 +586,19 @@ class BaseParticleEffect {
         this._target.x += (Math.random() - 0.5) * this._missScale;
         this._target.y += (Math.random() - 0.5) * this._missScale;
         this._target.z += (Math.random() - 0.5) * this._missScale;
+        //Calculate new target
+        this.params.tokenAnimation.to = null;
+        const origin = this._origin.clone();
+        const target = this._target.clone();
+        const collision = game.Levels3DPreview.interactionManager.computeSightCollisionFrom3DPositions(origin, target, "collision", false, false, false, false);
+        if (collision) {
+            this._target = collision;
+        } else {
+            //If no collision, find a point twice the distance from the origin
+            const dir = target.clone().sub(origin).normalize();
+            this._target = origin.clone().add(dir.multiplyScalar(this._origin.distanceTo(this._target) * 2));
+            this._missNoCollision = true;
+        }
     }
 
     createAnimationPath() {
@@ -748,7 +761,7 @@ class BaseParticleEffect {
             } else {
                 this._originBottom = game.Levels3DPreview.tokens[object.id].mesh.position.clone();
             }
-            this._missScale = Math.max(object.document.width, object.document.height) * object.document.scale;
+            this._missScale = Math.max(object.document.width, object.document.height) * (object.document?.flags?.["levels-3d-preview"]?.scale ?? 1);
             const tokenPos = game.Levels3DPreview.tokens[object.id].mesh.position.clone();
             if (isTarget) {
                 tokenPos.y += game.Levels3DPreview.tokens[object.id].d * (Math.random() * 0.5 + 0.25);
@@ -762,7 +775,7 @@ class BaseParticleEffect {
             }
             let closest = null;
             const token3D = game.Levels3DPreview.tokens[object.id].model;
-            if (token3D && isTarget) {
+            if (token3D && isTarget && !this.params.impactPoint) {
                 try {
                     token3D.traverse((child) => {
                         if (child.isMesh) {
@@ -810,6 +823,7 @@ class BaseParticleEffect {
             const p3d = new Particle3D().fromObject(e);
             if (!p3d._to) p3d.to(this.to);
             if(this.constructor instanceof ProjectileParticle) p3d.params.impactPoint = {x: this.emitter.position.x, y: this.emitter.position.y, z: this.emitter.position.z}
+            if(this.params.miss) p3d.params.impactPoint = {x: this.emitter.position.x, y: this.emitter.position.y, z: this.emitter.position.z}
             const isTargetOnly = Object.keys(PARTICLE_SYSTEMS.TARGET_ONLY_PARTICLE_SYSTEMS).includes(p3d.params.type);
             if (!p3d._from && !isTargetOnly) p3d.from(this.from);
             p3d.start(false);
@@ -820,10 +834,14 @@ class BaseParticleEffect {
         });
         this._persistObjects.forEach((o) => {
             if (this.to instanceof Token) {
-                const token3D = game.Levels3DPreview.tokens[this.to.id];
-                o.applyMatrix4(this.emitter.matrixWorld);
-                o.removeFromParent();
-                token3D.model.attach(o);
+                if (this.params.miss) {                    
+                    if(!this._missNoCollision) game.Levels3DPreview.scene.attach(o);
+                } else {
+                    const token3D = game.Levels3DPreview.tokens[this.to.id];
+                    o.applyMatrix4(this.emitter.matrixWorld);
+                    o.removeFromParent();
+                    token3D.model.attach(o);
+                }
             }
         });
     }
@@ -1220,7 +1238,6 @@ class Arrow extends ProjectileParticle{
     animateLight() { }
 
     async createEmitter() {
-
         const arrowModel = await this.getMesh("modules/levels-3d-preview/assets/particles/models/arrow_particle_color.glb", false);
 
         arrowModel.scale.setScalar(this.params.scale.start);
