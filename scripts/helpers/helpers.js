@@ -205,12 +205,13 @@ export class Helpers {
 
             }
         });
+        if(extension.startsWith("[heroforge]") || modelPath.includes("heroforge")) this.convertMaterials(output.model);
         this.simplifyGeometry(output.model);
         if (isSkinned) {
             delete this._loading[filePath];
             return output;
         }
-        if(!output?.object?.animations?.length)this.applyTransforms(output.model);
+        if(!output?.object?.animations?.length) this.applyTransforms(output.model);
         this.modelCache[modelPath] = output;
         THREE.Cache.remove(filePath);
         delete this._loading[filePath];
@@ -319,6 +320,23 @@ export class Helpers {
         } else {
             const materialClone = material.clone();
             return materialClone;
+        }
+    }
+
+    convertMaterials(object3d) {
+        object3d.traverse((child) => {
+            if (child.isMesh) {
+                child.material = this.convertPhysicalToStandard(child.material);
+            }
+        });
+    }
+
+    convertPhysicalToStandard(material) {
+        if (material instanceof THREE.MeshPhysicalMaterial) {
+            const standard = new THREE.MeshStandardMaterial(material);
+            return standard;
+        } else {
+            return material;
         }
     }
 
