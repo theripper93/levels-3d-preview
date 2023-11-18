@@ -46,6 +46,7 @@ export class Fog {
         const fowQuality = game.settings.get("levels-3d-preview", "fowQuality");
         const fogTexResolution = canvas.effects.visibility.textureConfiguration.resolution * fowQuality;
         this.pixiRenderTexture = PIXI.RenderTexture.create({ width: canvas.dimensions.width, height: canvas.dimensions.height, resolution: this._sharedContext ? fogTexResolution : 0.1 });
+        this.pixiRenderTexture.baseTexture.alphaMode = PIXI.ALPHA_MODES.NO_PREMULTIPLIED_ALPHA;
     }
 
     async initOverlay() {
