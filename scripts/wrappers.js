@@ -126,6 +126,7 @@ export function registerWrappers() {
             bouncingText.style.transition = `opacity 0.4s ease-in-out ${duration / 1000}s, transform ${duration / 1000}s ease-out`
 
             let translationTransform = "";
+            if (textData) textData.direction ??= CONST.TEXT_ANCHOR_POINTS.TOP;
             if (textData?.direction <= CONST.TEXT_ANCHOR_POINTS.TOP) {
                 translationTransform = `translateY(${textData?.direction == CONST.TEXT_ANCHOR_POINTS.BOTTOM ? "+" : "-"}${textData.distance ?? 100}%)`
             } else {

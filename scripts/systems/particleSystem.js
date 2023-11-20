@@ -512,6 +512,7 @@ class BaseParticleEffect {
         this._rotation = new THREE.Euler(this.params.rotation[0], this.params.rotation[1], this.params.rotation[2]);
         this._up = new THREE.Vector3(this.params.up[0], this.params.up[1], this.params.up[2]);
         this.miss();
+        this.setTargetData(to);
         this._time = 0;
         this._currentSpeed = 0;
         this.particleSystems = [];
@@ -813,6 +814,14 @@ class BaseParticleEffect {
             y: object.center.y,
             z: z,
         });
+    }
+
+    setTargetData(object) {
+        if(!this._origin || !object) return;
+        if (object instanceof Token) {
+            const token3d = game.Levels3DPreview.tokens[object.id];
+            token3d.lastParticleOrigin = this._origin.clone();
+        }
     }
 
     onEnd() {

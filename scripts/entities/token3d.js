@@ -8,6 +8,7 @@ import { heightHighlightShaderMaterial, radialGradientShaderMaterial } from "../
 import { ActiveEffectEffect } from "./effects/activeEffect.js";
 import {RangeRingEffect} from "./effects/rangeRing.js";
 import { imageTo3d } from "../helpers/imageTo3D.js";
+import {Ruler3D} from "../systems/ruler3d.js";
 THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
 THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
 THREE.Mesh.prototype.raycast = acceleratedRaycast;
