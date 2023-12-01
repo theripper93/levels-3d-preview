@@ -50,8 +50,7 @@
   "esmodules": [
     "scripts/main.js"
   ],
-  "scripts": [
-  ],
+  "scripts": [],
   "styles": [
     "styles/module.css",
     "styles/loadingScreen.css",
@@ -121,5 +120,7 @@
   "compatibility": {
     "minimum": "11",
     "verified": "11"
-  }
+  },
+  "manifest": "https://foundryvtt.s3.us-west-2.amazonaws.com/modules/levels-3d-preview/module.json",
+  "protected": true
 }

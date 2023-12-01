@@ -961,16 +961,17 @@ export class Token3D {
         });
         //this.effectsContainer.remove(...toRemove)
         let effectsize = this.h / 5;
-        effectsize = Math.min(Math.max(effectsize, 0.02), 0.05) * (canvas.grid.size / 100);
+        effectsize = Math.min(Math.max(effectsize, 0.02), 0.05);// * (canvas.grid.size / 100);
 
         const radiusSubdivision = (Math.PI * 2) / effects.length;
         let currentRadius = 0;
         const currentEffects = this.effectsContainer.children.map((child) => child.userData.effect);
+        const tokenRadius = Math.max(this.h, this.w);
         for (let effect of effects) {
             const position = {
-                x: Math.sin(currentRadius) * (this.h / 2),
+                x: Math.sin(currentRadius) * (tokenRadius / 2),
                 y: this.d + effectsize * 0.5,
-                z: Math.cos(currentRadius) * (this.h / 2),
+                z: Math.cos(currentRadius) * (tokenRadius / 2),
             };
             const mesh = this._getEffectMesh(effect, effectsize);
             mesh.userData.delta = 0;
