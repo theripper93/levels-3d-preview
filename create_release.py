@@ -6,7 +6,7 @@ import zipfile
 selected_folders = ['scripts', 'styles', 'assets', 'templates', 'languages', 'packs', 'storage']
 
 def read_module_json():
-    with open('module.json', 'r') as file:
+    with open(file, 'r', encoding='utf-8') as file:
         data = json.load(file)
         module_id = data['id']
         module_version = data['version']
