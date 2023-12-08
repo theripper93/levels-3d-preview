@@ -91,6 +91,17 @@ export function registerConfigs() {
                 //notes: game.i18n.localize("levels3dpreview.flags.enableFogOfWar.notes"),
                 default: true,
             },
+            grounding: {
+                type: "select",
+                label: game.i18n.localize("levels3dpreview.flags.grounding.label"),
+                notes: game.i18n.localize("levels3dpreview.flags.grounding.notes"),
+                default: "",
+                options: {
+                    "": game.i18n.localize("levels3dpreview.flags.grounding.options.none"),
+                    "notFlying": game.i18n.localize("levels3dpreview.flags.grounding.options.notFlying"),
+                    "always": game.i18n.localize("levels3dpreview.flags.grounding.options.always"),
+                },
+            },
             maxElevation: {
                 type: "number",
                 label: game.i18n.localize("levels3dpreview.flags.maxElevation.label"),

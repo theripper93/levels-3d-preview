@@ -46,7 +46,8 @@ export class Tile3D {
     }
 
     async load() {
-        await this.preloadShaderTextures();
+        try {
+            await this.preloadShaderTextures();
         if (this.gtflPath || this.dynaMesh != "default") {
             if (this.mergedMatrix) await this.initMerged();
             else this.fillType === "stretch" || this.fillType === "fit" ? await this.initModel() : await this.initInstanced();
@@ -80,6 +81,13 @@ export class Tile3D {
         if (this.particleData.type != "none") this.initParticle();
         if(this.onAnimation && this.mesh.children[0]) this.onAnimation = this.onAnimation.bind(this.mesh.children[0])
         return this;
+        } catch (e) {
+            const errText = `Failed to load 3D Tile ${this.document.id}. You can manually delete this tile with the console command 'canvas.tiles.get("${this.document.id}").document.delete()'`;
+            ui.notifications.error(errText);
+            console.error(errText, e)
+            this._loaded = true;
+            return this;
+        }
     }
 
     get isTerrain() {

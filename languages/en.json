@@ -48,6 +48,7 @@
             "gamecameradisabled": "3D Canvas: Disabling Game Camera - Game Camera is enabled but 'Use 3D Geometry for sight calculations' is disabled.",
             "filenotsupported": "File format not supported or missing",
             "toofarfromdoor": "Your Token is too far to open the door",
+            "tokenNotGrounded": "The attempted movement is not allowed, the token is not grounded.",
             "3dnotactive": "Cannot open canvas popout, the 3D mode is not active.",
             "canping": "User lacks permission to display pings on the map.",
             "canpingpan": "User lacks permission to send camera position.",
@@ -217,6 +218,15 @@
             "maxElevation": {
                 "label": "Max Elevation",
                 "notes": "Maximum allowed elevation for tokens on this scene."
+            },
+            "grounding": {
+                "label": "Grounding",
+                "notes": "Prevents player tokens from ending movement in the air.",
+                "options": {
+                    "none": "None",
+                    "notFlying": "Only if not Flying",
+                    "always": "Always"
+                }
             },
             "positional": {
                 "label": "3D Canvas: Positional Audio",

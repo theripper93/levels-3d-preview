@@ -1,16 +1,32 @@
 import os
 import json
 import zipfile
+import subprocess
 
 # Define selected folders
-selected_folders = ['scripts', 'styles', 'assets', 'templates', 'languages', 'packs', 'storage']
+selected_folders = ['scripts', 'styles', 'assets', 'templates', 'languages', 'lang', 'packs', 'storage', 'icons']
 
 def read_module_json():
-    with open(file, 'r', encoding='utf-8') as file:
+    with open('module.json', 'r', encoding='utf-8') as file:
         data = json.load(file)
         module_id = data['id']
         module_version = data['version']
+        data['protected'] = True
+
+    with open('module.json', 'w', encoding='utf-8') as file:
+        # Save updated manifest data
+        json.dump(data, file, indent=2, ensure_ascii=False)
+
     return module_id, module_version
+
+def unset_protected():
+    with open('module.json', 'r', encoding='utf-8') as file:
+        data = json.load(file)
+        data['protected'] = False
+
+    with open('module.json', 'w', encoding='utf-8') as file:
+        # Save updated manifest data
+        json.dump(data, file, indent=2, ensure_ascii=False)
 
 def create_dist_folder():
     if not os.path.exists('dist'):
@@ -36,11 +52,78 @@ def create_zip(module_id, module_version, folders):
 
     print(f"Zip file '{zip_filename}' created successfully.")
 
+def prompt_for_changelog():
+    changes = []
+    while True:
+        entry = input("Enter changelog entry (or press Enter to finish): ")
+        if entry == "":
+            break
+        else:
+            changes.append(entry)
+    return changes
+
+def update_changelog_file(folder_path, id, version, changes):
+    changelog_file_path = os.path.join(folder_path, f"{id}.md")
+
+    # Create the file if not present
+    if not os.path.exists(changelog_file_path):
+        with open(changelog_file_path, 'w') as file:
+            file.write("")
+
+    # Read existing content
+    with open(changelog_file_path, 'r') as file:
+        existing_content = file.read()
+
+    # Create the new changelog in markdown format
+    new_changelog = f"## Version {version}\n"
+    new_changelog += "\n".join([f"- {change}" for change in changes])
+    new_changelog += "\n\n" + existing_content
+
+    # Write back to the file
+    with open(changelog_file_path, 'w') as file:
+        file.write(new_changelog)
+
+def commit_and_push_changes(git_folder_path, commit_message):
+    os.chdir(git_folder_path)
+    subprocess.run(["git", "add", "."])
+    subprocess.run(["git", "commit", "-m", commit_message])
+    subprocess.run(["git", "push"])
+
+def create_changelog():
+    # Prompt for changelog entries
+    changes = prompt_for_changelog()
+
+    # Read manifest.json in the current folder
+    with open("module.json", 'r') as manifest_file:
+        manifest_data = json.load(manifest_file)
+        id = manifest_data["id"]
+        version = manifest_data["version"]
+
+    # Go back one folder
+    parent_folder_path = os.path.abspath(os.path.join(os.getcwd(), os.pardir))
+
+    # Navigate to "theripper-premium-hub/premium-changelogs"
+    changelog_folder_path = os.path.join(parent_folder_path, "theripper-premium-hub", "premium-changelogs")
+
+    # Update the changelog file
+    update_changelog_file(changelog_folder_path, id, version, changes)
+
+    # Commit and push changes to GitHub
+    git_folder_path = os.path.join(parent_folder_path, "theripper-premium-hub")
+    commit_message = f"Update changelog for {id} version {version}"
+    commit_and_push_changes(git_folder_path, commit_message)
+
+    print("Changelog updated successfully.")
+
 def main():
     module_id, module_version = read_module_json()
     create_dist_folder()
 
     create_zip(module_id, module_version, selected_folders)
+    
+    unset_protected()
+
+    create_changelog()
 
 if __name__ == "__main__":
     main()

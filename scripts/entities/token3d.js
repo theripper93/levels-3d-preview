@@ -525,7 +525,7 @@ export class Token3D {
                 collides = this.token.checkCollision({ x: center[0], y: center[1] });
             }
             if (collides) {
-                ui.notifications.error("ERROR.TokenCollide", { localize: true });
+                ui.notifications.error("RULER.MovementCollision", { localize: true });
                 return false;
             }
         }
@@ -1533,6 +1533,28 @@ export class Token3D {
                 });
             }
         });
+
+        Hooks.on("preUpdateToken", (tokenDocument, updates) => {
+            if (!game.Levels3DPreview._active || game.user.isGM) return;
+            const flag = canvas.scene.flags["levels-3d-preview"]?.grounding;
+            if (!flag) return;
+            if(tokenDocument.hasStatusEffect("fly") && flag === "notFlying") return;
+            if (!("x" in updates) && !("y" in updates) && !("elevation" in updates)) return;
+            const object = tokenDocument.object;
+            const x = (updates.x ?? tokenDocument.x) + tokenDocument.width * (canvas.grid.size / 2);
+            const y = (updates.y ?? tokenDocument.y) + tokenDocument.height * (canvas.grid.size / 2);
+            const height = object.losHeight - object.document.elevation;
+            const elevation = (updates.elevation ?? tokenDocument.elevation) + height;
+            const collision = game.Levels3DPreview.interactionManager.computeSightCollision({x, y, z: elevation}, {x, y, z: -100000});
+            if (!collision) return;
+            const pos2d = Ruler3D.pos3DToCanvas(collision);
+            const distanceFromGround = (updates.elevation ?? tokenDocument.elevation) - pos2d.z;
+            const maxDist = canvas.scene.dimensions.distance * 0.5;
+            if (distanceFromGround > maxDist) {
+                ui.notifications.error(game.i18n.localize("levels3dpreview.errors.tokenNotGrounded"));
+                return false;
+            }
+        })
 
         Hooks.on("targetToken", (user, token) => {
             if (game.Levels3DPreview?._active) game.Levels3DPreview.tokens[token.id]?.reDraw();
