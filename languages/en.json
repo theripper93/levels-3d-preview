@@ -1536,6 +1536,14 @@
                     "players": "Allow Players"
                 }
             },
+            "clipping": {
+                "name": "Clipping",
+                "description": "Clipping effect. The effect can be colorized and scaled, keep in mind that the color will be distorted by the effect.",
+                "speed": "Speed",
+                "diameter": "Radius",
+                "heightOffset": "Height Offset",
+                "useCamera": "Use Camera"
+            },
             "wind": {
                 "name": "Wind",
                 "description": "Wind like effect to add some movement to your vegetation.",

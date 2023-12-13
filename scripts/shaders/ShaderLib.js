@@ -246,8 +246,8 @@ export class ShaderHandler {
             shader.uniforms.mDepth = { value: commonParams.mDepth };
             shader.uniforms.mWidth = { value: commonParams.mWidth };
             shader.uniforms.mHeight = { value: commonParams.mHeight };
-            shader.uniforms.localSize = { value: commonParams.localSize };
-
+            shader.uniforms.localSize = {value: commonParams.localSize};
+            
             this.setUniforms(shader, shaderParams);
             this.shaders.push(shader);
             if (entity3D.pathTraced) {
@@ -523,6 +523,53 @@ export const shaders = {
         },
         vertexShader: [],
         fragmentShader: [],
+    },
+    clipping: {
+        icon: `<i class="fas fa-walking"></i>`,
+        useNoise: true,
+        uniforms: {
+            heightOffset: {
+                type: "float",
+                default: 200,
+            },
+            diameter: {
+                type: "float",
+                default: 500,
+            },
+            speed: {
+                type: "float",
+                default: 0.1,
+            },
+            useCamera: {
+                type: "bool",
+                default: false,
+            }
+        },
+        varying: {},
+        vertexShader: [
+        ],
+        fragmentShader: [
+            {
+                mode: SHADERS_CONSTS.PREPEND,
+                injectionPoint: "#include <fog_fragment>",
+                shaderCode: `
+                float ts = time * 0.001 * clipping_speed;
+                float gradientBorderSize = 0.1;
+                float adj_clipping_diameter = clipping_diameter / 1000.0;
+                float adj_clipping_heightOffset = clipping_heightOffset / 1000.0;
+                if( tokens[0].w > 0.0) {
+                    vec3 currentToken = clipping_useCamera ? cameraPosition : tokens[0].xyz;
+                    float distance2D = distance(vec2(vWorldPositionFoW.x, vWorldPositionFoW.z), vec2(currentToken.x, currentToken.z));
+                    float noise_multi = (gradientBorderSize - abs(vWorldPositionFoW.y - (tokens[0].y + adj_clipping_heightOffset))) / gradientBorderSize;
+                    float noise_multi_radius = (gradientBorderSize - abs(distance2D - adj_clipping_diameter)) / gradientBorderSize;
+                    float noise = Perlin3D(vec3(vWorldPositionFoW.x + ts, vWorldPositionFoW.y + ts, vWorldPositionFoW.z + ts)*100.0) - (1.0 - noise_multi * noise_multi_radius);
+                    if(noise > 0.1 && distance2D < adj_clipping_diameter && vWorldPositionFoW.y > (tokens[0].y + adj_clipping_heightOffset)) {
+                        discard;
+                    }
+                }
+                `
+            }
+        ],
     },
     idle: {
         icon: `<i class="fas fa-walking"></i>`,

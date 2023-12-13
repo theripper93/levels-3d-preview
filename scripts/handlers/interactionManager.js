@@ -250,7 +250,6 @@ export class InteractionManager {
             if (!tile3d?.mesh) continue;
             const mesh = tile3d.mesh;
             canvas.activeLayer.controlled.length == 1 && mesh.rotation ? controlledGroup.rotation.copy(mesh.rotation) : controlledGroup.rotation.set(0, 0, 0);
-            console.log(mesh.rotation.x, mesh.rotation.y, mesh.rotation.z);
             controlledGroup.attach(mesh);
         }
     }
@@ -604,11 +603,23 @@ export class InteractionManager {
 
     _clippingFilter(i) {
         const camera = game.Levels3DPreview.camera;
-        if (!i.object.material?.clippingPlanes && camera.near === 0.01) return true;
+        let entity3D = i.object?.userData?.entity3D;
+        if(!entity3D)i.object.traverseAncestors((parent) => {
+            if (parent.userData.entity3D && !entity3D) entity3D = parent.userData.entity3D;
+        });
+        const isClippingShader = entity3D?.shaders?.clipping?.enabled && canvas.tokens?.controlled?.length;
+        if (!i.object.material?.clippingPlanes && camera.near === 0.01 && !isClippingShader) return true;
         const distToCamera = i.point.distanceTo(camera.position);
         if (distToCamera < camera.near) return false;
-        if (!i.object.material?.clippingPlanes) return true;
-        return i.object.material?.clippingPlanes[0].constant > i.point.y;
+        if (!i.object.material?.clippingPlanes && !isClippingShader) return true;
+        if (isClippingShader) {
+            const t3d = game.Levels3DPreview.tokens[canvas.tokens.controlled[0].id];
+            const tY = t3d.mesh?.position?.y - (t3d.hasClone ? RULER_TOKEN_OFFSET : 0);
+            const yConstant = tY + entity3D.shaders.clipping.heightOffset / factor;
+            return yConstant > i.point.y;
+        } else {
+            return i.object.material?.clippingPlanes[0].constant > i.point.y;
+        }
     }
 
     getHoverObject() {

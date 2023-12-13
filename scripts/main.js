@@ -4,7 +4,7 @@ import { GameCamera } from "./handlers/GameCamera.js";
 import { TransformControls } from "./lib/TransformControls.js";
 import { GLTFLoader } from "./lib/GLTFLoader.js";
 import { Token3D } from "./entities/token3d.js";
-import { Ruler3D } from "./systems/ruler3d.js";
+import { Ruler3D, RULER_TOKEN_OFFSET } from "./systems/ruler3d.js";
 import { Light3D } from "./entities/light3d.js";
 import { Sound3D } from "./entities/sound3d.js";
 import { Wall3D } from "./entities/wall3d.js";
@@ -1235,7 +1235,9 @@ class Levels3DPreview {
             this.grid?.updateGrid();
             const tokensArray = Object.values(this.tokens);
             const length = Math.max(tokensArray.length, 100);
-            const tokenPositionsArray = [new THREE.Vector4(0, 0, 0, tokensArray.length)];
+            const cToken = this.tokens[canvas?.tokens?.controlled[0]?.id];
+            const ctPos = cToken?.mesh?.position;
+            const tokenPositionsArray = [new THREE.Vector4(ctPos?.x ?? 0,(ctPos?.y ?? 0) - (cToken?.hasClone ? RULER_TOKEN_OFFSET : 0),ctPos?.z ?? 0, tokensArray.length)];
             const emptyVec = new THREE.Vector4();
             for (let i = 1; i < length; i++) {
                 const pos = tokensArray[i - 1]?.mesh?.position;
