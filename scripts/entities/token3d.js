@@ -1497,6 +1497,7 @@ export class Token3D {
             if (renderFlags.refreshNameplate) token3d.drawName()
             if (renderFlags.refreshBars) token3d.drawBars()
             if (renderFlags.redrawEffects || renderFlags.refreshEffects) token3d.drawEffects()
+            if (renderFlags.refreshBorder) token3d.refreshBorder()
             token3d.setPosition();
         })
 

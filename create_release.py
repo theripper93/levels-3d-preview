@@ -45,7 +45,12 @@ def add_folder_to_zip(zip_file, folder):
 def create_zip(module_id, module_version, folders):
     zip_filename = f'dist/{module_id}-{module_version}.zip'
     with zipfile.ZipFile(zip_filename, 'w', zipfile.ZIP_DEFLATED) as zip_file:
-        zip_file.write('module.json')
+        files_to_zip = ['module.json', 'index.js', 'index.js.map']
+        for file_to_zip in files_to_zip:
+            if os.path.exists(file_to_zip):
+                zip_file.write(file_to_zip)
+            else:
+                print(f"Warning: {file_to_zip} is missing. Skipping.")
 
         for folder in folders:
             add_folder_to_zip(zip_file, folder)
@@ -67,11 +72,11 @@ def update_changelog_file(folder_path, id, version, changes):
 
     # Create the file if not present
     if not os.path.exists(changelog_file_path):
-        with open(changelog_file_path, 'w') as file:
+        with open(changelog_file_path, 'w', encoding='utf-8') as file:
             file.write("")
 
     # Read existing content
-    with open(changelog_file_path, 'r') as file:
+    with open(changelog_file_path, 'r', encoding='utf-8') as file:
         existing_content = file.read()
 
     # Create the new changelog in markdown format
@@ -80,7 +85,7 @@ def update_changelog_file(folder_path, id, version, changes):
     new_changelog += "\n\n" + existing_content
 
     # Write back to the file
-    with open(changelog_file_path, 'w') as file:
+    with open(changelog_file_path, 'w', encoding='utf-8') as file:
         file.write(new_changelog)
 
 def commit_and_push_changes(git_folder_path, commit_message):
@@ -94,7 +99,7 @@ def create_changelog():
     changes = prompt_for_changelog()
 
     # Read manifest.json in the current folder
-    with open("module.json", 'r') as manifest_file:
+    with open("module.json", 'r', encoding='utf-8') as manifest_file:
         manifest_data = json.load(manifest_file)
         id = manifest_data["id"]
         version = manifest_data["version"]

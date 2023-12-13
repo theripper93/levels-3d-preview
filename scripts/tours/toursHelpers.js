@@ -114,7 +114,9 @@ class TourEnhanced extends Tour{
     }
 
     async next(fromFadeElement = false) { 
-        if (!fromFadeElement) $(this.fadeElement)?.click()
+        if (!fromFadeElement) {
+            $(this.fadeElement)?.click()
+        }
         else await super.next();
     }
 
@@ -126,6 +128,8 @@ class TourEnhanced extends Tour{
             const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
             const timeout = 5000;
             let currentWait = 0;
+            this.activateTab();
+            await wait(100);
             $(this.currentStep.selector)[0]?.click()
             if(!nextStep) return this.next(true);
             await wait(100);
@@ -135,6 +139,19 @@ class TourEnhanced extends Tour{
             }
             this.next(true);
          });
+    }
+
+    activateTab() {
+        const nextStep = this.steps[this.stepIndex + 1];
+        if(!nextStep?.selector) return;
+        const el = $(nextStep.selector)[0];
+        if(!el) return;
+        const tab = el.closest(".tab");
+        if (!tab) return;
+        const tabId = tab.dataset.tab;
+        const tabButton = tab.parentElement.querySelector(`nav a.item[data-tab="${tabId}"]`);
+        if (!tabButton) return;
+        tabButton.click();
     }
 
     _getTargetElement(selector){

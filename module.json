@@ -82,15 +82,15 @@
   ],
   "packFolders": [
     {
-        "name": "3D Canvas",
-        "sorting": "m",
-        "color": "#765c13",
-        "packs": [
-            "documentation",
-            "macros",
-            "partmacros"
-        ]
-      }
+      "name": "3D Canvas",
+      "sorting": "m",
+      "color": "#765c13",
+      "packs": [
+        "documentation",
+        "macros",
+        "partmacros"
+      ]
+    }
   ],
   "socket": true,
   "relationships": {

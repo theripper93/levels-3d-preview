@@ -567,14 +567,14 @@ export function hideParams(app, html, element, flags, hide) {
         const value = typeof hide == "boolean" ? e.target.checked : e.target.value;
         if (value === hide) {
             flags.forEach((flag) => {
-                html.find(`[name="flags.levels-3d-preview.${flag}"]`).closest(".form-group").hide();
+                html.find(`[name="flags.levels-3d-preview.${flag}"]`).closest(".form-group").addClass("hidden");
             });
         } else {
             flags.forEach((flag) => {
-                html.find(`[name="flags.levels-3d-preview.${flag}"]`).closest(".form-group").show();
+                html.find(`[name="flags.levels-3d-preview.${flag}"]`).closest(".form-group").removeClass("hidden");
             });
         }
-        app.setPosition({ height: "auto" });
+            app.setPosition({ height: "auto" });
     });
     html.find(element).trigger("change");
 }

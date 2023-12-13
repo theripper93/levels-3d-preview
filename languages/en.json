@@ -61,6 +61,10 @@
             "critical": "3D Canvas: A Fatal Error was encountered in the Rendering Loop. Attempting to recover...",
             "notarget": "3D Canvas: No target found for drag and drop. Please ensure you have at least one 3D Object or the Background Enabled."
         },
+        "notifications": {
+            "initialviewcleared": "Initial View Position Cleared",
+            "initialviewcaptured": "Initial View Position Captured"
+        },
         "clipNavigator": {
             "disabled": "Show All",
             "sync": "Sync with Players",
@@ -250,7 +254,7 @@
                 "label": "Texture Repeat"
             },
             "flipY": {
-                "label": "Flip Y"
+                "label": "Flip Texture Vertically"
             },
             "doorState": {
                 "options": {
@@ -516,6 +520,7 @@
             },
             "fillType": {
                 "header": "Tiling",
+                "tabNotes": "Configure weather the 3D Model should be repeated multiple times or stretched to fit the tile.",
                 "label": "Fill Type",
                 "options": {
                     "stretch": "Single",
@@ -536,6 +541,8 @@
             },
             "material": {
                 "label": "Material",
+                "header": "Material",
+                "tabNotes": "Configure the visual properties of the material applied to this tile. Sliders set at -0.01 will use the default value for the material.",
                 "options": {
                     "none": "Default",
                     "optgroup": {
@@ -585,8 +592,17 @@
                     "DoubleSide": "Double Side"
                 }
             },
+            "basic": {
+                "header": "Basic",
+                "tabNotes": "Configure 3d model, positioning, and scaling options."
+            },
+            "effects": {
+                "header": "Effects",
+                "tabNotes": "Configure the special effects to apply to this tile."
+            },
             "noise": {
-                "header": "Terrain",
+                "header": "Noise",
+                "tabNotes": "Configure procedural noise on top of the model to apply a distortion.",
                 "label": "Noise Type",
                 "options": {
                     "none": "None",
@@ -761,6 +777,7 @@
             },
             "attachments": {
                 "header": "Attachments",
+                "tabNotes": "Configure the attachments to this token. To add an attachment, select the token, move to the Tiles Layer, position the tile you wish to attach on the token, right click the tile and click the 'Attach Tile to Token' option.",
                 "filename": "Attachment Name",
                 "info": "Tile %s attatched to Token "
             },
@@ -796,6 +813,7 @@
             },
             "tsight": {
                 "header": "Vision",
+                "tabNotes": "Configure the vision, light blocking and collision properties of this tile.",
                 "label": "Block Sight"
             },
             "aura": {
@@ -803,6 +821,9 @@
             },
             "advanced": {
                 "header": "Advanced"
+            },
+            "position": {
+                "header": "Position"
             },
             "auraRange": {
                 "label": "Aura Range"
