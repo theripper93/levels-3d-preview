@@ -31,7 +31,6 @@ export const injectConfig = {
         v.name = "flags." + moduleId + "." + (k || "");
         v.value = object?.getFlag(moduleId, k) ?? elemData.default ?? getDefaultFlag(k);
         v.label = v.units ? v.label + `<span class="units"> (${v.units})</span>` : v.label;
-
         if (v.type.includes("filepicker")) {
             const split = v.type.split(".");
             v.fpType = split[1] ?? "imagevideo";
@@ -227,8 +226,7 @@ const _template = `
         {{/if}}
 
         {{#if (eq input.type 'textarea')}}
-            <textarea type="text" name="{{input.name}}" placeholder="{{input.placeholder}}" value="{{input.value}}">
-            </textarea>
+            <textarea type="text" name="{{input.name}}" placeholder="{{input.placeholder}}"">{{input.value}}</textarea>
         {{/if}}
 
         {{#if (eq input.type 'number')}}
