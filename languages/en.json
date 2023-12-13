@@ -1538,7 +1538,7 @@
             },
             "clipping": {
                 "name": "Clipping",
-                "description": "Clipping effect. The effect can be colorized and scaled, keep in mind that the color will be distorted by the effect.",
+                "description": "Fade away this tile in proximity of a token or the camera.",
                 "speed": "Speed",
                 "diameter": "Radius",
                 "heightOffset": "Height Offset",
