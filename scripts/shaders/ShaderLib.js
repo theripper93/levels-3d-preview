@@ -983,6 +983,10 @@ export const shaders = {
                 type: "float",
                 default: 0.1,
             },
+            noiseScale: {
+                type: "float",
+                default: 1,
+            },
             useCamera: {
                 type: "bool",
                 default: false,
@@ -1006,7 +1010,7 @@ export const shaders = {
                         float gradientBorderSize = 0.1;
                         float noise_factor = 1.0 - ((gradientBorderSize - abs(vWorldPositionFoW.y - (tokens[0].y + adj_clipping_heightOffset))) / gradientBorderSize) * (gradientBorderSize - abs(distance2D - adj_clipping_diameter)) / gradientBorderSize;
 
-                        if(noise_factor <= 0.9 && (Perlin3D(vec3(vWorldPositionFoW.x + ts, vWorldPositionFoW.y + ts, vWorldPositionFoW.z + ts)*100.0) - noise_factor) > 0.1) {
+                        if(noise_factor <= 0.9 && (Perlin3D(vec3(vWorldPositionFoW.x + ts, vWorldPositionFoW.y + ts, vWorldPositionFoW.z + ts)*(100.0/clipping_noiseScale)) - noise_factor) > 0.1) {
                             discard;
                         }
                     }

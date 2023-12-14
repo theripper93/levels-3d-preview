@@ -138,7 +138,9 @@ export const injectConfig = {
         
         let injectHtml = this._generateInnerHtml(app, data, tabSize);
         
-        app.activateListeners($(injectHtml));
+        try {
+            app.activateListeners($(injectHtml));
+        } catch (error) {}
 
         html.querySelectorAll(".tabs .item").forEach((item) => {
             item.addEventListener("click", (e) => app._activeTab = e.currentTarget.dataset.tab);

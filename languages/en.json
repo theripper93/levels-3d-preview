@@ -1542,6 +1542,7 @@
                 "speed": "Speed",
                 "diameter": "Radius",
                 "heightOffset": "Height Offset",
+                "noiseScale": "Noise Scale",
                 "useCamera": "Use Camera"
             },
             "wind": {

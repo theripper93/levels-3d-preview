@@ -1494,6 +1494,7 @@ export class Token3D {
         Hooks.on("refreshToken", (token, renderFlags) => {
             if (!game.Levels3DPreview?._active) return;
             const token3d = game.Levels3DPreview.tokens[token.id]
+            if(!token3d) return;
             if (renderFlags.refreshNameplate) token3d.drawName()
             if (renderFlags.refreshBars) token3d.drawBars()
             if (renderFlags.redrawEffects || renderFlags.refreshEffects) token3d.drawEffects()
