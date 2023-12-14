@@ -344,6 +344,7 @@ export class Tile3D {
         this.tiltX = Math.toRadians(this.tiltX);
         this.tiltZ = this.tile.document.getFlag("levels-3d-preview", "tiltZ") ?? 0;
         this.tiltZ = Math.toRadians(this.tiltZ);
+        this.offset = new THREE.Vector3(...Object.values(this.tile.document.getFlag("levels-3d-preview", "offset") ?? { x: 0, y: 0, z: 0 })).divideScalar(factor);
         this.maxInstances = this.tile.document.getFlag("levels-3d-preview", "maxInstances") ?? 0;
         this.autoCenter = this.tile.document.getFlag("levels-3d-preview", "autoCenter") ?? false;
         this.autoGround = this.tile.document.getFlag("levels-3d-preview", "autoGround") ?? false;
@@ -678,7 +679,9 @@ export class Tile3D {
         const color = new THREE.Color(this.color);
         this._processModel(object, textureOrMat, isPBR, color);
         this.applyNoise(object);
-
+        object.children.forEach((child) => {
+            child.position.add(this.offset.clone().divide(object.scale));
+        });
         if (model.object.animations.length > 0 && this.enableAnim) {
             if (!model.object.animations[this.animIndex]) {
                 console.error("Animation index out of bounds", this.tile);

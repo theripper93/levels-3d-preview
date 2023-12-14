@@ -63,7 +63,7 @@ export function registerConfigs() {
                 icon: "fas fa-cube",
                 subTabs: true,
             },
-            basic: {
+            "basic-3d": {
                 tabLabel: game.i18n.localize("levels3dpreview.flags.basic.header"),
                 tabNotes: game.i18n.localize("levels3dpreview.settings.headers.basics.notes"),
                 tabIcon: "fas fa-cube",
@@ -143,7 +143,7 @@ export function registerConfigs() {
                 `,
                 },
             },
-            environment: {
+            "environment-3d": {
                 tabLabel: game.i18n.localize("levels3dpreview.settings.headers.environment.title"),
                 tabNotes: game.i18n.localize("levels3dpreview.settings.headers.environment.notes"),
                 tabIcon: "fas fa-cloud-sun",
@@ -272,7 +272,7 @@ export function registerConfigs() {
                     default: 3000,
                 },
             },
-            lighting: {
+            "lighting-3d": {
                 tabLabel: game.i18n.localize("levels3dpreview.settings.headers.lighting.title"),
                 tabNotes: game.i18n.localize("levels3dpreview.settings.headers.lighting.notes"),
                 tabIcon: "fas fa-lightbulb",
@@ -329,7 +329,7 @@ export function registerConfigs() {
                     step: 0.000001,
                 },
             },
-            particles: {
+            "particles-3d": {
                 tabLabel: game.i18n.localize("levels3dpreview.settings.headers.particles.title"),
                 tabNotes: game.i18n.localize("levels3dpreview.settings.headers.particles.notes"),
                 tabIcon: "fas fa-cloud-showers-heavy",
@@ -471,7 +471,7 @@ export function registerConfigs() {
                     html: `</div>`,
                 },
             },
-            visibility: {
+            "visibility-3d": {
                 tabLabel: game.i18n.localize("levels3dpreview.settings.headers.visibility.title"),
                 tabNotes: game.i18n.localize("levels3dpreview.settings.headers.visibility.notes"),
                 tabIcon: "fas fa-eye",
@@ -575,7 +575,7 @@ export function registerConfigs() {
                     icon: "fas fa-cube",
                     subTabs: true,
                 },
-                "basic": {
+                "basic-3d": {
                     tabLabel: game.i18n.localize("levels3dpreview.flags.basic.header"),
                     tabIcon: "fas fa-cube",
                     model3d: {
@@ -629,7 +629,7 @@ export function registerConfigs() {
                         default: 1,
                     },
                 },
-                aura: {
+                "aura-3d": {
                     tabLabel: game.i18n.localize("levels3dpreview.flags.aura.header"),
                     tabIcon: "fas fa-circle-dashed",
                     auraRange: {
@@ -651,7 +651,7 @@ export function registerConfigs() {
                         html: `<div id="shader-config"><div>`,
                     },
                 },
-                advanced: {
+                "advanced-3d": {
                     tabLabel: game.i18n.localize("levels3dpreview.flags.advanced.header"),
                     tabIcon: "fas fa-cogs",
                     baseColor: {
@@ -714,7 +714,7 @@ export function registerConfigs() {
                         },
                     },
                 },
-                position: {
+                "position-3d": {
                     tabLabel: game.i18n.localize("levels3dpreview.flags.position.header"),
                     tabIcon: "fas fa-arrows-alt",
                     autoCenter: {
@@ -762,7 +762,7 @@ export function registerConfigs() {
                         default: 0,
                     },
                 },
-                attachments: {
+                "attachments-3d": {
                     tabLabel: game.i18n.localize("levels3dpreview.flags.attachments.header"),
                     tabNotes: game.i18n.localize("levels3dpreview.flags.attachments.tabNotes"),
                     tabIcon: "fas fa-link",
@@ -839,8 +839,9 @@ export function registerConfigs() {
                 label: "3D",
                 icon: "fas fa-cube",
                 subTabs: true,
+                width: 200,
             },
-            "basic": {
+            "basic-3d": {
                 tabLabel: game.i18n.localize("levels3dpreview.flags.basic.header"),
                 tabNotes: game.i18n.localize("levels3dpreview.flags.basic.tabNotes"),
                 tabIcon: "fas fa-cube",
@@ -900,6 +901,7 @@ export function registerConfigs() {
                     type: "filepicker.any",
                     fpTypes: [".json"],
                     label: game.i18n.localize("levels3dpreview.flags.font.label"),
+                    notes: game.i18n.localize("levels3dpreview.flags.font.notes"),
                 },
                 displacementMap: {
                     type: "filepicker",
@@ -918,21 +920,6 @@ export function registerConfigs() {
                     type: "text",
                     label: game.i18n.localize("levels3dpreview.flags.displacementMatrix.label"),
                     default: "0,0,1,1",
-                },
-                autoCenter: {
-                    type: "checkbox",
-                    label: game.i18n.localize("levels3dpreview.flags.autoCenter.label"),
-                    default: false,
-                },
-                autoGround: {
-                    type: "checkbox",
-                    label: game.i18n.localize("levels3dpreview.flags.autoGround.label"),
-                    default: false,
-                },
-                maxInstances: {
-                    type: "number",
-                    label: game.i18n.localize("levels3dpreview.flags.maxInstances.label"),
-                    default: 0,
                 },
                 enableAnim: {
                     type: "checkbox",
@@ -962,6 +949,21 @@ export function registerConfigs() {
                     label: game.i18n.localize("levels3dpreview.flags.highlightOnHover.label"),
                     default: false,
                 },
+            },
+            "position-3d": {
+                tabLabel: game.i18n.localize("levels3dpreview.flags.position.header"),
+                tabIcon: "fas fa-arrows-alt",
+                tabNotes: game.i18n.localize("levels3dpreview.flags.position.tabNotes"),
+                autoCenter: {
+                    type: "checkbox",
+                    label: game.i18n.localize("levels3dpreview.flags.autoCenter.label"),
+                    default: false,
+                },
+                autoGround: {
+                    type: "checkbox",
+                    label: game.i18n.localize("levels3dpreview.flags.autoGround.label"),
+                    default: false,
+                },
                 tiltX: {
                     type: "number",
                     label: game.i18n.localize("levels3dpreview.flags.tiltX.label"),
@@ -980,8 +982,24 @@ export function registerConfigs() {
                     default: 100,
                     step: 0.000001,
                 },
+                "offset.x": {
+                    type: "number",
+                    label: game.i18n.localize("levels3dpreview.flags.offset.x.label"),
+                    default: 0,
+                },
+                "offset.z": {
+                    type: "number",
+                    label: game.i18n.localize("levels3dpreview.flags.offset.y.label"),
+                    default: 0,
+                },
+                "offset.y": {
+                    type: "number",
+                    label: game.i18n.localize("levels3dpreview.flags.offset.z.label"),
+                    default: 0,
+                },
+
             },
-            "material": {
+            "material-3d": {
                 tabLabel: game.i18n.localize("levels3dpreview.flags.material.header"),
                 tabNotes: game.i18n.localize("levels3dpreview.flags.material.tabNotes"),
                 tabIcon: "fas fa-circle-half-stroke",
@@ -1074,7 +1092,7 @@ export function registerConfigs() {
                     default: true,
                 },
             },
-            "vision": {
+            "vision-3d": {
                 tabLabel: game.i18n.localize("levels3dpreview.flags.tsight.header"),
                 tabNotes: game.i18n.localize("levels3dpreview.flags.tsight.tabNotes"),
                 tabIcon: "fas fa-eye",
@@ -1131,7 +1149,7 @@ export function registerConfigs() {
                     step: 1,
                 },
             },
-            "fillType": {
+            "fillType-3d": {
                 tabLabel: game.i18n.localize("levels3dpreview.flags.fillType.header"),
                 tabNotes: game.i18n.localize("levels3dpreview.flags.fillType.tabNotes"),
                 tabIcon: "fas fa-th",
@@ -1204,7 +1222,7 @@ export function registerConfigs() {
                     default: app.object.id.substring(0, 7),
                 },
             },
-            "effects": {
+            "effects-3d": {
                 tabLabel: game.i18n.localize("levels3dpreview.flags.effects.header"),
                 tabNotes: game.i18n.localize("levels3dpreview.flags.effects.tabNotes"),
                 tabIcon: "fas fa-fire",
@@ -1260,7 +1278,7 @@ export function registerConfigs() {
                     html: `<h3 class="form-header" id="shader-config"><i class="fas fa-magic"></i> ${game.i18n.localize("levels3dpreview.flags.shader.header")}</h3><div>`,
                 },
             },
-            "noise": {
+            "noise-3d": {
                 tabLabel: game.i18n.localize("levels3dpreview.flags.noise.header"),
                 tabNotes: game.i18n.localize("levels3dpreview.flags.noise.tabNotes"),
                 tabIcon: "fas fa-mountain",
