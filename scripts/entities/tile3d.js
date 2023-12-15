@@ -54,7 +54,9 @@ export class Tile3D {
         } else {
             await this.init();
         }
-        if (this._destroyed) return;
+            if (this._destroyed) return;
+        
+        this.computeWorldBoundingBox();
         this.setTransmissionIor();
         this.setRepeat();
         this.initShaders();
@@ -297,6 +299,9 @@ export class Tile3D {
         this.shader = this.tile.document.getFlag("levels-3d-preview", "shader") ?? "none";
         this.flipY = this.tile.document.getFlag("levels-3d-preview", "flipY") ?? false;
         this.shaders = this.tile.document.getFlag("levels-3d-preview", "shaders") ?? {};
+        
+        if(this.shaders?.clipping?.enabled && this.shaders.clipping.useCameraAdvanced) this._useCameraAdvanced = true;
+        
         this.dynaMesh = this.tile.document.getFlag("levels-3d-preview", "dynaMesh") ?? "default";
         if (this.dynaMesh === "decal") this.isGravity = true;
         this.font = this.tile.document.getFlag("levels-3d-preview", "font") ?? "";
@@ -1368,6 +1373,19 @@ export class Tile3D {
                 }
             }
         });
+    }
+
+    computeWorldBoundingBox() {
+        const boundingBox = this.controlledBox?.geometry?.boundingBox;
+        if(!boundingBox) return this._worldBoundingBox = new THREE.Box3();
+        const worldBoundingBox = new THREE.BoxGeometry(boundingBox.max.x - boundingBox.min.x, boundingBox.max.y - boundingBox.min.y, boundingBox.max.z - boundingBox.min.z);
+        const hasParent = this.controlledBox.parent;
+        this.mesh.add(this.controlledBox)
+        this.controlledBox.updateMatrixWorld();
+        worldBoundingBox.applyMatrix4(this.controlledBox.matrixWorld);
+        worldBoundingBox.computeBoundingBox();
+        this._worldBoundingBox = worldBoundingBox.boundingBox;
+        if(!hasParent) this.mesh.remove(this.controlledBox)
     }
 
     setTransmissionIor() {

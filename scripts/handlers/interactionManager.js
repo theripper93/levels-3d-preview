@@ -810,6 +810,41 @@ export class InteractionManager {
         if (!this.draggable) this.controls.enableZoom = true;
     }
 
+    getObstructingTiles() {
+        const obstructing = new Map();
+        const boxCenter = new THREE.Vector3(0, 0, 0);
+        const selectedToken = this._parent.tokens[canvas.tokens.controlled[0]?.id];
+        if (!selectedToken) return obstructing;
+        const position = selectedToken.head;
+        const cameraTokenDistance = this._parent.camera.position.distanceTo(position);
+        const cameraTokenMidPoint = new THREE.Vector3().addVectors(this._parent.camera.position, position).divideScalar(2);
+        const cameraTokenSphere = new THREE.Sphere(cameraTokenMidPoint, cameraTokenDistance / 2);
+        const collisions = this.computeSightCollisionFrom3DPositions(position, this._parent.camera.position, "sight", false, true, false, true) || [];
+        const collisionSpheres = [];
+        for (const collision of collisions) {
+            let tile3d = collision.object.userData.entity3D;
+            if(!tile3d) collision.object.traverseAncestors((parent) => {
+                if (parent.userData.entity3D && !tile3d) tile3d = parent.userData.entity3D;
+            });
+            if(!tile3d.shaders?.clipping?.diameter) continue;
+            const collisionSphere = new THREE.Sphere(collision.point, 10);
+            collisionSpheres.push(collisionSphere);
+            obstructing.set(tile3d, new THREE.Vector4(collision.point.x, collision.point.y, collision.point.z, 1));
+        }
+        const tiles = Object.values(this._parent.tiles);
+        if(!collisionSpheres.length) return obstructing;
+        for (const tile of tiles) {
+            if (obstructing.has(tile)) continue;
+            const tileBox = tile._worldBoundingBox
+            if (!cameraTokenSphere.intersectsBox(tileBox)) continue;
+            tileBox.getCenter(boxCenter);
+            const boxSphereIntersect = collisionSpheres.reduce((prev, curr) => prev.center.distanceTo(boxCenter) < curr.center.distanceTo(boxCenter) ? prev : curr);
+            if (boxSphereIntersect) obstructing.set(tile, new THREE.Vector4(boxSphereIntersect.center.x, boxSphereIntersect.center.y, boxSphereIntersect.center.z, 1));
+        }
+
+        return obstructing;
+    }
+
     findCameraLookatDistance() {
         const screenCenter = new THREE.Vector2(-0.1, +0.1);
         this.raycaster.setFromCamera(screenCenter, this.camera);

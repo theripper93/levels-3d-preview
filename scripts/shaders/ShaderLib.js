@@ -392,13 +392,15 @@ export class ShaderHandler {
         }
     }
 
-    updateShaders(delta, tokens, sound) {
+    updateShaders(delta, tokens, sound, obstructing) {
+        const v4 = new THREE.Vector4();
         this.shaders = this.shaders.filter((shader) => {
             if (shader.entity3D._destroyed) return false;
             shader.uniforms.time.value = delta / 100;
             shader.uniforms.yPos.value = getYpos(shader.entity3D);
             shader.uniforms.tokens.value = tokens;
             shader.uniforms.sound.value = sound;
+            shader.uniforms.obstructing.value = obstructing ? obstructing.get(shader.entity3D) ?? v4 : v4;
             if (this._sceneUniformsNeedUpdate) {
                 shader.uniforms.sceneSize.value = shaders.defaults.uniforms.sceneSize.value();
                 shader.uniforms.gridSize.value = shaders.defaults.uniforms.gridSize.value();
@@ -439,6 +441,10 @@ export const shaders = {
             sound: {
                 type: "vec3",
                 value: new THREE.Vector3(1, 1, 1),
+            },
+            obstructing: {
+                type: "vec4",
+                value: new THREE.Vector4(0, 0, 0, 0),
             },
             mDepth: {
                 type: "float",
@@ -990,6 +996,10 @@ export const shaders = {
             useCamera: {
                 type: "bool",
                 default: false,
+            },
+            useCameraAdvanced: {
+                type: "bool",
+                default: false,
             }
         },
         varying: {},
@@ -1004,10 +1014,11 @@ export const shaders = {
                     float adj_clipping_heightOffset = clipping_heightOffset / 1000.0;
                     float adj_clipping_diameter = clipping_diameter / 1000.0;
                     vec3 currentToken = clipping_useCamera ? cameraPosition : tokens[0].xyz;
+                    currentToken = clipping_useCameraAdvanced ? obstructing.xyz : currentToken;
                     float distance2D = distance(vec2(vWorldPositionFoW.x, vWorldPositionFoW.z), vec2(currentToken.x, currentToken.z));
                     if(distance2D < adj_clipping_diameter && vWorldPositionFoW.y > (tokens[0].y + adj_clipping_heightOffset)){
                         float ts = time * 0.001 * clipping_speed;
-                        float gradientBorderSize = 0.1;
+                        float gradientBorderSize = 0.05;
                         float noise_factor = 1.0 - ((gradientBorderSize - abs(vWorldPositionFoW.y - (tokens[0].y + adj_clipping_heightOffset))) / gradientBorderSize) * (gradientBorderSize - abs(distance2D - adj_clipping_diameter)) / gradientBorderSize;
 
                         if(noise_factor <= 0.9 && (Perlin3D(vec3(vWorldPositionFoW.x + ts, vWorldPositionFoW.y + ts, vWorldPositionFoW.z + ts)*(100.0/clipping_noiseScale)) - noise_factor) > 0.1) {

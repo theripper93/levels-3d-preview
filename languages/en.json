@@ -1561,7 +1561,8 @@
                 "diameter": "Radius",
                 "heightOffset": "Height Offset",
                 "noiseScale": "Noise Scale",
-                "useCamera": "Use Camera"
+                "useCamera": "Use Camera",
+                "useCameraAdvanced": "Use Advanced Camera Calculations"
             },
             "wind": {
                 "name": "Wind",

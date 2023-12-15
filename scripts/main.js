@@ -1232,7 +1232,19 @@ class Levels3DPreview {
                 const dist = this.interactionManager.findCameraLookatDistance();
                 this.bokeh.uniforms.focus.value = dist;
             }
+            const delta = this.clock.getDelta();
             this.grid?.updateGrid();
+            let calculateObstructing = false;
+            Object.values(this.tiles).forEach((tile) => {
+                if (tile) {
+                    if(tile._useCameraAdvanced) calculateObstructing = true;
+                    tile._onAnimationLoop(delta);
+                    if (tile.mixer && !tile.paused) {
+                        tile.mixer.update(delta);
+                    }
+                }
+            });
+            const obstructing = calculateObstructing ? this.interactionManager.getObstructingTiles() : null;
             const tokensArray = Object.values(this.tokens);
             const length = Math.max(tokensArray.length, 100);
             const cToken = this.tokens[canvas?.tokens?.controlled[0]?.id];
@@ -1248,11 +1260,10 @@ class Levels3DPreview {
                 tokenPositionsArray[i] = new THREE.Vector4(pos.x, pos.y, pos.z, tokensArray[i - 1]._shaderSize);
             }
             const sound = this.getSoundFrequency();
-            this.shaderHandler.updateShaders(time, tokenPositionsArray, sound);
+            this.shaderHandler.updateShaders(time, tokenPositionsArray, sound, obstructing);
             this.interactionManager._canMouseMove = true;
             this.interactionManager.dragObject();
             this.cursors.update();
-            const delta = this.clock.getDelta();
             if (this.models?.reticule?.material) this.models.reticule.material.rotation += delta * 0.05;
             tokensArray.forEach((token) => {
                 if (token) {
@@ -1265,14 +1276,6 @@ class Levels3DPreview {
                     }
                     if (token.standUp && token.standupFace) {
                         token.faceCamera();
-                    }
-                }
-            });
-            Object.values(this.tiles).forEach((tile) => {
-                if (tile) {
-                    tile._onAnimationLoop(delta);
-                    if (tile.mixer && !tile.paused) {
-                        tile.mixer.update(delta);
                     }
                 }
             });
