@@ -278,11 +278,16 @@
                 "label": "Door Style",
                 "options": {
                     "transparent": "Transparent",
-                    "animate": "Animated"
+                    "animate": "Animated (Pivot)",
+                    "slide": "Animated (Slide - Side)",
+                    "slideVertical": "Animated (Slide - Vertical)"
                 }
             },
             "doorAnimateAngle": {
                 "label": "Door Animation Angle"
+            },
+            "doorSlidePercent": {
+                "label": "Door Slide Percentage"
             },
             "isFog":{
                 "label": "Is Fog of War Box?",

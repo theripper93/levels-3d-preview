@@ -1138,6 +1138,8 @@ export function registerConfigs() {
                     options: {
                         0: game.i18n.localize("levels3dpreview.flags.doorStyle.options.transparent"),
                         1: game.i18n.localize("levels3dpreview.flags.doorStyle.options.animate"),
+                        2: game.i18n.localize("levels3dpreview.flags.doorStyle.options.slide"),
+                        3: game.i18n.localize("levels3dpreview.flags.doorStyle.options.slideVertical"),
                     },
                 },
                 doorAnimateAngle: {
@@ -1146,6 +1148,14 @@ export function registerConfigs() {
                     default: 90,
                     min: -180,
                     max: 180,
+                    step: 1,
+                },
+                doorSlidePercent: {
+                    type: "range",
+                    label: game.i18n.localize("levels3dpreview.flags.doorSlidePercent.label"),
+                    default: 50,
+                    min: -100,
+                    max: 100,
                     step: 1,
                 },
             },

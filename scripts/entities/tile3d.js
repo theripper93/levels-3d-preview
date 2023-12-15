@@ -353,6 +353,7 @@ export class Tile3D {
         this.wasFreeMode = this.tile.document.getFlag("levels-3d-preview", "wasFreeMode") ?? false;
         this.doorStyle = parseInt(this.tile.document.getFlag("levels-3d-preview", "doorStyle") ?? 0);
         this.doorAnimateAngle = Math.toRadians(parseInt(this.tile.document.getFlag("levels-3d-preview", "doorAnimateAngle") ?? 90));
+        this.doorSlidePercent = parseInt(this.tile.document.getFlag("levels-3d-preview", "doorSlidePercent") ?? 50);
         this.doorType = this.tile.document.getFlag("levels-3d-preview", "doorType") ?? 0;
         this.doorState = this.tile.document.getFlag("levels-3d-preview", "doorState") ?? 0;
         this.mergedMatrix = this.tile.document.getFlag("levels-3d-preview", "mergedMatrix") ?? null;
@@ -445,6 +446,49 @@ export class Tile3D {
                     }
                     const p = CanvasAnimation.animate(animation, { duration: 400, easing: "easeOutCircle" });
                     promises.push(p);
+                    break;
+                case 2:
+                    const slideAngle = this.doorAnimateAngle;
+                    const amount = (Math.max(this.tile.document.height, this.tile.document.width) / factor)*(this.doorSlidePercent/100);
+                    const xComponent = Math.cos(slideAngle) * amount;
+                    const zComponent = Math.sin(slideAngle) * amount;
+                    const animation2 = [
+                        {
+                            parent: door.position,
+                            attribute: "x",
+                            to: this.isOpen ? this.originalPosition.x + xComponent : this.originalPosition.x,
+                        },
+                        {
+                            parent: door.position,
+                            attribute: "z",
+                            to: this.isOpen ? this.originalPosition.z + zComponent : this.originalPosition.z,
+                        },
+                    ];
+                    const sightMesh2 = door.userData.sightMesh;
+                    if (sightMesh2) {
+                        sightMesh2.position.x = this.isOpen ? this.originalPosition.x + xComponent : this.originalPosition.x;
+                        sightMesh2.position.z = this.isOpen ? this.originalPosition.z + zComponent : this.originalPosition.z;
+                    }
+                    const p2 = CanvasAnimation.animate(animation2, {duration: 400, easing: "easeOutCircle"});
+                    promises.push(p2);
+                    break;
+                case 3:
+                    const amount2 = (this.depth)*(this.doorSlidePercent/100);
+                    const yComponent = amount2;
+                    const animation3 = [
+                        {
+                            parent: this.mesh.children[0].position,
+                            attribute: "y",
+                            to: this.isOpen ? this.originalPosition.y + yComponent : this.originalPosition.y,
+                        },
+                    ];
+                    const sightMesh3 = door.userData.sightMesh;
+                    if (sightMesh3) {
+                        sightMesh3.position.y = this.isOpen ? this.originalPosition.y + yComponent : this.originalPosition.y;
+                    }
+                    const p3 = CanvasAnimation.animate(animation3, {duration: 400, easing: "easeOutCircle"});
+                    promises.push(p3);
+                    break;
             }
             const sightMesh = door.userData.sightMesh;
             if (sightMesh) {
@@ -489,6 +533,7 @@ export class Tile3D {
         if (firstRender) {
             this.originalDoorMaterials = {};
             this.originalAngle = this.mesh.children[0].rotation.y;
+            this.originalPosition = this.mesh.children[0].position.clone();
             this.mesh.traverse((child) => {
                 if (child.isMesh) {
                     this.originalDoorMaterials[child.uuid] = {
@@ -536,6 +581,44 @@ export class Tile3D {
                 ];
                 if (!firstRender) promise = CanvasAnimation.animate(animation, { duration: 400, easing: "easeOutCircle" });
                 else this.mesh.children[0].rotation.y = this.isOpen ? this.originalAngle + this.doorAnimateAngle : this.originalAngle;
+                break;
+            case 2:
+                const slideAngle = this.doorAnimateAngle;
+                const amount = (Math.max(this.tile.document.height, this.tile.document.width) / factor)*(this.doorSlidePercent/100);
+                const xComponent = Math.cos(slideAngle) * amount;
+                const zComponent = Math.sin(slideAngle) * amount;
+                const animation2 = [
+                    {
+                        parent: this.mesh.children[0].position,
+                        attribute: "x",
+                        to: this.isOpen ? this.originalPosition.x + xComponent : this.originalPosition.x,
+                    },
+                    {
+                        parent: this.mesh.children[0].position,
+                        attribute: "z",
+                        to: this.isOpen ? this.originalPosition.z + zComponent : this.originalPosition.z,
+                    },
+                ];
+                if (!firstRender) promise = CanvasAnimation.animate(animation2, {duration: 400, easing: "easeOutCircle"});
+                else {
+                    this.mesh.children[0].position.x = this.isOpen ? this.originalPosition.x + xComponent : this.originalPosition.x;
+                    this.mesh.children[0].position.z = this.isOpen ? this.originalPosition.z + zComponent : this.originalPosition.z;
+                }
+                break;
+            case 3:
+                const amount2 = (this.depth)*(this.doorSlidePercent/100);
+                const yComponent = amount2;
+                const animation3 = [
+                    {
+                        parent: this.mesh.children[0].position,
+                        attribute: "y",
+                        to: this.isOpen ? this.originalPosition.y + yComponent : this.originalPosition.y,
+                    },
+                ];
+                if (!firstRender) promise = CanvasAnimation.animate(animation3, {duration: 400, easing: "easeOutCircle"});
+                else {
+                    this.mesh.children[0].position.y = this.isOpen ? this.originalPosition.y + yComponent : this.originalPosition.y;
+                }
                 break;
         }
         const finalizeDoor = () => {
