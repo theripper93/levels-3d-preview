@@ -286,6 +286,10 @@
             "doorAnimateAngle": {
                 "label": "Door Animation Angle"
             },
+            "doorAnimationDuration": {
+                "label": "Door Animation Duration",
+                "units": "ms"
+            },
             "doorSlidePercent": {
                 "label": "Door Slide Percentage"
             },

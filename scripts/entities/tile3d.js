@@ -10,6 +10,8 @@ THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
 THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
 THREE.Mesh.prototype.raycast = acceleratedRaycast;
 
+const DOOR_ANIMATION_EASING = "easeInOutCosine";
+
 export class Tile3D {
     constructor(tile, parent, fromUpdate = false, displacementCanvas = null) {
         this.tile = tile;
@@ -107,7 +109,7 @@ export class Tile3D {
                     to: 1,
                 },
             ];
-            CanvasAnimation.animate(animation, { duration: 400, easing: "easeOutCircle" });
+            CanvasAnimation.animate(animation, { duration: 350, easing: "easeOutCircle" });
         } else {
             this.mesh.scale.set(0.0001, 0.0001, 0.0001);
             const animation = [
@@ -127,7 +129,7 @@ export class Tile3D {
                     to: 1,
                 },
             ];
-            CanvasAnimation.animate(animation, { duration: 400, easing: "easeOutCircle" });
+            CanvasAnimation.animate(animation, { duration: 350, easing: "easeOutCircle" });
         }
     }
 
@@ -361,6 +363,7 @@ export class Tile3D {
         this.doorSlidePercent = parseInt(this.tile.document.getFlag("levels-3d-preview", "doorSlidePercent") ?? 50);
         this.doorType = this.tile.document.getFlag("levels-3d-preview", "doorType") ?? 0;
         this.doorState = this.tile.document.getFlag("levels-3d-preview", "doorState") ?? 0;
+        this.doorAnimationDuration = this.tile.document.getFlag("levels-3d-preview", "doorAnimationDuration") ?? 400;
         this.mergedMatrix = this.tile.document.getFlag("levels-3d-preview", "mergedMatrix") ?? null;
         this.originalDimensions = this.tile.document.getFlag("levels-3d-preview", "originalDimensions") ?? null;
         this.highlightOnHover = this.tile.document.getFlag("levels-3d-preview", "highlightOnHover") ?? false;
@@ -449,7 +452,7 @@ export class Tile3D {
                     if (sightMesh) {
                         sightMesh.rotation.y = matToApply.angle;
                     }
-                    const p = CanvasAnimation.animate(animation, { duration: 400, easing: "easeOutCircle" });
+                    const p = CanvasAnimation.animate(animation, { duration: this.doorAnimationDuration, easing: DOOR_ANIMATION_EASING });
                     promises.push(p);
                     break;
                 case 2:
@@ -474,7 +477,7 @@ export class Tile3D {
                         sightMesh2.position.x = this.isOpen ? this.originalPosition.x + xComponent : this.originalPosition.x;
                         sightMesh2.position.z = this.isOpen ? this.originalPosition.z + zComponent : this.originalPosition.z;
                     }
-                    const p2 = CanvasAnimation.animate(animation2, {duration: 400, easing: "easeOutCircle"});
+                    const p2 = CanvasAnimation.animate(animation2, { duration: this.doorAnimationDuration, easing: DOOR_ANIMATION_EASING});
                     promises.push(p2);
                     break;
                 case 3:
@@ -491,7 +494,7 @@ export class Tile3D {
                     if (sightMesh3) {
                         sightMesh3.position.y = this.isOpen ? this.originalPosition.y + yComponent : this.originalPosition.y;
                     }
-                    const p3 = CanvasAnimation.animate(animation3, {duration: 400, easing: "easeOutCircle"});
+                    const p3 = CanvasAnimation.animate(animation3, { duration: this.doorAnimationDuration, easing: DOOR_ANIMATION_EASING});
                     promises.push(p3);
                     break;
             }
@@ -584,7 +587,7 @@ export class Tile3D {
                         to: this.isOpen ? this.originalAngle + this.doorAnimateAngle : this.originalAngle,
                     },
                 ];
-                if (!firstRender) promise = CanvasAnimation.animate(animation, { duration: 400, easing: "easeOutCircle" });
+                if (!firstRender) promise = CanvasAnimation.animate(animation, { duration: this.doorAnimationDuration, easing: DOOR_ANIMATION_EASING });
                 else this.mesh.children[0].rotation.y = this.isOpen ? this.originalAngle + this.doorAnimateAngle : this.originalAngle;
                 break;
             case 2:
@@ -604,7 +607,7 @@ export class Tile3D {
                         to: this.isOpen ? this.originalPosition.z + zComponent : this.originalPosition.z,
                     },
                 ];
-                if (!firstRender) promise = CanvasAnimation.animate(animation2, {duration: 400, easing: "easeOutCircle"});
+                if (!firstRender) promise = CanvasAnimation.animate(animation2, { duration: this.doorAnimationDuration, easing: DOOR_ANIMATION_EASING});
                 else {
                     this.mesh.children[0].position.x = this.isOpen ? this.originalPosition.x + xComponent : this.originalPosition.x;
                     this.mesh.children[0].position.z = this.isOpen ? this.originalPosition.z + zComponent : this.originalPosition.z;
@@ -620,7 +623,7 @@ export class Tile3D {
                         to: this.isOpen ? this.originalPosition.y + yComponent : this.originalPosition.y,
                     },
                 ];
-                if (!firstRender) promise = CanvasAnimation.animate(animation3, {duration: 400, easing: "easeOutCircle"});
+                if (!firstRender) promise = CanvasAnimation.animate(animation3, { duration: this.doorAnimationDuration, easing: DOOR_ANIMATION_EASING});
                 else {
                     this.mesh.children[0].position.y = this.isOpen ? this.originalPosition.y + yComponent : this.originalPosition.y;
                 }

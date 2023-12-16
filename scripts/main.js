@@ -1765,18 +1765,36 @@ class Levels3DPreview {
         if (!scene) return;
         const tile = scene.tiles.get(tileId);
         if (!tile) return;
+
+        function _playDoorSound(interaction) {
+            if (!CONST.WALL_DOOR_INTERACTIONS.includes(interaction)) {
+                throw new Error(`"${interaction}" is not a valid door interaction type`);
+            }
+            const doorSound = CONFIG.Wall.doorSounds[tile.getFlag("levels-3d-preview","doorSound") ?? ""];
+            let sounds = doorSound?.[interaction];
+            if (sounds && !Array.isArray(sounds)) sounds = [sounds];
+            else if (!sounds?.length) {
+                if (interaction !== "test") return;
+                sounds = [CONFIG.sounds.lock];
+            }
+            const src = sounds[Math.floor(Math.random() * sounds.length)];
+            AudioHelper.play({ src }, true);
+        }
+        
         if (subDoorId) {
             const ds = tile.getFlag("levels-3d-preview", `modelDoors.${subDoorId}`)?.ds ?? 0;
             const isLocked = ds == 2;
 
-            if (isLocked) return AudioHelper.play({ src: CONFIG.sounds.lock });
+            if (isLocked) return _playDoorSound("lock");
             tile.setFlag("levels-3d-preview", `modelDoors.${subDoorId}.ds`, ds == 0 ? "1" : "0");
+            _playDoorSound(ds == 0 ? "open" : "close")
         } else {
             const ds = tile.getFlag("levels-3d-preview", "doorState") ?? 0;
             const isLocked = ds == 2;
 
-            if (isLocked) return AudioHelper.play({ src: CONFIG.sounds.lock });
+            if (isLocked) return _playDoorSound("lock");
             tile.setFlag("levels-3d-preview", "doorState", ds == 0 ? "1" : "0");
+            _playDoorSound(ds == 0 ? "open" : "close")
         }
     }
 

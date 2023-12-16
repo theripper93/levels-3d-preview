@@ -1121,6 +1121,15 @@ export function registerConfigs() {
                         2: game.i18n.localize("levels3dpreview.flags.doorType.options.secret"),
                     },
                 },
+                doorSound: {
+                    type: "select",
+                    label: game.i18n.localize("WALLS.DoorSoundLabel"),
+                    default: "",
+                    options: Object.entries(CONFIG.Wall.doorSounds).reduce((obj, [key, value]) => {
+                        obj[key] = game.i18n.localize(value.label);
+                        return obj;
+                    }, {"":""}),
+                },
                 doorState: {
                     type: "select",
                     label: game.i18n.localize("WALLS.DoorState"),
@@ -1141,6 +1150,12 @@ export function registerConfigs() {
                         2: game.i18n.localize("levels3dpreview.flags.doorStyle.options.slide"),
                         3: game.i18n.localize("levels3dpreview.flags.doorStyle.options.slideVertical"),
                     },
+                },
+                doorAnimationDuration: {
+                    type: "number",
+                    label: game.i18n.localize("levels3dpreview.flags.doorAnimationDuration.label"),
+                    units: game.i18n.localize("levels3dpreview.flags.doorAnimationDuration.units"),
+                    default: 400,
                 },
                 doorAnimateAngle: {
                     type: "range",

@@ -132,6 +132,7 @@ export const injectConfig = {
 
         const injectPoint = this._getInjectionPoint(app, html, data, object);
 
+        const isTabs = !!html.querySelector(".sheet-tabs");
         this._generateTabStruct(app, html, data, object);
         
         const tabSize = data.tab?.width ?? 100;
@@ -142,21 +143,33 @@ export const injectConfig = {
             app.activateListeners($(injectHtml));
         } catch (error) {}
 
+        if (data.tab) {
+            const injectTab = this._createTab(html, data.tab.name, data.tab.label, data.tab.icon)
+            injectTab.append(injectHtml);
+            (injectPoint ?? this._getInjectionPoint(app, html, data, object)).after(injectTab);
+            if(app._activeTab) html.querySelector(`.item[data-tab="${app._activeTab}"]`)?.click();
+        } else {
+            injectPoint.after(injectHtml);
+        }
+
         html.querySelectorAll(".tabs .item").forEach((item) => {
             item.addEventListener("click", (e) => app._activeTab = e.currentTarget.dataset.tab);
         });
 
-        if (data.tab) {
-            const injectTab = this._createTab(html, data.tab.name, data.tab.label, data.tab.icon)
-            injectTab.append(injectHtml);
-            injectPoint.after(injectTab);
-            if(app._activeTab) html.querySelector(`.item[data-tab="${app._activeTab}"]`)?.click();
-            app?.setPosition({"height" : "auto", "width" : data.tab ? app.options.width + tabSize : "auto"});
-            return $(injectHtml);
+        if (!isTabs) {
+            html.querySelectorAll(".item").forEach((item) => {
+                item.addEventListener("click", (e) => {
+                    html.querySelectorAll(".item").forEach((i) => i.classList.remove("active"));
+                    e.currentTarget.classList.add("active");
+                    html.querySelectorAll(".tab").forEach((i) => i.classList.remove("active"));
+                    html.querySelector(`.tab[data-tab="${e.currentTarget.dataset.tab}"]`).classList.add("active");
+                    app.setPosition({"height" : "auto", "width" : data.tab ? app.options.width + tabSize : "auto"});
+                });
+            });
         }
 
-        injectPoint.after(injectHtml);
-        if(app)app?.setPosition({"height" : "auto", "width" : data.tab ? app.options.width + tabSize : "auto"});
+        
+        app?.setPosition({"height" : "auto", "width" : data.tab ? app.options.width + tabSize : "auto"});
         return $(injectHtml);
 
     },
@@ -189,26 +202,16 @@ export const injectConfig = {
         const inputsContainer = container.querySelector(".tab");
         //move all content of form into tab
         const form = html.querySelector("form");
-        form.children.forEach((e)=>{
+        Array.from(form.children).forEach((e)=>{
             inputsContainer.append(e);
         });
         
-        container.children.forEach((e)=>{
+        Array.from(container.children).forEach((e)=>{
             form.append(e);
         });
 
         const submitButton = html.querySelector("button[type='submit']");
         form.append(submitButton);
-
-        html.querySelectorAll(".item").forEach((item) => {
-            item.addEventListener("click", (e) => {
-                html.querySelectorAll(".item").forEach((i) => i.classList.remove("active"));
-                e.currentTarget.classList.add("active");
-                html.querySelectorAll(".tab").forEach((i) => i.classList.remove("active"));
-                html.querySelector(`[data-tab="${e.currentTarget.dataset.tab}"]`).classList.add("active");
-                app.setPosition({"height" : "auto", "width" : data.tab ? app.options.width + tabSize : "auto"});
-            });
-        });
     }
 }
 
@@ -221,7 +224,7 @@ const _template = `
     {{else}}
     <div class="form-group">
         
-            <label for="{{input.name}}">{{input.label}}</label>
+            <label for="{{input.name}}">{{{input.label}}}</label>
         
         {{#if (eq input.type 'text')}}
             <input type="text" name="{{input.name}}" placeholder="{{input.placeholder}}" value="{{input.value}}">
