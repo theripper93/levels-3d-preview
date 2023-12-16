@@ -951,6 +951,16 @@
                         "optgroup": "Directional (Requires Emission Angle)"
                     }
                 },
+                "ParticlePosition": {
+                    "label": "Position",
+                    "options": {
+                        "surface": "Surface",
+                        "center": "Center"
+                    }
+                },
+                "ParticleRadius": {
+                    "label": "Radius"
+                },
                 "ParticleIntensity": {
                     "label": "Intensity"
                 },

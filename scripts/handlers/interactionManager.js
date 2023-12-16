@@ -919,7 +919,7 @@ export class InteractionManager {
             this.dragplane.position.set(center.x, -99999999, center.z);
             this.removeClone();
         }
-        if (this.ruler && (canvas.scene.getFlag("levels-3d-preview", "enableRuler") ?? true)) this.ruler.object = object;
+        if (this.ruler) this.ruler.object = object;
     }
 
     get draggable() {

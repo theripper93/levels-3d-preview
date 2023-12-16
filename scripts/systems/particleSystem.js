@@ -676,10 +676,10 @@ class BaseParticleEffect {
 
     setMeshSurface() {
         if(!this.params.meshSurface) return;
-        if (!(this.to instanceof Tile)) return;
-        const tile3d = game.Levels3DPreview.tiles[this.to.id];
+        if (!(this.to instanceof Tile) && !(this.to instanceof Token)) return;
+        const object3d = game.Levels3DPreview.tiles[this.to.id] ?? game.Levels3DPreview.tokens[this.to.id];
 
-        const mergedGeometry = tile3d.getMergedGeometry();
+        const mergedGeometry = object3d.getMergedGeometry();
         mergedGeometry.computeBoundingBox();
         const shape = new QUARKS.MeshSurfaceEmitter(mergedGeometry)
         this._meshCenter = mergedGeometry.boundingBox.getCenter(new THREE.Vector3());
@@ -875,7 +875,10 @@ class BaseParticleEffect {
     }
 
     animate(delta) {
-        if (this._attachTarget) this.emitter.position.copy(this._attachTarget.position);
+        if (this._attachTarget) {
+            if (this.to instanceof Token) this.emitter.rotation.copy(this._attachTarget.rotation);
+            this.emitter.position.copy(this._attachTarget.position);
+        }
         if (this._light) this.animateLight(delta);
     }
 
@@ -6086,6 +6089,25 @@ const TargetOnlyPresetSystems = {
     "json": JSONParticle,
 }
 
+const TokenParticleSystems = {
+    "torch": TorchParticle,
+    "fire": FireParticle,
+    "magiccircle": MagicCircleParticle,
+    "vortex": VortexParticle,
+    "sparks": SparksParticle,
+    "holy": HolyLightParticle,
+    "ghostly": GhostlyParticle,
+    "fairy": FairyParticle,
+    "smokecloud": SmokeCloudParticle,
+    "mysteriouslights": MysteriousLightsParticle,
+    "sunburst": SunburstParticle,
+    "tesla": TeslaParticle,
+    "magicsphere": MagicSphereParticle,
+    "mist": MistParticle,
+    "mist2": Mist2Particle,
+    "gravitywell": GravityWellParticle,
+}
+
 const TileParticleSystems = {
     "torch": TorchParticle,
     "fire": FireParticle,
@@ -6123,6 +6145,7 @@ export class PARTICLE_SYSTEMS{
             LightParticleSystems,
             DirectionalParticleSystems,
             TileParticleSystems,
+            TokenParticleSystems,
         }
     }
 
@@ -6135,6 +6158,12 @@ export class PARTICLE_SYSTEMS{
     static get TILE_PARTICLE_SYSTEMS() {
         return {
             ...TileParticleSystems,
+        }
+    }
+
+    static get TOKEN_PARTICLE_SYSTEMS() {
+        return {
+            ...TokenParticleSystems,
         }
     }
 
@@ -6225,6 +6254,7 @@ export class PARTICLE_SYSTEMS{
 
     static getDefaultLightData(system) {
         const systemClass = this.getParticleClass(system);
+        if(!systemClass) return null;
         return {
             scale: systemClass.DEFAULT_SCALE,
             emitterSize: systemClass.DEFAULT_EMITTER_SIZE,

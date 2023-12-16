@@ -6,6 +6,8 @@ import {isLockedOnOrigin} from "../shaders/templateEffects.js";
 
 const basicMat = new THREE.MeshBasicMaterial();
 
+const validTemplateTypes = ["circle", "rect", "cone", "ray"]
+
 export class Template3D {
     constructor(template, A, B) {
         this.template = template;
@@ -19,6 +21,7 @@ export class Template3D {
             this.template.t = "circle";
             this.isSound = true;
         }
+        if(!validTemplateTypes.includes(this.template.t)) this.template.t = "rect";
         this.embeddedName = "MeasuredTemplate";
         this.placeable = template;
         this.initialDirection = this.template.document?.direction;
@@ -512,7 +515,8 @@ export class Template3D {
     }
 
     _getBaseShape() {
-        return this.template.document?.t ?? this.template.t;
+        const t = this.template.document?.t ?? this.template.t;
+        return validTemplateTypes.includes(t) ? t : "rect";
     }
 
     get templateStyle() {

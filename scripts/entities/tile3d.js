@@ -289,6 +289,10 @@ export class Tile3D {
         return this.center;
     }
 
+    get hasAnimations() {
+        return !!this.mixer;
+    }
+
     getFlags() {
         this.gtflPath = this.tile.document.getFlag("levels-3d-preview", "model3d");
         this.mapgen = this.tile.document.getFlag("levels-3d-preview", "mapgen");

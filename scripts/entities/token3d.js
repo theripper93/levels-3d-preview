@@ -9,6 +9,7 @@ import { ActiveEffectEffect } from "./effects/activeEffect.js";
 import {RangeRingEffect} from "./effects/rangeRing.js";
 import { imageTo3d } from "../helpers/imageTo3D.js";
 import {Ruler3D} from "../systems/ruler3d.js";
+import { meshesToSingleMesh } from "../helpers/geometryUtils.js";
 THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
 THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
 THREE.Mesh.prototype.raycast = acceleratedRaycast;
@@ -22,6 +23,7 @@ export class Token3D {
         this.type = "Token";
         this.embeddedName = "Token";
         this.placeable = this.token;
+        this.document = this.token.document;
         this._shaderSize = Math.max(this.token.document.width, this.token.document.height);
         this.isOwner = this.token.isOwner;
         this._parent = parent;
@@ -40,6 +42,7 @@ export class Token3D {
         this.proneHandler = {};
         this.combatColor = new THREE.Color("#005eff");
         this._loaded = false;
+        game.Levels3DPreview.particleSystem.stop(this.particleEffectId);
         this.getFlags();
         this._baseColor = new THREE.Color(this.baseColor);
         this.forceDrawBars = this.drawBars;
@@ -85,6 +88,7 @@ export class Token3D {
         this.attachments = this.token.document.getFlag("levels-3d-preview", "attachments") ?? [];
         if (this.faceCameraOption !== "0") this.standupFace = this.faceCameraOption == "1" ? true : false;
         this.enableReticule = game.settings.get("levels-3d-preview", "enableReticule");
+        this.particleData = this.getParticleData();
     }
 
     async load() {
@@ -96,6 +100,7 @@ export class Token3D {
         this._loaded = true;
         await this.initShaders();
         this.animationHandler.init();
+        if (this.particleData.type != "none") this.initParticle();
         return token3d;
     }
     //remove
@@ -1455,6 +1460,65 @@ export class Token3D {
 
     async initShaders() {
         await this._parent.shaderHandler.applyShader(this.model, this, this.shaders);
+    }
+
+    get particleEffectId() {
+        return "Token." + this.document.id;
+    }
+
+    getMergedGeometry() {
+        if (this._mergedGeometry) return this._mergedGeometry;
+        const prevPosition = this.model.parent.position.clone();
+        const prevRotation = this.model.parent.rotation.clone();
+        this.model.parent.position.set(0, 0, 0);
+        this.model.parent.rotation.set(0, 0, 0);
+
+        this.model.parent.updateMatrix()
+        this.model.parent.updateMatrixWorld(true);
+        this.model.updateMatrixWorld(true);
+        const mergedMesh = meshesToSingleMesh([this.model]);
+
+        this._mergedGeometry = mergedMesh.geometry;
+        
+        this.model.parent.position.copy(prevPosition);
+        this.model.parent.rotation.copy(prevRotation);
+
+        return this._mergedGeometry;
+    }
+
+    initParticle() {
+        if (!game.settings.get("levels-3d-preview", "enableEffects")) return;
+        if (this.document.hidden && !this.document.getFlag("levels-3d-preview", "enableParticleHidden")) return;
+        const particleData = this.particleData;
+        const size = (Math.max(this.w, this.h) * factor) / canvas.grid.size;
+        const centerSize = particleData.radius;
+        this.particleEffect = new Particle3D(particleData.type);
+        this.particleEffect
+            .name(this.particleEffectId)
+            .sprite(particleData.sprite)
+            .scale(particleData.scale)
+            .color(particleData.color.split(","), particleData.color2 ? particleData.color2.split(",") : undefined)
+            .duration(Infinity)
+            .presetIntensity(particleData.presetIntensity)
+            .emitterSize(particleData.position === "center" ? centerSize : size)
+            .attach()
+            .to(this.placeable);
+        if(particleData.position === "surface") this.particleEffect.meshSurface()
+        this.particleEffect.start(false);
+    }
+
+    getParticleData() {
+        return {
+            type: this.document.getFlag("levels-3d-preview", "ParticleType") ?? "none",
+            sprite: this.document.getFlag("levels-3d-preview", "ParticleSprite") ?? "",
+            emitterScale: 1,
+            scale: this.document.getFlag("levels-3d-preview", "ParticleScale") ?? 1,
+            color: this.document.getFlag("levels-3d-preview", "ParticleColor") ?? "#ffffff",
+            color2: this.document.getFlag("levels-3d-preview", "ParticleColor2") ?? "#ffffff",
+            presetIntensity: this.document.getFlag("levels-3d-preview", "ParticleIntensity") ?? 1,
+            radius: this.document.getFlag("levels-3d-preview", "ParticleRadius") || Math.max(this.document.width, this.document.height) * canvas.scene.grid.distance,
+            position: this.document.getFlag("levels-3d-preview", "ParticlePosition") ?? "surface",
+        };
     }
 
     get h() {

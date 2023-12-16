@@ -10,6 +10,7 @@ export class Ruler3D {
         this.isDragRouler = game.modules.get("drag-ruler")?.active;
         this.isHoverDistance = game.modules.get("hover-distance")?.active;
         this.useRaycastRuler = game.settings.get("levels-3d-preview", "useRaycastRuler");
+        this._enableRuler = canvas.scene.getFlag("levels-3d-preview", "enableRuler");
         this.color = new THREE.Color(game.user.color);
         this.closedPolygonColor = new THREE.Color("#ffffff");
         this.colorCache = {};
@@ -33,6 +34,10 @@ export class Ruler3D {
 
     get allowedRulerDrag() {
         return game.Levels3DPreview.interactionManager.allowedRulerDrag;
+    }
+
+    get enableRuler() {
+        return this._enableRuler || !this.isToken;
     }
 
     drawTemplate() {
@@ -83,6 +88,11 @@ export class Ruler3D {
         this.textDistance = this.textElement.find(".distance")[0];
         this.textElement.hide();
         $("body").append(this.textElement);
+        if (!this.enableRuler) {
+            this.sphere1.visible = false;
+            this.sphere2.visible = false;
+            this.dragRing.visible = false;
+        }
     }
 
     addMarkers() {
@@ -109,12 +119,13 @@ export class Ruler3D {
             this.removeMarkers(isToken);
 
         } else {
+            this._enableRuler = canvas.scene.getFlag("levels-3d-preview", "enableRuler");
             this.clearSegments();
             this.addMarkers();
             const target = value.userData.isHitbox ? value.parent : value;
             this._object = target;
             this.origin = new THREE.Vector3(target.position.x, target.position.y, target.position.z);
-            this.textElement.show();
+            if(this.enableRuler) this.textElement.show();
             const isToken = this._object?.userData?.entity3D?.token;
             if (isToken) {
                 this.dragRing.scale.set(0, 1, 0);
@@ -275,6 +286,7 @@ export class Ruler3D {
         this.roulerLineMaterial.color = c;
         this.dragRingMaterial.color = c;
         this.line = new THREE.Group();
+        if(!this.enableRuler) this.line.visible = false;
         this.lineOuter = new THREE.Mesh(geometry, this.dragRingMaterial);
         this.lineOuter.userData.ignoreHover = true;
         this.line.add(this.lineOuter);

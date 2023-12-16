@@ -562,16 +562,19 @@ export function injectAdvancedToggle(app, html, settings, injected, other = []) 
     toggleAdvancedSettings(app, html, settings, other);
 }
 
-export function hideParams(app, html, element, flags, hide) {
+export function hideParams(app, html, element, flags, hide, invert = false) {
+    if(!Array.isArray(hide)) hide = [hide];
     html.on("change", element, (e) => {
-        const value = typeof hide == "boolean" ? e.target.checked : e.target.value;
-        if (value === hide) {
+        const value = hide.some(h => typeof h == "boolean") ? e.target.checked : e.target.value;
+        if (hide.includes(value)) {
             flags.forEach((flag) => {
-                html.find(`[name="flags.levels-3d-preview.${flag}"]`).closest(".form-group").addClass("hidden");
+                const els = html.find(`[name="flags.levels-3d-preview.${flag}"]`).closest(".form-group");
+                invert ? els.removeClass("hidden") : els.addClass("hidden");
             });
         } else {
             flags.forEach((flag) => {
-                html.find(`[name="flags.levels-3d-preview.${flag}"]`).closest(".form-group").removeClass("hidden");
+                const els = html.find(`[name="flags.levels-3d-preview.${flag}"]`).closest(".form-group");
+                invert ? els.addClass("hidden") : els.removeClass("hidden");
             });
         }
             app.setPosition({ height: "auto" });
