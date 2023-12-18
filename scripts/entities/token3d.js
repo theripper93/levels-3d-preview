@@ -1,6 +1,5 @@
 import * as THREE from "../lib/three.module.js";
 import { factor } from "../main.js";
-import { sleep } from "../helpers/utils.js";
 import { Light3D } from "./light3d.js";
 import { TokenAnimationHandler } from "../handlers/tokenAnimationHandler.js";
 import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from "../lib/three-mesh-bvh.js";
@@ -1451,6 +1450,7 @@ export class Token3D {
         this._parent.scene.remove(this.mesh);
         this._destroyed = true;
         delete this._parent.tokens[this.id];
+        game.Levels3DPreview.particleSystem.stop(this.particleEffectId);
     }
 
     refresh() {
@@ -1491,7 +1491,7 @@ export class Token3D {
         if (this.document.hidden && !this.document.getFlag("levels-3d-preview", "enableParticleHidden")) return;
         const particleData = this.particleData;
         const size = (Math.max(this.w, this.h) * factor) / canvas.grid.size;
-        const centerSize = particleData.radius;
+        const centerSize = particleData.radius / canvas.scene.dimensions.distance;
         this.particleEffect = new Particle3D(particleData.type);
         this.particleEffect
             .name(this.particleEffectId)
@@ -1516,7 +1516,7 @@ export class Token3D {
             color: this.document.getFlag("levels-3d-preview", "ParticleColor") ?? "#ffffff",
             color2: this.document.getFlag("levels-3d-preview", "ParticleColor2") ?? "#ffffff",
             presetIntensity: this.document.getFlag("levels-3d-preview", "ParticleIntensity") ?? 1,
-            radius: this.document.getFlag("levels-3d-preview", "ParticleRadius") || Math.max(this.document.width, this.document.height) * canvas.scene.grid.distance,
+            radius: this.document.getFlag("levels-3d-preview", "ParticleRadius") || (Math.max(this.document.width, this.document.height) * canvas.scene.grid.distance),
             position: this.document.getFlag("levels-3d-preview", "ParticlePosition") ?? "surface",
         };
     }

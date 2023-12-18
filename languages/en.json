@@ -343,9 +343,9 @@
                 "notes": "The file needs to be in the same folder of 6 total files, files must contain _ft, _bk, _up, _dn, _rt, _lf."
             },
             "exr" : {
-                "label": "HDRI",
-                "placeholder": "EXR File",
-                "notes": "Supports .EXR files or images in a 360° panorama format. If no skybox is selected, the HDRI will be used as the background."
+                "label": "Skybox",
+                "placeholder": "EXR File or 360° Panorama Image",
+                "notes": "Supports .EXR files or images in a 360° panorama format. HDRI will be used as the background and to light the scene."
             },
             "exposure": {
                 "label": "Exposure",

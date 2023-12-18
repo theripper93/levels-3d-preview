@@ -978,7 +978,7 @@ class Levels3DPreview {
             const sceneSize = Math.max(canvas.scene.dimensions.width, canvas.scene.dimensions.height) / 100;
             const size = sceneSize < 80 ? 80 : sceneSize;
             this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-            const rootImage = canvas.scene.getFlag("levels-3d-preview", "skybox") ?? this.CONFIG.skybox.sky;
+            const rootImage = canvas.scene.getFlag("levels-3d-preview", "skybox");
             const exr = canvas.scene.getFlag("levels-3d-preview", "exr") ?? this.CONFIG.skybox.exr;
             if (exr) this.loadEXR(exr, enableFog);
             if (!rootImage && !exr) this._envReady = true;
