@@ -1204,6 +1204,10 @@
                 "name": "Hide Target Indicator (if solid base)",
                 "hint": "Hide the target indicator if the token has the base enabled, the targets will be shown in the base ring highlight."
             },
+            "hideEffects": {
+                "name": "Hide Effects",
+                "hint": "Hide the effects indicator floating above the token."
+            },
             "rotateIndicator": {
                 "name": "Rotate Base",
                 "hint": "Rotate the 3D Base to match token Rotation."
@@ -1530,6 +1534,8 @@
             "sharpIndicator": "Sharp + Indicator",
             "rounded": "Rounded",
             "ringHollow": "Ring Hollow",
+            "ringSimple": "Ring Simple",
+            "ringSimpleSmall": "Ring Simple Small",
             "jb2ahex1": "Hex 1 (JB2A)",
             "jb2ahex1Indicator": "Hex 1 + Indicator (JB2A)",
             "jb2ahex2": "Hex 2 (JB2A)",

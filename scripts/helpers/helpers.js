@@ -132,15 +132,23 @@ export class Helpers {
     async getBase(path) {
         let scale = 1;
         let showDisp = false;
+        let shadows = true;
         if (!path) {
             const sett = game.settings.get("levels-3d-preview", "baseStyle");
             const bData = game.Levels3DPreview.CONFIG.tokenBase.find((b) => b?.id == sett) ?? game.Levels3DPreview.CONFIG.tokenBase[0];
             path = bData.path;
             scale = bData.scale ?? 1;
             showDisp = bData.showDisp ?? false;
+            shadows = bData.shadows ?? true;
         }
         const data = await this.loadModel(path);
         const model = data.model;
+        model.traverse((child) => {
+            if (child.isMesh) {
+                child.castShadow = shadows;
+                child.receiveShadow = shadows;
+            }
+        });
         return { model, scale, showDisp };
     }
 

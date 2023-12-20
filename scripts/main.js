@@ -55,7 +55,9 @@ import { ProceduralVines } from "./helpers/ProceduralVines.js";
 import { PARTICLE_SYSTEMS } from "./systems/particleSystem.js";
 import { registerConfigs } from "./settings/config.js";
 import {registerSettings} from "./settings/settingsConfig.js";
-import { WaveFunctionSolver } from "./generators/WaveFunctionCollapse.js";
+import {WaveFunctionSolver} from "./generators/WaveFunctionCollapse.js";
+
+import { createTargetGeometry } from "./entities/effects/target.js";
 
 export const factor = 1000;
 injectFoWShaders(THREE);
@@ -145,6 +147,7 @@ class Levels3DPreview {
         this.ClipNavigation = null;
         this.workers = new WorkerHandler();
         initSharing(this);
+        this.createTargetGeometry = createTargetGeometry;
         this.debugMode = game.settings.get("levels-3d-preview", "debugMode");
         this.CONFIG = {
             PARTICLE_SYSTEMS,
@@ -228,6 +231,30 @@ class Levels3DPreview {
             presetMaterials: presetMaterials,
             tokenBase: [
                 {
+                    id: "ringHollow",
+                    path: "modules/levels-3d-preview/assets/tokenBases/ringHollow.glb",
+                    name: game.i18n.localize(`levels3dpreview.baseStyles.ringHollow`),
+                    scale: 0.7,
+                    showDisp: true,
+                    shadows: false,
+                },
+                {
+                    id: "ringSimple",
+                    path: "modules/levels-3d-preview/assets/tokenBases/ringSimple.glb",
+                    name: game.i18n.localize(`levels3dpreview.baseStyles.ringSimple`),
+                    scale: 0.7,
+                    showDisp: true,
+                    shadows: false,
+                },
+                {
+                    id: "ringSimpleSmall",
+                    path: "modules/levels-3d-preview/assets/tokenBases/ringSimple.glb",
+                    name: game.i18n.localize(`levels3dpreview.baseStyles.ringSimpleSmall`),
+                    scale: 0.5,
+                    showDisp: true,
+                    shadows: false,
+                },
+                {
                     id: "roundDoubleRing",
                     path: "modules/levels-3d-preview/assets/tokenBases/roundDoubleRing.glb",
                     name: game.i18n.localize(`levels3dpreview.baseStyles.roundDoubleRing`),
@@ -250,13 +277,6 @@ class Levels3DPreview {
                     path: "modules/levels-3d-preview/assets/tokenBases/baseRounded.glb",
                     name: game.i18n.localize(`levels3dpreview.baseStyles.rounded`),
                     scale: 0.9,
-                },
-                {
-                    id: "ringHollow",
-                    path: "modules/levels-3d-preview/assets/tokenBases/ringHollow.glb",
-                    name: game.i18n.localize(`levels3dpreview.baseStyles.ringHollow`),
-                    scale: 0.7,
-                    showDisp: true,
                 },
                 {
                     id: "jb2around1Indicator",

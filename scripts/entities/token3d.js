@@ -8,13 +8,16 @@ import { ActiveEffectEffect } from "./effects/activeEffect.js";
 import {RangeRingEffect} from "./effects/rangeRing.js";
 import { imageTo3d } from "../helpers/imageTo3D.js";
 import {Ruler3D} from "../systems/ruler3d.js";
-import { meshesToSingleMesh } from "../helpers/geometryUtils.js";
+import {meshesToSingleMesh} from "../helpers/geometryUtils.js";
+import { createTargetGeometry } from "./effects/target.js";
 THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
 THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
 THREE.Mesh.prototype.raycast = acceleratedRaycast;
 
 const heightHighlightMaterialCache = {};
 const diamondGeometry = new THREE.OctahedronGeometry(0.01, 0);
+
+const targetMaterialsCache = {};
 
 export class Token3D {
     constructor(tokenDocument, parent) {
@@ -28,10 +31,12 @@ export class Token3D {
         this._parent = parent;
         this.isBase = game.settings.get("levels-3d-preview", "baseStyle") !== "image";
         this.baseMode = game.settings.get("levels-3d-preview", "baseStyle");
-        this.reticule = parent.models.reticule.clone();
         this.color = this.getColor();
         this.factor = factor;
         this.dispositionColor = this.getDispColor();
+        const targetMaterial = targetMaterialsCache[this.dispositionColor.getHexString()] ?? new THREE.MeshBasicMaterial({color: this.dispositionColor});
+        targetMaterialsCache[this.dispositionColor.getHexString()] = targetMaterial;
+        this.reticule = new THREE.Mesh(createTargetGeometry((this._shaderSize * canvas.scene.dimensions.size) / (2 * factor), this._shaderSize), targetMaterial);
         this.targetSize = 0.1;
         this.baseDepth = 0.008 * (canvas.grid.size / 100);
         this.elevation3d = 0;
@@ -312,7 +317,7 @@ export class Token3D {
         this.mesh.userData.documentName = this.token.document.documentName;
         this.targetContainer = new THREE.Group();
         this.mesh.add(this.targetContainer);
-        this.effectsContainer = new THREE.Group();
+        if(!game.settings.get("levels-3d-preview", "hideEffects"))this.effectsContainer = new THREE.Group();
         this.mesh.add(this.effectsContainer);
         this.border = new THREE.Group();
         this.mesh.add(this.border);
@@ -753,12 +758,19 @@ export class Token3D {
         }
     }
 
-    setReticule() {
+    _setReticule() {
         this.enableReticule ? this.mesh.add(this.reticule) : this.mesh.remove(this.reticule);
         const scale = Math.max(this.h, this.w, this.d) * 0.8;
         this.reticule.scale.set(scale, scale, scale);
         this.reticule.scale.multiplyScalar(1.2);
         this.reticule.position.y = this.d / 2;
+        this.reticule.userData.ignoreHover = true;
+        this.reticule.userData.interactive = false;
+        this.reticule.userData.noIntersect = true;
+    }
+
+    setReticule() {
+        this.enableReticule ? this.mesh.add(this.reticule) : this.mesh.remove(this.reticule);
         this.reticule.userData.ignoreHover = true;
         this.reticule.userData.interactive = false;
         this.reticule.userData.noIntersect = true;
@@ -1038,6 +1050,9 @@ export class Token3D {
         this._parent.helpers.getBase().then((resp) => {
             const base = resp.model;
             const scaleFactor = resp.scale;
+            if (this.reticule && (this.baseMode == "ringHollow" || this.baseMode == "ringSimple" || this.baseMode == "ringSimpleSmall")) {
+                this.reticule.scale.set(scaleFactor, scaleFactor, scaleFactor);
+            }
             const showDisp = resp.showDisp;
             if (showDisp) {
                 this.baseColor = this.dispositionColor;
@@ -1052,8 +1067,6 @@ export class Token3D {
             const offsetMesh = base.children.find((child) => child.name == "base");
             base.traverse((child) => {
                 if (child.isMesh) {
-                    child.castShadow = true;
-                    child.receiveShadow = true;
                     if (child == offsetMesh) {
                         if ((child.material.color.r = 1 && child.material.color.g == 1 && child.material.color.b == 1)) {
                             child.material.color = new THREE.Color(this.baseColor);
@@ -1085,6 +1098,7 @@ export class Token3D {
     }
 
     _setupBorderMaterials() {
+        
         const mat1 = new THREE.MeshStandardMaterial({
             color: 0xffffff,
             emissive: 0xffffff,
@@ -1384,6 +1398,7 @@ export class Token3D {
 
     updateVisibility() {
         if (this.heightIndicator) this.heightIndicator.rotation.y += 0.01;
+        if (this.reticule) this.reticule.rotation.y += (0.0005 / this._shaderSize);
         if (!this._loaded || !this.mesh || !this.nameplate) return;
         this.mesh.visible = this.alwaysVisible || this.token.visible || this.token.hasPreview;
         this.nameplate.visible = this.token.nameplate?.visible;
@@ -1411,7 +1426,11 @@ export class Token3D {
             }
         }
         const color = CONFIG.Canvas.dispositionColors[disp];
-        return new THREE.Color(color);
+        const threeColor = new THREE.Color(color);
+        //saturate the color
+        const hsl = threeColor.getHSL({});
+        hsl.s = 1;
+        return new THREE.Color().setHSL(hsl.h, hsl.s, hsl.l);
     }
 
     _onClickLeft(e) {
