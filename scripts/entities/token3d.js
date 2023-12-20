@@ -317,7 +317,8 @@ export class Token3D {
         this.mesh.userData.documentName = this.token.document.documentName;
         this.targetContainer = new THREE.Group();
         this.mesh.add(this.targetContainer);
-        if(!game.settings.get("levels-3d-preview", "hideEffects"))this.effectsContainer = new THREE.Group();
+        this.effectsContainer = new THREE.Group();
+        this.effectsContainer.visible = !game.settings.get("levels-3d-preview", "hideEffects");
         this.mesh.add(this.effectsContainer);
         this.border = new THREE.Group();
         this.mesh.add(this.border);

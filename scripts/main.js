@@ -150,6 +150,9 @@ class Levels3DPreview {
         this.createTargetGeometry = createTargetGeometry;
         this.debugMode = game.settings.get("levels-3d-preview", "debugMode");
         this.CONFIG = {
+            COLORS: {
+                COMBAT: new THREE.Color("#005eff"),
+            },
             PARTICLE_SYSTEMS,
             useMultithreading: true,
             entityClass: {

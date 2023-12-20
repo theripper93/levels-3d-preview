@@ -1,7 +1,8 @@
 import * as THREE from "../lib/three.module.js";
 import { Ruler3D } from "./ruler3d.js";
 import {factor} from "../main.js";
-import { radialGradientShaderMaterial } from "../shaders/shaderMaterials.js";
+import {radialGradientShaderMaterial} from "../shaders/shaderMaterials.js";
+import { createTargetGeometry } from "../entities/effects/target.js";
 
 export class turnStartMarker {
     constructor(parent) {
@@ -10,10 +11,21 @@ export class turnStartMarker {
         this.update();
     }
 
-    init() {
+    _init() {
         const sphereGeometry = new THREE.CylinderGeometry((0.5 * canvas.dimensions.size) / factor, (0.5 * canvas.dimensions.size) / factor, 0.0007, 32);
         const sphereMaterial = radialGradientShaderMaterial.clone();//new THREE.MeshBasicMaterial({ color: game.user.color, blending: THREE.MultiplyBlending });
         sphereMaterial.uniforms.curvecolor.value = new THREE.Color(game.user.color);
+        sphereMaterial.uniforms.gridSize.value = (1 * canvas.dimensions.size) / factor;
+        sphereMaterial.uniforms.reverseGradient.value = true;
+        this.mesh = new THREE.Mesh(sphereGeometry, sphereMaterial);
+        //this.mesh.rotation.set(Math.PI / 2, 0, 0);
+        this.scene.add(this.mesh);
+    }
+
+    init() {
+        const sphereGeometry = createTargetGeometry((0.5 * canvas.dimensions.size) / factor, 1)//new THREE.CylinderGeometry((0.5 * canvas.dimensions.size) / factor, (0.5 * canvas.dimensions.size) / factor, 0.0007, 32);
+        const sphereMaterial = radialGradientShaderMaterial.clone();//new THREE.MeshBasicMaterial({ color: game.user.color, blending: THREE.MultiplyBlending });
+        sphereMaterial.uniforms.curvecolor.value = game.Levels3DPreview.CONFIG.COLORS.COMBAT//new THREE.Color(game.user.color);
         sphereMaterial.uniforms.gridSize.value = (1 * canvas.dimensions.size) / factor;
         sphereMaterial.uniforms.reverseGradient.value = true;
         this.mesh = new THREE.Mesh(sphereGeometry, sphereMaterial);
