@@ -705,7 +705,7 @@ export class Token3D {
         const object3D = this.model;
         if (!object3D) return;
         game.Levels3DPreview.outline.toggleControlled(object3D, this.token.controlled);
-        game.Levels3DPreview.outline.toggleHovered(object3D, this.token.hover && !this.token.controlled, this.token?.document?.disposition);
+        game.Levels3DPreview.outline.toggleHovered(object3D, (this.token.hover && !this.token.controlled) || this.token.layer.highlightObjects, this.token?.document?.disposition);
     }
 
     updateAnimation() {
@@ -1578,11 +1578,14 @@ export class Token3D {
         Hooks.on("refreshToken", (token, renderFlags) => {
             if (!game.Levels3DPreview?._active) return;
             const token3d = game.Levels3DPreview.tokens[token.id]
-            if(!token3d) return;
+            if (!token3d) return;
             if (renderFlags.refreshNameplate) token3d.drawName()
             if (renderFlags.refreshBars) token3d.drawBars()
             if (renderFlags.redrawEffects || renderFlags.refreshEffects) token3d.drawEffects()
-            if (renderFlags.refreshBorder) token3d.refreshBorder()
+            if (renderFlags.refreshBorder) {
+                token3d.refreshOutline()
+                token3d.refreshBorder()
+            }
             token3d.setPosition();
         })
 

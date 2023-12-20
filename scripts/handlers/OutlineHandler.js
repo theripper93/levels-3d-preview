@@ -73,23 +73,6 @@ export class OutlineHandler {
 }
 
 function setOutlineHooks() {
-    Hooks.on("controlToken", (token, controlled) => {
-        if (!game.Levels3DPreview?._active || !canvas.tokens.active) return;
-        const object3D = game.Levels3DPreview.tokens[token.id]?.model;
-        if (object3D) game.Levels3DPreview.outline.toggleControlled(object3D, controlled);
-    });
-
-    Hooks.on("refreshToken", (token) => {
-        if (!game.Levels3DPreview?._active || !canvas.tokens.active) return;
-        const object3D = game.Levels3DPreview.tokens[token.id]?.model;
-        if (object3D) game.Levels3DPreview.outline.toggleHovered(object3D, token.hover && !token.controlled, token?.document?.disposition);
-    });
-
-    Hooks.on("hoverToken", (token, hovered) => {
-        if (!game.Levels3DPreview?._active || !canvas.tokens.active) return;
-        const object3D = game.Levels3DPreview.tokens[token.id]?.model;
-        if (object3D) game.Levels3DPreview.outline.toggleHovered(object3D, hovered && !token.controlled, token?.document?.disposition);
-    });
 
     Hooks.on("controlTile", (tile, controlled) => {
         if (!game.Levels3DPreview?._active || !canvas.tiles.active) return;
