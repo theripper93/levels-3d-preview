@@ -669,8 +669,10 @@ class BasicParticleGeometry {
         this.colorCount = this.colors.length;
         let maxYBound = 0;
         for (let tile3d of Object.values(game.Levels3DPreview.tiles)) {
-            const bbox = new THREE.Box3().setFromObject(tile3d.mesh);
-            if (bbox.max.y > maxYBound) maxYBound = bbox.max.y;
+            const elevation = ((tile3d.document.elevation / canvas.scene.dimensions.distance) * canvas.scene.dimensions.size) / factor;
+            const depth = tile3d.depth;
+            const boundsY = elevation + depth;
+            if (boundsY > maxYBound) maxYBound = boundsY;
         }
         this.boundingBox = new THREE.Vector3(canvas.scene.dimensions.sceneWidth / factor, Math.max(maxYBound, Math.min(canvas.scene.dimensions.sceneWidth / factor, canvas.scene.dimensions.sceneHeight / factor) / 2), canvas.scene.dimensions.sceneHeight / factor);
         this.createGeometry();
