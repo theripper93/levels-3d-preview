@@ -1852,6 +1852,13 @@ export class Tile3D {
         return minDist > maxDist;
     }
 
+    triggerMATT(e, type) {
+        if (this.tile.document.checkClick) {
+            const point = e?.position3D ? Ruler3D.pos3DToCanvas(e.position3D) : game.Levels3DPreview.interactionManager.canvas3dMousePosition;
+            this.tile.document.checkClick(point, type)
+        };
+    }
+
     _onClickLeft(e) {
         const oT = e.originalIntersect?.userData;
         if (oT?.isDoor && canvas.activeLayer.options.objectClass.embeddedName === "Token" && !(oT?.isSecret && !game.user.isGM)) {
@@ -1864,19 +1871,18 @@ export class Tile3D {
             else this._parent.socket.executeAsGM("toggleDoor", this.tile.id, canvas.scene.id, game.user.id);
         }
         if (canvas.activeLayer.options.objectClass.embeddedName !== "Tile") {
-            const point = Ruler3D.pos3DToCanvas(e.position3D);
-            if (this.tile.document.checkClick) this.tile.document.checkClick(point, "click");
+            this.triggerMATT(e, "click")
         } else {
             this.tile._onClickLeft(e);
         }
     }
 
-    _setDoorState() {}
+    _setDoorState() { }
+
 
     _onClickLeft2(e) {
         if (canvas.activeLayer.options.objectClass.embeddedName !== "Tile") {
-            const point = Ruler3D.pos3DToCanvas(e.position3D);
-            if (this.tile.document.checkClick) this.tile.document.checkClick(point, "dblclick");
+            this.triggerMATT(e, "dblclick")
         } else {
             this.tile._onClickLeft(e);
             this.tile._onClickLeft2(e);
@@ -1899,13 +1905,19 @@ export class Tile3D {
                 else this.tile.document.setFlag("levels-3d-preview", "doorState", 2);
             }
         }
-        if (canvas.activeLayer.options.objectClass.embeddedName !== "Tile") return;
+        if (canvas.activeLayer.options.objectClass.embeddedName !== "Tile") {
+            this.triggerMATT(e, "rightclick")
+            return;
+        }
         const event = e;
         this.tile._onClickRight(event);
     }
 
     _onClickRight2(e) {
-        if (canvas.activeLayer.options.objectClass.embeddedName !== "Tile") return;
+        if (canvas.activeLayer.options.objectClass.embeddedName !== "Tile") {
+            this.triggerMATT(e, "dblrightclick")
+            return;
+        }
         const event = e;
         this.tile._onClickRight2(event);
     }
@@ -1918,9 +1930,10 @@ export class Tile3D {
         if (!isGM && isHoverable && !this.isSecret) return true;
         return false;
     }
-
+//hoverin
     _onHoverIn(e) {
         if (canvas.activeLayer.options.objectClass.embeddedName !== "Tile") {
+            this.triggerMATT(e, "hoverin")
             if (this.isDoorHover) {
                 game.Levels3DPreview.outline.toggleHovered(this.mesh, true, 1);
                 this._parent.setCursor("pointer");
@@ -1934,6 +1947,7 @@ export class Tile3D {
 
     _onHoverOut(e) {
         if (canvas.activeLayer.options.objectClass.embeddedName !== "Tile") {
+            this.triggerMATT(e, "hoverout")
             if (this.isDoorHover) {
                 game.Levels3DPreview.outline.toggleHovered(this.mesh, false, 1);
             }
