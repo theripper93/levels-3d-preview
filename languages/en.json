@@ -1766,6 +1766,7 @@
                 "description": "Splat Map. Requires a texture to be set. This is an advanced shader. Maps the RGBA channels of the Splat Map texture to 4 different textures.",
                 "textureSplatMap": "Splat Map",
                 "repeatSplatMap": "Splat Map Repeat",
+                "flipY": "Flip Y",
                 "useAlpha": "Use Alpha Channel",
                 "upNormals": "Only 'Up Facing' Surfaces",
                 "textureDiffuse0": "Texture R",
