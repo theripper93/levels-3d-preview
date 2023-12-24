@@ -369,7 +369,13 @@ export class ShaderHandler {
                 let finalValue = paramValue;
                 if (isColor) finalValue = new THREE.Color(paramValue);
                 if (isTexture) {
-                    finalValue = game.Levels3DPreview.helpers.loadTextureSync(paramValue);
+                    const hpInputName = game.Levels3DPreview._heightmapPainter?.input?.name;
+                    const hasPreview = hpInputName && hpInputName.includes(name) && hpInputName.includes(uniformName);
+                    if (hasPreview) {
+                        finalValue = new THREE.CanvasTexture(game.Levels3DPreview._heightmapPainter.canvas);
+                    } else {
+                        finalValue = game.Levels3DPreview.helpers.loadTextureSync(paramValue);
+                    }
                     if (finalValue) {    
                         finalValue.wrapS = THREE.RepeatWrapping;
                         finalValue.wrapT = THREE.RepeatWrapping;
@@ -1922,6 +1928,10 @@ export const shaders = {
                 type: "bool",
                 default: false,
             },
+            flipY: {
+                type: "bool",
+                default: false,
+            },
             textureDiffuse0: {
                 type: "sampler2D",
                 default: null,
@@ -1983,7 +1993,7 @@ export const shaders = {
                 #ifdef USE_UV
                 if(splatMap_upNormals && shader_vNormal.y <= 0.0) {
                 }else{
-                    vec4 splatMapTexture = sRGBToLinear(texture( splatMap_textureSplatMap, vUv * splatMap_repeatSplatMap ));
+                    vec4 splatMapTexture = sRGBToLinear(texture( splatMap_textureSplatMap, vec2(vUv.x, splatMap_flipY ? 1.0 - vUv.y : vUv.y) * splatMap_repeatSplatMap ));
                     float splatR = splatMapTexture.r;
                     float splatG = splatMapTexture.g;
                     float splatB = splatMapTexture.b;
