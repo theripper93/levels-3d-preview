@@ -1499,6 +1499,47 @@ export const shaders = {
             },
         ],
     },
+    mask: {
+        icon: `<i class="fas fa-mask"></i>`,
+        uniforms: {
+            textureMask: {
+                type: "sampler2D",
+                default: null,
+            },
+            textureDiffuse: {
+                type: "sampler2D",
+                default: null,
+            },
+            color: {
+                type: "vec3",
+                default: "#ffffff",
+            },
+            repeat: {
+                type: "float",
+                default: 1,
+            },
+        },
+        varying: {},
+        vertexShader: [],
+        fragmentShader: [
+            {
+                mode: SHADERS_CONSTS.APPEND,
+                injectionPoint: "#include <map_fragment>",
+                shaderCode: `
+                #ifdef USE_UV
+                if(shader_vNormal.y > 0.0) {
+                    vec2 mask_vUv = vec2(vUv.x, vUv.y) * (mask_repeat);
+                    vec4 maskTexture = texture( mask_textureMask, vUv );
+                    vec4 maskDiffuseTexture = sRGBToLinear(texture( mask_textureDiffuse, mask_vUv ));
+                    maskDiffuseTexture.rgb *= mask_color;
+                    texelColor = mix(texelColor, maskDiffuseTexture, maskTexture.r);
+                    diffuseColor = texelColor;
+                }
+                #endif
+                `,
+            },
+        ],
+    },
     overlay: {
         icon: '<i class="fas fa-images"></i>',
         uniforms: {
@@ -1877,6 +1918,10 @@ export const shaders = {
                 type: "bool",
                 default: false,
             },
+            upNormals: {
+                type: "bool",
+                default: false,
+            },
             textureDiffuse0: {
                 type: "sampler2D",
                 default: null,
@@ -1936,33 +1981,36 @@ export const shaders = {
                 injectionPoint: "#include <map_fragment>",
                 shaderCode: `
                 #ifdef USE_UV
-                vec4 splatMapTexture = sRGBToLinear(texture( splatMap_textureSplatMap, vUv * splatMap_repeatSplatMap ));
-                float splatR = splatMapTexture.r;
-                float splatG = splatMapTexture.g;
-                float splatB = splatMapTexture.b;
-                float splatA = splatMapTexture.a;
-                vec4 finalColor = diffuseColor;
-                if(splatR > 0.0){
-                    vec4 R_CHANNEL_TEX = sRGBToLinear(texture( splatMap_textureDiffuse0, vUv * splatMap_repeat0 ));
-                    R_CHANNEL_TEX.rgb *= splatMap_color0;
-                    finalColor = mix(finalColor, R_CHANNEL_TEX, splatR);
+                if(splatMap_upNormals && shader_vNormal.y <= 0.0) {
+                }else{
+                    vec4 splatMapTexture = sRGBToLinear(texture( splatMap_textureSplatMap, vUv * splatMap_repeatSplatMap ));
+                    float splatR = splatMapTexture.r;
+                    float splatG = splatMapTexture.g;
+                    float splatB = splatMapTexture.b;
+                    float splatA = splatMapTexture.a;
+                    vec4 finalColor = diffuseColor;
+                    if(splatR > 0.0){
+                        vec4 R_CHANNEL_TEX = sRGBToLinear(texture( splatMap_textureDiffuse0, vUv * splatMap_repeat0 ));
+                        R_CHANNEL_TEX.rgb *= splatMap_color0;
+                        finalColor = mix(finalColor, R_CHANNEL_TEX, splatR);
+                    }
+                    if(splatG > 0.0){
+                        vec4 G_CHANNEL_TEX = sRGBToLinear(texture( splatMap_textureDiffuse1, vUv * splatMap_repeat1 ));
+                        G_CHANNEL_TEX.rgb *= splatMap_color1;
+                        finalColor = mix(finalColor, G_CHANNEL_TEX, splatG);
+                    }
+                    if(splatB > 0.0){
+                        vec4 B_CHANNEL_TEX = sRGBToLinear(texture( splatMap_textureDiffuse2, vUv * splatMap_repeat2 ));
+                        B_CHANNEL_TEX.rgb *= splatMap_color2;
+                        finalColor = mix(finalColor, B_CHANNEL_TEX, splatB);
+                    }
+                    if(splatMap_useAlpha && splatA > 0.0){
+                        vec4 A_CHANNEL_TEX = sRGBToLinear(texture( splatMap_textureDiffuse3, vUv * splatMap_repeat3 ));
+                        A_CHANNEL_TEX.rgb *= splatMap_color3;
+                        finalColor = mix(finalColor, A_CHANNEL_TEX, splatA);
+                    }
+                    diffuseColor = finalColor;
                 }
-                if(splatG > 0.0){
-                    vec4 G_CHANNEL_TEX = sRGBToLinear(texture( splatMap_textureDiffuse1, vUv * splatMap_repeat1 ));
-                    G_CHANNEL_TEX.rgb *= splatMap_color1;
-                    finalColor = mix(finalColor, G_CHANNEL_TEX, splatG);
-                }
-                if(splatB > 0.0){
-                    vec4 B_CHANNEL_TEX = sRGBToLinear(texture( splatMap_textureDiffuse2, vUv * splatMap_repeat2 ));
-                    B_CHANNEL_TEX.rgb *= splatMap_color2;
-                    finalColor = mix(finalColor, B_CHANNEL_TEX, splatB);
-                }
-                if(splatMap_useAlpha && splatA > 0.0){
-                    vec4 A_CHANNEL_TEX = sRGBToLinear(texture( splatMap_textureDiffuse3, vUv * splatMap_repeat3 ));
-                    A_CHANNEL_TEX.rgb *= splatMap_color3;
-                    finalColor = mix(finalColor, A_CHANNEL_TEX, splatA);
-                }
-                diffuseColor = finalColor;
                 #endif
                 `,
             },

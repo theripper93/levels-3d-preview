@@ -1737,6 +1737,14 @@
                 "centery": "Y Anchor",
                 "offsetAngle": "Angle Offset"
             },
+            "mask": {
+                "name": "Mask",
+                "description": "Mask effect. Mask the texture with a texture mask. Requires a texture and a mask texture.",
+                "textureMask": "Mask Texture",
+                "textureDiffuse": "Texture",
+                "repeat": "Repeat",
+                "color": "Color"
+            },
             "overlay": {
                 "name": "Overlay",
                 "description": "Texture Overlay. Requires a texture to be set. Use 'Multiply Blending' for textures with white background, 'Black Blending' for textures with black background.",
@@ -1759,6 +1767,7 @@
                 "textureSplatMap": "Splat Map",
                 "repeatSplatMap": "Splat Map Repeat",
                 "useAlpha": "Use Alpha Channel",
+                "upNormals": "Only 'Up Facing' Surfaces",
                 "textureDiffuse0": "Texture R",
                 "color0": "Color R",
                 "repeat0": "Repeat R",

@@ -512,6 +512,7 @@ class Levels3DPreview {
         this.GameCamera = new GameCamera(this.camera, this.controls, this);
         //clipping
         this.renderer.localClippingEnabled = true;
+
     }
 
     async cacheModels() {
