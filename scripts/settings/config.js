@@ -1264,12 +1264,14 @@ export function registerConfigs() {
                     step: 1,
                 },
                 doorSlidePercent: {
-                    type: "range",
+                    type: "number",
                     label: game.i18n.localize("levels3dpreview.flags.doorSlidePercent.label"),
                     default: 50,
-                    min: -200,
-                    max: 200,
-                    step: 1,
+                },
+                doorGrabTokens: {
+                    type: "checkbox",
+                    label: game.i18n.localize("levels3dpreview.flags.doorGrabTokens.label"),
+                    default: false,
                 },
             },
             "fillType-3d": {
@@ -1481,7 +1483,7 @@ export function registerConfigs() {
         html.find(`input[name="flags.levels-3d-preview.randomSeed"]`).prop("maxlength", 7);
         const tilingFlags = ["tileScale", "yScale", "gap", "randomRotation", "randomScale", "randomDepth", "randomPosition", "randomColor", "enableGravity"];
         const terrainFlags = ["noiseScale", "noiseHeight", "noisePersistence", "noiseOctaves", "noiseLacunarity", "noiseExponent", "noiseFlattening"];
-        const doorFlags = ["doorSound", "doorState", "doorStyle", "doorAnimationDuration", "doorAnimateAngle", "doorSlidePercent"];
+        const doorFlags = ["doorSound", "doorState", "doorStyle", "doorAnimationDuration", "doorAnimateAngle", "doorGrabTokens","doorSlidePercent"];
         const heightmapFlags = ["invertDisplacementMap", "displacementIntensity", "displacementMatrix"];
         const animationFlags = ["enableAnim", "animIndex", "animSpeed", "paused"];
         if(!tile3d?.hasAnimations) animationFlags.forEach((flag) => html.find(`[name="flags.levels-3d-preview.${flag}"]`).closest(".form-group").hide());

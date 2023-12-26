@@ -365,6 +365,7 @@ export class Tile3D {
         this.doorStyle = parseInt(this.tile.document.getFlag("levels-3d-preview", "doorStyle") ?? 0);
         this.doorAnimateAngle = Math.toRadians(parseInt(this.tile.document.getFlag("levels-3d-preview", "doorAnimateAngle") ?? 90));
         this.doorSlidePercent = parseInt(this.tile.document.getFlag("levels-3d-preview", "doorSlidePercent") ?? 50);
+        this.doorGrabTokens = this.tile.document.getFlag("levels-3d-preview", "doorGrabTokens") ?? false;
         this.doorType = this.tile.document.getFlag("levels-3d-preview", "doorType") ?? 0;
         this.doorState = this.tile.document.getFlag("levels-3d-preview", "doorState") ?? 0;
         this.doorAnimationDuration = this.tile.document.getFlag("levels-3d-preview", "doorAnimationDuration") ?? 400;
@@ -377,7 +378,7 @@ export class Tile3D {
         this.isSecret = this.doorType == 2;
         this.isOpen = this.doorState == 1;
         this.isLocked = this.doorState == 2;
-        if (this.isOpen) {
+        if (this.isOpen && this.doorStyle == 0) {
             this.collision = false;
             this.sight = false;
         }
@@ -537,7 +538,7 @@ export class Tile3D {
         this.isLocked = this.doorState == 2;
         this.isDoor = this.doorType != 0;
         if (!this.isDoor) return;
-        if (this.isOpen) {
+        if (this.isOpen && this.doorStyle == 0) {
             this.collision = false;
             this.sight = false;
         }
@@ -559,6 +560,9 @@ export class Tile3D {
                 }
             });
         }
+        const tokens = firstRender ? [] : this.getGrabTokens();
+        if (!firstRender) tokens.forEach((t) => this.mesh.children[0].attach(t.mesh));
+
         switch (this.doorStyle) {
             case 0:
                 if (this.isOpen) {
@@ -652,9 +656,54 @@ export class Tile3D {
 
         if (promise)
             promise.then(() => {
+                tokens.forEach((t) => {
+                    this._parent.scene.attach(t.mesh)
+                    t.forceUpdatePositionFrom3D()
+                });
                 finalizeDoor();
             });
         else finalizeDoor();
+    }
+
+    getGrabHitbox() {
+        /*
+        this.originalAngle = this.mesh.children[0].rotation.y;
+            this.originalPosition = this.mesh.children[0].position.clone();
+        */
+        const box = this.controlledBox.clone();
+
+        const positionDelta = this.mesh.children[0].position.clone().sub(this.originalPosition);
+        const rotationDelta = this.mesh.children[0].rotation.y - this.originalAngle;
+
+        this.mesh.add(box);
+
+        box.position.add(positionDelta);
+        box.rotation.y += rotationDelta;
+        box.scale.multiplyScalar(1.1);
+
+        box.updateMatrixWorld();
+
+        this._parent.scene.attach(box);
+
+        box.updateMatrixWorld();
+
+        const box3 = new THREE.Box3().setFromObject(box);
+
+        this._parent.scene.remove(box);
+
+        return box3;
+    }
+
+    getGrabTokens() {
+        const toGrab = [];
+        if(!this.doorGrabTokens) return toGrab;
+        const tileHitbox = this.getGrabHitbox();
+        const tokens = Object.values(this._parent.tokens);
+        for (const token of tokens) {
+            const tokenHitbox = token.getWorldBoundingBox();
+            if(tileHitbox.intersectsBox(tokenHitbox)) toGrab.push(token);
+        }
+        return toGrab;
     }
 
     async init() {

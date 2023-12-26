@@ -293,6 +293,9 @@
             "doorSlidePercent": {
                 "label": "Door Slide Percentage"
             },
+            "doorGrabTokens": {
+                "label": "Grab Tokens"
+            },
             "isFog":{
                 "label": "Is Fog of War Box?",
                 "notes": "Obscure view when camera enters this template. Works only for rectangle templates."

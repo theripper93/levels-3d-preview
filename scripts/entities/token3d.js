@@ -105,6 +105,11 @@ export class Token3D {
         await this.initShaders();
         this.animationHandler.init();
         if (this.particleData.type != "none") this.initParticle();
+        const boundingBoxDepth = ((this.token.losHeight - this.document.elevation) * canvas.scene.dimensions.size) / canvas.dimensions.distance / factor
+        const boundingBox = new THREE.BoxGeometry((this.document.width * canvas.grid.size) / factor, boundingBoxDepth, (this.document.height * canvas.grid.size) / factor);
+        const boundingMesh = new THREE.Mesh(boundingBox, new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true, transparent: true, opacity: 1 }));
+        boundingMesh.position.set(0, boundingBoxDepth / 2, 0);
+        this.boundingMesh = boundingMesh;
         return token3d;
     }
     //remove
@@ -303,6 +308,7 @@ export class Token3D {
         this.hitbox.geometry.computeBoundingBox();
         this._size = this.hitbox.geometry.boundingBox.getSize(new THREE.Vector3());
 
+        
         this.mesh = pivot;
         this.adjust = {
             x: this.offsetX / factor,
@@ -467,6 +473,19 @@ export class Token3D {
         }
     }
 
+    getWorldBoundingBox() {
+        const boundingMesh = this.boundingMesh;
+        const originalPosition = boundingMesh.position.clone();
+        this.mesh.add(boundingMesh);
+        boundingMesh.updateMatrixWorld(true);
+        this._parent.scene.attach(boundingMesh);
+        boundingMesh.updateMatrixWorld(true);
+        const box = new THREE.Box3().setFromObject(boundingMesh);
+        this._parent.scene.remove(boundingMesh);
+        boundingMesh.position.copy(originalPosition);
+        return box;
+    }
+
     loadLight() {
         this.light = new Light3D(this.token, this._parent, true);
         this.light.light3d.position.set(0, this.d / 2, 0);
@@ -494,6 +513,24 @@ export class Token3D {
         this.mesh = mesh;
         this.setPosition(true);
         return this;
+    }
+
+    async forceUpdatePositionFrom3D(animate = false, useSnapped = false) {
+        if(!this.document.isOwner) return;
+        this.skipMoveAnimation = true;
+        const x3d = this.mesh.position.x;
+        const y3d = this.mesh.position.y;
+        const z3d = this.mesh.position.z;
+        const x = x3d * this.factor - this.token.w / 2;
+        const y = z3d * this.factor - this.token.h / 2;
+        const z = Math.round(((y3d * this.factor * canvas.dimensions.distance) / canvas.dimensions.size) * 100) / 100;
+        const snapped = canvas.grid.getSnappedPosition(x, y);
+        const dest = {
+            x: useSnapped ? snapped.x : x,
+            y: useSnapped ? snapped.y : y,
+            elevation: z,
+        };
+        this.document.update(dest, { animate: animate });
     }
 
     updatePositionFrom3D(e) {
