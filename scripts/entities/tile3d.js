@@ -561,7 +561,10 @@ export class Tile3D {
             });
         }
         const tokens = firstRender ? [] : this.getGrabTokens();
-        if (!firstRender) tokens.forEach((t) => this.mesh.children[0].attach(t.mesh));
+        if (!firstRender) tokens.forEach((t) => {
+            t.isCaptured = true;
+            this.mesh.children[0].attach(t.mesh)
+        });
 
         switch (this.doorStyle) {
             case 0:
@@ -638,6 +641,12 @@ export class Tile3D {
                 break;
         }
         const finalizeDoor = () => {
+            tokens.forEach((t) => {
+                this._parent.scene.attach(t.mesh)
+                t.forceUpdatePositionFrom3D().then(() => {
+                    t.isCaptured = false;
+                });
+            });
             this._parent.interactionManager?.generateSightCollisions();
             canvas.perception.update(
                 {
@@ -656,10 +665,6 @@ export class Tile3D {
 
         if (promise)
             promise.then(() => {
-                tokens.forEach((t) => {
-                    this._parent.scene.attach(t.mesh)
-                    t.forceUpdatePositionFrom3D()
-                });
                 finalizeDoor();
             });
         else finalizeDoor();

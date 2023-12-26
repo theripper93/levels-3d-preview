@@ -294,7 +294,8 @@
                 "label": "Door Slide Percentage"
             },
             "doorGrabTokens": {
-                "label": "Grab Tokens"
+                "label": "Capture Tokens",
+                "notes": "Capture tokens that are in proximity of the door when the door starts moving. Does not work with 'Transparent' style. Note that tokens will not be captured mid-movement, only when the door starts moving."
             },
             "isFog":{
                 "label": "Is Fog of War Box?",

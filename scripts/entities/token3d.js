@@ -516,7 +516,7 @@ export class Token3D {
     }
 
     async forceUpdatePositionFrom3D(animate = false, useSnapped = false) {
-        if(!this.document.isOwner) return;
+        if(!game.user.isGM) return;
         this.skipMoveAnimation = true;
         const x3d = this.mesh.position.x;
         const y3d = this.mesh.position.y;
@@ -529,6 +529,7 @@ export class Token3D {
             x: useSnapped ? snapped.x : x,
             y: useSnapped ? snapped.y : y,
             elevation: z,
+            //rotation: (this.token.document.rotation + Math.toDegrees(this.mesh.getWorldQuaternion(new THREE.Quaternion()).y)) % 360,
         };
         this.document.update(dest, { animate: animate });
     }
@@ -1472,33 +1473,37 @@ export class Token3D {
     }
 
     _onClickLeft(e) {
+        if(this.isCaptured) return;
         const event = e;
         this.token._onClickLeft(event);
     }
 
     _onClickRight(e) {
+        if(this.isCaptured) return;
         const event = e;
         this.token._onClickRight(event);
     }
 
     _onClickLeft2(e) {
+        if(this.isCaptured) return;
         const event = e;
         this.token._onClickLeft2(event);
     }
 
     _onClickRight2(e) {
+        if(this.isCaptured) return;
         const event = e;
         this.token._onClickRight2(event);
     }
 
     _onHoverIn(e) {
-        if (this.hasClone) return;
+        if (this.hasClone || this.isCaptured) return;
         this.placeable._onHoverIn(e);
         this._parent.setCursor("pointer");
     }
 
     _onHoverOut(e) {
-        if (this.hasClone) return;
+        if (this.hasClone || this.isCaptured) return;
         this.placeable._onHoverOut(e);
         this._parent.setCursor("auto");
     }
@@ -1615,7 +1620,7 @@ export class Token3D {
         Hooks.on("refreshToken", (token, renderFlags) => {
             if (!game.Levels3DPreview?._active) return;
             const token3d = game.Levels3DPreview.tokens[token.id]
-            if (!token3d) return;
+            if (!token3d || token3d.isCaptured) return;
             if (renderFlags.refreshNameplate) token3d.drawName()
             if (renderFlags.refreshBars) token3d.drawBars()
             if (renderFlags.redrawEffects || renderFlags.refreshEffects) token3d.drawEffects()

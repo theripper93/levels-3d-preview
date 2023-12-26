@@ -728,7 +728,7 @@ export class InteractionManager {
     startDrag(event, intersectData) {
         if (this.isRulerDrag(event, intersectData)) return this._onEnableRuler(event);
         const entity = event.entity;
-        if (!entity) return this.abortDrag();
+        if (!entity || entity.isCaptured) return this.abortDrag();
         if (this._gizmoEnabled && this.activeLayerEntity === "Tile") return this.abortDrag();
         let intersect = event.intersect;
         const placeable = entity.placeable;

@@ -1271,6 +1271,7 @@ export function registerConfigs() {
                 doorGrabTokens: {
                     type: "checkbox",
                     label: game.i18n.localize("levels3dpreview.flags.doorGrabTokens.label"),
+                    notes: game.i18n.localize("levels3dpreview.flags.doorGrabTokens.notes"),
                     default: false,
                 },
             },
