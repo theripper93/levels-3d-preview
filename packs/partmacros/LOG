@@ -1,7 +1,3 @@
-2023/12/27-12:06:27.163 4b84 Recovering log #1362
-2023/12/27-12:06:27.167 4b84 Delete type=0 #1362
-2023/12/27-12:06:27.167 4b84 Delete type=3 #1360
-2023/12/27-12:07:38.596 46d4 Level-0 table #1367: started
-2023/12/27-12:07:38.597 46d4 Level-0 table #1367: 0 bytes OK
-2023/12/27-12:07:38.598 46d4 Delete type=0 #1365
-2023/12/27-12:07:38.598 46d4 Manual compaction at level-0 from '!macros!4FzwSicvO4Kn1OK8' @ 72057594037927935 : 1 .. '!macros!xkoX7Ju6cWE0aDNI' @ 0 : 0; will stop at (end)
+2023/12/27-12:17:47.812 72e0 Recovering log #1366
+2023/12/27-12:17:47.816 72e0 Delete type=0 #1366
+2023/12/27-12:17:47.816 72e0 Delete type=3 #1364

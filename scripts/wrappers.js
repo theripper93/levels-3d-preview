@@ -474,9 +474,15 @@ export function registerWrappers() {
             if (game.Levels3DPreview?._active && game.Levels3DPreview.CONFIG.autoPan) {
                 const x = args[0].x;
                 const y = args[0].y;
+                const dest = args[0].dest;
                 const token = canvas.tokens.placeables.find((t) => t.center?.x == x && t.center?.y == y);
-                if (token) {
-                    game.Levels3DPreview.setCameraToControlled(token);
+                const tile = canvas.tiles.placeables.find((t) => t.center?.x == x && t.center?.y == y);
+                if (token || dest instanceof TokenDocument) {
+                    game.Levels3DPreview.setCameraToControlled(token ?? dest);
+                } else if (tile || dest instanceof TileDocument) {
+                    game.Levels3DPreview.helpers.animateCamera(tile ?? dest);
+                } else {
+                    game.Levels3DPreview.helpers.animateCamera({ x: x, y: y });
                 }
             }
             return wrapped(...args);

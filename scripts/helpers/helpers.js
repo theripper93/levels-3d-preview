@@ -444,8 +444,9 @@ export class Helpers {
         const distance = (options.distance || 3000) / factor;
         const topdown = options.topdown || false;
         const cameraParams = {};
-        let token3D;
+        let token3D, tile3d;
         if (game.Levels3DPreview.tokens[target.id]) token3D = game.Levels3DPreview.tokens[target.id];
+        if (game.Levels3DPreview.tiles[target.id]) tile3d = game.Levels3DPreview.tiles[target.id];
 
         if (token3D) {
             const size = Math.max(token3D.w, token3D.h, token3D.d) * 8;
@@ -455,8 +456,16 @@ export class Helpers {
             cameraParams.cameraPosition = offset;
             const targetLookat = new THREE.Vector3(token3D.mesh.position.x, token3D.mesh.position.y, token3D.mesh.position.z);
             cameraParams.cameraLookat = targetLookat;
+        } else if (tile3d) {
+            const offset = new THREE.Vector3(-distance * Math.cos(rotation), distance, distance * Math.sin(rotation));
+            offset.add(tile3d.mesh.position);
+            cameraParams.cameraPosition = offset;
+            const targetLookat = new THREE.Vector3(tile3d.mesh.position.x, tile3d.mesh.position.y, tile3d.mesh.position.z);
+            cameraParams.cameraLookat = targetLookat;
+            cameraParams.speed = speed;
         } else {
             const targetPosition = Ruler3D.posCanvasTo3d(target);
+            if (isNaN(targetPosition.y)) targetPosition.y = game.Levels3DPreview.controls.target.y;
             if (topdown) {
                 cameraParams.cameraPosition = new THREE.Vector3(targetPosition.x, targetPosition.y + distance, targetPosition.z);
                 cameraParams.cameraLookat = new THREE.Vector3(targetPosition.x, targetPosition.y, targetPosition.z);
