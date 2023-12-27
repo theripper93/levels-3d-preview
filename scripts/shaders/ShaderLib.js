@@ -964,6 +964,18 @@ export const shaders = {
                 type: "float",
                 default: 1,
             },
+            axisX: {
+                type: "float",
+                default: 0,
+            },
+            axisZ: {
+                type: "float",
+                default: 0,
+            },
+            axisY: {
+                type: "float",
+                default: 1,
+            },
         },
         varying: {},
         vertexShader: [
@@ -973,7 +985,7 @@ export const shaders = {
                 shaderCode: `
                     float bounce_timeSpeed = time * bounce_speed;
                     float bounce = sin(bounce_timeSpeed) * bounce_strength;
-                    transformed = vec3(transformed.x, transformed.y + bounce, transformed.z);
+                    transformed = vec3(transformed.x + bounce * bounce_axisX, transformed.y + bounce * bounce_axisY, transformed.z + bounce * bounce_axisZ);
                 `,
             },
         ],
