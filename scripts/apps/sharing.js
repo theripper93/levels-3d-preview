@@ -97,7 +97,10 @@ async function getMap(id){
         });
         const data = await res.json();
         delete data.data.folder;
-        return data;
+        let stringifyData = JSON.stringify(data);
+        stringifyData = stringifyData.replaceAll("assets/canvas3dtokencompendium", "modules/canvas3dtokencompendium");
+        stringifyData = JSON.parse(stringifyData);
+        return stringifyData;
     } catch (e) {
         return ui.notifications.error(game.i18n.localize("levels3dpreview.sharing.error"));
     }
