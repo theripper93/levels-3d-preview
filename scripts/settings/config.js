@@ -959,6 +959,7 @@ export function registerConfigs() {
                     options: {
                         default: game.i18n.localize("levels3dpreview.flags.dynaMesh.options.default"),
                         box: game.i18n.localize("levels3dpreview.flags.dynaMesh.options.box"),
+                        plane: game.i18n.localize("levels3dpreview.flags.dynaMesh.options.plane"),
                         sphere: game.i18n.localize("levels3dpreview.flags.dynaMesh.options.sphere"),
                         dome: game.i18n.localize("levels3dpreview.flags.dynaMesh.options.dome"),
                         cylinder: game.i18n.localize("levels3dpreview.flags.dynaMesh.options.cylinder"),
@@ -1142,6 +1143,14 @@ export function registerConfigs() {
                 transparency: {
                     type: "range",
                     label: game.i18n.localize("levels3dpreview.flags.transparency.label"),
+                    default: -0.01,
+                    min: -0.01,
+                    max: 1,
+                    step: 0.01,
+                },
+                alphaClip: {
+                    type: "range",
+                    label: game.i18n.localize("levels3dpreview.flags.alphaClip.label"),
                     default: -0.01,
                     min: -0.01,
                     max: 1,

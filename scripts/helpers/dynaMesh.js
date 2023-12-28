@@ -76,6 +76,18 @@ export class DynaMesh {
         return geometry;
     }
 
+    _constructplane() {
+        const geometry = new THREE.PlaneGeometry(this.width, this.depth, Math.ceil((this.width / this._gridUnit) * this.resolution), Math.ceil((this.height / this._gridUnit) * this.resolution));
+        
+        const placeholderPlane = new THREE.PlaneGeometry(this.width, this.depth, 1, 1);
+
+        placeholderPlane.translate(0, 0, -this.height);
+        placeholderPlane.scale(0.0000001, 0.0000001, 0.0000001);
+
+
+        return mergeBufferGeometries([geometry, placeholderPlane]);
+    }
+
     _constructsphere() {
         const geometry = new THREE.SphereGeometry(this._avgAll, Math.ceil((this._avgWidthHeight / this._gridUnit) * this.resolution), Math.ceil((this.depth / this._gridUnit) * this.resolution));
         return geometry;

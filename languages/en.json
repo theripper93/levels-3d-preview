@@ -488,6 +488,7 @@
                 "options": {
                     "default": "None (Use 3D Model)",
                     "box": "Box",
+                    "plane": "Plane",
                     "sphere": "Sphere",
                     "cylinder": "Cylinder",
                     "cone": "Cone",
@@ -817,6 +818,9 @@
             },
             "transparency": {
                 "label": "Opacity"
+            },
+            "alphaClip":{
+                "label": "Alpha Clip"
             },
             "transmission": {
                 "label": "Transmission"

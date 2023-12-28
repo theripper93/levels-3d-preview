@@ -316,6 +316,7 @@ export class Tile3D {
         this.roughness = this.tile.document.getFlag("levels-3d-preview", "roughness") ?? -0.01;
         this.metalness = this.tile.document.getFlag("levels-3d-preview", "metalness") ?? -0.01;
         this.transparency = this.tile.document.getFlag("levels-3d-preview", "transparency") ?? -0.01;
+        this.alphaClip = this.tile.document.getFlag("levels-3d-preview", "alphaClip") ?? -0.01;
         this.sides = this.tile.document.getFlag("levels-3d-preview", "sides") ?? "default";
         this.castShadow = this.tile.document.getFlag("levels-3d-preview", "castShadow") ?? true;
         this.noiseParams = {
@@ -1541,6 +1542,9 @@ export class Tile3D {
                     child.material.transparent = true;
                     child.material.opacity = this.transparency;
                     child.material.alphaTest = 0.01;
+                }
+                if(this.alphaClip >= 0){
+                    child.material.alphaTest = this.alphaClip;
                 }
             }
         });
