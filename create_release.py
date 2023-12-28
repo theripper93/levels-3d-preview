@@ -2,9 +2,36 @@ import os
 import json
 import zipfile
 import subprocess
+import requests
 
 # Define selected folders
 selected_folders = ['scripts', 'styles', 'assets', 'templates', 'languages', 'lang', 'packs', 'storage', 'icons']
+webhook_url = 'https://discord.com/api/webhooks/1189536897438068827/pwmMRA3FiMFaRi_1LBVNkkShsCSxOQqD6BpThSbtXnUR3FVnmNwXuaeJY5_8rYsoqokk'
+
+def post_discord_webhook(embed_title, embed_description):
+    # Replace 'YOUR_WEBHOOK_URL' with your actual Discord webhook URL
+
+    # Create the payload for the webhook
+    payload = {
+        'embeds': [
+            {
+                'title': embed_title,
+                'description': embed_description,
+                'color': 0x3498db  # You can customize the color (hex) of the embed
+            }
+        ]
+    }
+
+    # Make an HTTP POST request to the webhook URL
+    headers = {'Content-Type': 'application/json'}
+    response = requests.post(webhook_url, data=json.dumps(payload), headers=headers)
+
+    # Check if the request was successful
+    if response.status_code == 200 or response.status_code == 204:
+        print("Webhook posted successfully.")
+    else:
+        print(f"Failed to post webhook. Status code: {response.status_code}")
+
 
 def read_module_json():
     with open('module.json', 'r', encoding='utf-8') as file:
@@ -103,6 +130,7 @@ def create_changelog():
         manifest_data = json.load(manifest_file)
         id = manifest_data["id"]
         version = manifest_data["version"]
+        title = manifest_data["title"]
 
     # Go back one folder
     parent_folder_path = os.path.abspath(os.path.join(os.getcwd(), os.pardir))
@@ -118,7 +146,17 @@ def create_changelog():
     commit_message = f"Update changelog for {id} version {version}"
     commit_and_push_changes(git_folder_path, commit_message)
 
-    print("Changelog updated successfully.")
+    # Create the embed title and description
+    embed_title = f"{title} - Version {version}"
+    
+    # Include the Package Page link in the description
+    package_page_link = f"\n**Package Page**\n https://foundryvtt.com/packages/{id}"
+    embed_description = "\n".join([f"- {change}" for change in changes] + [package_page_link])
+
+    # Post Discord Embed Webhook
+    post_discord_webhook(embed_title, embed_description)
+
+    print("Changelog updated and webhook posted successfully.")
 
 def main():
     module_id, module_version = read_module_json()

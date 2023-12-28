@@ -566,6 +566,8 @@ export class Tile3D {
             this.mesh.children[0].attach(t.mesh)
         });
 
+        const sightMesh = this.sightMesh;
+
         switch (this.doorStyle) {
             case 0:
                 if (this.isOpen) {
@@ -600,6 +602,9 @@ export class Tile3D {
                 ];
                 if (!firstRender) promise = CanvasAnimation.animate(animation, { duration: this.doorAnimationDuration, easing: DOOR_ANIMATION_EASING });
                 else this.mesh.children[0].rotation.y = this.isOpen ? this.originalAngle + this.doorAnimateAngle : this.originalAngle;
+                if (sightMesh) {
+                    sightMesh.rotation.y = this.isOpen ? this.originalAngle + this.doorAnimateAngle : this.originalAngle;
+                }
                 break;
             case 2:
                 const slideAngle = this.doorAnimateAngle;
@@ -623,6 +628,10 @@ export class Tile3D {
                     this.mesh.children[0].position.x = this.isOpen ? this.originalPosition.x + xComponent : this.originalPosition.x;
                     this.mesh.children[0].position.z = this.isOpen ? this.originalPosition.z + zComponent : this.originalPosition.z;
                 }
+                if (sightMesh) {
+                    sightMesh.position.x = this.isOpen ? this.originalPosition.x + xComponent : this.originalPosition.x;
+                    sightMesh.position.z = this.isOpen ? this.originalPosition.z + zComponent : this.originalPosition.z;
+                }
                 break;
             case 3:
                 const amount2 = (this.depth)*(this.doorSlidePercent/100);
@@ -637,6 +646,9 @@ export class Tile3D {
                 if (!firstRender) promise = CanvasAnimation.animate(animation3, { duration: this.doorAnimationDuration, easing: DOOR_ANIMATION_EASING});
                 else {
                     this.mesh.children[0].position.y = this.isOpen ? this.originalPosition.y + yComponent : this.originalPosition.y;
+                }
+                if (sightMesh) {
+                    sightMesh.position.y = this.isOpen ? this.originalPosition.y + yComponent : this.originalPosition.y;
                 }
                 break;
         }
