@@ -373,6 +373,7 @@ export class ShaderHandler {
                     const hasPreview = hpInputName && hpInputName.includes(name) && hpInputName.includes(uniformName);
                     if (hasPreview) {
                         finalValue = new THREE.CanvasTexture(game.Levels3DPreview._heightmapPainter.canvas);
+                        game.Levels3DPreview._heightmapPainter.CanvasTexture = finalValue;
                     } else {
                         finalValue = game.Levels3DPreview.helpers.loadTextureSync(paramValue);
                     }
