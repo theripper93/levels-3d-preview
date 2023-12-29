@@ -1756,6 +1756,25 @@
                 "repeat": "Repeat",
                 "color": "Color"
             },
+            "noiseMask": {
+                "name": "Noise",
+                "description": "Noise Mask effect. Mask the texture with 2 noise textures. Requires a texture and both noise textures.",
+                "textureNoise1": "Noise Texture 1",
+                "noise1Repeat": "Repeat",
+                "noise1ScrollX": "Scroll X",
+                "noise1ScrollY": "Scroll Y",
+                "textureNoise2": "Noise Texture 2",
+                "noise2Repeat": "Repeat",
+                "noise2ScrollX": "Scroll X",
+                "noise2ScrollY": "Scroll Y",
+                "invert": "Invert",
+                "textureDiffuse": "Texture",
+                "color": "Color",
+                "repeat": "Repeat",
+                "strength": "Strength",
+                "maskThreshold": "Mask Threshold"
+
+            },
             "overlay": {
                 "name": "Overlay",
                 "description": "Texture Overlay. Requires a texture to be set. Use 'Multiply Blending' for textures with white background, 'Black Blending' for textures with black background.",

@@ -610,7 +610,7 @@ export const shaders = {
                 type: "bool",
                 default: false,
             },
-            reactive: {
+            /*reactive: {
                 type: "bool",
                 default: false,
             },
@@ -619,7 +619,7 @@ export const shaders = {
                 default: 1.0,
                 min: 0.01,
                 max: 10,
-            },
+            },*/
             ground_blend: {
                 type: "float",
                 default: 0,
@@ -661,21 +661,7 @@ export const shaders = {
                 vec2 windOffset = vec2(0.0);
 
 
-                if(wind_reactive && wind_ground_blend_percent > 0.1){
-                    int token_array_size = int(tokens[0].w + 1.0);
-
-                    for(int i = 1; i < token_array_size; i++) {
-                        float distance = distance(vWorldPositionFoW.xyz, tokens[i].xyz);
-                        vec4 diff = vec4(vWorldPositionFoW.xyz - tokens[i].xyz, 0.0);
-                        diff.y = 0.0;
-                        diff = diff * current_matrix;
-                        vec3 dir = normalize(diff.xyz);
-                        float maxDist = tokens[i].w * gridSize * 1.1;
-                        if(distance < maxDist) {
-                            windOffset += wind_reactive_intensity * (dir.xz * (maxDist / distance) * gridSize * wind_ground_blend_percent);
-                        }
-                    }
-                }
+                //Reactive Removed due to performance issues
 
 
                 if (currentYDelta > useDepth*wind_affect_model) {
@@ -1520,6 +1506,7 @@ export const shaders = {
     },
     mask: {
         icon: `<i class="fas fa-mask"></i>`,
+        flipY: true,
         uniforms: {
             textureMask: {
                 type: "sampler2D",
@@ -1552,6 +1539,96 @@ export const shaders = {
                     vec4 maskDiffuseTexture = sRGBToLinear(texture( mask_textureDiffuse, mask_vUv ));
                     maskDiffuseTexture.rgb *= mask_color;
                     texelColor = mix(texelColor, maskDiffuseTexture, maskTexture.r);
+                    diffuseColor = texelColor;
+                }
+                #endif
+                `,
+            },
+        ],
+    },
+    noiseMask: {
+        icon: `<i class="fas fa-masks-theater"></i>`,
+        uniforms: {
+            textureNoise1: {
+                type: "sampler2D",
+                default: null,
+            },
+            noise1Repeat: {
+                type: "float",
+                default: 1,
+            },
+            noise1ScrollX: {
+                type: "float",
+                default: 0.01,
+            },
+            noise1ScrollY: {
+                type: "float",
+                default: 0.01,
+            },
+            textureNoise2: {
+                type: "sampler2D",
+                default: null,
+            },
+            noise2Repeat: {
+                type: "float",
+                default: 1,
+            },
+            noise2ScrollX: {
+                type: "float",
+                default: -0.01,
+            },
+            noise2ScrollY: {
+                type: "float",
+                default: -0.01,
+            },
+            invert: {
+                type: "bool",
+                default: false,
+            },
+            textureDiffuse: {
+                type: "sampler2D",
+                default: null,
+            },
+            color: {
+                type: "vec3",
+                default: "#ffffff",
+            },
+            repeat: {
+                type: "float",
+                default: 1,
+            },
+            strength: {
+                type: "float",
+                default: 1,
+                min: 0,
+                max: 1,
+            },
+            maskThreshold: {
+                type: "float",
+                default: 0,
+                min: 0,
+                max: 1,
+            },
+        },
+        varying: {},
+        vertexShader: [],
+        fragmentShader: [
+            {
+                mode: SHADERS_CONSTS.APPEND,
+                injectionPoint: "#include <map_fragment>",
+                shaderCode: `
+                #ifdef USE_UV
+                vec2 noiseMask1_vUv = vec2(vUv.x * noiseMask_noise1Repeat + noiseMask_noise1ScrollX * time, vUv.y * noiseMask_noise1Repeat + noiseMask_noise1ScrollY * time);
+                vec2 noiseMask2_vUv = vec2(vUv.x * noiseMask_noise2Repeat + noiseMask_noise2ScrollX * time, vUv.y * noiseMask_noise2Repeat + noiseMask_noise2ScrollY * time);
+                vec4 noise1Texture = texture( noiseMask_textureNoise1, noiseMask1_vUv );
+                vec4 noise2Texture = texture( noiseMask_textureNoise2, noiseMask2_vUv );
+                vec4 maskTexture = noise1Texture * noise2Texture;
+                if(noiseMask_invert) maskTexture = vec4(1.0) - maskTexture;
+                if(maskTexture.r > noiseMask_maskThreshold){
+                    vec2 mask_vUv = vec2(vUv.x, vUv.y) * (noiseMask_repeat);
+                    vec4 maskDiffuseTexture = sRGBToLinear(texture( noiseMask_textureDiffuse, mask_vUv ));
+                    maskDiffuseTexture.rgb *= noiseMask_color;
+                    texelColor = mix(texelColor, maskDiffuseTexture, maskTexture.r * noiseMask_strength);
                     diffuseColor = texelColor;
                 }
                 #endif
@@ -2383,4 +2460,25 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
 {
 
 }
+*/
+
+
+/* Reactive Wind
+
+if(wind_reactive && wind_ground_blend_percent > 0.1){
+    int token_array_size = int(tokens[0].w + 1.0);
+
+    for(int i = 1; i < token_array_size; i++) {
+        float distance = distance(vWorldPositionFoW.xyz, tokens[i].xyz);
+        vec4 diff = vec4(vWorldPositionFoW.xyz - tokens[i].xyz, 0.0);
+        diff.y = 0.0;
+        diff = diff * current_matrix;
+        vec3 dir = normalize(diff.xyz);
+        float maxDist = tokens[i].w * gridSize * 1.1;
+        if(distance < maxDist) {
+            windOffset += wind_reactive_intensity * (dir.xz * (maxDist / distance) * gridSize * wind_ground_blend_percent);
+        }
+    }
+}
+
 */

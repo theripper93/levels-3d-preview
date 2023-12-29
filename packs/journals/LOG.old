@@ -1,3 +1,7 @@
-2023/12/28-18:05:17.308 8cfc Recovering log #1379
-2023/12/28-18:05:17.311 8cfc Delete type=0 #1379
-2023/12/28-18:05:17.312 8cfc Delete type=3 #1378
+2023/12/29-11:36:54.039 ac98 Recovering log #1387
+2023/12/29-11:36:54.042 ac98 Delete type=0 #1387
+2023/12/29-11:36:54.042 ac98 Delete type=3 #1386
+2023/12/29-12:08:27.762 7744 Level-0 table #1391: started
+2023/12/29-12:08:27.762 7744 Level-0 table #1391: 0 bytes OK
+2023/12/29-12:08:27.764 7744 Delete type=0 #1389
+2023/12/29-12:08:27.769 7744 Manual compaction at level-0 from '!journal!X6rUPY9iSJxMpvPo' @ 72057594037927935 : 1 .. '!journal.pages!X6rUPY9iSJxMpvPo.jpDR4vr6znE1PEJL' @ 0 : 0; will stop at (end)

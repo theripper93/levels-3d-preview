@@ -1,3 +1,7 @@
-2023/12/28-18:05:17.321 8cfc Recovering log #1379
-2023/12/28-18:05:17.325 8cfc Delete type=0 #1379
-2023/12/28-18:05:17.325 8cfc Delete type=3 #1378
+2023/12/29-11:36:54.058 ac98 Recovering log #1387
+2023/12/29-11:36:54.061 ac98 Delete type=0 #1387
+2023/12/29-11:36:54.061 ac98 Delete type=3 #1386
+2023/12/29-12:08:27.770 7744 Level-0 table #1391: started
+2023/12/29-12:08:27.770 7744 Level-0 table #1391: 0 bytes OK
+2023/12/29-12:08:27.771 7744 Delete type=0 #1389
+2023/12/29-12:08:27.776 7744 Manual compaction at level-0 from '!macros!4FzwSicvO4Kn1OK8' @ 72057594037927935 : 1 .. '!macros!xkoX7Ju6cWE0aDNI' @ 0 : 0; will stop at (end)
