@@ -173,6 +173,7 @@
             },
             "mapbrowser": {
                 "title": "Map Browser: {count} maps available",
+                "createJournal": "Create Scene notes with information about imported scenes",
                 "imported": "Imported scene",
                 "search": "Start typing to search..."
             },

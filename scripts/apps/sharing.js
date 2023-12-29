@@ -278,9 +278,11 @@ class MapBrowser extends Application {
             map.stars = stars.length;
         });
         if (!this.sortNewest) mapList = mapList.sort((a, b) => b.stars - a.stars);
+        this._mapList = mapList;
         return {
             maps: mapList,
             sortNewest: this.sortNewest,
+            createJournal: game.settings.get("levels-3d-preview", "mapsharingJournal"),
             packs,
         };
     }
@@ -312,6 +314,25 @@ class MapBrowser extends Application {
         return buttons;
     }
 
+    async getJournalEntry(sceneName, content) {
+        let journal = game.journal.getName("3D Canvas Community Maps");
+        if (!journal) {
+            //create journal
+            journal = await JournalEntry.create({
+                name: "3D Canvas Community Maps",
+            });
+        }
+        const existingPage = journal.pages.getName(sceneName);
+        if (existingPage) return {journalId: journal.id, pageId: existingPage.id};
+        const page = await journal.createEmbeddedDocuments("JournalEntryPage", [
+            {
+                name: sceneName,
+                "text.content": content,
+            },
+        ]);
+        return {journalId: journal.id, pageId: page.id};
+    }
+
     activateListeners(html) {
         super.activateListeners(html);
         html = html[0];
@@ -319,24 +340,7 @@ class MapBrowser extends Application {
             this._onFilter();
         });
         html.querySelectorAll(".tdc-map-download").forEach((button) => {
-            button.addEventListener("click", async (e) => {
-                e.preventDefault();
-                const id = e.target.dataset.mapid;
-                const thumb = e.target.dataset.thumb;
-                const map = await getMap(id);
-                map.data.thumb = thumb;
-                const originalID = map.data._id;
-                const newID = randomID();
-                map.data.active = false;
-                map.data.flags["levels-3d-preview"].enablePlayers = true;
-                map.data.flags["levels-3d-preview"].auto3d = true;
-                map.data.flags["levels-3d-preview"].enableAnimationScripts = false;
-                let stringified = JSON.stringify(map.data);
-                stringified = stringified.replaceAll(originalID, newID);
-                map.data = JSON.parse(stringified);
-                await Scene.create(map.data, { keepId: true });
-                ui.notifications.info(game.i18n.localize("levels3dpreview.sharing.mapbrowser.imported") + `: ${map.data.name}`);
-            });
+            button.addEventListener("click", this._onMapDownload.bind(this));
         });
         html.querySelectorAll(".tdc-map-star").forEach((button) => {
             button.addEventListener("click", async (e) => {
@@ -359,6 +363,12 @@ class MapBrowser extends Application {
             this.sortNewest = false;
             if (oldSort != this.sortNewest) this.render(true);
         });
+        html.querySelector("#tdc-journal").addEventListener("click", (e) => {
+            e.preventDefault();
+            game.settings.set("levels-3d-preview", "mapsharingJournal", !game.settings.get("levels-3d-preview", "mapsharingJournal")).then(() => {
+                this.render(true);
+            });
+        });
         html.querySelectorAll(".tdc-filter").forEach((button) => {
             button.addEventListener("click", (e) => {
                 e.preventDefault();
@@ -368,6 +378,30 @@ class MapBrowser extends Application {
             });
         });
         this._onFilter();
+    }
+
+    async _onMapDownload(e){
+        e.preventDefault();
+        const createJournal = game.settings.get("levels-3d-preview", "mapsharingJournal");
+        const id = e.target.dataset.mapid;
+        const thumb = e.target.dataset.thumb;
+        const map = await getMap(id);
+        const mapData = this._mapList.find((m) => m.id == id);
+        const journalData = createJournal ? await this.getJournalEntry(mapData.name + ` (${mapData.author})`, mapData.description): {};
+        map.data.thumb = thumb;
+        const originalID = map.data._id;
+        const newID = randomID();
+        map.data.active = false;
+        map.data.flags["levels-3d-preview"].enablePlayers = true;
+        map.data.flags["levels-3d-preview"].auto3d = true;
+        map.data.flags["levels-3d-preview"].enableAnimationScripts = false;
+        map.data.journal = journalData?.journalId;
+        map.data.journalPage = journalData?.pageId;
+        let stringified = JSON.stringify(map.data);
+        stringified = stringified.replaceAll(originalID, newID);
+        map.data = JSON.parse(stringified);
+        await Scene.create(map.data, { keepId: true });
+        ui.notifications.info(game.i18n.localize("levels3dpreview.sharing.mapbrowser.imported") + `: ${map.data.name}`);
     }
 
     _onFilter() {

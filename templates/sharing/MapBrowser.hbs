@@ -3,6 +3,7 @@
     <input type="text" placeholder="{{localize "levels3dpreview.sharing.mapbrowser.search"}}">
     <button id="tdc-sort-newest" {{#if sortNewest}}class="active"{{/if}} >Newest</button>
     <button id="tdc-sort-popular" {{#unless sortNewest}}class="active"{{/unless}}>Popular</button>
+    <button data-tooltip="levels3dpreview.sharing.mapbrowser.createJournal" id="tdc-journal" {{#if createJournal}}class="active"{{/if}}><i class="fas fa-scroll fa-fw"></i></button>
     </div>
     <div class="tdc-filters">
         {{#each packs}}
