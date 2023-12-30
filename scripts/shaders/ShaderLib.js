@@ -2085,7 +2085,7 @@ export const shaders = {
                 #ifdef USE_UV
                 if(splatMap_upNormals && shader_vNormal.y <= 0.0) {
                 }else{
-                    vec4 splatMapTexture = sRGBToLinear(texture( splatMap_textureSplatMap, vec2(vUv.x, splatMap_flipY ? 1.0 - vUv.y : vUv.y) * splatMap_repeatSplatMap ));
+                    vec4 splatMapTexture = texture( splatMap_textureSplatMap, vec2(vUv.x, splatMap_flipY ? 1.0 - vUv.y : vUv.y) * splatMap_repeatSplatMap );
                     float splatR = splatMapTexture.r;
                     float splatG = splatMapTexture.g;
                     float splatB = splatMapTexture.b;
