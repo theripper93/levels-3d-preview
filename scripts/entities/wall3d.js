@@ -1,6 +1,8 @@
 import * as THREE from "../lib/three.module.js";
 import { Ruler3D } from "../systems/ruler3d.js";
-import { factor } from "../main.js";
+import {factor} from "../main.js";
+
+const doorIconMaterialCache = {};
 
 export class Wall3D {
     constructor(wall, parent) {
@@ -47,7 +49,10 @@ export class Wall3D {
         let isDisabledVisible = true;
         const isDoor = this.wall.isDoor;
         if (canvas.scene.getFlag("levels-3d-preview", "showSceneWalls") === false && !isDoor) isDisabledVisible = false;
-        if (canvas.scene.getFlag("levels-3d-preview", "showSceneDoors") === false && isDoor) isDisabledVisible = false;
+        if (canvas.scene.getFlag("levels-3d-preview", "showSceneDoors") === false && isDoor) {
+            this.showControlIcon = true;
+            isDisabledVisible = false;
+        }
         this._isDisabledVisible = isDisabledVisible;
         return isDisabledVisible;
     }
@@ -74,10 +79,23 @@ export class Wall3D {
             sidesTexture.wrapT = THREE.RepeatWrapping;
         }
         const materials = await this._getMaterials(texture, sidesTexture);
-        this.mesh = new THREE.Mesh(geometry, materials);
+        this.mesh = new THREE.Group();
+        const wallMesh = new THREE.Mesh(geometry, materials);
+        this.wallMesh = wallMesh;
+        this.mesh.add(wallMesh);
         if (this.wall.isDoor) {
             this.mesh.userData.hitbox = this.mesh;
             this.mesh.userData.interactive = true;
+            const controlIconMaterial = await this.getControlIconMaterial();
+            //sprite icon
+            const icon = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), controlIconMaterial);
+            icon.rotation.set(-Math.PI / 2, 0, Math.PI / 2 + Math.PI);
+            const controlIconScale = (canvas.grid.size / factor) / 2;
+            icon.scale.set(controlIconScale, controlIconScale, controlIconScale);
+            icon.position.set(0, -((this.vec1.y - this.vec2.y + 0.001)/2) + 0.001, 0);
+            this.mesh.add(icon);
+            this.controlIcon = icon;
+            icon.visible = false;
         }
         this.mesh.userData.entity3D = this;
         this.mesh.castShadow = true;
@@ -86,6 +104,32 @@ export class Wall3D {
         this.mesh.rotation.set(0, this.angle, 0);
         this.mesh.visible = this.isDisabledVisible;
         this._parent.scene.add(this.mesh);
+    }
+
+    async getControlIconMaterial() {
+        // Determine displayed door state
+        const ds = CONST.WALL_DOOR_STATES;
+        let s = this.wall.document.ds;
+        if (!game.user.isGM && s === ds.LOCKED) s = ds.CLOSED;
+
+        // Determine texture path
+        const icons = CONFIG.controlIcons;
+        let path =
+            {
+                [ds.LOCKED]: icons.doorLocked,
+                [ds.CLOSED]: icons.doorClosed,
+                [ds.OPEN]: icons.doorOpen,
+            }[s] || icons.doorClosed;
+        if (s === ds.CLOSED && this.wall.document.door === CONST.WALL_DOOR_TYPES.SECRET) path = icons.doorSecret;
+
+        // Return cached material
+        if (doorIconMaterialCache[path]) return doorIconMaterialCache[path];
+
+        // Obtain the icon texture
+        const texture = await this._parent.helpers.loadTexture(path);
+        const material = new THREE.MeshBasicMaterial({map: texture, alphaTest: 0.8, transparent: false});
+        doorIconMaterialCache[path] = material;
+        return material;
     }
 
     async _getMaterials(texture, sidesTexture) {
@@ -133,20 +177,31 @@ export class Wall3D {
 
     updateVisibility() {
         if (!this.mesh) return;
-        this.mesh.visible = this.isVisible;
+        let meshVisible = this.isVisible;
         if (game.Levels3DPreview.mirrorLevelsVisibility) {
             if (CONFIG.Levels.UI?.rangeEnabled) {
                 const isLevelsVisible = this.wall.visible;
-                this.mesh.visible = isLevelsVisible;
+                meshVisible = isLevelsVisible;
             } else {
                 const elevation = WallHeight.tokenElevation;
                 const isControlled = canvas.tokens.controlled[0];
                 const isGM = game.user.isGM;
                 if (isGM && !isControlled) return;
                 if (elevation < this.bottom) {
-                    this.mesh.visible = false;
+                    meshVisible = false;
                 }
             }
+        }
+        if (meshVisible) {
+            this.wallMesh.visible = true;
+            this.mesh.visible = true;
+            if(this.controlIcon) this.controlIcon.visible = false;
+        } else if (this.showControlIcon) {
+            this.wallMesh.visible = false;
+            this.controlIcon.visible = this.wall.doorControl.visible
+            this.mesh.visible = true;
+        } else {
+            this.mesh.visible = false;
         }
     }
 
