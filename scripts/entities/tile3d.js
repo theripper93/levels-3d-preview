@@ -2368,7 +2368,7 @@ export class Tile3D {
                 if (!updates.flags) return false;
                 if (!updates.flags["levels-3d-preview"]) return false;
                 if (Object.values(updates.flags["levels-3d-preview"]).length !== 1) return false;
-                if (updates.flags && updates.flags["levels-3d-preview"] && updates.flags["levels-3d-preview"].doorState) return true;
+                if (updates.flags["levels-3d-preview"].doorState != undefined) return true;
                 return false;
             }
 

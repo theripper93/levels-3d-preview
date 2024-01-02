@@ -1303,11 +1303,9 @@ class Levels3DPreview {
                     }
                 }
             });
-            if (this.mirrorLevelsVisibility) {
-                Object.values(this.walls).forEach((wall) => {
-                    wall.updateVisibility();
-                });
-            }
+            Object.values(this.walls).forEach((wall) => {
+                wall.updateVisibility();
+            });
             Object.values(this.lights.sceneLights).forEach((light) => {
                 light.updateHandle();
                 light.update(time);
