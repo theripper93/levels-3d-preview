@@ -1,3 +1,16 @@
+#tdc-map-browser.contest-active .window-header{
+    background-color: #7f4d00;
+    text-shadow: 0 0 1px black, 0 0 1px black, 0 0 1px black, 0 0 1px black, 0 0 1px black;
+}
+
+i[data-action="community-maps"].contest-active {
+    color: #ff9b00;
+}
+
+#tdc-map-browser.contest-active .window-header a.contest{
+    color: #ffaf4b;
+}
+
 #tdc-map-browser .window-content {
   background: url(/ui/denim075.png) repeat;
   color: var(--color-text-light-1);

@@ -6,10 +6,22 @@ import requests
 
 # Define selected folders
 selected_folders = ['scripts', 'styles', 'assets', 'templates', 'languages', 'lang', 'packs', 'storage', 'icons']
-webhook_url = 'https://discord.com/api/webhooks/1189536897438068827/pwmMRA3FiMFaRi_1LBVNkkShsCSxOQqD6BpThSbtXnUR3FVnmNwXuaeJY5_8rYsoqokk'
+
+def load_secrets():
+    secrets_file_path = os.path.join(os.path.dirname(__file__), '..', 'SECRETS.json')
+
+    try:
+        with open(secrets_file_path, 'r') as secrets_file:
+            secrets = json.load(secrets_file)
+            return secrets
+    except FileNotFoundError:
+        print(f"SECRETS.json file not found at: {secrets_file_path}")
+        return {}
+    except json.JSONDecodeError:
+        print(f"Error decoding JSON in SECRETS.json file at: {secrets_file_path}")
+        return {}
 
 def post_discord_webhook(embed_title, embed_description):
-    # Replace 'YOUR_WEBHOOK_URL' with your actual Discord webhook URL
 
     # Create the payload for the webhook
     payload = {
@@ -24,6 +36,11 @@ def post_discord_webhook(embed_title, embed_description):
 
     # Make an HTTP POST request to the webhook URL
     headers = {'Content-Type': 'application/json'}
+
+    secrets = load_secrets()
+
+    webhook_url = secrets.get('DISCORD_WEBHOOK_URL')
+
     response = requests.post(webhook_url, data=json.dumps(payload), headers=headers)
 
     # Check if the request was successful
@@ -157,6 +174,7 @@ def create_changelog():
     post_discord_webhook(embed_title, embed_description)
 
     print("Changelog updated and webhook posted successfully.")
+
 
 def main():
     module_id, module_version = read_module_json()

@@ -14,7 +14,7 @@
         {{#each maps}}
             <div class="tdc-map-card" data-mapid="{{id}}" data-name="{{name}}" style="background-image: linear-gradient(transparent, black), url('{{image}}');">
                 <h3 style="margin: 0;">{{name}}</h3>
-                <span style="font-size: small;">by {{author}}</span>
+                <span {{#if isWinner}}data-tooltip="This user won one of the 3D Mapmaking Contests"{{/if}} style="font-size: small;">by {{author}}{{#if isWinner}} <i class="fa-duotone fa-trophy-star"></i>{{/if}}</span>
                 <div class="tdc-btn-container">
                 <button {{#if starred}}style="pointer-events: none"{{/if}} class="tdc-map-star {{#if notStarOwned}}not-starred{{/if}}" data-mapid="{{id}}"><i class="{{#if starred}}fa-solid{{else}}fa-regular{{/if}} fa-heart"></i></button>
                 <span class="tdc-star-count">{{stars}}</span>

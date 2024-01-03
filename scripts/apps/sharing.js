@@ -141,6 +141,7 @@ class ShareMap extends FormApplication {
         this.scene = scene ?? canvas.scene;
     }
 
+
     static get defaultOptions() {
         return mergeObject(super.defaultOptions, {
             title: "Share Map",
@@ -232,6 +233,36 @@ class MapBrowser extends Application {
         this.sortNewest = true;
     }
 
+    
+    static get contest() {
+        const startTimestamp = null;
+        const endTimestamp = null;
+
+        const rulesUrl = "";
+
+
+        const format = {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+          };
+        const timeToNext = endTimestamp - Date.now();
+        const timeToStart = startTimestamp - Date.now();
+        return {
+            startTimestamp,
+            endTimestamp,
+            active: Date.now() >= startTimestamp && Date.now() <= endTimestamp,
+            isNextSoon: timeToNext <= 86400000, //1 day
+            endDateTime: new Date(endTimestamp).toLocaleString(undefined, format),
+            startDateTime: new Date(startTimestamp).toLocaleString(undefined, format),
+            timeToNext,
+            timeToStart,
+            rulesUrl,
+            pastWinners: ["Violet", "Jeff_V#2354", "Skrautholomew", "Smothmoth"]
+        }
+    }
+
     static get defaultOptions() {
         return mergeObject(super.defaultOptions, {
             title: game.i18n.localize("levels3dpreview.sharing.mapbrowser.title"),
@@ -245,15 +276,28 @@ class MapBrowser extends Application {
             resizable: true,
             tabs: [{ navSelector: ".tabs", contentSelector: ".content" }],
             filepickers: [],
+            classes: this.contest.active ? ["contest-active"] : [],
         });
     }
 
     get title() {
-        return game.i18n.localize("levels3dpreview.sharing.mapbrowser.title").replace("{count}", this._mapCount);
+        return game.i18n.localize("levels3dpreview.sharing.mapbrowser.title").replace("{count}", this._mapCount) + this.contestTitle;
+    }
+
+    get contestTitle() {
+        const contest = MapBrowser.contest;
+        if (contest.active) {
+            if (!contest.endTimestamp) return "";
+            return ` | Contest Ends: ${contest.endDateTime}`;
+        } else {
+            if (!contest.startTimestamp) return "";
+            return ` | Next Contest Starts: ${contest.startDateTime}`
+        }
     }
 
     async getData() {
         const maps = await getMapList();
+        const pastWinners = MapBrowser.contest.pastWinners;
         let mapList = maps.data.sort((a, b) => b.id - a.id);
         this._mapCount = mapList.length;
         const packs = assetpacks.map((ap) => {
@@ -276,6 +320,7 @@ class MapBrowser extends Application {
             map.starred = stars.includes(game.user.id);
             map.notStarOwned = !map.starred && game.scenes.getName(map.name);
             map.stars = stars.length;
+            if(pastWinners.includes(map.author)) map.isWinner = true;
         });
         if (!this.sortNewest) mapList = mapList.sort((a, b) => b.stars - a.stars);
         this._mapList = mapList;
@@ -311,6 +356,18 @@ class MapBrowser extends Application {
                 },
             },
         );
+        if (MapBrowser.contest.active && MapBrowser.contest.rulesUrl) buttons.unshift({
+            label: "Contest Rules",
+            class: "contest",
+            icon: "fas fa-trophy",
+            onclick: () => {
+                //open url
+                const link = document.createElement("a");
+                link.href = MapBrowser.contest.rulesUrl;
+                link.target = "_blank";
+                link.click();
+            },
+        });
         return buttons;
     }
 
