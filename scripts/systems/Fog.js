@@ -1,14 +1,15 @@
 import * as THREE from "../lib/three.module.js";
-import { factor } from "../main.js";
+import {factor} from "../main.js";
 
 export class Fog {
     constructor(parent) {
         this._parent = parent;
         this._ready = false;
         this._overlay = null;
+        this._lastBase64 = null;
         this.overlayRepeat = new THREE.Vector2(1, 1);
         this.debouncedUpdate = this.updateTexture;// !this._sharedContext ? debounce(this.updateTexture, 300) : this.updateTexture;
-        this.extractor ??= new TextureExtractor(canvas.app.renderer, {callerName: "FogExtractorCanvas3D", controlHash: true});
+        this.extractor ??= new TextureExtractor(canvas.app.renderer, {callerName: "FogExtractorCanvas3D", controlHash: true, format: PIXI.FORMATS.RED});
         this.extractor.reset();
         this.initTexture();
         this.initPixiRT();
@@ -106,13 +107,23 @@ export class Fog {
             texProps.__webglTexture = Object.values(this.pixiRenderTexture.baseTexture._glTextures)[0]?.texture;
             return this.webglFogTexture;
         } else {
-            const base64 = await this.extractor.extract({
+            let base64 = await this.extractor.extract({
                 texture: this.pixiRenderTexture,
                 compression: TextureExtractor.COMPRESSION_MODES.BASE64,
                 type: "image/webp",
-                quality: 1.0,
-                debug: false
-              });
+                quality: 0.8,
+                debug: false,
+            });
+            if(base64) this._lastBase64 = base64;
+            if (!base64) {
+                if (this._lastBase64) {
+                    return this._lastBase64;
+                }
+                //fallback to canvas base64 extraction
+                this.extractor.reset();
+                console.warn("3D Canvas | Failed to extract texture using TextureExtractor, falling back to PIXI.RenderTexture extraction");
+                base64 = await canvas.app.renderer.extract.base64(this.pixiRenderTexture, "image/webp", 0.8);
+            }
             //const base64 = await canvas.app.renderer.extract.base64(this.pixiRenderTexture, "image/jpeg");
             return base64;
         }
