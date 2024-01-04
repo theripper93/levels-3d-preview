@@ -135,6 +135,21 @@ async function starMap(id) {
     }
 }
 
+async function increaseDownloadCount(id) {
+    try {
+        const res = await fetch("https://theripper93.com/api/mapsharing", {
+            method: "POST",
+            headers: {
+                id: id,
+                download: true,
+            },
+        });
+        const data = await res.json();
+    } catch (e) {
+        return ui.notifications.error(game.i18n.localize("levels3dpreview.sharing.error"));
+    }
+}
+
 class ShareMap extends FormApplication {
     constructor(scene) {
         super();
@@ -259,7 +274,7 @@ class MapBrowser extends Application {
             timeToNext,
             timeToStart,
             rulesUrl,
-            pastWinners: ["Violet", "Jeff_V#2354", "Skrautholomew", "Smothmoth"]
+            pastWinners: ["Violet", "Digi_DM", "Skrautholomew", "Smothmoth"]
         }
     }
 
@@ -457,7 +472,8 @@ class MapBrowser extends Application {
         let stringified = JSON.stringify(map.data);
         stringified = stringified.replaceAll(originalID, newID);
         map.data = JSON.parse(stringified);
-        await Scene.create(map.data, { keepId: true });
+        await Scene.create(map.data, {keepId: true});
+        increaseDownloadCount(id);
         ui.notifications.info(game.i18n.localize("levels3dpreview.sharing.mapbrowser.imported") + `: ${map.data.name}`);
     }
 
