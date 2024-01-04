@@ -853,7 +853,7 @@ class Levels3DPreview {
         const divisions = isHeightmap ? 100 : 1;
         const geometry = new THREE.BoxGeometry(width, depth, height, divisions, 1 , divisions);
 
-        if(isHeightmap) await applyHeightmap(geometry, tableHeightmap)
+        if(isHeightmap) await applyHeightmap(geometry, tableHeightmap, (canvas.scene.getFlag("levels-3d-preview", "tableHeightmapScale") ?? 1)*10, (Math.max(canvas.scene.dimensions.width, canvas.scene.dimensions.height) / this.factor)/2);
 
         let uvAttribute = geometry.attributes.uv;
         const repeat = preset.repeat ?? (isHeightmap ? 0.1 : 1);

@@ -377,6 +377,9 @@
                 "label": "Padding Heightmap",
                 "placeholder": "Padding Heightmap"
             },
+            "tableHeightmapScale": {
+                "label": "Heightmap Scale"
+            },
             "tableColor": {
                 "label": "Padding Tint"
             },

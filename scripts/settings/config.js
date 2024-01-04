@@ -253,6 +253,14 @@ export function registerConfigs() {
                     placeholder: game.i18n.localize("levels3dpreview.flags.tableHeightmap.placeholder"),
                     default: "",
                 },
+                tableHeightmapScale: {
+                    type: "range",
+                    label: game.i18n.localize("levels3dpreview.flags.tableHeightmapScale.label"),
+                    default: 1,
+                    min: 0.01,
+                    max: 10,
+                    step: 0.01,
+                },
                 tableColor: {
                     type: "color",
                     label: game.i18n.localize("levels3dpreview.flags.tableColor.label"),
