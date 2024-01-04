@@ -45,6 +45,16 @@ export function initSharing(canvas3d) {
             type: Object,
             default: {},
         });
+
+        game.settings.register("levels-3d-preview", "mapsharingDownloaded", {
+            name: "",
+            hint: "",
+            scope: "world",
+            config: false,
+            type: Array,
+            default: [],
+        });
+
         game.settings.register("levels-3d-preview", "mapsharingKeys", {
             name: "",
             hint: "",
@@ -136,6 +146,10 @@ async function starMap(id) {
 }
 
 async function increaseDownloadCount(id) {
+
+    const alreadyDownloaded = game.settings.get("levels-3d-preview", "mapsharingDownloaded").includes(id);
+    if (alreadyDownloaded) return;
+
     try {
         const res = await fetch("https://theripper93.com/api/mapsharing", {
             method: "POST",
@@ -145,6 +159,9 @@ async function increaseDownloadCount(id) {
             },
         });
         const data = await res.json();
+        const downloaded = game.settings.get("levels-3d-preview", "mapsharingDownloaded");
+        downloaded.push(id);
+        await game.settings.set("levels-3d-preview", "mapsharingDownloaded", downloaded);
     } catch (e) {
         return ui.notifications.error(game.i18n.localize("levels3dpreview.sharing.error"));
     }
