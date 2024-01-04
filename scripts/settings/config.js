@@ -244,7 +244,13 @@ export function registerConfigs() {
                 tableTex: {
                     type: "filepicker",
                     label: game.i18n.localize("levels3dpreview.flags.tableTex.label"),
-                    placeholder: "Table Texture",
+                    placeholder: game.i18n.localize("levels3dpreview.flags.tableTex.placeholder"),
+                    default: "",
+                },
+                tableHeightmap: {
+                    type: "filepicker",
+                    label: game.i18n.localize("levels3dpreview.flags.tableHeightmap.label"),
+                    placeholder: game.i18n.localize("levels3dpreview.flags.tableHeightmap.placeholder"),
                     default: "",
                 },
                 tableColor: {

@@ -56,6 +56,7 @@ import { PARTICLE_SYSTEMS } from "./systems/particleSystem.js";
 import { registerConfigs } from "./settings/config.js";
 import {registerSettings} from "./settings/settingsConfig.js";
 import {WaveFunctionSolver} from "./generators/WaveFunctionCollapse.js";
+import { applyHeightmap } from "./helpers/applyHeightmap.js";
 
 import { createTargetGeometry } from "./entities/effects/target.js";
 
@@ -838,18 +839,24 @@ class Levels3DPreview {
         this.scene.remove(this.table);
         const tableOption = canvas.scene.getFlag("levels-3d-preview", "renderTable") ?? game.settings.get("levels-3d-preview", "paddingAppearance");
         const tableTex = canvas.scene.getFlag("levels-3d-preview", "tableTex") ?? "";
+        const tableHeightmap = canvas.scene.getFlag("levels-3d-preview", "tableHeightmap") ?? "";
         if (tableOption == "none" || !tableOption) return;
         //make a plane and apply a texture
+        const isHeightmap = !!tableHeightmap
         const isMat = tableOption.includes("mat");
-        const width = isMat ? 1000 : canvas.scene.dimensions.width / this.factor;
-        const height = isMat ? 1000 : canvas.scene.dimensions.height / this.factor;
+        const width = isMat ? (isHeightmap ? 200 : 1000) : canvas.scene.dimensions.width / this.factor;
+        const height = isMat ? (isHeightmap ? 200 : 1000) : canvas.scene.dimensions.height / this.factor;
         const center = this.canvasCenter;
-        const depth = isMat ? 0.1 : Math.max(width, height) / 10;
+        const depth = Math.max(width, height)//isMat ? 0.1 : Math.max(width, height) / 10;
         const preset = this.CONFIG.PADDING_PRESETS[tableOption] ?? {};
         const textureMat = await this.helpers.autodetectTextureOrMaterial(preset.texture ?? tableTex);
-        const geometry = new THREE.BoxGeometry(width, depth, height);
+        const divisions = isHeightmap ? 100 : 1;
+        const geometry = new THREE.BoxGeometry(width, depth, height, divisions, 1 , divisions);
+
+        if(isHeightmap) await applyHeightmap(geometry, tableHeightmap)
+
         let uvAttribute = geometry.attributes.uv;
-        const repeat = preset.repeat ?? 1;
+        const repeat = preset.repeat ?? (isHeightmap ? 0.1 : 1);
         for (let i = 0; i < uvAttribute.count; i++) {
             let u = uvAttribute.getX(i);
             let v = uvAttribute.getY(i);
@@ -861,6 +868,7 @@ class Levels3DPreview {
             textureMat.wrapS = THREE.RepeatWrapping;
             textureMat.wrapT = THREE.RepeatWrapping;
         }
+        
         const material = textureMat.isTexture
             ? new THREE.MeshStandardMaterial({
                   map: textureMat,

@@ -373,6 +373,10 @@
                 "label": "Padding Texture",
                 "placeholder": "Padding Texture"
             },
+            "tableHeightmap": {
+                "label": "Padding Heightmap",
+                "placeholder": "Padding Heightmap"
+            },
             "tableColor": {
                 "label": "Padding Tint"
             },
