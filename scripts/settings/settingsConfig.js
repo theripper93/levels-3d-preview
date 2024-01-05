@@ -451,15 +451,6 @@ export function registerSettings() {
             default: "sounds/combat/epic-turn-1hit.ogg",
         });
 
-        game.settings.register("levels-3d-preview", "standupFace", {
-            name: game.i18n.localize("levels3dpreview.settings.standupFace.name"),
-            hint: game.i18n.localize("levels3dpreview.settings.standupFace.hint"),
-            scope: "world",
-            config: false,
-            type: Boolean,
-            default: true,
-        });
-
         game.settings.register("levels-3d-preview", "flatTokenStyle", {
             name: game.i18n.localize("levels3dpreview.settings.flatTokenStyle.name"),
             hint: game.i18n.localize("levels3dpreview.settings.flatTokenStyle.hint"),
