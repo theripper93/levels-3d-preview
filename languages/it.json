@@ -17,7 +17,9 @@
             "roundDoubleRing": "Doppio anello tondo",
             "rounded": "Arrotondato",
             "sharp": "Acuto",
-            "sharpIndicator": "Indicatore tagliente"
+            "sharpIndicator": "Indicatore tagliente",
+            "ringSimple": "Anello semplice",
+            "ringSimpleSmall": "Anello Semplice Piccolo"
         },
         "clipNavigator": {
             "automode": "Modalità Segui",
@@ -88,7 +90,11 @@
                 "onend": "Particle system: .onEnd() - uno o più argomenti non erano un'istanza di Particle3D.",
                 "type": "Sistema particellare: tipo '%type%' non supportato, i tipi validi sono:"
             },
-            "toofarfromdoor": "Il tuo gettone è troppo lontano per aprire la porta"
+            "toofarfromdoor": "Il tuo gettone è troppo lontano per aprire la porta",
+            "attachmentNotFound": "Tela 3D: allegato non trovato. \nGettone: %token% | \nAllegato: %allegato%",
+            "noActiveScene": "Tela 3D: nessuna scena attiva trovata. \nUna scena è stata attivata automaticamente, ricarica la pagina.",
+            "noScenes": "Tela 3D: nessuna scena trovata. \nLa scena predefinita è stata creata, ricarica la pagina.",
+            "tokenNotGrounded": "Il tentativo di movimento non è consentito, il gettone non è a terra."
         },
         "exporter": {
             "all": "Scena completa",
@@ -212,7 +218,9 @@
                     "rockcylinder": "Roccia (cilindro)",
                     "rocksphere": "Roccia (Sfera)",
                     "stairs": "Scale",
-                    "vines": "Viti"
+                    "vines": "Viti",
+                    "paper": "Ritaglio di carta",
+                    "plane": "Aereo"
                 }
             },
             "dynaMeshResolution": {
@@ -282,7 +290,8 @@
                     "merged": "Riquadro unito",
                     "stretch": "Separare",
                     "tile": "Ripetere"
-                }
+                },
+                "tabNotes": "Configura se il modello 3D deve essere ripetuto più volte o allungato per adattarsi alla piastrella."
             },
             "filter": {
                 "label": "Filtro",
@@ -403,6 +412,16 @@
                     "options": {
                         "optgroup": "Direzionale (richiede angolo di emissione)"
                     }
+                },
+                "ParticlePosition": {
+                    "label": "Posizione",
+                    "options": {
+                        "center": "Centro",
+                        "surface": "Superficie"
+                    }
+                },
+                "ParticleRadius": {
+                    "label": "Raggio"
                 }
             },
             "lockCamera": {
@@ -438,7 +457,9 @@
                     },
                     "texcol": "Trama/Colore",
                     "wood": "Di legno"
-                }
+                },
+                "header": "Materiale",
+                "tabNotes": "Configura le proprietà visive del materiale applicato a questo riquadro. \nI cursori impostati su -0,01 utilizzeranno il valore predefinito per il materiale."
             },
             "maxElevation": {
                 "label": "Elevazione massima",
@@ -461,7 +482,8 @@
                     "none": "Nessuno",
                     "perlin": "Perlin",
                     "simplex": "Simplex"
-                }
+                },
+                "tabNotes": "Configura il rumore procedurale sulla parte superiore del modello per applicare una distorsione."
             },
             "noiseExponent": {
                 "label": "Esponente"
@@ -532,7 +554,8 @@
                     "snow": "Neve",
                     "starfall": "Stelle cadenti (JB2A)",
                     "stars": "Stelle",
-                    "toxic": "Fumi tossici"
+                    "toxic": "Fumi tossici",
+                    "sand": "Tempesta di sabbia"
                 }
             },
             "particleRandomRotation": {
@@ -766,7 +789,8 @@
             },
             "tsight": {
                 "header": "Visione",
-                "label": "Blocca la vista"
+                "label": "Blocca la vista",
+                "tabNotes": "Configura le proprietà di visione, blocco della luce e collisione di questo riquadro."
             },
             "wallDepth": {
                 "label": "Profondità della parete"
@@ -811,7 +835,9 @@
                 "label": "Stile porta",
                 "options": {
                     "animate": "Animato",
-                    "transparent": "Trasparente"
+                    "transparent": "Trasparente",
+                    "slide": "Animato (Diapositiva - Laterale)",
+                    "slideVertical": "Animato (Diapositiva - Verticale)"
                 }
             },
             "particleGroundOffset": {
@@ -823,7 +849,8 @@
             "attachments": {
                 "filename": "Nome dell'allegato",
                 "header": "Allegati",
-                "info": "Tile %s allegato al token"
+                "info": "Tile %s allegato al token",
+                "tabNotes": "Configura gli allegati a questo token. \nPer aggiungere un allegato, seleziona il token, spostati sul livello Piastrelle, posiziona la tessera che desideri allegare sul token, fai clic con il pulsante destro del mouse sulla tessera e fai clic sull'opzione \"Attacca tessera al token\"."
             },
             "ior": {
                 "label": "IoR"
@@ -837,6 +864,70 @@
             },
             "transmission": {
                 "label": "Trasmissione"
+            },
+            "alphaClip": {
+                "label": "Clip alfa"
+            },
+            "basic": {
+                "header": "Di base",
+                "tabNotes": "Configura le opzioni del modello 3D, del posizionamento e del ridimensionamento."
+            },
+            "doorAnimationDuration": {
+                "label": "Durata dell'animazione della porta",
+                "units": "SM"
+            },
+            "doorGrabTokens": {
+                "label": "Cattura gettoni",
+                "notes": "Cattura i gettoni che si trovano in prossimità della porta quando la porta inizia a muoversi. \nNon funziona con lo stile \"Trasparente\". \nTieni presente che i gettoni non verranno catturati durante il movimento, ma solo quando la porta inizierà a muoversi."
+            },
+            "doorSlidePercent": {
+                "label": "Percentuale di scorrimento della porta"
+            },
+            "effects": {
+                "header": "Effetti",
+                "tabNotes": "Configura gli effetti speciali da applicare a questa tessera."
+            },
+            "enableAnimationScripts": {
+                "label": "Abilita script di animazione",
+                "notes": "ATTENZIONE: assicurati di considerare attendibile l'origine della scena, poiché potrebbe essere utilizzata per eseguire codice dannoso. \nAbilita l'esecuzione di script di animazione per i riquadri."
+            },
+            "font": {
+                "label": "Font",
+                "notes": "Un carattere JSON da utilizzare per la mesh dinamica del testo."
+            },
+            "grounding": {
+                "label": "Messa a terra",
+                "notes": "Impedisce ai gettoni del giocatore di terminare il movimento in aria.",
+                "options": {
+                    "always": "Sempre",
+                    "none": "Nessuno",
+                    "notFlying": "Solo se non in volo"
+                }
+            },
+            "offset": {
+                "x": {
+                    "label": "Scostamento X"
+                },
+                "y": {
+                    "label": "Scostamento Y"
+                },
+                "z": {
+                    "label": "Spostamento Z"
+                }
+            },
+            "onAnimation": {
+                "label": "Funzione di animazione"
+            },
+            "position": {
+                "header": "Posizione",
+                "tabNotes": "Configurare la posizione, la scala e la rotazione. \nInoltre, configura un offset (l'offset deve essere utilizzato per modificare il punto cardine della tessera, non funzionerà su tessere unite). \nAlcune proprietà, come larghezza, altezza e rotazione, possono essere trovate nella normale scheda \"Base\" della configurazione del riquadro."
+            },
+            "tableHeightmap": {
+                "label": "Mappa dell'altezza dell'imbottitura",
+                "placeholder": "Mappa dell'altezza dell'imbottitura"
+            },
+            "tableHeightmapScale": {
+                "label": "Scala della mappa dell'altezza"
             }
         },
         "keybindings": {
@@ -1307,6 +1398,35 @@
             "paddingAppearance": {
                 "hint": "L'aspetto predefinito del padding. \nQuesto può essere personalizzato anche per scena.",
                 "name": "Aspetto imbottito"
+            },
+            "flatTokenStyle": {
+                "hint": "Lo stile da utilizzare per i token 2D quando non è impostato un modello 3D.",
+                "name": "Stile gettone 2D",
+                "options": {
+                    "coin": "Moneta (dall'alto verso il basso)",
+                    "extruded": "Estruso (in piedi)",
+                    "flat": "Piatto (fotocamera frontale)"
+                }
+            },
+            "gameCameraMaxAzimuth": {
+                "hint": "L'azimut massimo (rotazione orizzontale) verso il quale è possibile ruotare la telecamera.",
+                "name": "Azimut massimo"
+            },
+            "gameCameraMaxZoom": {
+                "hint": "Il livello di zoom massimo su cui è possibile impostare la fotocamera. \nValori più alti ridurranno maggiormente l'immagine.",
+                "name": "Zoom massimo"
+            },
+            "gameCameraMinAzimuth": {
+                "hint": "L'azimut minimo (rotazione orizzontale) verso il quale è possibile ruotare la telecamera.",
+                "name": "Azimut minimo"
+            },
+            "hideEffects": {
+                "hint": "Nascondi l'indicatore degli effetti fluttuante sopra il token.",
+                "name": "Nascondi effetti"
+            },
+            "useRaycastRuler": {
+                "hint": "Quando questa impostazione è abilitata, il righello rimarrà attaccato al terreno sottostante finché il gettone non volerà",
+                "name": "SPERIMENTALE: Righello adattivo"
             }
         },
         "shaders": {
@@ -1508,7 +1628,10 @@
                 "description": "Effetto rimbalzo. \nDai all'oggetto un effetto di rimbalzo, tieni presente che il modello deve essere una singola mesh per ottenere i migliori risultati.",
                 "name": "Rimbalzo",
                 "speed": "Velocità",
-                "strength": "Intensità"
+                "strength": "Intensità",
+                "axisX": "Asse X",
+                "axisY": "Asse Z",
+                "axisZ": "Asse Y"
             },
             "colorswap": {
                 "description": "Effetto cambio colore. \nScambia un colore del modello con un altro colore.",
@@ -1547,7 +1670,45 @@
                 "textureDiffuse2": "Trama B",
                 "textureDiffuse3": "Trama A",
                 "textureSplatMap": "Mappa Splat",
-                "useAlpha": "Usa il canale alfa"
+                "useAlpha": "Usa il canale alfa",
+                "flipY": "Capovolgi Y",
+                "upNormals": "Solo superfici \"rivolte verso l'alto\"."
+            },
+            "clipping": {
+                "description": "Sfuma questa tessera in prossimità di un gettone o della telecamera.",
+                "diameter": "Raggio",
+                "heightOffset": "Scostamento dell'altezza",
+                "name": "Ritaglio",
+                "noiseScale": "Scala del rumore",
+                "speed": "Velocità",
+                "useCamera": "Usa la fotocamera",
+                "useCameraAdvanced": "Utilizza i calcoli avanzati della fotocamera"
+            },
+            "mask": {
+                "color": "Colore",
+                "description": "Effetto maschera. \nMaschera la texture con una maschera texture. \nRichiede una texture e una texture maschera.",
+                "name": "Maschera",
+                "repeat": "Ripetere",
+                "textureDiffuse": "Struttura",
+                "textureMask": "Trama della maschera"
+            },
+            "noiseMask": {
+                "color": "Colore",
+                "description": "Effetto maschera rumore. \nMaschera la texture con 2 texture rumore. \nRichiede una texture ed entrambe le texture rumore.",
+                "invert": "Invertire",
+                "maskThreshold": "Soglia maschera",
+                "name": "Rumore",
+                "noise1Repeat": "Ripetere",
+                "noise1ScrollX": "Scorri X",
+                "noise1ScrollY": "Scorri Y",
+                "noise2Repeat": "Ripetere",
+                "noise2ScrollX": "Scorri X",
+                "noise2ScrollY": "Scorri Y",
+                "repeat": "Ripetere",
+                "strength": "Forza",
+                "textureDiffuse": "Struttura",
+                "textureNoise1": "Struttura del rumore 1",
+                "textureNoise2": "Struttura del rumore 2"
             }
         },
         "sharing": {
@@ -1556,7 +1717,8 @@
             "mapbrowser": {
                 "imported": "Scena importata",
                 "search": "Inizia a digitare per cercare...",
-                "title": "Browser mappe: {count} mappe disponibili"
+                "title": "Browser mappe: {count} mappe disponibili",
+                "createJournal": "Crea note di scena con informazioni sulle scene importate"
             },
             "packs": {
                 "baileywiki": "Baileywiki",
@@ -2175,6 +2337,10 @@
             "torch": "Torcia",
             "voidray": "Raggio Vuoto",
             "vortex": "Vortice"
+        },
+        "notifications": {
+            "initialviewcaptured": "Posizione di visualizzazione iniziale acquisita",
+            "initialviewcleared": "Posizione di visualizzazione iniziale cancellata"
         }
     }
 }

@@ -17,7 +17,9 @@
             "roundDoubleRing": "Double Anneau Rond",
             "rounded": "Arrondi",
             "sharp": "Pointu",
-            "sharpIndicator": "Indicateur pointu"
+            "sharpIndicator": "Indicateur pointu",
+            "ringSimple": "Bague Simple",
+            "ringSimpleSmall": "Bague Simple Petite"
         },
         "clipNavigator": {
             "automode": "Mode de suivi",
@@ -88,7 +90,11 @@
                 "onend": "Système de particules : .onEnd() - un ou plusieurs arguments n'étaient pas une instance de Particle3D.",
                 "type": "Système de particules : type '%type%' non pris en charge, les types valides sont :"
             },
-            "toofarfromdoor": "Votre Token est trop loin pour ouvrir la porte"
+            "toofarfromdoor": "Votre Token est trop loin pour ouvrir la porte",
+            "attachmentNotFound": "Toile 3D : pièce jointe introuvable. \nJeton : %jeton% | \nPièce jointe : %pièce jointe%",
+            "noActiveScene": "Toile 3D : aucune scène active trouvée. \nUne scène a été activée automatiquement, veuillez recharger la page.",
+            "noScenes": "Toile 3D : aucune scène trouvée. \nLa scène par défaut a été créée, veuillez recharger la page.",
+            "tokenNotGrounded": "La tentative de mouvement n'est pas autorisée, le jeton n'est pas cloué au sol."
         },
         "exporter": {
             "all": "Scène complète",
@@ -212,7 +218,9 @@
                     "rockcylinder": "Roche (Cylindre)",
                     "rocksphere": "Roche (sphère)",
                     "stairs": "Escaliers",
-                    "vines": "Vignes"
+                    "vines": "Vignes",
+                    "paper": "Découpe de papier",
+                    "plane": "Avion"
                 }
             },
             "dynaMeshResolution": {
@@ -282,7 +290,8 @@
                     "merged": "Tuile fusionnée",
                     "stretch": "Seul",
                     "tile": "Répéter"
-                }
+                },
+                "tabNotes": "Configurez la météo selon laquelle le modèle 3D doit être répété plusieurs fois ou étiré pour s'adapter à la tuile."
             },
             "filter": {
                 "label": "Filtre",
@@ -403,6 +412,16 @@
                     "options": {
                         "optgroup": "Directionnel (nécessite un angle d'émission)"
                     }
+                },
+                "ParticlePosition": {
+                    "label": "Position",
+                    "options": {
+                        "center": "Centre",
+                        "surface": "Surface"
+                    }
+                },
+                "ParticleRadius": {
+                    "label": "Rayon"
                 }
             },
             "lockCamera": {
@@ -438,7 +457,9 @@
                     },
                     "texcol": "Texture/Couleur",
                     "wood": "Bois"
-                }
+                },
+                "header": "Matériel",
+                "tabNotes": "Configurez les propriétés visuelles du matériau appliqué à cette tuile. \nLes curseurs définis sur -0,01 utiliseront la valeur par défaut du matériau."
             },
             "maxElevation": {
                 "label": "Altitude maximale",
@@ -461,7 +482,8 @@
                     "none": "Aucun",
                     "perlin": "Perlin",
                     "simplex": "Simplexe"
-                }
+                },
+                "tabNotes": "Configurez le bruit procédural au-dessus du modèle pour appliquer une distorsion."
             },
             "noiseExponent": {
                 "label": "Exposant"
@@ -532,7 +554,8 @@
                     "snow": "Neige",
                     "starfall": "Chute d'étoiles (JB2A)",
                     "stars": "Étoiles",
-                    "toxic": "Fumées toxiques"
+                    "toxic": "Fumées toxiques",
+                    "sand": "Tempête de sable"
                 }
             },
             "particleRandomRotation": {
@@ -766,7 +789,8 @@
             },
             "tsight": {
                 "header": "Vision",
-                "label": "Bloquer la vue"
+                "label": "Bloquer la vue",
+                "tabNotes": "Configurez les propriétés de vision, de blocage de la lumière et de collision de cette vignette."
             },
             "wallDepth": {
                 "label": "Profondeur du mur"
@@ -811,7 +835,9 @@
                 "label": "Style de porte",
                 "options": {
                     "animate": "Animé",
-                    "transparent": "Transparent"
+                    "transparent": "Transparent",
+                    "slide": "Animé (Diapositive - Côté)",
+                    "slideVertical": "Animé (Diapositive - Vertical)"
                 }
             },
             "particleGroundOffset": {
@@ -823,7 +849,8 @@
             "attachments": {
                 "filename": "Nom de la pièce jointe",
                 "header": "Pièces jointes",
-                "info": "Tuile %s attachée au jeton"
+                "info": "Tuile %s attachée au jeton",
+                "tabNotes": "Configurez les pièces jointes à ce jeton. \nPour ajouter une pièce jointe, sélectionnez le jeton, déplacez-vous vers le calque de tuiles, positionnez la tuile que vous souhaitez attacher sur le jeton, cliquez avec le bouton droit sur la tuile et cliquez sur l'option « Attacher la tuile au jeton »."
             },
             "ior": {
                 "label": "IoR"
@@ -837,6 +864,70 @@
             },
             "transmission": {
                 "label": "Transmission"
+            },
+            "alphaClip": {
+                "label": "Clip Alpha"
+            },
+            "basic": {
+                "header": "Basique",
+                "tabNotes": "Configurez les options de modèle 3D, de positionnement et de mise à l'échelle."
+            },
+            "doorAnimationDuration": {
+                "label": "Durée de l'animation de la porte",
+                "units": "MS"
+            },
+            "doorGrabTokens": {
+                "label": "Capturer des jetons",
+                "notes": "Capturez les jetons qui se trouvent à proximité de la porte lorsque la porte commence à bouger. \nNe fonctionne pas avec le style « Transparent ». \nNotez que les jetons ne seront pas capturés en cours de mouvement, uniquement lorsque la porte commencera à bouger."
+            },
+            "doorSlidePercent": {
+                "label": "Pourcentage de glissement de porte"
+            },
+            "effects": {
+                "header": "Effets",
+                "tabNotes": "Configurez les effets spéciaux à appliquer à cette vignette."
+            },
+            "enableAnimationScripts": {
+                "label": "Activer les scripts d'animation",
+                "notes": "AVERTISSEMENT : assurez-vous de faire confiance à la source de la scène, cela peut être potentiellement utilisé pour exécuter du code malveillant. \nActiver l'exécution de scripts d'animation pour les tuiles."
+            },
+            "font": {
+                "label": "Police de caractère",
+                "notes": "Une police JSON à utiliser pour le maillage dynamique de texte."
+            },
+            "grounding": {
+                "label": "Mise à la terre",
+                "notes": "Empêche les jetons des joueurs de terminer leur mouvement dans les airs.",
+                "options": {
+                    "always": "Toujours",
+                    "none": "Aucun",
+                    "notFlying": "Seulement si je ne vole pas"
+                }
+            },
+            "offset": {
+                "x": {
+                    "label": "Décalage X"
+                },
+                "y": {
+                    "label": "Décalage Y"
+                },
+                "z": {
+                    "label": "Décalage Z"
+                }
+            },
+            "onAnimation": {
+                "label": "Fonction d'animation"
+            },
+            "position": {
+                "header": "Position",
+                "tabNotes": "Configurez la position, l'échelle et la rotation. \nConfigurez en outre un décalage (le décalage est destiné à être utilisé pour changer le point pivot de la vignette, ne fonctionnera pas sur les vignettes fusionnées). \nCertaines propriétés, telles que la largeur, la hauteur et la rotation, peuvent être trouvées dans l'onglet « Basique » habituel de la configuration des vignettes."
+            },
+            "tableHeightmap": {
+                "label": "Carte de hauteur de remplissage",
+                "placeholder": "Carte de hauteur de remplissage"
+            },
+            "tableHeightmapScale": {
+                "label": "Échelle de la carte de hauteur"
             }
         },
         "keybindings": {
@@ -1307,6 +1398,35 @@
             "paddingAppearance": {
                 "hint": "L'apparence par défaut du rembourrage. \nCela peut également être personnalisé par scène.",
                 "name": "Apparence du rembourrage"
+            },
+            "flatTokenStyle": {
+                "hint": "Le style à utiliser pour les jetons 2D lorsqu'aucun modèle 3D n'est défini.",
+                "name": "Style de jeton 2D",
+                "options": {
+                    "coin": "Pièce (de haut en bas)",
+                    "extruded": "Extrudé (debout)",
+                    "flat": "Plat (caméra faciale)"
+                }
+            },
+            "gameCameraMaxAzimuth": {
+                "hint": "L'azimut maximum (rotation horizontale) vers lequel la caméra peut pivoter.",
+                "name": "Azimut maximum"
+            },
+            "gameCameraMaxZoom": {
+                "hint": "Le niveau de zoom maximum sur lequel la caméra peut être réglée. \nDes valeurs plus élevées entraîneront un zoom arrière plus important.",
+                "name": "Zoom maximum"
+            },
+            "gameCameraMinAzimuth": {
+                "hint": "L'azimut minimum (rotation horizontale) vers lequel la caméra peut pivoter.",
+                "name": "Azimut minimum"
+            },
+            "hideEffects": {
+                "hint": "Masquez l’indicateur d’effets flottant au-dessus du jeton.",
+                "name": "Masquer les effets"
+            },
+            "useRaycastRuler": {
+                "hint": "Lorsque ce paramètre est activé, la règle restera collée au terrain en dessous tant que le jeton ne volera pas.",
+                "name": "EXPÉRIMENTAL : Règle adaptative"
             }
         },
         "shaders": {
@@ -1508,7 +1628,10 @@
                 "description": "Effet rebond. \nDonnez à l'objet un effet de rebond, gardez à l'esprit que le modèle doit être un seul maillage pour de meilleurs résultats.",
                 "name": "Rebond",
                 "speed": "Vitesse",
-                "strength": "Intensité"
+                "strength": "Intensité",
+                "axisX": "Axe X",
+                "axisY": "Axe z",
+                "axisZ": "Axe Y"
             },
             "colorswap": {
                 "description": "Effet d'échange de couleurs. \nÉchangez une couleur du modèle avec une autre couleur.",
@@ -1547,7 +1670,45 @@
                 "textureDiffuse2": "Structure B",
                 "textureDiffuse3": "Structure A",
                 "textureSplatMap": "Carte de l'éclaboussure",
-                "useAlpha": "Utiliser le canal Alpha"
+                "useAlpha": "Utiliser le canal Alpha",
+                "flipY": "Retourner Y",
+                "upNormals": "Uniquement les surfaces « orientées vers le haut »"
+            },
+            "clipping": {
+                "description": "Faites disparaître cette tuile à proximité d’un jeton ou de la caméra.",
+                "diameter": "Rayon",
+                "heightOffset": "Décalage de hauteur",
+                "name": "Coupure",
+                "noiseScale": "Échelle de bruit",
+                "speed": "Vitesse",
+                "useCamera": "Utiliser l'appareil photo",
+                "useCameraAdvanced": "Utiliser les calculs avancés de la caméra"
+            },
+            "mask": {
+                "color": "Couleur",
+                "description": "Effet masque. \nMasquez la texture avec un masque de texture. \nNécessite une texture et une texture masque.",
+                "name": "Masque",
+                "repeat": "Répéter",
+                "textureDiffuse": "Texture",
+                "textureMask": "Texture du masque"
+            },
+            "noiseMask": {
+                "color": "Couleur",
+                "description": "Effet de masque de bruit. \nMasquez la texture avec 2 textures de bruit. \nNécessite une texture et les deux textures de bruit.",
+                "invert": "Inverser",
+                "maskThreshold": "Seuil de masque",
+                "name": "Bruit",
+                "noise1Repeat": "Répéter",
+                "noise1ScrollX": "Défilement X",
+                "noise1ScrollY": "Défilement Y",
+                "noise2Repeat": "Répéter",
+                "noise2ScrollX": "Défilement X",
+                "noise2ScrollY": "Défilement Y",
+                "repeat": "Répéter",
+                "strength": "Force",
+                "textureDiffuse": "Texture",
+                "textureNoise1": "Texture du bruit 1",
+                "textureNoise2": "Texture du bruit 2"
             }
         },
         "sharing": {
@@ -1556,7 +1717,8 @@
             "mapbrowser": {
                 "imported": "Scène importée",
                 "search": "Commencez à taper pour rechercher...",
-                "title": "Navigateur de cartes : {count} cartes disponibles"
+                "title": "Navigateur de cartes : {count} cartes disponibles",
+                "createJournal": "Créer des notes de scène avec des informations sur les scènes importées"
             },
             "packs": {
                 "baileywiki": "Baileywiki",
@@ -2175,6 +2337,10 @@
             "torch": "Torche",
             "voidray": "Rayon du Vide",
             "vortex": "Vortex"
+        },
+        "notifications": {
+            "initialviewcaptured": "Position de vue initiale capturée",
+            "initialviewcleared": "Position de vue initiale effacée"
         }
     }
 }

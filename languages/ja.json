@@ -56,7 +56,11 @@
             "initfailed": "3D キャンバス: 初期化に失敗しました。\nこれはキャッシュの問題である可能性があります。CTRL F5 を押してページを更新してみてください。\nまた、有効なシーンがあることも確認してください。\nまたは、3D キャンバスまたはその依存関係の 1 つが古くなっているか、破損している可能性があります。\nモジュールが最新であることを確認し、他のすべてが失敗した場合は再インストールを試みます。",
             "notarget": "3D キャンバス: ドラッグ アンド ドロップのターゲットが見つかりません。\n少なくとも 1 つの 3D オブジェクトまたは背景が有効になっていることを確認してください。",
             "overmaxelevation": "試行された移動は、このシーンの最大標高を超えています。",
-            "toofarfromdoor": "あなたのコマはドアを開けるには遠すぎます"
+            "toofarfromdoor": "あなたのコマはドアを開けるには遠すぎます",
+            "attachmentNotFound": "3D キャンバス: 添付ファイルが見つかりません。\nトークン: %token% |\n添付ファイル: %attachment%",
+            "noActiveScene": "3D キャンバス: アクティブなシーンが見つかりません。\nシーンが自動的にアクティブ化されました。ページをリロードしてください。",
+            "noScenes": "3D キャンバス: シーンが見つかりません。\nデフォルトのシーンが作成されました。ページをリロードしてください。",
+            "tokenNotGrounded": "試みられた移動は許可されません。トークンは接地されていません。"
         },
         "keybindings": {
             "resetView": "カメラリセット",
@@ -232,7 +236,9 @@
                         "steel": "鋼",
                         "wood": "木"
                     }
-                }
+                },
+                "header": "材料",
+                "tabNotes": "このタイルに適用されるマテリアルの視覚プロパティを構成します。 \n-0.01 に設定されたスライダーでは、マテリアルのデフォルト値が使用されます。"
             },
             "color": {
                 "label": "色",
@@ -363,7 +369,8 @@
                     "smoke": "煙",
                     "toxic": "毒霧",
                     "dust": "土煙",
-                    "custom": "カスタム"
+                    "custom": "カスタム",
+                    "sand": "砂嵐"
                 }
             },
             "particleTexture": {
@@ -472,6 +479,16 @@
                     "options": {
                         "optgroup": "指向性 (放射角度が必要)"
                     }
+                },
+                "ParticlePosition": {
+                    "label": "位置",
+                    "options": {
+                        "center": "中心",
+                        "surface": "表面"
+                    }
+                },
+                "ParticleRadius": {
+                    "label": "半径"
                 }
             },
             "autoGround": {
@@ -544,7 +561,9 @@
                     "rockcylinder": "岩（円柱）",
                     "rocksphere": "岩(球体)",
                     "stairs": "階段",
-                    "vines": "ブドウの木"
+                    "vines": "ブドウの木",
+                    "paper": "切り紙",
+                    "plane": "飛行機"
                 }
             },
             "dynaMeshResolution": {
@@ -573,7 +592,8 @@
                     "merged": "融合されたタイル",
                     "stretch": "単一",
                     "tile": "繰り返し"
-                }
+                },
+                "tabNotes": "天気の設定は、3D モデルを複数回繰り返すか、タイルに合わせて引き伸ばす必要があります。"
             },
             "filter": {
                 "label": "フィルター",
@@ -628,7 +648,8 @@
                     "none": "なし",
                     "perlin": "パーリン",
                     "simplex": "シンプレックス"
-                }
+                },
+                "tabNotes": "モデルの上にプロシージャル ノイズを設定して歪みを適用します。"
             },
             "noiseExponent": {
                 "label": "指数"
@@ -769,7 +790,8 @@
             },
             "tsight": {
                 "header": "視覚",
-                "label": "視覚をブロックする"
+                "label": "視覚をブロックする",
+                "tabNotes": "このタイルの視覚、遮光、衝突のプロパティを設定します。"
             },
             "yScale": {
                 "label": "Y スケール"
@@ -799,7 +821,9 @@
                 "label": "ドアのスタイル",
                 "options": {
                     "animate": "アニメーション",
-                    "transparent": "透明"
+                    "transparent": "透明",
+                    "slide": "アニメーション (スライド - サイド)",
+                    "slideVertical": "アニメーション (スライド - 垂直)"
                 }
             },
             "particleGroundOffset": {
@@ -811,7 +835,8 @@
             "attachments": {
                 "filename": "添付ファイル名",
                 "header": "添付ファイル",
-                "info": "タイル %s がトークンにアタッチされました"
+                "info": "タイル %s がトークンにアタッチされました",
+                "tabNotes": "このトークンへの添付ファイルを構成します。\nアタッチメントを追加するには、トークンを選択し、タイル レイヤーに移動し、トークン上にアタッチしたいタイルを配置し、タイルを右クリックして、[タイルをトークンにアタッチ] オプションをクリックします。"
             },
             "ior": {
                 "label": "IoR"
@@ -825,6 +850,70 @@
             },
             "transmission": {
                 "label": "伝染 ; 感染"
+            },
+            "alphaClip": {
+                "label": "アルファクリップ"
+            },
+            "basic": {
+                "header": "基本",
+                "tabNotes": "3D モデル、位置、およびスケーリングのオプションを構成します。"
+            },
+            "doorAnimationDuration": {
+                "label": "ドアアニメーションの長さ",
+                "units": "MS"
+            },
+            "doorGrabTokens": {
+                "label": "キャプチャトークン",
+                "notes": "ドアが動き始めたら、ドアの近くにあるトークンを捕獲します。 \n「透明」スタイルでは機能しません。\nトークンは移動中には捕捉されず、ドアが動き始めたときにのみ捕捉されることに注意してください。"
+            },
+            "doorSlidePercent": {
+                "label": "ドアスライド率"
+            },
+            "effects": {
+                "header": "効果",
+                "tabNotes": "このタイルに適用する特殊効果を構成します。"
+            },
+            "enableAnimationScripts": {
+                "label": "アニメーションスクリプトを有効にする",
+                "notes": "警告: シーンのソースが信頼できることを確認してください。これは悪意のあるコードの実行に使用される可能性があります。\nタイルのアニメーション スクリプトの実行を有効にします。"
+            },
+            "font": {
+                "label": "フォント",
+                "notes": "テキスト ダイナミック メッシュに使用される JSON フォント。"
+            },
+            "grounding": {
+                "label": "接地",
+                "notes": "プレイヤートークンが空中で移動を終了するのを防ぎます。",
+                "options": {
+                    "always": "いつも",
+                    "none": "なし",
+                    "notFlying": "飛んでいない場合のみ"
+                }
+            },
+            "offset": {
+                "x": {
+                    "label": "オフセット X"
+                },
+                "y": {
+                    "label": "オフセットY"
+                },
+                "z": {
+                    "label": "オフセット Z"
+                }
+            },
+            "onAnimation": {
+                "label": "アニメーション機能"
+            },
+            "position": {
+                "header": "位置",
+                "tabNotes": "位置、スケール、回転を設定します。\nさらに、オフセットを構成します (オフセットはタイルのピボット ポイントを変更するために使用することを目的としており、結合されたタイルでは機能しません)。\n幅、高さ、回転などの一部のプロパティは、タイル構成の通常の「基本」タブにあります。"
+            },
+            "tableHeightmap": {
+                "label": "パディングハイトマップ",
+                "placeholder": "パディングハイトマップ"
+            },
+            "tableHeightmapScale": {
+                "label": "ハイトマップスケール"
             }
         },
         "settings": {
@@ -1162,6 +1251,35 @@
             "paddingAppearance": {
                 "hint": "パディングのデフォルトの外観。\nこれもシーンごとにカスタマイズできます。",
                 "name": "パディングの外観"
+            },
+            "flatTokenStyle": {
+                "hint": "3D モデルが設定されていない場合に 2D トークンに使用するスタイル。",
+                "name": "2D トークン スタイル",
+                "options": {
+                    "coin": "コイン（トップダウン）",
+                    "extruded": "押し出し（立ち上げ）",
+                    "flat": "フラット（フェイスカメラ）"
+                }
+            },
+            "gameCameraMaxAzimuth": {
+                "hint": "カメラを回転できる最大方位角 (水平回転)。",
+                "name": "最大方位角"
+            },
+            "gameCameraMaxZoom": {
+                "hint": "カメラが設定できる最大ズーム レベル。\n値を大きくすると、さらにズームアウトされます。",
+                "name": "最大ズーム"
+            },
+            "gameCameraMinAzimuth": {
+                "hint": "カメラを回転できる最小の方位角 (水平回転)。",
+                "name": "最小方位角"
+            },
+            "hideEffects": {
+                "hint": "トークンの上に浮かぶ効果インジケーターを非表示にします。",
+                "name": "効果を隠す"
+            },
+            "useRaycastRuler": {
+                "hint": "この設定が有効な場合、トークンが飛んでいない限り、ルーラーはその下の地形に貼り付きます。",
+                "name": "実験的: アダプティブルーラー"
             }
         },
         "exporter": {
@@ -1212,7 +1330,9 @@
             "roundDoubleRing": "ラウンドダブルリング",
             "rounded": "丸みを帯びた",
             "sharp": "シャープ",
-            "sharpIndicator": "シャープインジケーター"
+            "sharpIndicator": "シャープインジケーター",
+            "ringSimple": "リング シンプル",
+            "ringSimpleSmall": "リング シンプル 小"
         },
         "clipNavigator": {
             "automode": "フォローモード",
@@ -1520,7 +1640,10 @@
                 "description": "バウンス効果。\nオブジェクトにバウンス効果を与えます。最良の結果を得るには、モデルが単一のメッシュである必要があることに注意してください。",
                 "name": "跳ねる、弾む",
                 "speed": "スピード",
-                "strength": "強度"
+                "strength": "強度",
+                "axisX": "X軸",
+                "axisY": "Z軸",
+                "axisZ": "Y軸"
             },
             "colorswap": {
                 "description": "カラースワップ効果。\nモデルの色を別の色と交換します。",
@@ -1559,7 +1682,45 @@
                 "textureDiffuse2": "テクスチャB",
                 "textureDiffuse3": "テクスチャA",
                 "textureSplatMap": "スプラットマップ",
-                "useAlpha": "アルファチャンネルを使用する"
+                "useAlpha": "アルファチャンネルを使用する",
+                "flipY": "フリップY",
+                "upNormals": "「上向き」の表面のみ"
+            },
+            "clipping": {
+                "description": "トークンまたはカメラの近くでこのタイルをフェードアウトします。",
+                "diameter": "半径",
+                "heightOffset": "高さのオフセット",
+                "name": "クリッピング",
+                "noiseScale": "ノイズスケール",
+                "speed": "スピード",
+                "useCamera": "カメラを使用する",
+                "useCameraAdvanced": "高度なカメラ計算を使用する"
+            },
+            "mask": {
+                "color": "色",
+                "description": "マスク効果。\nテクスチャマスクを使用してテクスチャをマスクします。\nテクスチャとマスク テクスチャが必要です。",
+                "name": "マスク",
+                "repeat": "繰り返す",
+                "textureDiffuse": "テクスチャ",
+                "textureMask": "マスクテクスチャ"
+            },
+            "noiseMask": {
+                "color": "色",
+                "description": "ノイズマスク効果。 \n2 つのノイズ テクスチャでテクスチャをマスクします。\nテクスチャと両方のノイズ テクスチャが必要です。",
+                "invert": "反転",
+                "maskThreshold": "マスクしきい値",
+                "name": "ノイズ",
+                "noise1Repeat": "繰り返す",
+                "noise1ScrollX": "スクロールX",
+                "noise1ScrollY": "スクロールY",
+                "noise2Repeat": "繰り返す",
+                "noise2ScrollX": "スクロールX",
+                "noise2ScrollY": "スクロールY",
+                "repeat": "繰り返す",
+                "strength": "強さ",
+                "textureDiffuse": "テクスチャ",
+                "textureNoise1": "ノイズテクスチャ1",
+                "textureNoise2": "ノイズテクスチャ2"
             }
         },
         "sharing": {
@@ -1568,7 +1729,8 @@
             "mapbrowser": {
                 "imported": "インポートされたシーン",
                 "search": "入力を開始して検索...",
-                "title": "マップ ブラウザ: {count} マップが利用可能"
+                "title": "マップ ブラウザ: {count} マップが利用可能",
+                "createJournal": "インポートされたシーンに関する情報を含むシーンノートを作成する"
             },
             "packs": {
                 "baileywiki": "ベイリーウィキ",
@@ -2175,6 +2337,10 @@
             "torch": "松明",
             "voidray": "ボイド・レイ",
             "vortex": "ボルテックス"
+        },
+        "notifications": {
+            "initialviewcaptured": "キャプチャされた初期ビュー位置",
+            "initialviewcleared": "初期ビュー位置がクリアされました"
         }
     }
 }

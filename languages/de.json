@@ -17,7 +17,9 @@
             "roundDoubleRing": "Runder Doppelring",
             "rounded": "Gerundet",
             "sharp": "Scharf",
-            "sharpIndicator": "Scharfer Indikator"
+            "sharpIndicator": "Scharfer Indikator",
+            "ringSimple": "Einfach klingeln",
+            "ringSimpleSmall": "Ring schlicht klein"
         },
         "clipNavigator": {
             "automode": "Folgemodus",
@@ -88,7 +90,11 @@
                 "onend": "Partikelsystem: .onEnd() - ein oder mehrere Argumente waren keine Instanz von Particle3D.",
                 "type": "Partikelsystem: Typ '%type%' wird nicht unterstützt, die gültigen Typen sind:"
             },
-            "toofarfromdoor": "Ihr Token ist zu weit entfernt, um die Tür zu öffnen"
+            "toofarfromdoor": "Ihr Token ist zu weit entfernt, um die Tür zu öffnen",
+            "attachmentNotFound": "3D-Leinwand: Anhang nicht gefunden. \nToken: %token% | \nAnhang: %attachment%",
+            "noActiveScene": "3D-Leinwand: Keine aktive Szene gefunden. \nEine Szene wurde automatisch aktiviert, bitte laden Sie die Seite neu.",
+            "noScenes": "3D-Leinwand: Keine Szenen gefunden. \nDie Standardszene wurde erstellt. Bitte laden Sie die Seite neu.",
+            "tokenNotGrounded": "Die versuchte Bewegung ist nicht zulässig, der Token ist nicht geerdet."
         },
         "exporter": {
             "all": "Vollständige Szene",
@@ -212,7 +218,9 @@
                     "rockcylinder": "Fels (Zylinder)",
                     "rocksphere": "Fels (Kugel)",
                     "stairs": "Stufen",
-                    "vines": "Reben"
+                    "vines": "Reben",
+                    "paper": "Papierausschnitt",
+                    "plane": "Flugzeug"
                 }
             },
             "dynaMeshResolution": {
@@ -282,7 +290,8 @@
                     "merged": "Zusammengeführte Kachel",
                     "stretch": "Einzel",
                     "tile": "Wiederholen"
-                }
+                },
+                "tabNotes": "Konfigurieren Sie, ob das 3D-Modell mehrmals wiederholt oder gestreckt werden soll, um es an die Kachel anzupassen."
             },
             "filter": {
                 "label": "Filter",
@@ -403,6 +412,16 @@
                     "options": {
                         "optgroup": "Richtungsabhängig (Abstrahlwinkel erforderlich)"
                     }
+                },
+                "ParticlePosition": {
+                    "label": "Position",
+                    "options": {
+                        "center": "Center",
+                        "surface": "Oberfläche"
+                    }
+                },
+                "ParticleRadius": {
+                    "label": "Radius"
                 }
             },
             "lockCamera": {
@@ -438,7 +457,9 @@
                     },
                     "texcol": "Textur/Farbe",
                     "wood": "Holz"
-                }
+                },
+                "header": "Material",
+                "tabNotes": "Konfigurieren Sie die visuellen Eigenschaften des auf diese Kachel angewendeten Materials. \nSchieberegler, die auf -0,01 eingestellt sind, verwenden den Standardwert für das Material."
             },
             "maxElevation": {
                 "label": "Maximale Höhe",
@@ -461,7 +482,8 @@
                     "none": "Keiner",
                     "perlin": "Perlin",
                     "simplex": "Simplex"
-                }
+                },
+                "tabNotes": "Konfigurieren Sie prozedurales Rauschen über dem Modell, um eine Verzerrung anzuwenden."
             },
             "noiseExponent": {
                 "label": "Exponent"
@@ -532,7 +554,8 @@
                     "snow": "Schnee",
                     "starfall": "Sternenfall (JB2A)",
                     "stars": "Sterne",
-                    "toxic": "Giftige Dämpfe"
+                    "toxic": "Giftige Dämpfe",
+                    "sand": "Sandsturm"
                 }
             },
             "particleRandomRotation": {
@@ -766,7 +789,8 @@
             },
             "tsight": {
                 "header": "Vision",
-                "label": "Sicht blockieren"
+                "label": "Sicht blockieren",
+                "tabNotes": "Konfigurieren Sie die Sicht-, Lichtblockierungs- und Kollisionseigenschaften dieser Kachel."
             },
             "wallDepth": {
                 "label": "Wandtiefe"
@@ -811,7 +835,9 @@
                 "label": "Türstil",
                 "options": {
                     "animate": "Animiert",
-                    "transparent": "Transparent"
+                    "transparent": "Transparent",
+                    "slide": "Animiert (Folie – Seite)",
+                    "slideVertical": "Animiert (Folie – Vertikal)"
                 }
             },
             "particleGroundOffset": {
@@ -823,7 +849,8 @@
             "attachments": {
                 "filename": "Anhangsname",
                 "header": "Anhänge",
-                "info": "Kachel %s an Token angehängt"
+                "info": "Kachel %s an Token angehängt",
+                "tabNotes": "Konfigurieren Sie die Anhänge zu diesem Token. \nUm einen Anhang hinzuzufügen, wählen Sie das Token aus, wechseln Sie zur Kachelebene, positionieren Sie die Kachel, die Sie anhängen möchten, auf dem Token, klicken Sie mit der rechten Maustaste auf die Kachel und klicken Sie auf die Option „Kachel an Token anhängen“."
             },
             "ior": {
                 "label": "IoR"
@@ -837,6 +864,70 @@
             },
             "transmission": {
                 "label": "Übertragung"
+            },
+            "alphaClip": {
+                "label": "Alpha-Clip"
+            },
+            "basic": {
+                "header": "Basic",
+                "tabNotes": "Konfigurieren Sie 3D-Modell-, Positionierungs- und Skalierungsoptionen."
+            },
+            "doorAnimationDuration": {
+                "label": "Dauer der Türanimation",
+                "units": "MS"
+            },
+            "doorGrabTokens": {
+                "label": "Capture-Token",
+                "notes": "Erfassen Sie Token, die sich in der Nähe der Tür befinden, wenn sich die Tür in Bewegung setzt. \nFunktioniert nicht mit dem Stil „Transparent“. \nBeachten Sie, dass Token nicht während der Bewegung erfasst werden, sondern erst, wenn sich die Tür in Bewegung setzt."
+            },
+            "doorSlidePercent": {
+                "label": "Türschiebeprozentsatz"
+            },
+            "effects": {
+                "header": "Auswirkungen",
+                "tabNotes": "Konfigurieren Sie die Spezialeffekte, die auf diese Kachel angewendet werden sollen."
+            },
+            "enableAnimationScripts": {
+                "label": "Animationsskripte aktivieren",
+                "notes": "WARNUNG: Stellen Sie sicher, dass Sie der Quelle der Szene vertrauen. Diese kann möglicherweise zur Ausführung von Schadcode verwendet werden. \nAktivieren Sie die Ausführung von Animationsskripten für Kacheln."
+            },
+            "font": {
+                "label": "Schriftart",
+                "notes": "Eine JSON-Schriftart, die für das Text Dynamic Mesh verwendet werden soll."
+            },
+            "grounding": {
+                "label": "Erdung",
+                "notes": "Verhindert, dass Spielertoken ihre Bewegung in der Luft beenden.",
+                "options": {
+                    "always": "Stets",
+                    "none": "Keiner",
+                    "notFlying": "Nur wenn nicht fliegend"
+                }
+            },
+            "offset": {
+                "x": {
+                    "label": "Versatz X"
+                },
+                "y": {
+                    "label": "Y-Versatz"
+                },
+                "z": {
+                    "label": "Versatz Z"
+                }
+            },
+            "onAnimation": {
+                "label": "Animationsfunktion"
+            },
+            "position": {
+                "header": "Position",
+                "tabNotes": "Konfigurieren Sie Position, Skalierung und Drehung. \nKonfigurieren Sie außerdem einen Offset (der Offset soll zum Ändern des Drehpunkts der Kachel verwendet werden, funktioniert nicht bei zusammengeführten Kacheln). \nEinige der Eigenschaften wie Breite, Höhe und Drehung finden Sie im regulären „Basic“-Tab der Kachelkonfiguration."
+            },
+            "tableHeightmap": {
+                "label": "Auffüllen der Heightmap",
+                "placeholder": "Auffüllen der Heightmap"
+            },
+            "tableHeightmapScale": {
+                "label": "Höhenkartenskala"
             }
         },
         "keybindings": {
@@ -1307,6 +1398,35 @@
             "paddingAppearance": {
                 "hint": "Das Standardaussehen der Polsterung. \nDies kann auch pro Szene angepasst werden.",
                 "name": "Polsterung Aussehen"
+            },
+            "flatTokenStyle": {
+                "hint": "Der für 2D-Token zu verwendende Stil, wenn kein 3D-Modell festgelegt ist.",
+                "name": "2D-Token-Stil",
+                "options": {
+                    "coin": "Münze (von oben nach unten)",
+                    "extruded": "Extrudiert (stehend)",
+                    "flat": "Flach (Gesichtskamera)"
+                }
+            },
+            "gameCameraMaxAzimuth": {
+                "hint": "Der maximale Azimut (horizontale Drehung), auf den die Kamera gedreht werden kann.",
+                "name": "Max. Azimut"
+            },
+            "gameCameraMaxZoom": {
+                "hint": "Die maximale Zoomstufe, auf die die Kamera eingestellt werden kann. \nBei höheren Werten wird stärker herausgezoomt.",
+                "name": "Maximaler Zoom"
+            },
+            "gameCameraMinAzimuth": {
+                "hint": "Der minimale Azimut (horizontale Drehung), auf den die Kamera gedreht werden kann.",
+                "name": "Min. Azimut"
+            },
+            "hideEffects": {
+                "hint": "Blenden Sie die Effektanzeige aus, die über dem Token schwebt.",
+                "name": "Effekte ausblenden"
+            },
+            "useRaycastRuler": {
+                "hint": "Wenn diese Einstellung aktiviert ist, bleibt das Lineal am darunter liegenden Gelände hängen, solange der Spielstein nicht fliegt",
+                "name": "EXPERIMENTELL: Adaptives Lineal"
             }
         },
         "shaders": {
@@ -1508,7 +1628,10 @@
                 "description": "Bounce-Effekt. \nGeben Sie dem Objekt einen Bounce-Effekt, denken Sie daran, dass das Modell für beste Ergebnisse ein einzelnes Netz sein muss.",
                 "name": "Prallen",
                 "speed": "Geschwindigkeit",
-                "strength": "Intensität"
+                "strength": "Intensität",
+                "axisX": "X-Achse",
+                "axisY": "Z-Achse",
+                "axisZ": "Y-Achse"
             },
             "colorswap": {
                 "description": "Farbwechseleffekt. \nTauschen Sie eine Farbe des Modells gegen eine andere Farbe aus.",
@@ -1547,7 +1670,45 @@
                 "textureDiffuse2": "Textur B",
                 "textureDiffuse3": "Textur A",
                 "textureSplatMap": "Splat-Karte",
-                "useAlpha": "Verwenden Sie den Alphakanal"
+                "useAlpha": "Verwenden Sie den Alphakanal",
+                "flipY": "Flip Y",
+                "upNormals": "Nur nach oben gerichtete Oberflächen"
+            },
+            "clipping": {
+                "description": "Blenden Sie diese Kachel in der Nähe eines Spielsteins oder der Kamera aus.",
+                "diameter": "Radius",
+                "heightOffset": "Höhenversatz",
+                "name": "Ausschnitt",
+                "noiseScale": "Lärmskala",
+                "speed": "Geschwindigkeit",
+                "useCamera": "Verwenden Sie die Kamera",
+                "useCameraAdvanced": "Verwenden Sie erweiterte Kameraberechnungen"
+            },
+            "mask": {
+                "color": "Farbe",
+                "description": "Maskeneffekt. \nMaskieren Sie die Textur mit einer Texturmaske. \nErfordert eine Textur und eine Maskentextur.",
+                "name": "Maske",
+                "repeat": "Wiederholen",
+                "textureDiffuse": "Textur",
+                "textureMask": "Maskentextur"
+            },
+            "noiseMask": {
+                "color": "Farbe",
+                "description": "Rauschmaskeneffekt. \nMaskieren Sie die Textur mit 2 Rauschtexturen. \nErfordert eine Textur und beide Rauschtexturen.",
+                "invert": "Umkehren",
+                "maskThreshold": "Maskenschwelle",
+                "name": "Lärm",
+                "noise1Repeat": "Wiederholen",
+                "noise1ScrollX": "Scrollen Sie mit X",
+                "noise1ScrollY": "Scrollen Sie Y",
+                "noise2Repeat": "Wiederholen",
+                "noise2ScrollX": "Scrollen Sie mit X",
+                "noise2ScrollY": "Scrollen Sie Y",
+                "repeat": "Wiederholen",
+                "strength": "Stärke",
+                "textureDiffuse": "Textur",
+                "textureNoise1": "Geräuschtextur 1",
+                "textureNoise2": "Rauschtextur 2"
             }
         },
         "sharing": {
@@ -1556,7 +1717,8 @@
             "mapbrowser": {
                 "imported": "Importierte Szene",
                 "search": "Beginnen Sie mit der Eingabe, um zu suchen...",
-                "title": "Kartenbrowser: {count} Karten verfügbar"
+                "title": "Kartenbrowser: {count} Karten verfügbar",
+                "createJournal": "Erstellen Sie Szenennotizen mit Informationen zu importierten Szenen"
             },
             "packs": {
                 "baileywiki": "Baileywiki",
@@ -2175,6 +2337,10 @@
             "torch": "Fackel",
             "voidray": "Leere Ray",
             "vortex": "Wirbel"
+        },
+        "notifications": {
+            "initialviewcaptured": "Erste Ansichtsposition erfasst",
+            "initialviewcleared": "Erste Ansichtsposition gelöscht"
         }
     }
 }

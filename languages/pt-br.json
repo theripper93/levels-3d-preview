@@ -17,7 +17,9 @@
             "roundDoubleRing": "Anel Duplo Redondo",
             "rounded": "Arredondado",
             "sharp": "Afiado",
-            "sharpIndicator": "Indicador de Sustenido"
+            "sharpIndicator": "Indicador de Sustenido",
+            "ringSimple": "Anel Simples",
+            "ringSimpleSmall": "Anel Simples Pequeno"
         },
         "clipNavigator": {
             "automode": "Seguir Modo",
@@ -88,7 +90,11 @@
                 "onend": "Sistema de partículas: .onEnd() - um ou mais argumentos não eram uma instância de Particle3D.",
                 "type": "Sistema de partículas: tipo '%type%' não suportado, os tipos válidos são:"
             },
-            "toofarfromdoor": "Seu token está muito longe para abrir a porta"
+            "toofarfromdoor": "Seu token está muito longe para abrir a porta",
+            "attachmentNotFound": "Tela 3D: Anexo não encontrado. \nToken: %token% | \nAnexo: %anexo%",
+            "noActiveScene": "Tela 3D: Nenhuma cena ativa encontrada. \nUma cena foi ativada automaticamente, recarregue a página.",
+            "noScenes": "Tela 3D: Nenhuma cena encontrada. \nA cena padrão foi criada, recarregue a página.",
+            "tokenNotGrounded": "A tentativa de movimento não é permitida, o token não está aterrado."
         },
         "exporter": {
             "all": "cena completa",
@@ -196,7 +202,9 @@
                 "label": "estilo de porta",
                 "options": {
                     "animate": "Animado",
-                    "transparent": "Transparente"
+                    "transparent": "Transparente",
+                    "slide": "Animado (Slide - Lateral)",
+                    "slideVertical": "Animado (Slide - Vertical)"
                 }
             },
             "doorType": {
@@ -238,7 +246,9 @@
                     "rockcylinder": "Rocha (cilindro)",
                     "rocksphere": "Rocha (Esfera)",
                     "stairs": "Escadaria",
-                    "vines": "videiras"
+                    "vines": "videiras",
+                    "paper": "Recorte de papel",
+                    "plane": "Avião"
                 }
             },
             "dynaMeshResolution": {
@@ -308,7 +318,8 @@
                     "merged": "Bloco Mesclado",
                     "stretch": "Solteiro",
                     "tile": "Repita"
-                }
+                },
+                "tabNotes": "Configure o clima, o modelo 3D deve ser repetido várias vezes ou esticado para caber no ladrilho."
             },
             "filter": {
                 "label": "Filtro",
@@ -432,6 +443,16 @@
                     "options": {
                         "optgroup": "Direcional (requer ângulo de emissão)"
                     }
+                },
+                "ParticlePosition": {
+                    "label": "Posição",
+                    "options": {
+                        "center": "Centro",
+                        "surface": "Superfície"
+                    }
+                },
+                "ParticleRadius": {
+                    "label": "Raio"
                 }
             },
             "lockCamera": {
@@ -467,7 +488,9 @@
                     },
                     "texcol": "Textura/Cor",
                     "wood": "Madeira"
-                }
+                },
+                "header": "Material",
+                "tabNotes": "Configure as propriedades visuais do material aplicado a este bloco. \nOs controles deslizantes definidos em -0,01 usarão o valor padrão do material."
             },
             "maxElevation": {
                 "label": "Elevação máxima",
@@ -490,7 +513,8 @@
                     "none": "Nenhum",
                     "perlin": "Perlin",
                     "simplex": "Simplex"
-                }
+                },
+                "tabNotes": "Configure o ruído processual na parte superior do modelo para aplicar uma distorção."
             },
             "noiseExponent": {
                 "label": "Expoente"
@@ -564,7 +588,8 @@
                     "snow": "Neve",
                     "starfall": "Queda Estelar (JB2A)",
                     "stars": "estrelas",
-                    "toxic": "Fumos Tóxicos"
+                    "toxic": "Fumos Tóxicos",
+                    "sand": "tempestade de areia"
                 }
             },
             "particleRandomRotation": {
@@ -804,7 +829,8 @@
             },
             "tsight": {
                 "header": "Visão",
-                "label": "Bloquear Mira"
+                "label": "Bloquear Mira",
+                "tabNotes": "Configure as propriedades de visão, bloqueio de luz e colisão deste bloco."
             },
             "wallDepth": {
                 "label": "Profundidade da parede"
@@ -827,7 +853,8 @@
             "attachments": {
                 "filename": "Nome do anexo",
                 "header": "Anexos",
-                "info": "Bloco %s anexado ao token"
+                "info": "Bloco %s anexado ao token",
+                "tabNotes": "Configure os anexos deste token. \nPara adicionar um anexo, selecione o token, vá para a camada de blocos, posicione o bloco que deseja anexar no token, clique com o botão direito no bloco e clique na opção 'Anexar bloco ao token'."
             },
             "ior": {
                 "label": "Eu ou"
@@ -841,6 +868,70 @@
             },
             "transmission": {
                 "label": "Transmissão"
+            },
+            "alphaClip": {
+                "label": "Clipe Alfa"
+            },
+            "basic": {
+                "header": "Básico",
+                "tabNotes": "Configure opções de modelo 3D, posicionamento e escala."
+            },
+            "doorAnimationDuration": {
+                "label": "Duração da animação da porta",
+                "units": "EM"
+            },
+            "doorGrabTokens": {
+                "label": "Capturar Tokens",
+                "notes": "Capture fichas que estejam próximas da porta quando ela começar a se mover. \nNão funciona com o estilo 'Transparente'. \nObserve que os tokens não serão capturados no meio do movimento, apenas quando a porta começar a se mover."
+            },
+            "doorSlidePercent": {
+                "label": "Porcentagem de deslizamento da porta"
+            },
+            "effects": {
+                "header": "Efeitos",
+                "tabNotes": "Configure os efeitos especiais a serem aplicados a este bloco."
+            },
+            "enableAnimationScripts": {
+                "label": "Habilitar scripts de animação",
+                "notes": "AVISO: Certifique-se de confiar na origem da cena, pois isso pode ser potencialmente usado para executar código malicioso. \nHabilite a execução de scripts de animação para blocos."
+            },
+            "font": {
+                "label": "Fonte",
+                "notes": "Uma fonte JSON a ser usada para Text Dynamic Mesh."
+            },
+            "grounding": {
+                "label": "Aterramento",
+                "notes": "Impede que as fichas dos jogadores terminem o movimento no ar.",
+                "options": {
+                    "always": "Sempre",
+                    "none": "Nenhum",
+                    "notFlying": "Só se não estiver voando"
+                }
+            },
+            "offset": {
+                "x": {
+                    "label": "Deslocamento X"
+                },
+                "y": {
+                    "label": "Deslocamento Y"
+                },
+                "z": {
+                    "label": "Deslocamento Z"
+                }
+            },
+            "onAnimation": {
+                "label": "Função de animação"
+            },
+            "position": {
+                "header": "Posição",
+                "tabNotes": "Configure a posição, escala e rotação. \nAlém disso, configure um deslocamento (o deslocamento destina-se a ser usado para alterar o ponto de articulação do bloco, não funcionará em blocos mesclados). \nAlgumas das propriedades, como largura, altura e rotação, podem ser encontradas na guia normal 'Básico' da configuração do bloco."
+            },
+            "tableHeightmap": {
+                "label": "Mapa de altura de preenchimento",
+                "placeholder": "Mapa de altura de preenchimento"
+            },
+            "tableHeightmapScale": {
+                "label": "Escala do mapa de altura"
             }
         },
         "keybindings": {
@@ -1315,6 +1406,35 @@
             "useMultithreading": {
                 "hint": "Use multithreading para melhorar o desempenho dos cálculos do Fog of War. \nEsta configuração não tem efeito se você não estiver usando o Fog of War.",
                 "name": "Usar Multithreading"
+            },
+            "flatTokenStyle": {
+                "hint": "O estilo a ser usado para tokens 2D quando um modelo 3D não está definido.",
+                "name": "Estilo de token 2D",
+                "options": {
+                    "coin": "Moeda (de cima para baixo)",
+                    "extruded": "Extrudado (em pé)",
+                    "flat": "Plana (câmera facial)"
+                }
+            },
+            "gameCameraMaxAzimuth": {
+                "hint": "O azimute máximo (rotação horizontal) para o qual a câmera pode ser girada.",
+                "name": "Azimute máximo"
+            },
+            "gameCameraMaxZoom": {
+                "hint": "O nível máximo de zoom para o qual a câmera pode ser definida. \nValores mais altos diminuirão ainda mais o zoom.",
+                "name": "Zoom máximo"
+            },
+            "gameCameraMinAzimuth": {
+                "hint": "O azimute mínimo (rotação horizontal) para o qual a câmera pode ser girada.",
+                "name": "Azimute mínimo"
+            },
+            "hideEffects": {
+                "hint": "Oculte o indicador de efeitos flutuando acima do token.",
+                "name": "Ocultar efeitos"
+            },
+            "useRaycastRuler": {
+                "hint": "Quando esta configuração está habilitada, a régua irá aderir ao terreno abaixo dela enquanto a ficha não estiver voando",
+                "name": "EXPERIMENTAL: Régua Adaptativa"
             }
         },
         "shaders": {
@@ -1322,7 +1442,10 @@
                 "description": "Efeito de salto. \nDê ao objeto um efeito de salto, lembre-se de que o modelo precisa ser uma única malha para obter melhores resultados.",
                 "name": "Quicar",
                 "speed": "Velocidade",
-                "strength": "Intensidade"
+                "strength": "Intensidade",
+                "axisX": "Eixo X",
+                "axisY": "Eixo Z",
+                "axisZ": "Eixo Y"
             },
             "colorswap": {
                 "description": "Efeito de troca de cores. \nTroque uma cor do modelo por outra cor.",
@@ -1555,7 +1678,45 @@
                 "textureDiffuse2": "Textura B",
                 "textureDiffuse3": "Textura A",
                 "textureSplatMap": "Splat Map",
-                "useAlpha": "Usar canal alfa"
+                "useAlpha": "Usar canal alfa",
+                "flipY": "Virar Y",
+                "upNormals": "Apenas superfícies 'voltadas para cima'"
+            },
+            "clipping": {
+                "description": "Desapareça este bloco próximo a um token ou à câmera.",
+                "diameter": "Raio",
+                "heightOffset": "Deslocamento de altura",
+                "name": "Recorte",
+                "noiseScale": "Escala de ruído",
+                "speed": "Velocidade",
+                "useCamera": "Usar câmera",
+                "useCameraAdvanced": "Use cálculos avançados de câmera"
+            },
+            "mask": {
+                "color": "Cor",
+                "description": "Efeito máscara. \nMascare a textura com uma máscara de textura. \nRequer uma textura e uma textura de máscara.",
+                "name": "mascarar",
+                "repeat": "Repita",
+                "textureDiffuse": "Textura",
+                "textureMask": "Textura da máscara"
+            },
+            "noiseMask": {
+                "color": "Cor",
+                "description": "Efeito Máscara de Ruído. \nMascare a textura com 2 texturas de ruído. \nRequer uma textura e ambas as texturas de ruído.",
+                "invert": "Invertido",
+                "maskThreshold": "Limite de máscara",
+                "name": "Barulho",
+                "noise1Repeat": "Repita",
+                "noise1ScrollX": "Rolar X",
+                "noise1ScrollY": "Role Y",
+                "noise2Repeat": "Repita",
+                "noise2ScrollX": "Rolar X",
+                "noise2ScrollY": "Role Y",
+                "repeat": "Repita",
+                "strength": "Força",
+                "textureDiffuse": "Textura",
+                "textureNoise1": "Textura de Ruído 1",
+                "textureNoise2": "Textura de Ruído 2"
             }
         },
         "sharing": {
@@ -1564,7 +1725,8 @@
             "mapbrowser": {
                 "imported": "cena importada",
                 "search": "Comece a digitar para pesquisar...",
-                "title": "Navegador de mapas: {count} mapas disponíveis"
+                "title": "Navegador de mapas: {count} mapas disponíveis",
+                "createJournal": "Crie notas de cena com informações sobre cenas importadas"
             },
             "packs": {
                 "baileywiki": "Baileywiki",
@@ -2167,6 +2329,10 @@
             "torch": "Tocha",
             "voidray": "raio vazio",
             "vortex": "Vórtice"
+        },
+        "notifications": {
+            "initialviewcaptured": "Posição de visualização inicial capturada",
+            "initialviewcleared": "Posição de visualização inicial apagada"
         }
     }
 }
