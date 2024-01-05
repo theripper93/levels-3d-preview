@@ -131,6 +131,197 @@ export class DynaMesh {
         return geometry;
     }
 
+    async _constructcounter() {
+        const font = fonts[this.font] || (fonts[this.font] = await loadTextFont(this.font));
+        const textGeometry = new THREE.TextGeometry(this.text || "0", {
+            font: font,
+            size: (this.width + this.depth),
+            height: this.height,
+            curveSegments: this.resolution,
+        });
+        textGeometry.center();
+        textGeometry.rotateX(Math.PI / 2 + Math.PI);
+        textGeometry.scale(1, 0.5, 1)
+        textGeometry.translate(0, this.depth / 4, 0);
+
+        //scale text to fit in box
+        const textWidth = textGeometry.boundingBox.max.x - textGeometry.boundingBox.min.x;
+        const textHeight = textGeometry.boundingBox.max.z - textGeometry.boundingBox.min.z;
+
+        const maxTextWidth = this.width * 0.9;
+        const maxTextHeight = this.height * 0.9;
+
+        const textScale = Math.min(maxTextWidth / textWidth, maxTextHeight / textHeight);
+
+        textGeometry.scale(textScale, 1, textScale);
+
+        const roundedRectShape = new THREE.Shape();
+        const x = 0
+        const y = 0
+        const width = this.width;
+        const height = this.height;
+        const radius = this.depth / 2;
+        roundedRectShape.moveTo(x + radius, y);
+        roundedRectShape.lineTo(x + width - radius, y);
+        roundedRectShape.quadraticCurveTo(x + width, y, x + width, y + radius);
+        roundedRectShape.lineTo(x + width, y + height - radius);
+        roundedRectShape.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+        roundedRectShape.lineTo(x + radius, y + height);
+        roundedRectShape.quadraticCurveTo(x, y + height, x, y + height - radius);
+        roundedRectShape.lineTo(x, y + radius);
+        roundedRectShape.quadraticCurveTo(x, y, x + radius, y);
+        const extrudeSettings = {
+            steps: 2,
+            depth: this.depth,
+            bevelEnabled: true,
+            bevelThickness: 0.011,
+            bevelSize: 0.01,
+            bevelOffset: 0,
+            bevelSegments: this.resolution,
+        };
+        const roundedRectGeometry = new THREE.ExtrudeGeometry(roundedRectShape, extrudeSettings);
+
+        roundedRectGeometry.rotateX(Math.PI / 2);
+        roundedRectGeometry.center();
+
+        //set vertex colors to black
+        const positionAttribute = roundedRectGeometry.getAttribute("position");
+        const colorBuffAttribute = new THREE.BufferAttribute(new Float32Array(positionAttribute.count * 3), 3);
+        roundedRectGeometry.setAttribute("color", colorBuffAttribute);
+
+        for (let i = 0; i < positionAttribute.count; i++) {
+            colorBuffAttribute.setXYZ(i, 0.2, 0.2, 0.2);
+        }
+
+        //set vertex colors to white on text
+        const textPositionAttribute = textGeometry.getAttribute("position");
+        const textColorBuffAttribute = new THREE.BufferAttribute(new Float32Array(textPositionAttribute.count * 3), 3);
+        textGeometry.setAttribute("color", textColorBuffAttribute);
+
+        for (let i = 0; i < textPositionAttribute.count; i++) {
+            textColorBuffAttribute.setXYZ(i, 1, 1, 1);
+        }
+
+
+
+        const mergedGeometry = mergeBufferGeometries([textGeometry, roundedRectGeometry]);
+
+
+
+
+        return mergedGeometry;
+    }
+
+    _constructcounterradial() {
+        //creates a radial counter with a pie style shape, every slice is a separate geometry
+        const values = this.text.split("|");
+        const max = parseInt(values[0] ?? 10);
+        const current = parseInt(values[1] ?? total);
+
+        const roundedRectShape = new THREE.Shape();
+        const x = 0
+        const y = 0
+        const width = this.width;
+        const height = this.height;
+        const radius = this.depth / 2;
+        roundedRectShape.moveTo(x + radius, y);
+        roundedRectShape.lineTo(x + width - radius, y);
+        roundedRectShape.quadraticCurveTo(x + width, y, x + width, y + radius);
+        roundedRectShape.lineTo(x + width, y + height - radius);
+        roundedRectShape.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+        roundedRectShape.lineTo(x + radius, y + height);
+        roundedRectShape.quadraticCurveTo(x, y + height, x, y + height - radius);
+        roundedRectShape.lineTo(x, y + radius);
+        roundedRectShape.quadraticCurveTo(x, y, x + radius, y);
+        const extrudeSettings = {
+            steps: 2,
+            depth: this.depth,
+            bevelEnabled: true,
+            bevelThickness: 0.011,
+            bevelSize: 0.01,
+            bevelOffset: 0,
+            bevelSegments: this.resolution,
+        };
+        const roundedRectGeometry = new THREE.ExtrudeGeometry(roundedRectShape, extrudeSettings);
+
+        roundedRectGeometry.rotateX(Math.PI / 2);
+        roundedRectGeometry.center();
+
+        //set vertex colors to black
+        const positionAttribute = roundedRectGeometry.getAttribute("position");
+        const colorBuffAttribute = new THREE.BufferAttribute(new Float32Array(positionAttribute.count * 3), 3);
+        roundedRectGeometry.setAttribute("color", colorBuffAttribute);
+
+        for (let i = 0; i < positionAttribute.count; i++) {
+            colorBuffAttribute.setXYZ(i, 0.2, 0.2, 0.2);
+        }
+
+        //create pie slices
+        
+        const pieSlices = [];
+        const maxSlices = max;
+        const currentSlices = current;
+
+        if(!currentSlices) return roundedRectGeometry;
+
+        const sliceAngle = (Math.PI * 2) / maxSlices;
+        const slicePaddedAngle = sliceAngle * 0.8;
+
+        const baseRadius = (Math.min(this.width, this.height) / 2);
+
+        const pieRadius = baseRadius * 0.80;
+
+        const centerOffset = baseRadius * 0.15;
+
+        const slice = new THREE.Shape();
+        slice.moveTo(centerOffset, 0);
+        const x1 = Math.cos(-slicePaddedAngle/2) * pieRadius;
+        const y1 = Math.sin(-slicePaddedAngle/2) * pieRadius;
+        const x2 = Math.cos(slicePaddedAngle/2) * pieRadius;
+        const y2 = Math.sin(slicePaddedAngle / 2) * pieRadius;
+        const midPointX = Math.cos(0) * pieRadius;
+        const midPointY = Math.sin(0) * pieRadius;
+        slice.lineTo(x1, y1);
+        slice.quadraticCurveTo(midPointX, midPointY, x2, y2);
+        slice.lineTo(centerOffset, 0);
+
+        const extrudeSettings2 = {
+            steps: 2,
+            depth: this.depth,
+            bevelEnabled: true,
+            bevelThickness: 0.011 / maxSlices,
+            bevelSize: 0.06 / maxSlices,
+            bevelOffset: 0,
+            bevelSegments: this.resolution,
+        }
+
+        const sliceGeometry = new THREE.ExtrudeGeometry(slice, extrudeSettings2);
+        sliceGeometry.translate(0, 0, 0);
+
+        for (let i = 0; i < currentSlices; i++) {
+            pieSlices.push(sliceGeometry.clone());
+            sliceGeometry.rotateZ(sliceAngle);
+        }
+        
+        const mergedPieSliceGeometry = mergeBufferGeometries(pieSlices);
+        mergedPieSliceGeometry.rotateX(Math.PI / 2);
+        mergedPieSliceGeometry.rotateY((Math.PI/2 - sliceAngle/2))
+        mergedPieSliceGeometry.translate(0, this.depth, 0);
+
+        //set vertex colors to white on text
+        const textPositionAttribute = mergedPieSliceGeometry.getAttribute("position");
+        const textColorBuffAttribute = new THREE.BufferAttribute(new Float32Array(textPositionAttribute.count * 3), 3);
+        mergedPieSliceGeometry.setAttribute("color", textColorBuffAttribute);
+
+        for (let i = 0; i < textPositionAttribute.count; i++) {
+            textColorBuffAttribute.setXYZ(i, 1, 1, 1);
+        }
+
+        const mergedGeometry = mergeBufferGeometries([mergedPieSliceGeometry, roundedRectGeometry]);
+
+        return mergedGeometry;
+    }
+
     _constructrock() { 
         const geometry = new THREE.BoxGeometry(this.width, this.depth, this.height, Math.ceil((this.width / this._gridUnit) * this.resolution), Math.ceil((this.depth / this._gridUnit) * this.resolution), Math.ceil((this.height / this._gridUnit) * this.resolution));
         const noise = new ImprovedNoise();

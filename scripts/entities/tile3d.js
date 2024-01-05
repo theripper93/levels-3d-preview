@@ -309,6 +309,8 @@ export class Tile3D {
         if(this.shaders?.clipping?.enabled && this.shaders.clipping.useCameraAdvanced) this._useCameraAdvanced = true;
         
         this.dynaMesh = this.tile.document.getFlag("levels-3d-preview", "dynaMesh") ?? "default";
+        this.isInteractiveDynaMesh = !!interactiveDynamesh[this.dynaMesh];
+        if(this.tile.document.getFlag("levels-3d-preview", "gmOnlyInteractive") && !game.user.isGM) this.isInteractiveDynaMesh = false;
         if (this.dynaMesh === "decal") this.isGravity = true;
         this.font = this.tile.document.getFlag("levels-3d-preview", "font") ?? "";
         this.dynaMeshResolution = this.tile.document.getFlag("levels-3d-preview", "dynaMeshResolution") ?? 1;
@@ -373,6 +375,7 @@ export class Tile3D {
         this.mergedMatrix = this.tile.document.getFlag("levels-3d-preview", "mergedMatrix") ?? null;
         this.originalDimensions = this.tile.document.getFlag("levels-3d-preview", "originalDimensions") ?? null;
         this.highlightOnHover = this.tile.document.getFlag("levels-3d-preview", "highlightOnHover") ?? false;
+        if(this.isInteractiveDynaMesh) this.highlightOnHover = true;
         const enableAnimationScripts = canvas.scene.getFlag("levels-3d-preview", "enableAnimationScripts") ?? true;
         this.onAnimation = enableAnimationScripts ? this.tile.document.getFlag("levels-3d-preview", "onAnimation") ?? "" : "";
         this.isDoor = this.doorType != 0;
@@ -1929,18 +1932,28 @@ export class Tile3D {
         };
     }
 
+    callInteractiveSocket(eventId) {
+        if(!this.isInteractiveDynaMesh) return;
+        const isFn = interactiveDynamesh[this.dynaMesh][eventId]
+        if(!isFn) return;
+        const firstGm = game.users.find((u) => u.isGM && u.active);
+        if(!firstGm) return ui.notifications.error(game.i18n.localize("levels3dpreview.errors.nogm"));
+        this._parent.socket.executeForUsers("executeInteractiveDynamesh", [firstGm.id], this.document.uuid, eventId);
+    }
+
     _onClickLeft(e) {
         const oT = e.originalIntersect?.userData;
         if (oT?.isDoor && canvas.activeLayer.options.objectClass.embeddedName === "Token" && !(oT?.isSecret && !game.user.isGM)) {
             if (this.isToFar(e.originalIntersect)) ui.notifications.error(game.i18n.localize("levels3dpreview.errors.toofarfromdoor"));
             else this._parent.socket.executeAsGM("toggleDoor", this.tile.id, canvas.scene.id, game.user.id, oT.doorId);
         }
-
+        
         if (canvas.activeLayer.options.objectClass.embeddedName === "Token" && this.isDoor && !(this.isSecret && !game.user.isGM)) {
             if (this.isToFar()) ui.notifications.error(game.i18n.localize("levels3dpreview.errors.toofarfromdoor"));
             else this._parent.socket.executeAsGM("toggleDoor", this.tile.id, canvas.scene.id, game.user.id);
         }
         if (canvas.activeLayer.options.objectClass.embeddedName !== "Tile") {
+            this.callInteractiveSocket("clickLeft")
             this.triggerMATT(e, "click")
         } else {
             this.tile._onClickLeft(e);
@@ -1952,6 +1965,7 @@ export class Tile3D {
 
     _onClickLeft2(e) {
         if (canvas.activeLayer.options.objectClass.embeddedName !== "Tile") {
+            this.callInteractiveSocket("clickLeft2")
             this.triggerMATT(e, "dblclick")
         } else {
             this.tile._onClickLeft(e);
@@ -1966,7 +1980,7 @@ export class Tile3D {
                 const subDoorId = oT.doorId;
                 const ds = this.tile.document.getFlag("levels-3d-preview", `modelDoors.${subDoorId}`)?.ds ?? 0;
                 const isLocked = ds == 2;
-
+                
                 if (isLocked) this.tile.document.setFlag("levels-3d-preview", `modelDoors.${subDoorId}.ds`, 0);
                 else this.tile.document.setFlag("levels-3d-preview", `modelDoors.${subDoorId}.ds`, 2);
             }
@@ -1976,6 +1990,7 @@ export class Tile3D {
             }
         }
         if (canvas.activeLayer.options.objectClass.embeddedName !== "Tile") {
+            this.callInteractiveSocket("clickRight")
             this.triggerMATT(e, "rightclick")
             return;
         }
@@ -1985,6 +2000,7 @@ export class Tile3D {
 
     _onClickRight2(e) {
         if (canvas.activeLayer.options.objectClass.embeddedName !== "Tile") {
+            this.callInteractiveSocket("clickRight2")
             this.triggerMATT(e, "dblrightclick")
             return;
         }
@@ -2467,6 +2483,14 @@ export class Tile3D {
             });
         });
     }
+
+    static executeInteractiveDynamesh(tileUuid, eventId) {
+        const tile = fromUuidSync(tileUuid);
+        if (!tile) return;
+        const tile3d = game.Levels3DPreview.tiles[tile.id];
+        if (!tile3d) return;
+        interactiveDynamesh[tile3d.dynaMesh][eventId].bind(tile3d)();
+    }
 }
 
 export async function recomputeGravity() {
@@ -2898,4 +2922,35 @@ export async function attachTileToToken(tile, token) {
     await token.document.setFlag("levels-3d-preview", "attachments", tokenAttachemnts);
     await canvas.scene.deleteEmbeddedDocuments("Tile", [tile.id]);
     ui.notifications.info(game.i18n.localize("levels3dpreview.flags.attachments.info").replace("%s", src) + token.document.name);
+}
+
+const interactiveDynamesh = {
+    "counter": {
+        clickLeft: function() {
+            const val = parseInt(this.gtflPath)
+            if (!Number.isNumeric(val)) return this.document.setFlag("levels-3d-preview", "model3d", 0)
+            const newValString = (val + 1).toString()
+            this.document.setFlag("levels-3d-preview", "model3d", newValString)
+        },
+        clickRight: function() {
+            const val = parseInt(this.gtflPath)
+            if (!Number.isNumeric(val)) return this.document.setFlag("levels-3d-preview", "model3d", 0)
+            const newValString = (val - 1).toString()
+            this.document.setFlag("levels-3d-preview", "model3d", newValString)
+        },
+    },
+    "counterradial": {
+        clickLeft: function() {
+            const [max, value] = this.gtflPath.split("|")
+            const maxVal = parseInt(max || 6)
+            const val = Math.min(parseInt(value ?? maxVal) + 1, maxVal)
+            this.document.setFlag("levels-3d-preview", "model3d", `${maxVal}|${val}`)
+        },
+        clickRight: function () {
+            const [max, value] = this.gtflPath.split("|")
+            const maxVal = parseInt(max || 6)
+            const val = Math.max(parseInt(value ?? maxVal) - 1, 0)
+            this.document.setFlag("levels-3d-preview", "model3d", `${maxVal}|${val}`)
+        },
+    },
 }

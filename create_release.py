@@ -34,7 +34,8 @@ def post_discord_webhook(embed_title, embed_description):
         ]
     }
 
-    # Make an HTTP POST request to the webhook URL
+    # Mak
+    
     headers = {'Content-Type': 'application/json'}
 
     secrets = load_secrets()

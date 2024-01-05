@@ -444,6 +444,7 @@ class Levels3DPreview {
         this.socket.register("playTokenAnimationSocket", this.helpers.playTokenAnimationSocket);
         this.socket.register("dispatchPing", this.helpers.dispatchPing);
         this.socket.register("playCutscene", this.cutsceneSocket);
+        this.socket.register("executeInteractiveDynamesh", Tile3D.executeInteractiveDynamesh);
         this.exporter = new Exporter(this);
         this.init3d();
     }

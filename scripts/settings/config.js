@@ -973,6 +973,12 @@ export function registerConfigs() {
                     default: "default",
                     options: {
                         default: game.i18n.localize("levels3dpreview.flags.dynaMesh.options.default"),
+                        optbasic: {
+                            optgroup: {
+                                start: true,
+                                label: game.i18n.localize("levels3dpreview.flags.dynaMesh.options.optgroup.basic"),
+                            },
+                        },
                         box: game.i18n.localize("levels3dpreview.flags.dynaMesh.options.box"),
                         plane: game.i18n.localize("levels3dpreview.flags.dynaMesh.options.plane"),
                         sphere: game.i18n.localize("levels3dpreview.flags.dynaMesh.options.sphere"),
@@ -984,13 +990,39 @@ export function registerConfigs() {
                         billboard2: game.i18n.localize("levels3dpreview.flags.dynaMesh.options.billboard2"),
                         text: game.i18n.localize("levels3dpreview.flags.dynaMesh.options.text"),
                         decal: game.i18n.localize("levels3dpreview.flags.dynaMesh.options.decal"),
+                        optcomplex: {
+                            optgroup: {
+                                start: true,
+                                label: game.i18n.localize("levels3dpreview.flags.dynaMesh.options.optgroup.complex"),
+                            },
+                        },
                         stairs: game.i18n.localize("levels3dpreview.flags.dynaMesh.options.stairs"),
                         paper: game.i18n.localize("levels3dpreview.flags.dynaMesh.options.paper"),
-                        vines: game.i18n.localize("levels3dpreview.flags.dynaMesh.options.vines"),
                         rock: game.i18n.localize("levels3dpreview.flags.dynaMesh.options.rock"),
                         rocksphere: game.i18n.localize("levels3dpreview.flags.dynaMesh.options.rocksphere"),
                         rockcylinder: game.i18n.localize("levels3dpreview.flags.dynaMesh.options.rockcylinder"),
                         rockcone: game.i18n.localize("levels3dpreview.flags.dynaMesh.options.rockcone"),
+                        optinteractive: {
+                            optgroup: {
+                                start: true,
+                                label: game.i18n.localize("levels3dpreview.flags.dynaMesh.options.optgroup.interactive"),
+                            },
+                        },
+                        counter: game.i18n.localize("levels3dpreview.flags.dynaMesh.options.counter"),
+                        counterradial: game.i18n.localize("levels3dpreview.flags.dynaMesh.options.counterradial"),
+                        optspecial: {
+                            optgroup: {
+                                start: true,
+                                label: game.i18n.localize("levels3dpreview.flags.dynaMesh.options.optgroup.special"),
+                            },
+                        },
+                        mapGen: game.i18n.localize("levels3dpreview.flags.dynaMesh.options.mapGen"),
+                        optadvanced: {
+                            optgroup: {
+                                start: true,
+                                label: game.i18n.localize("levels3dpreview.flags.dynaMesh.options.optgroup.advanced"),
+                            },
+                        },
                         polygon: game.i18n.localize("levels3dpreview.flags.dynaMesh.options.polygon"),
                         polygonbevel: game.i18n.localize("levels3dpreview.flags.dynaMesh.options.polygonbevel"),
                         polygonsolidify: game.i18n.localize("levels3dpreview.flags.dynaMesh.options.polygonsolidify"),
@@ -1000,7 +1032,7 @@ export function registerConfigs() {
                         polygonbevelsolidifyjaggedstraight: game.i18n.localize("levels3dpreview.flags.dynaMesh.options.polygonbevelsolidifyjaggedstraight"),
                         polygonlathe: game.i18n.localize("levels3dpreview.flags.dynaMesh.options.polygonlathe"),
                         polygonchain: game.i18n.localize("levels3dpreview.flags.dynaMesh.options.polygonchain"),
-                        mapGen: game.i18n.localize("levels3dpreview.flags.dynaMesh.options.mapGen"),
+                        vines: game.i18n.localize("levels3dpreview.flags.dynaMesh.options.vines"),
                     },
                 },
                 dynaMeshResolution: {
@@ -1016,6 +1048,11 @@ export function registerConfigs() {
                     fpTypes: [".json"],
                     label: game.i18n.localize("levels3dpreview.flags.font.label"),
                     notes: game.i18n.localize("levels3dpreview.flags.font.notes"),
+                },
+                gmOnlyInteractive: {
+                    type: "checkbox",
+                    label: game.i18n.localize("levels3dpreview.flags.gmOnlyInteractive.label"),
+                    default: false,
                 },
                 displacementMap: {
                     type: "filepicker",
@@ -1519,8 +1556,9 @@ export function registerConfigs() {
         hideParams(app, html, `select[name="flags.levels-3d-preview.dynaMesh"]`, ["dynaMeshResolution"], "default");
         hideParams(app, html, `select[name="flags.levels-3d-preview.dynaMesh"]`, ["font"], "text", true);
         hideParams(app, html, `input[name="flags.levels-3d-preview.displacementMap"]`, heightmapFlags, "");
+        hideParams(app, html, `select[name="flags.levels-3d-preview.dynaMesh"]`, ["gmOnlyInteractive"], ["counter", "counterradial"], true);
         
-
+        
         ShaderConfig.injectButton(app, html, html.find(`#shader-config`));
 
         const mapGenBtn = $(`<button type="button" title="Configure Map Generator">

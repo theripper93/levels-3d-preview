@@ -494,6 +494,13 @@
             "dynaMesh" : {
                 "label": "Dynamic Mesh",
                 "options": {
+                    "optgroup": {
+                        "basic": "Basic",
+                        "complex": "Complex",
+                        "advanced": "Advanced",
+                        "interactive": "Interactive",
+                        "special": "Special"
+                    },
                     "default": "None (Use 3D Model)",
                     "box": "Box",
                     "plane": "Plane",
@@ -522,6 +529,8 @@
                     "polygonbevelsolidifyjaggedstraight": "Polygon (Jagged Straight)",
                     "polygonlathe": "Polygon (Lathe)",
                     "polygonchain": "Polygon (Chain)",
+                    "counter": "Counter",
+                    "counterradial": "Counter - Pie",
                     "mapGen": "Map Generator"
                 }
             },
@@ -530,6 +539,9 @@
             },
             "imageTexture":{
                 "label": "Texture"
+            },
+            "gmOnlyInteractive": {
+                "label": "GM Only Interaction"
             },
             "displacementMap": {
                 "label": "Heightmap/Heatmap"
