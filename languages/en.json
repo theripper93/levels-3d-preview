@@ -1293,6 +1293,15 @@
                 "name": "Stand-ups Face Camera",
                 "hint": "2D Tokens displayed in a stand-up style will always face the camera."
             },
+            "flatTokenStyle": {
+                "name": "2D Tokens",
+                "hint": "The style to use for 2D tokens when a 3D model is not set.",
+                "options": {
+                    "flat": "Flat (Face Camera)",
+                    "extruded": "Extruded (Standing Up)",
+                    "coin": "Coin (Top Down)"
+                }
+            },
             "useMultithreading": {
                 "name": "Use Multithreading",
                 "hint": "Use multithreading to improve performance of Fog of War Calculations. This settings has no effect if you are not using the Fog of War."

@@ -686,7 +686,7 @@ class Levels3DPreview {
         this.createTemplates();
         const drawFloors = canvas.scene.getFlag("levels-3d-preview", "showSceneFloors") ?? true;
         const drawLights = canvas.scene.getFlag("levels-3d-preview", "renderSceneLights") ?? true;
-        this.standUpFaceCamera = game.settings.get("levels-3d-preview", "standupFace") ?? true;
+        this.standUpFaceCamera = game.settings.get("levels-3d-preview", "flatTokenStyle") == "flat";
         const enableFog = canvas.scene.getFlag("levels-3d-preview", "enableFog") ?? false;
         const fogColor = canvas.scene.getFlag("levels-3d-preview", "fogColor") ?? "#000000";
         const fogDistance = (canvas.scene.getFlag("levels-3d-preview", "fogDistance") ?? 3000) / this.factor;

@@ -120,6 +120,18 @@
       </div>
 
       <div class="form-group">
+        <label>{{localize "levels3dpreview.settings.flatTokenStyle.name"}}</label>
+        <select name="flatTokenStyle" data-dtype="String">
+          {{#select flatTokenStyle}}
+          <option value="flat">{{localize "levels3dpreview.settings.flatTokenStyle.options.flat"}}</option>
+          <option value="extruded">{{localize "levels3dpreview.settings.flatTokenStyle.options.extruded"}}</option>
+          <option value="coin">{{localize "levels3dpreview.settings.flatTokenStyle.options.coin"}}</option>
+          {{/select}}
+        </select>
+        <p class="notes">{{localize "levels3dpreview.settings.flatTokenStyle.hint"}}</p>
+      </div>
+
+      <div class="form-group">
         <label>{{localize "levels3dpreview.settings.highlightCombat.name"}}</label>
         <input type="checkbox" name="highlightCombat" data-dtype="Boolean" {{checked highlightCombat}} />
         <p class="notes">{{localize "levels3dpreview.settings.highlightCombat.hint"}}</p>

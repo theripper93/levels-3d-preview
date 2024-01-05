@@ -9,7 +9,7 @@ import {RangeRingEffect} from "./effects/rangeRing.js";
 import { imageTo3d } from "../helpers/imageTo3D.js";
 import {Ruler3D} from "../systems/ruler3d.js";
 import {meshesToSingleMesh} from "../helpers/geometryUtils.js";
-import { createTargetGeometry } from "./effects/target.js";
+import {createTargetGeometry} from "./effects/target.js";
 THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
 THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
 THREE.Mesh.prototype.raycast = acceleratedRaycast;
@@ -18,6 +18,8 @@ const heightHighlightMaterialCache = {};
 const diamondGeometry = new THREE.OctahedronGeometry(0.01, 0);
 
 const targetMaterialsCache = {};
+
+const coinBorderMaterialCache = {};
 
 export class Token3D {
     constructor(tokenDocument, parent) {
@@ -84,13 +86,16 @@ export class Token3D {
         this.material = this.token.document.getFlag("levels-3d-preview", "material") ?? "";
         this.imageTexture = this.token.document.getFlag("levels-3d-preview", "imageTexture") ?? "";
         this.collisionPlane = true;
-        this.faceCameraOption = this.token.document.getFlag("levels-3d-preview", "faceCamera") ?? "0";
+        this.flatTokenStyle = this.token.document.getFlag("levels-3d-preview", "flatTokenStyle") ?? "default";
+        const globalFlatTokenStyle = game.settings.get("levels-3d-preview", "flatTokenStyle") ?? "default";
+        if(this.flatTokenStyle === "default") this.flatTokenStyle = globalFlatTokenStyle;
+        
         this.stem = this.token.document.getFlag("levels-3d-preview", "stem") ?? false;
-        this.standupFace = game.settings.get("levels-3d-preview", "standupFace");
+
+        this.standupFace = this.flatTokenStyle == "flat";
         this.wasFreeMode = this.token.document.getFlag("levels-3d-preview", "wasFreeMode") ?? false;
         this.removeBase = this.token.document.getFlag("levels-3d-preview", "removeBase") ?? true;
         this.attachments = this.token.document.getFlag("levels-3d-preview", "attachments") ?? [];
-        if (this.faceCameraOption !== "0") this.standupFace = this.faceCameraOption == "1" ? true : false;
         this.enableReticule = game.settings.get("levels-3d-preview", "enableReticule");
         this.particleData = this.getParticleData();
     }
@@ -145,7 +150,7 @@ export class Token3D {
 
     async getModel() {
         if (!this.gtflPath) {
-            if (!this.standupFace && this.texture.image) {                
+            if (this.flatTokenStyle == "extruded" && this.texture.image) {                
                 const standup3d = await imageTo3d(this.texture.image);
                 this.standUp = true;
                 this.standUpMesh = standup3d;
@@ -155,23 +160,60 @@ export class Token3D {
                     scene: standup3d,
                     model: standup3d,
                 }
+            } else if (this.flatTokenStyle == "coin" && this.texture.image) {
+                const coinDepth = 0.1;
+                const borderRadius = 1.005;
+                const coinRadius = 0.5;
+                const coinGeometry = new THREE.CylinderGeometry(coinRadius, coinRadius, coinDepth, 32);
+                coinGeometry.translate(0, coinDepth / 2, 0);
+                coinGeometry.rotateY(Math.PI / 2);
+
+                const coinMaterial = new THREE.MeshStandardMaterial({
+                    map: this.texture,
+                    roughness: 1,
+                    metalness: 0,
+                });
+
+                const borderColor = this.color == "#ffffff" ? "#000000" : this.color;
+
+                const sideMaterial = coinBorderMaterialCache[borderColor] ?? new THREE.MeshStandardMaterial({
+                    color: borderColor,
+                    roughness: 1,
+                    metalness: 0,
+                });
+
+                coinBorderMaterialCache[borderColor] = sideMaterial;
+
+                const innerCoin = new THREE.Mesh(coinGeometry, coinMaterial);
+                const outerCoin = new THREE.Mesh(coinGeometry, sideMaterial);
+                outerCoin.scale.set(borderRadius, 1, borderRadius);
+                outerCoin.position.y -= 0.001;
+                const coin = new THREE.Group();
+                coin.add(outerCoin);
+                coin.add(innerCoin);
+                return {
+                    object: coin,
+                    scene: coin,
+                    model: coin,
+                }
+            }else if (this.flatTokenStyle == "flat" || !this.texture.image) {
+                const texture = this.texture;
+                texture.encoding = THREE.sRGBEncoding;
+                const geometry = new THREE.PlaneGeometry((texture.image?.width || texture.image?.videoWidth || 1) / 1000, (texture.image?.height || texture.image?.videoHeight || 1) / 1000);
+                const material = new THREE.MeshBasicMaterial();
+                const standupModel = new THREE.Mesh(geometry, material);
+                standupModel.userData.standupModel = true;
+                const object = new THREE.Group();
+                object.add(standupModel);
+                this.standUp = true;
+                this.standUpMesh = object;
+                return {
+                    object: object,
+                    scene: object,
+                    model: object,
+                };
             }
 
-            const texture = this.texture;
-            texture.encoding = THREE.sRGBEncoding;
-            const geometry = new THREE.PlaneGeometry((texture.image?.width || texture.image?.videoWidth || 1) / 1000, (texture.image?.height || texture.image?.videoHeight || 1) / 1000);
-            const material = new THREE.MeshBasicMaterial();
-            const standupModel = new THREE.Mesh(geometry, material);
-            standupModel.userData.standupModel = true;
-            const object = new THREE.Group();
-            object.add(standupModel);
-            this.standUp = true;
-            this.standUpMesh = object;
-            return {
-                object: object,
-                scene: object,
-                model: object,
-            };
         }
         const filePath = this.gtflPath;
         const extension = filePath.split(".").pop().toLowerCase();
@@ -1091,6 +1133,9 @@ export class Token3D {
             const scaleFactor = resp.scale;
             if (this.reticule && (this.baseMode == "ringHollow" || this.baseMode == "ringSimple" || this.baseMode == "ringSimpleSmall")) {
                 this.reticule.scale.set(scaleFactor, scaleFactor, scaleFactor);
+            }
+            if (this.reticule && this.flatTokenStyle == "coin") {
+                this.reticule.scale.set(1,1,1)
             }
             const showDisp = resp.showDisp;
             if (showDisp) {

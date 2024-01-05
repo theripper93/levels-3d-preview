@@ -780,14 +780,15 @@ export function registerConfigs() {
                         max: 10,
                         step: 0.1,
                     },
-                    faceCamera: {
+                    flatTokenStyle: {
                         type: "select",
-                        label: game.i18n.localize("levels3dpreview.flags.faceCamera.label"),
-                        default: 0,
+                        label: game.i18n.localize("levels3dpreview.settings.flatTokenStyle.name"),
+                        default: "default",
                         options: {
-                            0: game.i18n.localize("levels3dpreview.flags.faceCamera.options.default"),
-                            1: game.i18n.localize("levels3dpreview.flags.faceCamera.options.face"),
-                            2: game.i18n.localize("levels3dpreview.flags.faceCamera.options.noface"),
+                            default: game.i18n.localize("levels3dpreview.flags.faceCamera.options.default"),
+                            flat: game.i18n.localize("levels3dpreview.settings.flatTokenStyle.options.flat"),
+                            extruded: game.i18n.localize("levels3dpreview.settings.flatTokenStyle.options.extruded"),
+                            coin: game.i18n.localize("levels3dpreview.settings.flatTokenStyle.options.coin"),
                         },
                     },
                 },

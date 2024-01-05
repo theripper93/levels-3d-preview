@@ -14,7 +14,7 @@ class canvas3dConfig extends FormApplication {
 
     async getData(options) {
         const data = {};
-        const settingsKeys = ["useRaycastRuler", "paddingAppearance", "lightCacheSize", "pingsound", "lightHelpers", "templateEffects", "templateAuto3D", "enableReticule", "fullTransparency", "outline", "gameCameraWarnings", "gameCameraAutoLock", "gameCameraDefaultGm", "gameCameraClipping", "gameCameraMaxZoom", "gameCameraMinAzimuth", "gameCameraMaxAzimuth", "gameCameraMinAngle", "gameCameraMaxAngle", "enableGameCamera", "rangeFinder", "sharedContext", "rotateIndicator", "navigatorAuto", "showAdvanced", "canpingpan", "canping", "baseStyle", "solidBaseMode", "solidBaseColor", "highlightCombat", "startMarker", "hideTarget", "hideEffects", "templateSyle", "autoPan", "standupFace", "preventNegative", "miniCanvas", "debugMode", "cameralockzero"];
+        const settingsKeys = ["useRaycastRuler", "paddingAppearance", "lightCacheSize", "pingsound", "lightHelpers", "templateEffects", "templateAuto3D", "enableReticule", "fullTransparency", "outline", "gameCameraWarnings", "gameCameraAutoLock", "gameCameraDefaultGm", "gameCameraClipping", "gameCameraMaxZoom", "gameCameraMinAzimuth", "gameCameraMaxAzimuth", "gameCameraMinAngle", "gameCameraMaxAngle", "enableGameCamera", "rangeFinder", "sharedContext", "rotateIndicator", "navigatorAuto", "showAdvanced", "canpingpan", "canping", "baseStyle", "solidBaseMode", "solidBaseColor", "highlightCombat", "startMarker", "hideTarget", "hideEffects", "templateSyle", "autoPan", "flatTokenStyle", "preventNegative", "miniCanvas", "debugMode", "cameralockzero"];
         for (let key of settingsKeys) {
             data[key] = game.settings.get("levels-3d-preview", key);
         }
@@ -458,6 +458,20 @@ export function registerSettings() {
             config: false,
             type: Boolean,
             default: true,
+        });
+
+        game.settings.register("levels-3d-preview", "flatTokenStyle", {
+            name: game.i18n.localize("levels3dpreview.settings.flatTokenStyle.name"),
+            hint: game.i18n.localize("levels3dpreview.settings.flatTokenStyle.hint"),
+            scope: "world",
+            config: false,
+            type: String,
+            choices: {
+                flat: game.i18n.localize("levels3dpreview.settings.flatTokenStyle.options.flat"),
+                extruded: game.i18n.localize("levels3dpreview.settings.flatTokenStyle.options.extruded"),
+                coin: game.i18n.localize("levels3dpreview.settings.flatTokenStyle.options.coin"),
+            },
+            default: "extruded",
         });
 
         game.settings.register("levels-3d-preview", "preventNegative", {
