@@ -263,6 +263,9 @@ class MapBrowser extends Application {
     constructor() {
         super();
         this.sortNewest = true;
+        this.sortPopular = false;
+        this.sortDownloads = false;
+
     }
 
     
@@ -354,11 +357,14 @@ class MapBrowser extends Application {
             map.stars = stars.length;
             if(pastWinners.includes(map.author)) map.isWinner = true;
         });
-        if (!this.sortNewest) mapList = mapList.sort((a, b) => b.stars - a.stars);
+        if (this.sortDownloads) mapList = mapList.sort((a, b) => b.downloads - a.downloads);
+        if (this.sortPopular) mapList = mapList.sort((a, b) => b.stars - a.stars);
         this._mapList = mapList;
         return {
             maps: mapList,
             sortNewest: this.sortNewest,
+            sortPopular: this.sortPopular,
+            sortDownloads: this.sortDownloads,
             createJournal: game.settings.get("levels-3d-preview", "mapsharingJournal"),
             packs,
         };
@@ -442,15 +448,27 @@ class MapBrowser extends Application {
         });
         html.querySelector("#tdc-sort-newest").addEventListener("click", (e) => {
             e.preventDefault();
-            const oldSort = this.sortNewest;
+            const doRender = this.sortNewest != true;
             this.sortNewest = true;
-            if (oldSort != this.sortNewest) this.render(true);
+            this.sortPopular = false;
+            this.sortDownloads = false;
+            if (doRender) this.render(true);
         });
         html.querySelector("#tdc-sort-popular").addEventListener("click", (e) => {
             e.preventDefault();
-            const oldSort = this.sortNewest;
+            const doRender = this.sortPopular != true;
             this.sortNewest = false;
-            if (oldSort != this.sortNewest) this.render(true);
+            this.sortPopular = true;
+            this.sortDownloads = false;
+            if (doRender) this.render(true);
+        });
+        html.querySelector("#tdc-sort-downloads").addEventListener("click", (e) => {
+            e.preventDefault();
+            const doRender = this.sortDownloads != true;
+            this.sortNewest = false;
+            this.sortPopular = false;
+            this.sortDownloads = true;
+            if (doRender) this.render(true);
         });
         html.querySelector("#tdc-journal").addEventListener("click", (e) => {
             e.preventDefault();

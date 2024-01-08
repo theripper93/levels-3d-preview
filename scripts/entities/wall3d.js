@@ -198,7 +198,7 @@ export class Wall3D {
             if(this.controlIcon) this.controlIcon.visible = false;
         } else if (this.showControlIcon) {
             this.wallMesh.visible = false;
-            this.controlIcon.visible = this.wall.doorControl.visible
+            if(this.controlIcon) this.controlIcon.visible = this.wall.doorControl?.visible
             this.mesh.visible = true;
         } else {
             this.mesh.visible = false;

@@ -2,7 +2,8 @@
     <div class="tdc-navbar">
     <input type="text" placeholder="{{localize "levels3dpreview.sharing.mapbrowser.search"}}">
     <button id="tdc-sort-newest" {{#if sortNewest}}class="active"{{/if}} >Newest</button>
-    <button id="tdc-sort-popular" {{#unless sortNewest}}class="active"{{/unless}}>Popular</button>
+    <button id="tdc-sort-popular" {{#if sortPopular}}class="active"{{/if}}>Popular</button>
+    <button id="tdc-sort-downloads" {{#if sortDownloads}}class="active"{{/if}}>Downloads</button>
     <button data-tooltip="levels3dpreview.sharing.mapbrowser.createJournal" id="tdc-journal" {{#if createJournal}}class="active"{{/if}}><i class="fas fa-scroll fa-fw"></i></button>
     </div>
     <div class="tdc-filters">
