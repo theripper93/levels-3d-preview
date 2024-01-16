@@ -220,7 +220,16 @@
                     "stairs": "Scale",
                     "vines": "Viti",
                     "paper": "Ritaglio di carta",
-                    "plane": "Aereo"
+                    "plane": "Aereo",
+                    "counter": "Contatore",
+                    "counterradial": "Contatore - Torta",
+                    "optgroup": {
+                        "advanced": "Avanzate",
+                        "basic": "Di base",
+                        "complex": "Complesso",
+                        "interactive": "Interattivo",
+                        "special": "Speciale"
+                    }
                 }
             },
             "dynaMeshResolution": {
@@ -928,6 +937,9 @@
             },
             "tableHeightmapScale": {
                 "label": "Scala della mappa dell'altezza"
+            },
+            "gmOnlyInteractive": {
+                "label": "Interazione solo GM"
             }
         },
         "keybindings": {
@@ -2341,6 +2353,55 @@
         "notifications": {
             "initialviewcaptured": "Posizione di visualizzazione iniziale acquisita",
             "initialviewcleared": "Posizione di visualizzazione iniziale cancellata"
+        },
+        "dynamicSkyConfig": {
+            "cloudsAlpha": {
+                "label": "Opacità delle nuvole"
+            },
+            "cloudsScale": {
+                "label": "Scala delle nuvole"
+            },
+            "cloudsSpeed": {
+                "label": "Velocità delle nuvole"
+            },
+            "cloudsTint": {
+                "label": "Colore delle nuvole"
+            },
+            "color": {
+                "label": "Colore",
+                "notes": "Il colore del cielo."
+            },
+            "enableClouds": {
+                "label": "Abilita cloud"
+            },
+            "enabled": {
+                "label": "Abilitato"
+            },
+            "mieCoefficient": {
+                "label": "Coefficiente di Mie",
+                "notes": "Lo scattering Mie è la diffusione della luce da parte di particelle più grandi della lunghezza d'onda della luce. \nÈ responsabile dei colori rosso e arancione del cielo durante l'alba e il tramonto."
+            },
+            "mieDirectionalG": {
+                "label": "Mie Directional G"
+            },
+            "rayleigh": {
+                "label": "Rayleigh",
+                "notes": "La diffusione di Rayleigh è la diffusione della luce da parte di particelle molto più piccole della lunghezza d'onda della luce. \nÈ responsabile del colore azzurro del cielo durante il giorno."
+            },
+            "sceneConfig": {
+                "button": "Apri Configurazione",
+                "label": "Configurazione dinamica del cielo",
+                "notes": "La Dynamic Sky Configuration consente di configurare il cielo e le nuvole della scena."
+            },
+            "starDensity": {
+                "label": "Densità delle stelle",
+                "notes": "La quantità di stelle visibili nel cielo."
+            },
+            "title": "Configurazione dinamica del cielo",
+            "turbidity": {
+                "label": "Torbidità",
+                "notes": "La torbidità è la misura della quantità di particelle presenti nell'aria. \nUn'elevata torbidità risulterà in un cielo più nebbioso."
+            }
         }
     }
 }

@@ -220,7 +220,16 @@
                     "stairs": "Escaliers",
                     "vines": "Vignes",
                     "paper": "Découpe de papier",
-                    "plane": "Avion"
+                    "plane": "Avion",
+                    "counter": "Comptoir",
+                    "counterradial": "Comptoir - Tarte",
+                    "optgroup": {
+                        "advanced": "Avancé",
+                        "basic": "Basique",
+                        "complex": "Complexe",
+                        "interactive": "Interactif",
+                        "special": "Spécial"
+                    }
                 }
             },
             "dynaMeshResolution": {
@@ -928,6 +937,9 @@
             },
             "tableHeightmapScale": {
                 "label": "Échelle de la carte de hauteur"
+            },
+            "gmOnlyInteractive": {
+                "label": "Interaction avec GM uniquement"
             }
         },
         "keybindings": {
@@ -2341,6 +2353,55 @@
         "notifications": {
             "initialviewcaptured": "Position de vue initiale capturée",
             "initialviewcleared": "Position de vue initiale effacée"
+        },
+        "dynamicSkyConfig": {
+            "cloudsAlpha": {
+                "label": "Opacité des nuages"
+            },
+            "cloudsScale": {
+                "label": "Échelle des nuages"
+            },
+            "cloudsSpeed": {
+                "label": "Vitesse des nuages"
+            },
+            "cloudsTint": {
+                "label": "Couleur des nuages"
+            },
+            "color": {
+                "label": "Couleur",
+                "notes": "La couleur du ciel."
+            },
+            "enableClouds": {
+                "label": "Activer les nuages"
+            },
+            "enabled": {
+                "label": "Activé"
+            },
+            "mieCoefficient": {
+                "label": "Coefficient de Mie",
+                "notes": "La diffusion Mie est la diffusion de la lumière par des particules plus grandes que la longueur d'onde de la lumière. \nIl est responsable des couleurs rouge et orange du ciel au lever et au coucher du soleil."
+            },
+            "mieDirectionalG": {
+                "label": "Mie Directionnel G"
+            },
+            "rayleigh": {
+                "label": "Rayleigh",
+                "notes": "La diffusion Rayleigh est la diffusion de la lumière par des particules beaucoup plus petites que la longueur d'onde de la lumière. \nIl est responsable de la couleur bleue du ciel pendant la journée."
+            },
+            "sceneConfig": {
+                "button": "Ouvrir la configuration",
+                "label": "Configuration dynamique du ciel",
+                "notes": "La Configuration Dynamique du Ciel permet de configurer le ciel et les nuages ​​de la scène."
+            },
+            "starDensity": {
+                "label": "Densité des étoiles",
+                "notes": "Le nombre d'étoiles visibles dans le ciel."
+            },
+            "title": "Configuration dynamique du ciel",
+            "turbidity": {
+                "label": "Turbidité",
+                "notes": "La turbidité est la mesure de la quantité de particules présentes dans l'air. \nUne forte turbidité se traduira par un ciel plus brumeux."
+            }
         }
     }
 }

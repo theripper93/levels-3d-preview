@@ -1,13 +1,71 @@
 import * as THREE from "../lib/three.module.js";
-import { factor } from "../main.js";
+import {factor} from "../main.js";
+import {Sky} from "../lib/Sky.js";
+import {DynamicSkyConfig} from "../settings/dynamicSkyConfig.js";
+
+
 
 export class GlobalIllumination {
     constructor(parent) {
         this._parent = parent;
         this.lights = {};
         this.animationTarget = null;
+        this.DynamicSkyConfig = DynamicSkyConfig;
         this.generateTimeSpline();
         this.init();
+    }
+
+    initDynamicSky() {
+        if(this.sky) return;
+        const sky = new Sky();
+        this.sky = sky;
+        this.sky._positionVector = new THREE.Vector3();
+        this.sky._color = new THREE.Color();
+        this.sky.clouds._color = new THREE.Color();
+        sky.scale.setScalar( 450000 );
+        this._parent.scene.add( sky );
+    }
+
+    updateDynamicSky() {
+        debugger;
+        const dynamicSkyData = foundry.utils.mergeObject({...SKY_DEFAULTS}, canvas.scene.getFlag("levels-3d-preview", "dynamicSky") ?? {});
+        if (dynamicSkyData.enabled) {
+            this.initDynamicSky();
+        }
+        else {
+            this._parent.scene.remove(this.sky);
+            this.sky = null;
+        }
+        if (!this.sky) return;
+
+        this.sky._color.set(dynamicSkyData.color);
+        this.sky.clouds._color.set(dynamicSkyData.cloudsTint);
+
+
+        const maxDistance = canvas.scene.getFlag("levels-3d-preview", "sunDistance") ?? 10;
+        const sunWorldY = this.global.sunlight.getWorldPosition(this.sky._positionVector).y;
+        let unitDistance = 1 - (sunWorldY / maxDistance + 1) / 2;
+        //if(unitDistance < 0.5) unitDistance *= 0.1;
+
+        const uniforms = this.sky.material.uniforms;
+        uniforms["turbidity"].value = dynamicSkyData.turbidity;
+        uniforms["rayleigh"].value = dynamicSkyData.rayleigh;
+        uniforms["mieCoefficient"].value = dynamicSkyData.mieCoefficient;
+        uniforms["mieDirectionalG"].value = dynamicSkyData.mieDirectionalG;
+        uniforms["skyTint"].value = this.sky._color;
+        uniforms["starDensity"].value = 1/dynamicSkyData.starDensity;
+        uniforms["starAlpha"].value = Math.pow(unitDistance, 2);
+        uniforms["sunPosition"].value.copy(this.global.sunlight.getWorldPosition(this.sky._positionVector));
+
+        if (this.sky.clouds) {
+            this.sky.clouds.visible = dynamicSkyData.enableClouds;
+            const cloudsUniforms = this.sky.clouds.material.uniforms;
+            cloudsUniforms["timeAlpha"].value = Math.pow(this._parent.renderer.toneMappingExposure, 2);
+            cloudsUniforms["cloudsSpeed"].value = dynamicSkyData.cloudsSpeed;
+            cloudsUniforms["cloudsTint"].value = this.sky.clouds._color;
+            cloudsUniforms["cloudsAlpha"].value = dynamicSkyData.cloudsAlpha;
+            cloudsUniforms["cloudsScale"].value = (10 - dynamicSkyData.cloudsScale) * 2;
+        }
     }
 
     generateTimeSpline() {
@@ -53,6 +111,7 @@ export class GlobalIllumination {
         this._parent.scene.add(lightingGroup);
 
         this.setTarget(true, false);
+        this.updateDynamicSky();
     }
 
     _setShadowQuality() {
@@ -86,6 +145,7 @@ export class GlobalIllumination {
         if (!animate) return this.setValues(targetData);
         this._timePassed = 0;
         this.animationTarget = targetData;
+        this.updateDynamicSky();
     }
 
     setValues(values) {
@@ -99,6 +159,7 @@ export class GlobalIllumination {
         this.global.debugSphere.position.y = distance;
         this.global.lightingGroup.rotation.setFromQuaternion(angle);
         this._parent.renderer.toneMappingExposure = exposure;
+        this.updateDynamicSky();
     }
 
     setFromWorldTime() {
@@ -170,4 +231,19 @@ export function getTimeSyncDefault(scene) {
     const smalltime = game.modules.get("smalltime")?.active;
     if (smalltime && scene.getFlag("smalltime", "darkness-link")) return "time";
     return "darkness";
+}
+
+export const SKY_DEFAULTS = {
+    enabled: false,
+    turbidity: 10,
+    rayleigh: 3,
+    mieCoefficient: 0.005,
+    mieDirectionalG: 0.999,
+    color: "#3f8ea2",
+    starDensity: 1,
+    enableClouds: true,
+    cloudsSpeed: 1,
+    cloudsAlpha: 0.7,
+    cloudsTint: "#ffffff",
+    cloudsScale: 9.5,
 }

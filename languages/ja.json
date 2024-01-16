@@ -563,7 +563,16 @@
                     "stairs": "階段",
                     "vines": "ブドウの木",
                     "paper": "切り紙",
-                    "plane": "飛行機"
+                    "plane": "飛行機",
+                    "counter": "カウンター",
+                    "counterradial": "カウンター - パイ",
+                    "optgroup": {
+                        "advanced": "高度な",
+                        "basic": "基本",
+                        "complex": "複雑な",
+                        "interactive": "相互の作用",
+                        "special": "特別"
+                    }
                 }
             },
             "dynaMeshResolution": {
@@ -914,6 +923,9 @@
             },
             "tableHeightmapScale": {
                 "label": "ハイトマップスケール"
+            },
+            "gmOnlyInteractive": {
+                "label": "GM のみのインタラクション"
             }
         },
         "settings": {
@@ -2341,6 +2353,55 @@
         "notifications": {
             "initialviewcaptured": "キャプチャされた初期ビュー位置",
             "initialviewcleared": "初期ビュー位置がクリアされました"
+        },
+        "dynamicSkyConfig": {
+            "cloudsAlpha": {
+                "label": "雲の不透明度"
+            },
+            "cloudsScale": {
+                "label": "雲のスケール"
+            },
+            "cloudsSpeed": {
+                "label": "雲の速度"
+            },
+            "cloudsTint": {
+                "label": "雲の色"
+            },
+            "color": {
+                "label": "色",
+                "notes": "空の色。"
+            },
+            "enableClouds": {
+                "label": "クラウドを有効にする"
+            },
+            "enabled": {
+                "label": "有効"
+            },
+            "mieCoefficient": {
+                "label": "三重係数",
+                "notes": "ミー散乱は、光の波長よりも大きい粒子による光の散乱です。\n日の出と日の入りの空の赤​​とオレンジの色を担当します。"
+            },
+            "mieDirectionalG": {
+                "label": "三重ディレクショナルG"
+            },
+            "rayleigh": {
+                "label": "レイリー",
+                "notes": "レイリー散乱は、光の波長よりもはるかに小さい粒子による光の散乱です。\n日中の空の青色の原因となっています。"
+            },
+            "sceneConfig": {
+                "button": "オープン構成",
+                "label": "動的な空の構成",
+                "notes": "Dynamic Sky Configuration を使用すると、シーンの空と雲を設定できます。"
+            },
+            "starDensity": {
+                "label": "星の密度",
+                "notes": "空に見える星の数。"
+            },
+            "title": "動的な空の構成",
+            "turbidity": {
+                "label": "濁度",
+                "notes": "濁度は、空気中の粒子の量の尺度です。\n濁度が高いと空がより曇ります。"
+            }
         }
     }
 }

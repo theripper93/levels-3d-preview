@@ -419,6 +419,11 @@ export class ShaderHandler {
             }
             return true;
         });
+        const sky = game.Levels3DPreview.lights.globalIllumination.sky;
+        if (sky) {
+            sky.material.uniforms.time.value = delta / 100;
+            if(sky.clouds) sky.clouds.material.uniforms.iTime.value = delta / 100;
+        }
         this._sceneUniformsNeedUpdate = false;
     }
 

@@ -220,7 +220,16 @@
                     "stairs": "Escaleras",
                     "vines": "Vides",
                     "paper": "Recorte de papel",
-                    "plane": "Avión"
+                    "plane": "Avión",
+                    "counter": "Encimera",
+                    "counterradial": "Mostrador - Pastel",
+                    "optgroup": {
+                        "advanced": "Avanzado",
+                        "basic": "Básico",
+                        "complex": "Complejo",
+                        "interactive": "Interactivo",
+                        "special": "Especial"
+                    }
                 }
             },
             "dynaMeshResolution": {
@@ -928,6 +937,9 @@
             },
             "tableHeightmapScale": {
                 "label": "Escala de mapa de altura"
+            },
+            "gmOnlyInteractive": {
+                "label": "Interacción solo GM"
             }
         },
         "keybindings": {
@@ -2341,6 +2353,55 @@
         "notifications": {
             "initialviewcaptured": "Posición de vista inicial capturada",
             "initialviewcleared": "Posición de vista inicial borrada"
+        },
+        "dynamicSkyConfig": {
+            "cloudsAlpha": {
+                "label": "Opacidad de las nubes"
+            },
+            "cloudsScale": {
+                "label": "Escala de nubes"
+            },
+            "cloudsSpeed": {
+                "label": "Velocidad de las nubes"
+            },
+            "cloudsTint": {
+                "label": "Color de las nubes"
+            },
+            "color": {
+                "label": "Color",
+                "notes": "El color del cielo."
+            },
+            "enableClouds": {
+                "label": "Habilitar nubes"
+            },
+            "enabled": {
+                "label": "Activado"
+            },
+            "mieCoefficient": {
+                "label": "Coeficiente de Mie",
+                "notes": "La dispersión de Mie es la dispersión de la luz por partículas más grandes que la longitud de onda de la luz. \nEs responsable de los colores rojo y naranja del cielo durante el amanecer y el atardecer."
+            },
+            "mieDirectionalG": {
+                "label": "Mie Direccional G"
+            },
+            "rayleigh": {
+                "label": "Rayleigh",
+                "notes": "La dispersión de Rayleigh es la dispersión de la luz por partículas mucho más pequeñas que la longitud de onda de la luz. \nEs el responsable del color azul del cielo durante el día."
+            },
+            "sceneConfig": {
+                "button": "Abrir configuración",
+                "label": "Configuración de cielo dinámico",
+                "notes": "La Configuración Dinámica del Cielo le permite configurar el cielo y las nubes de la escena."
+            },
+            "starDensity": {
+                "label": "Densidad de estrellas",
+                "notes": "La cantidad de estrellas visibles en el cielo."
+            },
+            "title": "Configuración de cielo dinámico",
+            "turbidity": {
+                "label": "Turbiedad",
+                "notes": "La turbidez es la medida de la cantidad de partículas en el aire. \nUna turbidez alta dará como resultado un cielo más brumoso."
+            }
         }
     }
 }

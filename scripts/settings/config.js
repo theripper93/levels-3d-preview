@@ -281,6 +281,10 @@ export function registerConfigs() {
                     label: game.i18n.localize("levels3dpreview.flags.fogDistance.label"),
                     default: 3000,
                 },
+                header1: {
+                    type: "custom",
+                    html: `<div id="dynamic-sky-config-button"><div>`,
+                },
             },
             "lighting-3d": {
                 tabLabel: game.i18n.localize("levels3dpreview.settings.headers.lighting.title"),
@@ -568,6 +572,20 @@ export function registerConfigs() {
                 { render: false },
             );
             ui.notifications.notify(game.i18n.localize("levels3dpreview.notifications.initialviewcaptured"));
+        });
+
+        html.find("#dynamic-sky-config-button").after(`
+        <div class="form-group submenu">
+            <label>${game.i18n.localize("levels3dpreview.dynamicSkyConfig.sceneConfig.label")}</label>
+            <button type="button" data-key="sky-config">
+            <i class="fa-solid fa-clouds-sun"></i>
+                <label>${game.i18n.localize("levels3dpreview.dynamicSkyConfig.sceneConfig.button")}</label>
+            </button>
+            <p class="notes">${game.i18n.localize("levels3dpreview.dynamicSkyConfig.sceneConfig.notes")}</p>
+        </div>`);
+        html.on("click", "button[data-key='sky-config']", (e) => {
+            e.preventDefault();
+            new game.Levels3DPreview.lights.globalIllumination.DynamicSkyConfig(app.object).render(true)
         });
     });
 

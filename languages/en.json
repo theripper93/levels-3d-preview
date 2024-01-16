@@ -1,5 +1,5 @@
 {
-    "levels3dpreview" : {
+    "levels3dpreview": {
         "controls": {
             "preview3d": "Toggle 3D Mode",
             "miniCanvas": "Popout/Restore Canvas",
@@ -38,7 +38,7 @@
                 "scroll": "Scroll",
                 "loadingdone": "3D Canvas Ready! - Press <i class='fas fa-question control-highlighted'></i> to close this screen.",
                 "loadingarrow": "Click the '?' icon where the Arrow is pointing to close the loading screen."
-           }
+            }
         },
         "errors": {
             "initfailed": "3D Canvas: Initialization failed. This can be a caching issue, try CTRL+F5 to refresh the page. Make also sure you have an Active scene. Alternativelly 3D Canvas or one of it's dependencies might be out of date or corrupted. Make sure the modules are up to date and try a reinstall if everything else fails.",
@@ -186,7 +186,7 @@
             "scenedirbutton": "Browse Community 3D Maps",
             "contextbutton": "Share Scene"
         },
-        "keybindings":{
+        "keybindings": {
             "dialog": {
                 "title": "3D Canvas: Remove Core Keybindings",
                 "content": "For 3D Canvas controls to not overlap core controls, it's higly suggested to remove the core WASD Keybindings. You will still be able to move Tokens or other Entities with Arrow Keys or NumPad. Do you want to remove them?"
@@ -248,11 +248,11 @@
                 "label": "3D Canvas: Positional Audio",
                 "notes": "Ease the volume of this sound based on distance from the camera. Requires 'Volume Easing' to be enabled."
             },
-            "doorType":{
+            "doorType": {
                 "options": {
                     "none": "None",
                     "door": "Door",
-                    "secret" : "Secret"
+                    "secret": "Secret"
                 }
             },
             "textureMode": {
@@ -298,27 +298,27 @@
                 "label": "Capture Tokens",
                 "notes": "Capture tokens that are in proximity of the door when the door starts moving. Does not work with 'Transparent' style. Note that tokens will not be captured mid-movement, only when the door starts moving."
             },
-            "isFog":{
+            "isFog": {
                 "label": "Is Fog of War Box?",
                 "notes": "Obscure view when camera enters this template. Works only for rectangle templates."
             },
-            "enablePlayers":{
+            "enablePlayers": {
                 "label": "Enable for Players",
                 "notes": "Allow players to open the 3D view for this scene, if the fog of war is not enabled, the map will be fully visible."
             },
-            "auto3d":{
+            "auto3d": {
                 "label": "Enable 3D on Load"
             },
-            "bloom":{
+            "bloom": {
                 "label": "Enable Bloom"
             },
-            "bloomThreshold":{
+            "bloomThreshold": {
                 "label": "Bloom Threshold"
             },
-            "bloomStrength":{
+            "bloomStrength": {
                 "label": "Bloom Strength"
             },
-            "bloomRadius":{
+            "bloomRadius": {
                 "label": "Bloom Radius"
             },
             "filter": {
@@ -342,12 +342,12 @@
                 "label": "Custom Filter",
                 "placeholder": "eg. brightness(0.5) contrast(1.5) saturate(0.5)"
             },
-            "skybox" : {
+            "skybox": {
                 "label": "Skybox Image",
                 "placeholder": "Skybox Image",
                 "notes": "The file needs to be in the same folder of 6 total files, files must contain _ft, _bk, _up, _dn, _rt, _lf."
             },
-            "exr" : {
+            "exr": {
                 "label": "Skybox",
                 "placeholder": "EXR File or 360° Panorama Image",
                 "notes": "Supports .EXR files or images in a 360° panorama format. HDRI will be used as the background and to light the scene."
@@ -369,7 +369,7 @@
                     "matcustom": "Infinite Mat (Custom)"
                 }
             },
-            "tableTex" : {
+            "tableTex": {
                 "label": "Padding Texture",
                 "placeholder": "Padding Texture"
             },
@@ -485,13 +485,13 @@
                 "label": "Enable Game Camera",
                 "notes": "Enable the game camera for this Scene. The Game Camera Must be Enabled globally in the 3D Canvas Settings for this to work."
             },
-            "model3d" : {
+            "model3d": {
                 "label": "3D Model"
             },
             "rotation": {
                 "label": "Rotation"
             },
-            "dynaMesh" : {
+            "dynaMesh": {
                 "label": "Dynamic Mesh",
                 "options": {
                     "optgroup": {
@@ -534,10 +534,10 @@
                     "mapGen": "Map Generator"
                 }
             },
-            "dynaMeshResolution" : {
+            "dynaMeshResolution": {
                 "label": "Dynamic Mesh Resolution"
             },
-            "imageTexture":{
+            "imageTexture": {
                 "label": "Texture"
             },
             "gmOnlyInteractive": {
@@ -582,7 +582,7 @@
                     "gravityRotation": "Gravity + Surface Rotation"
                 }
             },
-            "depth":{
+            "depth": {
                 "label": "Depth"
             },
             "material": {
@@ -719,16 +719,16 @@
             "enableAnim": {
                 "label": "Enable Animation (if present)"
             },
-            "animIndex":{
+            "animIndex": {
                 "label": "Animation Index"
             },
-            "animSpeed":{
+            "animSpeed": {
                 "label": "Animation Speed"
             },
             "paused": {
                 "label": "Paused"
             },
-            "faceCamera":{
+            "faceCamera": {
                 "label": "Face Camera Mode",
                 "options": {
                     "default": "Global Setting (Default)",
@@ -736,7 +736,7 @@
                     "noface": "Don't Face Camera"
                 }
             },
-            "rotationAxis" : {
+            "rotationAxis": {
                 "label": "Rotation Axis",
                 "options": {
                     "x": "X",
@@ -751,13 +751,13 @@
             "autoGround": {
                 "label": "Auto Ground"
             },
-            "rotationX" : {
+            "rotationX": {
                 "label": "Rotation X"
             },
-            "rotationY" : {
+            "rotationY": {
                 "label": "Rotation Y"
             },
-            "rotationZ" : {
+            "rotationZ": {
                 "label": "Rotation Z"
             },
             "rotateBase": {
@@ -839,7 +839,7 @@
             "transparency": {
                 "label": "Opacity"
             },
-            "alphaClip":{
+            "alphaClip": {
                 "label": "Alpha Clip"
             },
             "transmission": {
@@ -1052,7 +1052,7 @@
                 }
             }
         },
-        "settings" : {
+        "settings": {
             "rangeFinder": {
                 "name": "Range Finder",
                 "hint": "Show distance to tokens when hovering over them.",
@@ -1102,7 +1102,7 @@
                     "all": "Players and GMs"
                 }
             },
-            "headers":{
+            "headers": {
                 "basics": {
                     "title": "Basics",
                     "notes": "Configure basic settings for this 3D Scene."
@@ -1252,7 +1252,7 @@
                 "name": "Enable Light Helpers",
                 "hint": "Enable the light helpers. This will show the light source and the area of effect of the light when in the lighting layer."
             },
-            "templateSyle" : {
+            "templateSyle": {
                 "name": "Template Style",
                 "hint": "The style to use for the measured templates.",
                 "options": {
@@ -1264,7 +1264,7 @@
                 "name": "Padding Appearance",
                 "hint": "The default appearance of the padding. This can be customized per scene as well."
             },
-            "gridMode" : {
+            "gridMode": {
                 "name": "Grid Draw Mode",
                 "hint": "How the grid is drawn. Fast is better in general but only supports square grids. Mirror, will mirror 1:1 the foundry grid but is more expensive to render.",
                 "options": {
@@ -1372,11 +1372,11 @@
                     "high": "High"
                 }
             },
-            "disableLighting":{
+            "disableLighting": {
                 "name": "Disable Shadows",
                 "hint": "Disable Shadows for better performance."
             },
-            "shadowQuality":{
+            "shadowQuality": {
                 "name": "Shadow Quality",
                 "hint": "The resolution of the shadows. Set to 'Disabled' to disable shadows.",
                 "options": {
@@ -1396,7 +1396,7 @@
                 "name": "Enable Effects",
                 "hint": "Enable weather and particle effects. Some of the effects can be performance intensive depending on the hardware and the amount. Disable for better performance."
             },
-            "softShadows":{
+            "softShadows": {
                 "name": "Soft Shadows",
                 "hint": "Enable soft shadows at a minor cost in performance. Requires refresh."
             },
@@ -1418,7 +1418,7 @@
                 "hint": "Show helpful debug info for troubleshooting."
             }
         },
-        "exporter" : {
+        "exporter": {
             "title": "Export objects as GLTF",
             "tokens": "Tokens",
             "interactive": "Include draggable Tokens",
@@ -1430,7 +1430,7 @@
             "export": "Export",
             "cancel": "Cancel"
         },
-        "particleSystems":{
+        "particleSystems": {
             "optgroup-projectiles": "Projectiles",
             "optgroup-rays": "Rays",
             "optgroup-sprites": "Objects",
@@ -1470,23 +1470,23 @@
             "voidray": "Void Ray",
             "runicray": "Runic Ray",
             "runicshot": "Runic Shot",
-            "explosion" : "Explosion",
-            "sprite" : "3D Model",
-            "slash" : "Slash",
-            "magicburst" : "Magic Burst",
+            "explosion": "Explosion",
+            "sprite": "3D Model",
+            "slash": "Slash",
+            "magicburst": "Magic Burst",
             "json": "Custom (JSON)",
             "jb2aexplosion": "Explosion (JB2A Animated)",
             "jb2aexplosionnolight": "Explosion (JB2A Animated, No Light)",
-            "arrow" : "Arrow",
+            "arrow": "Arrow",
             "bolt": "Bolt",
-            "javelin" : "Javelin",
-            "magicarrow" : "Magic Arrow",
-            "bullet" : "Bullet",
-            "swing" : "Swing (3D Object)",
-            "thrust" : "Thrust (3D Object)",
-            "thrustswing" : "Swing/Thrust (3D Object)",
-            "starburst" : "Starburst",
-            "lightning" : "Lightning",
+            "javelin": "Javelin",
+            "magicarrow": "Magic Arrow",
+            "bullet": "Bullet",
+            "swing": "Swing (3D Object)",
+            "thrust": "Thrust (3D Object)",
+            "thrustswing": "Swing/Thrust (3D Object)",
+            "starburst": "Starburst",
+            "lightning": "Lightning",
             "castingsign": "Ritual"
         },
         "macrodialog": {
@@ -1586,7 +1586,7 @@
             "jb2asquare2": "Square 2 (JB2A)",
             "jb2asquare2Indicator": "Square 2 + Indicator (JB2A)"
         },
-        "units":{
+        "units": {
             "ms": "Milliseconds",
             "gu": "Grid Units",
             "gs": "Grid Squares"
@@ -1639,7 +1639,7 @@
                 "description": "Distortion effect perfect for a Lava pool or other viscous liquids.",
                 "speed": "Speed",
                 "direction": "Direction",
-                "intensity" : "Intensity",
+                "intensity": "Intensity",
                 "convoluted": "Convoluted"
             },
             "water": {
@@ -1647,14 +1647,14 @@
                 "description": "Simple, sine wave based, water effect. Effective and very cheap on performance.",
                 "speed": "Speed",
                 "direction": "Direction",
-                "wave_amplitude" : "Wave Density",
-                "wave_height" : "Wave Height"
+                "wave_amplitude": "Wave Density",
+                "wave_height": "Wave Height"
             },
             "oil": {
                 "name": "Oil",
                 "description": "Oil/Liquid Metal effect. The effect can be colorized and scaled, keep in mind that the color will be distorted by the effect.",
                 "speed": "Speed",
-                "intensity" : "Intensity",
+                "intensity": "Intensity",
                 "scale": "Scale",
                 "color": "Color",
                 "blendMode": "Mix Blending"
@@ -1715,7 +1715,7 @@
                 "name": "Fire",
                 "description": "Fire effect. The effect can be colorized and scaled to produce results that go way beyond fire.",
                 "speed": "Speed",
-                "intensity" : "Intensity",
+                "intensity": "Intensity",
                 "scale": "Scale",
                 "color": "Color",
                 "blendMode": "Mix Blending"
@@ -1724,7 +1724,7 @@
                 "name": "Lightning",
                 "description": "Lightning like effect with moving electric arcs.",
                 "speed": "Speed",
-                "intensity" : "Intensity",
+                "intensity": "Intensity",
                 "scale": "Scale",
                 "color": "Color",
                 "blendMode": "Mix Blending"
@@ -1734,7 +1734,7 @@
                 "description": "Frosted surface effect with a very subtle animation.",
                 "speed": "Speed",
                 "grain": "Grain",
-                "intensity" : "Intensity",
+                "intensity": "Intensity",
                 "scale": "Scale",
                 "color": "Color",
                 "blendMode": "Mix Blending"
@@ -1751,10 +1751,10 @@
                 "name": "Color",
                 "description": "Color distortion effects, multiple can be set at the same time. Glow works best with the Bloom effect enabled in the scene configuration.",
                 "speed": "Speed",
-                "glow" : "Glow",
+                "glow": "Glow",
                 "hue_angle": "Hue Shift",
-                "flicker" : "Flicker",
-                "animate_range" : "Animation Range"
+                "flicker": "Flicker",
+                "animate_range": "Animation Range"
             },
             "colorswap": {
                 "name": "Color Swap",
@@ -1767,7 +1767,7 @@
                 "threshold2": "Threshold 2",
                 "sourceColor3": "Source Color 3",
                 "targetColor3": "Target Color 3",
-            "threshold3": "Threshold 3"
+                "threshold3": "Threshold 3"
             },
             "textureRotate": {
                 "name": "Rotate",
@@ -1802,7 +1802,6 @@
                 "repeat": "Repeat",
                 "strength": "Strength",
                 "maskThreshold": "Mask Threshold"
-
             },
             "overlay": {
                 "name": "Overlay",
@@ -1840,7 +1839,6 @@
                 "textureDiffuse3": "Texture A",
                 "color3": "Color A",
                 "repeat3": "Repeat A"
-
             },
             "textureGradient": {
                 "name": "Gradient",
@@ -2042,7 +2040,7 @@
                 },
                 "step-5": {
                     "title": "Shaders",
-                    "content": "This section allows you to apply shaders to the tile. Shaders are a powerful tool that can be used to create many effects. Try to apply some shaders to your tile and see how they work!"    
+                    "content": "This section allows you to apply shaders to the tile. Shaders are a powerful tool that can be used to create many effects. Try to apply some shaders to your tile and see how they work!"
                 },
                 "step-6": {
                     "title": "Shader Window",
@@ -2160,7 +2158,7 @@
                     "title": "Terrain",
                     "content": "This section will let you randomly generate a terrain, use the dropdown to chose between different terrain types. The Fine Tune button will let you manually offset and scale the Heightmap used for the terrain."
                 },
-                "step-3":{
+                "step-3": {
                     "title": "Fluids",
                     "content": "Click on the different fluid buttons to create a fluid tile. Note that depending on your terrain the fluid might require scaling or repositioning. Use the gizmo tools to do so if needed."
                 },
@@ -2347,6 +2345,55 @@
         "extrudeWalls": {
             "title": "Extrude Walls",
             "content": "This process will attempt to transform the walls in the scene into tiles. Are you sure you want to continue?"
+        },
+        "dynamicSkyConfig": {
+            "title": "Dynamic Sky Configuration",
+            "sceneConfig": {
+                "label": "Dynamic Sky Configuration",
+                "button": "Open Configuration",
+                "notes": "The Dynamic Sky Configuration allows you to configure the sky and clouds of the scene."
+            },
+            "enabled": {
+                "label": "Enabled"
+            },
+            "turbidity": {
+                "label": "Turbidity",
+                "notes": "Turbidity is the measure of the amount of particles in the air. A high turbidity will result in a more hazy sky."
+            },
+            "rayleigh": {
+                "label": "Rayleigh",
+                "notes": "Rayleigh scattering is the scattering of light by particles much smaller than the wavelength of the light. It is responsible for the blue color of the sky during the day."
+            },
+            "mieCoefficient": {
+                "label": "Mie Coefficient",
+                "notes": "Mie scattering is the scattering of light by particles larger than the wavelength of the light. It is responsible for the red and orange colors of the sky during sunrise and sunset."
+            },
+            "mieDirectionalG": {
+                "label": "Mie Directional G"
+            },
+            "starDensity": {
+                "label": "Star Density",
+                "notes": "The amount of stars visible in the sky."
+            },
+            "color": {
+                "label": "Color",
+                "notes": "The color of the sky."
+            },
+            "enableClouds": {
+                "label": "Enable Clouds"
+            },
+            "cloudsSpeed": {
+                "label": "Clouds Speed"
+            },
+            "cloudsAlpha": {
+                "label": "Clouds Opacity"
+            },
+            "cloudsTint": {
+                "label": "Clouds Color"
+            },
+            "cloudsScale": {
+                "label": "Clouds Scale"
+            }
         }
     }
 }

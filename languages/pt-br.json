@@ -248,7 +248,16 @@
                     "stairs": "Escadaria",
                     "vines": "videiras",
                     "paper": "Recorte de papel",
-                    "plane": "Avião"
+                    "plane": "Avião",
+                    "counter": "Contador",
+                    "counterradial": "Balcão - Torta",
+                    "optgroup": {
+                        "advanced": "Avançado",
+                        "basic": "Básico",
+                        "complex": "Complexo",
+                        "interactive": "Interativo",
+                        "special": "Especial"
+                    }
                 }
             },
             "dynaMeshResolution": {
@@ -932,6 +941,9 @@
             },
             "tableHeightmapScale": {
                 "label": "Escala do mapa de altura"
+            },
+            "gmOnlyInteractive": {
+                "label": "Interação somente GM"
             }
         },
         "keybindings": {
@@ -2333,6 +2345,55 @@
         "notifications": {
             "initialviewcaptured": "Posição de visualização inicial capturada",
             "initialviewcleared": "Posição de visualização inicial apagada"
+        },
+        "dynamicSkyConfig": {
+            "cloudsAlpha": {
+                "label": "Opacidade das Nuvens"
+            },
+            "cloudsScale": {
+                "label": "Escala de Nuvens"
+            },
+            "cloudsSpeed": {
+                "label": "Velocidade das nuvens"
+            },
+            "cloudsTint": {
+                "label": "Cor das nuvens"
+            },
+            "color": {
+                "label": "Cor",
+                "notes": "A cor do céu."
+            },
+            "enableClouds": {
+                "label": "Habilitar nuvens"
+            },
+            "enabled": {
+                "label": "Habilitado"
+            },
+            "mieCoefficient": {
+                "label": "Coeficiente de Mie",
+                "notes": "O espalhamento de Mie é o espalhamento da luz por partículas maiores que o comprimento de onda da luz. \nÉ responsável pelas cores vermelha e laranja do céu durante o nascer e o pôr do sol."
+            },
+            "mieDirectionalG": {
+                "label": "Mie Direcional G"
+            },
+            "rayleigh": {
+                "label": "Rayleigh",
+                "notes": "O espalhamento Rayleigh é o espalhamento da luz por partículas muito menores que o comprimento de onda da luz. \nÉ responsável pela cor azul do céu durante o dia."
+            },
+            "sceneConfig": {
+                "button": "Abrir configuração",
+                "label": "Configuração dinâmica do céu",
+                "notes": "A Configuração Dinâmica do Céu permite configurar o céu e as nuvens da cena."
+            },
+            "starDensity": {
+                "label": "Densidade Estelar",
+                "notes": "A quantidade de estrelas visíveis no céu."
+            },
+            "title": "Configuração dinâmica do céu",
+            "turbidity": {
+                "label": "Turbidez",
+                "notes": "Turbidez é a medida da quantidade de partículas no ar. \nUma alta turbidez resultará em um céu mais nebuloso."
+            }
         }
     }
 }

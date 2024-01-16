@@ -1,0 +1,106 @@
+<form action="submit">
+
+<div class="form-group">
+            <label>{{localize "levels3dpreview.dynamicSkyConfig.enabled.label"}}</label>
+            <div class="form-fields">
+                <input type="checkbox" name="flags.levels-3d-preview.dynamicSky.enabled" {{checked enabled}}>
+            </div>
+        </div>
+
+    <div class="form-group">
+            <label>{{localize "levels3dpreview.dynamicSkyConfig.turbidity.label"}}</label>
+            <div class="form-fields">
+                {{rangePicker name="flags.levels-3d-preview.dynamicSky.turbidity" value=turbidity min=0 max=20 step=0.1}}
+            </div>
+            <p class="notes">{{localize "levels3dpreview.dynamicSkyConfig.turbidity.notes"}}</p>
+    </div>
+
+    <div class="form-group">
+            <label>{{localize "levels3dpreview.dynamicSkyConfig.rayleigh.label"}}</label>
+            <div class="form-fields">
+                {{rangePicker name="flags.levels-3d-preview.dynamicSky.rayleigh" value=rayleigh min=0 max=4 step=0.1}}
+            </div>
+            <p class="notes">{{localize "levels3dpreview.dynamicSkyConfig.rayleigh.notes"}}</p>
+    </div>
+
+    <div class="form-group">
+            <label>{{localize "levels3dpreview.dynamicSkyConfig.mieCoefficient.label"}}</label>
+            <div class="form-fields">
+                {{rangePicker name="flags.levels-3d-preview.dynamicSky.mieCoefficient" value=mieCoefficient min=0 max=0.1 step=0.001}}
+            </div>
+            <p class="notes">{{localize "levels3dpreview.dynamicSkyConfig.mieCoefficient.notes"}}</p>
+    </div>
+
+    <div class="form-group">
+            <label>{{localize "levels3dpreview.dynamicSkyConfig.mieDirectionalG.label"}}</label>
+            <div class="form-fields">
+                {{rangePicker name="flags.levels-3d-preview.dynamicSky.mieDirectionalG" value=mieDirectionalG min=0 max=1 step=0.001}}
+            </div>
+    </div>
+
+
+    <div class="form-group">
+            <label>{{localize "levels3dpreview.dynamicSkyConfig.starDensity.label"}}</label>
+            <div class="form-fields">
+                {{rangePicker name="flags.levels-3d-preview.dynamicSky.starDensity" value=starDensity min=0 max=2 step=0.1}}
+            </div>
+            <p class="notes">{{localize "levels3dpreview.dynamicSkyConfig.starDensity.notes"}}</p>
+    </div>
+
+    <div class="form-group">
+    
+        <label>{{localize "levels3dpreview.dynamicSkyConfig.color.label"}}</label>
+        <div class="form-fields">
+            {{colorPicker name="flags.levels-3d-preview.dynamicSky.color" value=color default="#ffffff"}}
+        </div>
+        <p class="notes">{{localize "levels3dpreview.dynamicSkyConfig.color.notes"}}</p>
+    
+    </div>
+
+    <div class="form-group">
+    
+        <label>{{localize "levels3dpreview.dynamicSkyConfig.enableClouds.label"}}</label>
+        <div class="form-fields">
+            <input type="checkbox" name="flags.levels-3d-preview.dynamicSky.enableClouds" {{checked enableClouds}}>
+        </div>
+
+    </div>
+
+    <div class="form-group">
+    
+        <label>{{localize "levels3dpreview.dynamicSkyConfig.cloudsSpeed.label"}}</label>
+        <div class="form-fields">
+            {{rangePicker name="flags.levels-3d-preview.dynamicSky.cloudsSpeed" value=cloudsSpeed min=0 max=10 step=0.1}}
+        </div>
+
+    </div>
+
+    <div class="form-group">
+    
+        <label>{{localize "levels3dpreview.dynamicSkyConfig.cloudsScale.label"}}</label>
+        <div class="form-fields">
+            {{rangePicker name="flags.levels-3d-preview.dynamicSky.cloudsScale" value=cloudsScale min=0.1 max=10 step=0.1}}
+        </div>
+
+    </div>
+
+    <div class="form-group">
+    
+        <label>{{localize "levels3dpreview.dynamicSkyConfig.cloudsAlpha.label"}}</label>
+        <div class="form-fields">
+            {{rangePicker name="flags.levels-3d-preview.dynamicSky.cloudsAlpha" value=cloudsAlpha min=0 max=1 step=0.1}}
+        </div>
+
+    </div>
+
+    <div class="form-group">
+    
+        <label>{{localize "levels3dpreview.dynamicSkyConfig.cloudsTint.label"}}</label>
+        <div class="form-fields">
+            {{colorPicker name="flags.levels-3d-preview.dynamicSky.cloudsTint" value=cloudsTint default="#ffffff"}}
+        </div>
+
+    </div>
+
+
+</form>

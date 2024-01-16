@@ -1905,6 +1905,7 @@ Hooks.on("updateScene", (scene, updates) => {
     if ("exposure" in flags) game.Levels3DPreview.setExposure();
     if ("renderBackground" in flags && !("img" in updates)) game.Levels3DPreview.createBoard();
     if ("renderTable" in flags || "tableTex" in flags || "tableColor" in flags) game.Levels3DPreview.createTable();
+    if ("dynamicSky" in flags) game.Levels3DPreview.lights.globalIllumination.updateDynamicSky();
 });
 
 Hooks.on("updateCombat", () => {

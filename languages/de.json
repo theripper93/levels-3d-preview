@@ -220,7 +220,16 @@
                     "stairs": "Stufen",
                     "vines": "Reben",
                     "paper": "Papierausschnitt",
-                    "plane": "Flugzeug"
+                    "plane": "Flugzeug",
+                    "counter": "Schalter",
+                    "counterradial": "Theke - Kuchen",
+                    "optgroup": {
+                        "advanced": "Fortschrittlich",
+                        "basic": "Basic",
+                        "complex": "Komplex",
+                        "interactive": "Interaktiv",
+                        "special": "Besonders"
+                    }
                 }
             },
             "dynaMeshResolution": {
@@ -928,6 +937,9 @@
             },
             "tableHeightmapScale": {
                 "label": "Höhenkartenskala"
+            },
+            "gmOnlyInteractive": {
+                "label": "Nur GM-Interaktion"
             }
         },
         "keybindings": {
@@ -2341,6 +2353,55 @@
         "notifications": {
             "initialviewcaptured": "Erste Ansichtsposition erfasst",
             "initialviewcleared": "Erste Ansichtsposition gelöscht"
+        },
+        "dynamicSkyConfig": {
+            "cloudsAlpha": {
+                "label": "Wolkenopazität"
+            },
+            "cloudsScale": {
+                "label": "Wolkenskala"
+            },
+            "cloudsSpeed": {
+                "label": "Wolkengeschwindigkeit"
+            },
+            "cloudsTint": {
+                "label": "Wolkenfarbe"
+            },
+            "color": {
+                "label": "Farbe",
+                "notes": "Die Farbe des Himmels."
+            },
+            "enableClouds": {
+                "label": "Clouds aktivieren"
+            },
+            "enabled": {
+                "label": "Ermöglicht"
+            },
+            "mieCoefficient": {
+                "label": "Mie-Koeffizient",
+                "notes": "Mie-Streuung ist die Streuung von Licht durch Partikel, die größer als die Wellenlänge des Lichts sind. \nEs ist für die roten und orangen Farben des Himmels bei Sonnenaufgang und Sonnenuntergang verantwortlich."
+            },
+            "mieDirectionalG": {
+                "label": "Mie Directional G"
+            },
+            "rayleigh": {
+                "label": "Rayleigh",
+                "notes": "Rayleigh-Streuung ist die Streuung von Licht durch Partikel, die viel kleiner als die Wellenlänge des Lichts sind. \nEs ist für die blaue Farbe des Himmels am Tag verantwortlich."
+            },
+            "sceneConfig": {
+                "button": "Öffnen Sie die Konfiguration",
+                "label": "Dynamische Himmelskonfiguration",
+                "notes": "Mit der dynamischen Himmelskonfiguration können Sie den Himmel und die Wolken der Szene konfigurieren."
+            },
+            "starDensity": {
+                "label": "Sternendichte",
+                "notes": "Die Anzahl der am Himmel sichtbaren Sterne."
+            },
+            "title": "Dynamische Himmelskonfiguration",
+            "turbidity": {
+                "label": "Trübung",
+                "notes": "Die Trübung ist das Maß für die Menge an Partikeln in der Luft. \nEine hohe Trübung führt zu einem dunstigeren Himmel."
+            }
         }
     }
 }
