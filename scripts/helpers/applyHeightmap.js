@@ -12,6 +12,7 @@ export async function applyHeightmap(geometry, src, offset=10, zeroRadius=0) {
     const minY = geometry.boundingBox.min.y;
 
     const img = new Image();
+    img.crossOrigin = "anonymous";
     img.src = src;
 
     const image = await new Promise((resolve, reject) => {

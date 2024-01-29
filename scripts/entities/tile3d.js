@@ -1928,7 +1928,8 @@ export class Tile3D {
     triggerMATT(e, type) {
         if (this.tile.document.checkClick) {
             const point = e?.position3D ? Ruler3D.pos3DToCanvas(e.position3D) : game.Levels3DPreview.interactionManager.canvas3dMousePosition;
-            this.tile.document.checkClick(point, type)
+            const t = this.tile.document.checkClick(point, type);
+            if(t) this.tile.document.trigger(t.args)
         };
     }
 

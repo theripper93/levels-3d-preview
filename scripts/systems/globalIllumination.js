@@ -27,7 +27,6 @@ export class GlobalIllumination {
     }
 
     updateDynamicSky() {
-        debugger;
         const dynamicSkyData = foundry.utils.mergeObject({...SKY_DEFAULTS}, canvas.scene.getFlag("levels-3d-preview", "dynamicSky") ?? {});
         if (dynamicSkyData.enabled) {
             this.initDynamicSky();

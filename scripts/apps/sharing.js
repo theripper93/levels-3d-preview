@@ -355,6 +355,13 @@ class MapBrowser extends Application {
             map.starred = stars.includes(game.user.id);
             map.notStarOwned = !map.starred && game.scenes.getName(map.name);
             map.stars = stars.length;
+            //parse urls into links
+            const tempDiv = document.createElement("div");
+            tempDiv.innerHTML = map.description;
+            const descriptionText = tempDiv.innerText;
+            map.description = descriptionText.replaceAll(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank">$1</a>');
+
+
             if(pastWinners.includes(map.author)) map.isWinner = true;
         });
         if (this.sortDownloads) mapList = mapList.sort((a, b) => b.downloads - a.downloads);
