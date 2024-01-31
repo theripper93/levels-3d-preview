@@ -12,6 +12,25 @@ THREE.Mesh.prototype.raycast = acceleratedRaycast;
 
 const DOOR_ANIMATION_EASING = "easeInOutCosine";
 
+class TileUpdateQueue {
+    constructor () {
+        this._queue = [];
+        this.processQueue = debounce(this.processQueue.bind(this), 100);
+    }
+
+    add(data) {
+        this._queue.push(data);
+        this.processQueue();
+    }
+
+    processQueue() {
+        canvas.scene.updateEmbeddedDocuments("Tile", this._queue);
+        this._queue = [];
+    }
+}
+
+const tileUpdateQueue = new TileUpdateQueue();
+
 export class Tile3D {
     constructor(tile, parent, fromUpdate = false, displacementCanvas = null) {
         this.tile = tile;
@@ -1749,9 +1768,8 @@ export class Tile3D {
         };
         this.processScale(update, tile);
         this.processRotation(update, tile);
-        updates.push(update);
-        const resp = await canvas.scene.updateEmbeddedDocuments("Tile", updates);
-        if (!resp?.length) this._parent.interactionManager.setControlledGroup();
+
+        tileUpdateQueue.add(update);
         return true;
     }
 
