@@ -556,7 +556,7 @@ export function registerConfigs() {
         });
         html.on("click", "#clear-3d-view", (e) => {
             e.preventDefault();
-            canvas.scene.update({"flags.levels-3d-preview.-=initialPosition": null}, {render: false});
+            canvas.scene.update({ "flags.levels-3d-preview.-=initialPosition": null }, { render: false });
             ui.notifications.notify(game.i18n.localize("levels3dpreview.notifications.initialviewcleared"));
         });
         html.on("click", "#capture-3d-view", (e) => {
@@ -585,7 +585,7 @@ export function registerConfigs() {
         </div>`);
         html.on("click", "button[data-key='sky-config']", (e) => {
             e.preventDefault();
-            new game.Levels3DPreview.lights.globalIllumination.DynamicSkyConfig(app.object).render(true)
+            new game.Levels3DPreview.lights.globalIllumination.DynamicSkyConfig(app.object).render(true);
         });
     });
 
@@ -695,8 +695,8 @@ export function registerConfigs() {
                         label: game.i18n.localize("levels3dpreview.flags.lightParticleEffect.ParticlePosition.label"),
                         default: "surface",
                         options: {
-                            "surface": game.i18n.localize("levels3dpreview.flags.lightParticleEffect.ParticlePosition.options.surface"),
-                            "center": game.i18n.localize("levels3dpreview.flags.lightParticleEffect.ParticlePosition.options.center"),
+                            surface: game.i18n.localize("levels3dpreview.flags.lightParticleEffect.ParticlePosition.options.surface"),
+                            center: game.i18n.localize("levels3dpreview.flags.lightParticleEffect.ParticlePosition.options.center"),
                         },
                     },
                     enableParticleHidden: {
@@ -933,7 +933,7 @@ export function registerConfigs() {
             sprite.closest(".form-group").toggle(!hideAll && showSprite.includes(event.target.value));
             if (!firstChange) {
                 const defaultValues = PS.getDefaultLightData(event.target.value);
-                if (defaultValues) {                    
+                if (defaultValues) {
                     const scaleInput = injected.find(`[name='flags.levels-3d-preview.ParticleScale']`);
                     const emitSizeInput = injected.find(`[name='flags.levels-3d-preview.ParticleEmitterSizeMultiplier']`);
                     scaleInput.val(defaultValues.scale);
@@ -1166,7 +1166,6 @@ export function registerConfigs() {
                     label: game.i18n.localize("levels3dpreview.flags.offset.z.label"),
                     default: 0,
                 },
-
             },
             "material-3d": {
                 tabLabel: game.i18n.localize("levels3dpreview.flags.material.header"),
@@ -1302,10 +1301,13 @@ export function registerConfigs() {
                     type: "select",
                     label: game.i18n.localize("WALLS.DoorSoundLabel"),
                     default: "",
-                    options: Object.entries(CONFIG.Wall.doorSounds).reduce((obj, [key, value]) => {
-                        obj[key] = game.i18n.localize(value.label);
-                        return obj;
-                    }, {"":""}),
+                    options: Object.entries(CONFIG.Wall.doorSounds).reduce(
+                        (obj, [key, value]) => {
+                            obj[key] = game.i18n.localize(value.label);
+                            return obj;
+                        },
+                        { "": "" },
+                    ),
                 },
                 doorState: {
                     type: "select",
@@ -1563,11 +1565,11 @@ export function registerConfigs() {
         html.find(`input[name="flags.levels-3d-preview.randomSeed"]`).prop("maxlength", 7);
         const tilingFlags = ["tileScale", "yScale", "gap", "randomRotation", "randomScale", "randomDepth", "randomPosition", "randomColor", "enableGravity"];
         const terrainFlags = ["noiseScale", "noiseHeight", "noisePersistence", "noiseOctaves", "noiseLacunarity", "noiseExponent", "noiseFlattening"];
-        const doorFlags = ["doorSound", "doorState", "doorStyle", "doorAnimationDuration", "doorAnimateAngle", "doorGrabTokens","doorSlidePercent"];
+        const doorFlags = ["doorSound", "doorState", "doorStyle", "doorAnimationDuration", "doorAnimateAngle", "doorGrabTokens", "doorSlidePercent"];
         const heightmapFlags = ["invertDisplacementMap", "displacementIntensity", "displacementMatrix"];
         const animationFlags = ["enableAnim", "animIndex", "animSpeed", "paused"];
-        if(!tile3d?.hasAnimations) animationFlags.forEach((flag) => html.find(`[name="flags.levels-3d-preview.${flag}"]`).closest(".form-group").hide());
-        
+        if (!tile3d?.hasAnimations) animationFlags.forEach((flag) => html.find(`[name="flags.levels-3d-preview.${flag}"]`).closest(".form-group").hide());
+
         hideParams(app, html, `select[name="flags.levels-3d-preview.fillType"]`, tilingFlags, "stretch");
         hideParams(app, html, `select[name="flags.levels-3d-preview.noiseType"]`, terrainFlags, "none");
         hideParams(app, html, `select[name="flags.levels-3d-preview.doorType"]`, doorFlags, "0");
@@ -1575,8 +1577,7 @@ export function registerConfigs() {
         hideParams(app, html, `select[name="flags.levels-3d-preview.dynaMesh"]`, ["font"], "text", true);
         hideParams(app, html, `input[name="flags.levels-3d-preview.displacementMap"]`, heightmapFlags, "");
         hideParams(app, html, `select[name="flags.levels-3d-preview.dynaMesh"]`, ["gmOnlyInteractive"], ["counter", "counterradial"], true);
-        
-        
+
         ShaderConfig.injectButton(app, html, html.find(`#shader-config`));
 
         const mapGenBtn = $(`<button type="button" title="Configure Map Generator">
@@ -2005,7 +2006,6 @@ export function registerConfigs() {
                 $("#clip-navigation-lock").toggleClass("clip-navigation-enabled", game.Levels3DPreview.GameCamera.lock);
             },
         });
-        //toggleFirstPerson
         game.keybindings.register("levels-3d-preview", "gameCameraTopDown", {
             name: game.i18n.localize("levels3dpreview.keybindings.gameCameraTopDown"),
             editable: [{ key: "KeyO" }],
@@ -2016,6 +2016,19 @@ export function registerConfigs() {
                 } else {
                     game.Levels3DPreview.resetCamera(true);
                 }
+            },
+        });
+
+        game.keybindings.register("levels-3d-preview", "toggleCameraLockPosition", {
+            name: game.i18n.localize("levels3dpreview.keybindings.toggleCameraLockPosition"),
+            editable: [{ key: "KeyH" }],
+            onDown: () => {
+                if (!game.Levels3DPreview._active || !game.Levels3DPreview.hasFocus) return;
+                game.Levels3DPreview._toggleCameraLockPosition = game.Levels3DPreview.camera.position.clone();
+            },
+            onUp: () => {
+                game.Levels3DPreview._toggleCameraLockPosition = null;
+                game.Levels3DPreview.GameCamera.onChangeFreeCamera();
             },
         });
 

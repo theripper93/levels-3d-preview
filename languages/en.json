@@ -195,6 +195,7 @@
             "gameCameraTopDown": "Toggle Top-Down Camera (Game Camera Only)",
             "removeWaypoint": "Remove Ruler Waypoint",
             "toggleFirstPerson": "Toggle First-Person Camera",
+            "toggleCameraLockPosition": "Lock Camera in-place (Hold)",
             "rotate": "Tile Editor: Rotate",
             "translate": "Tile Editor: Translate",
             "toggleGizmo": "Tile Editor: Toggle Gizmo",

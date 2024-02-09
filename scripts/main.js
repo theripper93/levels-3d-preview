@@ -1361,6 +1361,9 @@ class Levels3DPreview {
                     }
                 }
             }
+            if (this._toggleCameraLockPosition) {
+                this.camera.position.copy(this._toggleCameraLockPosition);
+            }
             this.recoverCamera();
             //this.fogExploration?.update();
             const visibilityCache = {};
