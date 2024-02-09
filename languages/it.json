@@ -972,7 +972,8 @@
             "toggleSelect": "Selezione di gruppo (tieni premuto durante il trascinamento)",
             "topdownView": "Vista telecamera dall'alto",
             "translate": "Editor di tessere: Traduci",
-            "removeWaypoint": "Rimuovi waypoint righello"
+            "removeWaypoint": "Rimuovi waypoint righello",
+            "toggleCameraLockPosition": "Blocca la fotocamera sul posto (Tieni premuto)"
         },
         "macrodialog": {
             "cancel": "Annulla",

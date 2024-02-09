@@ -972,7 +972,8 @@
             "toggleSelect": "Sélection de groupe (maintenir tout en faisant glisser)",
             "topdownView": "Vue de caméra descendante",
             "translate": "Éditeur de tuiles : Traduire",
-            "removeWaypoint": "Supprimer le waypoint de la règle"
+            "removeWaypoint": "Supprimer le waypoint de la règle",
+            "toggleCameraLockPosition": "Verrouiller la caméra sur place (Maintenir)"
         },
         "macrodialog": {
             "cancel": "Annuler",

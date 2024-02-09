@@ -976,7 +976,8 @@
             "toggleMode": "Editor de Blocos: Estilo de Preenchimento de Ciclo",
             "toggleSelect": "Seleção de grupo (mantenha pressionado enquanto arrasta)",
             "topdownView": "Visão de cima para baixo da câmera",
-            "translate": "Editor de Blocos: Traduzir"
+            "translate": "Editor de Blocos: Traduzir",
+            "toggleCameraLockPosition": "Bloquear a câmera no lugar (manter pressionado)"
         },
         "macrodialog": {
             "cancel": "Cancelar",

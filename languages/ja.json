@@ -92,7 +92,8 @@
             "toggleMode": "タイル エディター: サイクル フィル スタイル",
             "toggleSelect": "グループの選択 (長押ししてドラッグ)",
             "translate": "タイル エディター: 移動",
-            "removeWaypoint": "定規のウェイポイントを削除"
+            "removeWaypoint": "定規のウェイポイントを削除",
+            "toggleCameraLockPosition": "カメラを所定の位置にロック (長押し)"
         },
         "flags": {
             "isFog": {

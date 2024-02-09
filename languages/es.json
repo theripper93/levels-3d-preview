@@ -972,7 +972,8 @@
             "toggleSelect": "Selección de grupo (mantener presionado mientras arrastra)",
             "topdownView": "Vista de cámara de arriba hacia abajo",
             "translate": "Editor de mosaicos: Traducir",
-            "removeWaypoint": "Quitar punto de referencia de la regla"
+            "removeWaypoint": "Quitar punto de referencia de la regla",
+            "toggleCameraLockPosition": "Bloquear la cámara en el lugar (sostener)"
         },
         "macrodialog": {
             "cancel": "Cancelar",

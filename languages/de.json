@@ -972,7 +972,8 @@
             "toggleSelect": "Gruppenauswahl (beim Ziehen gedrückt halten)",
             "topdownView": "Top-Down-Kameraansicht",
             "translate": "Kacheleditor: Übersetzen",
-            "removeWaypoint": "Lineal-Wegpunkt entfernen"
+            "removeWaypoint": "Lineal-Wegpunkt entfernen",
+            "toggleCameraLockPosition": "Kamera fixieren (Halten)"
         },
         "macrodialog": {
             "cancel": "Absagen",
