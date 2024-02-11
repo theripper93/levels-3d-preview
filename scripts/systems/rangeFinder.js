@@ -135,5 +135,13 @@ export class RangeFinder {
                 });
             }
         });
+        Hooks.on("controlToken", (token, controlled) => {
+            if (!game.Levels3DPreview._active) return;
+            game.Levels3DPreview.rangeFinders.forEach((rf) => {
+                if (rf.tokenId === token.id) {
+                    rf.destroy();
+                }
+            });
+        });
     }
 }
