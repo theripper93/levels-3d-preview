@@ -7,6 +7,7 @@ export function warpgateWrappers() {
             game.Levels3DPreview?._active && game.Levels3DPreview.CONFIG.entityClass.Template3D.drawPreview(this, false).then((response) => {
                 this.cancelled = !response;
                 if (response) this.document.updateSource({...response});
+                if(this.template?.destroyed) this.template = new PIXI.Graphics();
                 this.clearHandlers();
             });
         },

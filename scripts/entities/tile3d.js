@@ -13,7 +13,7 @@ THREE.Mesh.prototype.raycast = acceleratedRaycast;
 const DOOR_ANIMATION_EASING = "easeInOutCosine";
 
 class TileUpdateQueue {
-    constructor () {
+    constructor() {
         this._queue = [];
         this.processQueue = debounce(this.processQueue.bind(this), 100);
     }
@@ -69,45 +69,48 @@ export class Tile3D {
     async load() {
         try {
             await this.preloadShaderTextures();
-        if (this.gtflPath || this.dynaMesh != "default") {
-            if (this.mergedMatrix) await this.initMerged();
-            else this.fillType === "stretch" || this.fillType === "fit" ? await this.initModel() : await this.initInstanced();
-        } else {
-            await this.init();
-        }
-            if (this._destroyed) return;
-        
-        this.computeWorldBoundingBox();
-        this.setTransmissionIor();
-        this.setRepeat();
-        this.initShaders();
-        this.setShading();
-        this.setSides();
-        this.setMRT();
-        this.setVertexColors();
-        this.setPathTraced()
-        this._loaded = true;
-        this.elevation3d = this.mesh.position.y;
-        this.setHidden();
-        this.sendToWorker();
-        this.updateControls();
-        setTimeout(() => {
+            if (this.gtflPath || this.dynaMesh != "default") {
+                if (this.mergedMatrix) await this.initMerged();
+                else this.fillType === "stretch" || this.fillType === "fit" ? await this.initModel() : await this.initInstanced();
+            } else {
+                await this.init();
+            }
+            if (this._destroyed) {
+                this.mesh?.removeFromParent();
+                return;
+            }
+
+            this.computeWorldBoundingBox();
+            this.setTransmissionIor();
+            this.setRepeat();
+            this.initShaders();
+            this.setShading();
+            this.setSides();
+            this.setMRT();
+            this.setVertexColors();
+            this.setPathTraced();
+            this._loaded = true;
+            this.elevation3d = this.mesh.position.y;
+            this.setHidden();
+            this.sendToWorker();
             this.updateControls();
-        }, 150);
-        if (this.tile.controlled) this._parent.interactionManager.setControlledGroup(this);
-        this.popIn();
-        setTimeout(() => {
-            this.setUpDoors();
-            this.setupDoor(true);
-        }, 100);
-        game.Levels3DPreview.outline?.toggleControlled(this.mesh, this.tile.controlled);
-        if (this.particleData.type != "none") this.initParticle();
-        if(this.onAnimation && this.mesh.children[0]) this.onAnimation = this.onAnimation.bind(this.mesh.children[0])
-        return this;
+            setTimeout(() => {
+                this.updateControls();
+            }, 150);
+            if (this.tile.controlled) this._parent.interactionManager.setControlledGroup(this);
+            this.popIn();
+            setTimeout(() => {
+                this.setUpDoors();
+                this.setupDoor(true);
+            }, 100);
+            game.Levels3DPreview.outline?.toggleControlled(this.mesh, this.tile.controlled);
+            if (this.particleData.type != "none") this.initParticle();
+            if (this.onAnimation && this.mesh.children[0]) this.onAnimation = this.onAnimation.bind(this.mesh.children[0]);
+            return this;
         } catch (e) {
             const errText = `Failed to load 3D Tile ${this.document.id}. You can manually delete this tile with the console command 'canvas.tiles.get("${this.document.id}").document.delete()'`;
             ui.notifications.error(errText);
-            console.error(errText, e)
+            console.error(errText, e);
             this._loaded = true;
             return this;
         }
@@ -324,12 +327,12 @@ export class Tile3D {
         this.shader = this.tile.document.getFlag("levels-3d-preview", "shader") ?? "none";
         this.flipY = this.tile.document.getFlag("levels-3d-preview", "flipY") ?? false;
         this.shaders = this.tile.document.getFlag("levels-3d-preview", "shaders") ?? {};
-        
-        if(this.shaders?.clipping?.enabled && this.shaders.clipping.useCameraAdvanced) this._useCameraAdvanced = true;
-        
+
+        if (this.shaders?.clipping?.enabled && this.shaders.clipping.useCameraAdvanced) this._useCameraAdvanced = true;
+
         this.dynaMesh = this.tile.document.getFlag("levels-3d-preview", "dynaMesh") ?? "default";
         this.isInteractiveDynaMesh = !!interactiveDynamesh[this.dynaMesh];
-        if(this.tile.document.getFlag("levels-3d-preview", "gmOnlyInteractive") && !game.user.isGM) this.isInteractiveDynaMesh = false;
+        if (this.tile.document.getFlag("levels-3d-preview", "gmOnlyInteractive") && !game.user.isGM) this.isInteractiveDynaMesh = false;
         if (this.dynaMesh === "decal") this.isGravity = true;
         this.font = this.tile.document.getFlag("levels-3d-preview", "font") ?? "";
         this.dynaMeshResolution = this.tile.document.getFlag("levels-3d-preview", "dynaMeshResolution") ?? 1;
@@ -356,7 +359,7 @@ export class Tile3D {
         this.invertDisplacementMap = this.tile.document.getFlag("levels-3d-preview", "invertDisplacementMap") ?? false;
         this.displacementIntensity = this.tile.document.getFlag("levels-3d-preview", "displacementIntensity") ?? 1;
         this.displacementMatrix = this.tile.document.getFlag("levels-3d-preview", "displacementMatrix") ?? "0,0,1,1";
-        if(this.displacementCanvas) this.displacementMatrix = "0,0,1,1";
+        if (this.displacementCanvas) this.displacementMatrix = "0,0,1,1";
         this.fillType = this.tile.document.getFlag("levels-3d-preview", "fillType") ?? "stretch";
         this.scale = this.tile.document.getFlag("levels-3d-preview", "tileScale") ?? 1;
         this.yScale = this.tile.document.getFlag("levels-3d-preview", "yScale") ?? 1;
@@ -394,7 +397,7 @@ export class Tile3D {
         this.mergedMatrix = this.tile.document.getFlag("levels-3d-preview", "mergedMatrix") ?? null;
         this.originalDimensions = this.tile.document.getFlag("levels-3d-preview", "originalDimensions") ?? null;
         this.highlightOnHover = this.tile.document.getFlag("levels-3d-preview", "highlightOnHover") ?? false;
-        if(this.isInteractiveDynaMesh) this.highlightOnHover = true;
+        if (this.isInteractiveDynaMesh) this.highlightOnHover = true;
         const enableAnimationScripts = canvas.scene.getFlag("levels-3d-preview", "enableAnimationScripts") ?? true;
         this.onAnimation = enableAnimationScripts ? this.tile.document.getFlag("levels-3d-preview", "onAnimation") ?? "" : "";
         this.isDoor = this.doorType != 0;
@@ -485,7 +488,7 @@ export class Tile3D {
                     break;
                 case 2:
                     const slideAngle = this.doorAnimateAngle;
-                    const amount = (Math.max(this.tile.document.height, this.tile.document.width) / factor)*(this.doorSlidePercent/100);
+                    const amount = (Math.max(this.tile.document.height, this.tile.document.width) / factor) * (this.doorSlidePercent / 100);
                     const xComponent = Math.cos(slideAngle) * amount;
                     const zComponent = Math.sin(slideAngle) * amount;
                     const animation2 = [
@@ -505,11 +508,11 @@ export class Tile3D {
                         sightMesh2.position.x = this.isOpen ? this.originalPosition.x + xComponent : this.originalPosition.x;
                         sightMesh2.position.z = this.isOpen ? this.originalPosition.z + zComponent : this.originalPosition.z;
                     }
-                    const p2 = CanvasAnimation.animate(animation2, { duration: this.doorAnimationDuration, easing: DOOR_ANIMATION_EASING});
+                    const p2 = CanvasAnimation.animate(animation2, { duration: this.doorAnimationDuration, easing: DOOR_ANIMATION_EASING });
                     promises.push(p2);
                     break;
                 case 3:
-                    const amount2 = (this.depth)*(this.doorSlidePercent/100);
+                    const amount2 = this.depth * (this.doorSlidePercent / 100);
                     const yComponent = amount2;
                     const animation3 = [
                         {
@@ -522,7 +525,7 @@ export class Tile3D {
                     if (sightMesh3) {
                         sightMesh3.position.y = this.isOpen ? this.originalPosition.y + yComponent : this.originalPosition.y;
                     }
-                    const p3 = CanvasAnimation.animate(animation3, { duration: this.doorAnimationDuration, easing: DOOR_ANIMATION_EASING});
+                    const p3 = CanvasAnimation.animate(animation3, { duration: this.doorAnimationDuration, easing: DOOR_ANIMATION_EASING });
                     promises.push(p3);
                     break;
             }
@@ -584,10 +587,11 @@ export class Tile3D {
             });
         }
         const tokens = firstRender ? [] : this.getGrabTokens();
-        if (!firstRender) tokens.forEach((t) => {
-            t.isCaptured = true;
-            this.mesh.children[0].attach(t.mesh)
-        });
+        if (!firstRender)
+            tokens.forEach((t) => {
+                t.isCaptured = true;
+                this.mesh.children[0].attach(t.mesh);
+            });
 
         const sightMesh = this.sightMesh;
 
@@ -631,7 +635,7 @@ export class Tile3D {
                 break;
             case 2:
                 const slideAngle = this.doorAnimateAngle;
-                const amount = (Math.max(this.tile.document.height, this.tile.document.width) / factor)*(this.doorSlidePercent/100);
+                const amount = (Math.max(this.tile.document.height, this.tile.document.width) / factor) * (this.doorSlidePercent / 100);
                 const xComponent = Math.cos(slideAngle) * amount;
                 const zComponent = Math.sin(slideAngle) * amount;
                 const animation2 = [
@@ -646,7 +650,7 @@ export class Tile3D {
                         to: this.isOpen ? this.originalPosition.z + zComponent : this.originalPosition.z,
                     },
                 ];
-                if (!firstRender) promise = CanvasAnimation.animate(animation2, { duration: this.doorAnimationDuration, easing: DOOR_ANIMATION_EASING});
+                if (!firstRender) promise = CanvasAnimation.animate(animation2, { duration: this.doorAnimationDuration, easing: DOOR_ANIMATION_EASING });
                 else {
                     this.mesh.children[0].position.x = this.isOpen ? this.originalPosition.x + xComponent : this.originalPosition.x;
                     this.mesh.children[0].position.z = this.isOpen ? this.originalPosition.z + zComponent : this.originalPosition.z;
@@ -657,7 +661,7 @@ export class Tile3D {
                 }
                 break;
             case 3:
-                const amount2 = (this.depth)*(this.doorSlidePercent/100);
+                const amount2 = this.depth * (this.doorSlidePercent / 100);
                 const yComponent = amount2;
                 const animation3 = [
                     {
@@ -666,7 +670,7 @@ export class Tile3D {
                         to: this.isOpen ? this.originalPosition.y + yComponent : this.originalPosition.y,
                     },
                 ];
-                if (!firstRender) promise = CanvasAnimation.animate(animation3, { duration: this.doorAnimationDuration, easing: DOOR_ANIMATION_EASING});
+                if (!firstRender) promise = CanvasAnimation.animate(animation3, { duration: this.doorAnimationDuration, easing: DOOR_ANIMATION_EASING });
                 else {
                     this.mesh.children[0].position.y = this.isOpen ? this.originalPosition.y + yComponent : this.originalPosition.y;
                 }
@@ -677,7 +681,7 @@ export class Tile3D {
         }
         const finalizeDoor = () => {
             tokens.forEach((t) => {
-                this._parent.scene.attach(t.mesh)
+                this._parent.scene.attach(t.mesh);
                 t.forceUpdatePositionFrom3D().then(() => {
                     t.isCaptured = false;
                 });
@@ -736,12 +740,12 @@ export class Tile3D {
 
     getGrabTokens() {
         const toGrab = [];
-        if(!this.doorGrabTokens) return toGrab;
+        if (!this.doorGrabTokens) return toGrab;
         const tileHitbox = this.getGrabHitbox();
         const tokens = Object.values(this._parent.tokens);
         for (const token of tokens) {
             const tokenHitbox = token.getWorldBoundingBox();
-            if(tileHitbox.intersectsBox(tokenHitbox)) toGrab.push(token);
+            if (tileHitbox.intersectsBox(tokenHitbox)) toGrab.push(token);
         }
         return toGrab;
     }
@@ -1355,7 +1359,7 @@ export class Tile3D {
                 }
             }
             const dynamesh = new DynaMesh(this.dynaMesh, { font: this.font, image: this.imageTexture, text: this.gtflPath, width: this.width, height: this.height, depth: this.depth, resolution: this.dynaMeshResolution, decalData });
-            if(this.dynaMesh =="paper") this.pathTraced = true;
+            if (this.dynaMesh == "paper") this.pathTraced = true;
             const mesh = await dynamesh.create();
             return {
                 scene: mesh,
@@ -1473,15 +1477,15 @@ export class Tile3D {
 
     computeWorldBoundingBox() {
         const boundingBox = this.controlledBox?.geometry?.boundingBox;
-        if(!boundingBox) return this._worldBoundingBox = new THREE.Box3();
+        if (!boundingBox) return (this._worldBoundingBox = new THREE.Box3());
         const worldBoundingBox = new THREE.BoxGeometry(boundingBox.max.x - boundingBox.min.x, boundingBox.max.y - boundingBox.min.y, boundingBox.max.z - boundingBox.min.z);
         const hasParent = this.controlledBox.parent;
-        this.mesh.add(this.controlledBox)
+        this.mesh.add(this.controlledBox);
         this.controlledBox.updateMatrixWorld();
         worldBoundingBox.applyMatrix4(this.controlledBox.matrixWorld);
         worldBoundingBox.computeBoundingBox();
         this._worldBoundingBox = worldBoundingBox.boundingBox;
-        if(!hasParent) this.mesh.remove(this.controlledBox)
+        if (!hasParent) this.mesh.remove(this.controlledBox);
     }
 
     setTransmissionIor() {
@@ -1565,7 +1569,7 @@ export class Tile3D {
                     child.material.opacity = this.transparency;
                     child.material.alphaTest = 0.01;
                 }
-                if(this.alphaClip >= 0){
+                if (this.alphaClip >= 0) {
                     child.material.alphaTest = this.alphaClip;
                 }
             }
@@ -1578,7 +1582,7 @@ export class Tile3D {
             this.mesh.traverse((child) => {
                 if (child.isMesh && !(child.material instanceof Array)) {
                     child.material.onBeforeCompile = (shader) => {
-                        shader.fragmentShader = shader.fragmentShader.replace("#include <map_fragment>", customBlendMap)
+                        shader.fragmentShader = shader.fragmentShader.replace("#include <map_fragment>", customBlendMap);
                     };
                 }
             });
@@ -1800,7 +1804,6 @@ export class Tile3D {
                 const minZ = c.geometry.boundingBox.min.z;
                 const minY = c.geometry.boundingBox.min.y;
                 for (let i = 0; i < count; i++) {
-
                     /*const normal = new THREE.Vector3(normals.getX(i), normals.getY(i), normals.getZ(i));
                     const d = 1 - this.getPixel(this.displacementMap, uvAttributes.getX(i), uvAttributes.getY(i)).r / 255;
                     const position = new THREE.Vector3(positionAttributes.getX(i), positionAttributes.getY(i), positionAttributes.getZ(i));
@@ -1810,7 +1813,6 @@ export class Tile3D {
                     positionAttributes.setY(i, position.y);
                     positionAttributes.setZ(i, position.z);
                     continue;*/
-
 
                     const x = positionAttributes.getX(i);
                     const z = positionAttributes.getZ(i);
@@ -1862,7 +1864,7 @@ export class Tile3D {
     getDisplacementData(image) {
         if (!image) return false;
         if (game.Levels3DPreview._heightmapCache[image?.src]) return game.Levels3DPreview._heightmapCache[image.src];
-        if(image == this.displacementCanvas) return this.displacementCanvas.getContext("2d").getImageData(0, 0, this.displacementCanvas.width, this.displacementCanvas.height);
+        if (image == this.displacementCanvas) return this.displacementCanvas.getContext("2d").getImageData(0, 0, this.displacementCanvas.width, this.displacementCanvas.height);
         var canvas = document.createElement("canvas");
         canvas.width = image.width;
         canvas.height = image.height;
@@ -1947,16 +1949,16 @@ export class Tile3D {
         if (this.tile.document.checkClick) {
             const point = e?.position3D ? Ruler3D.pos3DToCanvas(e.position3D) : game.Levels3DPreview.interactionManager.canvas3dMousePosition;
             const t = this.tile.document.checkClick(point, type);
-            if(t) this.tile.document.trigger(t.args)
-        };
+            if (t) this.tile.document.trigger(t.args);
+        }
     }
 
     callInteractiveSocket(eventId) {
-        if(!this.isInteractiveDynaMesh) return;
-        const isFn = interactiveDynamesh[this.dynaMesh][eventId]
-        if(!isFn) return;
+        if (!this.isInteractiveDynaMesh) return;
+        const isFn = interactiveDynamesh[this.dynaMesh][eventId];
+        if (!isFn) return;
         const firstGm = game.users.find((u) => u.isGM && u.active);
-        if(!firstGm) return ui.notifications.error(game.i18n.localize("levels3dpreview.errors.nogm"));
+        if (!firstGm) return ui.notifications.error(game.i18n.localize("levels3dpreview.errors.nogm"));
         this._parent.socket.executeForUsers("executeInteractiveDynamesh", [firstGm.id], this.document.uuid, eventId);
     }
 
@@ -1966,26 +1968,25 @@ export class Tile3D {
             if (this.isToFar(e.originalIntersect)) ui.notifications.error(game.i18n.localize("levels3dpreview.errors.toofarfromdoor"));
             else this._parent.socket.executeAsGM("toggleDoor", this.tile.id, canvas.scene.id, game.user.id, oT.doorId);
         }
-        
+
         if (canvas.activeLayer.options.objectClass.embeddedName === "Token" && this.isDoor && !(this.isSecret && !game.user.isGM)) {
             if (this.isToFar()) ui.notifications.error(game.i18n.localize("levels3dpreview.errors.toofarfromdoor"));
             else this._parent.socket.executeAsGM("toggleDoor", this.tile.id, canvas.scene.id, game.user.id);
         }
         if (canvas.activeLayer.options.objectClass.embeddedName !== "Tile") {
-            this.callInteractiveSocket("clickLeft")
-            this.triggerMATT(e, "click")
+            this.callInteractiveSocket("clickLeft");
+            this.triggerMATT(e, "click");
         } else {
             this.tile._onClickLeft(e);
         }
     }
 
-    _setDoorState() { }
-
+    _setDoorState() {}
 
     _onClickLeft2(e) {
         if (canvas.activeLayer.options.objectClass.embeddedName !== "Tile") {
-            this.callInteractiveSocket("clickLeft2")
-            this.triggerMATT(e, "dblclick")
+            this.callInteractiveSocket("clickLeft2");
+            this.triggerMATT(e, "dblclick");
         } else {
             this.tile._onClickLeft(e);
             this.tile._onClickLeft2(e);
@@ -1999,7 +2000,7 @@ export class Tile3D {
                 const subDoorId = oT.doorId;
                 const ds = this.tile.document.getFlag("levels-3d-preview", `modelDoors.${subDoorId}`)?.ds ?? 0;
                 const isLocked = ds == 2;
-                
+
                 if (isLocked) this.tile.document.setFlag("levels-3d-preview", `modelDoors.${subDoorId}.ds`, 0);
                 else this.tile.document.setFlag("levels-3d-preview", `modelDoors.${subDoorId}.ds`, 2);
             }
@@ -2009,8 +2010,8 @@ export class Tile3D {
             }
         }
         if (canvas.activeLayer.options.objectClass.embeddedName !== "Tile") {
-            this.callInteractiveSocket("clickRight")
-            this.triggerMATT(e, "rightclick")
+            this.callInteractiveSocket("clickRight");
+            this.triggerMATT(e, "rightclick");
             return;
         }
         const event = e;
@@ -2019,8 +2020,8 @@ export class Tile3D {
 
     _onClickRight2(e) {
         if (canvas.activeLayer.options.objectClass.embeddedName !== "Tile") {
-            this.callInteractiveSocket("clickRight2")
-            this.triggerMATT(e, "dblrightclick")
+            this.callInteractiveSocket("clickRight2");
+            this.triggerMATT(e, "dblrightclick");
             return;
         }
         const event = e;
@@ -2035,10 +2036,10 @@ export class Tile3D {
         if (!isGM && isHoverable && !this.isSecret) return true;
         return false;
     }
-//hoverin
+    //hoverin
     _onHoverIn(e) {
         if (canvas.activeLayer.options.objectClass.embeddedName !== "Tile") {
-            this.triggerMATT(e, "hoverin")
+            this.triggerMATT(e, "hoverin");
             if (this.isDoorHover) {
                 game.Levels3DPreview.outline.toggleHovered(this.mesh, true, 1);
                 this._parent.setCursor("pointer");
@@ -2052,7 +2053,7 @@ export class Tile3D {
 
     _onHoverOut(e) {
         if (canvas.activeLayer.options.objectClass.embeddedName !== "Tile") {
-            this.triggerMATT(e, "hoverout")
+            this.triggerMATT(e, "hoverout");
             if (this.isDoorHover) {
                 game.Levels3DPreview.outline.toggleHovered(this.mesh, false, 1);
             }
@@ -2944,32 +2945,32 @@ export async function attachTileToToken(tile, token) {
 }
 
 const interactiveDynamesh = {
-    "counter": {
-        clickLeft: function() {
-            const val = parseInt(this.gtflPath)
-            if (!Number.isNumeric(val)) return this.document.setFlag("levels-3d-preview", "model3d", 0)
-            const newValString = (val + 1).toString()
-            this.document.setFlag("levels-3d-preview", "model3d", newValString)
-        },
-        clickRight: function() {
-            const val = parseInt(this.gtflPath)
-            if (!Number.isNumeric(val)) return this.document.setFlag("levels-3d-preview", "model3d", 0)
-            const newValString = (val - 1).toString()
-            this.document.setFlag("levels-3d-preview", "model3d", newValString)
-        },
-    },
-    "counterradial": {
-        clickLeft: function() {
-            const [max, value] = this.gtflPath.split("|")
-            const maxVal = parseInt(max || 6)
-            const val = Math.min(parseInt(value ?? maxVal) + 1, maxVal)
-            this.document.setFlag("levels-3d-preview", "model3d", `${maxVal}|${val}`)
+    counter: {
+        clickLeft: function () {
+            const val = parseInt(this.gtflPath);
+            if (!Number.isNumeric(val)) return this.document.setFlag("levels-3d-preview", "model3d", 0);
+            const newValString = (val + 1).toString();
+            this.document.setFlag("levels-3d-preview", "model3d", newValString);
         },
         clickRight: function () {
-            const [max, value] = this.gtflPath.split("|")
-            const maxVal = parseInt(max || 6)
-            const val = Math.max(parseInt(value ?? maxVal) - 1, 0)
-            this.document.setFlag("levels-3d-preview", "model3d", `${maxVal}|${val}`)
+            const val = parseInt(this.gtflPath);
+            if (!Number.isNumeric(val)) return this.document.setFlag("levels-3d-preview", "model3d", 0);
+            const newValString = (val - 1).toString();
+            this.document.setFlag("levels-3d-preview", "model3d", newValString);
         },
     },
-}
+    counterradial: {
+        clickLeft: function () {
+            const [max, value] = this.gtflPath.split("|");
+            const maxVal = parseInt(max || 6);
+            const val = Math.min(parseInt(value ?? maxVal) + 1, maxVal);
+            this.document.setFlag("levels-3d-preview", "model3d", `${maxVal}|${val}`);
+        },
+        clickRight: function () {
+            const [max, value] = this.gtflPath.split("|");
+            const maxVal = parseInt(max || 6);
+            const val = Math.max(parseInt(value ?? maxVal) - 1, 0);
+            this.document.setFlag("levels-3d-preview", "model3d", `${maxVal}|${val}`);
+        },
+    },
+};

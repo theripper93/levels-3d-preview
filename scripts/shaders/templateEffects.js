@@ -121,11 +121,6 @@ export function isLockedOnOrigin(item) {
 }
 
 function playVFX(template,damageType) {
-    if (game.user.isGM) {
-        setTimeout(() => {   
-            canvas.scene.deleteEmbeddedDocuments("MeasuredTemplate", [template.id]);
-        }, 100);
-    }
 
     const shape = template.t;
     const effect = new Particle3D(vfxTypes[damageType], false);
