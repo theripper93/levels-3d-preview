@@ -10,7 +10,7 @@ export function initSharing(canvas3d) {
     };
 }
 
- export function setSharingHooks(){
+export function setSharingHooks() {
     Hooks.on("renderSidebarTab", (app, html) => {
         if (!game.user.isGM || !(app instanceof SceneDirectory)) return;
         const buttonContainer = html[0].querySelector(".header-actions.action-buttons");
@@ -22,7 +22,7 @@ export function initSharing(canvas3d) {
         buttonContainer.appendChild(button);
     });
 
-     Hooks.on("getSceneDirectoryEntryContext", (directory, buttons) => {
+    Hooks.on("getSceneDirectoryEntryContext", (directory, buttons) => {
         buttons.push({
             name: "levels3dpreview.sharing.contextbutton",
             icon: '<i class="fa-solid fa-cube"></i>',
@@ -84,11 +84,11 @@ async function shareMap({ image, author, description, scene, name, assetpacks, s
             },
             body,
         });
-        console.log(body)
+        console.log(body);
         let rJson;
         try {
             rJson = await res.json();
-        } catch (e) { 
+        } catch (e) {
             rJson = { status: "Updated" };
         }
         return rJson;
@@ -97,7 +97,7 @@ async function shareMap({ image, author, description, scene, name, assetpacks, s
     }
 }
 
-async function getMap(id){
+async function getMap(id) {
     try {
         const res = await fetch("https://theripper93.com/api/mapsharing", {
             method: "GET",
@@ -146,7 +146,6 @@ async function starMap(id) {
 }
 
 async function increaseDownloadCount(id) {
-
     const alreadyDownloaded = game.settings.get("levels-3d-preview", "mapsharingDownloaded").includes(id);
     if (alreadyDownloaded) return;
 
@@ -172,7 +171,6 @@ class ShareMap extends FormApplication {
         super();
         this.scene = scene ?? canvas.scene;
     }
-
 
     static get defaultOptions() {
         return mergeObject(super.defaultOptions, {
@@ -265,40 +263,41 @@ class MapBrowser extends Application {
         this.sortNewest = true;
         this.sortPopular = false;
         this.sortDownloads = false;
-
     }
 
-    
     static get contest() {
-        const startTimestamp = null;
-        const endTimestamp = null;
+        const startTimestamp = 1715731200000;
+        const endTimestamp = 1719788400000;
 
         const rulesUrl = "";
 
-
         const format = {
-            weekday: 'long',
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-          };
+            weekday: "long",
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+        };
         const timeToNext = endTimestamp - Date.now();
         const timeToStart = startTimestamp - Date.now();
         return {
             startTimestamp,
             endTimestamp,
             active: Date.now() >= startTimestamp && Date.now() <= endTimestamp,
+            isNext: !!endTimestamp,
             isNextSoon: timeToNext <= 86400000, //1 day
             endDateTime: new Date(endTimestamp).toLocaleString(undefined, format),
             startDateTime: new Date(startTimestamp).toLocaleString(undefined, format),
             timeToNext,
             timeToStart,
             rulesUrl,
-            pastWinners: ["Violet", "Digi_DM", "Skrautholomew", "Smothmoth"]
-        }
+            pastWinners: ["Violet", "Digi_DM", "Skrautholomew", "Smothmoth"],
+        };
     }
 
     static get defaultOptions() {
+        const active = this.contest.active;
+        const isNext = !active && this.contest.isNext;
+        const cssClass = active ? "contest-active" : isNext ? "contest-next" : "";
         return mergeObject(super.defaultOptions, {
             title: game.i18n.localize("levels3dpreview.sharing.mapbrowser.title"),
             id: `tdc-map-browser`,
@@ -311,7 +310,7 @@ class MapBrowser extends Application {
             resizable: true,
             tabs: [{ navSelector: ".tabs", contentSelector: ".content" }],
             filepickers: [],
-            classes: this.contest.active ? ["contest-active"] : [],
+            classes: [cssClass],
         });
     }
 
@@ -326,7 +325,7 @@ class MapBrowser extends Application {
             return ` | Contest Ends: ${contest.endDateTime}`;
         } else {
             if (!contest.startTimestamp) return "";
-            return ` | Next Contest Starts: ${contest.startDateTime}`
+            return ` | Next Contest Starts: ${contest.startDateTime}`;
         }
     }
 
@@ -361,8 +360,7 @@ class MapBrowser extends Application {
             const descriptionText = tempDiv.innerText;
             map.description = descriptionText.replaceAll(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank">$1</a>');
 
-
-            if(pastWinners.includes(map.author)) map.isWinner = true;
+            if (pastWinners.includes(map.author)) map.isWinner = true;
         });
         if (this.sortDownloads) mapList = mapList.sort((a, b) => b.downloads - a.downloads);
         if (this.sortPopular) mapList = mapList.sort((a, b) => b.stars - a.stars);
@@ -401,18 +399,19 @@ class MapBrowser extends Application {
                 },
             },
         );
-        if (MapBrowser.contest.active && MapBrowser.contest.rulesUrl) buttons.unshift({
-            label: "Contest Rules",
-            class: "contest",
-            icon: "fas fa-trophy",
-            onclick: () => {
-                //open url
-                const link = document.createElement("a");
-                link.href = MapBrowser.contest.rulesUrl;
-                link.target = "_blank";
-                link.click();
-            },
-        });
+        if (MapBrowser.contest.active && MapBrowser.contest.rulesUrl)
+            buttons.unshift({
+                label: "Contest Rules",
+                class: "contest",
+                icon: "fas fa-trophy",
+                onclick: () => {
+                    //open url
+                    const link = document.createElement("a");
+                    link.href = MapBrowser.contest.rulesUrl;
+                    link.target = "_blank";
+                    link.click();
+                },
+            });
         return buttons;
     }
 
@@ -425,14 +424,14 @@ class MapBrowser extends Application {
             });
         }
         const existingPage = journal.pages.getName(sceneName);
-        if (existingPage) return {journalId: journal.id, pageId: existingPage.id};
+        if (existingPage) return { journalId: journal.id, pageId: existingPage.id };
         const page = await journal.createEmbeddedDocuments("JournalEntryPage", [
             {
                 name: sceneName,
                 "text.content": content,
             },
         ]);
-        return {journalId: journal.id, pageId: page.id};
+        return { journalId: journal.id, pageId: page.id };
     }
 
     activateListeners(html) {
@@ -494,14 +493,14 @@ class MapBrowser extends Application {
         this._onFilter();
     }
 
-    async _onMapDownload(e){
+    async _onMapDownload(e) {
         e.preventDefault();
         const createJournal = game.settings.get("levels-3d-preview", "mapsharingJournal");
         const id = e.target.dataset.mapid;
         const thumb = e.target.dataset.thumb;
         const map = await getMap(id);
         const mapData = this._mapList.find((m) => m.id == id);
-        const journalData = createJournal ? await this.getJournalEntry(mapData.name + ` (${mapData.author})`, mapData.description): {};
+        const journalData = createJournal ? await this.getJournalEntry(mapData.name + ` (${mapData.author})`, mapData.description) : {};
         map.data.thumb = thumb;
         const originalID = map.data._id;
         const newID = randomID();
@@ -514,7 +513,7 @@ class MapBrowser extends Application {
         let stringified = JSON.stringify(map.data);
         stringified = stringified.replaceAll(originalID, newID);
         map.data = JSON.parse(stringified);
-        await Scene.create(map.data, {keepId: true});
+        await Scene.create(map.data, { keepId: true });
         increaseDownloadCount(id);
         ui.notifications.info(game.i18n.localize("levels3dpreview.sharing.mapbrowser.imported") + `: ${map.data.name}`);
     }
@@ -548,8 +547,6 @@ class MapBrowser extends Application {
         });
     }
 }
-
-
 
 const assetpacks = ["mapmakingpack", "tokencollection", "baileywiki"];
 
