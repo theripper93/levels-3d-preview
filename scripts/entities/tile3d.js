@@ -265,8 +265,13 @@ export class Tile3D {
     setupAnimationFunction() {
         const functionText = this.onAnimation;
         if (!functionText) return null;
-        const fn = new Function("delta", "tile3d", functionText);
-        return fn;
+        try {
+            const fn = new Function("delta", "tile3d", functionText);
+            return fn;
+        } catch(error) {
+            console.error("Error in animation function", functionText);
+            return null;
+        }
     }
 
     initRandom() {
