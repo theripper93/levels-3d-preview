@@ -1,8 +1,8 @@
 import * as THREE from "../lib/three.module.js";
 import { factor } from "../main.js";
 import { Ruler3D, RULER_TOKEN_OFFSET } from "../systems/ruler3d.js";
-import {GroupSelectHandler} from "./GroupSelectHandler.js";
-import {isLockedOnOrigin} from "../shaders/templateEffects.js";
+import { GroupSelectHandler } from "./GroupSelectHandler.js";
+import { isLockedOnOrigin } from "../shaders/templateEffects.js";
 import { TileCreationQueue } from "./TileCreationQueue.js";
 import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from "../lib/three-mesh-bvh.js";
 THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
@@ -81,7 +81,7 @@ export class InteractionManager {
         const tiles = tileQuadtree.length ? tileQuadtree : Object.values(this._parent.tiles);
         const walls = wallsQuadtree.length ? wallsQuadtree : Object.values(this._parent.walls);
         for (let tile of tiles) {
-            if (!tile || tile?.document?.hidden/*!tile?.mesh?.visible**/) continue;
+            if (!tile || tile?.document?.hidden /*!tile?.mesh?.visible**/) continue;
             const mesh = tile.sightMesh ?? tile.mesh;
             if (tile.hasTags) {
                 mesh.traverse((o) => {
@@ -294,7 +294,7 @@ export class InteractionManager {
             if (!minZ || pos.z < minZ) minZ = pos.z;
         }
 
-        if(maxX === undefined || maxY === undefined || maxZ === undefined || minX === undefined || minY === undefined || minZ === undefined) return false;
+        if (maxX === undefined || maxY === undefined || maxZ === undefined || minX === undefined || minY === undefined || minZ === undefined) return false;
         const center = new THREE.Vector3((maxX + minX) / 2, (maxY + minY) / 2, (maxZ + minZ) / 2);
         controlledGroup.position.copy(center);
         return true;
@@ -317,10 +317,10 @@ export class InteractionManager {
         if (this.activeLayerEntity === "Tile" && (ui.controls.activeTool === "tile" || ui.controls.activeTool === "tile3dPolygon")) return true;
         if (this.currentHover?.embeddedName === this.activeLayerEntity) return false;
         if (this.isNoSelectDrag()) return false;
-        if (ui.controls.control.activeTool === "select" && ui.controls.activeTool != "ruler") return false;
+        if (ui.controls.activeTool === "select" && ui.controls.activeTool != "ruler") return false;
         if (!ui.controls.isRuler && !this.allowedRulerDrag.some((a) => a === this.activeLayerEntity)) return false;
         if (!this.mouseIntersection3DCollision({ x: event.clientX, y: event.clientY })?.length) return false;
-        if (this.activeLayerEntity === "Tile" && ui.controls.control.activeTool != "tile") return false;
+        if (this.activeLayerEntity === "Tile" && ui.controls.activeTool != "tile") return false;
         return true;
     }
 
@@ -539,7 +539,7 @@ export class InteractionManager {
                 this._parent.ruler.addSegment();
                 entity3D.setPosition(false, true);
                 this._parent.ruler.executeAllMovement(entity3D.token);
-            }else if (ui.controls.activeTool === "tile3dPolygon") {
+            } else if (ui.controls.activeTool === "tile3dPolygon") {
                 this._parent.ruler.addSegment();
                 this._parent.ruler.createTile();
             } else {
@@ -604,9 +604,10 @@ export class InteractionManager {
     _clippingFilter(i) {
         const camera = game.Levels3DPreview.camera;
         let entity3D = i.object?.userData?.entity3D;
-        if(!entity3D)i.object.traverseAncestors((parent) => {
-            if (parent.userData.entity3D && !entity3D) entity3D = parent.userData.entity3D;
-        });
+        if (!entity3D)
+            i.object.traverseAncestors((parent) => {
+                if (parent.userData.entity3D && !entity3D) entity3D = parent.userData.entity3D;
+            });
         const isClippingShader = entity3D?.shaders?.clipping?.enabled && canvas.tokens?.controlled?.length;
         if (!i.object.material?.clippingPlanes && camera.near === 0.01 && !isClippingShader) return true;
         const distToCamera = i.point.distanceTo(camera.position);
@@ -823,22 +824,23 @@ export class InteractionManager {
         const collisionSpheres = [];
         for (const collision of collisions) {
             let tile3d = collision.object.userData.entity3D;
-            if(!tile3d) collision.object.traverseAncestors((parent) => {
-                if (parent.userData.entity3D && !tile3d) tile3d = parent.userData.entity3D;
-            });
-            if(!tile3d.shaders?.clipping?.diameter) continue;
+            if (!tile3d)
+                collision.object.traverseAncestors((parent) => {
+                    if (parent.userData.entity3D && !tile3d) tile3d = parent.userData.entity3D;
+                });
+            if (!tile3d.shaders?.clipping?.diameter) continue;
             const collisionSphere = new THREE.Sphere(collision.point, 10);
             collisionSpheres.push(collisionSphere);
             obstructing.set(tile3d, new THREE.Vector4(collision.point.x, collision.point.y, collision.point.z, 1));
         }
         const tiles = Object.values(this._parent.tiles);
-        if(!collisionSpheres.length) return obstructing;
+        if (!collisionSpheres.length) return obstructing;
         for (const tile of tiles) {
             if (obstructing.has(tile)) continue;
-            const tileBox = tile._worldBoundingBox
+            const tileBox = tile._worldBoundingBox;
             if (!cameraTokenSphere.intersectsBox(tileBox)) continue;
             tileBox.getCenter(boxCenter);
-            const boxSphereIntersect = collisionSpheres.reduce((prev, curr) => prev.center.distanceTo(boxCenter) < curr.center.distanceTo(boxCenter) ? prev : curr);
+            const boxSphereIntersect = collisionSpheres.reduce((prev, curr) => (prev.center.distanceTo(boxCenter) < curr.center.distanceTo(boxCenter) ? prev : curr));
             if (boxSphereIntersect) obstructing.set(tile, new THREE.Vector4(boxSphereIntersect.center.x, boxSphereIntersect.center.y, boxSphereIntersect.center.z, 1));
         }
 
@@ -1056,7 +1058,7 @@ export class InteractionManager {
 
     dragObject() {
         if (!this.draggable) return;
-        if(this.groupSelectHandler._isSelecting) this.groupSelectHandler.endSelect();
+        if (this.groupSelectHandler._isSelecting) this.groupSelectHandler.endSelect();
         const collisionGeometries = this._collisionGeometries;
         const token = this.draggable.userData?.entity3D?.token;
         const isFlying = token && token?.document?.hasStatusEffect("fly");
@@ -1261,7 +1263,7 @@ export const dropFunctions = {
         const isBillboard = data.params?.dynaMesh?.includes("billboard");
         if (!game.Levels3DPreview.helpers.is3DModel(data.texture.src) && !isBillboard) return dropImage.bind(this)(event, data);
         canvas.tiles.activate();
-        const {grid, normal, rotation, pos} = data.assetBrowser ?? {};
+        const { grid, normal, rotation, pos } = data.assetBrowser ?? {};
         data.flags["levels-3d-preview"] = {
             model3d: data.texture.src,
             autoGround: true,
@@ -1278,11 +1280,11 @@ export const dropFunctions = {
             const modelBB = new THREE.Box3().setFromObject(object3d.model);
             const widthFactor = modelBB.max.x - modelBB.min.x;
             const heightFactor = modelBB.max.z - modelBB.min.z;
-            depth = (modelBB.max.y - modelBB.min.y ) * canvas.grid.size * (canvas.grid.size / data.tileSize);
+            depth = (modelBB.max.y - modelBB.min.y) * canvas.grid.size * (canvas.grid.size / data.tileSize);
             width = canvas.grid.size * (canvas.grid.size / data.tileSize) * widthFactor;
             height = canvas.grid.size * (canvas.grid.size / data.tileSize) * heightFactor;
         }
-        
+
         data.rotation = rotation ?? 0;
         data.flags["levels-3d-preview"].depth = depth || 0.05;
         if (normal) {
@@ -1294,7 +1296,6 @@ export const dropFunctions = {
             data.rotation = Math.toDegrees(dummy.rotation.y);
             data.flags["levels-3d-preview"].autoCenter = true;
         }
-
 
         const useSnapped = grid ?? Ruler3D.useSnapped();
         let snapped;
@@ -1356,7 +1357,7 @@ async function dropImage(event, data) {
     data.width = size;
     data.height = size;
     data.depth = size;
-    data.flags.levels.rangeBottom += canvas.scene.dimensions.distance*2;
+    data.flags.levels.rangeBottom += canvas.scene.dimensions.distance * 2;
     data.x -= size / 2;
     data.y -= size / 2;
     data.texture.src = "modules/levels-3d-preview/assets/blank.webp";
@@ -1369,12 +1370,11 @@ async function dropImage(event, data) {
         if (isToken) {
             data.x = isToken.center.x - size / 2;
             data.y = isToken.center.y - size / 2;
-            data.elevation = isToken.document.elevation+1;
-            
+            data.elevation = isToken.document.elevation + 1;
         }
     }
-    return await canvas.scene.createEmbeddedDocuments("Tile", [data]).then((tiles) => { 
-        if(isToken) tokenAttacher.attachElementToToken(tiles[0].object, game.Levels3DPreview.interactionManager.currentHover?.token);
+    return await canvas.scene.createEmbeddedDocuments("Tile", [data]).then((tiles) => {
+        if (isToken) tokenAttacher.attachElementToToken(tiles[0].object, game.Levels3DPreview.interactionManager.currentHover?.token);
         else canvas.tiles.activate();
     });
 }
