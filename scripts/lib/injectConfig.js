@@ -128,7 +128,11 @@ export const injectConfig = {
         html = html[0] || html;
         html = html.closest(".app") ?? html;
         
-        this._processData(data);
+        try {
+            this._processData(data);
+        } catch (error) {
+            console.warn("Error processing data", error);
+        }
 
         const injectPoint = this._getInjectionPoint(app, html, data, object);
 
@@ -169,7 +173,7 @@ export const injectConfig = {
         }
 
         
-        app?.setPosition({"height" : "auto", "width" : data.tab ? app.options.width + tabSize : "auto"});
+        if(app) app?.setPosition({"height" : "auto", "width" : data.tab ? app.options.width + tabSize : "auto"});
         return $(injectHtml);
 
     },

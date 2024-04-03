@@ -54,8 +54,8 @@ import { registerWrappers } from "./wrappers.js";
 import { ProceduralVines } from "./helpers/ProceduralVines.js";
 import { PARTICLE_SYSTEMS } from "./systems/particleSystem.js";
 import { registerConfigs } from "./settings/config.js";
-import {registerSettings} from "./settings/settingsConfig.js";
-import {WaveFunctionSolver} from "./generators/WaveFunctionCollapse.js";
+import { registerSettings } from "./settings/settingsConfig.js";
+import { WaveFunctionSolver } from "./generators/WaveFunctionCollapse.js";
 import { applyHeightmap } from "./helpers/applyHeightmap.js";
 
 import { createTargetGeometry } from "./entities/effects/target.js";
@@ -101,7 +101,7 @@ Hooks.once("ready", () => {
         });
         Object.defineProperty(window, "canvas3D", {
             get: () => game.Levels3DPreview,
-        })
+        });
     } catch (e) {
         ui.notifications.error(game.i18n.localize("levels3dpreview.errors.initfailed"));
         console.error(game.i18n.localize("levels3dpreview.errors.initfailed"), e);
@@ -514,7 +514,6 @@ class Levels3DPreview {
         this.GameCamera = new GameCamera(this.camera, this.controls, this);
         //clipping
         this.renderer.localClippingEnabled = true;
-
     }
 
     async cacheModels() {
@@ -843,18 +842,19 @@ class Levels3DPreview {
         const tableHeightmap = canvas.scene.getFlag("levels-3d-preview", "tableHeightmap") ?? "";
         if (tableOption == "none" || !tableOption) return;
         //make a plane and apply a texture
-        const isHeightmap = !!tableHeightmap
+        const isHeightmap = !!tableHeightmap;
         const isMat = tableOption.includes("mat");
         const width = isMat ? (isHeightmap ? 200 : 1000) : canvas.scene.dimensions.width / this.factor;
         const height = isMat ? (isHeightmap ? 200 : 1000) : canvas.scene.dimensions.height / this.factor;
         const center = this.canvasCenter;
-        const depth = Math.max(width, height)//isMat ? 0.1 : Math.max(width, height) / 10;
+        let depth = Math.max(width, height);
+        if(tableOption == "table") depth = Math.min(width, height) / 10;
         const preset = this.CONFIG.PADDING_PRESETS[tableOption] ?? {};
         const textureMat = await this.helpers.autodetectTextureOrMaterial(preset.texture ?? tableTex);
         const divisions = isHeightmap ? 100 : 1;
-        const geometry = new THREE.BoxGeometry(width, depth, height, divisions, 1 , divisions);
+        const geometry = new THREE.BoxGeometry(width, depth, height, divisions, 1, divisions);
 
-        if(isHeightmap) await applyHeightmap(geometry, tableHeightmap, (canvas.scene.getFlag("levels-3d-preview", "tableHeightmapScale") ?? 1)*10, (Math.max(canvas.scene.dimensions.width, canvas.scene.dimensions.height) / this.factor)/2);
+        if (isHeightmap) await applyHeightmap(geometry, tableHeightmap, (canvas.scene.getFlag("levels-3d-preview", "tableHeightmapScale") ?? 1) * 10, Math.max(canvas.scene.dimensions.width, canvas.scene.dimensions.height) / this.factor / 2);
 
         let uvAttribute = geometry.attributes.uv;
         const repeat = preset.repeat ?? (isHeightmap ? 0.1 : 1);
@@ -869,7 +869,7 @@ class Levels3DPreview {
             textureMat.wrapS = THREE.RepeatWrapping;
             textureMat.wrapT = THREE.RepeatWrapping;
         }
-        
+
         const material = textureMat.isTexture
             ? new THREE.MeshStandardMaterial({
                   map: textureMat,
@@ -924,7 +924,7 @@ class Levels3DPreview {
     }
 
     createFloors() {
-        if(!canvas.tiles.placeables.length) this.workers._visionReady = true;
+        if (!canvas.tiles.placeables.length) this.workers._visionReady = true;
         for (let tile of canvas.tiles.placeables) {
             if (this.isLevels) {
                 const bottom = tile.document.flags.levels?.rangeBottom ?? -Infinity;
@@ -1270,7 +1270,7 @@ class Levels3DPreview {
             let calculateObstructing = false;
             Object.values(this.tiles).forEach((tile) => {
                 if (tile) {
-                    if(tile._useCameraAdvanced) calculateObstructing = true;
+                    if (tile._useCameraAdvanced) calculateObstructing = true;
                     tile._onAnimationLoop(delta);
                     if (tile.mixer && !tile.paused) {
                         tile.mixer.update(delta);
@@ -1282,7 +1282,7 @@ class Levels3DPreview {
             const length = Math.max(tokensArray.length, 100);
             const cToken = this.tokens[canvas?.tokens?.controlled[0]?.id];
             const ctPos = cToken?.mesh?.position;
-            const tokenPositionsArray = [new THREE.Vector4(ctPos?.x ?? 0,(ctPos?.y ?? 0) - (cToken?.hasClone ? RULER_TOKEN_OFFSET : 0),ctPos?.z ?? 0, tokensArray.length)];
+            const tokenPositionsArray = [new THREE.Vector4(ctPos?.x ?? 0, (ctPos?.y ?? 0) - (cToken?.hasClone ? RULER_TOKEN_OFFSET : 0), ctPos?.z ?? 0, tokensArray.length)];
             const emptyVec = new THREE.Vector4();
             for (let i = 1; i < length; i++) {
                 const pos = tokensArray[i - 1]?.mesh?.position;
@@ -1804,7 +1804,7 @@ class Levels3DPreview {
             if (!CONST.WALL_DOOR_INTERACTIONS.includes(interaction)) {
                 throw new Error(`"${interaction}" is not a valid door interaction type`);
             }
-            const doorSound = CONFIG.Wall.doorSounds[tile.getFlag("levels-3d-preview","doorSound") ?? ""];
+            const doorSound = CONFIG.Wall.doorSounds[tile.getFlag("levels-3d-preview", "doorSound") ?? ""];
             let sounds = doorSound?.[interaction];
             if (sounds && !Array.isArray(sounds)) sounds = [sounds];
             else if (!sounds?.length) {
@@ -1814,21 +1814,21 @@ class Levels3DPreview {
             const src = sounds[Math.floor(Math.random() * sounds.length)];
             AudioHelper.play({ src }, true);
         }
-        
+
         if (subDoorId) {
             const ds = tile.getFlag("levels-3d-preview", `modelDoors.${subDoorId}`)?.ds ?? 0;
             const isLocked = ds == 2;
 
             if (isLocked) return _playDoorSound("lock");
             tile.setFlag("levels-3d-preview", `modelDoors.${subDoorId}.ds`, ds == 0 ? "1" : "0");
-            _playDoorSound(ds == 0 ? "open" : "close")
+            _playDoorSound(ds == 0 ? "open" : "close");
         } else {
             const ds = tile.getFlag("levels-3d-preview", "doorState") ?? 0;
             const isLocked = ds == 2;
 
             if (isLocked) return _playDoorSound("lock");
             tile.setFlag("levels-3d-preview", "doorState", ds == 0 ? "1" : "0");
-            _playDoorSound(ds == 0 ? "open" : "close")
+            _playDoorSound(ds == 0 ? "open" : "close");
         }
     }
 
