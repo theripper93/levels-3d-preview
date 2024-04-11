@@ -659,14 +659,19 @@ export class Template3D {
     }
 
     static async drawPreview(template, create = true, sheet) {
+        if (create === true && !(template instanceof MeasuredTemplateDocument)) {
+            template = new MeasuredTemplateDocument(template);
+            template.document = template;
+        }
         sheet = sheet ?? _token?.actor?.sheet;
         const currentSheet = sheet?.rendered ? sheet : null;
         template.actorSheet = template.actorSheet ?? currentSheet;
         const templateDocument = template.document ?? template;
-        const isPlaceable = !!template.document
+        templateDocument.direction ??= 0;
+        const isPlaceable = !!template.document;
         if(create) ui.notifications.info(game.i18n.localize("levels3dpreview.controls.tips.templatePlacement"));
         const initialLayer = canvas.activeLayer;
-        template.ray = Ray.fromAngle(templateDocument?.x, templateDocument?.y, Math.toRadians(templateDocument?.direction), (templateDocument?.distance * canvas.scene.dimensions.size) / canvas.scene.dimensions.distance);
+        template.ray = Ray.fromAngle(templateDocument?.x, templateDocument?.y, Math.toRadians(templateDocument?.direction ?? 0), (templateDocument?.distance * canvas.scene.dimensions.size) / canvas.scene.dimensions.distance);
         // Draw the template and switch to the template layer
         
         

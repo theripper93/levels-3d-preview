@@ -24,6 +24,8 @@ export function registerWrappers() {
 
         if (CONFIG.MeasuredTemplate.objectClass.prototype.drawPreview) libWrapper.register("levels-3d-preview", "CONFIG.MeasuredTemplate.objectClass.prototype.drawPreview", drawPreview, "MIXED");
 
+        if (TemplateLayer.prototype._createPreview) libWrapper.register("levels-3d-preview", "TemplateLayer.prototype._createPreview", drawPreviewTemplateLayer, "MIXED");
+
         async function HandlePing(wrapped, ...args) {
             if (!game.Levels3DPreview?._active) return wrapped(...args);
             const [user, position, options] = args;
@@ -334,6 +336,12 @@ export function registerWrappers() {
         function drawPreview(wrapped, ...args) {
             if (game.Levels3DPreview?._active) {
                 game.Levels3DPreview.Classes.Template3D.drawPreview(this);
+            } else return wrapped(...args);
+        }
+
+        function drawPreviewTemplateLayer(wrapped, ...args) {
+            if (game.Levels3DPreview?._active) {
+                game.Levels3DPreview.Classes.Template3D.drawPreview(args[0], true);
             } else return wrapped(...args);
         }
 
