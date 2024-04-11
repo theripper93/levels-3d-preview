@@ -659,7 +659,7 @@ export class Template3D {
     }
 
     static async drawPreview(template, create = true, sheet) {
-        if (create === true && !(template instanceof MeasuredTemplateDocument)) {
+        if (!template.document && create === true && !(template instanceof MeasuredTemplateDocument)) {
             template = new MeasuredTemplateDocument(template);
             template.document = template;
         }
