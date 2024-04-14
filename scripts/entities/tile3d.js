@@ -1967,6 +1967,15 @@ export class Tile3D {
         this._parent.socket.executeForUsers("executeInteractiveDynamesh", [firstGm.id], this.document.uuid, eventId);
     }
 
+    checkPuzzleLock() {
+        if(!CONFIG.PuzzleLocks) return true;
+        if (CONFIG.PuzzleLocks.isLocked(this.document)) {
+            CONFIG.PuzzleLocks.unlock(this.document.uuid);
+            return false;
+        }
+        return true;
+    }
+
     _onClickLeft(e) {
         const oT = e.originalIntersect?.userData;
         if (oT?.isDoor && canvas.activeLayer.options.objectClass.embeddedName === "Token" && !(oT?.isSecret && !game.user.isGM)) {
@@ -1976,7 +1985,9 @@ export class Tile3D {
 
         if (canvas.activeLayer.options.objectClass.embeddedName === "Token" && this.isDoor && !(this.isSecret && !game.user.isGM)) {
             if (this.isToFar()) ui.notifications.error(game.i18n.localize("levels3dpreview.errors.toofarfromdoor"));
-            else this._parent.socket.executeAsGM("toggleDoor", this.tile.id, canvas.scene.id, game.user.id);
+            else {
+                if(this.checkPuzzleLock()) this._parent.socket.executeAsGM("toggleDoor", this.tile.id, canvas.scene.id, game.user.id);
+            }
         }
         if (canvas.activeLayer.options.objectClass.embeddedName !== "Tile") {
             this.callInteractiveSocket("clickLeft");
