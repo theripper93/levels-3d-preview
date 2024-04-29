@@ -68,6 +68,12 @@ export class Template3D {
         return this.template.document?.x !== undefined ? true : false;
     }
 
+    updateVisibility() {
+        this.mesh.visible = this.placeable?.visible ?? true;
+        if(this.controlIcon) this.controlIcon.visible = this.placeable?.controlIcon?.visible ?? true;
+        if(this.templateMesh) this.templateMesh.visible = this.placeable?.template?.visible ?? true;
+    }
+
     contains(point, convertSpace = true) {
         if (convertSpace) point = Ruler3D.posCanvasTo3d(point);
         return this._parent.interactionManager.inMesh(point, this.collisionMesh ?? this.templateMesh);
@@ -137,6 +143,7 @@ export class Template3D {
             o.userData.noShaders = true;
         });
         if (this.placeable?.document) mesh.visible = this.placeable.owner;
+        this.controlIcon = mesh;
         this.mesh.add(mesh);
     }
 

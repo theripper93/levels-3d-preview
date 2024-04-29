@@ -1326,6 +1326,9 @@ class Levels3DPreview {
             Object.values(this.notes).forEach((note) => {
                 note.updateVisibility();
             });
+            Object.values(this.templates).forEach((template) => {
+                template.updateVisibility();
+            });
             this.rangeFinders.forEach((rangeFinder) => {
                 rangeFinder.updateText();
             });
