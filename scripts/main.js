@@ -654,16 +654,23 @@ class Levels3DPreview {
                 draggable: true,
                 embeddedName: "Tile",
                 _onClickLeft: (e) => {
-                    return this.controlledGroup.children[0]?.userData.entity3D._onClickLeft(e);
+                    const tile3d = this.tiles[canvas.tiles.hover?.id]
+                    return tile3d?._onClickLeft(e);
                 },
                 _onClickRight: (e) => {
-                    return this.controlledGroup.children[0]?.userData.entity3D._onClickRight(e);
+                    const tile3d = this.tiles[canvas.tiles.hover?.id]
+
+                    return tile3d?._onClickRight(e);
                 },
                 _onClickLeft2: (e) => {
-                    return this.controlledGroup.children[0]?.userData.entity3D._onClickLeft2(e);
+                    const tile3d = this.tiles[canvas.tiles.hover?.id]
+
+                    return tile3d?._onClickLeft2(e);
                 },
                 _onClickRight2: (e) => {
-                    return this.controlledGroup.children[0]?.userData.entity3D._onClickRight2(e);
+                    const tile3d = this.tiles[canvas.tiles.hover?.id]
+
+                    return tile3d?._onClickRight2(e);
                 },
             },
         };
