@@ -735,7 +735,8 @@ export class InteractionManager {
         const placeable = entity.placeable;
         if (!placeable?.controlled && placeable) placeable.control({ releaseOthers: true });
         if (canvas.activeLayer?.controlled.some((p) => p?.document?.locked)) return this.abortDrag();
-        if (!placeable?.isOwner && !game.user.isGM) return this.abortDrag();
+        const isOwner = game.user.isGM || placeable?.isOwner || placeable?.document?.isOwner;
+        if (!isOwner) return this.abortDrag();
         if (!entity.draggable || entity.mesh.userData?.entity3D?.embeddedName !== this.activeLayerEntity) return this.abortDrag();
         if (entity.mesh.userData?.entity3D?.embeddedName == "Tile") {
             this.setControlledGroup();
