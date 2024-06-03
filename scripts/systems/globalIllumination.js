@@ -1,9 +1,7 @@
 import * as THREE from "../lib/three.module.js";
-import {factor} from "../main.js";
-import {Sky} from "../lib/Sky.js";
-import {DynamicSkyConfig} from "../settings/dynamicSkyConfig.js";
-
-
+import { factor } from "../main.js";
+import { Sky } from "../lib/Sky.js";
+import { DynamicSkyConfig } from "../settings/dynamicSkyConfig.js";
 
 export class GlobalIllumination {
     constructor(parent) {
@@ -16,22 +14,21 @@ export class GlobalIllumination {
     }
 
     initDynamicSky() {
-        if(this.sky) return;
+        if (this.sky) return;
         const sky = new Sky();
         this.sky = sky;
         this.sky._positionVector = new THREE.Vector3();
         this.sky._color = new THREE.Color();
         this.sky.clouds._color = new THREE.Color();
-        sky.scale.setScalar( 450000 );
-        this._parent.scene.add( sky );
+        sky.scale.setScalar(450000);
+        this._parent.scene.add(sky);
     }
 
     updateDynamicSky() {
-        const dynamicSkyData = foundry.utils.mergeObject({...SKY_DEFAULTS}, canvas.scene.getFlag("levels-3d-preview", "dynamicSky") ?? {});
+        const dynamicSkyData = foundry.utils.mergeObject({ ...SKY_DEFAULTS }, canvas.scene.getFlag("levels-3d-preview", "dynamicSky") ?? {});
         if (dynamicSkyData.enabled) {
             this.initDynamicSky();
-        }
-        else {
+        } else {
             this._parent.scene.remove(this.sky);
             this.sky = null;
         }
@@ -39,7 +36,6 @@ export class GlobalIllumination {
 
         this.sky._color.set(dynamicSkyData.color);
         this.sky.clouds._color.set(dynamicSkyData.cloudsTint);
-
 
         const maxDistance = canvas.scene.getFlag("levels-3d-preview", "sunDistance") ?? 10;
         const sunWorldY = this.global.sunlight.getWorldPosition(this.sky._positionVector).y;
@@ -52,7 +48,7 @@ export class GlobalIllumination {
         uniforms["mieCoefficient"].value = dynamicSkyData.mieCoefficient;
         uniforms["mieDirectionalG"].value = dynamicSkyData.mieDirectionalG;
         uniforms["skyTint"].value = this.sky._color;
-        uniforms["starDensity"].value = 1/dynamicSkyData.starDensity;
+        uniforms["starDensity"].value = 1 / dynamicSkyData.starDensity;
         uniforms["starAlpha"].value = Math.pow(unitDistance, 2);
         uniforms["sunPosition"].value.copy(this.global.sunlight.getWorldPosition(this.sky._positionVector));
 
@@ -129,7 +125,7 @@ export class GlobalIllumination {
     setTarget(flags = true, animate = true) {
         const color = new THREE.Color(flags.color ?? canvas.scene.getFlag("levels-3d-preview", "sceneTint") ?? "white");
         const distance = -(flags.distance ?? canvas.scene.getFlag("levels-3d-preview", "sunDistance") ?? 10);
-        const time = Math.clamped(flags.time ?? canvas.scene.getFlag("levels-3d-preview", "sunPosition") ?? 12, 0, 24);
+        const time = Math.clamp(flags.time ?? canvas.scene.getFlag("levels-3d-preview", "sunPosition") ?? 12, 0, 24);
         const exposure = flags.exposure ?? canvas.scene.getFlag("levels-3d-preview", "exposure") ?? 1;
         const sunTilt = flags.tilt ?? canvas.scene.getFlag("levels-3d-preview", "sunTilt") ?? 0;
         const intensity = exposure;
@@ -210,7 +206,7 @@ export class GlobalIllumination {
             const timeSync = getTimeSync();
             if (timeSync == "off" || timeSync == "time") return;
             const lightness = 1 - updates.darkness;
-            mergeObject(updates, {
+            foundry.utils.mergeObject(updates, {
                 flags: {
                     "levels-3d-preview": {
                         exposure: 0.2 + lightness * 0.8,
@@ -245,4 +241,4 @@ export const SKY_DEFAULTS = {
     cloudsAlpha: 0.7,
     cloudsTint: "#ffffff",
     cloudsScale: 9.5,
-}
+};

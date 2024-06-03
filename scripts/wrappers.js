@@ -15,7 +15,6 @@ export function registerWrappers() {
         libWrapper.register("levels-3d-preview", "PlaceablesLayer.prototype.pasteObjects", pasteObjects, "WRAPPER");
         libWrapper.register("levels-3d-preview", "ClockwiseSweepPolygon.prototype._compute", computePolygonDispatch, "MIXED");
         libWrapper.register("levels-3d-preview", "Scenes.prototype.preload", preload3D, "OVERRIDE");
-        libWrapper.register("levels-3d-preview", "SoundsLayer.prototype.refresh", refreshAudioListener, "MIXED");
         libWrapper.register("levels-3d-preview", "canvas.app.renderer.events.pointer.getLocalPosition", pointerPositionWrapper, "MIXED");
         libWrapper.register("levels-3d-preview", "ControlsLayer.prototype.handlePing", HandlePing, "WRAPPER");
         //game.Levels3DPreview.raycastWorker = raycastWorker;
@@ -32,7 +31,7 @@ export function registerWrappers() {
             if (!canvas.ready || canvas.scene?.id !== options.scene || !position) return wrapped(...args);
             const token = canvas.tokens.placeables.find((t) => t.center.x == position.x && t.center.y == position.y);
             if (!token) return wrapped(...args);
-            const color = user.color;
+            const color = user.color.css;
             const size = Math.max(token.document.width, token.document.height);
             const pos3d = game.Levels3DPreview.tokens[token.id].mesh.position.clone();
             if (options.pull && game.user == user) {
@@ -48,64 +47,6 @@ export function registerWrappers() {
         function pointerPositionWrapper(wrapped, ...args) {
             if (game.Levels3DPreview?._active) return game.canvas3D.interactionManager.canvas2dMousePosition;
             return wrapped(...args);
-        }
-
-        function refreshAudioListener(wrapped, ...args) {
-            if (!game.Levels3DPreview?._active) return wrapped(...args);
-            const options = args[0];
-
-            if (!this.placeables.length) return;
-            if (game.audio.locked) {
-                return game.audio.pending.push(() => this.refresh(options));
-            }
-            let listeners = canvas.tokens.controlled.map((t) => t.center);
-            if (!listeners.length && !game.user.isGM)
-                listeners = canvas.tokens.placeables.reduce((arr, t) => {
-                    if (t.actor?.isOwner && t.isVisible) arr.push(t.center);
-                    return arr;
-                }, []);
-
-            function _syncPositions(listeners, options) {
-                if (!this.placeables.length || game.audio.locked) return;
-                const sounds = {};
-                for (let sound of this.placeables) {
-                    const useCameraDist = sound.document.flags["levels-3d-preview"]?.positional ?? false;
-                    const p = sound.document.path;
-                    const r = sound.radius;
-                    if (!p) continue;
-
-                    // Track one audible object per unique sound path
-                    if (!(p in sounds)) sounds[p] = { path: p, audible: false, volume: 0, sound };
-                    const s = sounds[p];
-                    if (!sound.isAudible) continue; // The sound may not be currently audible
-
-                    // Determine whether the sound is audible, and its greatest audible volume
-                    if (useCameraDist) {
-                        s.audible = true;
-                        const sound3d = game.Levels3DPreview.sounds[sound.id];
-                        const distance = sound3d.mesh.position.distanceTo(game.Levels3DPreview.camera.position) * game.Levels3DPreview.factor;
-                        let volume = sound.document.volume;
-                        if (sound.document.easing) volume *= this._getEasingVolume(distance, r);
-                        if (!s.volume || volume > s.volume) s.volume = volume;
-                    } else {
-                        for (let l of listeners) {
-                            if (!sound.source.active || !sound.source.shape?.contains(l.x, l.y)) continue;
-                            s.audible = true;
-                            const distance = Math.hypot(l.x - sound.x, l.y - sound.y);
-                            let volume = sound.document.volume;
-                            if (sound.document.easing) volume *= this._getEasingVolume(distance, r);
-                            if (!s.volume || volume > s.volume) s.volume = volume;
-                        }
-                    }
-                }
-
-                // For each audible sound, sync at the target volume
-                for (let s of Object.values(sounds)) {
-                    s.sound.sync(s.audible, s.volume, options);
-                }
-            }
-
-            _syncPositions.bind(this)(listeners, options);
         }
 
         async function showBouncingText(wrapped, ...args) {
@@ -275,7 +216,7 @@ export function registerWrappers() {
                     points: finalPoints,
                     computeTime: Date.now(),
                     complete: true,
-                    cacheId: randomID(20),
+                    cacheId: foundry.utils.randomID(20),
                 };
             } else if (computeFull) {
                 if (this.config.hasLimitedAngle) polygonPoints.push(origin.x, origin.y);
@@ -285,7 +226,7 @@ export function registerWrappers() {
                     points: polygonPoints,
                     computeTime: Date.now(),
                     complete: true,
-                    cacheId: randomID(20),
+                    cacheId: foundry.utils.randomID(20),
                 };
             } else {
                 (this.config.source._polygon3DCache.currentSplit = currentSplit + 1), (this.config.source._polygon3DCache.pointsCache[currentSplit] = polygonPoints);
@@ -301,10 +242,10 @@ export function registerWrappers() {
             const promises = [];
 
             // Preload sounds
-            if (scene.playlistSound?.document.path) promises.push(AudioHelper.preloadSound(scene.playlistSound.document.path));
+            if (scene.playlistSound?.document.path) promises.push(foundry.audio.AudioHelper.preloadSound(scene.playlistSound.document.path));
             else if (scene.playlist?.playbackOrder.length) {
                 const first = scene.playlist.sounds.get(scene.playlist.playbackOrder[0]);
-                if (first) promises.push(AudioHelper.preloadSound(first.document.path));
+                if (first) promises.push(foundry.audio.AudioHelper.preloadSound(first.document.path));
             }
 
             // Preload textures without expiring current ones

@@ -7,13 +7,12 @@ let object = null;
 let hookSet = false;
 
 export const injectConfig = {
-
     _processData: function _processData(data) {
         if (data.tab?.subTabs) {
             for (const [k, v] of Object.entries(data)) {
                 if (k === "moduleId" || k === "inject" || k === "tab") continue;
                 for (const [k2, v2] of Object.entries(v)) {
-                    if(k2 === "tabIcon" || k2 === "tabLabel" || k2 === "tabNotes") continue;
+                    if (k2 === "tabIcon" || k2 === "tabLabel" || k2 === "tabNotes") continue;
                     this._processInputData(k2, v2);
                 }
             }
@@ -41,8 +40,8 @@ export const injectConfig = {
             v.type = "filepicker";
         }
 
-        function getDefaultFlag(inputType){
-            switch(inputType){
+        function getDefaultFlag(inputType) {
+            switch (inputType) {
                 case "number":
                     return 0;
                 case "checkbox":
@@ -53,18 +52,19 @@ export const injectConfig = {
     },
 
     _getInjectionPoint: function _getInjectionPoint(app, html, data, object) {
-        let injectPoint
-        if(typeof data.inject === "string"){
+        let injectPoint;
+        if (typeof data.inject === "string") {
             injectPoint = html.querySelector(data.inject).closest(".form-group");
-        }else{
+        } else {
             injectPoint = data.inject;
         }
-        injectPoint = injectPoint ?? (data.tab ? [...html.querySelectorAll("form > .tab")].at(-1) : [...html.querySelectorAll(".form-group").at(-1)]);
+        injectPoint = injectPoint ?? (data.tab ? [...html.querySelectorAll("form > .tab")].at(-1) ?? [...html.querySelectorAll(".tab")].at(-1) : [...html.querySelectorAll(".form-group").at(-1)]);
         return injectPoint;
     },
 
-    _createTab: function _createTab(html, name,label,icon){
+    _createTab: function _createTab(html, name, label, icon) {
         const tabs = [...html.querySelector(".sheet-tabs").querySelectorAll(".item")].at(-1);
+        if (!tabs) return this._createTabV2(html, name, label, icon);
         const tab = document.createElement("a");
         tab.classList.add("item");
         tab.dataset.tab = name;
@@ -73,6 +73,21 @@ export const injectConfig = {
         const tabContainer = document.createElement("div");
         tabContainer.classList.add("tab");
         tabContainer.dataset.tab = name;
+        return tabContainer;
+    },
+
+    _createTabV2: function _createTabV2(html, name, label, icon) {
+        const tabs = [...html.querySelector(".sheet-tabs").querySelectorAll(`[data-action="tab"]`)].at(-1);
+        const tab = document.createElement("a");
+        tab.dataset.tab = name;
+        tab.dataset.action = "tab";
+        tab.dataset.group = tabs.dataset.group;
+        tab.innerHTML = `<i class="${icon}"></i> <label>${label}</label>`;
+        tabs.after(tab);
+        const tabContainer = document.createElement("section");
+        tabContainer.classList.add("tab", "standard-form", "scrollable");
+        tabContainer.dataset.tab = name;
+        tabContainer.dataset.group = tabs.dataset.group;
         return tabContainer;
     },
 
@@ -96,7 +111,7 @@ export const injectConfig = {
                     e.currentTarget.classList.add("active");
                     container.querySelectorAll(".tab").forEach((i) => i.classList.remove("active"));
                     container.querySelector(`.tab[data-tab="${tab}"]`).classList.add("active");
-                    app.setPosition({"height" : "auto", "width" : data.tab ? app.options.width + tabSize : "auto"});
+                    app.setPosition({ height: "auto", width: data.tab ? app.options.width + tabSize : "auto" });
                 });
                 subTabNav.append(a);
                 const tabContents = document.createElement("div");
@@ -104,7 +119,7 @@ export const injectConfig = {
                 tabContents.dataset.tab = k;
                 tabContents.dataset.group = data.tab.name;
                 container.append(tabContents);
-                const renderedContent = getRenderedTemplate({inputs: v});
+                const renderedContent = getRenderedTemplate({ inputs: v });
                 if (v.tabNotes) {
                     const notes = document.createElement("p");
                     notes.classList.add("notes");
@@ -118,16 +133,17 @@ export const injectConfig = {
             container.querySelector(".tab").classList.add("active");
             return container;
         } else {
-            return getRenderedTemplate({inputs: data});
+            return getRenderedTemplate({ inputs: data });
         }
     },
 
     inject: function injectConfig(app, html, data, _object) {
         moduleId = data.moduleId;
-        object = _object || app.object;
-        html = html[0] || html;
-        html = html.closest(".app") ?? html;
-        
+        object = _object || app.document;
+        html = $(html);
+        html = html.closest(".app, .application") ?? html;
+        html = html[0];
+
         try {
             this._processData(data);
         } catch (error) {
@@ -138,26 +154,25 @@ export const injectConfig = {
 
         const isTabs = !!html.querySelector(".sheet-tabs");
         this._generateTabStruct(app, html, data, object);
-        
+
         const tabSize = data.tab?.width ?? 100;
-        
+
         let injectHtml = this._generateInnerHtml(app, data, tabSize);
-        
+
         try {
             app.activateListeners($(injectHtml));
         } catch (error) {}
 
         if (data.tab) {
-            const injectTab = this._createTab(html, data.tab.name, data.tab.label, data.tab.icon)
+            const injectTab = this._createTab(html, data.tab.name, data.tab.label, data.tab.icon);
             injectTab.append(injectHtml);
             (injectPoint ?? this._getInjectionPoint(app, html, data, object)).after(injectTab);
-            if(app._activeTab) html.querySelector(`.item[data-tab="${app._activeTab}"]`)?.click();
+            if (app._activeTab) html.querySelector(`.item[data-tab="${app._activeTab}"]`)?.click();
         } else {
             injectPoint.after(injectHtml);
         }
-
         html.querySelectorAll(".tabs .item").forEach((item) => {
-            item.addEventListener("click", (e) => app._activeTab = e.currentTarget.dataset.tab);
+            item.addEventListener("click", (e) => (app._activeTab = e.currentTarget.dataset.tab));
         });
 
         if (!isTabs) {
@@ -167,35 +182,34 @@ export const injectConfig = {
                     e.currentTarget.classList.add("active");
                     html.querySelectorAll(".tab").forEach((i) => i.classList.remove("active"));
                     html.querySelector(`.tab[data-tab="${e.currentTarget.dataset.tab}"]`).classList.add("active");
-                    app.setPosition({"height" : "auto", "width" : data.tab ? app.options.width + tabSize : "auto"});
+                    app.setPosition({ height: "auto", width: data.tab ? app.options.width + tabSize : "auto" });
                 });
             });
         }
 
-        
-        if(app) app?.setPosition({"height" : "auto", "width" : data.tab ? app.options.width + tabSize : "auto"});
+        if (app) app?.setPosition({ height: "auto", width: data.tab ? app.options.width + tabSize : "auto" });
         return $(injectHtml);
-
     },
-    quickInject: function quickInject(injectData, data){
+    quickInject: function quickInject(injectData, data) {
         injectData = Array.isArray(injectData) ? injectData : [injectData];
-        for(const doc of injectData){
-            let newData = data
-            if(doc.inject){
-                newData = JSON.parse(JSON.stringify(data))
+        for (const doc of injectData) {
+            let newData = data;
+            if (doc.inject) {
+                newData = JSON.parse(JSON.stringify(data));
                 data.inject = doc.inject;
             }
-            Hooks.on(`render${doc.documentName}Config`, (app,html)=>{ injectConfig.inject(app,html,newData) });
+            Hooks.on(`render${doc.documentName}Config`, (app, html) => {
+                injectConfig.inject(app, html, newData);
+            });
         }
-
     },
-    _generateTabStruct : function _generateTabStruct(app,html,data,object){
+    _generateTabStruct: function _generateTabStruct(app, html, data, object) {
         const isTabs = !!html.querySelector(".sheet-tabs");
-        const useTabs = data.tab
-        if(isTabs || !useTabs) return;
+        const useTabs = data.tab;
+        if (isTabs || !useTabs) return;
         const tabSize = data.tab?.width || 100;
-        const layer = app?.object?.layer?.options?.name
-        const icon = $(".main-controls").find(`li[data-canvas-layer="${layer}"]`).find("i").attr("class")
+        const layer = app?.object?.layer?.options?.name;
+        const icon = $(".main-controls").find(`li[data-canvas-layer="${layer}"]`).find("i").attr("class");
 
         const tabsInner = `<nav class="sheet-tabs tabs">
         <a class="item active" data-tab="basic"><i class="${icon}"></i> ${game.i18n.localize("LIGHT.HeaderBasic")}</a>
@@ -206,18 +220,18 @@ export const injectConfig = {
         const inputsContainer = container.querySelector(".tab");
         //move all content of form into tab
         const form = html.querySelector("form");
-        Array.from(form.children).forEach((e)=>{
+        Array.from(form.children).forEach((e) => {
             inputsContainer.append(e);
         });
-        
-        Array.from(container.children).forEach((e)=>{
+
+        Array.from(container.children).forEach((e) => {
             form.append(e);
         });
 
         const submitButton = html.querySelector("button[type='submit']");
         form.append(submitButton);
-    }
-}
+    },
+};
 
 const _template = `
 
@@ -229,6 +243,7 @@ const _template = `
     <div class="form-group">
         
             <label for="{{input.name}}">{{{input.label}}}</label>
+            <div class="form-fields">
         
         {{#if (eq input.type 'text')}}
             <input type="text" name="{{input.name}}" placeholder="{{input.placeholder}}" value="{{input.value}}">
@@ -263,27 +278,19 @@ const _template = `
         {{/if}}
 
         {{#if (eq input.type 'range')}}
-            <div class="form-fields">
                 <input type="range" min="{{input.min}}" max="{{input.max}}" step="{{input.step}}" name="{{input.name}}" value="{{input.value}}">
                 <span class="range-value">{{input.value}}</span>
-            </div>
         {{/if}}
 
         {{#if (eq input.type 'color')}}
-            <div class="form-fields">
-                {{colorPicker name=input.name value=input.value default="#000000"}}
-            </div>
+            <color-picker name={{input.name}} value={{input.value}} default="#000000"></color-picker>
         {{/if}}
 
         {{#if (eq input.type 'filepicker')}}
-                <div class="form-fields">     
-                    <button type="button" class="file-picker" data-extras="{{input.fpTypes}}" data-type="{{input.fpType}}" data-target="{{input.name}}" title="Browse Files" tabindex="-1">
-                        <i class="fas fa-file-import fa-fw"></i>
-                    </button>
-                    <input class="image" type="text" name="{{input.name}}" placeholder="{{input.placeholder}}" value="{{input.value}}">
-                </div>
-        {{/if}}
-
+                    <file-picker data-extras="{{input.fpTypes}}" name="{{input.name}}" value="{{input.value}}" type="{{input.fpType}}"></file-picker>
+                    {{/if}}
+                    
+                    </div>
         {{#if input.notes}}
         <p class="notes">{{input.notes}}</p>
         {{/if}}
@@ -292,12 +299,13 @@ const _template = `
     {{/each}}
 </div>
 
-`
+`;
 
 let _compiledTemplate = null;
 
 function getRenderedTemplate(data) {
-    data.inputs = {...data.inputs}
+    debugger
+    data.inputs = { ...data.inputs };
     delete data.inputs.tab;
     delete data.inputs.moduleId;
     delete data.inputs.inject;
@@ -321,7 +329,7 @@ function setFilePickerHook() {
         const ext = button[0].dataset.extras;
         if (!ext) return;
         const extraExt = ext.split(",");
-        app.extensions ? app.extensions.push(...extraExt) : app.extensions = extraExt;
+        app.extensions ? app.extensions.push(...extraExt) : (app.extensions = extraExt);
         app._customExtensionsAdded = true;
         app.render(true);
     });

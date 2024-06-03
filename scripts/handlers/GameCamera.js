@@ -20,7 +20,7 @@ export class GameCamera {
             MINGROUND: 1,
         };
         this.controls.addEventListener("change", this.onChange.bind(this));
-        this.onChangeFreeCamera = debounce(this.onChangeFreeCamera.bind(this), 100);
+        this.onChangeFreeCamera = foundry.utils.debounce(this.onChangeFreeCamera.bind(this), 100);
         this.setControlPreset();
     }
 
@@ -82,8 +82,8 @@ export class GameCamera {
 
     computeBounds() {
         const dimensions = canvas.scene.dimensions;
-        const minBounds = new THREE.Vector3(0, -100000, 0);//new THREE.Vector3(dimensions.sceneX / factor, -100000, dimensions.sceneY / factor);
-        const maxBounds = new THREE.Vector3((dimensions.sceneWidth + dimensions.sceneX*2) / factor, 100000, (dimensions.sceneHeight + dimensions.sceneY*2) / factor);
+        const minBounds = new THREE.Vector3(0, -100000, 0); //new THREE.Vector3(dimensions.sceneX / factor, -100000, dimensions.sceneY / factor);
+        const maxBounds = new THREE.Vector3((dimensions.sceneWidth + dimensions.sceneX * 2) / factor, 100000, (dimensions.sceneHeight + dimensions.sceneY * 2) / factor);
         const box = new THREE.Box3(minBounds, maxBounds);
         this._bounds = box;
     }
@@ -110,8 +110,8 @@ export class GameCamera {
             maxPolarAngleRegular: Math.toRadians(game.settings.get("levels-3d-preview", "gameCameraMaxAngle") ?? 45),
             minPolarAngleTopDown: 0.1,
             maxPolarAngleTopDown: 0.1,
-            minAzimuthAngle: isInfinity ? -Infinity : minAzimuthSett / 180 * Math.PI,
-            maxAzimuthAngle: isInfinity ? Infinity : maxAzimuthSett / 180 * Math.PI,
+            minAzimuthAngle: isInfinity ? -Infinity : (minAzimuthSett / 180) * Math.PI,
+            maxAzimuthAngle: isInfinity ? Infinity : (maxAzimuthSett / 180) * Math.PI,
             clipping: game.settings.get("levels-3d-preview", "gameCameraClipping"),
         };
         if (!this.CONFIG.clipping) this.camera.near = 0.1;
@@ -123,7 +123,7 @@ export class GameCamera {
         this.controls.minAzimuthAngle = this.CONFIG.minAzimuthAngle;
         this.controls.maxAzimuthAngle = this.CONFIG.maxAzimuthAngle;
         this.controls.screenSpacePanning = false;
-        const squares = game.settings.get("levels-3d-preview", "gameCameraMaxZoom") * 2 * Math.max(canvas.scene.dimensions.sceneWidth, canvas.scene.dimensions.sceneHeight) / canvas.scene.dimensions.size;
+        const squares = (game.settings.get("levels-3d-preview", "gameCameraMaxZoom") * 2 * Math.max(canvas.scene.dimensions.sceneWidth, canvas.scene.dimensions.sceneHeight)) / canvas.scene.dimensions.size;
         this.CONSTS.MAXDIST = Math.sqrt(squares / 100) * 0.7 + 1;
     }
 
@@ -151,9 +151,12 @@ export class GameCamera {
             this.setHeight();
             this.keepInBounds();
         }
-        canvas.perception.update({
-            refreshSounds: true,
-        }, true);
+        canvas.perception.update(
+            {
+                refreshSounds: true,
+            },
+            true,
+        );
     }
 
     onChangeFreeCamera() {
@@ -163,15 +166,16 @@ export class GameCamera {
         let collision = null;
         for (const c of collisions) {
             let entity3D = c.object.userData.entity3D;
-            if (!entity3D) c.object.traverseAncestors((a) => {
-                if (a.userData.entity3D) entity3D = a.userData.entity3D;
-            });
+            if (!entity3D)
+                c.object.traverseAncestors((a) => {
+                    if (a.userData.entity3D) entity3D = a.userData.entity3D;
+                });
             const isBox = entity3D?.cameraCollision;
             if (!isBox && c.distance < 0.25) continue;
             collision = c.point;
             break;
         }
-        
+
         let targetPoint = collision || target;
         //if (this.controls._lockZero) targetPoint.y = Math.max(targetPoint.y, 0);
         this.controls.target = targetPoint;

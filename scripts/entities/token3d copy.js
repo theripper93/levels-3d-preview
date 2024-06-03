@@ -6,7 +6,7 @@ import { TokenAnimationHandler } from "../handlers/tokenAnimationHandler.js";
 import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from "../lib/three-mesh-bvh.js";
 import { heightHighlightShaderMaterial, radialGradientShaderMaterial } from "../shaders/shaderMaterials.js";
 import { ActiveEffectEffect } from "./effects/activeEffect.js";
-import {RangeRingEffect} from "./effects/rangeRing.js";
+import { RangeRingEffect } from "./effects/rangeRing.js";
 import { imageTo3d } from "../helpers/imageTo3D.js";
 THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
 THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
@@ -41,9 +41,9 @@ export class Token3D {
         this.getFlags();
         this._baseColor = new THREE.Color(this.baseColor);
         this.forceDrawBars = this.drawBars;
-        this.drawBars = debounce(this.drawBars, 100);
-        this.drawName = debounce(this.drawName, 100);
-        this.drawHeightIndicatorDebounced = debounce(this.drawHeightIndicator, 100);
+        this.drawBars = foundry.utils.debounce(this.drawBars, 100);
+        this.drawName = foundry.utils.debounce(this.drawName, 100);
+        this.drawHeightIndicatorDebounced = foundry.utils.debounce(this.drawHeightIndicator, 100);
         this.animationHandler = new TokenAnimationHandler(this);
     }
 
@@ -88,7 +88,7 @@ export class Token3D {
     async load() {
         if (!this.gtflPath && !this.imageTexture) this.imageTexture = this.token.document.texture.src;
         this.texture = await this._parent.helpers.loadTexture(this.imageTexture); //this.loadTexture();
-        if(!this.texture?.image) this.texture = await this._parent.helpers.loadTexture(CONST.DEFAULT_TOKEN);
+        if (!this.texture?.image) this.texture = await this._parent.helpers.loadTexture(CONST.DEFAULT_TOKEN);
         const token3d = this.gtflPath || this.imageTexture ? await this.loadModel() : this.draw();
         if (this.token.document.light.bright !== 0 || this.token.document.light.dim) this.loadLight();
         this._loaded = true;
@@ -129,7 +129,7 @@ export class Token3D {
 
     async getModel() {
         if (!this.gtflPath) {
-            if (!this.standupFace && this.texture.image) {                
+            if (!this.standupFace && this.texture.image) {
                 const standup3d = await imageTo3d(this.texture.image);
                 this.standUp = true;
                 this.standUpMesh = standup3d;
@@ -138,7 +138,7 @@ export class Token3D {
                     object: standup3d,
                     scene: standup3d,
                     model: standup3d,
-                }
+                };
             }
 
             const texture = this.texture;
@@ -378,12 +378,12 @@ export class Token3D {
         }
 
         if (materialType === "texcol") {
-                model.traverse((child) => {
-                    if (child.isMesh) {
-                        if (this.color) child.material.color = new THREE.Color(this.color);
-                        child.material.map = this.texture;
-                    }
-                });
+            model.traverse((child) => {
+                if (child.isMesh) {
+                    if (this.color) child.material.color = new THREE.Color(this.color);
+                    child.material.map = this.texture;
+                }
+            });
             return;
         }
 
@@ -411,15 +411,15 @@ export class Token3D {
         if (this.pathTraced) {
             const customBlendMap = "#ifdef USE_MAP\n\tvec4 texelColor = texture2D( map, vUv );\n\ttexelColor = mapTexelToLinear( texelColor );\n\tdiffuseColor.rgb = mix(diffuseColor.rgb, texelColor.rgb, texelColor.a);\n#endif";
             material.onBeforeCompile = (shader) => {
-                shader.fragmentShader = shader.fragmentShader.replace("#include <map_fragment>", customBlendMap)
+                shader.fragmentShader = shader.fragmentShader.replace("#include <map_fragment>", customBlendMap);
             };
         }
 
-            model.traverse((child) => {
-                if (child.isMesh) {
-                    child.material = material;
-                }
-            });
+        model.traverse((child) => {
+            if (child.isMesh) {
+                child.material = material;
+            }
+        });
     }
 
     async setPortrait(model) {
@@ -493,7 +493,7 @@ export class Token3D {
         const x = x3d * this.factor - this.token.w / 2;
         const y = z3d * this.factor - this.token.h / 2;
         const z = Math.round(((y3d * this.factor * canvas.dimensions.distance) / canvas.dimensions.size) * 100) / 100;
-        const snapped = canvas.grid.getSnappedPosition(x, y);
+        const snapped = canvas.grid.getSnappedPoint({ x, y }, { mode: CONST.GRID_SNAPPING_MODES.TOP_LEFT_CORNER });
         const dest = {
             x: useSnapped ? snapped.x : x,
             y: useSnapped ? snapped.y : y,
@@ -1185,14 +1185,13 @@ export class Token3D {
     }
 
     async drawName() {
-        
         const drawName = () => {
             const style = this.token._getTextStyle();
             const name = new PreciseText(this.token.document.name, style);
             name.anchor.set(0.5, 0);
             name.position.set(this.token.w / 2, this.token.h + 2);
             return name;
-        }
+        };
         const name = drawName();
 
         /*name.width *= 2;
@@ -1379,7 +1378,7 @@ export class Token3D {
             if (permLevel < 3) continue;
             const user = game.users.get(userId);
             if (!user || user.isGM) continue;
-            return user.color;
+            return user.color.css;
         }
         return 0xf2ff00;
     }
@@ -1476,14 +1475,13 @@ export class Token3D {
     }
 
     static setHooks() {
-
         Hooks.on("refreshToken", (token, renderFlags) => {
             if (!game.Levels3DPreview?._active) return;
-            const token3d = game.Levels3DPreview.tokens[token.id]
-            if (renderFlags.refreshNameplate) token3d.drawName()
-            if (renderFlags.refreshBars) token3d.drawBars()
-            if (renderFlags.refreshEffects) token3d.drawEffects()
-        })
+            const token3d = game.Levels3DPreview.tokens[token.id];
+            if (renderFlags.refreshNameplate) token3d.drawName();
+            if (renderFlags.refreshBars) token3d.drawBars();
+            if (renderFlags.refreshEffects) token3d.drawEffects();
+        });
 
         Hooks.on("updateToken", (tokenDocument, updates) => {
             if (!game.Levels3DPreview._active) return;

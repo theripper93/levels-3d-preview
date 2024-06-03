@@ -11,7 +11,7 @@ export class WorkerHandler {
     }
 
     get enabled() {
-        return game.Levels3DPreview?.CONFIG?.useMultithreading && game.Levels3DPreview?.object3dSight;// && game.Levels3DPreview?.fogExploration;
+        return game.Levels3DPreview?.CONFIG?.useMultithreading && game.Levels3DPreview?.object3dSight; // && game.Levels3DPreview?.fogExploration;
     }
 
     initRaycastWorker() {
@@ -33,7 +33,7 @@ export class WorkerHandler {
                 }
             }
             if (e.data.type == "refresh") {
-                if(this._waitingForInit) this._visionReady = true;
+                if (this._waitingForInit) this._visionReady = true;
                 this.refresh();
             }
             if (e.data.type == "rulerPoints" && game.Levels3DPreview.ruler.useRaycastRuler) {
@@ -43,7 +43,7 @@ export class WorkerHandler {
                 console.error(e.data.error);
             }
             ///debug
-            
+
             /*
             if (e.data.type == "removed") {
                 console.log("Removed", e.data.data);
@@ -61,7 +61,6 @@ export class WorkerHandler {
                 mesh.name = "shadowWorld";
                 game.Levels3DPreview.scene.add(mesh);
             }*/
-            
         };
     }
 
@@ -74,7 +73,7 @@ export class WorkerHandler {
                 initializeVision: true,
                 refreshLighting: true,
                 refreshSounds: true,
-                refreshTiles: true,
+                refreshOcclusion: true,
                 refreshVision: true,
             },
             true,
@@ -82,7 +81,7 @@ export class WorkerHandler {
     }
 
     requestWorkerRaycast(data, callback) {
-        data.callbackId = randomID(20);
+        data.callbackId = foundry.utils.randomID(20);
         this.raycastWorker.port.postMessage(data);
         this.callbacks[data.callbackId] = callback;
     }

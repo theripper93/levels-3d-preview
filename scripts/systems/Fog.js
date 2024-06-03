@@ -1,5 +1,5 @@
 import * as THREE from "../lib/three.module.js";
-import {factor} from "../main.js";
+import { factor } from "../main.js";
 
 export class Fog {
     constructor(parent) {
@@ -8,8 +8,8 @@ export class Fog {
         this._overlay = null;
         this._lastBase64 = null;
         this.overlayRepeat = new THREE.Vector2(1, 1);
-        this.debouncedUpdate = this.updateTexture;// !this._sharedContext ? debounce(this.updateTexture, 300) : this.updateTexture;
-        this.extractor ??= new TextureExtractor(canvas.app.renderer, {callerName: "FogExtractorCanvas3D", controlHash: true, format: PIXI.FORMATS.RED});
+        this.debouncedUpdate = this.updateTexture; // !this._sharedContext ? foundry.utils.debounce(this.updateTexture, 300) : this.updateTexture;
+        this.extractor ??= new TextureExtractor(canvas.app.renderer, { callerName: "FogExtractorCanvas3D", controlHash: true, format: PIXI.FORMATS.RED });
         this.extractor.reset();
         this.initTexture();
         this.initPixiRT();
@@ -45,14 +45,14 @@ export class Fog {
 
     initPixiRT() {
         const fowQuality = game.settings.get("levels-3d-preview", "fowQuality");
-        const fogTexResolution = canvas.effects.visibility.textureConfiguration.resolution * fowQuality;
+        const fogTexResolution = canvas.visibility.textureConfiguration.resolution * fowQuality;
         this.pixiRenderTexture = PIXI.RenderTexture.create({ width: canvas.dimensions.width, height: canvas.dimensions.height, resolution: this._sharedContext ? fogTexResolution : 0.1 });
         this.pixiRenderTexture.baseTexture.alphaMode = PIXI.ALPHA_MODES.NO_PREMULTIPLIED_ALPHA;
     }
 
     async initOverlay() {
-        if (!canvas.scene.fogOverlay) return;
-        const overlay = await game.Levels3DPreview.helpers.loadTexture(canvas.scene.fogOverlay);
+        if (!canvas.fog.overlay) return;
+        const overlay = await game.Levels3DPreview.helpers.loadTexture(canvas.fog.overlay);
         overlay.flipY = false;
         overlay.wrapS = THREE.RepeatWrapping;
         overlay.wrapT = THREE.RepeatWrapping;
@@ -85,22 +85,24 @@ export class Fog {
 
     updateShaders() {
         if (!this._ready) return;
-        const particleMaterials = this._parent.particleSystem.system.children.map(c => c.material)
-        Object.values(this._parent.materialProgramCache).concat(particleMaterials).forEach((m) => {
-            m.uniforms.fogTexture = { value: this.fogTexture };
-            m.uniforms.fogOverlay = { value: this._overlay };
-            m.uniforms.useOverlay = { value: !!this._overlay };
-            m.uniforms.overlayRepeat = { value: this.overlayRepeat };
-            m.uniforms.sceneDimensions = { value: this.sceneDimensions };
-            m.uniforms.sceneOrigin = { value: this.sceneOrigin };
-        });
+        const particleMaterials = this._parent.particleSystem.system.children.map((c) => c.material);
+        Object.values(this._parent.materialProgramCache)
+            .concat(particleMaterials)
+            .forEach((m) => {
+                m.uniforms.fogTexture = { value: this.fogTexture };
+                m.uniforms.fogOverlay = { value: this._overlay };
+                m.uniforms.useOverlay = { value: !!this._overlay };
+                m.uniforms.overlayRepeat = { value: this.overlayRepeat };
+                m.uniforms.sceneDimensions = { value: this.sceneDimensions };
+                m.uniforms.sceneOrigin = { value: this.sceneOrigin };
+            });
     }
 
     async generateTexture() {
         const originalTint = canvas.fog.sprite.tint;
         canvas.fog.sprite.tint = 0x808080;
-        if (canvas.scene.fogExploration) canvas.app.renderer.render(canvas.fog.sprite, { renderTexture: this.pixiRenderTexture, clear: true });
-        canvas.app.renderer.render(canvas.masks.vision.vision, { renderTexture: this.pixiRenderTexture, clear: !canvas.scene.fogExploration });
+        if (canvas.scene.fog.exploration) canvas.app.renderer.render(canvas.fog.sprite, { renderTexture: this.pixiRenderTexture, clear: true });
+        canvas.app.renderer.render(canvas.masks.vision.vision, { renderTexture: this.pixiRenderTexture, clear: !canvas.scene.fog.exploration });
         canvas.fog.sprite.tint = originalTint;
         if (this._sharedContext) {
             const texProps = this._parent.renderer.properties.get(this.webglFogTexture);
@@ -114,7 +116,7 @@ export class Fog {
                 quality: 0.8,
                 debug: false,
             });
-            if(base64) this._lastBase64 = base64;
+            if (base64) this._lastBase64 = base64;
             if (!base64) {
                 if (this._lastBase64) {
                     return this._lastBase64;
@@ -165,7 +167,8 @@ export function injectFoWShaders(THREELIB) {
     #endif
     `;
 
-    THREELIB.ShaderChunk.fog_fragment = `
+    THREELIB.ShaderChunk.fog_fragment =
+        `
     if( sceneDimensions.x != 0.0 && vWorldPositionFoW.x >= sceneOrigin.x && vWorldPositionFoW.x <= sceneDimensions.x - sceneOrigin.x && vWorldPositionFoW.z >= sceneOrigin.y && vWorldPositionFoW.z <= sceneDimensions.y - sceneOrigin.y ){
         float sceneX = (vWorldPositionFoW.x)/sceneDimensions.x;
         float sceneY = (vWorldPositionFoW.z)/sceneDimensions.y;
@@ -179,7 +182,6 @@ export function injectFoWShaders(THREELIB) {
     }
     ` + THREELIB.ShaderChunk.fog_fragment;
 }
-
 
 /*
 

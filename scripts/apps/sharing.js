@@ -173,7 +173,7 @@ class ShareMap extends FormApplication {
     }
 
     static get defaultOptions() {
-        return mergeObject(super.defaultOptions, {
+        return foundry.utils.mergeObject(super.defaultOptions, {
             title: "Share Map",
             id: `tdc-map-share`,
             template: `modules/levels-3d-preview/templates/sharing/ShareMap.hbs`,
@@ -191,7 +191,7 @@ class ShareMap extends FormApplication {
         return {
             scene: this.scene,
             user: game.user,
-            secret: game.settings.get("levels-3d-preview", "mapsharingKeys")[this.scene.name] ?? randomID(40),
+            secret: game.settings.get("levels-3d-preview", "mapsharingKeys")[this.scene.name] ?? foundry.utils.randomID(40),
             assetpacks: assetpacks.map((ap) => {
                 return {
                     name: game.i18n.localize(`levels3dpreview.sharing.packs.${ap}`),
@@ -222,7 +222,7 @@ class ShareMap extends FormApplication {
 
     async _updateObject(event, formData) {
         formData.scene = this.scene;
-        if (!formData.secret) formData.secret = randomID(40);
+        if (!formData.secret) formData.secret = foundry.utils.randomID(40);
         if (!formData.image || !formData.description || !formData.assetpacks.length) return ui.notifications.error(game.i18n.localize("levels3dpreview.sharing.sharemap.missingfields"));
         if (formData.author.toLowerCase() == "gamemaster") return ui.notifications.error(game.i18n.localize("levels3dpreview.sharing.sharemap.gamemaster"));
         Dialog.confirm({
@@ -298,7 +298,7 @@ class MapBrowser extends Application {
         const active = this.contest.active;
         const isNext = !active && this.contest.isNext;
         const cssClass = active ? "contest-active" : isNext ? "contest-next" : "";
-        return mergeObject(super.defaultOptions, {
+        return foundry.utils.mergeObject(super.defaultOptions, {
             title: game.i18n.localize("levels3dpreview.sharing.mapbrowser.title"),
             id: `tdc-map-browser`,
             template: `modules/levels-3d-preview/templates/sharing/MapBrowser.hbs`,
@@ -503,7 +503,7 @@ class MapBrowser extends Application {
         const journalData = createJournal ? await this.getJournalEntry(mapData.name + ` (${mapData.author})`, mapData.description) : {};
         map.data.thumb = thumb;
         const originalID = map.data._id;
-        const newID = randomID();
+        const newID = foundry.utils.randomID();
         map.data.active = false;
         map.data.flags["levels-3d-preview"].enablePlayers = true;
         map.data.flags["levels-3d-preview"].auto3d = true;
@@ -513,7 +513,8 @@ class MapBrowser extends Application {
         let stringified = JSON.stringify(map.data);
         stringified = stringified.replaceAll(originalID, newID);
         map.data = JSON.parse(stringified);
-        await Scene.create(map.data, { keepId: true });
+        const scene = await Scene.create(map.data, {keepId: true});
+        await CONFIG.Levels.helpers.migration.migrateData(scene);
         increaseDownloadCount(id);
         ui.notifications.info(game.i18n.localize("levels3dpreview.sharing.mapbrowser.imported") + `: ${map.data.name}`);
     }

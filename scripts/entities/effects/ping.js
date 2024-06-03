@@ -1,8 +1,6 @@
-import {mergeBufferGeometries} from "../../lib/BufferGeometryUtils.js";
+import { mergeBufferGeometries } from "../../lib/BufferGeometryUtils.js";
 import * as THREE from "../../lib/three.module.js";
-import {radialGradientShaderMaterial, coneFadeGradientShaderMaterial, radialRingGradientShaderMaterial} from "../../shaders/shaderMaterials.js";
-
-
+import { radialGradientShaderMaterial, coneFadeGradientShaderMaterial, radialRingGradientShaderMaterial } from "../../shaders/shaderMaterials.js";
 
 const CONFIG = {
     ANIMATION_TIME: 1.5,
@@ -11,12 +9,12 @@ const CONFIG = {
     RING_ENTER_TIME: 0.25,
     RING_DURATION: 0.25,
     RING_OPACITY: 0.9,
-}
+};
 
-export class Ping{
-    constructor (position, color, scale = 1) {
+export class Ping {
+    constructor(position, color, scale = 1) {
         const sound = game.settings.get("levels-3d-preview", "pingsound");
-        if(sound) AudioHelper.play({ src: sound, volume: game.settings.get("core", "globalInterfaceVolume") });
+        if (sound) foundry.audio.AudioHelper.play({ src: sound, volume: game.settings.get("core", "globalInterfaceVolume") });
         this.position = position;
         this.scale = scale;
         this._currentTime = 0;
@@ -38,7 +36,7 @@ export class Ping{
         return game.Levels3DPreview.scene;
     }
 
-    get pings() { 
+    get pings() {
         return game.Levels3DPreview.pings;
     }
 
@@ -52,18 +50,18 @@ export class Ping{
         this.ring.material.uniforms.curvecolor.value = color;
     }
 
-    update(delta) { 
+    update(delta) {
         this._currentTime += delta;
         if (this._currentTime > CONFIG.ANIMATION_TIME) {
             this.ping.visible = false;
             this.pings.delete(this);
             this.scene.remove(this.ping);
         }
-        if(this._currentTime <= CONFIG.CORE_SIZE_TIME) {
+        if (this._currentTime <= CONFIG.CORE_SIZE_TIME) {
             const scale = (this._currentTime / CONFIG.CORE_SIZE_TIME) * this.scale;
             this.ping.scale.set(scale, scale, scale);
         }
-        if(this._currentTime >= CONFIG.ANIMATION_TIME - CONFIG.CORE_SIZE_TIME) {
+        if (this._currentTime >= CONFIG.ANIMATION_TIME - CONFIG.CORE_SIZE_TIME) {
             const scale = ((CONFIG.ANIMATION_TIME - this._currentTime) / CONFIG.CORE_SIZE_TIME) * this.scale;
             this.ping.scale.set(scale, scale, scale);
         }
@@ -76,17 +74,14 @@ export class Ping{
         if (this._currentTime > CONFIG.RING_ENTER_TIME + CONFIG.RING_DURATION) {
             this.ring.material.uniforms.opacity.value = 0;
         }
-
     }
-
-
 }
 
 const pingSize = 0.1;
 const pingHeight = 0.5;
 
 const base = new THREE.CylinderGeometry(pingSize, pingSize, 0.01, 32);
-const top = new THREE.ConeGeometry(pingSize / 10, pingHeight*1.5, 32);
+const top = new THREE.ConeGeometry(pingSize / 10, pingHeight * 1.5, 32);
 top.translate(0, (pingHeight * 1.5) / 2, 0);
 const baseMaterial = radialGradientShaderMaterial.clone();
 baseMaterial.uniforms.curvecolor.value = new THREE.Color(0x00ff00);
@@ -96,7 +91,7 @@ baseMaterial.uniforms.glow.value = true;
 
 const baseMesh = new THREE.Mesh(base, baseMaterial);
 
-baseMesh.scale.set(0.5,1,0.5);
+baseMesh.scale.set(0.5, 1, 0.5);
 
 const topMaterial = coneFadeGradientShaderMaterial.clone();
 topMaterial.uniforms.curvecolor.value = new THREE.Color(0x00ff00);
@@ -111,12 +106,12 @@ const coreMesh = new THREE.Group();
 coreMesh.add(baseMesh);
 coreMesh.add(topMesh);
 
-const ring = new THREE.RingGeometry(pingSize/2, pingSize * 2, 32);
-ring.rotateX(- Math.PI / 2);
+const ring = new THREE.RingGeometry(pingSize / 2, pingSize * 2, 32);
+ring.rotateX(-Math.PI / 2);
 ring.translate(0, 0.01, 0);
 const ringMaterial = radialRingGradientShaderMaterial.clone();
 ringMaterial.uniforms.curvecolor.value = new THREE.Color(0x00ff00);
-ringMaterial.uniforms.innerRadius.value = pingSize/2;
+ringMaterial.uniforms.innerRadius.value = pingSize / 2;
 ringMaterial.uniforms.outerRadius.value = pingSize * 2;
 ringMaterial.uniforms.maxAlphaRadius.value = pingSize * 1.5;
 ringMaterial.uniforms.reverseGradient.value = true;

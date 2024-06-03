@@ -5,11 +5,11 @@ import { TokenAnimationHandler } from "../handlers/tokenAnimationHandler.js";
 import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from "../lib/three-mesh-bvh.js";
 import { heightHighlightShaderMaterial, radialGradientShaderMaterial } from "../shaders/shaderMaterials.js";
 import { ActiveEffectEffect } from "./effects/activeEffect.js";
-import {RangeRingEffect} from "./effects/rangeRing.js";
+import { RangeRingEffect } from "./effects/rangeRing.js";
 import { imageTo3d } from "../helpers/imageTo3D.js";
-import {Ruler3D} from "../systems/ruler3d.js";
-import {meshesToSingleMesh} from "../helpers/geometryUtils.js";
-import {createTargetGeometry} from "./effects/target.js";
+import { Ruler3D } from "../systems/ruler3d.js";
+import { meshesToSingleMesh } from "../helpers/geometryUtils.js";
+import { createTargetGeometry } from "./effects/target.js";
 THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
 THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
 THREE.Mesh.prototype.raycast = acceleratedRaycast;
@@ -36,7 +36,7 @@ export class Token3D {
         this.color = this.getColor();
         this.factor = factor;
         this.dispositionColor = this.getDispColor();
-        const targetMaterial = targetMaterialsCache[this.dispositionColor.getHexString()] ?? new THREE.MeshBasicMaterial({color: this.dispositionColor});
+        const targetMaterial = targetMaterialsCache[this.dispositionColor.getHexString()] ?? new THREE.MeshBasicMaterial({ color: this.dispositionColor });
         targetMaterialsCache[this.dispositionColor.getHexString()] = targetMaterial;
         this.reticule = new THREE.Mesh(createTargetGeometry((this._shaderSize * canvas.scene.dimensions.size) / (2 * factor), this._shaderSize), targetMaterial);
         this.targetSize = 0.1;
@@ -52,9 +52,9 @@ export class Token3D {
         this.getFlags();
         this._baseColor = new THREE.Color(this.baseColor);
         this.forceDrawBars = this.drawBars;
-        this.drawBars = debounce(this.drawBars, 100);
-        this.drawName = debounce(this.drawName, 100);
-        this.drawHeightIndicatorDebounced = debounce(this.drawHeightIndicator, 100);
+        this.drawBars = foundry.utils.debounce(this.drawBars, 100);
+        this.drawName = foundry.utils.debounce(this.drawName, 100);
+        this.drawHeightIndicatorDebounced = foundry.utils.debounce(this.drawHeightIndicator, 100);
         this.animationHandler = new TokenAnimationHandler(this);
     }
 
@@ -88,8 +88,8 @@ export class Token3D {
         this.collisionPlane = true;
         this.flatTokenStyle = this.token.document.getFlag("levels-3d-preview", "flatTokenStyle") ?? "default";
         const globalFlatTokenStyle = game.settings.get("levels-3d-preview", "flatTokenStyle") ?? "default";
-        if(this.flatTokenStyle === "default") this.flatTokenStyle = globalFlatTokenStyle;
-        
+        if (this.flatTokenStyle === "default") this.flatTokenStyle = globalFlatTokenStyle;
+
         this.stem = this.token.document.getFlag("levels-3d-preview", "stem") ?? false;
 
         this.standupFace = this.flatTokenStyle == "flat";
@@ -103,14 +103,14 @@ export class Token3D {
     async load() {
         if (!this.gtflPath && !this.imageTexture) this.imageTexture = this.token.document.texture.src;
         this.texture = await this._parent.helpers.loadTexture(this.imageTexture); //this.loadTexture();
-        if(!this.texture?.image) this.texture = await this._parent.helpers.loadTexture(CONST.DEFAULT_TOKEN);
+        if (!this.texture?.image) this.texture = await this._parent.helpers.loadTexture(CONST.DEFAULT_TOKEN);
         const token3d = this.gtflPath || this.imageTexture ? await this.loadModel() : this.draw();
         if (this.token.document.light.bright !== 0 || this.token.document.light.dim) this.loadLight();
         this._loaded = true;
         await this.initShaders();
         this.animationHandler.init();
         if (this.particleData.type != "none") this.initParticle();
-        const boundingBoxDepth = ((this.token.losHeight - this.document.elevation) * canvas.scene.dimensions.size) / canvas.dimensions.distance / factor
+        const boundingBoxDepth = ((this.token.losHeight - this.document.elevation) * canvas.scene.dimensions.size) / canvas.dimensions.distance / factor;
         const boundingBox = new THREE.BoxGeometry((this.document.width * canvas.grid.size) / factor, boundingBoxDepth, (this.document.height * canvas.grid.size) / factor);
         const boundingMesh = new THREE.Mesh(boundingBox, new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true, transparent: true, opacity: 1 }));
         boundingMesh.position.set(0, boundingBoxDepth / 2, 0);
@@ -150,7 +150,7 @@ export class Token3D {
 
     async getModel() {
         if (!this.gtflPath) {
-            if (this.flatTokenStyle == "extruded" && this.texture.image) {                
+            if (this.flatTokenStyle == "extruded" && this.texture.image) {
                 const standup3d = await imageTo3d(this.texture.image);
                 this.standUp = true;
                 this.standUpMesh = standup3d;
@@ -159,7 +159,7 @@ export class Token3D {
                     object: standup3d,
                     scene: standup3d,
                     model: standup3d,
-                }
+                };
             } else if (this.flatTokenStyle == "coin" && this.texture.image) {
                 const coinDepth = 0.1;
                 const borderRadius = 1.005;
@@ -176,11 +176,13 @@ export class Token3D {
 
                 const borderColor = this.color == "#ffffff" ? "#000000" : this.color;
 
-                const sideMaterial = coinBorderMaterialCache[borderColor] ?? new THREE.MeshStandardMaterial({
-                    color: borderColor,
-                    roughness: 1,
-                    metalness: 0,
-                });
+                const sideMaterial =
+                    coinBorderMaterialCache[borderColor] ??
+                    new THREE.MeshStandardMaterial({
+                        color: borderColor,
+                        roughness: 1,
+                        metalness: 0,
+                    });
 
                 coinBorderMaterialCache[borderColor] = sideMaterial;
 
@@ -195,8 +197,8 @@ export class Token3D {
                     object: coin,
                     scene: coin,
                     model: coin,
-                }
-            }else if (this.flatTokenStyle == "flat" || !this.texture.image) {
+                };
+            } else if (this.flatTokenStyle == "flat" || !this.texture.image) {
                 const texture = this.texture;
                 texture.encoding = THREE.sRGBEncoding;
                 const geometry = new THREE.PlaneGeometry((texture.image?.width || texture.image?.videoWidth || 1) / 1000, (texture.image?.height || texture.image?.videoHeight || 1) / 1000);
@@ -213,7 +215,6 @@ export class Token3D {
                     model: object,
                 };
             }
-
         }
         const filePath = this.gtflPath;
         const extension = filePath.split(".").pop().toLowerCase();
@@ -350,7 +351,6 @@ export class Token3D {
         this.hitbox.geometry.computeBoundingBox();
         this._size = this.hitbox.geometry.boundingBox.getSize(new THREE.Vector3());
 
-        
         this.mesh = pivot;
         this.adjust = {
             x: this.offsetX / factor,
@@ -438,12 +438,12 @@ export class Token3D {
         }
 
         if (materialType === "texcol") {
-                model.traverse((child) => {
-                    if (child.isMesh) {
-                        if (this.color) child.material.color = new THREE.Color(this.color);
-                        child.material.map = this.texture;
-                    }
-                });
+            model.traverse((child) => {
+                if (child.isMesh) {
+                    if (this.color) child.material.color = new THREE.Color(this.color);
+                    child.material.map = this.texture;
+                }
+            });
             return;
         }
 
@@ -471,15 +471,15 @@ export class Token3D {
         if (this.pathTraced) {
             const customBlendMap = "#ifdef USE_MAP\n\tvec4 texelColor = texture2D( map, vUv );\n\ttexelColor = mapTexelToLinear( texelColor );\n\tdiffuseColor.rgb = mix(diffuseColor.rgb, texelColor.rgb, texelColor.a);\n#endif";
             material.onBeforeCompile = (shader) => {
-                shader.fragmentShader = shader.fragmentShader.replace("#include <map_fragment>", customBlendMap)
+                shader.fragmentShader = shader.fragmentShader.replace("#include <map_fragment>", customBlendMap);
             };
         }
 
-            model.traverse((child) => {
-                if (child.isMesh) {
-                    child.material = material;
-                }
-            });
+        model.traverse((child) => {
+            if (child.isMesh) {
+                child.material = material;
+            }
+        });
     }
 
     async setPortrait(model) {
@@ -558,7 +558,7 @@ export class Token3D {
     }
 
     async forceUpdatePositionFrom3D(animate = false, useSnapped = false) {
-        if(!game.user.isGM) return;
+        if (!game.user.isGM) return;
         this.skipMoveAnimation = true;
         const x3d = this.mesh.position.x;
         const y3d = this.mesh.position.y;
@@ -566,7 +566,7 @@ export class Token3D {
         const x = x3d * this.factor - this.token.w / 2;
         const y = z3d * this.factor - this.token.h / 2;
         const z = Math.round(((y3d * this.factor * canvas.dimensions.distance) / canvas.dimensions.size) * 100) / 100;
-        const snapped = canvas.grid.getSnappedPosition(x, y);
+        const snapped = canvas.grid.getSnappedPoint({ x, y }, { mode: CONST.GRID_SNAPPING_MODES.TOP_LEFT_CORNER });
         const dest = {
             x: useSnapped ? snapped.x : x,
             y: useSnapped ? snapped.y : y,
@@ -585,7 +585,7 @@ export class Token3D {
         const x = x3d * this.factor - this.token.w / 2;
         const y = z3d * this.factor - this.token.h / 2;
         const z = Math.round(((y3d * this.factor * canvas.dimensions.distance) / canvas.dimensions.size) * 100) / 100;
-        const snapped = canvas.grid.getSnappedPosition(x, y);
+        const snapped = canvas.grid.getSnappedPoint({ x, y }, { mode: CONST.GRID_SNAPPING_MODES.TOP_LEFT_CORNER });
         const dest = {
             x: useSnapped ? snapped.x : x,
             y: useSnapped ? snapped.y : y,
@@ -683,50 +683,48 @@ export class Token3D {
         const mesh = this.mesh;
         const token = this.token;
         const f = this.factor;
-        
-        
+
         this.setPositionFrom2D(force);
-        
+
         const y = (token.document.elevation * canvas.scene.dimensions.size) / canvas.dimensions.distance / f;
-        
+
         if (force) mesh.position.y = y;
-        
+
         const placeablePosition = new THREE.Vector2(token.center.x / f, token.center.y / f);
-        
+
         const targetPosition = new THREE.Vector2(this.documentCenter.x / f, this.documentCenter.y / f);
-        
+
         const initialPosition = new THREE.Vector2(placeablePosition.x, placeablePosition.y);
-        
+
         const currentAnimation = CanvasAnimation.animations[token.animationName];
 
         let animationElevation = undefined;
-        
-        
+
         if (currentAnimation) {
             const attrX = currentAnimation.attributes.find((a) => a.attribute === "x");
             const attrY = currentAnimation.attributes.find((a) => a.attribute === "y");
             const attrElevation = currentAnimation.attributes.find((a) => a.attribute === "animationElevation");
             if (attrElevation) animationElevation = token.animationElevation;
 
-            initialPosition.x = attrX?.from !== undefined ? (attrX.from + token.document.width * canvas.grid.size / 2) / f : placeablePosition.x;
-            initialPosition.y = attrY?.from !== undefined ? (attrY.from + token.document.height * canvas.grid.size / 2) / f : placeablePosition.y;
+            initialPosition.x = attrX?.from !== undefined ? (attrX.from + (token.document.width * canvas.grid.size) / 2) / f : placeablePosition.x;
+            initialPosition.y = attrY?.from !== undefined ? (attrY.from + (token.document.height * canvas.grid.size) / 2) / f : placeablePosition.y;
 
-            targetPosition.x = attrX?.to !== undefined ? (attrX.to + token.document.width * canvas.grid.size / 2) / f : this.documentCenter.x / f;
-            targetPosition.y = attrY?.to !== undefined ? (attrY.to + token.document.height * canvas.grid.size / 2) / f : this.documentCenter.y / f;
+            targetPosition.x = attrX?.to !== undefined ? (attrX.to + (token.document.width * canvas.grid.size) / 2) / f : this.documentCenter.x / f;
+            targetPosition.y = attrY?.to !== undefined ? (attrY.to + (token.document.height * canvas.grid.size) / 2) / f : this.documentCenter.y / f;
         }
-        
+
         const maxDistance = initialPosition.distanceTo(targetPosition);
         const distance = initialPosition.distanceTo(placeablePosition);
         const alpha = maxDistance === 0 ? 1 : distance / maxDistance;
-        
+
         if (!mesh) return;
-        
+
         const lerp = (a, b, n) => {
             return (1 - n) * a + n * b;
         };
-        
+
         const yPosition = lerp(mesh.position.y, y, animationElevation ?? alpha);
-        
+
         mesh.position.y = yPosition;
 
         const rotations = {
@@ -1040,9 +1038,8 @@ export class Token3D {
         const defeated = this.token?.actor?.effects.some((e) => e.statuses.has(CONFIG.specialStatusEffects.DEFEATED)) || this.token?.combatant?.defeated;
         this.isProne = defeated || this.isTokenProne ? true : false;
         if (oldProne !== this.isProne) this.toggleProne();
-        const tokenEffects = this.token.document.effects;
         const actorEffects = this.token.actor?.temporaryEffects || [];
-        const effects = tokenEffects.concat(actorEffects).map((e) => e.icon ?? e);
+        const effects = actorEffects.map((e) => e.img ?? e);
         if (effects.length === this.effectsContainer.children.length) return;
         if (!firstDraw && effects.length > this.effectsContainer.children.length) {
             const newEffects = effects.filter((effect) => !this.effectsContainer.children.map((child) => child.userData.effect).includes(effect));
@@ -1058,7 +1055,7 @@ export class Token3D {
         });
         //this.effectsContainer.remove(...toRemove)
         let effectsize = this.h / 5;
-        effectsize = Math.min(Math.max(effectsize, 0.02), 0.05);// * (canvas.grid.size / 100);
+        effectsize = Math.min(Math.max(effectsize, 0.02), 0.05); // * (canvas.grid.size / 100);
 
         const radiusSubdivision = (Math.PI * 2) / effects.length;
         let currentRadius = 0;
@@ -1135,7 +1132,7 @@ export class Token3D {
                 this.reticule.scale.set(scaleFactor, scaleFactor, scaleFactor);
             }
             if (this.reticule && this.flatTokenStyle == "coin") {
-                this.reticule.scale.set(1,1,1)
+                this.reticule.scale.set(1, 1, 1);
             }
             const showDisp = resp.showDisp;
             if (showDisp) {
@@ -1182,7 +1179,6 @@ export class Token3D {
     }
 
     _setupBorderMaterials() {
-        
         const mat1 = new THREE.MeshStandardMaterial({
             color: 0xffffff,
             emissive: 0xffffff,
@@ -1301,14 +1297,13 @@ export class Token3D {
     }
 
     async drawName() {
-        
         const drawName = () => {
             const style = this.token._getTextStyle();
             const name = new PreciseText(this.token.document.name, style);
             name.anchor.set(0.5, 0);
             name.position.set(this.token.w / 2, this.token.h + 2);
             return name;
-        }
+        };
         const name = drawName();
 
         /*name.width *= 2;
@@ -1482,7 +1477,7 @@ export class Token3D {
 
     updateVisibility() {
         if (this.heightIndicator) this.heightIndicator.rotation.y += 0.01;
-        if (this.reticule) this.reticule.rotation.y += (0.0005 / this._shaderSize);
+        if (this.reticule) this.reticule.rotation.y += 0.0005 / this._shaderSize;
         if (!this._loaded || !this.mesh || !this.nameplate) return;
         this.mesh.visible = this.alwaysVisible || this.token.visible || this.token.hasPreview;
         this.nameplate.visible = this.token.nameplate?.visible;
@@ -1496,7 +1491,7 @@ export class Token3D {
             if (permLevel < 3) continue;
             const user = game.users.get(userId);
             if (!user || user.isGM) continue;
-            return user.color;
+            return user.color.css;
         }
         return 0xf2ff00;
     }
@@ -1518,25 +1513,25 @@ export class Token3D {
     }
 
     _onClickLeft(e) {
-        if(this.isCaptured) return;
+        if (this.isCaptured) return;
         const event = e;
         this.token._onClickLeft(event);
     }
 
     _onClickRight(e) {
-        if(this.isCaptured) return;
+        if (this.isCaptured) return;
         const event = e;
         this.token._onClickRight(event);
     }
 
     _onClickLeft2(e) {
-        if(this.isCaptured) return;
+        if (this.isCaptured) return;
         const event = e;
         this.token._onClickLeft2(event);
     }
 
     _onClickRight2(e) {
-        if(this.isCaptured) return;
+        if (this.isCaptured) return;
         const event = e;
         this.token._onClickRight2(event);
     }
@@ -1580,13 +1575,13 @@ export class Token3D {
         this.model.parent.position.set(0, 0, 0);
         this.model.parent.rotation.set(0, 0, 0);
 
-        this.model.parent.updateMatrix()
+        this.model.parent.updateMatrix();
         this.model.parent.updateMatrixWorld(true);
         this.model.updateMatrixWorld(true);
         const mergedMesh = meshesToSingleMesh([this.model]);
 
         this._mergedGeometry = mergedMesh.geometry;
-        
+
         this.model.parent.position.copy(prevPosition);
         this.model.parent.rotation.copy(prevRotation);
 
@@ -1610,7 +1605,7 @@ export class Token3D {
             .emitterSize(particleData.position === "center" ? centerSize : size)
             .attach()
             .to(this.placeable);
-        if(particleData.position === "surface") this.particleEffect.meshSurface()
+        if (particleData.position === "surface") this.particleEffect.meshSurface();
         this.particleEffect.start(false);
     }
 
@@ -1623,7 +1618,7 @@ export class Token3D {
             color: this.document.getFlag("levels-3d-preview", "ParticleColor") ?? "#ffffff",
             color2: this.document.getFlag("levels-3d-preview", "ParticleColor2") ?? "#ffffff",
             presetIntensity: this.document.getFlag("levels-3d-preview", "ParticleIntensity") ?? 1,
-            radius: this.document.getFlag("levels-3d-preview", "ParticleRadius") || (Math.max(this.document.width, this.document.height) * canvas.scene.grid.distance),
+            radius: this.document.getFlag("levels-3d-preview", "ParticleRadius") || Math.max(this.document.width, this.document.height) * canvas.scene.grid.distance,
             position: this.document.getFlag("levels-3d-preview", "ParticlePosition") ?? "surface",
         };
     }
@@ -1661,20 +1656,19 @@ export class Token3D {
     }
 
     static setHooks() {
-
         Hooks.on("refreshToken", (token, renderFlags) => {
             if (!game.Levels3DPreview?._active) return;
-            const token3d = game.Levels3DPreview.tokens[token.id]
+            const token3d = game.Levels3DPreview.tokens[token.id];
             if (!token3d || token3d.isCaptured) return;
-            if (renderFlags.refreshNameplate) token3d.drawName()
-            if (renderFlags.refreshBars) token3d.drawBars()
-            if (renderFlags.redrawEffects || renderFlags.refreshEffects) token3d.drawEffects()
+            if (renderFlags.refreshNameplate) token3d.drawName();
+            if (renderFlags.refreshBars) token3d.drawBars();
+            if (renderFlags.redrawEffects || renderFlags.refreshEffects) token3d.drawEffects();
             if (renderFlags.refreshBorder) {
-                token3d.refreshOutline()
-                token3d.refreshBorder()
+                token3d.refreshOutline();
+                token3d.refreshBorder();
             }
             token3d.setPosition();
-        })
+        });
 
         Hooks.on("updateToken", (tokenDocument, updates) => {
             if (!game.Levels3DPreview._active) return;
@@ -1695,18 +1689,22 @@ export class Token3D {
             if (!updateX && !updateY && updateElevation) {
                 token.animationElevation = 0;
                 CanvasAnimation.animate(
-                    [{
-                        attribute: "animationElevation",
-                        from: token.animationElevation,
-                        to: 1,
-                        parent: token,
-                    }],{
+                    [
+                        {
+                            attribute: "animationElevation",
+                            from: token.animationElevation,
+                            to: 1,
+                            parent: token,
+                        },
+                    ],
+                    {
                         duration: 250,
                         easing: CanvasAnimation.easeInCircle,
                         name: token.animationName,
                         priority: PIXI.UPDATE_PRIORITY.OBJECTS + 1,
-                        ontick: ()=> token.refresh(),
-                });
+                        ontick: () => token.refresh(),
+                    },
+                );
             }
         });
 
@@ -1714,14 +1712,14 @@ export class Token3D {
             if (!game.Levels3DPreview._active || game.user.isGM) return;
             const flag = canvas.scene.flags["levels-3d-preview"]?.grounding;
             if (!flag) return;
-            if(tokenDocument.hasStatusEffect("fly") && flag === "notFlying") return;
+            if (tokenDocument.hasStatusEffect("fly") && flag === "notFlying") return;
             if (!("x" in updates) && !("y" in updates) && !("elevation" in updates)) return;
             const object = tokenDocument.object;
             const x = (updates.x ?? tokenDocument.x) + tokenDocument.width * (canvas.grid.size / 2);
             const y = (updates.y ?? tokenDocument.y) + tokenDocument.height * (canvas.grid.size / 2);
             const height = object.losHeight - object.document.elevation;
             const elevation = (updates.elevation ?? tokenDocument.elevation) + height;
-            const collision = game.Levels3DPreview.interactionManager.computeSightCollision({x, y, z: elevation}, {x, y, z: -100000});
+            const collision = game.Levels3DPreview.interactionManager.computeSightCollision({ x, y, z: elevation }, { x, y, z: -100000 });
             if (!collision) return;
             const pos2d = Ruler3D.pos3DToCanvas(collision);
             const distanceFromGround = (updates.elevation ?? tokenDocument.elevation) - pos2d.z;
@@ -1730,7 +1728,7 @@ export class Token3D {
                 ui.notifications.error(game.i18n.localize("levels3dpreview.errors.tokenNotGrounded"));
                 return false;
             }
-        })
+        });
 
         Hooks.on("targetToken", (user, token) => {
             if (game.Levels3DPreview?._active) game.Levels3DPreview.tokens[token.id]?.reDraw();

@@ -1752,19 +1752,6 @@ export function registerConfigs() {
         });
     });
 
-    Hooks.on("renderAmbientSoundConfig", (app, html) => {
-        injectConfig.inject(app, html, {
-            moduleId: "levels-3d-preview",
-            inject: 'input[name="easing"]',
-            positional: {
-                type: "checkbox",
-                label: game.i18n.localize("levels3dpreview.flags.positional.label"),
-                notes: game.i18n.localize("levels3dpreview.flags.positional.notes"),
-                default: false,
-            },
-        });
-    });
-
     Hooks.on("renderAmbientLightConfig", (app, html) => {
         const PS = game.Levels3DPreview.CONFIG.PARTICLE_SYSTEMS;
 
@@ -1951,11 +1938,10 @@ export function registerConfigs() {
         });
 
         injhtml.find("select[name='flags.levels-3d-preview.ParticleType']").trigger("change");
-
-        const color1 = injhtml.find("input[name='flags.levels-3d-preview.ParticleColor']")[0];
-        const color2 = injhtml.find("input[name='flags.levels-3d-preview.ParticleColor2']")[0];
+        const color1 = injhtml.find("[name='flags.levels-3d-preview.ParticleColor'] input")[0];
+        const color2 = injhtml.find("[name='flags.levels-3d-preview.ParticleColor2'] input")[0];
         const gradientPickerEl = GradientPicker.create(color1, color2);
-        injhtml.find("input[name='flags.levels-3d-preview.ParticleColor2']").closest(".form-group").after(gradientPickerEl);
+        injhtml.find("[name='flags.levels-3d-preview.ParticleColor2']").closest(".form-group").after(gradientPickerEl);
 
         app.setPosition({ height: "auto" });
     });

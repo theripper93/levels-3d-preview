@@ -36,7 +36,7 @@ const raycaster = new THREE.Raycaster();
 
 let _port
 
-function debounce(func, timeout = 200) {
+function foundry.utils.debounce(func, timeout = 200) {
     let timer;
     return (...args) => {
         clearTimeout(timer);
@@ -227,7 +227,7 @@ function createMergedGeometry() {
     }
 }
 
-const createMergedGeometryDebounced = debounce(createMergedGeometry, 100);
+const createMergedGeometryDebounced = foundry.utils.debounce(createMergedGeometry, 100);
 
 function applyMatrixWorldToGeometry(mesh) {
     if (mesh.isInstancedMesh) return applyMatrixWorldToGeometryInstanced(mesh)    

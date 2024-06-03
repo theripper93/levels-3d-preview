@@ -1,6 +1,6 @@
 class canvas3dConfig extends FormApplication {
     static get defaultOptions() {
-        return mergeObject(super.defaultOptions, {
+        return foundry.utils.mergeObject(super.defaultOptions, {
             title: game.i18n.localize("levels3dpreview.settings.configApp.title"),
             template: "modules/levels-3d-preview/templates/config.hbs",
             id: "levels-3d-preview-settings",

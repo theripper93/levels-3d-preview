@@ -4,7 +4,7 @@ import { Ruler3D } from "../systems/ruler3d.js";
 import { mergeVertices } from "../lib/BufferGeometryUtils.js";
 import { setPerformancePreset, injectPresetButtons } from "../settings/performancePresets.js";
 import { SimplifyModifier } from "../lib/Simplify.js";
-import {showSceneReport, showPerformanceDialog} from "../settings/performanceReport.js";
+import { showSceneReport, showPerformanceDialog } from "../settings/performanceReport.js";
 import { Ping } from "../entities/effects/ping.js";
 
 const simplify = new SimplifyModifier();
@@ -45,7 +45,7 @@ export class Helpers {
         const extension = texturePath.split(".").pop().toLowerCase();
         const isValidExtension = Object.keys(CONST.IMAGE_FILE_EXTENSIONS).includes(extension) || Object.keys(CONST.VIDEO_FILE_EXTENSIONS).includes(extension);
         if (!isValidExtension && window.Sequencer) {
-            let sequencerFiles = window.Sequencer.Database.getEntry(texturePath, {softFail: true})
+            let sequencerFiles = window.Sequencer.Database.getEntry(texturePath, { softFail: true });
             if (!sequencerFiles) return texturePath;
             sequencerFiles = Array.isArray(sequencerFiles) ? sequencerFiles : [sequencerFiles];
             const file = sequencerFiles[Math.floor(Math.random() * sequencerFiles.length)];
@@ -61,10 +61,10 @@ export class Helpers {
     }
 
     async getTexture(texturePath) {
-        const extension = (texturePath.split(".").pop()).toLowerCase();
+        const extension = texturePath.split(".").pop().toLowerCase();
         const isVideo = Object.keys(CONST.VIDEO_FILE_EXTENSIONS).includes(extension);
         const isImage = Object.keys(CONST.IMAGE_FILE_EXTENSIONS).includes(extension);
-        
+
         if (isVideo) {
             let video;
             video = document.createElement("video");
@@ -108,8 +108,6 @@ export class Helpers {
                 setTimeout(() => {
                     resolve(video);
                 }, 10000);
-
-
             });
         }
     }
@@ -210,16 +208,15 @@ export class Helpers {
                         map: material.map || material.alphaMap,
                     });
                 }
-
             }
         });
-        if(extension.startsWith("[heroforge]") || modelPath.includes("heroforge")) this.convertMaterials(output.model);
+        if (extension.startsWith("[heroforge]") || modelPath.includes("heroforge")) this.convertMaterials(output.model);
         this.simplifyGeometry(output.model);
         if (isSkinned) {
             delete this._loading[filePath];
             return output;
         }
-        if(!output?.object?.animations?.length) this.applyTransforms(output.model);
+        if (!output?.object?.animations?.length) this.applyTransforms(output.model);
         this.modelCache[modelPath] = output;
         THREE.Cache.remove(filePath);
         delete this._loading[filePath];
@@ -257,7 +254,7 @@ export class Helpers {
         });
         for (let i = 0; i < toMatrixProcess.length; i++) {
             const child = toMatrixProcess[i];
-            if(child.position.equals(basePos) && child.rotation.equals(baseRot) && child.scale.equals(baseScale)) continue;
+            if (child.position.equals(basePos) && child.rotation.equals(baseRot) && child.scale.equals(baseScale)) continue;
             child.updateMatrix(true);
             child.updateMatrixWorld(true);
             child.geometry.applyMatrix4(child.matrix);
@@ -296,7 +293,7 @@ export class Helpers {
             return sightMesh;
         } catch (e) {
             console.error(e);
-            return null//new THREE.Mesh();
+            return null; //new THREE.Mesh();
         }
     }
 
@@ -493,18 +490,18 @@ export class Helpers {
         this._ping();
     }
 
-    dispatchPing({ position, color, size }) { 
+    dispatchPing({ position, color, size }) {
         new Ping(position, color, size);
     }
 
     _ping() {
         if (!game.user.isGM && !game.settings.get("levels-3d-preview", "canping")) return ui.notifications.error(game.i18n.localize("levels3dpreview.errors.canping"));
         let position = game.Levels3DPreview.interactionManager.canvas3dMousePosition.clone();
-        const color = game.user.color;
+        const color = game.user.color.css;
         let size = 1;
         if (canvas.tokens.hover) {
             const token3D = game.Levels3DPreview.tokens[canvas.tokens.hover.id];
-            if (token3D) { 
+            if (token3D) {
                 position = token3D.mesh.position.clone();
                 size = Math.max(token3D.token.document.width, token3D.token.document.height);
             }
@@ -580,9 +577,9 @@ export function injectAdvancedToggle(app, html, settings, injected, other = []) 
 }
 
 export function hideParams(app, html, element, flags, hide, invert = false) {
-    if(!Array.isArray(hide)) hide = [hide];
+    if (!Array.isArray(hide)) hide = [hide];
     html.on("change", element, (e) => {
-        const value = hide.some(h => typeof h == "boolean") ? e.target.checked : e.target.value;
+        const value = hide.some((h) => typeof h == "boolean") ? e.target.checked : e.target.value;
         if (hide.includes(value)) {
             flags.forEach((flag) => {
                 const els = html.find(`[name="flags.levels-3d-preview.${flag}"]`).closest(".form-group");
@@ -594,7 +591,7 @@ export function hideParams(app, html, element, flags, hide, invert = false) {
                 invert ? els.addClass("hidden") : els.removeClass("hidden");
             });
         }
-            app.setPosition({ height: "auto" });
+        app.setPosition({ height: "auto" });
     });
     html.find(element).trigger("change");
 }

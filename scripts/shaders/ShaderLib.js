@@ -10,7 +10,7 @@ export class ShaderConfig extends FormApplication {
     }
 
     static get defaultOptions() {
-        return mergeObject(super.defaultOptions, {
+        return foundry.utils.mergeObject(super.defaultOptions, {
             title: game.i18n.localize("levels3dpreview.shaders.config.title"),
             id: `levels-3d-preview-shader-config`,
             template: `modules/levels-3d-preview/templates/ShaderConfig.hbs`,
@@ -154,7 +154,7 @@ export class ShaderConfig extends FormApplication {
         });
     }
 
-    debouncedSubmit = debounce(this._onSubmit.bind(this), 400);
+    debouncedSubmit = foundry.utils.debounce(this._onSubmit.bind(this), 400);
 
     setPosition(...args) {
         super.setPosition(...args);
@@ -204,7 +204,7 @@ export class ShaderHandler {
     async preloadTextures(shaderParams) {
         for (const [shaderName, shader] of Object.entries(shaderParams)) {
             if (shader.enabled) {
-                for (const [key,value] of Object.entries(shader)) {
+                for (const [key, value] of Object.entries(shader)) {
                     if (key.toLowerCase().includes("texture")) {
                         await game.Levels3DPreview.helpers.loadTexture(value);
                     }
@@ -222,22 +222,24 @@ export class ShaderHandler {
         commonParams.localSize = entity3D.isInstanced ? new THREE.Vector3(commonParams.mWidth * 0.3, commonParams.mDepth * 0.3, commonParams.mHeight * 0.3) : new THREE.Vector3(0.2, 0.2, 0.2);
         Object3D.traverse((child) => {
             if (child.isMesh && !child.userData?.noShaders) {
-                if(!child.material.map) child.material.map = game.Levels3DPreview.UTILS.TEXTURES.BLANK
+                if (!child.material.map) child.material.map = game.Levels3DPreview.UTILS.TEXTURES.BLANK;
                 this.buildShader(child, shaderParams, commonParams, entity3D);
             }
         });
     }
 
-    disablePerformanceHeavyShaders(shaderParams){
+    disablePerformanceHeavyShaders(shaderParams) {
         const perfHeavy = ["ice", "fire", "oil", "lightning"];
-        perfHeavy.forEach((shader) => { 
+        perfHeavy.forEach((shader) => {
             delete shaderParams[shader];
         });
         return shaderParams;
     }
 
     buildShader(mesh, shaderParams, commonParams, entity3D) {
-        const shaderKey = Object.keys(shaderParams).filter((k) => shaderParams[k].enabled).join("_");
+        const shaderKey = Object.keys(shaderParams)
+            .filter((k) => shaderParams[k].enabled)
+            .join("_");
         const _onBeforeCompile = (shader) => {
             shader.entity3D = entity3D;
             this.injectShaders(shader, commonParams, shaderParams);
@@ -246,13 +248,13 @@ export class ShaderHandler {
             shader.uniforms.mDepth = { value: commonParams.mDepth };
             shader.uniforms.mWidth = { value: commonParams.mWidth };
             shader.uniforms.mHeight = { value: commonParams.mHeight };
-            shader.uniforms.localSize = {value: commonParams.localSize};
-            
+            shader.uniforms.localSize = { value: commonParams.localSize };
+
             this.setUniforms(shader, shaderParams);
             this.shaders.push(shader);
             if (entity3D.pathTraced) {
                 const customBlendMap = "#ifdef USE_MAP\n\tvec4 texelColor = texture2D( map, vUv );\n\ttexelColor = mapTexelToLinear( texelColor );\n\tdiffuseColor.rgb = mix(diffuseColor.rgb, texelColor.rgb, texelColor.a);\n#endif";
-                shader.fragmentShader = shader.fragmentShader.replace("#include <map_fragment>", customBlendMap)
+                shader.fragmentShader = shader.fragmentShader.replace("#include <map_fragment>", customBlendMap);
             }
         };
         mesh.material.onBeforeCompile = _onBeforeCompile;
@@ -273,7 +275,7 @@ export class ShaderHandler {
 
     injectShaders(shader, commonParams, shaderParams) {
         shader.vertexShader = "attribute float shader_instance_depth;\nattribute float shader_instance_position;\nattribute float shader_random_rotation;\nuniform float tex_repeat;\nattribute float shader_cell_size;\nuniform float bevelSize;\n" + shader.vertexShader;
-        if (Object.keys(shaderParams).some((k) => this.shaderLib[k].useNoise)){     
+        if (Object.keys(shaderParams).some((k) => this.shaderLib[k].useNoise)) {
             shader.vertexShader = noiseShaders.snoise + "\n" + shader.vertexShader;
             shader.fragmentShader = noiseShaders.snoise + "\n" + shader.fragmentShader;
         }
@@ -306,7 +308,8 @@ export class ShaderHandler {
         }
         `,
         );
-        shader.fragmentShader = `
+        shader.fragmentShader =
+            `
         vec4 getMappedTexel( sampler2D tex, vec2 uv ) {
             vec4 texelColor = texture2D( tex, uv );
             texelColor.r = pow((texelColor.r + 0.055) / 1.055, 2.4);
@@ -316,7 +319,7 @@ export class ShaderHandler {
         }
         ` + shader.fragmentShader;
         for (const [shaderId, shaderConfig] of Object.entries(this.shaderLib)) {
-            if(!shaderParams[shaderId]?.enabled && shaderId !== "defaults") continue;
+            if (!shaderParams[shaderId]?.enabled && shaderId !== "defaults") continue;
             const { vertexShader, fragmentShader, uniforms, varying } = shaderConfig;
             let uniformsVarying = `uniform bool ${shaderId + "_enabled"};`;
             for (const [name, value] of Object.entries(varying)) {
@@ -377,18 +380,18 @@ export class ShaderHandler {
                     } else {
                         finalValue = game.Levels3DPreview.helpers.loadTextureSync(paramValue);
                     }
-                    if (finalValue) {    
+                    if (finalValue) {
                         finalValue.wrapS = THREE.RepeatWrapping;
                         finalValue.wrapT = THREE.RepeatWrapping;
-                        if(value.flipY !== undefined) finalValue.flipY = value.flipY;
+                        if (value.flipY !== undefined) finalValue.flipY = value.flipY;
                         shader.uniforms[`${name + "_" + uniformName}`] = { value: finalValue };
                     } else {
                         game.Levels3DPreview.helpers.loadTexture(paramValue).then((texture) => {
                             finalValue = texture;
-                            if(!finalValue) return;
+                            if (!finalValue) return;
                             finalValue.wrapS = THREE.RepeatWrapping;
                             finalValue.wrapT = THREE.RepeatWrapping;
-                            if(value.flipY !== undefined) finalValue.flipY = value.flipY;
+                            if (value.flipY !== undefined) finalValue.flipY = value.flipY;
                             shader.uniforms[`${name + "_" + uniformName}`] = { value: finalValue };
                         });
                     }
@@ -399,14 +402,13 @@ export class ShaderHandler {
         }
     }
 
-    updateShaders(delta, tokens, sound, obstructing) {
+    updateShaders(delta, tokens, obstructing) {
         const v4 = new THREE.Vector4();
         this.shaders = this.shaders.filter((shader) => {
             if (shader.entity3D._destroyed) return false;
             shader.uniforms.time.value = delta / 100;
             shader.uniforms.yPos.value = getYpos(shader.entity3D);
             shader.uniforms.tokens.value = tokens;
-            shader.uniforms.sound.value = sound;
             shader.uniforms.obstructing.value = obstructing ? obstructing.get(shader.entity3D) ?? v4 : v4;
             if (this._sceneUniformsNeedUpdate) {
                 shader.uniforms.sceneSize.value = shaders.defaults.uniforms.sceneSize.value();
@@ -422,7 +424,7 @@ export class ShaderHandler {
         const sky = game.Levels3DPreview.lights.globalIllumination.sky;
         if (sky) {
             sky.material.uniforms.time.value = delta / 100;
-            if(sky.clouds) sky.clouds.material.uniforms.iTime.value = delta / 100;
+            if (sky.clouds) sky.clouds.material.uniforms.iTime.value = delta / 100;
         }
         this._sceneUniformsNeedUpdate = false;
     }
@@ -449,10 +451,6 @@ export const shaders = {
             tokens: {
                 type: "vec4[100]",
                 value: new Float32Array(100 * 4),
-            },
-            sound: {
-                type: "vec3",
-                value: new THREE.Vector3(1, 1, 1),
             },
             obstructing: {
                 type: "vec4",
@@ -509,21 +507,21 @@ export const shaders = {
             gridMinX: {
                 type: "float",
                 value: () => {
-                    return 0;//(canvas.grid.grid._bounds?.minX ?? 0) / factor;
+                    return 0; //(canvas.grid.grid._bounds?.minX ?? 0) / factor;
                 },
             },
             gridMinY: {
                 type: "float",
                 value: () => {
-                    return 0;//(canvas.grid.grid._bounds?.minY ?? 0) / factor;
+                    return 0; //(canvas.grid.grid._bounds?.minY ?? 0) / factor;
                 },
             },
             sceneSize: {
                 type: "vec4",
-                value: () => { 
+                value: () => {
                     return new THREE.Vector4(canvas.scene.dimensions.sceneWidth / factor, canvas.scene.dimensions.sceneHeight / factor, canvas.scene.dimensions.sceneX / factor, canvas.scene.dimensions.sceneY / factor);
                 },
-            }
+            },
         },
         varying: {
             shader_vPosition: {
@@ -1010,11 +1008,10 @@ export const shaders = {
             useCameraAdvanced: {
                 type: "bool",
                 default: false,
-            }
+            },
         },
         varying: {},
-        vertexShader: [
-        ],
+        vertexShader: [],
         fragmentShader: [
             {
                 mode: SHADERS_CONSTS.PREPEND,
@@ -1036,8 +1033,8 @@ export const shaders = {
                         }
                     }
                 }
-                `
-            }
+                `,
+            },
         ],
     },
     grid: {
@@ -2078,10 +2075,8 @@ export const shaders = {
                 default: 1,
             },
         },
-        varying: {
-        },
-        vertexShader: [
-        ],
+        varying: {},
+        vertexShader: [],
         fragmentShader: [
             {
                 mode: SHADERS_CONSTS.APPEND,
@@ -2295,69 +2290,6 @@ export const shaders = {
             },
         ],
     },
-    sound: {
-        icon: `<i class="fas fa-music"></i>`,
-        uniforms: {
-            intensity: {
-                type: "float",
-                default: 1,
-            },
-            glow: {
-                type: "bool",
-                default: false,
-            },
-            chroma: {
-                type: "bool",
-                default: false,
-            },
-            croma_offset_angle: {
-                type: "float",
-                default: 0,
-                min: 0,
-                max: 360,
-            },
-            flat_bottom: {
-                type: "bool",
-                default: true,
-            },
-        },
-        varying: {
-            ground_blend_percent: {
-                type: "float",
-                value: 0,
-            },
-        },
-        vertexShader: [
-            {
-                mode: SHADERS_CONSTS.APPEND,
-                injectionPoint: "#include <begin_vertex>",
-                shaderCode: `
-                vec3 original_transformed = transformed.xyz;
-                transformed.xyz *= sound*sound_intensity;
-                if(sound_flat_bottom){
-                    float delta_y = transformed.y - original_transformed.y;
-                    transformed.y += abs(delta_y);
-                }
-                `,
-            },
-        ],
-        fragmentShader: [
-            {
-                mode: SHADERS_CONSTS.PREPEND,
-                injectionPoint: "#include <fog_fragment>",
-                shaderCode: `
-                float sound_fac = ((sound.x + sound.y + sound.z - 3.0)/3.0);
-                if(sound_chroma){
-                    float chromaAngle = mod(sound_fac * 6.28 + sound_croma_offset_angle, 6.28);
-                    gl_FragColor.rgb = hueShift(gl_FragColor.rgb, chromaAngle);
-                }
-                if(sound_glow){
-                    gl_FragColor.rgb *= (1.0 + sound_fac);
-                }
-                `,
-            },
-        ],
-    },
 };
 
 function getSizesForShader(entity3D) {
@@ -2476,7 +2408,6 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
 
 }
 */
-
 
 /* Reactive Wind
 

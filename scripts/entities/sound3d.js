@@ -81,7 +81,7 @@ export class Sound3D {
         const x = x3d * factor;
         const y = z3d * factor;
         const z = Math.round(((y3d * factor * canvas.dimensions.distance) / canvas.dimensions.size) * 100) / 100;
-        const snapped = canvas.grid.getSnappedPosition(x, y, 2);
+        const snapped = canvas.grid.getSnappedPoint({x, y}, {mode: CONST.GRID_SNAPPING_MODES.TOP_LEFT_CORNER, resolution: 2});
         const { rangeTop, rangeBottom } = CONFIG.Levels.helpers.getRangeForDocument(this.sound.document);
         const dest = {
             x: useSnapped ? snapped.x : x,

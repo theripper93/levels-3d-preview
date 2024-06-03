@@ -32,10 +32,10 @@ export class InteractionManager {
         this.lcTime = 0;
         this.controls.enableRotate = !this.isCameraLocked;
         this.forceSightCollisions = this.generateSightCollisions.bind(this);
-        this.generateSightCollisions = debounce(this.generateSightCollisions.bind(this), 100);
+        this.generateSightCollisions = foundry.utils.debounce(this.generateSightCollisions.bind(this), 100);
         this._downId = null;
         this.tileCreationQueue = new TileCreationQueue();
-        //this.updateHoverObj = debounce(this.updateHoverObj.bind(this), 100);
+        //this.updateHoverObj = foundry.utils.debounce(this.updateHoverObj.bind(this), 100);
     }
 
     get scene() {
@@ -410,7 +410,7 @@ export class InteractionManager {
         }
         if (this._groupSelect && this.activeLayerEntity != "MeasuredTemplate") return this.groupSelectHandler.startSelect(event);
         if (this.preventSelect) return;
-        const downId = randomID();
+        const downId = foundry.utils.randomID();
         this._downId = downId;
         const currentMousePos = { x: this.mousemove.x, y: this.mousemove.y };
         if (!event.shiftKey && !event.ctrlKey && !event.altKey && event.which === 1 && this.canDragStart) {
@@ -1247,7 +1247,7 @@ export class InteractionManager {
         Hooks.on("3DCanvasSceneReady", () => {
             if (game.Levels3DPreview?._active) {
                 game.Levels3DPreview?.interactionManager?.generateSightCollisions();
-                canvas.effects.visibility.refresh();
+                canvas.visibility.refresh();
             }
         });
 
@@ -1301,7 +1301,7 @@ export const dropFunctions = {
         const useSnapped = grid ?? Ruler3D.useSnapped();
         let snapped;
         if (useSnapped) {
-            snapped = canvas.grid.getSnappedPosition(data.x - width / 2, data.y - height / 2);
+            snapped = canvas.grid.getSnappedPoint({x: data.x - width / 2, y: data.y - height / 2}, {mode: CONST.GRID_SNAPPING_MODES.TOP_LEFT_CORNER});
         }
         return await canvas.scene.createEmbeddedDocuments("Tile", [
             {
@@ -1310,7 +1310,6 @@ export const dropFunctions = {
                 width: Math.round(width),
                 height: Math.round(height),
                 img: "modules/levels-3d-preview/assets/blank.webp",
-                overhead: canvas.activeLayer?.name !== "BackgroundLayer",
                 flags: data.flags,
                 rotation: data.rotation,
             },
@@ -1362,7 +1361,6 @@ async function dropImage(event, data) {
     data.x -= size / 2;
     data.y -= size / 2;
     data.texture.src = "modules/levels-3d-preview/assets/blank.webp";
-    data.overhead = canvas.activeLayer?.name !== "BackgroundLayer";
 
     let isToken = false;
     if (game.modules.get("token-attacher")?.active) {

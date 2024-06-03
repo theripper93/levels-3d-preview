@@ -15,7 +15,7 @@ const DOOR_ANIMATION_EASING = "easeInOutCosine";
 class TileUpdateQueue {
     constructor() {
         this._queue = [];
-        this.processQueue = debounce(this.processQueue.bind(this), 100);
+        this.processQueue = foundry.utils.debounce(this.processQueue.bind(this), 100);
     }
 
     add(data) {
@@ -38,7 +38,7 @@ export class Tile3D {
         this.document = tile.document;
         this._parent = parent;
         this.fromUpdate = fromUpdate;
-        this.isOverhead = this.tile.document.overhead;
+        this.isOverhead = true;
         this.isAnimated = false;
         this.draggable = true;
         this.displacementCanvas = displacementCanvas;
@@ -268,7 +268,7 @@ export class Tile3D {
         try {
             const fn = new Function("delta", "tile3d", functionText);
             return fn;
-        } catch(error) {
+        } catch (error) {
             console.error("Error in animation function", functionText);
             return null;
         }
@@ -551,7 +551,7 @@ export class Tile3D {
                     initializeVision: true,
                     refreshLighting: true,
                     refreshSounds: true,
-                    refreshTiles: true,
+                    refreshOcclusion: true,
                     refreshVision: true,
                 },
                 true,
@@ -699,7 +699,7 @@ export class Tile3D {
                     initializeVision: true,
                     refreshLighting: true,
                     refreshSounds: true,
-                    refreshTiles: true,
+                    refreshOcclusion: true,
                     refreshVision: true,
                 },
                 true,
@@ -1730,7 +1730,7 @@ export class Tile3D {
         this.mesh.visible = !this.tile.document.hidden || game.user.isGM;
         if (this.sightMesh) this.sightMesh.visible = this._parent.ClipNavigation.wireframe;
         if (this._decalCone) this._decalCone.visible = !!canvas?.tiles?.active;
-        if (game.Levels3DPreview.mirrorLevelsVisibility && this.tile.document.overhead && this.tile.mesh) {
+        if (game.Levels3DPreview.mirrorLevelsVisibility && this.tile.mesh) {
             this.mesh.visible = this.tile.occluded || !this.tile.mesh?.visible ? false : this.tile.visible;
         }
     }
@@ -1745,7 +1745,7 @@ export class Tile3D {
         const y = z3d * factor - this.tile.document.height / 2;
         const z = (y3d * factor * canvas.dimensions.distance) / canvas.dimensions.size;
         const useSnapped = Ruler3D.useSnapped() && !transform;
-        const snapped = canvas.grid.getSnappedPosition(x, y);
+        const snapped = canvas.grid.getSnappedPoint({x, y}, {mode: CONST.GRID_SNAPPING_MODES.TOP_LEFT_CORNER});
         let { rangeTop, rangeBottom } = CONFIG.Levels.helpers.getRangeForDocument(this.tile.document);
         if (!rangeBottom || rangeBottom == -Infinity) rangeBottom = 0;
         const dest = {
@@ -1968,7 +1968,7 @@ export class Tile3D {
     }
 
     checkPuzzleLock() {
-        if(!CONFIG.PuzzleLocks) return true;
+        if (!CONFIG.PuzzleLocks) return true;
         if (CONFIG.PuzzleLocks.isLocked(this.document)) {
             CONFIG.PuzzleLocks.unlock(this.document.uuid);
             return false;
@@ -1986,7 +1986,7 @@ export class Tile3D {
         if (canvas.activeLayer.options.objectClass.embeddedName === "Token" && this.isDoor && !(this.isSecret && !game.user.isGM)) {
             if (this.isToFar()) ui.notifications.error(game.i18n.localize("levels3dpreview.errors.toofarfromdoor"));
             else {
-                if(this.checkPuzzleLock()) this._parent.socket.executeAsGM("toggleDoor", this.tile.id, canvas.scene.id, game.user.id);
+                if (this.checkPuzzleLock()) this._parent.socket.executeAsGM("toggleDoor", this.tile.id, canvas.scene.id, game.user.id);
             }
         }
         if (canvas.activeLayer.options.objectClass.embeddedName !== "Tile") {
@@ -2452,7 +2452,7 @@ export class Tile3D {
                             },
                         },
                     };
-                    mergeObject(td, data3d);
+                    foundry.utils.mergeObject(td, data3d);
                 });
             }
         });
@@ -2551,7 +2551,7 @@ export async function recomputeGravity() {
     game.Levels3DPreview.interactionManager.setControlledGroup();
 }
 
-export const recomputeGravityDebounced = debounce(recomputeGravity, 100);
+export const recomputeGravityDebounced = foundry.utils.debounce(recomputeGravity, 100);
 
 export async function mergeTiles(tileDocuments) {
     const sameSource = tileDocuments.every((td) => td.data.flags["levels-3d-preview"]?.model3d === tileDocuments[0].data.flags["levels-3d-preview"]?.model3d);

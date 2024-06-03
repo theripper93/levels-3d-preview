@@ -1,12 +1,12 @@
 import * as THREE from "../lib/three.module.js";
 import { Ruler3D } from "../systems/ruler3d.js";
-import {factor} from "../main.js";
+import { factor } from "../main.js";
 import { mergeBufferGeometries } from "../lib/BufferGeometryUtils.js";
-import {isLockedOnOrigin} from "../shaders/templateEffects.js";
+import { isLockedOnOrigin } from "../shaders/templateEffects.js";
 
 const basicMat = new THREE.MeshBasicMaterial();
 
-const validTemplateTypes = ["circle", "rect", "cone", "ray"]
+const validTemplateTypes = ["circle", "rect", "cone", "ray"];
 
 export class Template3D {
     constructor(template, A, B) {
@@ -21,7 +21,7 @@ export class Template3D {
             this.template.t = "circle";
             this.isSound = true;
         }
-        if(!validTemplateTypes.includes(this.template.t)) this.template.t = "rect";
+        if (!validTemplateTypes.includes(this.template.t)) this.template.t = "rect";
         this.embeddedName = "MeasuredTemplate";
         this.placeable = template;
         this.initialDirection = this.template.document?.direction;
@@ -56,7 +56,7 @@ export class Template3D {
     }
 
     get isOwner() {
-        return this.template.owner;
+        return this.template.isOwner;
     }
 
     get scene() {
@@ -70,8 +70,8 @@ export class Template3D {
 
     updateVisibility() {
         this.mesh.visible = this.placeable?.visible ?? true;
-        if(this.controlIcon) this.controlIcon.visible = this.placeable?.controlIcon?.visible ?? true;
-        if(this.templateMesh) this.templateMesh.visible = this.placeable?.template?.visible ?? true;
+        if (this.controlIcon) this.controlIcon.visible = this.placeable?.controlIcon?.visible ?? true;
+        if (this.templateMesh) this.templateMesh.visible = this.placeable?.template?.visible ?? true;
     }
 
     contains(point, convertSpace = true) {
@@ -97,11 +97,11 @@ export class Template3D {
         this.angle = 0;
         this.width = 1;
         const mesh = this._getMesh();
-        mesh.traverse((o) => { 
+        mesh.traverse((o) => {
             o.userData.interactive = false;
             o.userData.ignoreHover = true;
         });
-        mesh.rotateZ(Math.toRadians(this.tilt))
+        mesh.rotateZ(Math.toRadians(this.tilt));
         this.templateMesh = mesh;
         this.templateMesh.userData.interactive = false;
         this.templateMesh.userData.ignoreHover = true;
@@ -116,11 +116,11 @@ export class Template3D {
     createHandle() {
         const texture = this.isLight ? this._parent.textures.lightOn : this._parent.textures.template;
         const size = (canvas.scene.dimensions.size * 0.5) / factor / 2;
-        const geometry = new THREE.OctahedronGeometry(size,0,)// 16, 16);
-        const material = new THREE.MeshStandardMaterial({ color: this.material.color, emissive: this.material.color });//this.material; //new THREE.MeshBasicMaterial({color: new THREE.Color("white"), transparent: true, depthWrite:false, opacity: 0.5})
+        const geometry = new THREE.OctahedronGeometry(size, 0); // 16, 16);
+        const material = new THREE.MeshStandardMaterial({ color: this.material.color, emissive: this.material.color }); //this.material; //new THREE.MeshBasicMaterial({color: new THREE.Color("white"), transparent: true, depthWrite:false, opacity: 0.5})
         const lightSphere = new THREE.Mesh(geometry, material);
         const outline = new THREE.EdgesGeometry(geometry);
-        const outlineMaterial = new THREE.LineBasicMaterial({color: 0x000000, linewidth: 2});
+        const outlineMaterial = new THREE.LineBasicMaterial({ color: 0x000000, linewidth: 2 });
         const outlineMesh = new THREE.LineSegments(outline, outlineMaterial);
         outlineMesh.userData.ignoreHover = true;
         outlineMesh.userData.interactive = false;
@@ -139,10 +139,10 @@ export class Template3D {
         mesh.userData.sprite = sprite;
         mesh.userData.sphere = lightSphere;
         this.dragHandle = mesh;
-        this.dragHandle.traverse((o) => { 
+        this.dragHandle.traverse((o) => {
             o.userData.noShaders = true;
         });
-        if (this.placeable?.document) mesh.visible = this.placeable.owner;
+        if (this.placeable?.document) mesh.visible = this.placeable.isOwner;
         this.controlIcon = mesh;
         this.mesh.add(mesh);
     }
@@ -211,7 +211,6 @@ export class Template3D {
                 texture: {
                     src: "modules/levels-3d-preview/assets/blank.webp",
                 },
-                overhead: true,
                 x: x,
                 y: y,
                 flags: {
@@ -235,7 +234,7 @@ export class Template3D {
             direction: this.isPreview ? this.template.document?.direction : this.direction,
             width: this.width,
             user: game.user.id,
-            fillColor: game.user.color,
+            fillColor: game.user.color.css,
             t: this._getBaseShape(),
             x: origin2d.x,
             y: origin2d.y,
@@ -250,7 +249,7 @@ export class Template3D {
             },
         };
         const currentTemplateData = this.template?.document?.toObject() ?? {};
-        const finalTemplateData = mergeObject(currentTemplateData, templateData);
+        const finalTemplateData = foundry.utils.mergeObject(currentTemplateData, templateData);
         if (!create) {
             this.destroy();
             return finalTemplateData;
@@ -266,7 +265,7 @@ export class Template3D {
         this._destroyed = true;
         if (this.isPreview) {
             setTimeout(() => {
-            this.initialLayer?.activate();
+                this.initialLayer?.activate();
                 this.actorSheet?.maximize();
             }, 500);
         }
@@ -299,12 +298,11 @@ export class Template3D {
         if (!isWireframe || isFog) return new THREE.Mesh(geometry, this.material);
         const color = this.material.color;
         const edges = new THREE.EdgesGeometry(geometry, 1);
-        const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({color: color, linewidth: 10}));
+        const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: color, linewidth: 10 }));
         return line;
     }
 
-    _makeCollisionMesh(geometry, originalMesh) { 
-
+    _makeCollisionMesh(geometry, originalMesh) {
         const mesh = new THREE.Mesh(geometry, basicMat);
         mesh.geometry.computeBoundsTree();
         if (originalMesh) {
@@ -314,7 +312,7 @@ export class Template3D {
         }
         mesh.visible = false;
         this.collisionMesh = mesh;
-        return mesh
+        return mesh;
     }
 
     _getSphereGeometry() {
@@ -322,7 +320,7 @@ export class Template3D {
         const radius = this._origin && this._destination ? this._origin.distanceTo(this._destination) : Ruler3D.unitsToPixels(this.template.document?.distance);
         const sphereGeometry = new THREE.SphereGeometry(radius, 16, 16);
         let torusGeo;
-        if (isWireframe) {            
+        if (isWireframe) {
             const torus1 = new THREE.TorusGeometry(radius, 0.001, 6, 32);
             const torus2 = torus1.clone();
             const torus3 = torus1.clone();
@@ -371,9 +369,9 @@ export class Template3D {
         mesh.position.set(width / 2, height / 2, depth / 2);
         const group = new THREE.Group();
         const effectOrigin = new THREE.Object3D();
-        effectOrigin.position.set(width/2, 0, depth/2);
+        effectOrigin.position.set(width / 2, 0, depth / 2);
         const effectTarget = new THREE.Object3D();
-        effectTarget.position.set(width/2, height, depth/2);
+        effectTarget.position.set(width / 2, height, depth / 2);
         this._effectOrigin = effectOrigin;
         this._effectTarget = effectTarget;
         this._effectLength = height;
@@ -407,7 +405,7 @@ export class Template3D {
         this._effectOrigin = effectOrigin;
         this._effectTarget = effectTarget;
         this._effectAngle = Math.toRadians(this.template?.document?.angle ?? CONFIG.MeasuredTemplate.defaults.angle);
-        this._effectRadius = 0//0.0001;
+        this._effectRadius = 0; //0.0001;
         this._effectLength = height;
         group.add(mesh);
         group.add(effectOrigin);
@@ -543,11 +541,11 @@ export class Template3D {
         switch (templateStyle) {
             case "wireframe":
                 return new THREE.MeshBasicMaterial({
-                    color: this.fromData ? this.template.document?.fillColor : game.user.color,
+                    color: this.fromData ? this.template.document?.fillColor : game.user.color.css,
                     wireframe: true,
                 });
             case "solid":
-                let templateColor = this.fromData ? this.template.document?.fillColor : game.user.color;
+                let templateColor = this.fromData ? this.template.document?.fillColor : game.user.color.css;
                 if (this.hasShaders) templateColor = 0xffffff;
                 return new THREE.MeshPhongMaterial({
                     color: templateColor,
@@ -555,7 +553,7 @@ export class Template3D {
                     opacity: this.hasShaders ? 0.7 : 0.3,
                     side: THREE.DoubleSide,
                     depthWrite: false,
-                    emissive: this.fromData ? this.template.document?.fillColor : game.user.color,
+                    emissive: this.fromData ? this.template.document?.fillColor : game.user.color.css,
                     specular: 0xffffff,
                     shininess: 1,
                 });
@@ -591,7 +589,7 @@ export class Template3D {
         const x = x3d * factor;
         const y = z3d * factor;
         const z = ((y3d * factor * canvas.dimensions.distance) / canvas.dimensions.size).toFixed(2);
-        const snapped = canvas.grid.getSnappedPosition(x, y, 2);
+        const snapped = canvas.grid.getSnappedPoint({ x, y }, { mode: CONST.GRID_SNAPPING_MODES.CENTER });
         const dest = {
             x: useSnapped ? snapped.x : x,
             y: useSnapped ? snapped.y : y,
@@ -676,12 +674,11 @@ export class Template3D {
         const templateDocument = template.document ?? template;
         templateDocument.direction ??= 0;
         const isPlaceable = !!template.document;
-        if(create) ui.notifications.info(game.i18n.localize("levels3dpreview.controls.tips.templatePlacement"));
+        if (create) ui.notifications.info(game.i18n.localize("levels3dpreview.controls.tips.templatePlacement"));
         const initialLayer = canvas.activeLayer;
         template.ray = Ray.fromAngle(templateDocument?.x, templateDocument?.y, Math.toRadians(templateDocument?.direction ?? 0), (templateDocument?.distance * canvas.scene.dimensions.size) / canvas.scene.dimensions.distance);
         // Draw the template and switch to the template layer
-        
-        
+
         let special;
 
         if (game.settings.get("levels-3d-preview", "templateAuto3D")) {
@@ -697,9 +694,9 @@ export class Template3D {
 
         templateDocument.flags.levels ??= {};
         templateDocument.flags.levels.special = special;
-        
+
         canvas.templates.activate();
-        const template3d = isPlaceable ? new Template3D(template) : new Template3D(template,new THREE.Vector2(template.ray.A.x, template.ray.A.y), new THREE.Vector2(template.ray.B.x, template.ray.B.y));
+        const template3d = isPlaceable ? new Template3D(template) : new Template3D(template, new THREE.Vector2(template.ray.A.x, template.ray.A.y), new THREE.Vector2(template.ray.B.x, template.ray.B.y));
         template3d.temporary = !create;
         template3d.initialLayer = initialLayer;
         template3d.draggable = true;
@@ -729,7 +726,7 @@ export class Template3D {
         game.Levels3DPreview.interactionManager.ruler._templatePreviewData = {
             resolve: res,
             create: create,
-        }
+        };
         return promise;
     }
 

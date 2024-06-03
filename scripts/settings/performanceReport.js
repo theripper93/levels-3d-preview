@@ -50,7 +50,7 @@ export function showSceneReport() {
     score -= Math.round(result["Vertices"] / 1000000);
     score -= Math.round(result["Meshes"] / 80);
     score -= Math.round(result["Instanced Meshes"] / 500);
-    score = Math.clamped(score, 0, 20);
+    score = Math.clamp(score, 0, 20);
     const color = new THREE.Color("red").lerpHSL(new THREE.Color("green"), score / 18).getHexString();
     const grades = ["F", "E", "D", "C", "B", "A"];
     let grade = grades[Math.floor(score / 3) - 1];
@@ -69,7 +69,7 @@ export function showPerformanceDialog() {
     const report = showSceneReport();
     const dpr = game.settings.get("core", "pixelRatioResolutionScaling") ? window.devicePixelRatio : 1;
     const resMulti = game.settings.get("levels-3d-preview", "resolutionMultiplier");
-    const dialogData = { "3D Canvas Engine": game.modules.get("levels-3d-preview").version, "Mapmaking Pack": game.modules.get("canvas3dcompendium")?.version , "FVTT CORE": SupportDetails.generateSupportReport().coreVersion, GPU: SupportDetails.generateSupportReport().gpu, Resolution: `${window.innerWidth * dpr * resMulti}x${window.innerHeight * dpr * resMulti}`, ...report };
+    const dialogData = { "3D Canvas Engine": game.modules.get("levels-3d-preview").version, "Mapmaking Pack": game.modules.get("canvas3dcompendium")?.version, "FVTT CORE": SupportDetails.generateSupportReport().coreVersion, GPU: SupportDetails.generateSupportReport().gpu, Resolution: `${window.innerWidth * dpr * resMulti}x${window.innerHeight * dpr * resMulti}`, ...report };
     dialogData["Shared Context"] = game.settings.get("levels-3d-preview", "sharedContext") ? "Yes" : "No";
     delete dialogData.color;
     delete dialogData.grade;

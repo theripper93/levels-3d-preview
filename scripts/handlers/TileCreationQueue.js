@@ -1,13 +1,13 @@
-export class TileCreationQueue{
-    constructor () {
+export class TileCreationQueue {
+    constructor() {
         this.queue = [];
-        this.processQueue = debounce(this.processQueue.bind(this), 100);
+        this.processQueue = foundry.utils.debounce(this.processQueue.bind(this), 100);
     }
-    
+
     async createTile(data) {
         let resolve = null;
-        const promise = new Promise((res) => resolve = res);
-        this.queue.push({data, resolve});
+        const promise = new Promise((res) => (resolve = res));
+        this.queue.push({ data, resolve });
         this.processQueue();
         return promise;
     }
@@ -19,6 +19,4 @@ export class TileCreationQueue{
         this.queue.forEach((t, i) => t.resolve([tiles[i]]));
         this.queue = [];
     }
-
-
 }

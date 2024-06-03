@@ -366,7 +366,7 @@ class Levels3DPreview {
         this.UTILS = {
             autoMergeTiles,
             unmergeTiles,
-            debouncedReload: debounce(this.reload.bind(this), 300),
+            debouncedReload: foundry.utils.debounce(this.reload.bind(this), 300),
             throttle,
             splitToChunks,
             extractPointsFromDrawing,
@@ -532,7 +532,7 @@ class Levels3DPreview {
             new THREE.SpriteMaterial({
                 map: tex,
                 alphaTest: 0.9,
-                color: game.user.color,
+                color: game.user.color.css,
                 depthWrite: false,
                 depthTest: false,
             }),
@@ -654,21 +654,21 @@ class Levels3DPreview {
                 draggable: true,
                 embeddedName: "Tile",
                 _onClickLeft: (e) => {
-                    const tile3d = this.tiles[canvas.tiles.hover?.id]
+                    const tile3d = this.tiles[canvas.tiles.hover?.id];
                     return tile3d?._onClickLeft(e);
                 },
                 _onClickRight: (e) => {
-                    const tile3d = this.tiles[canvas.tiles.hover?.id]
+                    const tile3d = this.tiles[canvas.tiles.hover?.id];
 
                     return tile3d?._onClickRight(e);
                 },
                 _onClickLeft2: (e) => {
-                    const tile3d = this.tiles[canvas.tiles.hover?.id]
+                    const tile3d = this.tiles[canvas.tiles.hover?.id];
 
                     return tile3d?._onClickLeft2(e);
                 },
                 _onClickRight2: (e) => {
-                    const tile3d = this.tiles[canvas.tiles.hover?.id]
+                    const tile3d = this.tiles[canvas.tiles.hover?.id];
 
                     return tile3d?._onClickRight2(e);
                 },
@@ -855,7 +855,7 @@ class Levels3DPreview {
         const height = isMat ? (isHeightmap ? 200 : 1000) : canvas.scene.dimensions.height / this.factor;
         const center = this.canvasCenter;
         let depth = Math.max(width, height);
-        if(tableOption == "table") depth = Math.min(width, height) / 10;
+        if (tableOption == "table") depth = Math.min(width, height) / 10;
         const preset = this.CONFIG.PADDING_PRESETS[tableOption] ?? {};
         const textureMat = await this.helpers.autodetectTextureOrMaterial(preset.texture ?? tableTex);
         const divisions = isHeightmap ? 100 : 1;
@@ -1194,42 +1194,6 @@ class Levels3DPreview {
         });
     }
 
-    getSoundFrequency() {
-        const sound = Array.from(game.audio.playing.values())[0];
-        if (sound && sound == this._sound && this._analyser) {
-            this._analyser.node.getByteFrequencyData(this._analyser.data);
-            let bass = 0,
-                mid = 0;
-            const length = this._analyser.data.length;
-            for (let i = 0; i < length; i++) {
-                if (i < 20) {
-                    bass += this._analyser.data[i];
-                } else if (i < 40) {
-                    mid += this._analyser.data[i];
-                }
-            }
-            bass /= 20;
-            mid /= 20;
-            //return new THREE.Vector3(1 + mid/255,1 + bass/255,1 + mid/255);
-            return new THREE.Vector3(1 + bass / 255, 1 + mid / 255, 1 + bass / 255);
-            //return new THREE.Vector3(1 + bass/255,1 + mid/255,1 + treble/255);
-        }
-        this._sound = sound;
-        if (!sound) return new THREE.Vector3(1, 1, 1);
-        const {
-            container: { sourceNode },
-            context,
-            id,
-        } = sound;
-        const analyserNode = new AnalyserNode(context, { fftSize: 4096 });
-        sourceNode.connect(analyserNode);
-        this._analyser = {
-            node: analyserNode,
-            data: new Uint8Array(40),
-        };
-        return new THREE.Vector3(1, 1, 1);
-    }
-
     toggleFirstPerson() {
         if (!this.firstPersonMode && !canvas.tokens.controlled.length) return;
 
@@ -1299,8 +1263,7 @@ class Levels3DPreview {
                 }
                 tokenPositionsArray[i] = new THREE.Vector4(pos.x, pos.y, pos.z, tokensArray[i - 1]._shaderSize);
             }
-            const sound = this.getSoundFrequency();
-            this.shaderHandler.updateShaders(time, tokenPositionsArray, sound, obstructing);
+            this.shaderHandler.updateShaders(time, tokenPositionsArray, obstructing);
             this.interactionManager._canMouseMove = true;
             this.interactionManager.dragObject();
             this.cursors.update();
@@ -1671,7 +1634,7 @@ class Levels3DPreview {
                 initializeVision: true,
                 refreshLighting: true,
                 refreshSounds: true,
-                refreshTiles: true,
+                refreshOcclusion: true,
                 refreshVision: true,
             },
             true,
@@ -1822,7 +1785,7 @@ class Levels3DPreview {
                 sounds = [CONFIG.sounds.lock];
             }
             const src = sounds[Math.floor(Math.random() * sounds.length)];
-            AudioHelper.play({ src }, true);
+            foundry.audio.AudioHelper.play({ src }, true);
         }
 
         if (subDoorId) {

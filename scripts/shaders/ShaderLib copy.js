@@ -10,7 +10,7 @@ export class ShaderConfig extends FormApplication {
     }
 
     static get defaultOptions() {
-        return mergeObject(super.defaultOptions, {
+        return foundry.utils.mergeObject(super.defaultOptions, {
             title: game.i18n.localize("levels3dpreview.shaders.config.title"),
             id: `levels-3d-preview-shader-config`,
             template: `modules/levels-3d-preview/templates/ShaderConfig.hbs`,
@@ -154,7 +154,7 @@ export class ShaderConfig extends FormApplication {
         });
     }
 
-    debouncedSubmit = debounce(this._onSubmit.bind(this), 400);
+    debouncedSubmit = foundry.utils.debounce(this._onSubmit.bind(this), 400);
 
     setPosition(...args) {
         super.setPosition(...args);

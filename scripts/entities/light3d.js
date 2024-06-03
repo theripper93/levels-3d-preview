@@ -10,8 +10,8 @@ export class Light3D {
         this.isToken = isToken;
         this._useHelper = game.user.isGM && game.settings.get("levels-3d-preview", "lightHelpers");
         this.animationFn = () => {};
-        this.refreshDebounced = debounce(this.refresh.bind(this), 100);
-        //this.refresh = debounce(this.refresh.bind(this), 100);
+        this.refreshDebounced = foundry.utils.debounce(this.refresh.bind(this), 100);
+        //this.refresh = foundry.utils.debounce(this.refresh.bind(this), 100);
         if (!this.isToken) {
             this.embeddedName = this.light.document.documentName;
             this.draggable = true;
@@ -97,7 +97,7 @@ export class Light3D {
         const x = x3d * factor;
         const y = z3d * factor;
         const z = Math.round(((y3d * factor * canvas.dimensions.distance) / canvas.dimensions.size) * 100) / 100;
-        const snapped = canvas.grid.getSnappedPosition(x, y, 2);
+        const snapped = canvas.grid.getSnappedPoint({x, y}, {mode: CONST.GRID_SNAPPING_MODES.TOP_LEFT_CORNER, resolution: 2});
         const { rangeTop, rangeBottom } = CONFIG.Levels.helpers.getRangeForDocument(this.light.document);
         const dest = {
             x: useSnapped ? snapped.x : x,
