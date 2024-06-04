@@ -376,6 +376,7 @@ export class InteractionManager {
             data.x = coord3d.x;
             data.y = coord3d.y;
             data.elevation = coord3d.z;
+            data.flags = {};
 
             const dropFunction = this._parent.CONFIG.INTERACTIONS.dropFunctions[data.type];
 
@@ -1304,7 +1305,8 @@ export const dropFunctions = {
                 y: Math.round(snapped ? snapped.y : data.y - height / 2),
                 width: Math.round(width),
                 height: Math.round(height),
-                img: "modules/levels-3d-preview/assets/blank.webp",
+                elevation: data.elevation,
+                texture: { src: "modules/levels-3d-preview/assets/blank.webp" },
                 flags: data.flags,
                 rotation: data.rotation,
             },

@@ -304,7 +304,6 @@ const _template = `
 let _compiledTemplate = null;
 
 function getRenderedTemplate(data) {
-    debugger
     data.inputs = { ...data.inputs };
     delete data.inputs.tab;
     delete data.inputs.moduleId;
