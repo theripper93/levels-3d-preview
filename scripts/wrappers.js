@@ -150,7 +150,8 @@ export function registerWrappers() {
                 this.points = points;
                 if (!lastRaycast) {
                     this.config.source.object.updatedByWorker = true;
-                    this.config.source.object.updateSource();
+                    if (this.config.source.object.initializeSources) this.config.source.object.initializeSources();
+                    if (this.config.source.object.initializeLightSource) this.config.source.object.initializeLightSource();
                 }
             });
         }
@@ -180,14 +181,7 @@ export function registerWrappers() {
             const splitStart = computeFull ? 0 : currentSplit * splitAngle;
             const splitEnd = computeFull ? nPoints : splitStart + splitAngle;
 
-            /*if(currentSplit === 0 && this.config.source._polygon3DCache?.cacheId){
-                const id = this.config.source._polygon3DCache.cacheId;
-                setTimeout(() => {
-                    if(this.config.source._polygon3DCache?.cacheId === id && !this.config.source._polygon3DCache?.complete){
-                        //if(!canvas.loading)this.config.source.object.updateSource();
-                    }
-                }, timeoutLimit+16);
-            }*/
+
 
             const z = this.config.source?.object?.b ?? 0;
             const perfStart = Date.now();

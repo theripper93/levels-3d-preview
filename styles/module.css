@@ -183,3 +183,38 @@
     line-height: 0.7em;
     border-color: white;
 }
+
+.placeable-hud .status-effects-3d{
+    visibility: hidden;
+    position: absolute;
+    left: 65px;
+    top: 0;
+    display: grid;
+    padding: 3px;
+    box-sizing: content-box;
+    width: 100px;
+    grid-template-columns: repeat(4, 25%);
+    background: rgba(0, 0, 0, 0.6);
+    box-shadow: 0 0 15px var(--color-shadow-dark);
+    border: 1px solid var(--color-border-dark-3);
+    border-radius: 4px;
+    pointer-events: all;
+}
+
+.placeable-hud .status-effects-3d.active{
+    visibility: visible;
+}
+
+.placeable-hud .status-effects-3d .effect-control{
+    width: 24px;
+    height: 24px;
+    margin: 0;
+    padding: 0;
+    border: none;
+    opacity: 0.5;
+}
+
+.placeable-hud .status-effects-3d .effect-control.active{
+    opacity: 1;
+    border: 1px solid green;
+}
