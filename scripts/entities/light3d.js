@@ -98,7 +98,7 @@ export class Light3D {
         const y = z3d * factor;
         const z = Math.round(((y3d * factor * canvas.dimensions.distance) / canvas.dimensions.size) * 100) / 100;
         const snapped = canvas.grid.getSnappedPoint({x, y}, {mode: CONST.GRID_SNAPPING_MODES.TOP_LEFT_CORNER, resolution: 2});
-        const { rangeTop, rangeBottom } = CONFIG.Levels.helpers.getRangeForDocument(this.light.document);
+        const {rangeTop, elevation} = CONFIG.Levels.helpers.getRangeForDocument(this.light.document);
         const dest = {
             x: useSnapped ? snapped.x : x,
             y: useSnapped ? snapped.y : y,
@@ -107,7 +107,7 @@ export class Light3D {
         const deltas = {
             x: dest.x - this.light.document.x,
             y: dest.y - this.light.document.y,
-            elevation: dest.elevation - rangeBottom,
+            elevation: dest.elevation - elevation,
         };
         let updates = [];
         for (let light of canvas.activeLayer.controlled.length ? canvas.activeLayer.controlled : [this.light]) {
@@ -116,13 +116,13 @@ export class Light3D {
                 _id: light.id,
                 x: light.document.x + deltas.x,
                 y: light.document.y + deltas.y,
+                elevation: Math.round((lightFlags.elevation + deltas.elevation) * 1000) / 1000,
                 flags: {
                     "levels-3d-preview": {
                         wasFreeMode: this.wasFreeMode,
                     },
                     levels: {
-                        rangeBottom: Math.round((lightFlags.rangeBottom + deltas.elevation) * 1000) / 1000,
-                        rangeTop: Math.round((lightFlags.rangeBottom + deltas.elevation) * 1000) / 1000,
+                        rangeTop: Math.round((lightFlags.elevation + deltas.elevation) * 1000) / 1000,
                     },
                 },
             });
@@ -149,7 +149,7 @@ export class Light3D {
             this.light3d.castShadow = true;
         }
         let top = light.document.flags.levels?.rangeTop ?? 1;
-        let bottom = light.document.flags.levels?.rangeBottom ?? 1;
+        let bottom = light.document.elevation;
         const z = ((top + bottom) * canvas.scene.dimensions.size) / canvas.scene.dimensions.distance / 2;
         this.z = (top + bottom) / 2;
         const color = this.color || "#ffffff";
@@ -393,8 +393,7 @@ export class Light3D {
             if (game.Levels3DPreview?._active) {
                 const pos = game.Levels3DPreview.interactionManager.canvas2dMousePosition;
                 data.forEach((ld) => {
-                    if (ld.flags?.levels?.rangeBottom === undefined) ld.flags.levels = { rangeBottom: 0, rangeTop: 0 };
-                    ld.flags.levels.rangeBottom = pos.z;
+                    ld.elevation = pos.z;
                     ld.flags.levels.rangeTop = pos.z;
                 });
             }

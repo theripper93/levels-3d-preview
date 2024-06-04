@@ -134,6 +134,7 @@ export class ProceduralVines{
             y: offset.z * factor,
             width: width * factor,
             height: height * factor,
+            elevation: (offset.y * factor) / canvas.scene.dimensions.size * canvas.scene.dimensions.distance,
             texture: {
                 src: "modules/levels-3d-preview/assets/blank.webp",
             },
@@ -148,9 +149,6 @@ export class ProceduralVines{
                     collision: false,
                     color: "#00ff00",
                 },
-                levels: {
-                    rangeBottom: (offset.y * factor) / canvas.scene.dimensions.size * canvas.scene.dimensions.distance,
-                }
             }
         }
         canvas.scene.createEmbeddedDocuments("Tile", [tileData]);

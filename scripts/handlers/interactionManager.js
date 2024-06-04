@@ -376,11 +376,6 @@ export class InteractionManager {
             data.x = coord3d.x;
             data.y = coord3d.y;
             data.elevation = coord3d.z;
-            data.flags = {
-                levels: {
-                    rangeBottom: coord3d.z,
-                },
-            };
 
             const dropFunction = this._parent.CONFIG.INTERACTIONS.dropFunctions[data.type];
 
@@ -1357,7 +1352,7 @@ async function dropImage(event, data) {
     data.width = size;
     data.height = size;
     data.depth = size;
-    data.flags.levels.rangeBottom += canvas.scene.dimensions.distance * 2;
+    data.elevation += canvas.scene.dimensions.distance * 2;
     data.x -= size / 2;
     data.y -= size / 2;
     data.texture.src = "modules/levels-3d-preview/assets/blank.webp";

@@ -43,7 +43,7 @@ export class Tile3D {
         this.draggable = true;
         this.displacementCanvas = displacementCanvas;
         this.embeddedName = "Tile";
-        this.bottom = tile.document.flags?.levels?.rangeBottom ?? canvas.primary.background.elevation;
+        this.bottom = tile.document.elevation;
         this.shaders = [];
         this.center2d = {
             x: this.tile.document.x + Math.abs(this.tile.document.width) / 2,
@@ -1746,8 +1746,7 @@ export class Tile3D {
         const z = (y3d * factor * canvas.dimensions.distance) / canvas.dimensions.size;
         const useSnapped = Ruler3D.useSnapped() && !transform;
         const snapped = canvas.grid.getSnappedPoint({x, y}, {mode: CONST.GRID_SNAPPING_MODES.TOP_LEFT_CORNER});
-        let { rangeTop, rangeBottom } = CONFIG.Levels.helpers.getRangeForDocument(this.tile.document);
-        if (!rangeBottom || rangeBottom == -Infinity) rangeBottom = 0;
+        let { rangeTop, elevation } = CONFIG.Levels.helpers.getRangeForDocument(this.tile.document);
         const dest = {
             x: useSnapped ? snapped.x : x,
             y: useSnapped ? snapped.y : y,
@@ -1756,22 +1755,19 @@ export class Tile3D {
         const deltas = {
             x: dest.x - this.tile.document.x,
             y: dest.y - this.tile.document.y,
-            elevation: dest.elevation - rangeBottom,
+            elevation: dest.elevation - elevation,
         };
         let updates = [];
         let tile = this.tile;
         let tileFlags = CONFIG.Levels.helpers.getRangeForDocument(tile.document) || {};
-        if (!tileFlags.rangeBottom || tileFlags.rangeBottom == -Infinity) tileFlags.rangeBottom = 0;
         const update = {
             _id: tile.id,
             x: tile.document.x + deltas.x,
             y: tile.document.y + deltas.y,
+            elevation: tileFlags.elevation + deltas.elevation,
             flags: {
                 "levels-3d-preview": {
                     wasFreeMode: this.wasFreeMode,
-                },
-                levels: {
-                    rangeBottom: tileFlags.rangeBottom + deltas.elevation,
                 },
             },
         };
@@ -2407,7 +2403,7 @@ export class Tile3D {
                 });
 
                 function hasFlag(updates) {
-                    if (updates?.flags?.levels?.rangeBottom !== undefined) return true;
+                    if (updates?.elevation !== undefined) return true;
                     if (updates?.flags?.levels?.rangeTop !== undefined) return true;
                 }
             }
@@ -2446,11 +2442,7 @@ export class Tile3D {
                 const pos = game.Levels3DPreview.interactionManager.canvas2dMousePosition;
                 data.forEach((td) => {
                     const data3d = {
-                        flags: {
-                            levels: {
-                                rangeBottom: pos.z,
-                            },
-                        },
+                        elevation: pos.z,
                     };
                     foundry.utils.mergeObject(td, data3d);
                 });
@@ -2565,14 +2557,14 @@ export async function mergeTiles(tileDocuments) {
         minXYZ.y = Math.min(minXYZ.y, td.y);
         maxXYZ.x = Math.max(maxXYZ.x, td.x + td.width);
         maxXYZ.y = Math.max(maxXYZ.y, td.y + td.height);
-        minXYZ.z = Math.min(minXYZ.z, td.flags.levels.rangeBottom);
-        maxXYZ.z = Math.max(maxXYZ.z, td.flags.levels.rangeBottom + td.flags["levels-3d-preview"].depth);
+        minXYZ.z = Math.min(minXYZ.z, td.elevation);
+        maxXYZ.z = Math.max(maxXYZ.z, td.elevation + td.flags["levels-3d-preview"].depth);
     }
     baseData.x = minXYZ.x;
     baseData.y = minXYZ.y;
     baseData.width = maxXYZ.x - minXYZ.x;
     baseData.height = maxXYZ.y - minXYZ.y;
-    baseData.flags.levels.rangeBottom = minXYZ.z;
+    baseData.elevation = minXYZ.z;
     baseData.flags["levels-3d-preview"].depth = maxXYZ.z - minXYZ.z;
 
     for (let td of tileDocuments) {
@@ -2582,7 +2574,7 @@ export async function mergeTiles(tileDocuments) {
             depth: td.flags["levels-3d-preview"].depth / factor,
             x: (td.x - minXYZ.x) / factor,
             y: (td.y - minXYZ.y) / factor,
-            z: Ruler3D.unitsToPixels(td.flags.levels.rangeBottom - minXYZ.z),
+            z: Ruler3D.unitsToPixels(td.elevation - minXYZ.z),
             color: td.flags["levels-3d-preview"].color ?? "#ffffff",
             rotation: td.rotation ?? 0,
             tiltX: td.flags["levels-3d-preview"].tiltX ?? 0,
@@ -2680,7 +2672,7 @@ export async function unmergeTile(tile) {
     const newTiles = [];
     const originalX = tile.x;
     const originalY = tile.y;
-    const originalZ = tile.flags.levels.rangeBottom;
+    const originalZ = tile.elevation;
     for (const instance of instancesMatrix) {
         const newTileData = tile.toObject();
         delete newTileData.flags["levels-3d-preview"].mergedMatrix;
@@ -2689,7 +2681,7 @@ export async function unmergeTile(tile) {
         newTileData.height = instance.height * factor;
         newTileData.x = instance.x * factor + originalX;
         newTileData.y = instance.y * factor + originalY;
-        newTileData.flags.levels.rangeBottom = (instance.z * factor) / (canvas.scene.dimensions.size / canvas.scene.dimensions.distance) + originalZ;
+        newTileData.elevation = (instance.z * factor) / (canvas.scene.dimensions.size / canvas.scene.dimensions.distance) + originalZ;
         newTileData.flags["levels-3d-preview"].depth = instance.depth * factor;
         newTileData.flags["levels-3d-preview"].color = instance.color;
         newTileData.rotation = instance.rotation;
@@ -2899,15 +2891,13 @@ function extrudeWallGroup(walls, top, bottom) {
             texture: {
                 src: "modules/levels-3d-preview/assets/blank.webp",
             },
+            elevation: bottom,
             flags: {
                 "levels-3d-preview": {
                     dynaMesh: "polygonbevelsolidify",
                     model3d: "10#" + points.join(","),
                     depth: ((top - bottom) / canvas.scene.dimensions.distance) * canvas.dimensions.size,
                     autoGround: true,
-                },
-                levels: {
-                    rangeBottom: bottom,
                 },
             },
         };

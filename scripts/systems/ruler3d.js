@@ -362,6 +362,7 @@ export class Ruler3D {
             height: Math.max(height, 10),
             x: minX * factor,
             y: minY * factor,
+            elevation: bottom,
             texture: {
                 src: "modules/levels-3d-preview/assets/blank.webp",
             },
@@ -372,9 +373,6 @@ export class Ruler3D {
                     model3d: isClosed ? polygonPoints.join(",") : "10#" + polygonPoints.join(","),
                     fromPolygonTool: true,
                     autoGround: true,
-                },
-                levels: {
-                    rangeBottom: bottom,
                 },
             },
         };

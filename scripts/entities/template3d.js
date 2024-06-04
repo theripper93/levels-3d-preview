@@ -166,9 +166,9 @@ export class Template3D {
                 },
                 x: origin2d.x,
                 y: origin2d.y,
+                elevation: parseFloat((origin2d.z + 0.1).toFixed(2)),
                 flags: {
                     levels: {
-                        rangeBottom: parseFloat((origin2d.z + 0.1).toFixed(2)),
                         rangeTop: parseFloat((origin2d.z + 0.1).toFixed(2)),
                     },
                 },
@@ -182,9 +182,9 @@ export class Template3D {
                 radius: this.distance,
                 x: origin2d.x,
                 y: origin2d.y,
+                elevation: parseFloat((origin2d.z + 0.1).toFixed(2)),
                 flags: {
                     levels: {
-                        rangeBottom: parseFloat((origin2d.z + 0.1).toFixed(2)),
                         rangeTop: parseFloat((origin2d.z + 0.1).toFixed(2)),
                     },
                 },
@@ -213,6 +213,7 @@ export class Template3D {
                 },
                 x: x,
                 y: y,
+                elevation: elevation,
                 flags: {
                     "levels-3d-preview": {
                         dynaMesh: "box",
@@ -220,7 +221,6 @@ export class Template3D {
                         depth: Math.abs(depth),
                     },
                     levels: {
-                        rangeBottom: elevation,
                         rangeTop: elevation,
                     },
                 },

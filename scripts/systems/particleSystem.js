@@ -802,7 +802,7 @@ class BaseParticleEffect {
             this._bottomTarget.y -= game.Levels3DPreview.tokens[object.id].d;
             return tokenPos;
         }
-        const z = object.document.getFlag("levels", "rangeBottom") ?? object.document.getFlag("levels", "elevation") ?? 0;
+        const z = object.document.elevation;
         return Ruler3D.posCanvasTo3d({
             x: object.center.x,
             y: object.center.y,

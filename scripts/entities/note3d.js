@@ -8,7 +8,7 @@ export class Note3D {
         this.embeddedName = note.document.documentName;
         this.placeable = note;
         this.nameplate = new THREE.Object3D();
-        this.bottom = note.document.flags.levels?.rangeBottom ?? 0;
+        this.bottom = note.document.elevation;
         this._parent = game.Levels3DPreview;
         this.draggable = true;
         this.mesh = new THREE.Group();
@@ -107,8 +107,7 @@ export class Note3D {
         const y = z3d * factor;
         const z = Math.round(((y3d * factor * canvas.dimensions.distance) / canvas.dimensions.size) * 100) / 100;
         const snapped = canvas.grid.getSnappedPoint({x, y}, {mode: CONST.GRID_SNAPPING_MODES.TOP_LEFT_CORNER, resolution: 2});
-        let { rangeTop, rangeBottom } = CONFIG.Levels.helpers.getRangeForDocument(this.placeable.document);
-        if (rangeBottom === -Infinity) rangeBottom = 0;
+        let { rangeTop, elevation } = CONFIG.Levels.helpers.getRangeForDocument(this.placeable.document);
         const dest = {
             x: useSnapped ? snapped.x : x,
             y: useSnapped ? snapped.y : y,
@@ -117,23 +116,22 @@ export class Note3D {
         const deltas = {
             x: dest.x - this.placeable.document.x,
             y: dest.y - this.placeable.document.y,
-            elevation: dest.elevation - rangeBottom,
+            elevation: dest.elevation - elevation,
         };
         let updates = [];
         for (let placeable of canvas.activeLayer.controlled.length ? canvas.activeLayer.controlled : [this.placeable]) {
             const placeableFlags = CONFIG.Levels.helpers.getRangeForDocument(placeable.document);
-            if (placeableFlags.rangeBottom === -Infinity) placeableFlags.rangeBottom = 0;
             updates.push({
                 _id: placeable.id,
                 x: placeable.document.x + deltas.x,
                 y: placeable.document.y + deltas.y,
+                elevation: placeableFlags.elevation,
                 flags: {
                     "levels-3d-preview": {
                         wasFreeMode: this.wasFreeMode,
                     },
                     levels: {
-                        rangeBottom: Math.round((placeableFlags.rangeBottom + deltas.elevation) * 1000) / 1000,
-                        rangeTop: Math.round((placeableFlags.rangeBottom + deltas.elevation) * 1000) / 1000,
+                        rangeTop: Math.round((placeableFlags.elevation + deltas.elevation) * 1000) / 1000,
                     },
                 },
             });

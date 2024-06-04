@@ -82,7 +82,7 @@ export class Sound3D {
         const y = z3d * factor;
         const z = Math.round(((y3d * factor * canvas.dimensions.distance) / canvas.dimensions.size) * 100) / 100;
         const snapped = canvas.grid.getSnappedPoint({x, y}, {mode: CONST.GRID_SNAPPING_MODES.TOP_LEFT_CORNER, resolution: 2});
-        const { rangeTop, rangeBottom } = CONFIG.Levels.helpers.getRangeForDocument(this.sound.document);
+        const { rangeTop, elevation } = CONFIG.Levels.helpers.getRangeForDocument(this.sound.document);
         const dest = {
             x: useSnapped ? snapped.x : x,
             y: useSnapped ? snapped.y : y,
@@ -91,7 +91,7 @@ export class Sound3D {
         const deltas = {
             x: dest.x - this.sound.document.x,
             y: dest.y - this.sound.document.y,
-            elevation: dest.elevation - rangeBottom,
+            elevation: dest.elevation - elevation,
         };
         let updates = [];
         for (let sound of canvas.activeLayer.controlled.length ? canvas.activeLayer.controlled : [this.sound]) {
@@ -100,13 +100,13 @@ export class Sound3D {
                 _id: sound.id,
                 x: sound.document.x + deltas.x,
                 y: sound.document.y + deltas.y,
+                elevation: Math.round((soundFlags.elevation + deltas.elevation) * 1000) / 1000,
                 flags: {
                     "levels-3d-preview": {
                         wasFreeMode: this.wasFreeMode,
                     },
                     levels: {
-                        rangeBottom: Math.round((soundFlags.rangeBottom + deltas.elevation) * 1000) / 1000,
-                        rangeTop: Math.round((soundFlags.rangeBottom + deltas.elevation) * 1000) / 1000,
+                        rangeTop: Math.round((soundFlags.elevation + deltas.elevation) * 1000) / 1000,
                     },
                 },
             });
@@ -122,7 +122,7 @@ export class Sound3D {
             this.dragHandle.position.set(0, 0, 0);
         }
         let top = sound.document.flags.levels?.rangeTop ?? 1;
-        let bottom = sound.document.flags.levels?.rangeBottom ?? 1;
+        let bottom = sound.document.elevation;
         const z = ((top + bottom) * canvas.scene.dimensions.size) / canvas.scene.dimensions.distance / 2;
         this.z = (top + bottom) / 2;
         const position = {
@@ -214,8 +214,7 @@ export class Sound3D {
             if (game.Levels3DPreview?._active) {
                 const pos = game.Levels3DPreview.interactionManager.canvas2dMousePosition;
                 data.forEach((ld) => {
-                    if (ld.flags?.levels?.rangeBottom === undefined) ld.flags.levels = { rangeBottom: 0, rangeTop: 0 };
-                    ld.flags.levels.rangeBottom = pos.z;
+                    ld.elevation = pos.z;
                     ld.flags.levels.rangeTop = pos.z;
                 });
             }

@@ -934,7 +934,7 @@ class Levels3DPreview {
         if (!canvas.tiles.placeables.length) this.workers._visionReady = true;
         for (let tile of canvas.tiles.placeables) {
             if (this.isLevels) {
-                const bottom = tile.document.flags.levels?.rangeBottom ?? -Infinity;
+                const bottom = tile.document.elevation ?? -Infinity;
                 if (bottom > this.level) continue;
             }
             this.createTile(tile);
@@ -942,7 +942,7 @@ class Levels3DPreview {
             if (!this.debugMode) continue;
             if (!tile.roomPoly) continue;
             const top = tile.document.getFlag("levels", "rangeTop") ?? undefined;
-            const bottom = tile.document.getFlag("levels", "rangeBottom") ?? undefined;
+            const bottom = tile.document.elevation;
             if (bottom > this.level) continue;
             if (top !== undefined) this.scene.add(this.createFloor(tile.roomPoly.points, top));
             if (bottom !== undefined) this.scene.add(this.createFloor(tile.roomPoly.points, bottom));

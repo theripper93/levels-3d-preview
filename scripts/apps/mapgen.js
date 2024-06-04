@@ -402,8 +402,8 @@ export class MapGen extends FormApplication {
                 height,
                 x,
                 y,
+                elevation: -canvas.scene.dimensions.distance,
                 flags: {
-                    levels: { rangeBottom: -canvas.scene.dimensions.distance },
                     "levels-3d-preview": { depth: depth },
                 },
             });
