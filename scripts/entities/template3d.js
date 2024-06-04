@@ -206,8 +206,8 @@ export class Template3D {
             if (depth < 0) elevation += Ruler3D.pixelsToUnits(depth) / factor;
 
             const tileData = {
-                width: width,
-                height: height,
+                width: Math.abs(width),
+                height: Math.abs(height),
                 texture: {
                     src: "modules/levels-3d-preview/assets/blank.webp",
                 },
