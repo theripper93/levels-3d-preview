@@ -490,11 +490,11 @@ export class Helpers {
         this._ping();
     }
 
-    dispatchPing({ position, color, size }) {
-        new Ping(position, color, size);
+    dispatchPing({ position, color, size, type }) {
+        new Ping(position, color, size, type);
     }
 
-    _ping() {
+    _ping(type = null) {
         if (!game.user.isGM && !game.settings.get("levels-3d-preview", "canping")) return ui.notifications.error(game.i18n.localize("levels3dpreview.errors.canping"));
         let position = game.Levels3DPreview.interactionManager.canvas3dMousePosition.clone();
         const color = game.user.color.css;
@@ -510,6 +510,7 @@ export class Helpers {
             position,
             color,
             size,
+            type,
         });
     }
 

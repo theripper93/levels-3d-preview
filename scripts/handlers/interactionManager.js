@@ -559,6 +559,7 @@ export class InteractionManager {
         if (!this._canMouseMove && !force) return;
         this._canMouseMove = false;
         if (event) {
+            this.domMousePosition = { x: event.clientX, y: event.clientY };
             this.mousemove.x = (event.clientX / window.innerWidth) * 2 - 1;
             this.mousemove.y = -(event.clientY / window.innerHeight) * 2 + 1;
         }

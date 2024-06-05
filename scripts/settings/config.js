@@ -6,6 +6,7 @@ import { promptForTour } from "../tours/toursHelpers.js";
 import { getTimeSyncDefault } from "../systems/globalIllumination.js";
 import { GradientPicker } from "../helpers/GradientPicker.js";
 import { injectConfig } from "../lib/injectConfig.js";
+import {TacticalPingPicker} from "../entities/effects/ping.js";
 
 export function registerConfigs() {
     Hooks.on("getSceneControlButtons", (buttons) => {
@@ -2087,12 +2088,21 @@ export function registerConfigs() {
                 game.Levels3DPreview.helpers.focusCameraToCursor();
             },
         });
+
+        let pingPicker = null;
+
         game.keybindings.register("levels-3d-preview", "ping", {
             name: game.i18n.localize("levels3dpreview.keybindings.ping"),
             editable: [{ key: "KeyE", modifiers: [SHIFT] }],
-            onDown: () => {
+            onDown: (e) => {
                 if (!game.Levels3DPreview._active || !game.Levels3DPreview.hasFocus) return;
-                game.Levels3DPreview.helpers._ping();
+                pingPicker = new TacticalPingPicker();
+            },
+            onUp: () => {
+                const type = pingPicker?.close() ?? null;
+                console.log(type);
+                pingPicker = null;
+                game.Levels3DPreview.helpers._ping(type);
             },
         });
 

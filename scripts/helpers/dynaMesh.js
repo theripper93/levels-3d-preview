@@ -741,7 +741,7 @@ export class DynaMesh {
     }
 }
 
-async function loadTextFont(fontPath) {
+export async function loadTextFont(fontPath) {
     try {        
         const loader = new THREE.FontLoader();
         const font = await loader.loadAsync(fontPath || defaultFont);
