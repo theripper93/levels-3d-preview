@@ -1,4 +1,3 @@
-import {loadTextFont} from "../../helpers/dynaMesh.js";
 import { mergeBufferGeometries } from "../../lib/BufferGeometryUtils.js";
 import * as THREE from "../../lib/three.module.js";
 import { radialGradientShaderMaterial, coneFadeGradientShaderMaterial, radialRingGradientShaderMaterial } from "../../shaders/shaderMaterials.js";
@@ -13,7 +12,7 @@ const CONFIG = {
 };
 
 export class Ping {
-    constructor(position, color, scale = 1, specialPing = null) {
+    constructor (position, color, scale = 1, specialPing = null) {
         const sound = game.settings.get("levels-3d-preview", "pingsound");
         if (sound) foundry.audio.AudioHelper.play({ src: sound, volume: game.settings.get("core", "globalInterfaceVolume") });
         this.position = position;
@@ -21,14 +20,15 @@ export class Ping {
         this._currentTime = 0;
         this.core = coreMesh.clone(true);
         this.ring = ringMesh.clone();
-        this.setColor(new THREE.Color(color));
+        this.setColor(specialPing ? new THREE.Color(SPECIAL_PINGS[specialPing].cssColor) : new THREE.Color(color));
         this.ping = new THREE.Group();
         this.ping.add(this.core);
         this.ping.add(this.ring);
         if (specialPing) {
             this.core.children[1].visible = false;
             this.ping.add(SPECIAL_PINGS[specialPing].sprite);
-            this.setColor(SPECIAL_PINGS[specialPing].color);
+        } else {
+            this.core.children[1].visible = true;
         }
         this.ping.scale.set(0, 0, 0);
         this.ring.scale.set(CONFIG.RING_START_SCALE, CONFIG.RING_START_SCALE, CONFIG.RING_START_SCALE);
@@ -148,42 +148,71 @@ const SPECIAL_PINGS = {
     },
     "exclamation": {
         text: "!",
-        texture: "modules/levels-3d-preview/assets/pings/exclamation.webp",
+        texture: "modules/levels-3d-preview/assets/pings/danger.webp",
         color: new THREE.Color("red"),
         cssColor: "red",
     },
     "location": {
-        text: "↓",
+        text: "˅",
         texture: "modules/levels-3d-preview/assets/pings/arrow-down.webp",
         color: new THREE.Color("dodgerblue"),
         cssColor: "dodgerblue",
     },
     "target": {
-        text: "⇥",
-        texture: "modules/levels-3d-preview/assets/pings/target.webp",
-        color: new THREE.Color("green"),
-        cssColor: "green",
-    },
+        text: "⚑",
+        texture: "modules/levels-3d-preview/assets/pings/flag.webp",
+        color: new THREE.Color("lime"),
+        cssColor: "lime",
+    }
 }
 
 const SPECIAL_PING_SCALE = pingSize * 2;
 
+const SPRITE_CACHE = {};
+
+export async function loadUserEmotes() {
+    const users = Array.from(game.users);
+    //remove special pings with sticker: true
+    Object.keys(SPECIAL_PINGS).forEach((ping) => {
+        if (SPECIAL_PINGS[ping].sticker) delete SPECIAL_PINGS[ping];
+    });
+    for(const user of users){
+        const emote = user.getFlag("levels-3d-preview", "emote");
+        if (!emote) continue;
+        SPECIAL_PINGS[emote] = {
+            text: "✨",
+            texture: emote,
+            color: new THREE.Color(user.color.css),
+            cssColor: user.color.css,
+            sticker: true,
+            hidden: user !== game.user,
+        };
+        getSpecialPingSprite(emote);
+    }
+}
+
 async function getSpecialPingSprite(ping) {
     const specialPing = SPECIAL_PINGS[ping];
     if (!specialPing) return null;
-    if (specialPing.sprite) return specialPing.sprite.clone();
+    if (SPRITE_CACHE[ping]) {
+        specialPing.sprite = SPRITE_CACHE[ping];
+        return specialPing.sprite.clone();
+    }
     const texture = await new THREE.TextureLoader().load(specialPing.texture);
+    texture.encoding = THREE.sRGBEncoding;
     const spriteMaterial = new THREE.SpriteMaterial({
         map: texture,
         transparent: true,
-        opacity: 0.8,
+        opacity: specialPing.sticker ? 1 : 0.8,
+        alphaClip: 0.01,
         side: THREE.DoubleSide,
-        color: specialPing.color,
+        color: specialPing.sticker ? null : specialPing.color,
     });
     const sprite = new THREE.Sprite(spriteMaterial);
     sprite.scale.set(SPECIAL_PING_SCALE, SPECIAL_PING_SCALE, SPECIAL_PING_SCALE);
     sprite.position.set(0, SPECIAL_PING_SCALE * 0.6, 0);
     specialPing.sprite = sprite;
+    SPRITE_CACHE[ping] = sprite;
     return sprite;
 }
 
@@ -200,40 +229,37 @@ export class TacticalPingPicker {
     render() {
         let html = "";
 
-        //draw an svg circle sectors
+        const PINGS = Object.keys(SPECIAL_PINGS).filter((ping) => !SPECIAL_PINGS[ping].hidden).reduce((acc, ping) => {
+            acc[ping] = SPECIAL_PINGS[ping];
+            return acc;
+        }, {});
 
-        const sectorsCount = Object.keys(SPECIAL_PINGS).length;
-        const SP_KEYS = Object.keys(SPECIAL_PINGS);
+        const sectorsCount = Object.keys(PINGS).length;
+        const SP_KEYS = Object.keys(PINGS);
         const sectorSize = 360 / sectorsCount;
         for (let i = 0; i < sectorsCount; i++) {
-            const specialPing = SPECIAL_PINGS[SP_KEYS[i]];
-            const startAngle = i * sectorSize;
-            const endAngle = (i + 1) * sectorSize;
+            const specialPing = PINGS[SP_KEYS[i]];
+            if (!specialPing.cssColor) {
+                specialPing.cssColor = game.user.color.css;
+                specialPing.color = new THREE.Color(specialPing.cssColor);
+            }
+            const startAngle = i * sectorSize - sectorSize/2;
+            const endAngle = (i + 1) * sectorSize - sectorSize/2;
 
-            // Convert angles to radians
             const startRadians = (startAngle - 90) * (Math.PI / 180);
             const endRadians = (endAngle - 90) * (Math.PI / 180);
 
-            // Calculate the x and y coordinates for the start and end points
             const x1 = 50 + 50 * Math.cos(startRadians);
             const y1 = 50 + 50 * Math.sin(startRadians);
             const x2 = 50 + 50 * Math.cos(endRadians);
             const y2 = 50 + 50 * Math.sin(endRadians);
 
-            // Create the path for the sector
             const largeArcFlag = sectorSize > 180 ? 1 : 0;
             const pathData = `M 50 50 L ${x1} ${y1} A 50 50 0 ${largeArcFlag} 1 ${x2} ${y2} Z`;
-            // Add the path to the SVG
-            html += `<path data-type="${SP_KEYS[i]}" d="${pathData}" fill="${specialPing.cssColor}" stroke="" stroke-width="2"></path>`;
 
-            //add text centered on the path
-            const text = document.createElement("text");
-            text.setAttribute("x", `${(x1 + x2) / 2}`);
-            text.setAttribute("y", `${(y1 + y2) / 2}`);
-            text.setAttribute("text-anchor", "middle");
-            text.setAttribute("dominant-baseline", "middle");
-            text.innerHTML = specialPing.text;
-            html += `<text x="${(x1 + x2) / 2}" y="${(y1 + y2) / 2}" text-anchor="middle" dominant-baseline="middle">${specialPing.text}</text>`;
+            html += `<path data-type="${SP_KEYS[i]}" d="${pathData}" fill="rgb(0 0 0 / 30%)" stroke="orange" stroke-width="0.1"></path>`;
+
+            html += `<text style="filter: drop-shadow(0px 0px 1px ${specialPing.cssColor})" x="${(x1 + x2) / 2}" y="${(y1 + y2) / 2}" fill="${specialPing.cssColor}" text-anchor="middle" dominant-baseline="middle">${specialPing.text}</text>`;
         }
 
         //const svg = `<svg width="200" height="200" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">`;
@@ -247,6 +273,7 @@ export class TacticalPingPicker {
 
         const tacticalPickerContainer = document.createElement("div");
         tacticalPickerContainer.id = "tactical-ping-picker";
+        tacticalPickerContainer.style.setProperty("--pings-count", Object.keys(PINGS).length);
         tacticalPickerContainer.appendChild(svg);
 
         const defaultPing = document.createElement("div");

@@ -6,7 +6,7 @@ import { promptForTour } from "../tours/toursHelpers.js";
 import { getTimeSyncDefault } from "../systems/globalIllumination.js";
 import { GradientPicker } from "../helpers/GradientPicker.js";
 import { injectConfig } from "../lib/injectConfig.js";
-import {TacticalPingPicker} from "../entities/effects/ping.js";
+import { TacticalPingPicker, loadUserEmotes } from "../entities/effects/ping.js";
 
 export function registerConfigs() {
     Hooks.on("getSceneControlButtons", (buttons) => {
@@ -1945,6 +1945,27 @@ export function registerConfigs() {
         injhtml.find("[name='flags.levels-3d-preview.ParticleColor2']").closest(".form-group").after(gradientPickerEl);
 
         app.setPosition({ height: "auto" });
+    });
+
+    Hooks.on("renderUserConfig", (app, html) => {
+        const emote = app.document.getFlag("levels-3d-preview", "emote") ?? "";
+        const emoteHtml = `
+        <fieldset>
+            <legend>${game.i18n.localize("levels3dpreview.flags.emote.header")}</legend>
+            <div class="form-group character">
+            ${emote ? `<img class="avatar" src="${emote}" alt="Aoth (Human Druid)">` : ``}
+                <div class="form-fields">
+                    <file-picker name="flags.levels-3d-preview.emote" data-dtype="String" value="${emote}" type="image" />
+                </div>
+                <p class="hint">${game.i18n.localize("levels3dpreview.flags.emote.notes")}</p>
+            </div>
+        </fieldset>
+        `;
+        Array.from(html.querySelectorAll("fieldset")).at(-1).insertAdjacentHTML("afterend", emoteHtml);
+    });
+
+    Hooks.on("updateUser", (user, data) => {
+        loadUserEmotes();
     });
 
     Hooks.on("updateTile", (tile, updates) => {

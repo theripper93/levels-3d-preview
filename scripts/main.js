@@ -44,7 +44,7 @@ import { WorkerHandler } from "./helpers/workers.js";
 import { miniCanvas } from "./apps/minicanvas.js";
 import { throttle, sleep } from "./helpers/utils.js";
 import { BokehPass } from "./lib/BokehPass.js";
-import { Ping } from "./entities/effects/ping.js";
+import { loadUserEmotes, Ping } from "./entities/effects/ping.js";
 import { injectThreeModifications } from "./threejsmodifications.js";
 import { ActiveEffectEffect } from "./entities/effects/activeEffect.js";
 import { RangeRingEffect } from "./entities/effects/rangeRing.js";
@@ -83,6 +83,7 @@ setSharingHooks();
 globalThis.Particle3D = Particle3D;
 
 Hooks.once("ready", () => {
+
     if (!game.scenes.active) {
         const scene = Array.from(game.scenes)[0];
         if (scene) {
@@ -107,6 +108,7 @@ Hooks.once("ready", () => {
         console.error(game.i18n.localize("levels3dpreview.errors.initfailed"), e);
     }
     Hooks.callAll("3DCanvasInit", game.Levels3DPreview);
+    loadUserEmotes();
     game.Levels3DPreview.cacheModels();
     if (!game.settings.get("levels-3d-preview", "removeKeybindingsPrompt")) game.Levels3DPreview.interactionManager.removeWASDBindings();
     Hooks.callAll("3DCanvasReady", game.Levels3DPreview);

@@ -220,6 +220,11 @@
             "tiltY": "Tile Editor: Tilt Y"
         },
         "flags": {
+            "emote": {
+                "header": "3D Canvas",
+                "label": "Emote",
+                "notes": "Select a Custom player emote to use with 3D Canvas tactical pings."
+            },
             "meshStats": "Vertices: %v% | Triangles: %t% | Meshes: %m% | Instances: %i%",
             "maxElevation": {
                 "label": "Max Elevation",
