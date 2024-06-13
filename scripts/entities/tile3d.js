@@ -2546,7 +2546,7 @@ export async function recomputeGravity() {
 export const recomputeGravityDebounced = foundry.utils.debounce(recomputeGravity, 100);
 
 export async function mergeTiles(tileDocuments) {
-    const sameSource = tileDocuments.every((td) => td.data.flags["levels-3d-preview"]?.model3d === tileDocuments[0].data.flags["levels-3d-preview"]?.model3d);
+    const sameSource = tileDocuments.every((td) => td.document.flags["levels-3d-preview"]?.model3d === tileDocuments[0].document.flags["levels-3d-preview"]?.model3d);
     if (!sameSource) return ui.notifications.error("Tiles must have the same source to be merged");
     const baseData = tileDocuments[0].toObject();
     const instancesMatrix = [];
@@ -2806,8 +2806,8 @@ export async function extrudeWalls(walls) {
     const wallGroups = {};
 
     for (const wall of walls) {
-        const top = wall.document.data.flags["wall-height"]?.top ?? canvas.scene.dimensions.distance * 2;
-        const bottom = wall.document.data.flags["wall-height"]?.bottom ?? 0;
+        const top = wall.document.flags["wall-height"]?.top ?? canvas.scene.dimensions.distance * 2;
+        const bottom = wall.document.flags["wall-height"]?.bottom ?? 0;
         const key = `${top}-${bottom}`;
         if (!wallGroups[key]) wallGroups[key] = [];
         wallGroups[key].push(wall);
