@@ -2629,10 +2629,10 @@ export async function autoMergeTiles(tiles = canvas.tiles.placeables, skipContro
             if (isDoor) continue;
             const repeatTile = tile.document.flags["levels-3d-preview"]?.mergedMatrix || tile.document.getFlag("levels-3d-preview", "fillType") === "tile";
             if (repeatTile) continue;
-            const model3d = tile.data.flags["levels-3d-preview"]?.model3d;
-            const texture = tile.data.flags["levels-3d-preview"]?.imageTexture;
-            const dynaMesh = tile.data.flags["levels-3d-preview"]?.dynaMesh;
-            const heightmap = tile.data.flags["levels-3d-preview"]?.displacementMap;
+            const model3d = tile.document.flags["levels-3d-preview"]?.model3d;
+            const texture = tile.document.flags["levels-3d-preview"]?.imageTexture;
+            const dynaMesh = tile.document.flags["levels-3d-preview"]?.dynaMesh;
+            const heightmap = tile.document.flags["levels-3d-preview"]?.displacementMap;
             if (dynaMesh === "decal") continue;
             if (heightmap) continue;
             const key = `${model3d}-${texture}-${dynaMesh}`;
