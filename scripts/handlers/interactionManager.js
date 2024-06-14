@@ -83,6 +83,7 @@ export class InteractionManager {
         for (let tile of tiles) {
             if (!tile || tile?.document?.hidden /*!tile?.mesh?.visible**/) continue;
             const mesh = tile.sightMesh ?? tile.mesh;
+            if(!mesh) continue;
             if (tile.hasTags) {
                 mesh.traverse((o) => {
                     const ud = o?.userData;

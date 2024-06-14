@@ -2546,7 +2546,7 @@ export async function recomputeGravity() {
 export const recomputeGravityDebounced = foundry.utils.debounce(recomputeGravity, 100);
 
 export async function mergeTiles(tileDocuments) {
-    const sameSource = tileDocuments.every((td) => td.document.flags["levels-3d-preview"]?.model3d === tileDocuments[0].document.flags["levels-3d-preview"]?.model3d);
+    const sameSource = tileDocuments.every((td) => td.flags["levels-3d-preview"]?.model3d === tileDocuments[0].flags["levels-3d-preview"]?.model3d);
     if (!sameSource) return ui.notifications.error("Tiles must have the same source to be merged");
     const baseData = tileDocuments[0].toObject();
     const instancesMatrix = [];
