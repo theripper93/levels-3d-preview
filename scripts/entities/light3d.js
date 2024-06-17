@@ -338,7 +338,8 @@ export class Light3D {
     }
 
     get color() {
-        return this.lightData.color ?? this.light.document.lightColor;
+        debugger
+        return this.lightData.color.toString() ?? this.light.document.lightColor;
     }
 
     get angle() {
