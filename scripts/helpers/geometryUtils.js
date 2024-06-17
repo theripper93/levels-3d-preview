@@ -9,7 +9,7 @@ export function getMergedMeshFromInstanced(instancedMesh) {
 }
 
 function applyMatrixWorldToGeometryInstanced(mesh) {
-    const geometry = toTrianglesDrawMode(mesh.geometry.clone());
+    const geometry = toTrianglesDrawMode(mesh.geometry.clone(), THREE.TriangleStripDrawMode);
     mesh.updateMatrixWorld(true, true);
     const attributes = geometry.attributes;
     for (const key in attributes) {

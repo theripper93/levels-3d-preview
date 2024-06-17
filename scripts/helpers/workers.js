@@ -7,6 +7,7 @@ export class WorkerHandler {
         this._lastKnownValid = {};
         this._visionReady = false;
         this._waitingForInit = false;
+        this.deleteDebounced = debounce(this.deleteDebounced.bind(this), 10);
         this.initRaycastWorker();
     }
 
@@ -66,6 +67,7 @@ export class WorkerHandler {
 
     refresh() {
         if (!this.enabled) return;
+        console.log("Refreshing");
         canvas.perception.update(
             {
                 initializeLighting: true,
@@ -93,8 +95,13 @@ export class WorkerHandler {
 
     getLastRaycast(id) {
         const result = this._lastResults[id];
-        delete this._lastResults[id];
+        //delete this._lastResults[id];
+        this.deleteDebounced(id);
         return result;
+    }
+
+    deleteDebounced(id) {
+        delete this._lastResults[id];
     }
 
     getLastComputed(id) {
