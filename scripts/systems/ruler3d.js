@@ -499,7 +499,7 @@ export class Ruler3D {
             snappedCenterPos.x += isToken.w / 2;
             snappedCenterPos.y += isToken.h / 2;
         } else {
-            snappedCenterPos = canvas.grid.getSnappedPoint({ x: canvasPosition.x, y: canvasPosition.y }, { mode: CONST.GRID_SNAPPING_MODES.CENTER });
+            snappedCenterPos = canvas.grid.getSnappedPoint({ x: canvasPosition.x, y: canvasPosition.y }, { mode: CONST.GRID_SNAPPING_MODES.TOP_LEFT_CORNER });
         }
 
         const snappedPos = {

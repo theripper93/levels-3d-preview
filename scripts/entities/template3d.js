@@ -9,7 +9,7 @@ const basicMat = new THREE.MeshBasicMaterial();
 const validTemplateTypes = ["circle", "rect", "cone", "ray"];
 
 export class Template3D {
-    constructor(template, A, B) {
+    constructor (template, A, B) {
         this.template = template;
         if (this.template.t === "light") {
             this.template.t = "circle";
