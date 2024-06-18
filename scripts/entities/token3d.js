@@ -1231,7 +1231,7 @@ export class Token3D {
         this.border.add(stemMesh);
     }
 
-    updateTargetTexture() {
+    async updateTargetTexture() {
         if (!this.isBase) return;
         const targeted = this.enableReticule ? Array.from(this.token.targeted).filter((t) => t.id !== game.user.id) : Array.from(this.token.targeted);
         const colors = targeted.map((t) => t.color);
@@ -1244,7 +1244,7 @@ export class Token3D {
                 g.beginFill(colors[i].replace("#", "0x"));
                 g.drawRect(i, 0, 1, 1);
             }
-            const base64 = canvas.app.renderer.extract.base64(g);
+            const base64 = await canvas.app.renderer.extract.base64(g);
             text = new THREE.TextureLoader().load(base64, (t) => {
                 t.magFilter = THREE.NearestFilter;
                 t.minFilter = THREE.NearestFilter;

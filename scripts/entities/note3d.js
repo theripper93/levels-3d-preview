@@ -67,13 +67,13 @@ export class Note3D {
         this.mesh.add(mesh);
     }
 
-    _drawTooltip() {
+    async _drawTooltip() {
         if (this.nameplate) this.mesh.remove(this.nameplate);
         const name = this.note._drawTooltip();
         name.visible = true;
         const container = new PIXI.Container();
         container.addChild(name);
-        const base64 = canvas.app.renderer.extract.base64(container);
+        const base64 = await canvas.app.renderer.extract.base64(container);
         const spriteMaterial = new THREE.SpriteMaterial({
             map: new THREE.TextureLoader().load(base64),
             transparent: true,
