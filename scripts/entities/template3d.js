@@ -541,11 +541,11 @@ export class Template3D {
         switch (templateStyle) {
             case "wireframe":
                 return new THREE.MeshBasicMaterial({
-                    color: this.fromData ? this.template.document?.fillColor : game.user.color.css,
+                    color: this.fromData ? this.template.document?.fillColor.css : game.user.color.css,
                     wireframe: true,
                 });
             case "solid":
-                let templateColor = this.fromData ? this.template.document?.fillColor : game.user.color.css;
+                let templateColor = this.fromData ? this.template.document?.fillColor.css : game.user.color.css;
                 if (this.hasShaders) templateColor = 0xffffff;
                 return new THREE.MeshPhongMaterial({
                     color: templateColor,
@@ -553,7 +553,7 @@ export class Template3D {
                     opacity: this.hasShaders ? 0.7 : 0.3,
                     side: THREE.DoubleSide,
                     depthWrite: false,
-                    emissive: this.fromData ? this.template.document?.fillColor : game.user.color.css,
+                    emissive: this.fromData ? this.template.document?.fillColor.css : game.user.color.css,
                     specular: 0xffffff,
                     shininess: 1,
                 });
