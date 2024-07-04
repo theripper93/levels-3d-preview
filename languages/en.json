@@ -288,7 +288,8 @@
                     "animate": "Animated (Pivot)",
                     "slide": "Animated (Slide - Side)",
                     "slideVertical": "Animated (Slide - Vertical)",
-                    "linkWithAnimation": "Link with 3D Model Animation"
+                    "linkWithAnimation": "Link with 3D Model Animation",
+                    "linkWithAnimationReversed": "Link with Single 3D Model Animation"
                 }
             },
             "doorAnimateAngle": {

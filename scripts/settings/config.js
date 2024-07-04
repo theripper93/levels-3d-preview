@@ -1335,6 +1335,7 @@ export function registerConfigs() {
                         2: game.i18n.localize("levels3dpreview.flags.doorStyle.options.slide"),
                         3: game.i18n.localize("levels3dpreview.flags.doorStyle.options.slideVertical"),
                         4: game.i18n.localize("levels3dpreview.flags.doorStyle.options.linkWithAnimation"),
+                        5: game.i18n.localize("levels3dpreview.flags.doorStyle.options.linkWithAnimationReversed")
                     },
                 },
                 doorAnimationDuration: {

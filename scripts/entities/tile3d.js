@@ -924,6 +924,8 @@ export class Tile3D {
 
         this.animIndex = parseInt(this.tile.document.getFlag("levels-3d-preview", "animIndex") ?? 0);
 
+        const useReversed = this.tile.document.getFlag("levels-3d-preview", "doorStyle") == 5;
+
         if (model.object.animations.length > 0 && this.enableAnim) {
             //Clamp animation index
             if (this.animIndex > model.object.animations.length - 1) this.animIndex = model.object.animations.length - 1;
@@ -935,12 +937,38 @@ export class Tile3D {
                 this.mixer.timeScale = this.animSpeed;
                 const previousClipAction = this._currentClipAction;
                 const clipAction = this.mixer.clipAction(model.object.animations[this.animIndex]);
-                clipAction.reset();
-                this._currentClipAction = clipAction;
-                clipAction.clampWhenFinished = this.animationOnce;
                 clipAction.setLoop(this.animationOnce ? THREE.LoopOnce : THREE.LoopRepeat);
-                if (previousClipAction) clipAction.crossFadeFrom(previousClipAction, 0.5, false);
-                clipAction.play();
+                clipAction.clampWhenFinished = this.animationOnce;
+                this._currentClipAction = clipAction;
+                clipAction.time = 0;
+
+                if (!useReversed) {                    
+                    clipAction.reset();
+                    if (previousClipAction) clipAction.crossFadeFrom(previousClipAction, 0.5, false);
+                    clipAction.play();
+                } else {
+                    const forwards = this.doorState == 1;
+                    clipAction.reset();
+
+                    if (!previousClipAction) {
+                        clipAction.time = forwards ? clipAction._clip.duration * this.mixer.timeScale - 0.01 : 0;
+                        clipAction.play();
+                        setTimeout(() => {
+                            clipAction.halt(0);
+                        }, 1)
+                        return;
+                    }
+
+                    if (forwards) clipAction.play();
+                    else {
+                        clipAction.setLoop(THREE.LoopPingPong);
+                        clipAction.time = clipAction._clip.duration * this.mixer.timeScale;
+                        setTimeout(() => {
+                            clipAction.halt(0);
+                        }, (clipAction._clip.duration * this.mixer.timeScale - 0.1) * 1000);
+                        clipAction.play();
+                    }
+                }
             }
         }
     }
@@ -2418,7 +2446,7 @@ export class Tile3D {
             }
             if (isSingleDoorUpdate(updates)) {
                 game.Levels3DPreview.tiles[tile.id]?.setupDoor();
-                if (tile.flags["levels-3d-preview"]?.doorStyle == 4) game.Levels3DPreview.tiles[tile.id]?.setupAnimations();
+                if (tile.flags["levels-3d-preview"]?.doorStyle == 4 || tile.flags["levels-3d-preview"]?.doorStyle == 5) game.Levels3DPreview.tiles[tile.id]?.setupAnimations();
                 return;
             }
 
