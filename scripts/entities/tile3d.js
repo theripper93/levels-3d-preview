@@ -920,11 +920,13 @@ export class Tile3D {
     setupAnimations() {
         const model = this._animationModelReference;
 
-        if(!model) return;
+        if (!model) return;
+
+        this.animIndex = parseInt(this.tile.document.getFlag("levels-3d-preview", "animIndex") ?? 0);
 
         if (model.object.animations.length > 0 && this.enableAnim) {
             //Clamp animation index
-            if(this.animIndex > model.object.animations.length - 1) this.animIndex = model.object.animations.length - 1;
+            if (this.animIndex > model.object.animations.length - 1) this.animIndex = model.object.animations.length - 1;
             if (!model.object.animations[this.animIndex]) {
                 console.error("Animation index out of bounds", this.tile);
             } else {
@@ -932,8 +934,8 @@ export class Tile3D {
                 this.mixer = this.mixer ?? new THREE.AnimationMixer(model.scene);
                 this.mixer.timeScale = this.animSpeed;
                 const previousClipAction = this._currentClipAction;
-                const clipAction = this.mixer.clipAction(model.object.animations[this.animIndex])
-                clipAction.reset()
+                const clipAction = this.mixer.clipAction(model.object.animations[this.animIndex]);
+                clipAction.reset();
                 this._currentClipAction = clipAction;
                 clipAction.clampWhenFinished = this.animationOnce;
                 clipAction.setLoop(this.animationOnce ? THREE.LoopOnce : THREE.LoopRepeat);
@@ -1772,7 +1774,7 @@ export class Tile3D {
         const y = z3d * factor - this.tile.document.height / 2;
         const z = (y3d * factor * canvas.dimensions.distance) / canvas.dimensions.size;
         const useSnapped = Ruler3D.useSnapped() && !transform;
-        const snapped = canvas.grid.getSnappedPoint({x, y}, {mode: CONST.GRID_SNAPPING_MODES.TOP_LEFT_CORNER});
+        const snapped = canvas.grid.getSnappedPoint({ x, y }, { mode: CONST.GRID_SNAPPING_MODES.TOP_LEFT_CORNER });
         let { rangeTop, elevation } = CONFIG.Levels.helpers.getRangeForDocument(this.tile.document);
         const dest = {
             x: useSnapped ? snapped.x : x,
@@ -2408,33 +2410,38 @@ export class Tile3D {
 
     static setHooks() {
         Hooks.on("updateTile", (tile, updates) => {
-            if (game.Levels3DPreview?._active && tile.object && isDoorUpdate(updates)) {
+            if (!game.Levels3DPreview?._active && tile.object) return;
+
+            if (isDoorUpdate(updates)) {
                 game.Levels3DPreview.tiles[tile.id]?.setDoorsMaterials(true);
                 return;
             }
-            //setupAnimations
-            if (game.Levels3DPreview?._active && tile.object && isSingleDoorUpdate(updates)) {
+            if (isSingleDoorUpdate(updates)) {
                 game.Levels3DPreview.tiles[tile.id]?.setupDoor();
-                if(tile.flags["levels-3d-preview"]?.doorStyle == 4) game.Levels3DPreview.tiles[tile.id]?.setupAnimations();
+                if (tile.flags["levels-3d-preview"]?.doorStyle == 4) game.Levels3DPreview.tiles[tile.id]?.setupAnimations();
                 return;
             }
-            if (game.Levels3DPreview?._active && tile.object && !isAnimOnly(updates)) {
-                const hasGravity = (tile.getFlag("levels-3d-preview", "enableGravity") ?? "none") !== "none";
-                const hadGravity = game.Levels3DPreview.tiles[tile.id]?.isGravity;
-                if (hasGravity && hadGravity) return recomputeGravityDebounced();
-                game.Levels3DPreview.tiles[tile.id]?.destroy(true);
-                const newTile = new Tile3D(tile.object, game.Levels3DPreview, true);
-                game.Levels3DPreview.tiles[tile.id] = newTile;
-                newTile.load().then(() => {
-                    if ("x" in updates || "y" in updates || hasFlag(updates)) {
-                        recomputeGravityDebounced();
-                    }
-                });
 
-                function hasFlag(updates) {
-                    if (updates?.elevation !== undefined) return true;
-                    if (updates?.flags?.levels?.rangeTop !== undefined) return true;
+            if (isAnimOnly(updates)) {
+                game.Levels3DPreview.tiles[tile.id]?.setupAnimations();
+                return;
+            }
+
+            const hasGravity = (tile.getFlag("levels-3d-preview", "enableGravity") ?? "none") !== "none";
+            const hadGravity = game.Levels3DPreview.tiles[tile.id]?.isGravity;
+            if (hasGravity && hadGravity) return recomputeGravityDebounced();
+            game.Levels3DPreview.tiles[tile.id]?.destroy(true);
+            const newTile = new Tile3D(tile.object, game.Levels3DPreview, true);
+            game.Levels3DPreview.tiles[tile.id] = newTile;
+            newTile.load().then(() => {
+                if ("x" in updates || "y" in updates || hasFlag(updates)) {
+                    recomputeGravityDebounced();
                 }
+            });
+
+            function hasFlag(updates) {
+                if (updates?.elevation !== undefined) return true;
+                if (updates?.flags?.levels?.rangeTop !== undefined) return true;
             }
 
             function isDoorUpdate(updates) {
