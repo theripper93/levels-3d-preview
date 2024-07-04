@@ -326,6 +326,7 @@ export class Tile3D {
         this.enableAnim = this.tile.document.getFlag("levels-3d-preview", "enableAnim") ?? true;
         this.animIndex = this.tile.document.getFlag("levels-3d-preview", "animIndex") ?? 0;
         this.animSpeed = this.tile.document.getFlag("levels-3d-preview", "animSpeed") ?? 1;
+        this.animationOnce = this.tile.document.getFlag("levels-3d-preview", "animationOnce") ?? false;
         this.color = this.tile.document.getFlag("levels-3d-preview", "color") ?? "#ffffff";
         this.enableGravity = this.tile.document.getFlag("levels-3d-preview", "enableGravity") ?? "none";
         this.shading = this.tile.document.getFlag("levels-3d-preview", "shading") ?? "default";
@@ -397,7 +398,11 @@ export class Tile3D {
         this.doorSlidePercent = parseInt(this.tile.document.getFlag("levels-3d-preview", "doorSlidePercent") ?? 50);
         this.doorGrabTokens = this.tile.document.getFlag("levels-3d-preview", "doorGrabTokens") ?? false;
         this.doorType = this.tile.document.getFlag("levels-3d-preview", "doorType") ?? 0;
-        this.doorState = this.tile.document.getFlag("levels-3d-preview", "doorState") ?? 0;
+        this.doorState = parseInt(this.tile.document.getFlag("levels-3d-preview", "doorState") ?? 0);
+        this.linkWithDoorState = this.doorStyle === 4;
+        if (this.linkWithDoorState) {
+            this.animIndex = this.doorState;
+        }
         this.doorAnimationDuration = this.tile.document.getFlag("levels-3d-preview", "doorAnimationDuration") ?? 400;
         this.mergedMatrix = this.tile.document.getFlag("levels-3d-preview", "mergedMatrix") ?? null;
         this.originalDimensions = this.tile.document.getFlag("levels-3d-preview", "originalDimensions") ?? null;
@@ -561,7 +566,10 @@ export class Tile3D {
     }
 
     setupDoor(firstRender = false) {
-        this.doorState = this.tile.document.getFlag("levels-3d-preview", "doorState") ?? 0;
+        this.doorState = parseInt(this.tile.document.getFlag("levels-3d-preview", "doorState") ?? 0);
+        if (this.linkWithDoorState) {
+            this.animIndex = this.doorState;
+        }
         this.sight = this.tile.document.getFlag("levels-3d-preview", "sight") ?? true;
         this.collision = this.tile.document.getFlag("levels-3d-preview", "collision") ?? true;
         this.isSecret = this.doorType == 2;
@@ -875,16 +883,9 @@ export class Tile3D {
         object.children.forEach((child) => {
             child.position.add(this.offset.clone().divide(object.scale));
         });
-        if (model.object.animations.length > 0 && this.enableAnim) {
-            if (!model.object.animations[this.animIndex]) {
-                console.error("Animation index out of bounds", this.tile);
-            } else {
-                this.isAnimated = true;
-                this.mixer = new THREE.AnimationMixer(model.scene);
-                this.mixer.timeScale = this.animSpeed;
-                this.mixer.clipAction(model.object.animations[this.animIndex]).play();
-            }
-        }
+
+        this._animationModelReference = model;
+        this.setupAnimations();
 
         this.mesh = container;
         this.sightMesh = this._parent.helpers.getSightMesh(object, this.sightMeshComplexity);
@@ -914,6 +915,32 @@ export class Tile3D {
         });
         this._parent.scene.add(container);
         this.initBoundingBox();
+    }
+
+    setupAnimations() {
+        const model = this._animationModelReference;
+
+        if(!model) return;
+
+        if (model.object.animations.length > 0 && this.enableAnim) {
+            //Clamp animation index
+            if(this.animIndex > model.object.animations.length - 1) this.animIndex = model.object.animations.length - 1;
+            if (!model.object.animations[this.animIndex]) {
+                console.error("Animation index out of bounds", this.tile);
+            } else {
+                this.isAnimated = true;
+                this.mixer = this.mixer ?? new THREE.AnimationMixer(model.scene);
+                this.mixer.timeScale = this.animSpeed;
+                const previousClipAction = this._currentClipAction;
+                const clipAction = this.mixer.clipAction(model.object.animations[this.animIndex])
+                clipAction.reset()
+                this._currentClipAction = clipAction;
+                clipAction.clampWhenFinished = this.animationOnce;
+                clipAction.setLoop(this.animationOnce ? THREE.LoopOnce : THREE.LoopRepeat);
+                if (previousClipAction) clipAction.crossFadeFrom(previousClipAction, 0.5, false);
+                clipAction.play();
+            }
+        }
     }
 
     async initInstanced() {
@@ -2385,8 +2412,10 @@ export class Tile3D {
                 game.Levels3DPreview.tiles[tile.id]?.setDoorsMaterials(true);
                 return;
             }
+            //setupAnimations
             if (game.Levels3DPreview?._active && tile.object && isSingleDoorUpdate(updates)) {
                 game.Levels3DPreview.tiles[tile.id]?.setupDoor();
+                if(tile.flags["levels-3d-preview"]?.doorStyle == 4) game.Levels3DPreview.tiles[tile.id]?.setupAnimations();
                 return;
             }
             if (game.Levels3DPreview?._active && tile.object && !isAnimOnly(updates)) {

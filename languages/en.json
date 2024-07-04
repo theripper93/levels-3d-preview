@@ -287,7 +287,8 @@
                     "transparent": "Transparent",
                     "animate": "Animated (Pivot)",
                     "slide": "Animated (Slide - Side)",
-                    "slideVertical": "Animated (Slide - Vertical)"
+                    "slideVertical": "Animated (Slide - Vertical)",
+                    "linkWithAnimation": "Link with 3D Model Animation"
                 }
             },
             "doorAnimateAngle": {
@@ -727,6 +728,12 @@
             },
             "animIndex": {
                 "label": "Animation Index"
+            },
+            "animationOnce": {
+                "label": "Play Once"
+            },
+            "linkWithDoorState": {
+                "label": "Link with Door State"
             },
             "animSpeed": {
                 "label": "Animation Speed"

@@ -1109,6 +1109,11 @@ export function registerConfigs() {
                     max: 10,
                     step: 0.1,
                 },
+                animationOnce: {
+                    type: "checkbox",
+                    label: game.i18n.localize("levels3dpreview.flags.animationOnce.label"),
+                    default: false,
+                },
                 paused: {
                     type: "checkbox",
                     label: game.i18n.localize("levels3dpreview.flags.paused.label"),
@@ -1329,6 +1334,7 @@ export function registerConfigs() {
                         1: game.i18n.localize("levels3dpreview.flags.doorStyle.options.animate"),
                         2: game.i18n.localize("levels3dpreview.flags.doorStyle.options.slide"),
                         3: game.i18n.localize("levels3dpreview.flags.doorStyle.options.slideVertical"),
+                        4: game.i18n.localize("levels3dpreview.flags.doorStyle.options.linkWithAnimation"),
                     },
                 },
                 doorAnimationDuration: {
