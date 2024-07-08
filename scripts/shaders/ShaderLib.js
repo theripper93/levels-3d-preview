@@ -483,7 +483,7 @@ export const shaders = {
             gridColor: {
                 type: "vec3",
                 value: () => {
-                    return new THREE.Color(canvas.scene.grid.color);
+                    return new THREE.Color(canvas.scene.grid.color.css);
                 },
             },
             gridAlpha: {
