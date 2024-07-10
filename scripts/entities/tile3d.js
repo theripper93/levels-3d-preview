@@ -1923,11 +1923,11 @@ export class Tile3D {
         if (!image) return false;
         if (game.Levels3DPreview._heightmapCache[image?.src]) return game.Levels3DPreview._heightmapCache[image.src];
         if (image == this.displacementCanvas) return this.displacementCanvas.getContext("2d").getImageData(0, 0, this.displacementCanvas.width, this.displacementCanvas.height);
-        var canvas = document.createElement("canvas");
+        const canvas = document.createElement("canvas");
         canvas.width = image.width;
         canvas.height = image.height;
 
-        var context = canvas.getContext("2d");
+        const context = canvas.getContext("2d");
         context.drawImage(image, 0, 0);
         const imagedata = context.getImageData(0, 0, image.width, image.height);
         game.Levels3DPreview._heightmapCache[image.src] = imagedata;

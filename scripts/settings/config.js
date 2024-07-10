@@ -1594,10 +1594,7 @@ export function registerConfigs() {
 
         const dMLabel = html.find(`label[for="flags.levels-3d-preview.dynaMesh"]`);
         const dMSelect = html.find(`select[name="flags.levels-3d-preview.dynaMesh"]`);
-        const dMFF = $(`<div class="form-fields"></div>`);
-        dMFF.append(dMSelect);
-        dMFF.append(mapGenBtn);
-        dMLabel.after(dMFF);
+        dMSelect.after(mapGenBtn);
         dMSelect.on("change", (e) => {
             mapGenBtn.toggle(dMSelect.val() === "mapGen");
         });
