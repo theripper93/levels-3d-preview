@@ -318,7 +318,7 @@
                 "label": "Enable 3D on Load"
             },
             "bloom": {
-                "label": "Enable Bloom"
+                "label": "Bloom"
             },
             "bloomThreshold": {
                 "label": "Bloom Threshold"
@@ -921,6 +921,38 @@
             "castShadow": {
                 "label": "Cast Shadow",
                 "notes": "Enable the shadow casting on the light - WARNING High performance impact!."
+            },
+            "visibleWhenDisabled": {
+                "label": "Visible When Disabled",
+                "notes": "If the light is disabled, it will still be visible. It will not provide a vision source but will still apply the visual effect of lighting."
+            },
+            "postprocessing": {
+                "header": "Post Processing",
+                "notes": "Post processing effects applied to the scene.",
+                "enabled": {
+                    "label": "Enabled"
+                },
+                "vignette": {
+                    "label": "Vignette"
+                },
+                "chromaticAberration": {
+                    "label": "Chromatic Aberration"
+                },
+                "grain": {
+                    "label": "Grain"
+                },
+                "tint": {
+                    "label": "Tint"
+                },
+                "contrast": {
+                    "label": "Contrast"
+                },
+                "brightness": {
+                    "label": "Brightness"
+                },
+                "saturation": {
+                    "label": "Saturation"
+                }
             },
             "particlePreset": {
                 "label1": "Particle Preset 1",

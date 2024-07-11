@@ -59,6 +59,7 @@ import { WaveFunctionSolver } from "./generators/WaveFunctionCollapse.js";
 import { applyHeightmap } from "./helpers/applyHeightmap.js";
 
 import { createTargetGeometry } from "./entities/effects/target.js";
+import {UberPass} from "./lib/UberPass.js";
 
 export const factor = 1000;
 injectFoWShaders(THREE);
@@ -620,6 +621,23 @@ class Levels3DPreview {
             this.bloomPass.radius = canvas.scene.getFlag("levels-3d-preview", "bloomRadius") ?? 0.4;
             this.composer.addPass(this.bloomPass);
         }
+
+        if (true) {
+            this.uberPass = this.uberPass ?? new ShaderPass(UberPass);
+            this.uberPass.setupUniforms = (uniforms) => {
+                for (const [key, value] of (Object.entries(uniforms ?? canvas.scene.getFlag("levels-3d-preview", "pp") ?? {}))) {
+                    if (key == "enabled") {
+                        this.uberPass.enabled = value;
+                        continue;
+                    }
+                    const finalValue = typeof value === "string" ? new THREE.Color(value) : value;
+                    this.uberPass.uniforms[key].value = finalValue;
+                }
+            }
+            this.uberPass.setupUniforms();
+            this.composer.addPass(this.uberPass);
+        }
+
         if (this.fogExploration) {
             this.fogExploration.destroy();
             this.fogExploration = null;

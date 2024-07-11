@@ -235,7 +235,7 @@ export const injectConfig = {
 
 const _template = `
 
-<div>
+<div class="standard-form">
     {{#each inputs as |input|}}
     {{#if (eq input.type 'custom')}}
     {{{input.html}}}
@@ -292,7 +292,7 @@ const _template = `
                     
                     </div>
         {{#if input.notes}}
-        <p class="notes">{{input.notes}}</p>
+        <p class="notes hint">{{input.notes}}</p>
         {{/if}}
     </div>
     {{/if}}

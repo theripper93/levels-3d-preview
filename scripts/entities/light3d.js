@@ -85,6 +85,7 @@ export class Light3D {
         if (!this.dragHandle.visible) return;
         this.dragHandle.userData.sprite.material.map = this.light.document.hidden ? this._parent.textures.lightOff : this._parent.textures.lightOn;
         this.dragHandle.userData.sprite.material.color.set(this.light.document.hidden ? "#ff0000" : "#ffffff");
+        if(this.light.document.hidden && this.light.document.flags?.["levels-3d-preview"]?.visibleWhenDisabled) this.dragHandle.userData.sprite.material.color.set("#00ff00");
         this.dragHandle.userData.sphere.material.color.set(this.color || "#ffffff");
     }
 
@@ -191,11 +192,11 @@ export class Light3D {
             this.light3d.target.updateMatrixWorld();
         }
         //this.light3d.visible = !this.light.document.hidden && radius != 0;
-        if (this.light.document.hidden || radius == 0) {
+        /*if (this.light.document.hidden || radius == 0) {
             this.light3d.distance = 0;
             this.light3d.decay = 9999999;
             this.light3d.intensity = 0;
-        }
+        }*/
         this.animationFn = (lightAnimations[this.animationType] ?? lightAnimations.none).bind(this);
         if (this.useHelper) {
             this.mesh.remove(this.lightHelper);
@@ -217,6 +218,7 @@ export class Light3D {
     }
 
     update(delta) {
+        this.light3d.visible = (this.light.emitsLight && !this.light.document.hidden) || !!this.light.document.flags?.["levels-3d-preview"]?.visibleWhenDisabled;
         this.animationFn(delta);
     }
 

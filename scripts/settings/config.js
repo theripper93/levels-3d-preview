@@ -169,35 +169,6 @@ export function registerConfigs() {
                     default: true,
                     notes: game.i18n.localize("levels3dpreview.flags.renderBackground.notes"),
                 },
-                bloom: {
-                    type: "checkbox",
-                    label: game.i18n.localize("levels3dpreview.flags.bloom.label"),
-                    default: false,
-                },
-                bloomThreshold: {
-                    type: "range",
-                    label: game.i18n.localize("levels3dpreview.flags.bloomThreshold.label"),
-                    min: 0,
-                    max: 1,
-                    step: 0.01,
-                    default: 0,
-                },
-                bloomStrength: {
-                    type: "range",
-                    label: game.i18n.localize("levels3dpreview.flags.bloomStrength.label"),
-                    min: 0,
-                    max: 1,
-                    step: 0.01,
-                    default: 0.4,
-                },
-                bloomRadius: {
-                    type: "range",
-                    label: game.i18n.localize("levels3dpreview.flags.bloomRadius.label"),
-                    min: 0,
-                    max: 1,
-                    step: 0.01,
-                    default: 0.4,
-                },
                 filter: {
                     type: "select",
                     label: game.i18n.localize("levels3dpreview.flags.filter.label"),
@@ -516,10 +487,104 @@ export function registerConfigs() {
                     default: false,
                 },
             },
+            "postprocessing": {
+                tabLabel: game.i18n.localize("levels3dpreview.flags.postprocessing.header"),
+                tabNotes: game.i18n.localize("levels3dpreview.flags.postprocessing.notes"),
+                tabIcon: "fas fa-adjust",
+                "pp.enabled": {
+                    type: "checkbox",
+                    label: game.i18n.localize("levels3dpreview.flags.postprocessing.enabled.label"),
+                    default: true,
+                },
+                "pp.vignette": {
+                    type: "range",
+                    label: game.i18n.localize("levels3dpreview.flags.postprocessing.vignette.label"),
+                    min: 0,
+                    max: 1,
+                    step: 0.01,
+                    default: 0,
+                },
+                "pp.chromaticAberration": {
+                    type: "range",
+                    label: game.i18n.localize("levels3dpreview.flags.postprocessing.chromaticAberration.label"),
+                    min: 0,
+                    max: 1,
+                    step: 0.01,
+                    default: 0,
+                },
+                "pp.grain": {
+                    type: "range",
+                    label: game.i18n.localize("levels3dpreview.flags.postprocessing.grain.label"),
+                    min: 0,
+                    max: 1,
+                    step: 0.01,
+                    default: 0,
+                },
+                "pp.tint": {
+                    type: "color",
+                    label: game.i18n.localize("levels3dpreview.flags.postprocessing.tint.label"),
+                    default: "#ffffff",
+                },
+                "pp.contrast": {
+                    type: "range",
+                    label: game.i18n.localize("levels3dpreview.flags.postprocessing.contrast.label"),
+                    min: 0,
+                    max: 2,
+                    step: 0.01,
+                    default: 1,
+                },
+                "pp.brightness": {
+                    type: "range",
+                    label: game.i18n.localize("levels3dpreview.flags.postprocessing.brightness.label"),
+                    min: 0,
+                    max: 2,
+                    step: 0.01,
+                    default: 1,
+                },
+                "pp.saturation": {
+                    type: "range",
+                    label: game.i18n.localize("levels3dpreview.flags.postprocessing.saturation.label"),
+                    min: 0,
+                    max: 2,
+                    step: 0.01,
+                    default: 1,
+                },
+                
+                bloom: {
+                    type: "checkbox",
+                    label: game.i18n.localize("levels3dpreview.flags.bloom.label"),
+                    default: false,
+                },
+                bloomThreshold: {
+                    type: "range",
+                    label: game.i18n.localize("levels3dpreview.flags.bloomThreshold.label"),
+                    min: 0,
+                    max: 1,
+                    step: 0.01,
+                    default: 0,
+                },
+                bloomStrength: {
+                    type: "range",
+                    label: game.i18n.localize("levels3dpreview.flags.bloomStrength.label"),
+                    min: 0,
+                    max: 1,
+                    step: 0.01,
+                    default: 0.4,
+                },
+                bloomRadius: {
+                    type: "range",
+                    label: game.i18n.localize("levels3dpreview.flags.bloomRadius.label"),
+                    min: 0,
+                    max: 1,
+                    step: 0.01,
+                    default: 0.4,
+                },
+            },
+
         };
 
         const injected = injectConfig.inject(app, html, data);
-        html.on("change", `select[name="flags.levels-3d-preview.particlePreset"]`, (e) => {
+        html.on("change", `[name="flags.levels-3d-preview.particlePreset"]`, (e) => {
             const value = e.target.value;
             if (value === "custom") {
                 html.find(`#part-group`).removeClass("hidden");
@@ -528,25 +593,36 @@ export function registerConfigs() {
             }
             app.setPosition({ height: "auto" });
         });
-        html.find(`select[name="flags.levels-3d-preview.particlePreset"]`).trigger("change");
+        html.find(`[name="flags.levels-3d-preview.particlePreset"]`).trigger("change");
+
+        const ppInputs = Array.from(injected[0].querySelectorAll("[name]")).filter((input) => input.name.includes("pp."));
+
+        ppInputs.forEach((input) => {
+            input.addEventListener("change", (e) => {
+                const data = new FormDataExtended(html.find("form")[0]);
+                const toObject = foundry.utils.expandObject(data.object);
+                const ppData = foundry.utils.getProperty(toObject, `flags.levels-3d-preview.pp`);
+                game.Levels3DPreview.uberPass.setupUniforms(ppData);
+            })
+        } );
 
         const bloomFlags = ["bloomThreshold", "bloomStrength", "bloomRadius"];
         const filterFlags = ["filterStrength", "filterCustom"];
         const customTableFlags = ["tableTex", "tableColor"];
         const fogFlags = ["fogColor", "fogDistance"];
         hideParams(app, html, `input[name="flags.levels-3d-preview.bloom"]`, bloomFlags, false);
-        hideParams(app, html, `select[name="flags.levels-3d-preview.filter"]`, filterFlags, "none");
-        hideParams(app, html, `select[name="flags.levels-3d-preview.renderTable"]`, customTableFlags, ["table", "matcustom"], true);
+        hideParams(app, html, `[name="flags.levels-3d-preview.filter"]`, filterFlags, "none");
+        hideParams(app, html, `[name="flags.levels-3d-preview.renderTable"]`, customTableFlags, ["table", "matcustom"], true);
         hideParams(app, html, `input[name="flags.levels-3d-preview.enableFog"]`, fogFlags, false);
 
         if (canvas.scene.id !== app.object.id) return;
         html.on("change", "input", (e) => {
             if (!game.Levels3DPreview._active) return;
-            const sunPosition = html.find("input[name='flags.levels-3d-preview.sunPosition']")[0].value;
-            const sunDistance = html.find("input[name='flags.levels-3d-preview.sunDistance']")[0].value;
-            const sceneTint = html.find("input[name='flags.levels-3d-preview.sceneTint']")[0].value;
-            const exposure = html.find("input[name='flags.levels-3d-preview.exposure']")[0].value;
-            const sunTilt = html.find("input[name='flags.levels-3d-preview.sunTilt']")[0].value;
+            const sunPosition = html.find("[name='flags.levels-3d-preview.sunPosition']")[0].value;
+            const sunDistance = html.find("[name='flags.levels-3d-preview.sunDistance']")[0].value;
+            const sceneTint = html.find("[name='flags.levels-3d-preview.sceneTint']")[0].value;
+            const exposure = html.find("[name='flags.levels-3d-preview.exposure']")[0].value;
+            const sunTilt = html.find("[name='flags.levels-3d-preview.sunTilt']")[0].value;
             game.Levels3DPreview.lights.globalIllumination.setTarget({
                 color: sceneTint,
                 time: sunPosition,
@@ -1788,9 +1864,15 @@ export function registerConfigs() {
                 max: 90,
                 step: 1,
             },
+            visibleWhenDisabled: {
+                type: "checkbox",
+                label: game.i18n.localize("levels3dpreview.flags.visibleWhenDisabled.label"),
+                default: false,
+                notes: game.i18n.localize("levels3dpreview.flags.visibleWhenDisabled.notes"),
+            },
             partHeader: {
                 type: "custom",
-                html: `<h3 class="form-header"><i class="fas fa-fire"></i> ${game.i18n.localize("levels3dpreview.flags.lightParticleEffect.header.title")}</h3><p class="notes">${game.i18n.localize("levels3dpreview.flags.lightParticleEffect.header.notes")}</p><div>`,
+                html: `<h3 class="form-header"><i class="fas fa-fire"></i> ${game.i18n.localize("levels3dpreview.flags.lightParticleEffect.header.title")}</h3><p class="notes">${game.i18n.localize("levels3dpreview.flags.lightParticleEffect.header.notes")}</p><div class="standard-form">`,
             },
             enableParticle: {
                 type: "checkbox",
@@ -1805,7 +1887,7 @@ export function registerConfigs() {
             ParticleType: {
                 type: "select",
                 label: game.i18n.localize("levels3dpreview.flags.lightParticleEffect.ParticleType.label"),
-                default: "custom",
+                default: "torch",
                 options: particleSelect,
             },
             ParticleIntensity: {
