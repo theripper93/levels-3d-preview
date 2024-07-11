@@ -28,7 +28,7 @@ export class Cursors3D {
     }
 
     createCursor(uId, cursor) {
-        const color = game.users.get(uId).color;
+        const color = game.users.get(uId).color?.css;
         const geometry = new THREE.SphereGeometry(this.radius, 16, 16);
         const material = new THREE.MeshBasicMaterial({ color: color });
         const mesh = new THREE.Mesh(geometry, material);

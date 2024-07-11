@@ -1861,7 +1861,7 @@ Hooks.on("sightRefresh", () => {
 Hooks.on("updateScene", (scene, updates) => {
     if (!game.Levels3DPreview?._active || scene.id !== canvas.scene.id) return;
     if ("img" in updates) game.Levels3DPreview.createBoard();
-    if ("fogExploration" in updates || "tokenVision" in updates) {
+    if (updates.fog !== undefined || "tokenVision" in updates) {
         game.Levels3DPreview.reload();
         return;
     }
