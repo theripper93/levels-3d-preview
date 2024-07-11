@@ -494,7 +494,7 @@ export function registerConfigs() {
                 "pp.enabled": {
                     type: "checkbox",
                     label: game.i18n.localize("levels3dpreview.flags.postprocessing.enabled.label"),
-                    default: true,
+                    default: false,
                 },
                 "pp.vignette": {
                     type: "range",
