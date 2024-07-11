@@ -833,7 +833,9 @@
                     "animate": "アニメーション",
                     "transparent": "透明",
                     "slide": "アニメーション (スライド - サイド)",
-                    "slideVertical": "アニメーション (スライド - 垂直)"
+                    "slideVertical": "アニメーション (スライド - 垂直)",
+                    "linkWithAnimation": "3Dモデルアニメーションとの連携",
+                    "linkWithAnimationReversed": "単一の 3D モデル アニメーションとのリンク"
                 }
             },
             "particleGroundOffset": {
@@ -927,6 +929,52 @@
             },
             "gmOnlyInteractive": {
                 "label": "GM のみのインタラクション"
+            },
+            "animationOnce": {
+                "label": "一度プレイする"
+            },
+            "emote": {
+                "header": "3Dキャンバス",
+                "label": "エモート",
+                "notes": "3D Canvas 戦術 ping で使用するカスタム プレーヤー エモートを選択します。"
+            },
+            "linkWithDoorState": {
+                "label": "ドアの状態と連動"
+            },
+            "pixel": {
+                "label": "ピクセル化"
+            },
+            "postprocessing": {
+                "brightness": {
+                    "label": "輝度"
+                },
+                "chromaticAberration": {
+                    "label": "色収差"
+                },
+                "contrast": {
+                    "label": "対比"
+                },
+                "enabled": {
+                    "label": "有効"
+                },
+                "grain": {
+                    "label": "粒"
+                },
+                "header": "後処理",
+                "notes": "シーンに適用される後処理エフェクト。",
+                "saturation": {
+                    "label": "飽和"
+                },
+                "tint": {
+                    "label": "色合い"
+                },
+                "vignette": {
+                    "label": "ビネット"
+                }
+            },
+            "visibleWhenDisabled": {
+                "label": "無効な場合に表示される",
+                "notes": "ライトが無効になっている場合でも、ライトは表示されます。\n視覚ソースは提供されませんが、照明の視覚効果は適用されます。"
             }
         },
         "settings": {

@@ -204,7 +204,9 @@
                     "animate": "Animado",
                     "transparent": "Transparente",
                     "slide": "Animado (Slide - Lateral)",
-                    "slideVertical": "Animado (Slide - Vertical)"
+                    "slideVertical": "Animado (Slide - Vertical)",
+                    "linkWithAnimation": "Link com animação de modelo 3D",
+                    "linkWithAnimationReversed": "Link com animação de modelo 3D único"
                 }
             },
             "doorType": {
@@ -944,6 +946,52 @@
             },
             "gmOnlyInteractive": {
                 "label": "Interação somente GM"
+            },
+            "animationOnce": {
+                "label": "Jogue uma vez"
+            },
+            "emote": {
+                "header": "Tela 3D",
+                "label": "Emote",
+                "notes": "Selecione um emote de jogador personalizado para usar com pings táticos do 3D Canvas."
+            },
+            "linkWithDoorState": {
+                "label": "Link com estado da porta"
+            },
+            "pixel": {
+                "label": "Pixelizar"
+            },
+            "postprocessing": {
+                "brightness": {
+                    "label": "Brilho"
+                },
+                "chromaticAberration": {
+                    "label": "Aberração cromática"
+                },
+                "contrast": {
+                    "label": "Contraste"
+                },
+                "enabled": {
+                    "label": "Habilitado"
+                },
+                "grain": {
+                    "label": "Grão"
+                },
+                "header": "Pós-processamento",
+                "notes": "Efeitos de pós-processamento aplicados à cena.",
+                "saturation": {
+                    "label": "Saturação"
+                },
+                "tint": {
+                    "label": "Matiz"
+                },
+                "vignette": {
+                    "label": "Vinheta"
+                }
+            },
+            "visibleWhenDisabled": {
+                "label": "Visível quando desativado",
+                "notes": "Se a luz estiver desativada, ela ainda estará visível. \nNão fornecerá uma fonte de visão, mas ainda aplicará o efeito visual da iluminação."
             }
         },
         "keybindings": {

@@ -846,7 +846,9 @@
                     "animate": "Animiert",
                     "transparent": "Transparent",
                     "slide": "Animiert (Folie – Seite)",
-                    "slideVertical": "Animiert (Folie – Vertikal)"
+                    "slideVertical": "Animiert (Folie – Vertikal)",
+                    "linkWithAnimation": "Verknüpfung mit 3D-Modellanimation",
+                    "linkWithAnimationReversed": "Verknüpfung mit der Animation einzelner 3D-Modelle"
                 }
             },
             "particleGroundOffset": {
@@ -940,6 +942,52 @@
             },
             "gmOnlyInteractive": {
                 "label": "Nur GM-Interaktion"
+            },
+            "animationOnce": {
+                "label": "Einmal spielen"
+            },
+            "emote": {
+                "header": "3D-Leinwand",
+                "label": "Emote",
+                "notes": "Wählen Sie ein benutzerdefiniertes Spieler-Emote aus, das Sie mit taktischen 3D-Canvas-Pings verwenden möchten."
+            },
+            "linkWithDoorState": {
+                "label": "Verknüpfung mit Türstatus"
+            },
+            "pixel": {
+                "label": "Pixelisieren"
+            },
+            "postprocessing": {
+                "brightness": {
+                    "label": "Helligkeit"
+                },
+                "chromaticAberration": {
+                    "label": "Chromatische Abweichung"
+                },
+                "contrast": {
+                    "label": "Kontrast"
+                },
+                "enabled": {
+                    "label": "Ermöglicht"
+                },
+                "grain": {
+                    "label": "Getreide"
+                },
+                "header": "Nachbearbeitung",
+                "notes": "Auf die Szene angewendete Nachbearbeitungseffekte.",
+                "saturation": {
+                    "label": "Sättigung"
+                },
+                "tint": {
+                    "label": "Farbton"
+                },
+                "vignette": {
+                    "label": "Vignette"
+                }
+            },
+            "visibleWhenDisabled": {
+                "label": "Sichtbar, wenn deaktiviert",
+                "notes": "Wenn das Licht deaktiviert ist, ist es weiterhin sichtbar. \nEs stellt keine Sichtquelle dar, sorgt aber dennoch für den visuellen Effekt der Beleuchtung."
             }
         },
         "keybindings": {

@@ -549,6 +549,12 @@ export function registerConfigs() {
                     step: 0.01,
                     default: 1,
                 },
+
+                pixel: {
+                    type: "checkbox",
+                    label: game.i18n.localize("levels3dpreview.flags.pixel.label"),
+                    default: false,
+                },
                 
                 bloom: {
                     type: "checkbox",

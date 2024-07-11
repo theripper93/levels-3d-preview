@@ -846,7 +846,9 @@
                     "animate": "Animé",
                     "transparent": "Transparent",
                     "slide": "Animé (Diapositive - Côté)",
-                    "slideVertical": "Animé (Diapositive - Vertical)"
+                    "slideVertical": "Animé (Diapositive - Vertical)",
+                    "linkWithAnimation": "Lien avec l'animation du modèle 3D",
+                    "linkWithAnimationReversed": "Lien avec l'animation d'un modèle 3D unique"
                 }
             },
             "particleGroundOffset": {
@@ -940,6 +942,52 @@
             },
             "gmOnlyInteractive": {
                 "label": "Interaction avec GM uniquement"
+            },
+            "animationOnce": {
+                "label": "Jouer une fois"
+            },
+            "emote": {
+                "header": "Toile 3D",
+                "label": "Émote",
+                "notes": "Sélectionnez une emote de joueur personnalisée à utiliser avec les pings tactiques 3D Canvas."
+            },
+            "linkWithDoorState": {
+                "label": "Lien avec l'état de la porte"
+            },
+            "pixel": {
+                "label": "Pixeliser"
+            },
+            "postprocessing": {
+                "brightness": {
+                    "label": "Luminosité"
+                },
+                "chromaticAberration": {
+                    "label": "Aberration chromatique"
+                },
+                "contrast": {
+                    "label": "Contraste"
+                },
+                "enabled": {
+                    "label": "Activé"
+                },
+                "grain": {
+                    "label": "Grain"
+                },
+                "header": "Post-traitement",
+                "notes": "Effets de post-traitement appliqués à la scène.",
+                "saturation": {
+                    "label": "Saturation"
+                },
+                "tint": {
+                    "label": "Teinte"
+                },
+                "vignette": {
+                    "label": "Vignette"
+                }
+            },
+            "visibleWhenDisabled": {
+                "label": "Visible lorsqu'il est désactivé",
+                "notes": "Si la lumière est désactivée, elle sera toujours visible. \nIl ne fournira pas de source de vision mais appliquera tout de même l'effet visuel de l'éclairage."
             }
         },
         "keybindings": {

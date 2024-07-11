@@ -317,6 +317,9 @@
             "auto3d": {
                 "label": "Enable 3D on Load"
             },
+            "pixel": {
+                "label": "Pixelize"
+            },
             "bloom": {
                 "label": "Bloom"
             },
