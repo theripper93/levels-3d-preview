@@ -787,14 +787,15 @@ export class InteractionManager {
         const entity = event.entity;
         if (!entity) return;
         if (entity?.placeable?.document?.locked) return;
-        const intersect = event.intersect;
         entity._onClickLeft2(event);
     }
 
     _onClickRight2(event) {
         const entity = event.entity;
+        if ((entity?.tile && canvas.activeLayer?.options.objectClass.name !== "Tile" && !entity?.isDoor && !event?.originalIntersect?.userData?.isDoor) || !entity) {
+            if (this._downCameraPosition.distanceTo(this._upCameraPosition) < 0.01) game.Levels3DPreview.GameCamera.moveCameraToCursor();
+        }
         if (!entity) return;
-        const intersect = event.intersect;
         entity._onClickRight2(event);
     }
 

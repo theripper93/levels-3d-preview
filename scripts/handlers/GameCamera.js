@@ -310,6 +310,20 @@ export class GameCamera {
         return token3D; //token3D?.hasClone ?? token3D;
     }
 
+    moveCameraToCursor() {
+        const hoverPosition = new THREE.Vector3(...Object.values(game.Levels3DPreview.interactionManager._currentMousePosition));
+        const cameraPosition = this.camera.position.clone();
+        const cameraLookAt = this.controls.target.clone();
+
+        const deltaLookAt = hoverPosition.clone().sub(cameraLookAt);
+
+        const newPosition = cameraPosition.clone().add(deltaLookAt);
+
+        game.Levels3DPreview._animateCameraTarget.cameraPosition = newPosition;
+        game.Levels3DPreview._animateCameraTarget.cameraLookat = hoverPosition;
+        game.Levels3DPreview._animateCameraTarget.speed = 0.04;
+    }
+
     lerp(v1, v2, alpha) {
         alpha = alpha < 0 ? 0 : alpha;
         alpha = alpha > 1 ? 1 : alpha;
