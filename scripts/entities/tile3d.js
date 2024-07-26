@@ -581,6 +581,10 @@ export class Tile3D {
             this.collision = false;
             this.sight = false;
         }
+        if (this.isOpen && (this.doorStyle == 4 || this.doorStyle == 5)) {
+            this.sight = false;
+            this.collision = false;
+        }
         let promise;
         if (firstRender) {
             this.originalDoorMaterials = {};
@@ -933,7 +937,9 @@ export class Tile3D {
                 console.error("Animation index out of bounds", this.tile);
             } else {
                 this.isAnimated = true;
+                const wasMixer = !!this.mixer;
                 this.mixer = this.mixer ?? new THREE.AnimationMixer(model.scene);
+                if (!wasMixer && this.sight) this.mixer.addEventListener("finished", () => { this.sendToWorker(); });
                 this.mixer.timeScale = this.animSpeed;
                 const previousClipAction = this._currentClipAction;
                 const clipAction = this.mixer.clipAction(model.object.animations[this.animIndex]);
@@ -941,6 +947,7 @@ export class Tile3D {
                 clipAction.clampWhenFinished = this.animationOnce;
                 this._currentClipAction = clipAction;
                 clipAction.time = 0;
+
 
                 if (!useReversed) {                    
                     clipAction.reset();
@@ -955,6 +962,7 @@ export class Tile3D {
                         clipAction.play();
                         setTimeout(() => {
                             clipAction.halt(0);
+                            if(this.sight) this.sendToWorker();
                         }, 1)
                         return;
                     }
@@ -965,6 +973,7 @@ export class Tile3D {
                         clipAction.time = clipAction._clip.duration * this.mixer.timeScale;
                         setTimeout(() => {
                             clipAction.halt(0);
+                            if(this.sight) this.sendToWorker();
                         }, (clipAction._clip.duration * this.mixer.timeScale - 0.1) * 1000);
                         clipAction.play();
                     }

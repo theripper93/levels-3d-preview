@@ -2,7 +2,7 @@
   "title": "3D Canvas",
   "id": "levels-3d-preview",
   "description": "Bring your games to the 3rd dimension!",
-  "version": "6.2.3",
+  "version": "6.2.4",
   "authors": [
     {
       "name": "theripper93",
@@ -134,5 +134,5 @@
     "verified": "12"
   },
   "manifest": "https://foundryvtt.s3.us-west-2.amazonaws.com/modules/levels-3d-preview/module.json",
-  "protected": true
+  "protected": false
 }
