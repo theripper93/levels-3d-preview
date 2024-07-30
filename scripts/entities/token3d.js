@@ -28,7 +28,8 @@ export class Token3D {
         this.embeddedName = "Token";
         this.placeable = this.token;
         this.document = this.token.document;
-        this._shaderSize = Math.max(this.token.document.width, this.token.document.height);
+        this.documentSource = this.document._source;
+        this._shaderSize = Math.max(this.documentSource.width, this.documentSource.height);
         this.isOwner = this.token.isOwner;
         this._parent = parent;
         this.isBase = game.settings.get("levels-3d-preview", "baseStyle") !== "image";
@@ -59,59 +60,59 @@ export class Token3D {
     }
 
     getFlags() {
-        this.gtflPath = this.token.document.getFlag("levels-3d-preview", "model3d") ?? "";
-        this.solidBaseMode = this.token.document.getFlag("levels-3d-preview", "solidBaseMode");
-        this.baseColor = this.token.document.getFlag("levels-3d-preview", "baseColor") || game.settings.get("levels-3d-preview", "solidBaseColor");
+        this.gtflPath = this.document.getFlag("levels-3d-preview", "model3d") ?? "";
+        this.solidBaseMode = this.document.getFlag("levels-3d-preview", "solidBaseMode");
+        this.baseColor = this.document.getFlag("levels-3d-preview", "baseColor") || game.settings.get("levels-3d-preview", "solidBaseColor");
         if (!this.solidBaseMode || this.solidBaseMode === "default") this.solidBaseMode = game.settings.get("levels-3d-preview", "solidBaseMode");
-        this.disableBase = this.token.document.getFlag("levels-3d-preview", "disableBase");
-        this.autoCenter = this.token.document.getFlag("levels-3d-preview", "autoCenter") ?? false;
-        this.shaders = this.token.document.getFlag("levels-3d-preview", "shaders") ?? {};
-        this.auraRange = this.token.document.getFlag("levels-3d-preview", "auraRange") ?? 0;
-        this.auraColor = this.token.document.getFlag("levels-3d-preview", "auraColor") ?? "#ffffff";
-        this.rotationX = Math.toRadians(this.token.document.getFlag("levels-3d-preview", "rotationX") ?? 0);
-        this.rotationY = Math.toRadians(this.token.document.getFlag("levels-3d-preview", "rotationY") ?? 0);
-        this.rotationZ = Math.toRadians(this.token.document.getFlag("levels-3d-preview", "rotationZ") ?? 0);
-        this.offsetX = this.token.document.getFlag("levels-3d-preview", "offsetX") ?? 0;
-        this.offsetY = this.token.document.getFlag("levels-3d-preview", "offsetY") ?? 0;
+        this.disableBase = this.document.getFlag("levels-3d-preview", "disableBase");
+        this.autoCenter = this.document.getFlag("levels-3d-preview", "autoCenter") ?? false;
+        this.shaders = this.document.getFlag("levels-3d-preview", "shaders") ?? {};
+        this.auraRange = this.document.getFlag("levels-3d-preview", "auraRange") ?? 0;
+        this.auraColor = this.document.getFlag("levels-3d-preview", "auraColor") ?? "#ffffff";
+        this.rotationX = Math.toRadians(this.document.getFlag("levels-3d-preview", "rotationX") ?? 0);
+        this.rotationY = Math.toRadians(this.document.getFlag("levels-3d-preview", "rotationY") ?? 0);
+        this.rotationZ = Math.toRadians(this.document.getFlag("levels-3d-preview", "rotationZ") ?? 0);
+        this.offsetX = this.document.getFlag("levels-3d-preview", "offsetX") ?? 0;
+        this.offsetY = this.document.getFlag("levels-3d-preview", "offsetY") ?? 0;
         //this.offsetY += this.solidBaseMode === "ontop" ? this.baseDepth*factor : 0;
         this.rotateIndicator = game.settings.get("levels-3d-preview", "rotateIndicator");
-        this.offsetZ = this.token.document.getFlag("levels-3d-preview", "offsetZ") ?? 0;
-        this.scale = this.token.document.getFlag("levels-3d-preview", "scale") ?? 1;
-        this.enableAnim = this.token.document.getFlag("levels-3d-preview", "enableAnim") ?? true;
-        this.animIndex = this.token.document.getFlag("levels-3d-preview", "animIndex") ?? 0;
-        this.animSpeed = this.token.document.getFlag("levels-3d-preview", "animSpeed") ?? 1;
+        this.offsetZ = this.document.getFlag("levels-3d-preview", "offsetZ") ?? 0;
+        this.scale = this.document.getFlag("levels-3d-preview", "scale") ?? 1;
+        this.enableAnim = this.document.getFlag("levels-3d-preview", "enableAnim") ?? true;
+        this.animIndex = this.document.getFlag("levels-3d-preview", "animIndex") ?? 0;
+        this.animSpeed = this.document.getFlag("levels-3d-preview", "animSpeed") ?? 1;
         this.interactive = true;
         this.draggable = true;
-        this.color = this.token.document.getFlag("levels-3d-preview", "color") ?? "#ffffff";
-        this.material = this.token.document.getFlag("levels-3d-preview", "material") ?? "";
-        this.imageTexture = this.token.document.getFlag("levels-3d-preview", "imageTexture") ?? "";
+        this.color = this.document.getFlag("levels-3d-preview", "color") ?? "#ffffff";
+        this.material = this.document.getFlag("levels-3d-preview", "material") ?? "";
+        this.imageTexture = this.document.getFlag("levels-3d-preview", "imageTexture") ?? "";
         this.collisionPlane = true;
-        this.flatTokenStyle = this.token.document.getFlag("levels-3d-preview", "flatTokenStyle") ?? "default";
+        this.flatTokenStyle = this.document.getFlag("levels-3d-preview", "flatTokenStyle") ?? "default";
         const globalFlatTokenStyle = game.settings.get("levels-3d-preview", "flatTokenStyle") ?? "default";
         if (this.flatTokenStyle === "default") this.flatTokenStyle = globalFlatTokenStyle;
 
-        this.stem = this.token.document.getFlag("levels-3d-preview", "stem") ?? false;
+        this.stem = this.document.getFlag("levels-3d-preview", "stem") ?? false;
 
         this.standupFace = this.flatTokenStyle == "flat";
-        this.wasFreeMode = this.token.document.getFlag("levels-3d-preview", "wasFreeMode") ?? false;
-        this.removeBase = this.token.document.getFlag("levels-3d-preview", "removeBase") ?? true;
-        this.attachments = this.token.document.getFlag("levels-3d-preview", "attachments") ?? [];
+        this.wasFreeMode = this.document.getFlag("levels-3d-preview", "wasFreeMode") ?? false;
+        this.removeBase = this.document.getFlag("levels-3d-preview", "removeBase") ?? true;
+        this.attachments = this.document.getFlag("levels-3d-preview", "attachments") ?? [];
         this.enableReticule = game.settings.get("levels-3d-preview", "enableReticule");
         this.particleData = this.getParticleData();
     }
 
     async load() {
-        if (!this.gtflPath && !this.imageTexture) this.imageTexture = this.token.document.texture.src;
+        if (!this.gtflPath && !this.imageTexture) this.imageTexture = this.documentSource.texture.src;
         this.texture = await this._parent.helpers.loadTexture(this.imageTexture); //this.loadTexture();
         if (!this.texture?.image) this.texture = await this._parent.helpers.loadTexture(CONST.DEFAULT_TOKEN);
         const token3d = this.gtflPath || this.imageTexture ? await this.loadModel() : this.draw();
-        if (this.token.document.light.bright !== 0 || this.token.document.light.dim) this.loadLight();
+        if (this.document.light.bright !== 0 || this.document.light.dim) this.loadLight();
         this._loaded = true;
         await this.initShaders();
         this.animationHandler.init();
         if (this.particleData.type != "none") this.initParticle();
         const boundingBoxDepth = ((this.token.losHeight - this.document.elevation) * canvas.scene.dimensions.size) / canvas.dimensions.distance / factor;
-        const boundingBox = new THREE.BoxGeometry((this.document.width * canvas.grid.size) / factor, boundingBoxDepth, (this.document.height * canvas.grid.size) / factor);
+        const boundingBox = new THREE.BoxGeometry((this.documentSource.width * canvas.grid.size) / factor, boundingBoxDepth, (this.documentSource.height * canvas.grid.size) / factor);
         const boundingMesh = new THREE.Mesh(boundingBox, new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true, transparent: true, opacity: 1 }));
         boundingMesh.position.set(0, boundingBoxDepth / 2, 0);
         this.boundingMesh = boundingMesh;
@@ -221,7 +222,7 @@ export class Token3D {
         const model = await game.Levels3DPreview.helpers.loadModel(this.gtflPath);
         if (model) return model;
         //make 1x1 cube
-        const errText = game.i18n.localize("levels3dpreview.errors.filenotsupported") + "(" + extension + "): " + filePath + " Token: " + this.token.document.name;
+        const errText = game.i18n.localize("levels3dpreview.errors.filenotsupported") + "(" + extension + "): " + filePath + " Token: " + this.document.name;
         console.error(errText);
         ui.notifications.error(errText);
         const geometry = new THREE.BoxGeometry(1, 1, 1);
@@ -278,7 +279,7 @@ export class Token3D {
         //Calculate scale
         const originalSize = new THREE.Box3().setFromObject(scene).getSize(new THREE.Vector3());
         const maxSize = Math.max(originalSize.x, originalSize.y, originalSize.z);
-        const targetScale = Math.min(this.token.w, this.token.h) / this.factor;
+        const targetScale = Math.min(this.documentSource.width * canvas.grid.size, this.documentSource.height * canvas.grid.size) / this.factor;
         const scaleFactor = targetScale / maxSize;
         const scale = this.scale * scaleFactor;
         this.hasGeometry = model.geometry ? true : false;
@@ -362,7 +363,7 @@ export class Token3D {
         this.mesh.userData.interactive = this.interactive;
         this.mesh.userData.isHitbox = false;
         this.mesh.userData.entity3D = this;
-        this.mesh.userData.documentName = this.token.document.documentName;
+        this.mesh.userData.documentName = this.document.documentName;
         this.targetContainer = new THREE.Group();
         this.mesh.add(this.targetContainer);
         this.effectsContainer = new THREE.Group();
@@ -494,7 +495,7 @@ export class Token3D {
             });
         }
         if (portraitMesh) {
-            const text = await this._parent.helpers.loadTexture(this.token.actor?.img ?? this.token.texture.src);
+            const text = await this._parent.helpers.loadTexture(this.token.actor?.img ?? this.documentSource.texture.src);
             portraitMesh.material = new THREE.MeshStandardMaterial({
                 map: text,
             });
@@ -571,7 +572,7 @@ export class Token3D {
             x: useSnapped ? snapped.x : x,
             y: useSnapped ? snapped.y : y,
             elevation: z,
-            //rotation: (this.token.document.rotation + Math.toDegrees(this.mesh.getWorldQuaternion(new THREE.Quaternion()).y)) % 360,
+            //rotation: (this.document.rotation + Math.toDegrees(this.mesh.getWorldQuaternion(new THREE.Quaternion()).y)) % 360,
         };
         this.document.update(dest, { animate: animate });
     }
@@ -597,7 +598,7 @@ export class Token3D {
             const geometryCollisions = game.Levels3DPreview?.object3dSight;
             let collides;
             if (geometryCollisions) {
-                const tokenHeight = this.token.losHeight - this.token.document.elevation;
+                const tokenHeight = this.token.losHeight - this.document.elevation;
                 collides = CONFIG.Levels.API.testCollision(
                     {
                         x: this.token.center.x,
@@ -605,8 +606,8 @@ export class Token3D {
                         z: this.token.losHeight,
                     },
                     {
-                        x: dest.x + this.token.document.width * canvas.grid.size * 0.5,
-                        y: dest.y + this.token.document.height * canvas.grid.size * 0.5,
+                        x: dest.x + this.documentSource.width * canvas.grid.size * 0.5,
+                        y: dest.y + this.documentSource.height * canvas.grid.size * 0.5,
                         z: dest.elevation + tokenHeight,
                     },
                     "collision",
@@ -620,9 +621,9 @@ export class Token3D {
             }
         }
         const deltas = {
-            x: dest.x - this.token.document.x,
-            y: dest.y - this.token.document.y,
-            elevation: dest.elevation - this.token.document.elevation,
+            x: dest.x - this.document.x,
+            y: dest.y - this.document.y,
+            elevation: dest.elevation - this.document.elevation,
         };
         let updates = [];
         for (let token of canvas.tokens.controlled) {
@@ -654,7 +655,7 @@ export class Token3D {
             const geometryCollisions = game.Levels3DPreview?.object3dSight;
             let collides;
             if (geometryCollisions) {
-                const tokenHeight = this.token.losHeight - this.token.document.elevation;
+                const tokenHeight = this.token.losHeight - this.document.elevation;
                 collides = CONFIG.Levels.API.testCollision(
                     {
                         x: this.token.center.x,
@@ -662,8 +663,8 @@ export class Token3D {
                         z: this.token.losHeight,
                     },
                     {
-                        x: dest.x + this.token.document.width * canvas.grid.size * 0.5,
-                        y: dest.y + this.token.document.height * canvas.grid.size * 0.5,
+                        x: dest.x + this.documentSource.width * canvas.grid.size * 0.5,
+                        y: dest.y + this.documentSource.height * canvas.grid.size * 0.5,
                         z: dest.elevation + tokenHeight,
                     },
                     "collision",
@@ -737,7 +738,7 @@ export class Token3D {
         if (this.border && !this.rotateIndicator) {
             this.border.rotation.set(-rotations.x, -rotations.y, -rotations.z);
         }
-        if (this.light && this.token.document.light.angle != 360) {
+        if (this.light && this.document.light.angle != 360) {
             const rotationy = rotations.y;
             const distance = 1;
             const lx = Math.sin(rotationy) * distance + placeablePosition.x;
@@ -750,8 +751,8 @@ export class Token3D {
 
     get documentCenter() {
         return {
-            x: this.token.document.x + (this.token.document.width / 2) * canvas.grid.size,
-            y: this.token.document.y + (this.token.document.height / 2) * canvas.grid.size,
+            x: this.document.x + (this.documentSource.width / 2) * canvas.grid.size,
+            y: this.document.y + (this.documentSource.height / 2) * canvas.grid.size,
         };
     }
 
@@ -789,7 +790,7 @@ export class Token3D {
     updateAnimation() {
         if (!this.mixer) return;
         const currAction = this.mixer._actions.find((a) => a.isRunning());
-        this.animIndex = this.token.document.getFlag("levels-3d-preview", "animIndex") ?? 0;
+        this.animIndex = this.document.getFlag("levels-3d-preview", "animIndex") ?? 0;
         const newAction = this.mixer._actions.find((a) => a._clip.uuid == this.mixerAnimations[this.animIndex].uuid);
         for (let act of this.mixer._actions) {
             if (act != newAction && act != currAction) {
@@ -954,7 +955,7 @@ export class Token3D {
     }
 
     getHeightIndicatorColor() {
-        const disposition = this.token.document.disposition;
+        const disposition = this.document.disposition;
         let disp = "NEUTRAL";
         for (const [k, v] of Object.entries(CONST.TOKEN_DISPOSITIONS)) {
             if (v === disposition) {
@@ -986,7 +987,7 @@ export class Token3D {
     }
 
     get hidden() {
-        return this.token.document.hidden && !this.token.hasPreview;
+        return this.document.hidden && !this.token.hasPreview;
     }
 
     updateHiden() {
@@ -1141,7 +1142,7 @@ export class Token3D {
             const box = new THREE.Box3().setFromObject(base);
             const sphere = box.getBoundingSphere(new THREE.Sphere());
             const maxDimension = sphere.radius * 2; //Math.max(box.max.x - box.min.x, box.max.y - box.min.y, box.max.z - box.min.z);
-            const maxComputed = (Math.max(this.token.document.width, this.token.document.height) * canvas.grid.size) / factor;
+            const maxComputed = (Math.max(this.documentSource.width, this.documentSource.height) * canvas.grid.size) / factor;
             const scale = (maxComputed * Math.SQRT2) / maxDimension;
             base.scale.multiplyScalar(scale * scaleFactor);
             base.position.set(0, 0, 0);
@@ -1208,7 +1209,7 @@ export class Token3D {
     }
 
     addStem() {
-        const baseRadius = (Math.SQRT2 * ((Math.max(this.token.document.width, this.token.document.height) * canvas.grid.size) / factor)) / 2;
+        const baseRadius = (Math.SQRT2 * ((Math.max(this.documentSource.width, this.documentSource.height) * canvas.grid.size) / factor)) / 2;
         if (!this.isBase || !this.stem) return;
         let w = baseRadius * 1.02;
         let h = baseRadius * 1.02;
@@ -1299,7 +1300,7 @@ export class Token3D {
     async drawName() {
         const drawName = () => {
             const style = this.token._getTextStyle();
-            const name = new PreciseText(this.token.document.name, style);
+            const name = new PreciseText(this.document.name, style);
             name.anchor.set(0.5, 0);
             name.position.set(this.token.w / 2, this.token.h + 2);
             return name;
@@ -1497,7 +1498,7 @@ export class Token3D {
     }
 
     getDispColor() {
-        const disposition = this.token.document.disposition;
+        const disposition = this.document.disposition;
         let disp = "NEUTRAL";
         for (const [k, v] of Object.entries(CONST.TOKEN_DISPOSITIONS)) {
             if (v === disposition) {
@@ -1618,7 +1619,7 @@ export class Token3D {
             color: this.document.getFlag("levels-3d-preview", "ParticleColor") ?? "#ffffff",
             color2: this.document.getFlag("levels-3d-preview", "ParticleColor2") ?? "#ffffff",
             presetIntensity: this.document.getFlag("levels-3d-preview", "ParticleIntensity") ?? 1,
-            radius: this.document.getFlag("levels-3d-preview", "ParticleRadius") || Math.max(this.document.width, this.document.height) * canvas.scene.grid.distance,
+            radius: this.document.getFlag("levels-3d-preview", "ParticleRadius") || Math.max(this.documentSource.width, this.documentSource.height) * canvas.scene.grid.distance,
             position: this.document.getFlag("levels-3d-preview", "ParticlePosition") ?? "surface",
         };
     }
@@ -1652,7 +1653,7 @@ export class Token3D {
     }
 
     get radius() {
-        return Math.min(this.token.document.width / factor, this.token.document.height / factor) / 2.1;
+        return Math.min(this.documentSource.width / factor, this.documentSource.height / factor) / 2.1;
     }
 
     static setHooks() {
