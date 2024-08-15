@@ -1709,11 +1709,17 @@ export class Token3D {
             }
         });
 
+        function isFlying(tokenDocument) {
+            if (!tokenDocument.actor) return false;
+            const statuses = Array.from(tokenDocument.actor.statuses);
+            return statuses.some((s) => s.toLowerCase().includes("fly"));
+        }
+
         Hooks.on("preUpdateToken", (tokenDocument, updates) => {
             if (!game.Levels3DPreview._active || game.user.isGM) return;
             const flag = canvas.scene.flags["levels-3d-preview"]?.grounding;
             if (!flag) return;
-            if (tokenDocument.hasStatusEffect("fly") && flag === "notFlying") return;
+            if (isFlying(tokenDocument) && flag === "notFlying") return;
             if (!("x" in updates) && !("y" in updates) && !("elevation" in updates)) return;
             const object = tokenDocument.object;
             const x = (updates.x ?? tokenDocument.x) + tokenDocument.width * (canvas.grid.size / 2);
