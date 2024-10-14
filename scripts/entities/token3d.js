@@ -823,7 +823,7 @@ export class Token3D {
         const targetModel = this._parent.models.target;
         for (let target of Array.from(this.token.targeted)) {
             if (target.id === game.user.id && this.enableReticule) continue;
-            const color = target.color;
+            const color = target.color.css;
             const position = {
                 x: 0,
                 y: this.d + this.targetSize + positionOffset,
@@ -1243,7 +1243,7 @@ export class Token3D {
     async updateTargetTexture() {
         if (!this.isBase) return;
         const targeted = this.enableReticule ? Array.from(this.token.targeted).filter((t) => t.id !== game.user.id) : Array.from(this.token.targeted);
-        const colors = targeted.map((t) => t.color);
+        const colors = targeted.map((t) => t.color.css);
         const colorstring = colors.join("");
         if (!colors.length) return;
         let text;
@@ -1558,6 +1558,7 @@ export class Token3D {
     }
 
     destroy() {
+        this.light?.destroy();
         this._parent.scene.remove(this.mesh);
         this._destroyed = true;
         delete this._parent.tokens[this.id];
