@@ -212,7 +212,7 @@ export const injectConfig = {
         const icon = $(".main-controls").find(`li[data-canvas-layer="${layer}"]`).find("i").attr("class");
 
         const tabsInner = `<nav class="sheet-tabs tabs">
-        <a class="item active" data-tab="basic"><i class="${icon}"></i> ${game.i18n.localize("LIGHT.HeaderBasic")}</a>
+        <a class="item active" data-tab="basic"><i class="${icon}"></i> ${game.i18n.localize("AMBIENT_LIGHT.SECTIONS.BASIC")}</a>
         </nav>
         <div class="tab active" data-tab="basic"></div>`;
         const container = document.createElement("div");

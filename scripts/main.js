@@ -56,7 +56,7 @@ import { PARTICLE_SYSTEMS } from "./systems/particleSystem.js";
 import { registerConfigs } from "./settings/config.js";
 import { registerSettings } from "./settings/settingsConfig.js";
 import { WaveFunctionSolver } from "./generators/WaveFunctionCollapse.js";
-import { applyHeightmap } from "./helpers/applyHeightmap.js";
+import {applyHeightmap} from "./helpers/applyHeightmap.js";
 
 import { createTargetGeometry } from "./entities/effects/target.js";
 import {UberPass} from "./lib/UberPass.js";
