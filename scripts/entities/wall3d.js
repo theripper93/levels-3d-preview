@@ -186,7 +186,7 @@ export class Wall3D {
                 const elevation = WallHeight.tokenElevation;
                 const isControlled = canvas.tokens.controlled[0];
                 const isGM = game.user.isGM;
-                if (isGM && !isControlled) return;
+                if (isGM && !isControlled && !this.showControlIcon) return;
                 if (elevation < this.bottom) {
                     meshVisible = false;
                 }
