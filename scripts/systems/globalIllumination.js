@@ -1,16 +1,24 @@
 import * as THREE from "../lib/three.module.js";
 import { factor } from "../main.js";
 import { Sky } from "../lib/Sky.js";
-import { DynamicSkyConfig } from "../settings/dynamicSkyConfig.js";
+import {DynamicSkyConfig} from "../settings/dynamicSkyConfig.js";
+
+let worldClockDelta = 0;
+
 
 export class GlobalIllumination {
-    constructor(parent) {
+    constructor (parent) {
+        if (game.system.id === "pf2e") {
+            const wco = game.pf2e.worldClock.worldCreatedOn.c;
+            worldClockDelta = wco.hour * 3600 + wco.minute * 60 + wco.second;
+        }
         this._parent = parent;
         this.lights = {};
         this.animationTarget = null;
         this.DynamicSkyConfig = DynamicSkyConfig;
         this.generateTimeSpline();
         this.init();
+
     }
 
     initDynamicSky() {
@@ -158,8 +166,8 @@ export class GlobalIllumination {
     }
 
     setFromWorldTime() {
-        const minutes = new Date(game.time.worldTime * 1000).getUTCMinutes();
-        const hours = new Date(game.time.worldTime * 1000).getUTCHours();
+        const minutes = new Date((game.time.worldTime + worldClockDelta) * 1000).getUTCMinutes();
+        const hours = new Date((game.time.worldTime + worldClockDelta) * 1000).getUTCHours();
         const final = parseFloat((hours + minutes / 60).toFixed(1));
         canvas.scene.setFlag("levels-3d-preview", "sunPosition", final);
     }
@@ -202,10 +210,10 @@ export class GlobalIllumination {
         });
 
         Hooks.on("preUpdateScene", (scene, updates) => {
-            if (!game.user.isGM || !game.Levels3DPreview?._active || scene.id != canvas.scene.id || !("darkness" in updates)) return;
+            if (!game.user.isGM || !game.Levels3DPreview?._active || scene.id != canvas.scene.id || updates.environment?.darknessLevel === undefined) return;
             const timeSync = getTimeSync();
             if (timeSync == "off" || timeSync == "time") return;
-            const lightness = 1 - updates.darkness;
+            const lightness = 1 - updates.environment.darknessLevel;
             foundry.utils.mergeObject(updates, {
                 flags: {
                     "levels-3d-preview": {
