@@ -56,6 +56,8 @@ export function registerConfigs() {
     });
 
     Hooks.on("renderSceneConfig", (app, html) => {
+        if (html.find(`a[data-tab="levels-3d-preview"]>`).length) return;
+
         const data = {
             moduleId: "levels-3d-preview",
             tab: {
@@ -588,7 +590,6 @@ export function registerConfigs() {
             },
 
         };
-
         const injected = injectConfig.inject(app, html, data);
         html.on("change", `[name="flags.levels-3d-preview.particlePreset"]`, (e) => {
             const value = e.target.value;
@@ -673,6 +674,7 @@ export function registerConfigs() {
     });
 
     Hooks.on("renderTokenConfig", (app, html) => {
+        if (html.find(`a[data-tab="levels-3d-preview"]>`).length) return;
         const dmSelect = {};
         game.Levels3DPreview.CONFIG.presetMaterials.forEach((m) => {
             dmSelect["preset-" + m.id] = m.name || game.i18n.localize(`levels3dpreview.flags.material.options.presets.${m.id}`);
@@ -1721,6 +1723,8 @@ export function registerConfigs() {
     });
 
     Hooks.on("renderWallConfig", (app, html) => {
+        if (html.find(`a[data-tab="levels-3d-preview"]>`).length) return;
+
         injectConfig.inject(app, html, {
             moduleId: "levels-3d-preview",
             tab: {
@@ -1794,6 +1798,8 @@ export function registerConfigs() {
     });
 
     Hooks.on("renderMeasuredTemplateConfig", (app, html) => {
+        if (html[0].querySelector(`[name="flags.levels-3d-preview.tilt"]`)) return;
+
         injectConfig.inject(app, html, {
             moduleId: "levels-3d-preview",
             tab: {
@@ -1820,6 +1826,8 @@ export function registerConfigs() {
     });
 
     Hooks.on("renderNoteConfig", (app, html) => {
+        if (html[0].querySelector(`[name="flags.levels-3d-preview.rotation"]`)) return;
+
         injectConfig.inject(app, html, {
             moduleId: "levels-3d-preview",
             inject: 'input[name="icon.custom"]',
@@ -1840,6 +1848,10 @@ export function registerConfigs() {
     });
 
     Hooks.on("renderAmbientLightConfig", (app, html) => {
+
+        if (html.querySelector(`[name="flags.levels-3d-preview.castShadow"]`)) return;
+
+
         const PS = game.Levels3DPreview.CONFIG.PARTICLE_SYSTEMS;
 
         const particleSelect = {
