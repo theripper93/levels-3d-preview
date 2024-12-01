@@ -111,7 +111,7 @@ export class Token3D {
         await this.initShaders();
         this.animationHandler.init();
         if (this.particleData.type != "none") this.initParticle();
-        const boundingBoxDepth = ((this.token.losHeight - this.document.elevation) * canvas.scene.dimensions.size) / canvas.dimensions.distance / factor;
+        const boundingBoxDepth = ((this.losHeight - this.document.elevation) * canvas.scene.dimensions.size) / canvas.dimensions.distance / factor;
         const boundingBox = new THREE.BoxGeometry((this.baseDocumentWidth * canvas.grid.size) / factor, boundingBoxDepth, (this.baseDocumentHeight * canvas.grid.size) / factor);
         const boundingMesh = new THREE.Mesh(boundingBox, new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true, transparent: true, opacity: 1 }));
         boundingMesh.position.set(0, boundingBoxDepth / 2, 0);
@@ -541,7 +541,7 @@ export class Token3D {
         const f = this.factor;
         const w = token.w / f;
         const h = token.h / f;
-        const d = ((token.losHeight - token.document.elevation) * canvas.scene.dimensions.size) / canvas.dimensions.distance / f;
+        const d = ((this.losHeight - token.document.elevation) * canvas.scene.dimensions.size) / canvas.dimensions.distance / f;
         //create a box
         const color = this.color;
         const geometry = new THREE.BoxGeometry(w, d, h);
@@ -597,13 +597,13 @@ export class Token3D {
             const center = canvas.grid.getCenter(x, y);
             const geometryCollisions = game.Levels3DPreview?.object3dSight;
             let collides;
-            if (geometryCollisions) {
-                const tokenHeight = this.token.losHeight - this.document.elevation;
+            if (geometryCollisions && CONFIG.Levels) {
+                const tokenHeight = this.losHeight - this.document.elevation;
                 collides = CONFIG.Levels.API.testCollision(
                     {
                         x: this.token.center.x,
                         y: this.token.center.y,
-                        z: this.token.losHeight,
+                        z: this.losHeight,
                     },
                     {
                         x: dest.x + this.baseDocumentWidth * canvas.grid.size * 0.5,
@@ -654,13 +654,13 @@ export class Token3D {
             const center = canvas.grid.getCenter(x, y);
             const geometryCollisions = game.Levels3DPreview?.object3dSight;
             let collides;
-            if (geometryCollisions) {
-                const tokenHeight = this.token.losHeight - this.document.elevation;
+            if (geometryCollisions && CONFIG.Levels) {
+                const tokenHeight = this.losHeight - this.document.elevation;
                 collides = CONFIG.Levels.API.testCollision(
                     {
                         x: this.token.center.x,
                         y: this.token.center.y,
-                        z: this.token.losHeight,
+                        z: this.losHeight,
                     },
                     {
                         x: dest.x + this.baseDocumentWidth * canvas.grid.size * 0.5,
@@ -754,6 +754,10 @@ export class Token3D {
             x: this.document.x + (this.baseDocumentWidth / 2) * canvas.grid.size,
             y: this.document.y + (this.baseDocumentHeight / 2) * canvas.grid.size,
         };
+    }
+
+    get losHeight() {
+        return this.token.losHeight ?? this.token.document.elevation;
     }
 
     setPositionFrom2D(force = false) {
@@ -1733,7 +1737,7 @@ export class Token3D {
             const object = tokenDocument.object;
             const x = (updates.x ?? tokenDocument.x) + tokenDocument.width * (canvas.grid.size / 2);
             const y = (updates.y ?? tokenDocument.y) + tokenDocument.height * (canvas.grid.size / 2);
-            const height = object.losHeight - object.document.elevation;
+            const height = (object.losHeight ?? object.document.elevation) - object.document.elevation;
             const elevation = (updates.elevation ?? tokenDocument.elevation) + height;
             const collision = game.Levels3DPreview.interactionManager.computeSightCollision({ x, y, z: elevation }, { x, y, z: -100000 });
             if (!collision) return;

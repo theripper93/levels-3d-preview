@@ -179,7 +179,7 @@ export class Wall3D {
         if (!this.mesh) return;
         let meshVisible = this.isVisible;
         if (game.Levels3DPreview.mirrorLevelsVisibility) {
-            if (CONFIG.Levels.UI?.rangeEnabled) {
+            if (CONFIG.Levels?.UI?.rangeEnabled) {
                 const isLevelsVisible = this.wall.visible;
                 meshVisible = isLevelsVisible;
             } else {

@@ -1812,7 +1812,7 @@ export class Tile3D {
         const z = (y3d * factor * canvas.dimensions.distance) / canvas.dimensions.size;
         const useSnapped = Ruler3D.useSnapped() && !transform;
         const snapped = canvas.grid.getSnappedPoint({ x, y }, { mode: CONST.GRID_SNAPPING_MODES.TOP_LEFT_CORNER });
-        let { rangeTop, elevation } = CONFIG.Levels.helpers.getRangeForDocument(this.tile.document);
+        const elevation = this.tile.document.elevation;
         const dest = {
             x: useSnapped ? snapped.x : x,
             y: useSnapped ? snapped.y : y,
@@ -1825,12 +1825,11 @@ export class Tile3D {
         };
         let updates = [];
         let tile = this.tile;
-        let tileFlags = CONFIG.Levels.helpers.getRangeForDocument(tile.document) || {};
         const update = {
             _id: tile.id,
             x: tile.document.x + deltas.x,
             y: tile.document.y + deltas.y,
-            elevation: tileFlags.elevation + deltas.elevation,
+            elevation: elevation + deltas.elevation,
             flags: {
                 "levels-3d-preview": {
                     wasFreeMode: this.wasFreeMode,

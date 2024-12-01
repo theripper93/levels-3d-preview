@@ -58,9 +58,10 @@ export class Grid3D {
     }
 
     updateGrid() {
-        if (!this.secondaryGrid || !CONFIG.Levels.UI?.rangeEnabled || !CONFIG.Levels.UI?.range || isNaN(CONFIG.Levels.UI?.range[0])) return this.setPosition();
-        this.secondaryGrid.visible = CONFIG.Levels.UI.rangeEnabled ? true : false;
-        this.secondaryGrid.position.y = (CONFIG.Levels.UI.range[0] * canvas.grid.size) / canvas.scene.grid.distance / factor - this.buildPlaneThickness / 2;
+        const levelsConfig = CONFIG.Levels;
+        if (!levelsConfig || !this.secondaryGrid || !levelsConfig.UI?.rangeEnabled || !levelsConfig.UI?.range || isNaN(levelsConfig.UI?.range[0])) return this.setPosition();
+        this.secondaryGrid.visible = levelsConfig.UI.rangeEnabled ? true : false;
+        this.secondaryGrid.position.y = (levelsConfig.UI.range[0] * canvas.grid.size) / canvas.scene.grid.distance / factor - this.buildPlaneThickness / 2;
         this.grid.position.y = this.secondaryGrid.position.y + 0.0001 + this.buildPlaneThickness / 2;
     }
 

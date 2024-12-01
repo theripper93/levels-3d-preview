@@ -99,7 +99,7 @@ export class Light3D {
         const y = z3d * factor;
         const z = Math.round(((y3d * factor * canvas.dimensions.distance) / canvas.dimensions.size) * 100) / 100;
         const snapped = canvas.grid.getSnappedPoint({x, y}, {mode: CONST.GRID_SNAPPING_MODES.TOP_LEFT_CORNER, resolution: 2});
-        const {rangeTop, elevation} = CONFIG.Levels.helpers.getRangeForDocument(this.light.document);
+        const elevation = this.light.document.elevation;
         const dest = {
             x: useSnapped ? snapped.x : x,
             y: useSnapped ? snapped.y : y,
@@ -112,18 +112,18 @@ export class Light3D {
         };
         let updates = [];
         for (let light of canvas.activeLayer.controlled.length ? canvas.activeLayer.controlled : [this.light]) {
-            const lightFlags = CONFIG.Levels.helpers.getRangeForDocument(light.document);
+            const lightElevation = light.document.elevation;
             updates.push({
                 _id: light.id,
                 x: light.document.x + deltas.x,
                 y: light.document.y + deltas.y,
-                elevation: Math.round((lightFlags.elevation + deltas.elevation) * 1000) / 1000,
+                elevation: Math.round((lightElevation + deltas.elevation) * 1000) / 1000,
                 flags: {
                     "levels-3d-preview": {
                         wasFreeMode: this.wasFreeMode,
                     },
                     levels: {
-                        rangeTop: Math.round((lightFlags.elevation + deltas.elevation) * 1000) / 1000,
+                        rangeTop: Math.round((lightElevation + deltas.elevation) * 1000) / 1000,
                     },
                 },
             });

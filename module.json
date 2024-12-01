@@ -2,7 +2,7 @@
   "title": "3D Canvas",
   "id": "levels-3d-preview",
   "description": "Bring your games to the 3rd dimension!",
-  "version": "6.2.15",
+  "version": "6.2.16",
   "authors": [
     {
       "name": "theripper93",
@@ -101,16 +101,6 @@
         "compatibility": {}
       },
       {
-        "id": "levels",
-        "type": "module",
-        "compatibility": {}
-      },
-      {
-        "id": "wall-height",
-        "type": "module",
-        "compatibility": {}
-      },
-      {
         "id": "socketlib",
         "type": "module",
         "compatibility": {}
@@ -124,6 +114,16 @@
       },
       {
         "id": "canvas3dtokencompendium",
+        "type": "module",
+        "compatibility": {}
+      },
+      {
+        "id": "levels",
+        "type": "module",
+        "compatibility": {}
+      },
+      {
+        "id": "wall-height",
         "type": "module",
         "compatibility": {}
       }

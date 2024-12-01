@@ -514,7 +514,7 @@ class MapBrowser extends Application {
         stringified = stringified.replaceAll(originalID, newID);
         map.data = JSON.parse(stringified);
         const scene = await Scene.create(map.data, {keepId: true});
-        await CONFIG.Levels.helpers.migration.migrateData(scene);
+        if(CONFIG.Levels) await CONFIG.Levels.helpers.migration.migrateData(scene);
         increaseDownloadCount(id);
         ui.notifications.info(game.i18n.localize("levels3dpreview.sharing.mapbrowser.imported") + `: ${map.data.name}`);
     }

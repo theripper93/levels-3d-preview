@@ -487,7 +487,7 @@ export class Template3D {
         if (this.fromData) {
             return this.template.document?.flags?.levels ?? { special: 0 };
         } else {
-            return { special: this.template.document?.flags?.levels?.special ?? CONFIG.Levels.UI.nextTemplateSpecial };
+            return { special: this.template.document?.flags?.levels?.special ?? CONFIG.Levels?.UI?.nextTemplateSpecial };
         }
     }
 

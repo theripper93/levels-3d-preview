@@ -82,7 +82,7 @@ export class Sound3D {
         const y = z3d * factor;
         const z = Math.round(((y3d * factor * canvas.dimensions.distance) / canvas.dimensions.size) * 100) / 100;
         const snapped = canvas.grid.getSnappedPoint({x, y}, {mode: CONST.GRID_SNAPPING_MODES.TOP_LEFT_CORNER, resolution: 2});
-        const { rangeTop, elevation } = CONFIG.Levels.helpers.getRangeForDocument(this.sound.document);
+        const elevation = this.sound.document.elevation;
         const dest = {
             x: useSnapped ? snapped.x : x,
             y: useSnapped ? snapped.y : y,
@@ -95,18 +95,18 @@ export class Sound3D {
         };
         let updates = [];
         for (let sound of canvas.activeLayer.controlled.length ? canvas.activeLayer.controlled : [this.sound]) {
-            const soundFlags = CONFIG.Levels.helpers.getRangeForDocument(sound.document);
+            const soundElevation = sound.document.elevation;
             updates.push({
                 _id: sound.id,
                 x: sound.document.x + deltas.x,
                 y: sound.document.y + deltas.y,
-                elevation: Math.round((soundFlags.elevation + deltas.elevation) * 1000) / 1000,
+                elevation: Math.round((soundElevation + deltas.elevation) * 1000) / 1000,
                 flags: {
                     "levels-3d-preview": {
                         wasFreeMode: this.wasFreeMode,
                     },
                     levels: {
-                        rangeTop: Math.round((soundFlags.elevation + deltas.elevation) * 1000) / 1000,
+                        rangeTop: Math.round((soundElevation + deltas.elevation) * 1000) / 1000,
                     },
                 },
             });

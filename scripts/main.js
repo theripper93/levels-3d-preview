@@ -707,7 +707,7 @@ class Levels3DPreview {
                 transparent: true,
             });
         }
-        this.level = Infinity; //this.isLevels ? parseFloat($(CONFIG.Levels.UI?.element)?.find(".level-item.active").find(".level-bottom").val()) ?? Infinity : Infinity;
+        this.level = Infinity;
         if (isNaN(this.level)) this.level = Infinity;
         this.showSun = this.debugMode;
         this.createTemplates();
@@ -717,7 +717,7 @@ class Levels3DPreview {
         const enableFog = canvas.scene.getFlag("levels-3d-preview", "enableFog") ?? false;
         const fogColor = canvas.scene.getFlag("levels-3d-preview", "fogColor") ?? "#000000";
         const fogDistance = (canvas.scene.getFlag("levels-3d-preview", "fogDistance") ?? 3000) / this.factor;
-        this.isLevels && this.createFloors(this.level);
+        this.createFloors(this.level);
         this.createWalls(this.level);
         this.createSceneLights();
         this.createSceneSounds();
@@ -958,14 +958,6 @@ class Levels3DPreview {
                 if (bottom > this.level) continue;
             }
             this.createTile(tile);
-
-            if (!this.debugMode) continue;
-            if (!tile.roomPoly) continue;
-            const top = tile.document.getFlag("levels", "rangeTop") ?? undefined;
-            const bottom = tile.document.elevation;
-            if (bottom > this.level) continue;
-            if (top !== undefined) this.scene.add(this.createFloor(tile.roomPoly.points, top));
-            if (bottom !== undefined) this.scene.add(this.createFloor(tile.roomPoly.points, bottom));
         }
     }
 

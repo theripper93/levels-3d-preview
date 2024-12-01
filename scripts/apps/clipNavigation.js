@@ -27,7 +27,7 @@ export class ClipNavigation extends Application {
         this.isGC = data.isGC;
         this.isGM = data.isGM;
         this.isFog = data.isFog;
-        const levels = (canvas.scene.getFlag("levels", "sceneLevels") ?? [])
+        const levels = (canvas.scene.flags.levels?.sceneLevels ?? [])
             .filter((l) => l[1] !== undefined && l[0] !== undefined)
             .sort((a, b) => {
                 return parseFloat(a[0]) - parseFloat(b[0]);
