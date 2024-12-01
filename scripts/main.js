@@ -61,7 +61,12 @@ import {applyHeightmap} from "./helpers/applyHeightmap.js";
 import { createTargetGeometry } from "./entities/effects/target.js";
 import {UberPass} from "./lib/UberPass.js";
 
+import { Socket } from "./lib/socket.js";
+
 export const factor = 1000;
+
+export const MODULE_ID = "levels-3d-preview";
+
 injectFoWShaders(THREE);
 injectThreeModifications(THREE);
 
@@ -136,10 +141,10 @@ class Levels3DPreview {
         this.raycasterCache = {};
         this._heightmapCache = {};
         this._fullTransparency = game.settings.get("levels-3d-preview", "fullTransparency");
-        this.socket = socketlib.registerModule("levels-3d-preview");
-        this.socket.register("Particle3D", this.particleSocket);
-        this.socket.register("Particle3DStop", this.Particle3DStop);
-        this.socket.register("toggleDoor", this.toggleDoor);
+        this.socket = Socket;
+        Socket.register("Particle3D", this.particleSocket);
+        Socket.register("Particle3DStop", this.Particle3DStop);
+        Socket.register("toggleDoor", this.toggleDoor);
         this.isLevels = game.modules.get("levels")?.active;
         this.fpsKillSwitch = 1;
         this.camera;
@@ -442,12 +447,12 @@ class Levels3DPreview {
         this._cameraSet = false;
         this.helpers = new Helpers();
         OutlineHandler.setHooks();
-        this.socket.register("socketCamera", this.helpers.socketCamera);
-        this.socket.register("syncClipNavigator", this.helpers.syncClipNavigator);
-        this.socket.register("playTokenAnimationSocket", this.helpers.playTokenAnimationSocket);
-        this.socket.register("dispatchPing", this.helpers.dispatchPing);
-        this.socket.register("playCutscene", this.cutsceneSocket);
-        this.socket.register("executeInteractiveDynamesh", Tile3D.executeInteractiveDynamesh);
+        Socket.register("socketCamera", this.helpers.socketCamera);
+        Socket.register("syncClipNavigator", this.helpers.syncClipNavigator);
+        Socket.register("playTokenAnimationSocket", this.helpers.playTokenAnimationSocket);
+        Socket.register("dispatchPing", this.helpers.dispatchPing);
+        Socket.register("playCutscene", this.cutsceneSocket);
+        Socket.register("executeInteractiveDynamesh", Tile3D.executeInteractiveDynamesh);
         this.exporter = new Exporter(this);
         this.init3d();
     }
@@ -1756,11 +1761,7 @@ class Levels3DPreview {
     playTokenAnimation(tokenIds, animationId, options = {}) {
         tokenIds instanceof Array || (tokenIds = [tokenIds]);
         tokenIds = tokenIds.map((id) => id.id ?? id);
-        this.socket.executeForEveryone("playTokenAnimationSocket", {
-            tokenIds,
-            animationId,
-            options,
-        });
+        Socket.playTokenAnimationSocket({ tokenIds, animationId, options });
     }
 
     cutsceneSocket({ userIds, sceneId, cutsceneId }) {
@@ -1768,15 +1769,15 @@ class Levels3DPreview {
         game.Levels3DPreview.cutsceneEngine.play(cutsceneId);
     }
 
-    particleSocket(...args) {
-        game.Levels3DPreview.particleSystem.resolveSocket(...args);
+    particleSocket({from, to, params}) {
+        game.Levels3DPreview.particleSystem.resolveSocket(from, to, params);
     }
 
-    Particle3DStop(...args) {
-        game.Levels3DPreview.particleSystem.stop(...args);
+    Particle3DStop({id}) {
+        game.Levels3DPreview.particleSystem.stop(id);
     }
 
-    toggleDoor(tileId, sceneId, userId, subDoorId) {
+    toggleDoor({tileId, sceneId, userId, subDoorId}) {
         const user = game.users.get(userId);
         if (!user.can("WALL_DOORS")) return;
         if (game.paused && !game.user.isGM) return ui.notifications.warn("GAME.PausedWarning", { localize: true });

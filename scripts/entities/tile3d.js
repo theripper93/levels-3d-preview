@@ -6,6 +6,7 @@ import { factor } from "../main.js";
 import { DynaMesh } from "../helpers/dynaMesh.js";
 import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from "../lib/three-mesh-bvh.js";
 import { getMergedMeshFromInstanced, meshesToSingleMesh } from "../helpers/geometryUtils.js";
+import {Socket} from "../lib/socket.js";
 THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
 THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
 THREE.Mesh.prototype.raycast = acceleratedRaycast;
@@ -2025,7 +2026,7 @@ export class Tile3D {
         if (!isFn) return;
         const firstGm = game.users.find((u) => u.isGM && u.active);
         if (!firstGm) return ui.notifications.error(game.i18n.localize("levels3dpreview.errors.nogm"));
-        this._parent.socket.executeForUsers("executeInteractiveDynamesh", [firstGm.id], this.document.uuid, eventId);
+        Socket.executeInteractiveDynamesh({users: [firstGm.id], uuid: this.document.uuid, eventId});
     }
 
     checkPuzzleLock() {
@@ -2041,13 +2042,13 @@ export class Tile3D {
         const oT = e.originalIntersect?.userData;
         if (oT?.isDoor && canvas.activeLayer.options.objectClass.embeddedName === "Token" && !(oT?.isSecret && !game.user.isGM)) {
             if (this.isToFar(e.originalIntersect)) ui.notifications.error(game.i18n.localize("levels3dpreview.errors.toofarfromdoor"));
-            else this._parent.socket.executeAsGM("toggleDoor", this.tile.id, canvas.scene.id, game.user.id, oT.doorId);
+            else Socket.toggleDoor({tileId: this.tile.id, sceneId: canvas.scene.id, userId: game.user.id, subDoorId: oT.doorId});
         }
 
         if (canvas.activeLayer.options.objectClass.embeddedName === "Token" && this.isDoor && !(this.isSecret && !game.user.isGM)) {
             if (this.isToFar()) ui.notifications.error(game.i18n.localize("levels3dpreview.errors.toofarfromdoor"));
             else {
-                if (this.checkPuzzleLock()) this._parent.socket.executeAsGM("toggleDoor", this.tile.id, canvas.scene.id, game.user.id);
+                if (this.checkPuzzleLock()) Socket.toggleDoor({tileId: this.tile.id, sceneId: canvas.scene.id, userId: game.user.id});
             }
         }
         if (canvas.activeLayer.options.objectClass.embeddedName !== "Tile") {
@@ -2584,8 +2585,8 @@ export class Tile3D {
         });
     }
 
-    static executeInteractiveDynamesh(tileUuid, eventId) {
-        const tile = fromUuidSync(tileUuid);
+    static executeInteractiveDynamesh({uuid, eventId}) {
+        const tile = fromUuidSync(uuid);
         if (!tile) return;
         const tile3d = game.Levels3DPreview.tiles[tile.id];
         if (!tile3d) return;

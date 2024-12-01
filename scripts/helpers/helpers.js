@@ -6,6 +6,7 @@ import { setPerformancePreset, injectPresetButtons } from "../settings/performan
 import { SimplifyModifier } from "../lib/Simplify.js";
 import { showSceneReport, showPerformanceDialog } from "../settings/performanceReport.js";
 import { Ping } from "../entities/effects/ping.js";
+import {Socket} from "../lib/socket.js";
 
 const simplify = new SimplifyModifier();
 
@@ -506,22 +507,13 @@ export class Helpers {
                 size = Math.max(token3D.token.document.width, token3D.token.document.height);
             }
         }
-        game.Levels3DPreview.socket.executeForEveryone("dispatchPing", {
-            position,
-            color,
-            size,
-            type,
-        });
+        Socket.dispatchPing({position, color, size, type});
     }
 
     focusCameraToPosition(cameraPosition, cameraLookat, speed = 0.04) {
         if (game.Levels3DPreview.interactionManager.isCameraLocked) return;
         if (!game.user.isGM && !game.settings.get("levels-3d-preview", "canpingpan")) return ui.notifications.error(game.i18n.localize("levels3dpreview.errors.canpingpan"));
-        game.Levels3DPreview.socket.executeForEveryone("socketCamera", {
-            cameraPosition,
-            cameraLookat,
-            speed,
-        });
+        Socket.socketCamera({cameraPosition, cameraLookat, speed});
     }
 
     playTokenAnimationSocket(params) {
@@ -543,7 +535,7 @@ export class Helpers {
         game.Levels3DPreview._animateCameraTarget.speed = params.speed ?? 0.04;
     }
 
-    syncClipNavigator(range) {
+    syncClipNavigator({range}) {
         game.Levels3DPreview.ClipNavigation.set(range);
     }
 

@@ -2,6 +2,7 @@ import * as THREE from "../lib/three.module.js";
 import { Ruler3D } from "./ruler3d.js";
 import { factor } from "../main.js";
 import * as QUARKS from "../lib/three.quarks.esm.js";
+import {Socket} from "../lib/socket.js";
 
 const materialCache = {};
 const vfxCache = {};
@@ -251,7 +252,7 @@ export class Particle3D {
         if (!this._validate()) return false;
         this.params.scene = canvas.scene.id;
         if (socket) {
-            game.Levels3DPreview.socket.executeForEveryone("Particle3D", this._from, this._to, this.params);
+            Socket.Particle3D({from, to, params});
         } else {
             game.Levels3DPreview.particleSystem.resolveSocket(this._from, this._to, this.params);
         }
@@ -486,7 +487,7 @@ export class Particle3D {
     }
 
     static stop(id) {
-        game.Levels3DPreview.socket.executeForEveryone("Particle3DStop", id);
+        Socket.Particle3DStop({id});
     }
 }
 

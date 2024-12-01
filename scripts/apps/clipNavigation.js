@@ -1,3 +1,4 @@
+import {Socket} from "../lib/socket.js";
 import { factor } from "../main.js";
 
 export class ClipNavigation extends Application {
@@ -292,7 +293,7 @@ export const CLIP_NAVIGATION_BUTTONS = [
         icon: "fas fa-random",
         visible: () => game.Levels3DPreview.ClipNavigation.isGM && game.Levels3DPreview.ClipNavigation.showRange,
         callback: () => {
-            game.Levels3DPreview.socket.executeForEveryone("syncClipNavigator", game.Levels3DPreview.ClipNavigation.currentRange);
+            Socket.syncClipNavigator({range: game.Levels3DPreview.ClipNavigation.currentRange});
             ui.notifications.info(game.i18n.localize("levels3dpreview.clipNavigator.syncNotification").replace("{{level}}", game.Levels3DPreview.ClipNavigation.currentLevel.name));
         },
     },

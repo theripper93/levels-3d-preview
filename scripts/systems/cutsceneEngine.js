@@ -1,3 +1,4 @@
+import {Socket} from "../lib/socket.js";
 import * as THREE from "../lib/three.module.js";
 
 export class CutsceneEngine{
@@ -39,11 +40,7 @@ export class CutsceneEngine{
     }
 
     playCutscene(cutsceneId, userIds) {
-        this._parent.socket.executeForEveryone("playCutscene", {
-            userIds,
-            sceneId: canvas.scene.id,
-            cutsceneId,
-        });
+        Socket.playCutscene({userIds, sceneId: canvas.scene.id, cutsceneId});
     }
 
     play(index) {
