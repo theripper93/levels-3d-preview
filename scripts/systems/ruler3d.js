@@ -534,7 +534,7 @@ export class Ruler3D {
         const square = canvas.scene.dimensions.size / factor;
         const halfSquare = square / 2;
         const generatePoints = (token) => {
-            const tokenHeight = ((token.token.losHeight ?? token.token.document.elevation) - token.token.document.elevation) / canvas.scene.dimensions.distance;
+            const tokenHeight = ((token.token.losHeight ?? (token.token.document.elevation+0.001)) - token.token.document.elevation) / canvas.scene.dimensions.distance;
             const tokenPositions = [];
             const tokenStart = token.mesh.position.clone();
             tokenStart.x += -token.token.document.width * halfSquare + halfSquare;
