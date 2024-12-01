@@ -597,9 +597,9 @@ export class Token3D {
             const center = canvas.grid.getCenter(x, y);
             const geometryCollisions = game.Levels3DPreview?.object3dSight;
             let collides;
-            if (geometryCollisions && CONFIG.Levels) {
+            if (geometryCollisions) {
                 const tokenHeight = this.losHeight - this.document.elevation;
-                collides = CONFIG.Levels.API.testCollision(
+                collides = game.Levels3DPreview.interactionManager.computeSightCollision(
                     {
                         x: this.token.center.x,
                         y: this.token.center.y,
@@ -654,9 +654,9 @@ export class Token3D {
             const center = canvas.grid.getCenter(x, y);
             const geometryCollisions = game.Levels3DPreview?.object3dSight;
             let collides;
-            if (geometryCollisions && CONFIG.Levels) {
+            if (geometryCollisions) {
                 const tokenHeight = this.losHeight - this.document.elevation;
-                collides = CONFIG.Levels.API.testCollision(
+                collides = game.Levels3DPreview.interactionManager.computeSightCollision(
                     {
                         x: this.token.center.x,
                         y: this.token.center.y,
