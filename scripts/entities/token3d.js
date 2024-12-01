@@ -760,6 +760,11 @@ export class Token3D {
         return this.token.losHeight ?? this.token.document.elevation;
     }
 
+    get visionSourceElevation() {
+        const heightOffset = (this.d * factor * 0.9) / (canvas.scene.dimensions.size / canvas.scene.dimensions.distance);
+        return this.token.document.elevation + ((this.d * factor * 0.9) / (canvas.scene.dimensions.size / canvas.scene.dimensions.distance));
+    }
+
     setPositionFrom2D(force = false) {
         const tokenCenter = force ? this.documentCenter : this.token.center;
         if (!this.mesh) return;

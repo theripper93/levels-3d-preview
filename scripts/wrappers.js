@@ -1,6 +1,15 @@
 import { warpgateWrappers } from "./compatibility/warpgate.js";
 
 export function registerWrappers() {
+
+    Object.defineProperty(Token.prototype, "object3d", {
+        get: function () {
+            return game.Levels3DPreview.tokens[this.id];
+        },
+    });
+
+
+
     Hooks.once("ready", async function () {
         //Register Module Wrappers
         warpgateWrappers();
@@ -106,6 +115,13 @@ export function registerWrappers() {
             }
         }
 
+        function getSourceElevation(source) {
+            if (source?.object?.b !== undefined) return source.object.b;
+            const object3d = source?.object?.object3d;
+            if (object3d) return object3d.visionSourceElevation;
+            return source.elevation ?? 0;
+        }
+
         function _computePolygonMultithreaded(wrapped, ...args) {
             wrapped(...args);
             if (!game.Levels3DPreview?._ready || !game.Levels3DPreview?._active || !game.Levels3DPreview?.workers?._visionReady) {
@@ -138,7 +154,7 @@ export function registerWrappers() {
                     angle: this.config.angle,
                     hasLimitedAngle: this.config.hasLimitedAngle,
                     radius: this.config.radius,
-                    z: ((this.config.source?.object?.b ?? 0) * (canvas.scene.dimensions.size / canvas.scene.dimensions.distance)) / game.Levels3DPreview.factor,
+                    z: (getSourceElevation(this.config.source) * (canvas.scene.dimensions.size / canvas.scene.dimensions.distance)) / game.Levels3DPreview.factor,
                     origin: {
                         x: this.origin.x,
                         y: this.origin.y,
