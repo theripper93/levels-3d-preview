@@ -286,20 +286,14 @@ export function registerWrappers() {
 
         function drawPreview(wrapped, ...args) {
             if (game.Levels3DPreview?._active) {
-                game.Levels3DPreview.Classes.Template3D.drawPreview(this);
+                return game.Levels3DPreview.Classes.Template3D.drawPreview(this);
             } else return wrapped(...args);
         }
 
         function drawPreviewTemplateLayer(wrapped, ...args) {
             if (game.Levels3DPreview?._active) {
-                game.Levels3DPreview.Classes.Template3D.drawPreview(args[0], true);
+                return game.Levels3DPreview.Classes.Template3D.drawPreview(args[0], true);
             } else return wrapped(...args);
-        }
-
-        function reDraw() {
-            try {
-                game.Levels3DPreview?._active && game.Levels3DPreview.tokens[this.id]?.reDraw();
-            } catch (e) {}
         }
 
         function _handleMovement(wrapped, ...args) {
