@@ -252,7 +252,7 @@ export class Particle3D {
         if (!this._validate()) return false;
         this.params.scene = canvas.scene.id;
         if (socket) {
-            Socket.Particle3D({from, to, params});
+            Socket.Particle3D({from: this._from, to: this._to, params: this.params});
         } else {
             game.Levels3DPreview.particleSystem.resolveSocket(this._from, this._to, this.params);
         }
