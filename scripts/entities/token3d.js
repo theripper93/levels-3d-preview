@@ -976,11 +976,11 @@ export class Token3D {
     }
 
     get baseDocumentWidth() {
-        return this.placeable?.animation ? this.documentSource.width : this.document.width;
+        return this.placeable?.animationContexts?.size ? this.documentSource.width : this.document.width;
     }
 
     get baseDocumentHeight() {
-        return this.placeable?.animation ? this.documentSource.height : this.document.height;
+        return this.placeable?.animationContexts?.size ? this.documentSource.height : this.document.height;
     }
 
     get isTokenProne() {
