@@ -1,5 +1,1 @@
-2025/01/03-18:32:46.757 4bac Log #2656: 0 ops saved to Table #2657 OK
-2025/01/03-18:32:46.758 4bac Archiving C:\Users\tspla\AppData\Local\FoundryVTT\Data\modules\levels-3d-preview\packs\journals/002656.log: OK
-2025/01/03-18:32:46.758 4bac Table #2042: 3 entries OK
-2025/01/03-18:32:46.759 4bac Archiving C:\Users\tspla\AppData\Local\FoundryVTT\Data\modules\levels-3d-preview\packs\journals/MANIFEST-002655: OK
-2025/01/03-18:32:46.761 4bac **** Repaired leveldb C:\Users\tspla\AppData\Local\FoundryVTT\Data\modules\levels-3d-preview\packs\journals; recovered 1 files; 2119 bytes. Some data may have been lost. ****
+2025/01/03-18:32:46.766 4bac Delete type=3 #1

@@ -4,6 +4,12 @@ import {factor} from "../main.js";
 
 const doorIconMaterialCache = {};
 
+const getWallColor = (wall) => {
+    if (game.user.isGM) return wall._getWallColor();
+    if(wall.document.door === CONST.WALL_DOOR_TYPES.SECRET) return 0xFFFFBB
+    return wall._getWallColor();
+}
+
 export class Wall3D {
     constructor(wall, parent) {
         this.wall = wall;
@@ -34,8 +40,8 @@ export class Wall3D {
         this.alwaysVisible = wall.document.getFlag("levels-3d-preview", "alwaysVisible");
         this.tint = wall.document.getFlag("levels-3d-preview", "wallTint");
         this.sideTint = wall.document.getFlag("levels-3d-preview", "wallSidesTint");
-        this.color = this.texture ? this.tint ?? "#ffffff" : this.tint ?? wall._getWallColor();
-        this.sidesColor = this.sidesTexture ? this.sideTint ?? "#ffffff" : this.sideTint ?? wall._getWallColor();
+        this.color = this.texture ? this.tint ?? "#ffffff" : this.tint ?? getWallColor(wall);
+        this.sidesColor = this.sidesTexture ? this.sideTint ?? "#ffffff" : this.sideTint ?? getWallColor(wall);
         this.depth = wall.document.getFlag("levels-3d-preview", "wallDepth") / factor || 0.03;
         this.distance += wall.document.getFlag("levels-3d-preview", "joinWall") ? this.depth : 0;
         this.roughness = wall.document.getFlag("levels-3d-preview", "roughness") ?? 1;
@@ -83,7 +89,7 @@ export class Wall3D {
         const wallMesh = new THREE.Mesh(geometry, materials);
         this.wallMesh = wallMesh;
         this.mesh.add(wallMesh);
-        if (this.wall.isDoor) {
+        if (this.wall.isDoor && !(!game.user.isGM && this.wall.document.door === CONST.WALL_DOOR_TYPES.SECRET)) {
             this.mesh.userData.hitbox = this.mesh;
             this.mesh.userData.interactive = true;
             const controlIconMaterial = await this.getControlIconMaterial();

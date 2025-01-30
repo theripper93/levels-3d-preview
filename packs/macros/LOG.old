@@ -1,5 +1,1 @@
-2025/01/03-18:32:46.773 48c4 Log #2657: 0 ops saved to Table #2658 OK
-2025/01/03-18:32:46.773 48c4 Archiving C:\Users\tspla\AppData\Local\FoundryVTT\Data\modules\levels-3d-preview\packs\macros/002657.log: OK
-2025/01/03-18:32:46.773 48c4 Table #2043: 8 entries OK
-2025/01/03-18:32:46.775 48c4 Archiving C:\Users\tspla\AppData\Local\FoundryVTT\Data\modules\levels-3d-preview\packs\macros/MANIFEST-002656: OK
-2025/01/03-18:32:46.777 48c4 **** Repaired leveldb C:\Users\tspla\AppData\Local\FoundryVTT\Data\modules\levels-3d-preview\packs\macros; recovered 1 files; 3587 bytes. Some data may have been lost. ****
+2025/01/03-18:32:46.782 48c4 Delete type=3 #1
