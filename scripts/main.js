@@ -62,6 +62,7 @@ import { createTargetGeometry } from "./entities/effects/target.js";
 import {UberPass} from "./lib/UberPass.js";
 
 import { Socket } from "./lib/socket.js";
+import {renderSceneToImage} from "./helpers/export2d.js";
 
 export const factor = 1000;
 
@@ -380,6 +381,7 @@ class Levels3DPreview {
             extractPointsFromDrawing,
             extrudeWalls,
             attachTileToToken,
+            renderSceneToImage,
             WaveFunctionSolver,
             TEXTURES: {
                 BLANK: new THREE.TextureLoader().load("modules/levels-3d-preview/assets/blankTex.jpg"),
