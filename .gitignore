@@ -1,8 +1,2 @@
-# Ignore everything inside packs
-packs/**
-
-# Allow subdirectories inside packs
-!packs/**/
-
-# Allow only .ldb files inside packs and its subdirectories
+packs/**/*
 !packs/**/*.ldb
