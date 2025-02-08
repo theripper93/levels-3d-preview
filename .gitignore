@@ -1,2 +1,4 @@
 packs/**/*
 !packs/**/*.ldb
+# Run to fix:
+# git rm -r --cached packs
