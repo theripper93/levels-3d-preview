@@ -1237,6 +1237,7 @@ class Levels3DPreview {
     }
 
     animation(time) {
+        if(!canvas.ready || this._pauseRendering) return;
         try {
             if (!this._active) return;
             if (!this._ready) return this._onProgress();
@@ -1703,6 +1704,7 @@ class Levels3DPreview {
     }
 
     open() {
+        this._pauseRendering = false;
         if (this._active) return;
         this.setFilters(true);
         if (this._sharedContext) {
@@ -1846,6 +1848,10 @@ Hooks.on("canvasReady", async () => {
         }
     } while (!game.Levels3DPreview || !game.Levels3DPreview?._init);
 });
+
+Hooks.on("canvasTearDown", () => {
+    game.Levels3DPreview._pauseRendering = true;
+} );
 
 Hooks.on("sightRefresh", () => {
     if (game.Levels3DPreview?._active && game.Levels3DPreview.fogExploration) {
