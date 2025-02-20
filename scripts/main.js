@@ -1237,7 +1237,7 @@ class Levels3DPreview {
     }
 
     animation(time) {
-        if(!canvas.ready || this._pauseRendering) return;
+        if(!canvas.ready || this._pauseRendering || (this.fogExploration && !this.fogExploration._ready)) return;
         try {
             if (!this._active) return;
             if (!this._ready) return this._onProgress();

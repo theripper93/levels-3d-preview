@@ -449,7 +449,7 @@ export class Template3D {
         const width = vertexB.distanceTo(vertexA);
         const height = this.template3dData.special !== undefined ? Ruler3D.unitsToPixels(this.template3dData.special) : vertexB.y - vertexA.y;
         this.special = Ruler3D.pixelsToUnits(height);
-        const depth = Ruler3D.unitsToPixels(5);
+        const depth = Ruler3D.unitsToPixels(this.template?.document?.width ?? 5);
         this.width = Ruler3D.pixelsToUnits(depth);
         const geometry = new THREE.BoxGeometry(width, height, depth, 5, 5, 5);
         const mesh = this._makeMesh(geometry);
