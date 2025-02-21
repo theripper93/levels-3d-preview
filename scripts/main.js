@@ -56,13 +56,13 @@ import { PARTICLE_SYSTEMS } from "./systems/particleSystem.js";
 import { registerConfigs } from "./settings/config.js";
 import { registerSettings } from "./settings/settingsConfig.js";
 import { WaveFunctionSolver } from "./generators/WaveFunctionCollapse.js";
-import {applyHeightmap} from "./helpers/applyHeightmap.js";
+import { applyHeightmap } from "./helpers/applyHeightmap.js";
 
 import { createTargetGeometry } from "./entities/effects/target.js";
-import {UberPass} from "./lib/UberPass.js";
+import { UberPass } from "./lib/UberPass.js";
 
 import { Socket } from "./lib/socket.js";
-import {renderSceneToImage} from "./helpers/export2d.js";
+import { renderSceneToImage } from "./helpers/export2d.js";
 
 export const factor = 1000;
 
@@ -90,7 +90,6 @@ setSharingHooks();
 globalThis.Particle3D = Particle3D;
 
 Hooks.once("ready", () => {
-
     if (!game.scenes.active) {
         const scene = Array.from(game.scenes)[0];
         if (scene) {
@@ -632,7 +631,7 @@ class Levels3DPreview {
         if (true) {
             this.uberPass = this.uberPass ?? new ShaderPass(UberPass);
             this.uberPass.setupUniforms = (uniforms) => {
-                for (const [key, value] of (Object.entries(uniforms ?? canvas.scene.getFlag("levels-3d-preview", "pp") ?? {}))) {
+                for (const [key, value] of Object.entries(uniforms ?? canvas.scene.getFlag("levels-3d-preview", "pp") ?? {})) {
                     if (key == "enabled") {
                         this.uberPass.enabled = value;
                         continue;
@@ -640,7 +639,7 @@ class Levels3DPreview {
                     const finalValue = typeof value === "string" ? new THREE.Color(value) : value;
                     this.uberPass.uniforms[key].value = finalValue;
                 }
-            }
+            };
             this.uberPass.setupUniforms();
             this.composer.addPass(this.uberPass);
         }
@@ -1237,7 +1236,7 @@ class Levels3DPreview {
     }
 
     animation(time) {
-        if(!canvas.ready || this._pauseRendering || (this.fogExploration && !this.fogExploration._ready)) return;
+        if (!canvas.ready || this._pauseRendering || (this.fogExploration && !this.fogExploration._ready)) return;
         try {
             if (!this._active) return;
             if (!this._ready) return this._onProgress();
@@ -1366,6 +1365,10 @@ class Levels3DPreview {
                 });
             this.composer.render(time);
             if (this._firstFrame) {
+                setTimeout(() => {
+                    document.querySelector("#board").style.opacity = 1;
+                    this.renderer.domElement.style.opacity = 1;
+                }, 100);
                 this._firstFrame = false;
                 this.workers._waitingForInit = true;
                 Object.values(this.tiles).forEach((t) => t.sendToWorker());
@@ -1581,6 +1584,8 @@ class Levels3DPreview {
         }
         if (total === loaded && this._envReady) {
             if (!this._finalizingLoad) {
+                this.renderer.domElement.style.opacity = 0;
+                document.querySelector("#board").style.opacity = 0;
                 this._finalizingLoad = true;
                 this._progressText = game.i18n.localize("levels3dpreview.controls.loading.gravity");
                 this.interactionManager.forceSightCollisions();
@@ -1773,15 +1778,15 @@ class Levels3DPreview {
         game.Levels3DPreview.cutsceneEngine.play(cutsceneId);
     }
 
-    particleSocket({from, to, params}) {
+    particleSocket({ from, to, params }) {
         game.Levels3DPreview.particleSystem.resolveSocket(from, to, params);
     }
 
-    Particle3DStop({id}) {
+    Particle3DStop({ id }) {
         game.Levels3DPreview.particleSystem.stop(id);
     }
 
-    toggleDoor({tileId, sceneId, userId, subDoorId}) {
+    toggleDoor({ tileId, sceneId, userId, subDoorId }) {
         const user = game.users.get(userId);
         if (!user.can("WALL_DOORS")) return;
         if (game.paused && !game.user.isGM) return ui.notifications.warn("GAME.PausedWarning", { localize: true });
@@ -1834,6 +1839,7 @@ class Levels3DPreview {
 }
 
 Hooks.on("canvasReady", async () => {
+    document.querySelector("#board").style.opacity = 1;
     do {
         await sleep(100);
         if (!game.Levels3DPreview || !game.Levels3DPreview?._init) continue;
@@ -1851,7 +1857,7 @@ Hooks.on("canvasReady", async () => {
 
 Hooks.on("canvasTearDown", () => {
     game.Levels3DPreview._pauseRendering = true;
-} );
+});
 
 Hooks.on("sightRefresh", () => {
     if (game.Levels3DPreview?._active && game.Levels3DPreview.fogExploration) {
