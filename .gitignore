@@ -1,4 +1,9 @@
-packs/**/*
-!packs/**/*.ldb
+# !packs/**/*.ldb
+# packs/**/*
+packs/**/LOCK
+packs/**/*log
+packs/**/LOG
+packs/**/*.old
+packs/**/MANIFEST*
 # Run to fix:
 # git rm -r --cached packs
