@@ -235,12 +235,12 @@ export class Template3D {
             width: this.width,
             user: game.user.id,
             fillColor: game.user.color.css,
+            elevation: parseFloat((origin2d.z).toFixed(2)),
             t: this._getBaseShape(),
             x: origin2d.x,
             y: origin2d.y,
             flags: {
                 levels: {
-                    elevation: origin2d.z.toFixed(2),
                     special: this.special !== undefined ? this.special.toFixed(2) : undefined,
                 },
                 "levels-3d-preview": {
