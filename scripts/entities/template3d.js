@@ -34,7 +34,6 @@ export class Template3D {
         this.directionOffset = 0;
         this._parent = game.Levels3DPreview;
         this.mesh = new THREE.Group();
-        this.elevation3d = 0;
         this.template3dData = this._get3DData();
         this.shape = this._inferShape(this.template3dData);
         this._origin = this._getOrigin(A);
@@ -87,7 +86,7 @@ export class Template3D {
         this.mesh.remove(this.templateMesh);
         this.material = this._getMaterial();
         this._getTexture();
-        this.A = this._origin ?? Ruler3D.posCanvasTo3d({ x: this.template.document?.x, y: this.template.document?.y, z: this.template.document?.flags?.levels?.elevation ?? 0 });
+        this.A = this._origin ?? Ruler3D.posCanvasTo3d({ x: this.template.document?.x, y: this.template.document?.y, z: this.template.document?.elevation ?? 0 });
         this.B = this._destination;
         this.pointsFromData();
         this.direction = (Math.atan2(this.B.z - this.A.z, this.B.x - this.A.x) * 180) / Math.PI;
@@ -149,8 +148,8 @@ export class Template3D {
 
     pointsFromData() {
         if (!this.fromData) return;
-        this.A = Ruler3D.posCanvasTo3d({ x: this.template.ray.A.x, y: this.template.ray.A.y, z: this.template.document?.flags?.levels?.elevation ?? 0 });
-        this.B = Ruler3D.posCanvasTo3d({ x: this.template.ray.B.x, y: this.template.ray.B.y, z: this.template.document?.flags?.levels?.elevation ?? 0 });
+        this.A = Ruler3D.posCanvasTo3d({ x: this.template.ray.A.x, y: this.template.ray.A.y, z: this.template.document?.elevation ?? 0 });
+        this.B = Ruler3D.posCanvasTo3d({ x: this.template.ray.B.x, y: this.template.ray.B.y, z: this.template.document?.elevation ?? 0 });
         if (this.shape !== "cylinder") this.B.y += Ruler3D.unitsToPixels(this.template.document?.flags?.levels?.special ?? 0);
     }
 
@@ -475,7 +474,7 @@ export class Template3D {
 
     _getOrigin(A) {
         if (A) return A;
-        return Ruler3D.posCanvasTo3d({ x: this.template.document?.x, y: this.template.document?.y, z: this.template.document?.flags?.levels?.elevation ?? 0 });
+        return Ruler3D.posCanvasTo3d({ x: this.template.document?.x, y: this.template.document?.y, z: this.template.document?.elevation ?? 0 });
     }
 
     _getDestination(B) {

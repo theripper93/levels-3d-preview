@@ -1,3 +1,7 @@
-2025/02/26-18:48:31.650 22c4 Recovering log #2732
-2025/02/26-18:48:31.653 22c4 Delete type=0 #2732
-2025/02/26-18:48:31.653 22c4 Delete type=3 #2731
+2025/02/27-17:08:39.189 8654 Recovering log #2738
+2025/02/27-17:08:39.192 8654 Delete type=0 #2738
+2025/02/27-17:08:39.193 8654 Delete type=3 #2737
+2025/02/27-17:10:09.885 2eec Level-0 table #2742: started
+2025/02/27-17:10:09.885 2eec Level-0 table #2742: 0 bytes OK
+2025/02/27-17:10:09.886 2eec Delete type=0 #2740
+2025/02/27-17:10:09.886 2eec Manual compaction at level-0 from '!journal!X6rUPY9iSJxMpvPo' @ 72057594037927935 : 1 .. '!journal.pages!X6rUPY9iSJxMpvPo.jpDR4vr6znE1PEJL' @ 0 : 0; will stop at (end)
