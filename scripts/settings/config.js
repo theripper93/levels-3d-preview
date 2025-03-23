@@ -894,6 +894,11 @@ export function registerConfigs() {
                             coin: game.i18n.localize("levels3dpreview.settings.flatTokenStyle.options.coin"),
                         },
                     },
+                    forceFlyingMode: {
+                        type: "checkbox",
+                        label: game.i18n.localize("levels3dpreview.flags.forceFlyingMode.label"),
+                        default: false,
+                    },
                 },
                 "position-3d": {
                     tabLabel: game.i18n.localize("levels3dpreview.flags.position.header"),

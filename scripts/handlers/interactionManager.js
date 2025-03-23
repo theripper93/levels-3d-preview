@@ -1061,7 +1061,7 @@ export class InteractionManager {
         if (this.groupSelectHandler._isSelecting) this.groupSelectHandler.endSelect();
         const collisionGeometries = this._collisionGeometries;
         const token = this.draggable.userData?.entity3D?.token;
-        const isFlying = token && token?.document?.hasStatusEffect("fly");
+        const isFlying = token && (token?.document?.actor?.statuses.some(s=>s.includes("fly")) ?? token?.document?.flags?.["levels-3d-preview"]?.forceFlyingMode);
         const target = this.draggable.userData.isHitbox ? this.draggable.parent : this.draggable;
         const isFree = this.isFreeMode || this.forceFree || isFlying || (this.draggable.userData.entity3D.template && this.draggable.userData.entity3D.wasFreeMode);
         this.draggable.userData.entity3D.wasFreeMode = isFree;

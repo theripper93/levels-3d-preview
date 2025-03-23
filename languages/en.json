@@ -742,6 +742,9 @@
             "animSpeed": {
                 "label": "Animation Speed"
             },
+            "forceFlyingMode": {
+                "label": "Force Flying Mode"
+            },
             "paused": {
                 "label": "Paused"
             },
