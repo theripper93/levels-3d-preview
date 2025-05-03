@@ -457,6 +457,13 @@
             "sunIntensity": {
                 "label": "Sun Intensity"
             },
+            "ambientLightIntensity": {
+                "label": "Ambient Light Intensity",
+                "notes": "Controls the strength of a global light source that illuminates all surfaces equally. This light is uniform and does not cast or receive shadows."
+            },
+            "ambientLightColor": {
+                "label": "Ambient Light Color"
+            },
             "shadowBias": {
                 "label": "Shadow Bias",
                 "notes": "Number that determines how shadows are rendered, if you notice black stripes on entities in the scene, you can adjust this number. Correct values for this number tend to be very small, it's suggested to make increments or decrements of 0.00001 or less."

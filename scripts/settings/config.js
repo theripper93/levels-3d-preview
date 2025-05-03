@@ -309,6 +309,19 @@ export function registerConfigs() {
                     max: 1,
                     step: 0.01,
                 },
+                ambientLightIntensity: {
+                    type: "range",
+                    label: game.i18n.localize("levels3dpreview.flags.ambientLightIntensity.label"),
+                    default: 0,
+                    min: 0,
+                    max: 1,
+                    step: 0.01,
+                },
+                ambientLightColor: {
+                    type: "color",
+                    label: game.i18n.localize("levels3dpreview.flags.ambientLightColor.label"),
+                    default: "#ffffff",
+                },
                 shadowBias: {
                     type: "number",
                     label: game.i18n.localize("levels3dpreview.flags.shadowBias.label"),

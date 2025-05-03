@@ -21,6 +21,19 @@ export class GlobalIllumination {
 
     }
 
+    initAmbientLight() {
+        this.ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    }
+
+    updateAmbientLight() {
+        if(!this.ambientLight) this.initAmbientLight();
+        const ambientLight = this.ambientLight;
+        const intensity = canvas.scene.getFlag("levels-3d-preview", "ambientLightIntensity") ?? 0;
+        ambientLight.intensity = intensity;
+        ambientLight.color.set(canvas.scene.getFlag("levels-3d-preview", "ambientLightColor") ?? "#ffffff");
+        intensity > 0 ? this._parent.scene.add(ambientLight) : this._parent.scene.remove(ambientLight);
+    }
+
     initDynamicSky() {
         if (this.sky) return;
         const sky = new Sky();
@@ -115,6 +128,7 @@ export class GlobalIllumination {
 
         this.setTarget(true, false);
         this.updateDynamicSky();
+        this.updateAmbientLight();
     }
 
     _setShadowQuality() {
