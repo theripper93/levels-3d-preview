@@ -9,33 +9,18 @@ import { injectConfig } from "../lib/injectConfig.js";
 
 export function registerConfigs() {
     Hooks.on("getSceneControlButtons", (buttons) => {
-        buttons
-            .find((b) => b.name === "token")
-            ?.tools?.push(
+        buttons.tokens.tools.preview3d =
                 {
                     name: "preview3d",
                     title: game.i18n.localize("levels3dpreview.controls.preview3d"),
                     icon: "fas fa-cube",
                     button: true,
                     visible: canvas?.scene?.getFlag("levels-3d-preview", "enablePlayers") || game.user.isGM,
-                    onClick: () => {
+                    onChange: () => {
                         game.Levels3DPreview.toggle();
                     },
-                },
-                {
-                    name: "miniCanvas",
-                    title: game.i18n.localize("levels3dpreview.controls.miniCanvas"),
-                    icon: "fas fa-sign-out-alt",
-                    button: true,
-                    visible: !game.settings.get("levels-3d-preview", "sharedContext") && (canvas?.scene?.getFlag("levels-3d-preview", "enablePlayers") || game.user.isGM),
-                    onClick: () => {
-                        if (!game.Levels3DPreview?._active) {
-                            return ui.notifications.warn(game.i18n.localize("levels3dpreview.errors.3dnotactive"));
-                        }
-                        miniCanvas.toggle();
-                    },
-                },
-            );
+                }
+            
 
         if (game.Levels3DPreview?._active && game.user.isGM) {
             const drawPolygonTool = {
@@ -47,8 +32,8 @@ export function registerConfigs() {
                     game.Levels3DPreview.UTILS.extractPointsFromDrawing();
                 },*/
             };
-            buttons.find((b) => b.name === "tiles")?.tools?.splice(1, 0, drawPolygonTool);
-            buttons.find((b) => b.name === "tiles").tools.find((t) => t.name === "browse").onClick = () => {
+            buttons.tiles.tools.tile3dPolygon = drawPolygonTool;
+            buttons.tiles.tools.browse.onChange = () => {
                 game.Levels3DPreview.open3DFilePicker();
             };
         }

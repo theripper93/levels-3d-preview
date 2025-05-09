@@ -13,6 +13,7 @@ export class Cursors3D {
     }
 
     update() {
+        return;isNoSelectDrag
         const cursors = canvas.controls._cursors;
 
         for (let [k, v] of Object.entries(cursors)) {

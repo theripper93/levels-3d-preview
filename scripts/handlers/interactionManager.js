@@ -326,7 +326,7 @@ export class InteractionManager {
     }
 
     isNoSelectDrag() {
-        const currentControl = ui.controls.controls.find((c) => c.name === ui.controls.activeControl).tools.find((t) => (t.name = "select"));
+        const currentControl = ui.controls.controls[ui.controls.activeControl].tools.select
         if (!currentControl) return false;
         return this.currentHover?.embeddedName === this.activeLayerEntity;
     }
