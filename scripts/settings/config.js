@@ -257,7 +257,7 @@ export function registerConfigs() {
                 timeSync: {
                     type: "select",
                     label: game.i18n.localize("levels3dpreview.flags.timeSync.label"),
-                    default: getTimeSyncDefault(app.object),
+                    default: getTimeSyncDefault(app.document),
                     options: {
                         off: game.i18n.localize("levels3dpreview.flags.timeSync.options.off"),
                         time: game.i18n.localize("levels3dpreview.flags.timeSync.options.time"),
@@ -620,7 +620,7 @@ export function registerConfigs() {
         hideParams(app, html, `[name="flags.levels-3d-preview.renderTable"]`, customTableFlags, ["table", "matcustom"], true);
         hideParams(app, html, `input[name="flags.levels-3d-preview.enableFog"]`, fogFlags, false);
 
-        if (canvas.scene.id !== app.object.id) return;
+        if (canvas.scene.id !== app.document.id) return;
         html.on("change", "input", (e) => {
             if (!game.Levels3DPreview._active) return;
             const sunPosition = html.find("[name='flags.levels-3d-preview.sunPosition']")[0].value;
@@ -667,7 +667,7 @@ export function registerConfigs() {
         </div>`);
         html.on("click", "button[data-key='sky-config']", (e) => {
             e.preventDefault();
-            new game.Levels3DPreview.lights.globalIllumination.DynamicSkyConfig(app.object).render(true);
+            new game.Levels3DPreview.lights.globalIllumination.DynamicSkyConfig(app.document).render(true);
         });
     });
 
@@ -961,7 +961,7 @@ export function registerConfigs() {
 
         const attachmentHeader = html.find(`#attachment-config`);
 
-        const attachments = app.object.getFlag("levels-3d-preview", "attachments") || [];
+        const attachments = app.document.getFlag("levels-3d-preview", "attachments") || [];
 
         //create a 2 column table with filename, delete button and hide button
 
@@ -982,17 +982,17 @@ export function registerConfigs() {
         table.find(".levels-3d-preview-delete-attachment").click((event) => {
             event.preventDefault();
             const index = parseInt(event.currentTarget.dataset.index);
-            const attachments = app.object.getFlag("levels-3d-preview", "attachments") || [];
+            const attachments = app.document.getFlag("levels-3d-preview", "attachments") || [];
             attachments.splice(index, 1);
-            app.object.setFlag("levels-3d-preview", "attachments", attachments);
+            app.document.setFlag("levels-3d-preview", "attachments", attachments);
         });
         //hide button
         table.find(".levels-3d-preview-togglehide-attachment").click((event) => {
             event.preventDefault();
             const index = parseInt(event.currentTarget.dataset.index);
-            const attachments = app.object.getFlag("levels-3d-preview", "attachments") || [];
+            const attachments = app.document.getFlag("levels-3d-preview", "attachments") || [];
             attachments[index].hidden = !attachments[index].hidden;
-            app.object.setFlag("levels-3d-preview", "attachments", attachments);
+            app.document.setFlag("levels-3d-preview", "attachments", attachments);
         });
         if (attachments.length > 0) {
             attachmentHeader.after(table);
@@ -1037,9 +1037,10 @@ export function registerConfigs() {
     });
 
     Hooks.on("renderTileConfig", (app, html) => {
+        html = $(html);
         if (html.find(`a[data-tab="levels-3d-preview"]>`).length) return;
         let meshStats;
-        const tile3d = game.Levels3DPreview.tiles[app.object.id];
+        const tile3d = game.Levels3DPreview.tiles[app.document.id];
         try {
             meshStats = tile3d?.getMeshStats();
         } catch (e) {}
@@ -1521,7 +1522,7 @@ export function registerConfigs() {
                 randomSeed: {
                     type: "text",
                     label: game.i18n.localize("levels3dpreview.flags.randomSeed.label"),
-                    default: app.object.id.substring(0, 7),
+                    default: app.document.id.substring(0, 7),
                 },
             },
             "effects-3d": {
@@ -1687,7 +1688,7 @@ export function registerConfigs() {
         });
         dMSelect.trigger("change");
         mapGenBtn.on("click", (e) => {
-            new MapGen(app.object).render(true);
+            new MapGen(app.document).render(true);
         });
 
         let firstChange = true;
@@ -1726,6 +1727,7 @@ export function registerConfigs() {
     });
 
     Hooks.on("renderWallConfig", (app, html) => {
+        html = $(html);
         if (html.find(`a[data-tab="levels-3d-preview"]>`).length) return;
 
         injectConfig.inject(app, html, {
@@ -1801,6 +1803,7 @@ export function registerConfigs() {
     });
 
     Hooks.on("renderMeasuredTemplateConfig", (app, html) => {
+        html = $(html);
         if (html[0].querySelector(`[name="flags.levels-3d-preview.tilt"]`)) return;
 
         injectConfig.inject(app, html, {
@@ -1829,6 +1832,7 @@ export function registerConfigs() {
     });
 
     Hooks.on("renderNoteConfig", (app, html) => {
+        html = $(html);
         if (html[0].querySelector(`[name="flags.levels-3d-preview.rotation"]`)) return;
 
         injectConfig.inject(app, html, {

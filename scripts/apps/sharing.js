@@ -11,11 +11,11 @@ export function initSharing(canvas3d) {
 }
 
 export function setSharingHooks() {
-    Hooks.on("renderSidebarTab", (app, html) => {
-        if (!game.user.isGM || !(app instanceof SceneDirectory)) return;
-        const buttonContainer = html[0].querySelector(".header-actions.action-buttons");
+    Hooks.on("renderSceneDirectory", (app, html) => {
+        if (!game.user.isGM) return;
+        const buttonContainer = html.querySelector(".header-actions.action-buttons");
         const button = document.createElement("button");
-        button.innerHTML = `<i class="fa-solid fa-cube"></i> ${game.i18n.localize("levels3dpreview.sharing.scenedirbutton")}`;
+        button.innerHTML = `<i class="fa-solid fa-cube"></i> <span>${game.i18n.localize("levels3dpreview.sharing.scenedirbutton")}</span>`;
         button.onclick = () => {
             new MapBrowser().render(true);
         };
