@@ -41,7 +41,8 @@ export function registerConfigs() {
     });
 
     Hooks.on("renderSceneConfig", (app, html) => {
-        if (html.find(`a[data-tab="levels-3d-preview"]>`).length) return;
+        html = $(html);
+        if (html.find(`a[data-tab="levels-3d-preview"]`).length) return;
 
         const data = {
             moduleId: "levels-3d-preview",

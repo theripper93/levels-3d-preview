@@ -13,7 +13,7 @@ export class Cursors3D {
     }
 
     update() {
-        return;isNoSelectDrag
+        return;
         const cursors = canvas.controls._cursors;
 
         for (let [k, v] of Object.entries(cursors)) {
@@ -41,7 +41,6 @@ export class Cursors3D {
     updateCursorPosition(uId, cursor) {
         const target = JSON.parse(cursor.target.x);
         if (!target.x && !target.z) {
-            //this._cursors[uId].visible = false;
             return;
         } else {
             this._cursors[uId].userData.lastPosition = new THREE.Vector3(target.x, target.y, target.z);

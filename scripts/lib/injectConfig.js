@@ -58,7 +58,7 @@ export const injectConfig = {
         } else {
             injectPoint = data.inject;
         }
-        injectPoint = injectPoint ?? (data.tab ? [...html.querySelectorAll("form > .tab")].at(-1) ?? [...html.querySelectorAll(".tab")].at(-1) : [...html.querySelectorAll(".form-group").at(-1)]);
+        injectPoint = injectPoint ?? (data.tab ? [...html.querySelectorAll("section.window-content > .tab")].at(-1) ?? [...html.querySelectorAll(".tab")].at(-1) : [...html.querySelectorAll(".form-group").at(-1)]);
         return injectPoint;
     },
 
@@ -84,8 +84,9 @@ export const injectConfig = {
         tab.dataset.group = tabs.dataset.group;
         tab.innerHTML = `<i class="${icon}"></i> <label>${label}</label>`;
         tabs.after(tab);
-        const tabContainer = document.createElement("section");
-        tabContainer.classList.add("tab", "standard-form", "scrollable");
+        const tabContainer = document.createElement("div");
+        tabContainer.classList.add("tab", "scrollable");
+        tabContainer.style.height = "auto";
         tabContainer.dataset.tab = name;
         tabContainer.dataset.group = tabs.dataset.group;
         return tabContainer;
@@ -107,11 +108,12 @@ export const injectConfig = {
                 a.innerHTML = `<i class="${v.tabIcon}"></i> ${v.tabLabel}`;
                 a.addEventListener("click", (e) => {
                     const tab = e.currentTarget.dataset.tab;
-                    container.querySelectorAll(".item").forEach((i) => i.classList.remove("active"));
+                    const innerContainer = e.currentTarget.closest(".tab") ?? e.currentTarget.closest(".window-content");
+                    innerContainer.querySelectorAll(".item").forEach((i) => i.classList.remove("active"));
                     e.currentTarget.classList.add("active");
-                    container.querySelectorAll(".tab").forEach((i) => i.classList.remove("active"));
-                    container.querySelector(`.tab[data-tab="${tab}"]`).classList.add("active");
-                    app.setPosition({ height: "auto", width: data.tab ? app.options.width + tabSize : "auto" });
+                    innerContainer.querySelectorAll(".tab").forEach((i) => i.classList.remove("active"));
+                    innerContainer.querySelector(`.tab[data-tab="${tab}"]`).classList.add("active");
+                    app.setPosition({ height: "auto"});
                 });
                 subTabNav.append(a);
                 const tabContents = document.createElement("div");
@@ -165,7 +167,9 @@ export const injectConfig = {
 
         if (data.tab) {
             const injectTab = this._createTab(html, data.tab.name, data.tab.label, data.tab.icon);
-            injectTab.append(injectHtml);
+            
+            //injectTab.append(injectHtml);
+            Array.from(injectHtml.children).forEach((e) => injectTab.append(e));
             (injectPoint ?? this._getInjectionPoint(app, html, data, object)).after(injectTab);
             if (app._activeTab) html.querySelector(`.item[data-tab="${app._activeTab}"]`)?.click();
         } else {
@@ -182,12 +186,12 @@ export const injectConfig = {
                     e.currentTarget.classList.add("active");
                     html.querySelectorAll(".tab").forEach((i) => i.classList.remove("active"));
                     html.querySelector(`.tab[data-tab="${e.currentTarget.dataset.tab}"]`).classList.add("active");
-                    app.setPosition({ height: "auto", width: data.tab ? app.options.width + tabSize : "auto" });
+                    app.setPosition({ height: "auto" });
                 });
             });
         }
 
-        if (app) app?.setPosition({ height: "auto", width: data.tab ? app.options.width + tabSize : "auto" });
+        if (app) app?.setPosition({ height: "auto"});
         return $(injectHtml);
     },
     quickInject: function quickInject(injectData, data) {
@@ -219,7 +223,7 @@ export const injectConfig = {
         container.innerHTML = tabsInner;
         const inputsContainer = container.querySelector(".tab");
         //move all content of form into tab
-        const form = html.querySelector("form");
+        const form = html.querySelector(".window-content.standard-form");
         Array.from(form.children).forEach((e) => {
             inputsContainer.append(e);
         });
