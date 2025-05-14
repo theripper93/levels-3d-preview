@@ -312,6 +312,8 @@ function getRenderedTemplate(data) {
     delete data.inputs.tab;
     delete data.inputs.moduleId;
     delete data.inputs.inject;
+    delete data.inputs.tabIcon;
+    delete data.inputs.tabLabel;
     const compiledTemplate = _compiledTemplate ?? Handlebars.compile(_template);
     _compiledTemplate = compiledTemplate;
     const innerHtml = compiledTemplate(data, {

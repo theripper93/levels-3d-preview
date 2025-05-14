@@ -673,6 +673,7 @@ export function registerConfigs() {
     });
 
     Hooks.on("renderTokenConfig", (app, html) => {
+        html = $(html);
         if (html.find(`a[data-tab="levels-3d-preview"]>`).length) return;
         const dmSelect = {};
         game.Levels3DPreview.CONFIG.presetMaterials.forEach((m) => {
