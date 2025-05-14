@@ -42,7 +42,7 @@ export function registerConfigs() {
 
     Hooks.on("renderSceneConfig", (app, html) => {
         html = $(html);
-        if (html.find(`a[data-tab="levels-3d-preview"]`).length) return;
+        html.find(`[data-tab="levels-3d-preview"]`).remove();
 
         const data = {
             moduleId: "levels-3d-preview",
@@ -1041,7 +1041,7 @@ export function registerConfigs() {
 
     Hooks.on("renderTileConfig", (app, html) => {
         html = $(html);
-        if (html.find(`a[data-tab="levels-3d-preview"]>`).length) return;
+        html.find(`[data-tab="levels-3d-preview"]`).remove();
         let meshStats;
         const tile3d = game.Levels3DPreview.tiles[app.document.id];
         try {
@@ -1731,7 +1731,7 @@ export function registerConfigs() {
 
     Hooks.on("renderWallConfig", (app, html) => {
         html = $(html);
-        if (html.find(`a[data-tab="levels-3d-preview"]>`).length) return;
+        if (html.find(`[data-tab="levels-3d-preview"]`).length) return;
 
         injectConfig.inject(app, html, {
             moduleId: "levels-3d-preview",
