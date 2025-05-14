@@ -672,7 +672,9 @@ export function registerConfigs() {
         });
     });
 
-    Hooks.on("renderTokenConfig", (app, html) => {
+
+
+    const renderTokenConfig = (app, html) => {
         html = $(html);
         html.find(`[data-tab="levels-3d-preview"]`).remove();
         //if (html.find(`[data-tab="levels-3d-preview"]`).length) return;
@@ -964,7 +966,7 @@ export function registerConfigs() {
 
         const attachmentHeader = html.find(`#attachment-config`);
 
-        const attachments = app.document.getFlag("levels-3d-preview", "attachments") || [];
+        const attachments = app.token.getFlag("levels-3d-preview", "attachments") || [];
 
         //create a 2 column table with filename, delete button and hide button
 
@@ -985,17 +987,17 @@ export function registerConfigs() {
         table.find(".levels-3d-preview-delete-attachment").click((event) => {
             event.preventDefault();
             const index = parseInt(event.currentTarget.dataset.index);
-            const attachments = app.document.getFlag("levels-3d-preview", "attachments") || [];
+            const attachments = app.token.getFlag("levels-3d-preview", "attachments") || [];
             attachments.splice(index, 1);
-            app.document.setFlag("levels-3d-preview", "attachments", attachments);
+            app.token.setFlag("levels-3d-preview", "attachments", attachments);
         });
         //hide button
         table.find(".levels-3d-preview-togglehide-attachment").click((event) => {
             event.preventDefault();
             const index = parseInt(event.currentTarget.dataset.index);
-            const attachments = app.document.getFlag("levels-3d-preview", "attachments") || [];
+            const attachments = app.token.getFlag("levels-3d-preview", "attachments") || [];
             attachments[index].hidden = !attachments[index].hidden;
-            app.document.setFlag("levels-3d-preview", "attachments", attachments);
+            app.token.setFlag("levels-3d-preview", "attachments", attachments);
         });
         if (attachments.length > 0) {
             attachmentHeader.after(table);
@@ -1037,7 +1039,11 @@ export function registerConfigs() {
         });
 
         injected.find("select[name='flags.levels-3d-preview.ParticleType']").trigger("change");
-    });
+    }
+
+    Hooks.on("renderPrototypeTokenConfig", renderTokenConfig)
+
+    Hooks.on("renderTokenConfig", renderTokenConfig);
 
     Hooks.on("renderTileConfig", (app, html) => {
         html = $(html);

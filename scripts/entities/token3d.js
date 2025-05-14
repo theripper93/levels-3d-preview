@@ -1786,25 +1786,27 @@ export class Token3D {
             if (!game.Levels3DPreview?._active) return;
             const token3d = game.Levels3DPreview.tokens[hud.object.id];
             const tokenAnimations = game.Levels3DPreview.CONFIG.tokenAnimations;
-            const height = hud.element.find(`div[data-action="effects"]`).height();
+            const effectsElement = hud.element.querySelector(`[data-palette="effects"]`);
+            const height = effectsElement.offsetHeight;
+
             let taMenuHtml = `<div class="control-icon" data-action="3d-animations">
-    <i class="fas fa-magic" title="${game.i18n.localize(`levels3dpreview.tokenAnimations.title`)}" data-action="3d-animations"></i>
-    <div class="status-effects-3d" style="transform: translateY(${height}px);" >`;
+                <i class="fas fa-magic" title="${game.i18n.localize(`levels3dpreview.tokenAnimations.title`)}" data-action="3d-animations"></i>
+                <div class="status-effects-3d" style="transform: translateY(${height}px);">`;
 
             const shaders = token3d.shaders;
             for (const [shaderId, shader] of Object.entries(game.Levels3DPreview.shaderHandler.shaderLib)) {
-                if (shaderId == "defaults") continue;
-                const $item = $(shader.icon);
-                $item.css({
-                    "font-size": "20px",
-                    "text-align": "center",
-                    "line-height": "24px",
-                });
-                $item.toggleClass("active", shaders[shaderId]?.enabled ? true : false);
-                $item.addClass("effect-control");
-                $item.attr("data-shader-id", shaderId);
-                $item.attr("data-tooltip", game.i18n.localize(`levels3dpreview.shaders.${shaderId}.name`));
-                taMenuHtml += $item[0].outerHTML;
+                if (shaderId === "defaults") continue;
+                const item = document.createElement("i");
+                item.innerHTML = shader.icon;
+                item.className = `effect-control ` + item.querySelector("i")?.className;
+                item.innerHTML = "";
+                item.style.fontSize = "20px";
+                item.style.textAlign = "center";
+                item.style.lineHeight = "24px";
+                item.classList.toggle("active", !!shaders[shaderId]?.enabled);
+                item.dataset.shaderId = shaderId;
+                item.dataset.tooltip = game.i18n.localize(`levels3dpreview.shaders.${shaderId}.name`);
+                taMenuHtml += item.outerHTML;
             }
 
             const itemsCount = (Object.values(game.Levels3DPreview.shaderHandler.shaderLib).length - 1) % 4;
@@ -1819,6 +1821,7 @@ export class Token3D {
                     taMenuHtml += `<i class="${anim.icon ?? "fas fa-magic"} effect-control" data-tooltip="${anim.name}" data-anim-id="${anim.id}"></i>`;
                 }
             }
+
             if (token3d.mixerAnimations?.length > 1) {
                 const currentAnim = token3d.animIndex;
                 for (let i = 0; i < token3d.mixerAnimations.length; i++) {
@@ -1830,39 +1833,47 @@ export class Token3D {
             }
 
             taMenuHtml += `</div></div>`;
-            const $taMenu = $(taMenuHtml);
-            $taMenu.on("click", (e) => {
+            const taMenu = document.createElement("div");
+            taMenu.innerHTML = taMenuHtml;
+            const taMenuElement = taMenu.firstChild;
+
+            taMenuElement.addEventListener("click", (e) => {
                 e.preventDefault();
                 if (e.target.dataset.action !== "3d-animations") return;
-                const $statusEffects = $taMenu.find(".status-effects-3d");
-                $taMenu.toggleClass("active");
-                $statusEffects.toggleClass("active");
-                //refresh active shaders
+                const statusEffects = taMenuElement.querySelector(".status-effects-3d");
+                taMenuElement.classList.toggle("active");
+                statusEffects.classList.toggle("active");
+
+                // Refresh active shaders
                 const currentShaders = game.Levels3DPreview.tokens[hud.object.id].shaders;
-                $taMenu.find(".effect-control").each((i, el) => {
-                    const $el = $(el);
-                    const shaderId = $el.data("shaderId");
+                taMenuElement.querySelectorAll(".effect-control").forEach((el) => {
+                    const shaderId = el.dataset.shaderId;
                     if (!shaderId) return;
-                    $el.toggleClass("active", currentShaders[shaderId]?.enabled ? true : false);
+                    el.classList.toggle("active", !!currentShaders[shaderId]?.enabled);
                 });
             });
-            $taMenu.on("click", ".effect-control", async (e) => {
-                const $effectControl = $(e.currentTarget);
-                const animId = $effectControl.data("animId");
-                const animIndex = $effectControl.data("animIndex");
-                const shaderId = $effectControl.data("shaderId");
+
+            taMenuElement.addEventListener("click", async (e) => {
+                const effectControl = e.target.closest(".effect-control");
+                if (!effectControl) return;
+
+                const animId = effectControl.dataset.animId;
+                const animIndex = effectControl.dataset.animIndex;
+                const shaderId = effectControl.dataset.shaderId;
+
                 if (shaderId) {
-                    await hud.object.document.setFlag("levels-3d-preview", `shaders.${shaderId}.enabled`, !$effectControl.hasClass("active"));
-                    $effectControl.toggleClass("active");
+                    await hud.object.document.setFlag("levels-3d-preview", `shaders.${shaderId}.enabled`, !effectControl.classList.contains("active"));
+                    effectControl.classList.toggle("active");
                 } else if (animId) {
                     game.Levels3DPreview.playTokenAnimation(hud.object.id, animId);
-                } else {
-                    $taMenu.find(".effect-control").removeClass("active");
+                } else if (animIndex !== undefined) {
+                    taMenuElement.querySelectorAll(".effect-control").forEach((el) => el.classList.remove("active"));
                     await hud.object.document.setFlag("levels-3d-preview", "animIndex", animIndex);
-                    $effectControl.addClass("active");
+                    effectControl.classList.add("active");
                 }
             });
-            hud.element.find(`div[data-action="effects"]`).after($taMenu);
+
+            effectsElement.insertAdjacentElement("afterend", taMenuElement);
         });
     }
 }
