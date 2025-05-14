@@ -171,7 +171,12 @@ export const injectConfig = {
             //injectTab.append(injectHtml);
             Array.from(injectHtml.children).forEach((e) => injectTab.append(e));
             (injectPoint ?? this._getInjectionPoint(app, html, data, object)).after(injectTab);
-            if (app._activeTab) html.querySelector(`.item[data-tab="${app._activeTab}"]`)?.click();
+            if (app.tabGroups) {
+                Object.keys(app.tabGroups).forEach((tg) => {
+                    html.querySelectorAll(`.tab[data-group="${tg}"]`).forEach((i) => i.classList.remove("active"));
+                    html.querySelector(`.tab[data-tab="${app.tabGroups[tg]}"]`).classList.add("active");
+                });
+            }
         } else {
             injectPoint.after(injectHtml);
         }

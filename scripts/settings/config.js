@@ -674,7 +674,8 @@ export function registerConfigs() {
 
     Hooks.on("renderTokenConfig", (app, html) => {
         html = $(html);
-        if (html.find(`a[data-tab="levels-3d-preview"]>`).length) return;
+        html.find(`[data-tab="levels-3d-preview"]`).remove();
+        //if (html.find(`[data-tab="levels-3d-preview"]`).length) return;
         const dmSelect = {};
         game.Levels3DPreview.CONFIG.presetMaterials.forEach((m) => {
             dmSelect["preset-" + m.id] = m.name || game.i18n.localize(`levels3dpreview.flags.material.options.presets.${m.id}`);
