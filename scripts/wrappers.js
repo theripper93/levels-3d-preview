@@ -1,5 +1,3 @@
-import { warpgateWrappers } from "./compatibility/warpgate.js";
-
 export function registerWrappers() {
 
     Object.defineProperty(Token.prototype, "object3d", {
@@ -11,17 +9,15 @@ export function registerWrappers() {
 
 
     Hooks.once("ready", async function () {
-        //Register Module Wrappers
-        warpgateWrappers();
 
         //Register Core Wrappers
 
-        //libWrapper.register("levels-3d-preview", "ClientKeybindings.prototype._handleMovement", _handleMovement, "MIXED");
+        libWrapper.register("levels-3d-preview", "foundry.canvas.layers.TokenLayer.prototype.moveMany", moveMany, "MIXED");
         libWrapper.register("levels-3d-preview", "InterfaceCanvasGroup.prototype.createScrollingText", showBouncingText, "WRAPPER");
         libWrapper.register("levels-3d-preview", "TokenLayer.prototype.cycleTokens", cycleTokens, "WRAPPER");
         libWrapper.register("levels-3d-preview", "Canvas.prototype.animatePan", animatePan, "WRAPPER");
         libWrapper.register("levels-3d-preview", "FogManager.prototype.save", updateFog, "WRAPPER");
-        libWrapper.register("levels-3d-preview", "PlaceablesLayer.prototype.pasteObjects", pasteObjects, "WRAPPER");
+        libWrapper.register("levels-3d-preview", "foundry.canvas.layers.PlaceablesLayer.prototype.pasteObjects", pasteObjects, "WRAPPER");
         libWrapper.register("levels-3d-preview", "ClockwiseSweepPolygon.prototype._compute", computePolygonDispatch, "MIXED");
         libWrapper.register("levels-3d-preview", "Scenes.prototype.preload", preload3D, "OVERRIDE");
         libWrapper.register("levels-3d-preview", "canvas.app.renderer.events.pointer.getLocalPosition", pointerPositionWrapper, "MIXED");
@@ -296,17 +292,33 @@ export function registerWrappers() {
             } else return wrapped(...args);
         }
 
-        function _handleMovement(wrapped, ...args) {
-            const object3dSight = canvas.scene.getFlag("levels-3d-preview", "object3dSight") ?? false;
-            const layer = args[1];
-            if (!game.Levels3DPreview?._active || !canvas.tokens.controlled[0]) return wrapped(...args);
-            const positions = handleArrowKeys(this.moveKeys);
+        async function moveMany(wrapped, ...args) {
+            if (!game.Levels3DPreview?._active || args[0].rotate) return wrapped(...args);
+            let {dx, dy, dz, rotate, ids, includeLocked} = args[0];
+            if ( ![-1, 0, 1].includes(dx) ) throw new Error("Invalid argument: dx must be -1, 0, or 1");
+            if ( ![-1, 0, 1].includes(dy) ) throw new Error("Invalid argument: dy must be -1, 0, or 1");
+            if ( ![-1, 0, 1].includes(dz) ) throw new Error("Invalid argument: dz must be -1, 0, or 1");
+            if ( !dx && !dy && !dz ) return [];
+            if ( game.paused && !game.user.isGM ) {
+            ui.notifications.warn("GAME.PausedWarning", {localize: true});
+            return [];
+            }
+
+            // Identify the objects requested for movement
+            const objects = this._getMovableObjects(ids, includeLocked);
+            if ( !objects.length ) return objects;
+
+            // Conceal any active HUD
+            this.hud?.close();
+            let [updateData, updateOptions={}] = this._prepareKeyboardMovementUpdates(objects, dx, dy, dz);
+            const positions = handleArrowKeys({dx,dy,dz});
+
             if (!positions) return;
-            let dx = positions.x;
-            let dy = positions.y;
-            const factor = game.Levels3DPreview.factor;
-            if (canvas.activeLayer.options.objectClass.embeddedName == "Token" && game.Levels3DPreview?.object3dSight) {
-                for (let token of canvas.tokens.controlled) {
+            dx = positions.x;
+            dy = positions.y;
+
+            if (game.Levels3DPreview?.object3dSight) {
+                for (const token of objects) {
                     const oldPos = {
                         x: token.center.x,
                         y: token.center.y,
@@ -321,66 +333,56 @@ export function registerWrappers() {
                     if (collision) {
                         dx = 0;
                         dy = 0;
-                        return layer.moveMany({ dx, dy, rotate: false });
                     }
                 }
             }
-            if (canvas.activeLayer.options.objectClass.embeddedName == "Token") {
-                let updates = [];
-                for (let token of canvas.tokens.controlled) {
-                    const oldPos = {
-                        x: token.center.x,
-                        y: token.center.y,
-                        z: token.losHeight ?? token.document.elevation,
-                    };
-                    const newPos = {
-                        x: oldPos.x + dx * canvas.grid.size,
-                        y: oldPos.y + dy * canvas.grid.size,
-                        z: token.losHeight ?? token.document.elevation,
-                    };
-                    const collisionPos = {
-                        x: newPos.x,
-                        y: newPos.y,
-                        z: -100000,
-                    };
-                    const collision = token.document.getFlag("levels-3d-preview", "wasFreeMode") ? null : game.Levels3DPreview.interactionManager.computeSightCollision(newPos, collisionPos, "collision");
-                    let targetElevation = token.document.elevation;
-                    if (collision) {
-                        let point2d = game.Levels3DPreview.helpers.ruler3d.pos3DToCanvas(collision);
-                        targetElevation = point2d.z.toFixed(2);
-                    }
-                    const movementCollision = game.Levels3DPreview.interactionManager.computeSightCollision(oldPos, newPos, "collision");
+            for (const token of objects) {
+                const oldPos = {
+                    x: token.center.x,
+                    y: token.center.y,
+                    z: token.losHeight ?? token.document.elevation,
+                };
+                const newPos = {
+                    x: oldPos.x + dx * canvas.grid.size,
+                    y: oldPos.y + dy * canvas.grid.size,
+                    z: token.losHeight ?? token.document.elevation,
+                };
+                const collisionPos = {
+                    x: newPos.x,
+                    y: newPos.y,
+                    z: -100000,
+                };
+                const collision = token.document.getFlag("levels-3d-preview", "wasFreeMode") ? null : game.Levels3DPreview.interactionManager.computeSightCollision(newPos, collisionPos, "collision");
+                let targetElevation = token.document.elevation;
+                if (collision) {
+                    let point2d = game.Levels3DPreview.helpers.ruler3d.pos3DToCanvas(collision);
+                    targetElevation = point2d.z.toFixed(2);
+                }
+                const movementCollision = game.Levels3DPreview.interactionManager.computeSightCollision(oldPos, newPos, "collision");
 
-                    if (!movementCollision)
-                        updates.push({
-                            _id: token.id,
-                            x: token.document.x + dx * canvas.grid.size,
-                            y: token.document.y + dy * canvas.grid.size,
-                            elevation: targetElevation,
-                        });
+                if (!movementCollision){
+                    const waypoint = updateOptions.movement[token.id].waypoints[0];
+                    waypoint.x = token.document.x + dx * canvas.grid.size;
+                    waypoint.y = token.document.y + dy * canvas.grid.size;
+                    waypoint.elevation = parseFloat(targetElevation);
+                }else{
+                    delete updateOptions.movement[token.id];
+                    updateData = updateData.filter(e => e._id !== token.id);
                 }
-                canvas.scene.updateEmbeddedDocuments("Token", updates);
-            } else {
-                layer.moveMany({ dx, dy, rotate: false });
+            
+            await canvas.scene.updateEmbeddedDocuments(this.constructor.documentName, updateData, updateOptions);
             }
+            return objects;
         }
 
-        function handleArrowKeys(directions) {
-            if (!directions.size || (!game.user.isGM && game.paused)) return;
+        function handleArrowKeys(originalDeltas) {
+
+            const {dx, dy} = originalDeltas;
 
             const cPos = game.Levels3DPreview.camera.position;
             const cTar = game.Levels3DPreview.controls.target;
 
             const angle = Math.atan2(cTar.z - cPos.z, cTar.x - cPos.x);
-
-            let dx = 0;
-            let dy = 0;
-
-            // Assign movement offsets
-            if (directions.has("left")) dx -= 1;
-            if (directions.has("up")) dy -= 1;
-            if (directions.has("right")) dx += 1;
-            if (directions.has("down")) dy += 1;
 
             // Calculate movement vector
             const d1 = {
