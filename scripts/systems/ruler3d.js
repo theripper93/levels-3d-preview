@@ -41,12 +41,12 @@ export class Ruler3D {
     }
 
     drawTemplate() {
-        if (ui.controls.activeTool === "select" || ui.controls.activeTool === "tile3dPolygon" || !this.allowedRulerDrag.some((a) => a === canvas.activeLayer.options.objectClass.embeddedName)) return;
+        if (ui.controls.tool.name === "select" || ui.controls.tool.name === "tile3dPolygon" || !this.allowedRulerDrag.some((a) => a === canvas.activeLayer.options.objectClass.embeddedName)) return;
         if (this.template?.isPreview) return;
         if (this.allowedRulerDrag.some((a) => a === this._object?.userData?.entity3D?.placeable?.document?.documentName)) return;
         this.template?.destroy();
         const pos = Ruler3D.useSnapped() ? Ruler3D.snapped3DPosition(this._object.position) : this._object.position;
-        const template = new Template3D({ t: ui.controls.activeTool }, this._origin, pos);
+        const template = new Template3D({ t: ui.controls.tool.name }, this._origin, pos);
         this.template = template;
     }
 
@@ -423,10 +423,11 @@ export class Ruler3D {
 
     async _animateSegment(token, destination) {
         await token.document.update(destination);
-        await sleep(100);
+        return token.movementAnimationPromise;
+        /*await sleep(100);
         const anim = CanvasAnimation.getAnimation(token.animationName);
         if (!anim) return;
-        return anim.promise;
+        return anim.promise;*/
     }
 
     static position3dtoScreen(position) {
@@ -466,7 +467,7 @@ export class Ruler3D {
     static posCanvasTo3d(position) {
         return new THREE.Vector3(position.x / factor, (position.z * canvas.scene.dimensions.size) / (canvas.scene.dimensions.distance * factor), position.y / factor);
     }
-
+    
     static unitsToPixels(units) {
         return (units * canvas.scene.dimensions.size) / (canvas.scene.dimensions.distance * factor);
     }

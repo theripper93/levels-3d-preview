@@ -314,19 +314,19 @@ export class InteractionManager {
     }
 
     isRulerDrag(event, intersectData) {
-        if (ui.controls.activeTool == "ruler") return true;
-        if (this.activeLayerEntity === "Tile" && (ui.controls.activeTool === "tile" || ui.controls.activeTool === "tile3dPolygon")) return true;
+        if (ui.controls.tool.name == "ruler") return true;
+        if (this.activeLayerEntity === "Tile" && (ui.controls.tool.name === "tile" || ui.controls.tool.name === "tile3dPolygon")) return true;
         if (this.currentHover?.embeddedName === this.activeLayerEntity) return false;
         if (this.isNoSelectDrag()) return false;
-        if (ui.controls.activeTool === "select" && ui.controls.activeTool != "ruler") return false;
+        if (ui.controls.tool.name === "select" && ui.controls.tool.name != "ruler") return false;
         if (!ui.controls.isRuler && !this.allowedRulerDrag.some((a) => a === this.activeLayerEntity)) return false;
         if (!this.mouseIntersection3DCollision({ x: event.clientX, y: event.clientY })?.length) return false;
-        if (this.activeLayerEntity === "Tile" && ui.controls.activeTool != "tile") return false;
+        if (this.activeLayerEntity === "Tile" && ui.controls.tool.name != "tile") return false;
         return true;
     }
 
     isNoSelectDrag() {
-        const currentControl = ui.controls.controls[ui.controls.activeControl].tools.select
+        const currentControl = ui.controls.controls[ui.controls.control.name].tools.select
         if (!currentControl) return false;
         return this.currentHover?.embeddedName === this.activeLayerEntity;
     }
@@ -393,7 +393,7 @@ export class InteractionManager {
 
     get canDragStart() {
         if (!this.altControls) return false;
-        if (ui.controls.activeTool !== "select") return false;
+        if (ui.controls.tool.name !== "select") return false;
         if (this.activeLayerEntity === "Tile") {
             return this._gizmoEnabled;
         } else {
@@ -462,7 +462,7 @@ export class InteractionManager {
             originalIntersect: event.originalIntersect,
             intersectData: intersectData.intersectData,
         };
-        if (event.which === 3 && (this.draggable?.userData?.entity3D?.token || ui.controls.activeTool === "tile3dPolygon")) {
+        if (event.which === 3 && (this.draggable?.userData?.entity3D?.token || ui.controls.tool.name === "tile3dPolygon")) {
             this._parent.ruler.addSegment();
         } else {
             if (this.clicks === 1) {
@@ -536,7 +536,7 @@ export class InteractionManager {
                 this._parent.ruler.addSegment();
                 entity3D.setPosition(false, true);
                 this._parent.ruler.executeAllMovement(entity3D.token);
-            } else if (ui.controls.activeTool === "tile3dPolygon") {
+            } else if (ui.controls.tool.name === "tile3dPolygon") {
                 this._parent.ruler.addSegment();
                 this._parent.ruler.createTile();
             } else {
@@ -1077,7 +1077,7 @@ export class InteractionManager {
         if (intersects.length > 0) {
             const entity3D = this.draggable.userData.entity3D;
             const intersect = intersects[0];
-            if (this._parent.CONFIG.UI.windows.RoomBuilder && ui.controls.activeTool == "tile") {
+            if (this._parent.CONFIG.UI.windows.RoomBuilder && ui.controls.tool.name == "tile") {
                 intersect.point.y = this.ruler.origin.y;
             }
             const distance = target.position.distanceTo(intersect.point);

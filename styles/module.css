@@ -28,7 +28,7 @@
 
 #levels3d-ruler-text.ruler::before {
     transform: scale(0.6) translateY(-1rem);
-    font-family: "Font Awesome 5 Free"; font-weight: 900; content: "\f0d7";
+    font-family: "FontAwesome"; font-weight: 900; content: "\f0d7";
 }
 
 /*#levels3d-ruler-text.rangefinder {
@@ -104,7 +104,7 @@
     opacity: 0.3;
     pointer-events: none;
     transition: opacity 0.5s ease-in-out;
-    text-shadow: var(--color-shadow-highlight) 0 0 5px;
+    text-shadow: var(--color-warm-2) 0 0 5px;
 }
 
 #clip-navigation .clip-navigation-range-label.level-active{
@@ -112,14 +112,14 @@
 }
 
 #clip-navigation i.clip-navigation-enabled, .build-panel-button.clip-navigation-enabled{
-    color: var(--color-shadow-highlight);
+    color: var(--color-warm-2);
 }
 
 #levels-3d-preview-select-box{
     position: absolute;
     z-index: 100;
     background-color: rgba(0, 0, 0, 0);
-    border: 1px solid var(--color-border-highlight);
+    border: 1px solid var(--color-warm-1);
 }
 
 #hud.levels-3d-preview-hud{
@@ -136,11 +136,11 @@
 }
 
 #levels-3d-preview-shader-config .shader-tab-enabled i, .autosave.active{
-    color: var(--color-border-highlight);
+    color: var(--color-warm-1);
 }
 
 #levels-3d-preview-shader-config .shader-tab-enabled{
-    border-bottom: 1.5px solid var(--color-border-highlight);
+    border-bottom: 1.5px solid var(--color-warm-1);
 }
 
 #levels-3d-preview-shader-config .sheet-tabs.tabs{

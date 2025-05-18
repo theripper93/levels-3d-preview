@@ -649,7 +649,8 @@ export class Token3D {
             y: y,
             elevation: z,
         };
-        if (!game.user.isGM) {
+        const unconstrainedMovement = game.user.isGM && ui.controls.controls.tokens.tools.unconstrainedMovement.active;
+        if (!game.user.isGM || !unconstrainedMovement) {
             if (game.paused) return false;
             const center = canvas.grid.getCenter(x, y);
             const geometryCollisions = game.Levels3DPreview?.object3dSight;
