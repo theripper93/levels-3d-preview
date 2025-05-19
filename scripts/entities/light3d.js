@@ -30,6 +30,7 @@ export class Light3D {
         this.light3d.shadow.camera.near = 0.001;
         this.light3d.shadow.mapSize.width = 256 * shadowRes;
         this.light3d.shadow.mapSize.height = 256 * shadowRes;
+        this.light3d.penumbra = 1;
         this.refresh();
         if (!this.isToken) {
             this.mesh.add(this.light3d);
@@ -47,7 +48,7 @@ export class Light3D {
         } else if (!isSpotLight && cache.point.length) {
             light = cache.point.pop();
         } else {
-            light = isSpotLight ? new THREE.SpotLight() : new THREE.PointLight();
+            light = isSpotLight ? new THREE.SpotLight(0xffffff, 0.0001, 0.0001, 1, 1, 2) : new THREE.PointLight();
         }
         return light;
     }

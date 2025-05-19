@@ -578,7 +578,7 @@ class Levels3DPreview {
         }
 
         for (let i = 0; i < cacheSize / 2; i++) {
-            const spotLight = new THREE.SpotLight(0xffffff, 0.0001, 0.0001, 0.5, 0.5, 2);
+            const spotLight = new THREE.SpotLight(0xffffff, 0.0001, 0.0001, 1, 1, 2);
             spotLight.position.set(-100, -100, -100);
             this.lights.lightCache.spot.push(spotLight);
             this.scene.add(spotLight);
