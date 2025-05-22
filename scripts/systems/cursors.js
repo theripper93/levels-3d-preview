@@ -13,15 +13,11 @@ export class Cursors3D {
     }
 
     update() {
-        return;
-        const cursors = canvas.controls._cursors;
-
-        for (let [k, v] of Object.entries(cursors)) {
-            this.updateCursor(k, v);
-        }
+        game.users.forEach(u => this.updateCursor(u.id, canvas.controls.getCursorForUser(u.id)))
     }
 
     updateCursor(uId, cursor) {
+        if(!cursor) return;
         if (!this._cursors[uId]) {
             this.createCursor(uId, cursor);
         }
