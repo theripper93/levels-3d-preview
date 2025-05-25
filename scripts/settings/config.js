@@ -22,22 +22,24 @@ export function registerConfigs() {
                     },
                 }
             
-
-        if (game.Levels3DPreview?._active && game.user.isGM) {
             const drawPolygonTool = {
                 name: "tile3dPolygon",
                 title: game.i18n.localize("levels3dpreview.controls.tile3dPolygon"),
                 icon: "fa-solid fa-draw-polygon",
-                visible: true,
-                /*onClick: () => {
-                    game.Levels3DPreview.UTILS.extractPointsFromDrawing();
-                },*/
+                toggle: true,
+                get visible(){
+                    return !!(game.Levels3DPreview?._active && game.user.isGM)
+                }
             };
             buttons.tiles.tools.tile3dPolygon = drawPolygonTool;
+            const oldOnChange = buttons.tiles.tools.browse.onChange;
             buttons.tiles.tools.browse.onChange = () => {
-                game.Levels3DPreview.open3DFilePicker();
+                if(game.Levels3DPreview?._active && game.user.isGM){
+                    game.Levels3DPreview.open3DFilePicker();
+                }else{
+                    return oldOnChange();
+                }
             };
-        }
     });
 
     Hooks.on("renderSceneConfig", (app, html) => {

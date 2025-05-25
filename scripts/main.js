@@ -658,6 +658,7 @@ class Levels3DPreview {
             this.composer.addPass(this.bokeh);
         }
         this._active = true;
+        ui.controls.render({force:true, reset: true});
         this.particleSystem?.destroy();
         if (this.particleSystem) {
             this.particleSystem._parent = this;
@@ -1735,6 +1736,7 @@ class Levels3DPreview {
         $(".levels-3d-preview-loading-screen").hide();
         this.setFilters(false);
         this._active = false;
+        ui.controls.render({force:true, reset: true});
         this.ClipNavigation?.close();
         $("#hud").removeClass("levels-3d-preview-hud");
         $("#levels3d").remove();
@@ -1874,6 +1876,7 @@ Hooks.on("updateScene", (scene, updates) => {
     }
     const flags = updates.flags ? updates.flags["levels-3d-preview"] : undefined;
     if (!flags) return;
+    ui.controls.render({force:true, reset: true});
     if ("object3dSight" in flags) {
         game.Levels3DPreview.reload();
         return;
