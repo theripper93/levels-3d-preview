@@ -442,6 +442,7 @@ export class Ruler3D {
     }
 
     static centerElement(element, position, ontop = false) {
+        if(!element) return;
         //get distance between element and camera
         element = element.jquery ? element[0] : element;
         let cachedFontSize = element.dataset.cachedSize;

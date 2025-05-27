@@ -1,4 +1,4 @@
-<form class="flexcol" autocomplete="off">
+<div class="flexcol" autocomplete="off">
     <nav class="sheet-tabs tabs" data-group="sections">
         {{#each shaders}}
             <a class="item {{#if this.isEnabled}}shader-tab-enabled{{/if}}" data-tab="{{@key}}">{{{this.icon}}} {{this.title}}</a>
@@ -6,9 +6,7 @@
     </nav>
 
 
-    <section id="config-tabs" class="content">
-        <hr>
-
+    <section id="config-tabs" class="content scrollable" style="max-height: 50vh;">
         {{#each shaders}}
             <div class="tab" data-tab="{{@key}}" data-group="sections">
                 <p class="notes">{{#if this.isSlow}}<i id="levels-3d-preview-slow-shader" data-tooltip="{{localize "levels3dpreview.shaders.config.slow"}}" class="fas fa-exclamation-triangle"></i> {{/if}}{{this.description}}</p>
@@ -43,7 +41,7 @@
     </section>
 
 
-    <footer class="sheet-footer flexrow">
+    <footer class="form-footer flexrow">
         <button type="submit" name="submit">
             <i class="fas fa-save"></i> {{localize "levels3dpreview.shaders.config.save"}}
         </button>

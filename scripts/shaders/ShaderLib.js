@@ -2,26 +2,48 @@ import * as THREE from "../lib/three.module.js";
 import { factor } from "../main.js";
 import { noiseShaders } from "./noise.js";
 
-export class ShaderConfig extends FormApplication {
+export class ShaderConfig extends foundry.applications.api.HandlebarsApplicationMixin(foundry.applications.api.ApplicationV2) {
     constructor(document) {
         super();
         this.document = document;
         this.autoSave = game.settings.get("levels-3d-preview", "shaderAutoSave");
     }
 
-    static get defaultOptions() {
-        return foundry.utils.mergeObject(super.defaultOptions, {
-            title: game.i18n.localize("levels3dpreview.shaders.config.title"),
-            id: `levels-3d-preview-shader-config`,
-            template: `modules/levels-3d-preview/templates/ShaderConfig.hbs`,
+    static DEFAULT_OPTIONS = {
+        id: "levels-3d-preview-shader-config",
+        position: {
             width: 335,
+        },
+        window: {
+            title: "levels3dpreview.shaders.config.title",
+            contentClasses: ["standard-form"]
+        },
+        tag: "form",
+        form: {
             closeOnSubmit: true,
-            tabs: [{ navSelector: ".tabs", contentSelector: ".content" }],
-            filepickers: [],
-        });
+            handler: ShaderConfig.#onSubmit
+        },
     }
 
-    getData() {
+    static PARTS = {
+        shaderConfig: {
+            template: "modules/levels-3d-preview/templates/ShaderConfig.hbs"
+        }
+    }
+
+    static #onSubmit(event, form, formData) {
+        const data = foundry.utils.expandObject(formData.object);
+        return this.document.setFlag("levels-3d-preview", "shaders", data);
+    }
+
+    _onSubmit(event, options) {
+        event.preventDefault();
+        const formData = new FormDataExtended(this.form);
+        const data = foundry.utils.expandObject(formData.object);
+        return this.document.setFlag("levels-3d-preview", "shaders", data)
+    }
+
+    _prepareContext() {
         const shaderData = this.document?.getFlag("levels-3d-preview", "shaders") ?? {};
         const finalData = {};
         for (const [k, v] of Object.entries(game.Levels3DPreview.CONFIG.shaders.shaders)) {
@@ -59,99 +81,135 @@ export class ShaderConfig extends FormApplication {
                 finalData[k][k2] = uniData;
             }
         }
-        return { shaders: finalData };
+        return {
+            shaders: finalData,
+            buttons: [{
+                type: "submit",
+                label: "Submit",
+                icon: "fas fa-save"
+            }]
+        };
     }
 
-    _getHeaderButtons(...args) {
-        const buttons = super._getHeaderButtons(...args);
-        buttons.unshift({
-            label: game.i18n.localize("levels3dpreview.shaders.config.autosave"),
-            class: `autosave`,
-            icon: "far fa-save",
-            onclick: (e) => {
-                this.autoSave = !this.autoSave;
-                game.settings.set("levels-3d-preview", "shaderAutoSave", this.autoSave);
-                $(e.currentTarget).toggleClass("active");
-            },
+    async _renderFrame(options) {
+        const frame = await super._renderFrame(options);
+        const buttonHtml = `<button type="button" class="header-control autosave icon fa-solid fa-save"
+              data-tooltip="levels3dpreview.shaders.config.autosave" aria-label="levels3dpreview.shaders.config.autosave"
+              data-action="toggleAutosave"></button>`
+        //insert before the close button
+        const closeButton = frame.querySelector(`[data-action="close"]`);
+        if (closeButton) {
+            closeButton.insertAdjacentHTML("beforebegin", buttonHtml);
+        }
+        frame.querySelector(`button.autosave`)?.addEventListener("click", (event) => {
+            this.autoSave = !this.autoSave;
+            game.settings.set("levels-3d-preview", "shaderAutoSave", this.autoSave);
+            event.currentTarget.classList.toggle("active");
+            debugger
         });
-        return buttons;
+        return frame;
     }
 
-    async activateListeners(html) {
-        super.activateListeners(html);
-        html[0].closest("#levels-3d-preview-shader-config").querySelector(".autosave").classList.toggle("active", this.autoSave);
-        html.on("click", ".item", (e) => {
-            this.setPosition({ height: "auto" });
-        });
-        html.on("click", "#apply", (e) => {
+    _onRender(context, options) {
+        const autosaveBtn = this.element.closest("#levels-3d-preview-shader-config").querySelector(".autosave");
+        autosaveBtn?.classList.toggle("active", this.autoSave);
+
+        this.element.querySelector("#apply")?.addEventListener("click", (e) => {
             e.preventDefault();
             this._onSubmit(e, { preventClose: true, preventRender: true });
         });
-        html.on("click", "#tomacro", (e) => {
-            e.preventDefault();
-            Dialog.prompt({
-                title: game.i18n.localize("levels3dpreview.shaders.config.macro.title"),
-                content: "",
-                callback: (html) => {
-                    const macroName = html.find("#macro-name").val();
-                    const macroEnabled = html.find("#macro-enabled").prop("checked");
-                    const macroPlayers = html.find("#macro-players").prop("checked");
-                    let macroData = foundry.utils.expandObject(this._getSubmitData());
-                    if (macroEnabled) {
-                        for (const [k, v] of Object.entries(macroData)) {
-                            if (!v.enabled) delete macroData[k];
+
+            this.element.addEventListener("change", (e) => {
+                if(this.autoSave) this.debouncedSubmit(e, { preventClose: true, preventRender: true });
+            });
+
+        // Macro button handler  
+        this.element.querySelector("#tomacro")?.addEventListener("click", this.#handleMacroCreation.bind(this));
+        this.element.querySelectorAll(".tabs .item").forEach(tab => {
+            tab.addEventListener("click", (e) => {
+                e.preventDefault();
+                const tabId = tab.dataset.tab;
+                this.setTab(tabId);
+            });
+        })
+    }
+
+    setTab(tabId) {
+        this.element.querySelectorAll(".tab").forEach(t => {
+            t.classList.toggle("active", t.dataset.tab === tabId);
+        })
+        this.setPosition({ height: "auto" });
+    }
+
+    async #handleMacroCreation(e) {
+        e.preventDefault();
+        const dialog = await Dialog.prompt({
+            title: game.i18n.localize("levels3dpreview.shaders.config.macro.title"),
+            content: this.#getMacroDialogContent(),
+            callback: (html) => this.#createMacro(html),
+            render: (html) => {
+                const dialogContent = this.#getMacroDialogContent();
+                html[0].insertAdjacentHTML('beforeend', dialogContent);
+            }
+        });
+    }
+
+    #getMacroDialogContent() {
+        return `
+            <div class="form-group" style="display: grid;grid-template-columns: 1fr 1fr;align-items: center;padding-bottom: 8px;">
+                <label>${game.i18n.localize("levels3dpreview.shaders.config.macro.content")}</label>
+                <input type="text" id="macro-name" value="Shader Macro" placeholder="">
+            </div>
+            <div class="form-group" style="display: grid;grid-template-columns: 1fr 1fr;align-items: center;padding-bottom: 8px;">
+                <label>${game.i18n.localize("levels3dpreview.shaders.config.macro.enabled")}</label>
+                <input style="justify-self: end;" type="checkbox" id="macro-enabled" checked>
+            </div>
+            <div class="form-group" style="display: grid;grid-template-columns: 1fr 1fr;align-items: center;padding-bottom: 8px;">
+                <label>${game.i18n.localize("levels3dpreview.shaders.config.macro.players")}</label>
+                <input style="justify-self: end;" type="checkbox" id="macro-players">
+            </div>
+        `;
+    }
+
+    #createMacro(html) {
+        const macroName = html.querySelector("#macro-name").value;
+        const macroEnabled = html.querySelector("#macro-enabled").checked;
+        const macroPlayers = html.querySelector("#macro-players").checked;
+        let macroData = foundry.utils.expandObject(this._getSubmitData());
+        if (macroEnabled) {
+            for (const [k, v] of Object.entries(macroData)) {
+                if (!v.enabled) delete macroData[k];
+            }
+        }
+        const shaderData = JSON.stringify(macroData);
+        const macroContent = `
+            if(!canvas.activeLayer.controlled.length) return ui.notifications.error("No object selected, please select at least one object.");
+            const updates = [];
+            const shaderData = ${shaderData};
+            canvas.activeLayer.controlled.forEach(obj => {
+                updates.push({
+                    _id: obj.id,
+                    flags: {
+                        "levels-3d-preview": {
+                            "shaders": shaderData
                         }
                     }
-                    const shaderData = JSON.stringify(macroData);
-                    const macroContent = `
-                    if(!canvas.activeLayer.controlled.length) return ui.notifications.error("No object selected, please select at least one object.");
-                    const updates = [];
-                    const shaderData = ${shaderData};
-                    canvas.activeLayer.controlled.forEach(obj => {
-                        updates.push({
-                            _id: obj.id,
-                            flags: {
-                                "levels-3d-preview": {
-                                    "shaders": shaderData
-                                }
-                            }
-                        });
-                    })
-                    canvas.scene.updateEmbeddedDocuments(canvas.activeLayer.options.objectClass.embeddedName, updates);
-                    `;
-                    Macro.create({
-                        command: macroContent,
-                        img: "icons/svg/acid.svg",
-                        type: "script",
-                        name: macroName,
-                        ownership: {
-                            default: macroPlayers ? 2 : 0,
-                        },
-                    });
-                    ui.notifications.notify(game.i18n.localize("levels3dpreview.shaders.config.macro.created").replace("%s", macroName));
-                },
-                render: (html) => {
-                    const input = `
-                    <div class="form-group" style="display: grid;grid-template-columns: 1fr 1fr;align-items: center;padding-bottom: 8px;">
-                        <label>${game.i18n.localize("levels3dpreview.shaders.config.macro.content")}</label>
-                        <input type="text" id="macro-name" value="Shader Macro" placeholder="">
-                    </div>
-                    <div class="form-group" style="display: grid;grid-template-columns: 1fr 1fr;align-items: center;padding-bottom: 8px;">
-                        <label>${game.i18n.localize("levels3dpreview.shaders.config.macro.enabled")}</label>
-                            <input style="justify-self: end;" type="checkbox" id="macro-enabled" checked>
-                    </div>
-                    <div class="form-group" style="display: grid;grid-template-columns: 1fr 1fr;align-items: center;padding-bottom: 8px;">
-                    <label>${game.i18n.localize("levels3dpreview.shaders.config.macro.players")}</label>
-                        <input style="justify-self: end;" type="checkbox" id="macro-players">
-                    </div>
-                  `;
-                    $(html[0]).append(input);
-                },
-            });
+                });
+            })
+            canvas.scene.updateEmbeddedDocuments(canvas.activeLayer.options.objectClass.embeddedName, updates);
+        `;
+
+        Macro.create({
+            command: macroContent,
+            img: "icons/svg/acid.svg",
+            type: "script",
+            name: macroName,
+            ownership: {
+                default: macroPlayers ? 2 : 0,
+            },
         });
-        html.on("change", (e) => {
-            if (this.autoSave) this.debouncedSubmit(e, { preventClose: true, preventRender: true });
-        });
+
+        ui.notifications.notify(game.i18n.localize("levels3dpreview.shaders.config.macro.created").replace("%s", macroName));
     }
 
     debouncedSubmit = foundry.utils.debounce(this._onSubmit.bind(this), 400);
@@ -160,30 +218,29 @@ export class ShaderConfig extends FormApplication {
         super.setPosition(...args);
         if (!this.activatedInitialTab) {
             this.activatedInitialTab = true;
-            const tabId = $(this.element).find(".shader-tab-enabled").first().data("tab");
-            if (tabId) this.activateTab(tabId);
+            const tabId = this.element.querySelector(".shader-tab-enabled")?.dataset.tab;
+            if (tabId) this.setTab(tabId);
             this.setPosition({ height: "auto" });
         }
     }
 
-    async _updateObject(event, formData) {
-        formData = foundry.utils.expandObject(formData);
-        return await this.document.setFlag("levels-3d-preview", "shaders", formData);
-    }
-
     static injectButton(app, html, element) {
-        $(element).after(`
-        <div class="form-group submenu">
-            <label>${game.i18n.localize("levels3dpreview.shaders.config.label")}</label>
-            <button type="button" data-key="shader-config">
-                <i class="fas fa-magic"></i>
-                <label>${game.i18n.localize("levels3dpreview.shaders.config.button")}</label>
-            </button>
-            <p class="notes">${game.i18n.localize("levels3dpreview.shaders.config.notes")}</p>
-        </div>`);
-        html.on("click", "button[data-key='shader-config']", (e) => {
+        html = html.jquery ? html[0] : html;
+        element = element.jquery ? element[0] : element;
+        const buttonHtml = `
+            <div class="form-group submenu">
+                <label>${game.i18n.localize("levels3dpreview.shaders.config.label")}</label>
+                <button type="button" data-action="shader-config">
+                    <i class="fas fa-magic"></i>
+                    <label>${game.i18n.localize("levels3dpreview.shaders.config.button")}</label>
+                </button>
+                <p class="hint">${game.i18n.localize("levels3dpreview.shaders.config.notes")}</p>
+            </div>`;
+
+        element.insertAdjacentHTML('afterend', buttonHtml);
+        html.querySelector('button[data-action="shader-config"]')?.addEventListener("click", (e) => {
             e.preventDefault();
-            new ShaderConfig(app.object).render(true);
+            new ShaderConfig(app.token ?? app.document).render(true);
         });
     }
 }
@@ -2323,7 +2380,7 @@ function getYpos(entity3D) {
 #define STANDARD
 varying vec3 vViewPosition;
 #ifdef USE_TRANSMISSION
-	varying vec3 vWorldPosition;
+    varying vec3 vWorldPosition;
 #endif
 #include <common>
 #include <uv_pars_vertex>
@@ -2338,28 +2395,28 @@ varying vec3 vViewPosition;
 #include <logdepthbuf_pars_vertex>
 #include <clipping_planes_pars_vertex>
 void main() {
-	#include <uv_vertex>
-	#include <uv2_vertex>
-	#include <color_vertex>
-	#include <beginnormal_vertex>
-	#include <morphnormal_vertex>
-	#include <skinbase_vertex>
-	#include <skinnormal_vertex>
-	#include <defaultnormal_vertex>
-	#include <normal_vertex>
-	#include <begin_vertex>
-	#include <morphtarget_vertex>
-	#include <skinning_vertex>
-	#include <displacementmap_vertex>
-	#include <project_vertex>
-	#include <logdepthbuf_vertex>
-	#include <clipping_planes_vertex>
-	vViewPosition = - mvPosition.xyz;
-	#include <worldpos_vertex>
-	#include <shadowmap_vertex>
-	#include <fog_vertex>
+    #include <uv_vertex>
+    #include <uv2_vertex>
+    #include <color_vertex>
+    #include <beginnormal_vertex>
+    #include <morphnormal_vertex>
+    #include <skinbase_vertex>
+    #include <skinnormal_vertex>
+    #include <defaultnormal_vertex>
+    #include <normal_vertex>
+    #include <begin_vertex>
+    #include <morphtarget_vertex>
+    #include <skinning_vertex>
+    #include <displacementmap_vertex>
+    #include <project_vertex>
+    #include <logdepthbuf_vertex>
+    #include <clipping_planes_vertex>
+    vViewPosition = - mvPosition.xyz;
+    #include <worldpos_vertex>
+    #include <shadowmap_vertex>
+    #include <fog_vertex>
 #ifdef USE_TRANSMISSION
-	vWorldPosition = worldPosition.xyz;
+    vWorldPosition = worldPosition.xyz;
 #endif
 }
 */

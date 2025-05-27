@@ -144,10 +144,9 @@
 }
 
 #levels-3d-preview-shader-config .sheet-tabs.tabs{
-    flex-wrap: wrap;
-    justify-content: space-around;
-    column-gap: 1.6rem;
-    row-gap: 0.5rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 0.3rem;
 }
 
 #levels-3d-preview-slow-shader{
