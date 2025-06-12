@@ -28,7 +28,8 @@
 
 #levels3d-ruler-text.ruler::before {
     transform: scale(0.6) translateY(-1rem);
-    font-family: "FontAwesome"; font-weight: 900; content: "\f0d7";
+    font-family: var(--font-awesome);
+     font-weight: 900; content: "\f0d7";
 }
 
 /*#levels3d-ruler-text.rangefinder {

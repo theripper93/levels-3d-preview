@@ -4,7 +4,7 @@ import { factor } from "../main.js";
 import { sleep } from "../helpers/utils.js";
 
 export class Ruler3D {
-    constructor (parent) {
+    constructor(parent) {
         this._parent = parent;
         this._distanceOffset = 0;
         this.isDragRouler = game.modules.get("drag-ruler")?.active;
@@ -166,7 +166,7 @@ export class Ruler3D {
         return !!this._object?.userData?.entity3D?.token;
     }
 
-    updateVisibility() {}
+    updateVisibility() { }
 
     pointsArrayToSegments(points) {
         const segments = [];
@@ -422,12 +422,8 @@ export class Ruler3D {
     }
 
     async _animateSegment(token, destination) {
-        await token.document.update(destination);
+        await token.document.update(destination, {movement: {[token.document.id]: { autoRotate: game.settings.get("core", "tokenAutoRotate") }}});
         return token.movementAnimationPromise;
-        /*await sleep(100);
-        const anim = CanvasAnimation.getAnimation(token.animationName);
-        if (!anim) return;
-        return anim.promise;*/
     }
 
     static position3dtoScreen(position) {
@@ -442,7 +438,7 @@ export class Ruler3D {
     }
 
     static centerElement(element, position, ontop = false) {
-        if(!element) return;
+        if (!element) return;
         //get distance between element and camera
         element = element.jquery ? element[0] : element;
         let cachedFontSize = element.dataset.cachedSize;
@@ -468,7 +464,7 @@ export class Ruler3D {
     static posCanvasTo3d(position) {
         return new THREE.Vector3(position.x / factor, (position.z * canvas.scene.dimensions.size) / (canvas.scene.dimensions.distance * factor), position.y / factor);
     }
-    
+
     static unitsToPixels(units) {
         return (units * canvas.scene.dimensions.size) / (canvas.scene.dimensions.distance * factor);
     }
@@ -536,7 +532,7 @@ export class Ruler3D {
         const square = canvas.scene.dimensions.size / factor;
         const halfSquare = square / 2;
         const generatePoints = (token) => {
-            const tokenHeight = ((token.token.losHeight ?? (token.token.document.elevation+0.001)) - token.token.document.elevation) / canvas.scene.dimensions.distance;
+            const tokenHeight = ((token.token.losHeight ?? (token.token.document.elevation + 0.001)) - token.token.document.elevation) / canvas.scene.dimensions.distance;
             const tokenPositions = [];
             const tokenStart = token.mesh.position.clone();
             tokenStart.x += -token.token.document.width * halfSquare + halfSquare;
