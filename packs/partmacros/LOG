@@ -1,3 +1,7 @@
-2025/06/12-15:48:39.284 5abc Recovering log #2928
-2025/06/12-15:48:39.287 5abc Delete type=0 #2928
-2025/06/12-15:48:39.288 5abc Delete type=3 #2926
+2025/08/02-16:00:31.361 8120 Recovering log #2953
+2025/08/02-16:00:31.365 8120 Delete type=0 #2953
+2025/08/02-16:00:31.365 8120 Delete type=3 #2952
+2025/08/02-16:02:08.137 7728 Level-0 table #2957: started
+2025/08/02-16:02:08.137 7728 Level-0 table #2957: 0 bytes OK
+2025/08/02-16:02:08.138 7728 Delete type=0 #2955
+2025/08/02-16:02:08.139 7728 Manual compaction at level-0 from '!macros!4FzwSicvO4Kn1OK8' @ 72057594037927935 : 1 .. '!macros!xkoX7Ju6cWE0aDNI' @ 0 : 0; will stop at (end)
