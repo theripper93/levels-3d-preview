@@ -119,9 +119,9 @@ export class ShaderConfig extends foundry.applications.api.HandlebarsApplication
             this._onSubmit(e, { preventClose: true, preventRender: true });
         });
 
-            this.element.addEventListener("change", (e) => {
-                if(this.autoSave) this.debouncedSubmit(e, { preventClose: true, preventRender: true });
-            });
+        this.element.addEventListener("change", (e) => {
+            if (this.autoSave) this.debouncedSubmit(e, { preventClose: true, preventRender: true });
+        });
 
         // Macro button handler  
         this.element.querySelector("#tomacro")?.addEventListener("click", this.#handleMacroCreation.bind(this));
@@ -143,15 +143,15 @@ export class ShaderConfig extends foundry.applications.api.HandlebarsApplication
 
     async #handleMacroCreation(e) {
         e.preventDefault();
-        const dialog = await Dialog.prompt({
-            title: game.i18n.localize("levels3dpreview.shaders.config.macro.title"),
+        return foundry.applications.api.DialogV2.prompt({
+            window: { title: game.i18n.localize("levels3dpreview.shaders.config.macro.title"), },
             content: this.#getMacroDialogContent(),
-            callback: (html) => this.#createMacro(html),
-            render: (html) => {
-                const dialogContent = this.#getMacroDialogContent();
-                html[0].insertAdjacentHTML('beforeend', dialogContent);
-            }
-        });
+            ok: {
+                callback: (e, b, dialog) => {
+                    this.#createMacro(dialog.element)
+                }
+            },
+        })
     }
 
     #getMacroDialogContent() {
@@ -175,7 +175,7 @@ export class ShaderConfig extends foundry.applications.api.HandlebarsApplication
         const macroName = html.querySelector("#macro-name").value;
         const macroEnabled = html.querySelector("#macro-enabled").checked;
         const macroPlayers = html.querySelector("#macro-players").checked;
-        let macroData = foundry.utils.expandObject(this._getSubmitData());
+        let macroData = foundry.utils.expandObject((new foundry.applications.ux.FormDataExtended(this.form)).object);
         if (macroEnabled) {
             for (const [k, v] of Object.entries(macroData)) {
                 if (!v.enabled) delete macroData[k];
