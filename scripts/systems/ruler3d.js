@@ -509,7 +509,6 @@ export class Ruler3D {
     }
 
     static measureDistance(position1, position2) {
-        if (Math.round(position1.y * 1000) / 1000 !== Math.round(position2.y * 1000) / 1000 || !Ruler3D.useSnapped()) return (((position1.distanceTo(position2) * factor) / canvas.scene.dimensions.size) * canvas.scene.dimensions.distance).toFixed(1);
         const pos1Canvas = Ruler3D.pos3DToCanvas(position1);
         const pos2Canvas = Ruler3D.pos3DToCanvas(position2);
         const d = canvas.grid.measurePath(
@@ -517,10 +516,12 @@ export class Ruler3D {
                 {
                     x: Math.round(pos1Canvas.x),
                     y: Math.round(pos1Canvas.y),
+                    elevation: pos1Canvas.z,
                 },
                 {
                     x: Math.round(pos2Canvas.x),
                     y: Math.round(pos2Canvas.y),
+                    elevation: pos2Canvas.z,
                 },
             ],
             { gridSpaces: true },
