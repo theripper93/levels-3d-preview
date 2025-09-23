@@ -287,8 +287,7 @@ const _template = `
         {{/if}}
 
         {{#if (eq input.type 'range')}}
-                <input type="range" min="{{input.min}}" max="{{input.max}}" step="{{input.step}}" name="{{input.name}}" value="{{input.value}}">
-                <span class="range-value">{{input.value}}</span>
+                <range-picker name="{{input.name}}" value="{{input.value}}" min="{{input.min}}" max="{{input.max}}" step="{{input.step}}"></range-picker>
         {{/if}}
 
         {{#if (eq input.type 'color')}}

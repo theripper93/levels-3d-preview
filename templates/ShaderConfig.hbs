@@ -25,8 +25,8 @@
                                     <input type="checkbox" name="{{@../key}}.{{@key}}" data-dtype="Boolean" {{checked this.value}}/>
                                 {{/if}}
                                 {{#if this.isTexture}}
-                                    {{filePicker target=(concat @../key "." @key) type="image"}}
-                                    <input type="text" class="image" name="{{@../key}}.{{@key}}" value="{{this.value}}">
+                                <file-picker name="{{@../key}}.{{@key}}" type="image" value="{{this.value}}">
+                                </file-picker>
                                 {{/if}}
                                 {{#if this.isColor}}
                                     {{colorPicker name=(concat @../key "." @key) value=this.value}}
