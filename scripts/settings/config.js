@@ -618,13 +618,13 @@ export function registerConfigs() {
         const filterFlags = ["filterStrength", "filterCustom"];
         const customTableFlags = ["tableTex", "tableColor"];
         const fogFlags = ["fogColor", "fogDistance"];
-        hideParams(app, html, `input[name="flags.levels-3d-preview.bloom"]`, bloomFlags, false);
+        hideParams(app, html, `[name="flags.levels-3d-preview.bloom"]`, bloomFlags, false);
         hideParams(app, html, `[name="flags.levels-3d-preview.filter"]`, filterFlags, "none");
         hideParams(app, html, `[name="flags.levels-3d-preview.renderTable"]`, customTableFlags, ["table", "matcustom"], true);
-        hideParams(app, html, `input[name="flags.levels-3d-preview.enableFog"]`, fogFlags, false);
+        hideParams(app, html, `[name="flags.levels-3d-preview.enableFog"]`, fogFlags, false);
 
         if (canvas.scene.id !== app.document.id) return;
-        html.on("change", "input", (e) => {
+        html.on("change", "[name^='flags.levels-3d-preview.']", (e) => {
             if (!game.Levels3DPreview._active) return;
             const sunPosition = html.find("[name='flags.levels-3d-preview.sunPosition']")[0].value;
             const sunDistance = html.find("[name='flags.levels-3d-preview.sunDistance']")[0].value;
