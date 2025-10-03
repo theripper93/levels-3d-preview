@@ -6,7 +6,7 @@ import { factor } from "../main.js";
 import { DynaMesh } from "../helpers/dynaMesh.js";
 import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from "../lib/three-mesh-bvh.js";
 import { getMergedMeshFromInstanced, meshesToSingleMesh } from "../helpers/geometryUtils.js";
-import {Socket} from "../lib/socket.js";
+import { Socket } from "../lib/socket.js";
 THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
 THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
 THREE.Mesh.prototype.raycast = acceleratedRaycast;
@@ -295,7 +295,7 @@ export class Tile3D {
         }
     }
 
-    get hudCenter() {}
+    get hudCenter() { }
 
     get pseudoRandom() {
         return this.marsenne.random() + 0.5;
@@ -776,17 +776,17 @@ export class Tile3D {
         const material = isPBR
             ? textureOrMat
             : new THREE.MeshStandardMaterial({
-                  color: this.color,
-                  transparent: this.opacity < 1,
-                  opacity: this.opacity,
-                  visible: !this.tile.document.hidden,
-                  map: texture,
-                  side: THREE.DoubleSide,
-                  roughness: 1,
-                  metalness: 0,
-                  transparent: this._parent._fullTransparency,
-                  alphaTest: this._parent._fullTransparency ? 0.01 : 0.99,
-              });
+                color: this.color,
+                transparent: this.opacity < 1,
+                opacity: this.opacity,
+                visible: !this.tile.document.hidden,
+                map: texture,
+                side: THREE.DoubleSide,
+                roughness: 1,
+                metalness: 0,
+                transparent: this._parent._fullTransparency,
+                alphaTest: this._parent._fullTransparency ? 0.01 : 0.99,
+            });
         this.mesh = new THREE.Mesh(geometry, material);
         this.mesh.position.set(this.center.x, this.center.y, this.center.z);
         this.mesh.rotation.set(-Math.PI / 2 + (this.mirrorY ? Math.PI : 0), this.mirrorX ? Math.PI : 0, -this.angle * this.rotSign);
@@ -950,7 +950,7 @@ export class Tile3D {
                 clipAction.time = 0;
 
 
-                if (!useReversed) {                    
+                if (!useReversed) {
                     clipAction.reset();
                     if (previousClipAction) clipAction.crossFadeFrom(previousClipAction, 0.5, false);
                     clipAction.play();
@@ -963,7 +963,7 @@ export class Tile3D {
                         clipAction.play();
                         setTimeout(() => {
                             clipAction.halt(0);
-                            if(this.sight) this.sendToWorker();
+                            if (this.sight) this.sendToWorker();
                         }, 1)
                         return;
                     }
@@ -974,7 +974,7 @@ export class Tile3D {
                         clipAction.time = clipAction._clip.duration * this.mixer.timeScale;
                         setTimeout(() => {
                             clipAction.halt(0);
-                            if(this.sight) this.sendToWorker();
+                            if (this.sight) this.sendToWorker();
                         }, (clipAction._clip.duration * this.mixer.timeScale - 0.1) * 1000);
                         clipAction.play();
                     }
@@ -2026,7 +2026,7 @@ export class Tile3D {
         if (!isFn) return;
         const firstGm = game.users.find((u) => u.isGM && u.active);
         if (!firstGm) return ui.notifications.error(game.i18n.localize("levels3dpreview.errors.nogm"));
-        Socket.executeInteractiveDynamesh({users: [firstGm.id], uuid: this.document.uuid, eventId});
+        Socket.executeInteractiveDynamesh({ users: [firstGm.id], uuid: this.document.uuid, eventId });
     }
 
     checkPuzzleLock() {
@@ -2042,13 +2042,13 @@ export class Tile3D {
         const oT = e.originalIntersect?.userData;
         if (oT?.isDoor && canvas.activeLayer.options.objectClass.embeddedName === "Token" && !(oT?.isSecret && !game.user.isGM)) {
             if (this.isToFar(e.originalIntersect)) ui.notifications.error(game.i18n.localize("levels3dpreview.errors.toofarfromdoor"));
-            else Socket.toggleDoor({tileId: this.tile.id, sceneId: canvas.scene.id, userId: game.user.id, subDoorId: oT.doorId});
+            else Socket.toggleDoor({ tileId: this.tile.id, sceneId: canvas.scene.id, userId: game.user.id, subDoorId: oT.doorId });
         }
 
         if (canvas.activeLayer.options.objectClass.embeddedName === "Token" && this.isDoor && !(this.isSecret && !game.user.isGM)) {
             if (this.isToFar()) ui.notifications.error(game.i18n.localize("levels3dpreview.errors.toofarfromdoor"));
             else {
-                if (this.checkPuzzleLock()) Socket.toggleDoor({tileId: this.tile.id, sceneId: canvas.scene.id, userId: game.user.id});
+                if (this.checkPuzzleLock()) Socket.toggleDoor({ tileId: this.tile.id, sceneId: canvas.scene.id, userId: game.user.id });
             }
         }
         if (canvas.activeLayer.options.objectClass.embeddedName !== "Tile") {
@@ -2059,7 +2059,7 @@ export class Tile3D {
         }
     }
 
-    _setDoorState() {}
+    _setDoorState() { }
 
     _onClickLeft2(e) {
         if (canvas.activeLayer.options.objectClass.embeddedName !== "Tile") {
@@ -2527,31 +2527,40 @@ export class Tile3D {
 
             const tile3d = game.Levels3DPreview.tiles[hud.object.id];
             const isMerged = !!tile3d.mergedMatrix;
-
+            const lockedButton = hud.element.querySelector(`[data-action="locked"]`);
             if (!isMerged && canvas.tiles.controlled.length > 1) {
-                const mergeButton = $(`<div class="control-icon" data-action="merge-tiles"><i class="fas fa-object-group" title="Merge Tiles"></i></div>`);
+                const mergeButton = document.createElement("button");
+                mergeButton.className = "control-icon";
+                mergeButton.dataset.action = "merge-tiles";
+                mergeButton.innerHTML = `<i class="fas fa-object-group" title="Merge Tiles"></i>`;
 
-                mergeButton.on("click", (e) => {
+                mergeButton.addEventListener("click", (e) => {
                     e.stopPropagation();
                     autoMergeTiles(canvas.tiles.controlled, false);
                 });
-                hud.element.find(`div[data-action="locked"]`).before(mergeButton);
+                lockedButton.parentNode.insertBefore(mergeButton, lockedButton);
             } else if (isMerged) {
-                const unmergeButton = $(`<div class="control-icon" data-action="unmerge-tiles"><i class="fas fa-object-ungroup" title="Unmerge Tiles"></i></div>`);
+                const unmergeButton = document.createElement("button");
+                unmergeButton.className = "control-icon";
+                unmergeButton.dataset.action = "unmerge-tiles";
+                unmergeButton.innerHTML = `<i class="fas fa-object-ungroup" title="Unmerge Tiles"></i>`;
 
-                unmergeButton.on("click", (e) => {
+                unmergeButton.addEventListener("click", (e) => {
                     e.stopPropagation();
                     unmergeTiles(canvas.tiles.controlled);
                 });
-                hud.element.find(`div[data-action="locked"]`).before(unmergeButton);
+                lockedButton.parentNode.insertBefore(unmergeButton, lockedButton);
             }
 
-            const attachButton = $(`<div class="control-icon" data-action="attach-tile"><i class="fas fa-link" title="Attach Tile to Token"></i></div>`);
-            attachButton.on("click", (e) => {
+            const attachButton = document.createElement("button");
+            attachButton.className = "control-icon";
+            attachButton.dataset.action = "attach-tile";
+            attachButton.innerHTML = `<i class="fas fa-link" title="Attach Tile to Token"></i>`;
+            attachButton.addEventListener("click", (e) => {
                 e.stopPropagation();
                 attachTileToToken(hud.object, _token);
             });
-            hud.element.find(`div[data-action="locked"]`).before(attachButton);
+            lockedButton.parentNode.insertBefore(attachButton, lockedButton);
 
             if (!tile3d?.isAnimated) return;
 
@@ -2562,19 +2571,21 @@ export class Tile3D {
 
             const isPaused = tile3d.isPaused;
 
-            const controlButton = $(`
-    <div class="control-icon" data-action="play-pause-3d">
-        <i class="fas ${isPaused ? images.pause : images.play}" title="Overhead Tile"></i>
-    </div>
-    `);
+            const controlButton = document.createElement("button");
+            controlButton.className = "control-icon";
+            controlButton.dataset.action = "play-pause-3d";
+            controlButton.innerHTML = `<i class="fas ${isPaused ? images.pause : images.play}" title="Overhead Tile"></i>`;
 
-            controlButton.on("click", (e) => {
+            controlButton.addEventListener("click", (e) => {
                 e.stopPropagation();
                 hud.object.document.setFlag("levels-3d-preview", "paused", !hud.object.document.getFlag("levels-3d-preview", "paused"));
-                controlButton.find("i").toggleClass(`${images.play} ${images.pause}`);
+                const icon = controlButton.querySelector("i");
+                icon.classList.toggle(images.play);
+                icon.classList.toggle(images.pause);
             });
 
-            hud.element.find(`div[data-action="locked"]`).before(controlButton);
+            lockedButton.parentNode.insertBefore(controlButton, lockedButton);
+
         });
 
         Hooks.on("controlTile", (tile, controlled) => {
@@ -2585,7 +2596,7 @@ export class Tile3D {
         });
     }
 
-    static executeInteractiveDynamesh({uuid, eventId}) {
+    static executeInteractiveDynamesh({ uuid, eventId }) {
         const tile = fromUuidSync(uuid);
         if (!tile) return;
         const tile3d = game.Levels3DPreview.tiles[tile.id];
@@ -2724,7 +2735,7 @@ export async function autoMergeTiles(tiles = canvas.tiles.placeables, skipContro
             yes: async () => {
                 await merge();
             },
-            no: () => {},
+            no: () => { },
             defaultYes: false,
         });
 
