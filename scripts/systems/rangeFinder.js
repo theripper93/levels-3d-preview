@@ -50,7 +50,7 @@ export class RangeFinder {
         const label = $(`<div id="levels3d-ruler-text" class="rangefinder"></div>`);
         if (this.options.style) label.css(this.options.style);
         $("body").append(label);
-        let text = this.options.text ?? `${distance}${canvas.scene.grid.units}.`;
+        let text = this.options.text ?? `${distance.toFixed(1)} ${canvas.scene.grid.units}.`;
         if (this.isHoverDistance) {
             const rangeBand = DistanceTooltip.getRangeBand(distance);
             if (rangeBand) text = `${rangeBand} (${text})`;

@@ -22,10 +22,10 @@ export default function initTemplateEffects(){
 const handlers = {
     "dnd5e": (templateDocument, preCreate = false) => {
         const effects = shaderData[game.system.id]
-        const item = fromUuidSync(templateDocument.flags?.dnd5e?.origin)
-        if (!item?.system) return;
-        const isInstant = !item.system.duration?.value
-        const damageTypes = item.system.damage.parts.map(part => part[1])
+        const activity = fromUuidSync(templateDocument.flags?.dnd5e?.origin)
+        if (!activity) return;
+        const isInstant = !activity.duration?.value
+        const damageTypes = activity.damage.parts.map(part => Array.from(part.types)).flat();
         const damageType = damageTypes.find(type => effects[type]) ?? "default"
         if(isInstant && !preCreate) return playVFX(templateDocument, damageType);
         if(preCreate && !isInstant) applyEffect(templateDocument, effects[damageType])
