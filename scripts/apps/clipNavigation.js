@@ -359,7 +359,7 @@ export const CLIP_NAVIGATION_BUTTONS = [
         callback: () => {
             canvas.tiles.activate();
             game.Levels3DPreview.interactionManager.showControlReference();
-            $(".item[data-tab='chat']")[0].click();
+            ui.sidebar.changeTab("chat", "primary")
         },
     },
     {

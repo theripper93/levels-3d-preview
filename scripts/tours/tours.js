@@ -1,7 +1,7 @@
 import { GenericTour } from "./toursHelpers.js";
 
 export const GettingStartedTour = () => {
-    return new GenericTour("getting-started", [`li.scene-control[data-control="token"]`, `li.control-tool[data-tool="preview3d"]`, `.levels-3d-preview-loading-screen`], {
+    return new GenericTour("getting-started", [`.control[data-control="tokens"]`, `.control[data-tool="preview3d"]`, `.levels-3d-preview-loading-screen`], {
         moduleId: "levels-3d-preview",
         localizationRoot: "levels3dpreview.tours",
         display: true,
@@ -14,7 +14,7 @@ export const GettingStartedTour = () => {
 };
 
 export const First3DTile = () => {
-    return new GenericTour("first-tile", [`li.scene-control[data-control="tiles"]`, `li.control-tool[data-tool="browse"]`, `li.dir[data-name="modules"]`, `li.dir[data-name="canvas3dcompendium"]`, `li.dir[data-name="assets"]`, `li.dir[data-name="Tiles"]`, `li.dir[data-name="Nature"]`, `.app.window-app.filepicker`], {
+    return new GenericTour("first-tile", [`.control[data-control="tiles"]`, `.control[data-tool="browse"]`, `li.dir[data-name="modules"]`, `li.dir[data-name="canvas3dcompendium"]`, `li.dir[data-name="assets"]`, `li.dir[data-name="Tiles"]`, `li.dir[data-name="Nature"]`, `.app.window-app.filepicker`], {
         moduleId: "levels-3d-preview",
         localizationRoot: "levels3dpreview.tours",
         display: true,
@@ -51,7 +51,7 @@ export const SceneConfiguration = () => {
 };
 
 export const First3DScene = () => {
-    return new GenericTour("first-scene", [`.item[data-tab="scenes"]`, `#scenes button.create-document`, `input[name="scene3d"]`, `.dialog-button.ok.default`, `.levels-3d-preview-loading-screen`, `#build-panel`, `#clip-navigation-controls`, `#controlsRef`, ".chat-message:last-child"], {
+    return new GenericTour("first-scene", [`.ui-control[data-tab="scenes"]`, `#scenes button.create-entry`, `input[name="scene3d"]`, `button[data-action='ok']`, `.levels-3d-preview-loading-screen`, `#build-panel`, `[data-action="clip-navigation-controls"]`, `[data-action="controlsRef"]`, ".chat-message:last-child"], {
         moduleId: "levels-3d-preview",
         localizationRoot: "levels3dpreview.tours",
         display: true,
@@ -89,7 +89,7 @@ export const AdvancedTileConfiguration = () => {
 //Mapmaking pack tours
 
 export const Tokens = () => {
-    return new GenericTour("tokens", [`a[data-tab="levels-3d-preview"]`, `.form-group:has(label[for="flags.levels-3d-preview.model3d"])`, `.form-group:has(label[for="flags.levels-3d-preview.material"])`, `.form-group:has(label[for="flags.levels-3d-preview.color"])`, `button:has(.fa-regular.fa-person)`, `#token-browser`], {
+    return new GenericTour("tokens", [`a[data-tab="levels-3d-preview"]`, `.form-group:has(label[for="flags.levels-3d-preview.model3d"])`, `.form-group:has(label[for="flags.levels-3d-preview.material"])`, `.form-group:has(label[for="flags.levels-3d-preview.color"])`, `button:has(.fa-regular.fa-person)`, `button:has(.fa-regular.fa-person)`], {
         moduleId: "levels-3d-preview",
         localizationRoot: "levels3dpreview.tours",
         display: true,
