@@ -31,7 +31,6 @@ import { turnStartMarker } from "./systems/turnStartMarker.js";
 import { ParticleEngine } from "./systems/particleSystem.js";
 import { Particle3D } from "./systems/particleSystem.js";
 import { defaultTokenAnimations } from "./handlers/tokenAnimationHandler.js";
-import { ClipNavigation, CLIP_NAVIGATION_BUTTONS } from "./apps/clipNavigation.js";
 import { presetMaterials, PresetMaterialHandler, populateScene } from "./helpers/presetMaterials.js";
 import { FXAAShader } from "./lib/FXAA.js";
 import { SMAAPass } from "./lib/SMAAPass.js";
@@ -41,7 +40,7 @@ import { OutlineHandler } from "./handlers/OutlineHandler.js";
 import { ShaderHandler, shaders } from "./shaders/ShaderLib.js";
 import { DecalGeometry } from "./lib/DecalGeometry.js";
 import { WorkerHandler } from "./helpers/workers.js";
-import { miniCanvas } from "./apps/minicanvas.js";
+import { MiniCanvas } from "./apps/miniCanvas.js";
 import { throttle, sleep } from "./helpers/utils.js";
 import { BokehPass } from "./lib/BokehPass.js";
 import { loadUserEmotes, Ping } from "./entities/effects/ping.js";
@@ -57,6 +56,10 @@ import { registerConfigs } from "./settings/config.js";
 import { registerSettings } from "./settings/settingsConfig.js";
 import { WaveFunctionSolver } from "./generators/WaveFunctionCollapse.js";
 import { applyHeightmap } from "./helpers/applyHeightmap.js";
+import { BuildPanel } from "./apps/buildPanel.js";
+import { AssetBrowser } from "./apps/assetBrowser.js";
+import { TokenBrowser, setHudHook } from "./apps/tokenBrowser.js";
+import { RoomBuilder } from "./apps/roomBuilder.js";
 
 import { createTargetGeometry } from "./entities/effects/target.js";
 import { UberPass } from "./lib/UberPass.js";
@@ -84,7 +87,8 @@ Template3D.setHooks();
 RangeFinder.setHooks();
 InteractionManager.setHooks();
 GlobalIllumination.setHooks();
-ClipNavigation.setHooks();
+BuildPanel.setHooks();
+setHudHook();
 setSharingHooks();
 
 globalThis.Particle3D = Particle3D;
@@ -122,13 +126,58 @@ Hooks.once("ready", () => {
     const navHooks = ["updateTile", "createTile", "deleteTile", "updateWall", "createWall", "deleteWall"];
     navHooks.forEach((h) => {
         Hooks.on(h, () => {
-            if (game.Levels3DPreview?._active) game.Levels3DPreview.ClipNavigation?.update();
+            if (game.Levels3DPreview?._active) game.Levels3DPreview.BuildPanel?.update();
         });
     });
 
     Hooks.on("updateScene", () => {
-        if (game.Levels3DPreview?._active) game.Levels3DPreview.ClipNavigation?.render(true);
+        if (game.Levels3DPreview?._active) game.Levels3DPreview.BuildPanel?.render(true);
     });
+});
+
+// Hooks.on("3DCanvasConfig", (config) => {
+//     const UI = config.UI;
+//     UI.AssetBrowser = AssetBrowser;
+//     UI.TokenBrowser = TokenBrowser;
+//     UI.BuildPanel = BuildPanel;
+//     UI.RoomBuilder = RoomBuilder;
+// });
+
+Hooks.once("ready", () => {
+    // Module title
+    const MODULE_TITLE = "3D Canvas Mapmaking Pack";
+
+    const FALLBACK_MESSAGE_TITLE = MODULE_TITLE;
+    const FALLBACK_MESSAGE = `
+    <h2>3D Canvas Mapmaking Pack License Agreement</h3>
+    <p>By using this module, you understand that some of the included assets can be used <strong>only inside 3D Canvas</strong>.</p>
+    <p>By clicking <strong>'I Accept'</strong> you confirm that you read the asset specific licensing linked below.</p>
+    <p>Check <a href="https://github.com/theripper93/canvas3dcompendium">HERE</a> for the specific license of every included asset.</p>`;
+
+    // Settings key used for the "Don't remind me again" setting
+    const DONT_REMIND_AGAIN_KEY = "canvas3dcompendiumLicenseAgreement";
+
+    // Dialog code
+    game.settings.register(MODULE_ID, DONT_REMIND_AGAIN_KEY, {
+        name: "",
+        default: false,
+        type: Boolean,
+        scope: "world",
+        config: false,
+    });
+    if (game.user.isGM && !game.settings.get(MODULE_ID, DONT_REMIND_AGAIN_KEY)) {
+        new Dialog({
+            title: FALLBACK_MESSAGE_TITLE,
+            content: FALLBACK_MESSAGE,
+            buttons: {
+                ok: { icon: '<i class="fas fa-check"></i>', label: "I Accept", callback: () => game.settings.set(MODULE_ID, DONT_REMIND_AGAIN_KEY, true), },
+                dont_remind: {
+                    icon: '<i class="fas fa-times"></i>',
+                    label: "I Refuse",
+                },
+            },
+        }).render(true);
+    }
 });
 
 class Levels3DPreview {
@@ -153,7 +202,7 @@ class Levels3DPreview {
         this.scene;
         this.renderer;
         this.factor = factor;
-        this.ClipNavigation = null;
+        this.BuildPanel = null;
         this.workers = new WorkerHandler();
         initSharing(this);
         this.createTargetGeometry = createTargetGeometry;
@@ -202,9 +251,9 @@ class Levels3DPreview {
                 BUILD_PANEL: {
                     FORCE_AUTOHIDE_OFF: false,
                 },
-                CLIP_NAVIGATION: {
-                    BUTTONS: CLIP_NAVIGATION_BUTTONS,
-                },
+                // CLIP_NAVIGATION: {
+                //     BUTTONS: CLIP_NAVIGATION_BUTTONS,
+                // },
                 windows: {},
             },
             RULER: {
@@ -390,6 +439,10 @@ class Levels3DPreview {
             },
         };
 
+        this.CONFIG.UI.AssetBrowser = AssetBrowser;
+        this.CONFIG.UI.TokenBrowser = TokenBrowser;
+        this.CONFIG.UI.BuildPanel = BuildPanel;
+        this.CONFIG.UI.RoomBuilder = RoomBuilder;
         Hooks.callAll("3DCanvasConfig", this.CONFIG);
         for (let [k, v] of Object.entries(this.CONFIG.tokenAnimations)) {
             v.name = game.i18n.localize(`levels3dpreview.tokenAnimations.${k}`);
@@ -1523,7 +1576,7 @@ class Levels3DPreview {
             }
             if (!cToken) return;
             if (cToken.isOwner) cToken.control();
-            this.ClipNavigation.setToClosest(cToken.document.elevation);
+            this.BuildPanel.setToClosest(cToken.document.elevation);
             token3D = this.tokens[cToken.id];
             if (!token3D) return;
         } else {
@@ -1558,7 +1611,7 @@ class Levels3DPreview {
             collision = this.interactionManager.computeSightCollisionFrom3DPositions(headPoint, targetPosition);
         }
 
-        if (collision && targetPosition.y < (this.ClipNavigation._clipHeight ?? Infinity)) {
+        if (collision && targetPosition.y < (this.BuildPanel._clipHeight ?? Infinity)) {
             const collisionPoint = new THREE.Vector3(collision.x, collision.y, collision.z);
             collisionPoint.lerp(headPoint, 0.1);
             targetPosition = collisionPoint;
@@ -1630,27 +1683,27 @@ class Levels3DPreview {
             });
         } else {
             this.CONFIG.UI.BUILD_PANEL.FORCE_AUTOHIDE_OFF = true;
-            Hooks.once("renderClipNavigation", () => {
-                const isClipNav = $("#clip-navigation-controls").length > 0;
-                setTimeout(
-                    () => {
-                        const $qm = $("#clip-navigation-controls").length ? $("#clip-navigation-controls") : $("#build-panel");
-                        $("#levels-3d-preview-loading-bar-text").html(game.i18n.localize("levels3dpreview.controls.loadingScreen.loadingdone"));
-                        const $arrow = $('<i id="clip-navigation-higlight-arrow" class="fas fa-arrow-right"></i>').css({
-                            right: window.innerWidth - $qm.offset().left + 20,
-                            top: `calc(${$qm.offset().top + $qm.height() / 2}px - 2rem)`,
-                        });
-                        $("body").append($arrow);
-                        $("#close-loading-screen").css("display", "flex");
-                        ui.notifications.info(game.i18n.localize("levels3dpreview.controls.loadingScreen.loadingarrow"));
-                    },
-                    isClipNav ? 0 : 1000,
-                );
-            });
+            // Hooks.once("renderClipNavigation", () => {
+            //     const isClipNav = $("#clip-navigation-controls").length > 0;
+            //     setTimeout(
+            //         () => {
+            //             const $qm = $("#clip-navigation-controls").length ? $("#clip-navigation-controls") : $("#build-panel");
+            //             $("#levels-3d-preview-loading-bar-text").html(game.i18n.localize("levels3dpreview.controls.loadingScreen.loadingdone"));
+            //             const $arrow = $('<i id="clip-navigation-higlight-arrow" class="fas fa-arrow-right"></i>').css({
+            //                 right: window.innerWidth - $qm.offset().left + 20,
+            //                 top: `calc(${$qm.offset().top + $qm.height() / 2}px - 2rem)`,
+            //             });
+            //             $("body").append($arrow);
+            //             $("#close-loading-screen").css("display", "flex");
+            //             ui.notifications.info(game.i18n.localize("levels3dpreview.controls.loadingScreen.loadingarrow"));
+            //         },
+            //         isClipNav ? 0 : 1000,
+            //     );
+            // });
             game.settings.set("levels-3d-preview", "loadingShown", true);
         }
-        this.ClipNavigation = new ClipNavigation();
-        this.ClipNavigation.render(true);
+        // this.BuildPanel = new BuildPanel();
+        // this.BuildPanel.render(true);
         this.weather = new WeatherSystem(this);
 
         canvas.perception.update(
@@ -1724,7 +1777,7 @@ class Levels3DPreview {
             canvas.stage.renderable = false;
         } else {
             document.body.appendChild(this.renderer.domElement);
-            if (game.settings.get("levels-3d-preview", "miniCanvas")) new miniCanvas().render(true);
+            if (game.settings.get("levels-3d-preview", "miniCanvas")) new MiniCanvas().render(true);
             else {
                 $("#board").hide();
                 canvas.stage.renderable = false;
@@ -1737,7 +1790,7 @@ class Levels3DPreview {
         this.setFilters(false);
         this._active = false;
         ui.controls.render({force:true, reset: true});
-        this.ClipNavigation?.close();
+        this.BuildPanel?.close();
         $("#hud").removeClass("levels-3d-preview-hud");
         $("#levels3d").remove();
         $(".rangefinder").remove();
@@ -1928,9 +1981,9 @@ Hooks.on("deleteCombat", () => {
     game.Levels3DPreview.turnStartMarker.update();
 });
 
-Hooks.on("collapseSidebar", () => {
-    if (game.Levels3DPreview?._active) game.Levels3DPreview.ClipNavigation.render(true);
-});
+// Hooks.on("collapseSidebar", () => {
+//     if (game.Levels3DPreview?._active) game.Levels3DPreview.BuildPanel.render(true);
+// });
 
 Hooks.on("controlTile", (tile, control) => {
     if (!game.Levels3DPreview?._active) return;
@@ -1967,11 +2020,11 @@ Hooks.on("preUpdateToken", (token, updates) => {
 });
 
 Hooks.on("ready", async () => {
-    const html = await renderTemplate("modules/levels-3d-preview/templates/loadingScreen.hbs", { isGM: game.user.isGM });
+    const html = await foundry.applications.handlebars.renderTemplate("modules/levels-3d-preview/templates/loadingScreen.hbs", { isGM: game.user.isGM });
     const div = $(`<div class="levels-3d-preview-loading-screen">${html}</div>`);
-    div.on("click", "#close-loading-screen", () => {
-        game.Levels3DPreview.CONFIG.UI.CLIP_NAVIGATION.BUTTONS.find((b) => b.id === "clip-navigation-controls").callback();
-    });
+    // div.on("click", "#close-loading-screen", () => {
+    //     game.Levels3DPreview.CONFIG.UI.CLIP_NAVIGATION.BUTTONS.find((b) => b.id === "clip-navigation-controls").callback();
+    // });
     div.hide();
     $("#ui-top").after(div);
 });

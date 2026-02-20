@@ -1,6 +1,6 @@
 export function registerWrappers() {
 
-    Object.defineProperty(Token.prototype, "object3d", {
+    Object.defineProperty(foundry.canvas.placeables.Token.prototype, "object3d", {
         get: function () {
             return game.Levels3DPreview.tokens[this.id];
         },
@@ -13,22 +13,22 @@ export function registerWrappers() {
         //Register Core Wrappers
 
         libWrapper.register("levels-3d-preview", "foundry.canvas.layers.TokenLayer.prototype.moveMany", moveMany, "MIXED");
-        libWrapper.register("levels-3d-preview", "InterfaceCanvasGroup.prototype.createScrollingText", showBouncingText, "WRAPPER");
-        libWrapper.register("levels-3d-preview", "TokenLayer.prototype.cycleTokens", cycleTokens, "WRAPPER");
-        libWrapper.register("levels-3d-preview", "Canvas.prototype.animatePan", animatePan, "WRAPPER");
-        libWrapper.register("levels-3d-preview", "FogManager.prototype.save", updateFog, "WRAPPER");
+        libWrapper.register("levels-3d-preview", "foundry.canvas.groups.InterfaceCanvasGroup.prototype.createScrollingText", showBouncingText, "WRAPPER");
+        libWrapper.register("levels-3d-preview", "foundry.canvas.layers.TokenLayer.prototype.cycleTokens", cycleTokens, "WRAPPER");
+        libWrapper.register("levels-3d-preview", "foundry.canvas.Canvas.prototype.animatePan", animatePan, "WRAPPER");
+        libWrapper.register("levels-3d-preview", "foundry.canvas.perception.FogManager.prototype.save", updateFog, "WRAPPER");
         libWrapper.register("levels-3d-preview", "foundry.canvas.layers.PlaceablesLayer.prototype.pasteObjects", pasteObjects, "WRAPPER");
-        libWrapper.register("levels-3d-preview", "ClockwiseSweepPolygon.prototype._compute", computePolygonDispatch, "MIXED");
-        libWrapper.register("levels-3d-preview", "Scenes.prototype.preload", preload3D, "OVERRIDE");
+        libWrapper.register("levels-3d-preview", "foundry.canvas.geometry.ClockwiseSweepPolygon.prototype._compute", computePolygonDispatch, "MIXED");
+        libWrapper.register("levels-3d-preview", "foundry.documents.collections.Scenes.prototype.preload", preload3D, "OVERRIDE");
         libWrapper.register("levels-3d-preview", "canvas.app.renderer.events.pointer.getLocalPosition", pointerPositionWrapper, "MIXED");
-        libWrapper.register("levels-3d-preview", "ControlsLayer.prototype.handlePing", HandlePing, "WRAPPER");
+        libWrapper.register("levels-3d-preview", "foundry.canvas.layers.ControlsLayer.prototype.handlePing", HandlePing, "WRAPPER");
         //game.Levels3DPreview.raycastWorker = raycastWorker;
 
         if (game[game.system.id]?.canvas?.AbilityTemplate?.prototype?.drawPreview) libWrapper.register("levels-3d-preview", `game.${game.system.id}.canvas.AbilityTemplate.prototype.drawPreview`, drawPreview, "MIXED");
 
         if (CONFIG.MeasuredTemplate.objectClass.prototype.drawPreview) libWrapper.register("levels-3d-preview", "CONFIG.MeasuredTemplate.objectClass.prototype.drawPreview", drawPreview, "MIXED");
 
-        if (TemplateLayer.prototype._createPreview) libWrapper.register("levels-3d-preview", "TemplateLayer.prototype._createPreview", drawPreviewTemplateLayer, "MIXED");
+        if (foundry.canvas.layers.TemplateLayer.prototype._createPreview) libWrapper.register("levels-3d-preview", "foundry.canvas.layers.TemplateLayer.prototype._createPreview", drawPreviewTemplateLayer, "MIXED");
 
         async function HandlePing(wrapped, ...args) {
             if (!game.Levels3DPreview?._active) return wrapped(...args);

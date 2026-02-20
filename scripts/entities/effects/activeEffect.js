@@ -94,9 +94,9 @@ export class ActiveEffectEffect {
                 to: ROTATION_DEG,
             },
         ];
-        CanvasAnimation.animate(scaleInAnimation, { duration: 500, easing: "easeOutCircle" });
-        await CanvasAnimation.animate(rotateAnimation, {duration: 2000});
-        await CanvasAnimation.animate(scaleOutAnimation, {duration: 500});
+        foundry.canvas.animation.CanvasAnimation.animate(scaleInAnimation, { duration: 500, easing: "easeOutCircle" });
+        await foundry.canvas.animation.CanvasAnimation.animate(rotateAnimation, {duration: 2000});
+        await foundry.canvas.animation.CanvasAnimation.animate(scaleOutAnimation, {duration: 500});
         this.effect.removeFromParent();
     }
 }

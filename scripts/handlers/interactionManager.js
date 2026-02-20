@@ -140,7 +140,7 @@ export class InteractionManager {
         let collisions = this.sightRaycaster.intersectObjects(this._sightCollisions[type] ?? this._sightCollisions["collision"], true);
         if (!collisions.length) return false;
         if (useClipping && !returnAll) {
-            collisions = collisions.filter((c) => c.point.y < (game.Levels3DPreview.ClipNavigation._clipHeight ?? Infinity));
+            collisions = collisions.filter((c) => c.point.y < (game.Levels3DPreview.BuildPanel._clipHeight ?? Infinity));
             if (!collisions.length) return false;
         }
         if (returnAll) return collisions;
@@ -432,7 +432,7 @@ export class InteractionManager {
                 } else {
                     game.Levels3DPreview.helpers._ping();
                 }
-            }, MouseInteractionManager.LONG_PRESS_DURATION_MS + 250);
+            }, foundry.canvas.interaction.MouseInteractionManager.LONG_PRESS_DURATION_MS + 250);
         }
         this._parent.stopCameraAnimation();
         this._downCameraPosition = this._parent.camera.position.clone();

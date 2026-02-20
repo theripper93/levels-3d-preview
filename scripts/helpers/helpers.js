@@ -536,7 +536,7 @@ export class Helpers {
     }
 
     syncClipNavigator({range}) {
-        game.Levels3DPreview.ClipNavigation.set(range);
+        game.Levels3DPreview.BuildPanel.set(range);
     }
 
     showSceneReport() {

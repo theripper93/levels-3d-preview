@@ -7,7 +7,7 @@ export class WorkerHandler {
         this._lastKnownValid = {};
         this._visionReady = false;
         this._waitingForInit = false;
-        this.deleteDebounced = debounce(this.deleteDebounced.bind(this), 10);
+        this.deleteDebounced = foundry.utils.debounce(this.deleteDebounced.bind(this), 10);
         this.initRaycastWorker();
     }
 

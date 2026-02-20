@@ -84,7 +84,7 @@ export class GenericTour{
     }
 }
 
-class TourEnhanced extends Tour{
+class TourEnhanced extends foundry.nue.Tour{
     constructor(...args){
         super(...args);
     }

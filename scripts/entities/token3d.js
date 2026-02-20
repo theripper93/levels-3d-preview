@@ -698,7 +698,7 @@ export class Token3D {
 
         const initialPosition = new THREE.Vector2(placeablePosition.x, placeablePosition.y);
 
-        const currentAnimation = CanvasAnimation.animations[token.animationName];
+        const currentAnimation = foundry.canvas.animation.CanvasAnimation.animations[token.animationName];
 
         let animationElevation = undefined;
 
@@ -1318,7 +1318,7 @@ export class Token3D {
     async drawName() {
         const drawName = () => {
             const style = this.token._getTextStyle();
-            const name = new PreciseText(this.document.name, style);
+            const name = new foundry.canvas.containers.PreciseText(this.document.name, style);
             name.anchor.set(0.5, 0);
             name.position.set(this.token.w / 2, this.token.h + 2);
             return name;
@@ -1708,7 +1708,7 @@ export class Token3D {
             const updateElevation = updates?.elevation !== undefined;
             if (!updateX && !updateY && updateElevation) {
                 token.animationElevation = 0;
-                CanvasAnimation.animate(
+                foundry.canvas.animation.CanvasAnimation.animate(
                     [
                         {
                             attribute: "animationElevation",
@@ -1719,7 +1719,7 @@ export class Token3D {
                     ],
                     {
                         duration: 250,
-                        easing: CanvasAnimation.easeInCircle,
+                        easing: foundry.canvas.animation.CanvasAnimation.easeInCircle,
                         name: token.animationName,
                         priority: PIXI.UPDATE_PRIORITY.OBJECTS + 1,
                         ontick: () => token.refresh(),

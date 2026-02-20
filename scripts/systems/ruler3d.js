@@ -140,7 +140,7 @@ export class Ruler3D {
                         to: isToken.document.height,
                     },
                 ];
-                CanvasAnimation.animate(animation, { duration: 500, easing: "easeOutCircle", name: "dragRing" });
+                foundry.canvas.animation.CanvasAnimation.animate(animation, { duration: 500, easing: "easeOutCircle", name: "dragRing" });
             }
         }
 

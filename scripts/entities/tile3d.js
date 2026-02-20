@@ -132,7 +132,7 @@ export class Tile3D {
                     to: 1,
                 },
             ];
-            CanvasAnimation.animate(animation, { duration: 350, easing: "easeOutCircle" });
+            foundry.canvas.animation.CanvasAnimation.animate(animation, { duration: 350, easing: "easeOutCircle" });
         } else {
             this.mesh.scale.set(0.0001, 0.0001, 0.0001);
             const animation = [
@@ -152,7 +152,7 @@ export class Tile3D {
                     to: 1,
                 },
             ];
-            CanvasAnimation.animate(animation, { duration: 350, easing: "easeOutCircle" });
+            foundry.canvas.animation.CanvasAnimation.animate(animation, { duration: 350, easing: "easeOutCircle" });
         }
     }
 
@@ -165,7 +165,7 @@ export class Tile3D {
                     to: 0,
                 },
             ];
-            await CanvasAnimation.animate(animation, { duration: 75, easing: "easeOutCircle" });
+            await foundry.canvas.animation.CanvasAnimation.animate(animation, { duration: 75, easing: "easeOutCircle" });
         } else {
             const animation = [
                 {
@@ -184,7 +184,7 @@ export class Tile3D {
                     to: 0,
                 },
             ];
-            await CanvasAnimation.animate(animation, { duration: 150, easing: "easeOutCircle" });
+            await foundry.canvas.animation.CanvasAnimation.animate(animation, { duration: 150, easing: "easeOutCircle" });
         }
     }
 
@@ -494,7 +494,7 @@ export class Tile3D {
                     if (sightMesh) {
                         sightMesh.rotation.y = matToApply.angle;
                     }
-                    const p = CanvasAnimation.animate(animation, { duration: this.doorAnimationDuration, easing: DOOR_ANIMATION_EASING });
+                    const p = foundry.canvas.animation.CanvasAnimation.animate(animation, { duration: this.doorAnimationDuration, easing: DOOR_ANIMATION_EASING });
                     promises.push(p);
                     break;
                 case 2:
@@ -519,7 +519,7 @@ export class Tile3D {
                         sightMesh2.position.x = this.isOpen ? this.originalPosition.x + xComponent : this.originalPosition.x;
                         sightMesh2.position.z = this.isOpen ? this.originalPosition.z + zComponent : this.originalPosition.z;
                     }
-                    const p2 = CanvasAnimation.animate(animation2, { duration: this.doorAnimationDuration, easing: DOOR_ANIMATION_EASING });
+                    const p2 = foundry.canvas.animation.CanvasAnimation.animate(animation2, { duration: this.doorAnimationDuration, easing: DOOR_ANIMATION_EASING });
                     promises.push(p2);
                     break;
                 case 3:
@@ -536,7 +536,7 @@ export class Tile3D {
                     if (sightMesh3) {
                         sightMesh3.position.y = this.isOpen ? this.originalPosition.y + yComponent : this.originalPosition.y;
                     }
-                    const p3 = CanvasAnimation.animate(animation3, { duration: this.doorAnimationDuration, easing: DOOR_ANIMATION_EASING });
+                    const p3 = foundry.canvas.animation.CanvasAnimation.animate(animation3, { duration: this.doorAnimationDuration, easing: DOOR_ANIMATION_EASING });
                     promises.push(p3);
                     break;
             }
@@ -645,7 +645,7 @@ export class Tile3D {
                         to: this.isOpen ? this.originalAngle + this.doorAnimateAngle : this.originalAngle,
                     },
                 ];
-                if (!firstRender) promise = CanvasAnimation.animate(animation, { duration: this.doorAnimationDuration, easing: DOOR_ANIMATION_EASING });
+                if (!firstRender) promise = foundry.canvas.animation.CanvasAnimation.animate(animation, { duration: this.doorAnimationDuration, easing: DOOR_ANIMATION_EASING });
                 else this.mesh.children[0].rotation.y = this.isOpen ? this.originalAngle + this.doorAnimateAngle : this.originalAngle;
                 if (sightMesh) {
                     sightMesh.rotation.y = this.isOpen ? this.originalAngle + this.doorAnimateAngle : this.originalAngle;
@@ -668,7 +668,7 @@ export class Tile3D {
                         to: this.isOpen ? this.originalPosition.z + zComponent : this.originalPosition.z,
                     },
                 ];
-                if (!firstRender) promise = CanvasAnimation.animate(animation2, { duration: this.doorAnimationDuration, easing: DOOR_ANIMATION_EASING });
+                if (!firstRender) promise = foundry.canvas.animation.CanvasAnimation.animate(animation2, { duration: this.doorAnimationDuration, easing: DOOR_ANIMATION_EASING });
                 else {
                     this.mesh.children[0].position.x = this.isOpen ? this.originalPosition.x + xComponent : this.originalPosition.x;
                     this.mesh.children[0].position.z = this.isOpen ? this.originalPosition.z + zComponent : this.originalPosition.z;
@@ -688,7 +688,7 @@ export class Tile3D {
                         to: this.isOpen ? this.originalPosition.y + yComponent : this.originalPosition.y,
                     },
                 ];
-                if (!firstRender) promise = CanvasAnimation.animate(animation3, { duration: this.doorAnimationDuration, easing: DOOR_ANIMATION_EASING });
+                if (!firstRender) promise = foundry.canvas.animation.CanvasAnimation.animate(animation3, { duration: this.doorAnimationDuration, easing: DOOR_ANIMATION_EASING });
                 else {
                     this.mesh.children[0].position.y = this.isOpen ? this.originalPosition.y + yComponent : this.originalPosition.y;
                 }
@@ -1795,7 +1795,7 @@ export class Tile3D {
         this.updateInstancedCulling();
         this.toggleBoundingBox();
         this.mesh.visible = !this.tile.document.hidden || game.user.isGM;
-        if (this.sightMesh) this.sightMesh.visible = this._parent.ClipNavigation.wireframe;
+        if (this.sightMesh) this.sightMesh.visible = this._parent.BuildPanel.wireframe;
         if (this._decalCone) this._decalCone.visible = !!canvas?.tiles?.active;
         if (game.Levels3DPreview.mirrorLevelsVisibility && this.tile.mesh) {
             this.mesh.visible = this.tile.occluded || !this.tile.mesh?.visible ? false : this.tile.visible;

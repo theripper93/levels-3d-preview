@@ -58,7 +58,7 @@ export class RangeRingEffect {
                 to: this.scale,
             },
         ];
-        CanvasAnimation.animate(scaleInAnimation, { duration: 500, easing: "easeOutCircle" });
+        foundry.canvas.animation.CanvasAnimation.animate(scaleInAnimation, { duration: 500, easing: "easeOutCircle" });
     }
 
     remove() { 
@@ -79,7 +79,7 @@ export class RangeRingEffect {
                 to: 0,
             },
         ];
-        CanvasAnimation.animate(scaleInAnimation, { duration: 400, easing: "easeOutCircle" }).then(() => this.effect.removeFromParent());
+        foundry.canvas.animation.CanvasAnimation.animate(scaleInAnimation, { duration: 400, easing: "easeOutCircle" }).then(() => this.effect.removeFromParent());
         
     }
 }

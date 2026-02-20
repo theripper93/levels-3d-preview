@@ -1,7 +1,7 @@
 import { toggleAdvancedSettings, injectAdvancedToggle, hideParams } from "../helpers/helpers.js";
 import { ShaderConfig } from "../shaders/ShaderLib.js";
 import { RegisterTours } from "../tours/tours.js";
-import { MapGen } from "../apps/mapgen.js";
+import { MapGen } from "../apps/mapGen.js";
 import { promptForTour } from "../tours/toursHelpers.js";
 import { getTimeSyncDefault } from "../systems/globalIllumination.js";
 import { GradientPicker } from "../helpers/GradientPicker.js";
@@ -2097,7 +2097,7 @@ export function registerConfigs() {
 
     //KEYBINDINGS
     Hooks.on("init", () => {
-        const { SHIFT, CONTROL, ALT } = KeyboardManager.MODIFIER_KEYS;
+        const { SHIFT, CONTROL, ALT } = foundry.helpers.interaction.KeyboardManager.MODIFIER_KEYS;
         game.keybindings.register("levels-3d-preview", "resetView", {
             name: game.i18n.localize("levels3dpreview.keybindings.resetView"),
             editable: [{ key: "KeyR", modifiers: [SHIFT] }],

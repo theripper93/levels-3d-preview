@@ -622,6 +622,54 @@ export function registerSettings() {
                 left: 0,
             },
         });
+
+        game.settings.register("levels-3d-preview", "allTokens", {
+            name: "Show All Tokens",
+            hint: "When disabled, show only colorized tokens, if enabled, show every token available.",
+            scope: "world",
+            config: true,
+            type: Boolean,
+            default: false,
+        });
+
+        game.settings.register("levels-3d-preview", "autoAssignToken", {
+            name: "Auto Assign 3D Model",
+            hint: "When placing an Unlinked token on the canvas, automatically assign a 3D model to it if none is assigned.",
+            scope: "world",
+            config: true,
+            choices: {
+            0: "Disabled",
+            1: "3D Model Only",
+            2: "3D Model and Top Down Token",
+            },
+            type: Number,
+            default: 1,
+        });
+
+        game.settings.register("levels-3d-preview", "assetBrowserCustomPath", {
+            name: "Custom Asset Path",
+            hint: "If you want to use a custom path for the asset browser, set it here.",
+            scope: "world",
+            config: true,
+            filePicker: "folder",
+            type: String,
+            default: "",
+        }),
+
+        game.settings.register("levels-3d-preview", "assetbrowsertour", {
+            scope: "world",
+            config: false,
+            type: Boolean,
+            default: false,
+        });
+
+        game.settings.register("levels-3d-preview", "assetbrowserpainttour", {
+            scope: "world",
+            config: false,
+            type: Boolean,
+            default: false,
+        });
+
     });
 
     Hooks.once("ready", () => {

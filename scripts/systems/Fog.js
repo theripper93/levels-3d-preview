@@ -9,7 +9,7 @@ export class Fog {
         this._lastBase64 = null;
         this.overlayRepeat = new THREE.Vector2(1, 1);
         this.debouncedUpdate = this.updateTexture; // !this._sharedContext ? foundry.utils.debounce(this.updateTexture, 300) : this.updateTexture;
-        this.extractor ??= new TextureExtractor(canvas.app.renderer, { callerName: "FogExtractorCanvas3D", controlHash: true, format: PIXI.FORMATS.RED });
+        this.extractor ??= new foundry.canvas.TextureExtractor(canvas.app.renderer, { callerName: "FogExtractorCanvas3D", controlHash: true, format: PIXI.FORMATS.RED });
         this.extractor.reset();
         this.initTexture();
         this.initPixiRT();
@@ -111,7 +111,7 @@ export class Fog {
         } else {
             let base64 = await this.extractor.extract({
                 texture: this.pixiRenderTexture,
-                compression: TextureExtractor.COMPRESSION_MODES.BASE64,
+                compression: foundry.canvas.TextureExtractor.COMPRESSION_MODES.BASE64,
                 type: "image/webp",
                 quality: 0.8,
                 debug: false,
@@ -123,7 +123,7 @@ export class Fog {
                 }
                 //fallback to canvas base64 extraction
                 this.extractor.reset();
-                console.warn("3D Canvas | Failed to extract texture using TextureExtractor, falling back to PIXI.RenderTexture extraction");
+                console.warn("3D Canvas | Failed to extract texture using foundry.canvas.TextureExtractor, falling back to PIXI.RenderTexture extraction");
                 base64 = await canvas.app.renderer.extract.base64(this.pixiRenderTexture, "image/webp", 0.8);
             }
             //const base64 = await canvas.app.renderer.extract.base64(this.pixiRenderTexture, "image/jpeg");
