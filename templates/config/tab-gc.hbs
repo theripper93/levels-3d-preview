@@ -1,0 +1,78 @@
+<section class='tab {{tab.cssClass}}' data-group='primary' data-tab='gc'>
+
+  <div class="form-group">
+    <label>{{localize "levels3dpreview.settings.enableGameCamera.name"}}</label>
+    <input type="checkbox" name="enableGameCamera" data-dtype="Boolean" {{checked enableGameCamera}} />
+    <p class="hint">{{localize "levels3dpreview.settings.enableGameCamera.hint"}}</p>
+  </div>
+
+  <div class="form-group">
+    <label>{{localize "levels3dpreview.settings.gameCameraMinAngle.name"}}</label>
+    <div class="form-fields">
+        <input type="range" name="gameCameraMinAngle" value="{{gameCameraMinAngle}}" min="0" max="90" step="1">
+        <span class="range-value">{{gameCameraMinAngle}}</span>
+    </div>
+    <p class="hint">{{localize "levels3dpreview.settings.gameCameraMinAngle.hint"}}</p>
+  </div>
+
+  <div class="form-group">
+    <label>{{localize "levels3dpreview.settings.gameCameraMaxAngle.name"}}</label>
+    <div class="form-fields">
+        <input type="range" name="gameCameraMaxAngle" value="{{gameCameraMaxAngle}}" min="0" max="90" step="1">
+        <span class="range-value">{{gameCameraMaxAngle}}</span>
+    </div>
+    <p class="hint">{{localize "levels3dpreview.settings.gameCameraMaxAngle.hint"}}</p>
+  </div>
+
+  <div class="form-group">
+    <label>{{localize "levels3dpreview.settings.gameCameraMinAzimuth.name"}}</label>
+    <div class="form-fields">
+        <input type="range" name="gameCameraMinAzimuth" value="{{gameCameraMinAzimuth}}" min="-180" max="180" step="1">
+        <span class="range-value">{{gameCameraMinAzimuth}}</span>
+    </div>
+    <p class="hint">{{localize "levels3dpreview.settings.gameCameraMinAzimuth.hint"}}</p>
+  </div>
+
+  <div class="form-group">
+    <label>{{localize "levels3dpreview.settings.gameCameraMaxAzimuth.name"}}</label>
+    <div class="form-fields">
+        <input type="range" name="gameCameraMaxAzimuth" value="{{gameCameraMaxAzimuth}}" min="-180" max="180" step="1">
+        <span class="range-value">{{gameCameraMaxAzimuth}}</span>
+    </div>
+    <p class="hint">{{localize "levels3dpreview.settings.gameCameraMaxAzimuth.hint"}}</p>
+  </div>
+
+  <div class="form-group">
+    <label>{{localize "levels3dpreview.settings.gameCameraMaxZoom.name"}}</label>
+    <div class="form-fields">
+        <input type="range" name="gameCameraMaxZoom" value="{{gameCameraMaxZoom}}" min="0.1" max="20" step="0.1">
+        <span class="range-value">{{gameCameraMaxZoom}}</span>
+    </div>
+    <p class="hint">{{localize "levels3dpreview.settings.gameCameraMaxZoom.hint"}}</p>
+  </div>
+
+  <div class="form-group">
+    <label>{{localize "levels3dpreview.settings.gameCameraClipping.name"}}</label>
+    <input type="checkbox" name="gameCameraClipping" data-dtype="Boolean" {{checked gameCameraClipping}} />
+    <p class="hint">{{localize "levels3dpreview.settings.gameCameraClipping.hint"}}</p>
+  </div>
+
+  <div class="form-group">
+    <label>{{localize "levels3dpreview.settings.gameCameraAutoLock.name"}}</label>
+    <input type="checkbox" name="gameCameraAutoLock" data-dtype="Boolean" {{checked gameCameraAutoLock}} />
+    <p class="hint">{{localize "levels3dpreview.settings.gameCameraAutoLock.hint"}}</p>
+  </div>
+
+  <div class="form-group">
+    <label>{{localize "levels3dpreview.settings.gameCameraDefaultGm.name"}}</label>
+    <input type="checkbox" name="gameCameraDefaultGm" data-dtype="Boolean" {{checked gameCameraDefaultGm}} />
+    <p class="hint">{{localize "levels3dpreview.settings.gameCameraDefaultGm.hint"}}</p>
+  </div>
+
+  <div class="form-group">
+    <label>{{localize "levels3dpreview.settings.gameCameraWarnings.name"}}</label>
+    <input type="checkbox" name="gameCameraWarnings" data-dtype="Boolean" {{checked gameCameraWarnings}} />
+    <p class="hint">{{localize "levels3dpreview.settings.gameCameraWarnings.hint"}}</p>
+  </div>
+  
+</section>

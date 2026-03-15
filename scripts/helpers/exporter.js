@@ -83,36 +83,40 @@ export class Exporter {
             Hooks.once("renderDialog", (app) => {
                 app.element.css({ width: "auto" });
             });
-            new Dialog({
-                title: game.i18n.localize("levels3dpreview.exporter.title"),
+            new foundry.applications.api.DialogV2({
+                window: { title: "levels3dpreview.exporter.title" },
                 content: "",
-                buttons: {
-                    export: {
-                        label: `<i class="fas fa-file-export"></i> ` + game.i18n.localize("levels3dpreview.exporter.export"),
+                buttons: [
+                    {
+                        action: "export",
+                        icon: "fas fa-file-export",
+                        label: "levels3dpreview.exporter.export",
                         callback: (dhtml) => {
                             const data = {
-                                tokens: dhtml.find('[name="flags.levels-3d-preview.tokens"]').is(":checked"),
-                                tiles: dhtml.find('[name="flags.levels-3d-preview.tiles"]').is(":checked"),
-                                walls: dhtml.find('[name="flags.levels-3d-preview.walls"]').is(":checked"),
-                                doors: dhtml.find('[name="flags.levels-3d-preview.doors"]').is(":checked"),
-                                background: dhtml.find('[name="flags.levels-3d-preview.background"]').is(":checked"),
-                                all: dhtml.find('[name="flags.levels-3d-preview.all"]').is(":checked"),
+                                tokens: dhtml.querySelector('[name="flags.levels-3d-preview.tokens"]').checked,
+                                tiles: dhtml.querySelector('[name="flags.levels-3d-preview.tiles"]').checked,
+                                walls: dhtml.querySelector('[name="flags.levels-3d-preview.walls"]').checked,
+                                doors: dhtml.querySelector('[name="flags.levels-3d-preview.doors"]').checked,
+                                background: dhtml.querySelector('[name="flags.levels-3d-preview.background"]').checked,
+                                all: dhtml.querySelector('[name="flags.levels-3d-preview.all"]').checked,
                             };
                             resolve(data);
                         },
                     },
-                    cancel: {
-                        label: `<i class="fas fa-times"></i> ` + game.i18n.localize("levels3dpreview.exporter.cancel"),
+                    {
+                        action: "cancel",
+                        icon: "fas fa-times",
+                        label: "levels3dpreview.exporter.cancel",
                         callback: () => {
                             resolve(false);
                         },
                     },
-                },
+                ],
                 render: (dhtml) => {
-                    $(dhtml[0]).append(html);
-                    $(dhtml[0]).replaceWith(function () {
-                        return "<form>" + this.innerHTML + "</form>";
-                    });
+                    dhtml.append(html);
+                    const newForm = document.createElement('form');
+                    newForm.innerHTML = dhtml.innerHTML;
+                    dhtml.replaceWith(newForm);
                 },
                 default: "cancel",
             }).render(true);

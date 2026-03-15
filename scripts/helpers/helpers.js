@@ -535,10 +535,6 @@ export class Helpers {
         game.Levels3DPreview._animateCameraTarget.speed = params.speed ?? 0.04;
     }
 
-    syncClipNavigator({range}) {
-        game.Levels3DPreview.BuildPanel.set(range);
-    }
-
     showSceneReport() {
         return showSceneReport();
     }
@@ -546,7 +542,7 @@ export class Helpers {
 
 export function toggleAdvancedSettings(app, html, settings, other) {
     for (let setting of settings) {
-        html.find(`[name="flags.levels-3d-preview.${setting}"]`).closest(".form-group").toggle();
+        html.querySelector(`[name="flags.levels-3d-preview.${setting}"]`).closest(".form-group").toggle();
     }
     other.forEach((o) => {
         o.toggle();
@@ -571,22 +567,17 @@ export function injectAdvancedToggle(app, html, settings, injected, other = []) 
 
 export function hideParams(app, html, element, flags, hide, invert = false) {
     if (!Array.isArray(hide)) hide = [hide];
-    html.on("change", element, (e) => {
+    html.querySelector(element).addEventListener("change", (e) => {
         const value = hide.some((h) => typeof h == "boolean") ? e.target.checked : e.target.value;
-        if (hide.includes(value)) {
-            flags.forEach((flag) => {
-                const els = html.find(`[name="flags.levels-3d-preview.${flag}"]`).closest(".form-group");
-                invert ? els.removeClass("hidden") : els.addClass("hidden");
-            });
-        } else {
-            flags.forEach((flag) => {
-                const els = html.find(`[name="flags.levels-3d-preview.${flag}"]`).closest(".form-group");
-                invert ? els.addClass("hidden") : els.removeClass("hidden");
-            });
-        }
+        const shouldHide = hide.includes(value);
+        flags.forEach((flag) => {
+            const el = html.querySelector(`[name="flags.levels-3d-preview.${flag}"]`)?.closest(".form-group");
+            if (!el) return;
+            el.classList.toggle("hidden", invert ? !shouldHide : shouldHide);
+        });
         app.setPosition({ height: "auto" });
     });
-    html.find(element).trigger("change");
+    html.querySelector(element).dispatchEvent(new Event("change"));
 }
 
 export const tTypes = ["Color", "Roughness", "Metalness", "AmbientOcclusion", "NormalGL", "Emissive"];

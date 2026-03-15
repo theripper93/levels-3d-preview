@@ -1,0 +1,46 @@
+<section class='tab {{tab.cssClass}}' data-group='primary' data-tab='token'>
+
+  <div class="form-group">
+    <label>{{localize "levels3dpreview.settings.flatTokenStyle.name"}}</label>
+    <select name="flatTokenStyle" data-dtype="String">
+      {{#select flatTokenStyle}}
+      <option value="flat">{{localize "levels3dpreview.settings.flatTokenStyle.options.flat"}}</option>
+      <option value="extruded">{{localize "levels3dpreview.settings.flatTokenStyle.options.extruded"}}</option>
+      <option value="coin">{{localize "levels3dpreview.settings.flatTokenStyle.options.coin"}}</option>
+      {{/select}}
+    </select>
+    <p class="hint">{{localize "levels3dpreview.settings.flatTokenStyle.hint"}}</p>
+  </div>
+
+  <div class="form-group">
+    <label>{{localize "levels3dpreview.settings.highlightCombat.name"}}</label>
+    <input type="checkbox" name="highlightCombat" data-dtype="Boolean" {{checked highlightCombat}} />
+    <p class="hint">{{localize "levels3dpreview.settings.highlightCombat.hint"}}</p>
+  </div>
+
+  <div class="form-group">
+    <label>{{localize "levels3dpreview.settings.startMarker.name"}}</label>
+    <input type="checkbox" name="startMarker" data-dtype="Boolean" {{checked startMarker}} />
+    <p class="hint">{{localize "levels3dpreview.settings.startMarker.hint"}}</p>
+  </div>
+
+  
+  <div class="form-group">
+    <label>{{localize "levels3dpreview.settings.enableReticule.name"}}</label>
+    <input type="checkbox" name="enableReticule" data-dtype="Boolean" {{checked enableReticule}} />
+    <p class="hint">{{localize "levels3dpreview.settings.enableReticule.hint"}}</p>
+  </div>
+
+  <div class="form-group">
+    <label>{{localize "levels3dpreview.settings.hideTarget.name"}}</label>
+    <input type="checkbox" name="hideTarget" data-dtype="Boolean" {{checked hideTarget}} />
+    <p class="hint">{{localize "levels3dpreview.settings.hideTarget.hint"}}</p>
+  </div>
+
+  <div class="form-group">
+    <label>{{localize "levels3dpreview.settings.hideEffects.name"}}</label>
+    <input type="checkbox" name="hideEffects" data-dtype="Boolean" {{checked hideEffects}} />
+    <p class="hint">{{localize "levels3dpreview.settings.hideEffects.hint"}}</p>
+  </div>
+
+<section>

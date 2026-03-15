@@ -74,19 +74,6 @@
     transition-delay: 0s;
 }
 
-#clip-navigation #clip-navigation-range{
-    position: relative;
-    transform: translateX(calc(-100% - 0.2rem)) rotate(-90deg);
-    transform-origin: top right;
-    pointer-events: all;
-}
-
-#clip-navigation #clip-navigation-range span{
-    position: absolute;
-    transform-origin: center right;
-    transform: rotate(90deg);
-}
-
 #clip-navigation input{
     width: 100%;
 }
@@ -98,18 +85,6 @@
 #clip-navigation i:hover{
     text-shadow: 0 0 8px var(--color-shadow-primary);
     cursor: pointer;
-}
-
-#clip-navigation .clip-navigation-range-label{
-    bottom: 1rem;
-    opacity: 0.3;
-    pointer-events: none;
-    transition: opacity 0.5s ease-in-out;
-    text-shadow: var(--color-warm-2) 0 0 5px;
-}
-
-#clip-navigation .clip-navigation-range-label.level-active{
-    opacity: 1;
 }
 
 #clip-navigation i.clip-navigation-enabled, .build-panel-button.clip-navigation-enabled{

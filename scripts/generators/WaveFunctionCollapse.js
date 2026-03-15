@@ -246,26 +246,30 @@ export class WaveFunctionSolver{
     static fromDialog(offset = {x: canvas.scene.dimensions.sceneX, y: canvas.scene.dimensions.sceneY}, width, height, depth) {
         const wfc = new WaveFunctionSolver(undefined, width, height, depth);
         let preventClose = false;
-        const d = new Dialog({
-            title: "Wave Function Collapse",
+        const d = new foundry.applications.api.DialogV2({
+            window: { title: "Wave Function Collapse" },
             content: `Select the tiles you want to learn from, then click Learn Pattern. After that, click Collapse to generate the tiles.`,
-            buttons: {
-                learn: {
-                    label: '<i class="fas fa-graduation-cap"></i> Learn Pattern',
+            buttons: [
+                {
+                    action: "learn",
+                    icon: "fas fa-graduation-cap",
+                    label: "Learn Pattern",
                     callback: () => {
                         preventClose = true;
                         wfc.learn();
                     }
                 },
-                collapse: {
-                    label: '<i class="fa-regular fa-arrows-minimize"></i> Collapse',
+                {
+                    action: "collapse",
+                    icon: "fa-regular fa-arrows-minimize",
+                    label: "Collapse",
                     callback: () => {
                         wfc.collapse(offset);
                     }
                 },
-            },
+            ],
             default: "learn",
-        })
+        });
         const oldClose = d.close;
         d.close = async function () {
             if (preventClose) {

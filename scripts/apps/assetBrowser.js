@@ -1,4 +1,4 @@
-import { toWorldSpace, getPolygonFromTile } from "./roomBuilder.js";
+import { HandlebarsApplication, mergeClone } from "../lib/utils.js";
 
 let fileCache = null;
 let dataCache = null;
@@ -13,7 +13,8 @@ data-search="{{search}}" data-output="{{output}}" data-displayname="{{displayNam
 </li>
 `;
 
-export class AssetBrowser extends Application {
+export class AssetBrowser extends HandlebarsApplication {
+
     constructor() {
         super();
         canvas.tiles.activate();
@@ -26,6 +27,50 @@ export class AssetBrowser extends Application {
         this.tilePreCrateHookId = Hooks.on("preCreateTile", this._onTileCreate.bind(this));
         this._paintTourDone = game.settings.get("levels-3d-preview", "assetbrowserpainttour");
         _this = this;
+    }
+
+    static get DEFAULT_OPTIONS() {
+        return mergeClone(super.DEFAULT_OPTIONS, {
+            classes: ["three-canvas-compendium-app"],
+            window: {
+                title: "Asset Browser",
+                resizable: true,
+            },
+            position: {
+                width: 390,
+                height: window.innerHeight * 0.8,
+            },
+            dragDrop: [{ dragSelector: "li", dropSelector: "" }],
+        });
+    }
+
+    static get PARTS() {
+        return {
+            tabs: {
+                template: 'modules/levels-3d-preview/templates/material-explorer/tab-navigation.hbs',
+            },
+            options: {
+                template: 'modules/levels-3d-preview/templates/material-explorer/tab-options.hbs',
+            },
+            utility: {
+                template: 'modules/levels-3d-preview/templates/material-explorer/tab-utility.hbs',
+            },
+            content: {
+                template: `modules/levels-3d-preview/templates/material-explorer/content.hbs`,
+            }
+        }
+    };
+
+    static get TABS() {
+        return {
+            primary: {
+                tabs: [
+                    { id: "options", icon: "fas fa-gears", label: "Options" },
+                    { id: "utility", icon: "fas fa-screwdriver-wrench", label: "Utility" },
+                ],
+                initial: "options",
+            },
+        }
     }
 
     get sources() {
@@ -42,22 +87,8 @@ export class AssetBrowser extends Application {
     }
 
     static scale = 1;
-
+    
     static density = 1;
-
-    static get defaultOptions() {
-        return {
-            ...super.defaultOptions,
-            title: "Asset Browser",
-            id: "asset-browser",
-            classes: ["three-canvas-compendium-app"],
-            template: `modules/levels-3d-preview/templates/material-explorer.hbs`,
-            width: 390,
-            height: window.innerHeight * 0.8,
-            resizable: true,
-            dragDrop: [{ dragSelector: "li", dropSelector: "" }],
-        };
-    }
 
     get title() {
         return "Asset Browser: " + this._assetCount + " assets available";
@@ -96,7 +127,7 @@ export class AssetBrowser extends Application {
         const { x, y, width, height } = tileData;
         const approxArea = width * height;
         const pointCount = (approxArea / Math.pow(canvas.grid.size, 2)) * AssetBrowser.density * 0.3;
-        const polygonToolPoints = isPolygon ? toWorldSpace(getPolygonFromTile(tileData).polygon, x, y) : [x, y, x + width, y, x + width, y + height, x, y + height, x, y].map((n) => parseInt(n));
+        const polygonToolPoints = isPolygon ? this.toWorldSpace(this.getPolygonFromTile(tileData).polygon, x, y) : [x, y, x + width, y, x + width, y + height, x, y + height, x, y].map((n) => parseInt(n));
         const isClosed = isPolygon ? polygonToolPoints[0] === polygonToolPoints[polygonToolPoints.length - 2] && polygonToolPoints[1] === polygonToolPoints[polygonToolPoints.length - 1] : true;
         const randomPoints = getRandomPointsInsidePolygon(polygonToolPoints, pointCount, isClosed);
         const pos3D = (...args) => game.Levels3DPreview.CONFIG.entityClass.Ruler3D.posCanvasTo3d(...args);
@@ -111,6 +142,23 @@ export class AssetBrowser extends Application {
             }
         }
         return false;
+    }
+
+    static toWorldSpace(polygon, x, y) {
+        return polygon.map((n, index) => index % 2 == 0 ? n + x : n + y);
+    }
+
+    static getPolygonFromTile(tileDocument) {
+        const flags = tileDocument.flags["levels-3d-preview"]?.model3d;
+        if (flags) {
+            if (!flags.includes("#")) return {thickness: null, polygon: flags.split(",").map((s) => parseInt(s))};
+            const [thickness, points] = flags.split("#");
+            const isWall = tileDocument.flags["levels-3d-preview"]?.dynaMesh == "polygonbevelsolidify" || tileDocument.flags["levels-3d-preview"]?.dynaMesh == "polygonbevelsolidifyjagged";
+            let mappedPoints = points.split(",").map((s) => parseInt(s));
+            if(isWall) mappedPoints = mappedPoints.map((p) => p + thickness*2)
+            return {thickness: parseInt(thickness), polygon: mappedPoints};
+        }
+        return null;
     }
 
     async _autoScatterOnTile(tile) {
@@ -305,8 +353,8 @@ export class AssetBrowser extends Application {
             <hr>
             `,
             callback: (html) => {
-                edges = html.find("#edges").is(":checked");
-                surfaces = html.find("#surfaces").is(":checked");
+                edges = html.querySelector("#edges").checked;
+                surfaces = html.querySelector("#surfaces").checked;
             },
             rejectClose: true,
         });
@@ -321,10 +369,10 @@ export class AssetBrowser extends Application {
         const currentIntersect = collisionPoint ?? _this.currentPoint;
         if (currentIntersect?.point) _this.lastPlacementPosition.copy(currentIntersect.point);
         const srcs = [];
-        src ? srcs.push(src) : _this.element.find("li.selected").each((i, el) => srcs.push(el.dataset.output));
+        src ? srcs.push(src) : _this.element.querySelectorAll("li.selected").forEach(el => srcs.push(el.dataset.output));
         const randomSrc = srcs[Math.floor(Math.random() * srcs.length)];
-        const angle = parseFloat(_this.element.find("#angle").val() || 0);
-        let color = _this.element.find("#color").val();
+        const angle = parseFloat(_this.element.querySelector("#angle").value || 0);
+        let color = _this.element.querySelector("#color").value;
         const options = _this.quickPlacementOptions;
         let normal = null;
         let scale = AssetBrowser.scale;
@@ -372,15 +420,18 @@ export class AssetBrowser extends Application {
         event.dataTransfer.setData("text/plain", JSON.stringify(dragData));
     }
 
-    async getData() {
-        const data = super.getData();
+    async _prepareContext(options) {
+        const data = await super._prepareContext(options);
         data.assetPacks = AssetBrowser.assetPacks;
         if (dataCache) {
             this._assetCount = dataCache.materials.length;
             dataCache.scale = AssetBrowser.scale || 1;
             dataCache.density = AssetBrowser.density || 1;
             dataCache.angle = AssetBrowser.angle || 0;
-            return dataCache;
+            return {
+                ...dataCache,
+                tabs: this._prepareTabs("primary"),
+            };
         }
         const materials = [];
         const files = fileCache ?? (await this.getSources());
@@ -403,6 +454,7 @@ export class AssetBrowser extends Application {
         data.angle = AssetBrowser.angle || 0;
         this._assetCount = materials.length;
         dataCache = data;
+        data.tabs = this._prepareTabs("primary");
         return data;
     }
 
@@ -426,79 +478,80 @@ export class AssetBrowser extends Application {
         return files;
     }
 
-    activateListeners(html) {
-        super.activateListeners(html);
-        this.element.find(`.tab[data-tab="options"]`).show();
-        this.element.find(".tab-button").on("click", (e) => {
-            const tab = $(e.currentTarget).data("tab");
-            this.element.find(".tab").hide();
-            this.element.find(`.tab[data-tab="${tab}"]`).show();
-            this.element.find(".tab-button").removeClass("active");
-            $(e.currentTarget).addClass("active");
+    _onRender(context, options) {
+        super._onRender(context, options);
+        const html = this.element;
+
+        html.querySelector(".window-title").innerText = this.title;
+
+        html.querySelector(`.tab[data-tab="options"]`).style.display = "";
+        html.querySelectorAll(".tab-button").forEach(btn => btn.addEventListener("click", (e) => {
+            const tab = e.currentTarget.dataset.tab;
+            html.querySelectorAll(".tab").forEach(el => el.style.display = "none");
+            html.querySelector(`.tab[data-tab="${tab}"]`).style.display = "";
+            html.querySelectorAll(".tab-button").forEach(el => el.classList.remove("active"));
+            e.currentTarget.classList.add("active");
+        }));
+        html.querySelector("#toggle-tabs").addEventListener("click", (e) => {
+            html.querySelectorAll(".tab").forEach(el => el.classList.toggle("hidden"));
+            e.currentTarget.querySelector("i").classList.toggle("fa-caret-up");
+            e.currentTarget.querySelector("i").classList.toggle("fa-caret-down");
         });
-        this.element.find("#toggle-tabs").on("click", (e) => {
-            this.element.find(".tab").toggleClass("hidden");
-            $(e.currentTarget).find("i").toggleClass("fa-caret-up fa-caret-down");
-        });
-        this.element.find("#selected-notification").toggle(false);
-        this.element.find(".material-confirm").hide();
-        this.element.on("keyup", "#search", this.onSearch.bind(this));
-        this.element.find("input").trigger("keyup");
-        this.element.on("mouseup", (e) => {
-            const li = $(e.target).closest("li");
-            if (li.length === 0) return;
-            const isSelect = $(e.target).closest("li").hasClass("selected");
-            if (!e.ctrlKey && !e.shiftKey) this.element.find("li").removeClass("selected");
-            if (e.ctrlKey) $(e.target).closest("li").toggleClass("selected");
+        html.querySelector("#selected-notification").style.display = "none";
+        html.querySelectorAll(".material-confirm").forEach(el => el.classList.add("hidden"));
+        html.addEventListener("keyup", (e) => { if (e.target.matches("#search")) this.onSearch(e); });
+        html.querySelectorAll("input").forEach(el => el.dispatchEvent(new Event("keyup")));
+        html.querySelectorAll("li").forEach(li => li.addEventListener("mouseup", (e) => {
+            const isSelect = e.target.closest("li").classList.contains("selected");
+            if (!e.ctrlKey && !e.shiftKey) html.querySelectorAll("li").forEach(el => el.classList.remove("selected"));
+            if (e.ctrlKey) e.target.closest("li").classList.toggle("selected");
             if (e.shiftKey) {
-                const selected = this.element.find("li.selected");
+                const selected = html.querySelectorAll("li.selected");
                 if (selected.length === 0) {
-                    $(e.target).closest("li").addClass("selected");
+                    e.target.closest("li").classList.add("selected");
                 } else {
-                    const start = selected.first().index();
-                    const end = li.index();
+                    const allLis = [...html.querySelectorAll("li")];
+                    const start = allLis.indexOf(selected[0]);
+                    const end = allLis.indexOf(li);
                     const min = Math.min(start, end);
                     const max = Math.max(start, end);
-                    this.element.find("li").each((i, el) => {
-                        if (i >= min && i <= max) $(el).addClass("selected");
+                    allLis.forEach((el, i) => {
+                        if (i >= min && i <= max) el.classList.add("selected");
                     });
                 }
             }
             if (!isSelect) {
-                $(e.target).closest("li").addClass("selected");
+                e.target.closest("li").classList.add("selected");
             }
-            this._hasSelected = this.element.find("li.selected").length > 0;
-            this.element.find("#selected-notification").toggle(this._hasSelected, 200);
+            this._hasSelected = html.querySelectorAll("li.selected").length > 0;
+            html.querySelector("#selected-notification").style.display = this._hasSelected ? "" : "none";
             if (this._hasSelected) canvas.tiles.releaseAll();
-        });
-        this.element.on("change", "#asset-packs", this.onSearch.bind(this));
-        this.element.on("click", ".quick-placement-toggle", (e) => {
-            e.currentTarget.classList.toggle("active");
-            if (!this._paintTourDone && e.currentTarget.dataset.action == "paint") {
-                game.settings.set("levels-3d-preview", "assetbrowserpainttour", true);
-                this._paintTourDone = true;
-                setTimeout(() => {
-                    game.tours.get("levels-3d-preview.asset-browser-paint").start();
-                }, 2000);
-            }
-        });
-        this.element.on("click", ".utility-button", (e) => {
-            const action = e.currentTarget.dataset.action;
+        }));
+        html.querySelector("#asset-packs").addEventListener("change", e => this.onSearch(e) );
+        html.querySelectorAll(".quick-placement-toggle").forEach(btn => btn.addEventListener("click", (e) => {
+                btn.classList.toggle("active");
+                if (!this._paintTourDone && btn.dataset.action == "paint") {
+                    game.settings.set("levels-3d-preview", "assetbrowserpainttour", true);
+                    this._paintTourDone = true;
+                    setTimeout(() => {
+                        game.tours.get("levels-3d-preview.asset-browser-paint").start();
+                    }, 2000);
+                }
+        }));
+        html.querySelectorAll(".utility-button").forEach(btn => btn.addEventListener("click", (e) => {
+            const action = btn.dataset.action;
             runScript.bind(this)(action);
-        });
-        this.element.on("change", "#scale", (e) => {
-            AssetBrowser.scale = parseFloat(e.target.value);
-        });
-        this.element.on("change", "#density", (e) => {
-            AssetBrowser.density = parseFloat(e.target.value);
-        });
+        }));
+        html.querySelector("#scale").addEventListener("change", (e) => AssetBrowser.scale = parseFloat(e.target.value));
+        html.querySelector("#density").addEventListener("change", (e) => AssetBrowser.density = parseFloat(e.target.value));
+        this.onSearch();
     }
 
     onSearch() {
-        const value = this.element.find("#search").val();
+        const value = this.element.querySelector("#search").value;
         const packData = this.element
-            .find("#asset-packs")
-            .val()
+            .querySelector("#asset-packs")
+            .value
             .split(",")
             .filter((p) => p)
             .map((p) => p.trim().toLowerCase().replaceAll(" ", "%20"));
@@ -520,22 +573,9 @@ export class AssetBrowser extends Application {
             }
         }
         const html = results.map((m) => this.generateListItem(m)).join("");
-        this.element.find("ol").html(html);
-        this.element[0].querySelectorAll("li").forEach((li) => {
-            li.addEventListener("dragstart", this._onDragStart, false);
-        });
-
-        //old method
-        return;
-        this.element.find("li").each((i, el) => {
-            const displayName = $(el).data("displayname");
-            const search = $(el).data("output");
-            const searchLC = search.toLowerCase();
-            const inSearch = count >= this._maxCount ? false : searchLC.includes(value.toLowerCase()) || displayName.toLowerCase().includes(value.toLowerCase());
-            const packMatch = packName === "all" || (searchLC.includes(packName) && pack.some((p) => searchLC.includes(p)));
-            const display = inSearch && packMatch;
-            $(el).toggle(display);
-            if (display) count++;
+        this.element.querySelector("ol").innerHTML = html;
+        this.element.querySelectorAll("li").forEach((li) => {
+            li.addEventListener("dragstart", this._onDragStart);
         });
     }
 
@@ -552,13 +592,13 @@ export class AssetBrowser extends Application {
         }, 2000);
     }
 
-    _getHeaderButtons() {
-        const buttons = super._getHeaderButtons();
+    _getHeaderControls() {
+	    const buttons = super._getHeaderControls();
         buttons.unshift({
             label: "",
             class: "tour",
             icon: "fas fa-question",
-            onclick: () => {
+            onClick: () => {
                 const tour = game.tours.get(`levels-3d-preview.${this.id}`);
                 tour ? tour.start() : ui.notifications.warn("No tour found for this panel.");
             },
@@ -568,7 +608,7 @@ export class AssetBrowser extends Application {
 
     get quickPlacementOptions() {
         const options = {};
-        const quickPlacementToggles = this.element.find(".quick-placement-toggle");
+        const quickPlacementToggles = this.element.querySelectorAll(".quick-placement-toggle");
         for (let toggle of quickPlacementToggles) {
             const action = toggle.dataset.action;
             options[action] = toggle.classList.contains("active");
@@ -671,7 +711,7 @@ async function runScript(id) {
             game.Levels3DPreview.UTILS.extrudeWalls();
             break;
         case "smart-scatter":
-            if (!canvas.tiles.controlled.length || !this.element.find("li.selected").length) return ui.notifications.error("Please select a tile to scatter assets on and one or more assets to scatter.");
+            if (!canvas.tiles.controlled.length || !this.element.querySelectorAll("li.selected").length) return ui.notifications.error("Please select a tile to scatter assets on and one or more assets to scatter.");
             ui.notifications.info("Scattering assets...The canvas will freeze for a few seconds.");
             await wait(1000);
             for (let tile of canvas.tiles.controlled) {
@@ -695,7 +735,7 @@ async function runScript(id) {
                 <hr>
                 `,
                 callback: (html) => {
-                    radius = parseInt(html.find('[name="radius"]').val());
+                    radius = parseInt(html.querySelector('[name="radius"]').value);
                 },
                 rejectClose: true,
             });

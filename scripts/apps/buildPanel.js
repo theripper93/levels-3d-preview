@@ -2,9 +2,10 @@ import { AssetBrowser } from "./assetBrowser.js";
 import { TokenBrowser } from "./tokenBrowser.js";
 import { Socket } from "../lib/socket.js";
 import { factor } from "../main.js";
-// import { CLIP_NAVIGATION_BUTTONS } from "./clipNavigation.js";
+import { HandlebarsApplication, mergeClone } from "../lib/utils.js";
 
-export class BuildPanel extends Application {
+export class BuildPanel extends HandlebarsApplication {
+
     constructor() {
         super();
         this._autoHide = true;
@@ -22,21 +23,25 @@ export class BuildPanel extends Application {
         ];
     }
 
-    static get defaultOptions() {
-        return {
-            ...super.defaultOptions,
-            id: "build-panel",
-            classes: ["three-canvas-compendium-app-slim"],
-            template: `modules/levels-3d-preview/templates/build-panel.hbs`,
-            resizable: false,
-            popOut: false,
-        };
+    static get DEFAULT_OPTIONS() {
+        return mergeClone(super.DEFAULT_OPTIONS, {
+            tag: "menu",
+            classes: ["flexcol"],
+            window: {
+                frame: false,
+                positioned: false,
+            },
+        });
     }
 
-    getData() {
+    async _prepareContext(options) {
+        const data = {};
         this.isGC = game.settings.get("levels-3d-preview", "enableGameCamera") && (canvas.scene.getFlag("levels-3d-preview", "enableGameCamera") ?? true);;
         this.isGM = game.user.isGM;
         this.isFog = canvas.scene.getFlag("levels-3d-preview", "enableFog") ?? false;
+        data.isGC = this.isGC;
+        data.isGM = this.isGM;
+        data.isFog = this.isFog;
         const levels = (canvas.scene.flags.levels?.sceneLevels ?? [])
             .filter((l) => l[1] !== undefined && l[0] !== undefined)
             .sort((a, b) => {
@@ -50,6 +55,8 @@ export class BuildPanel extends Application {
                 };
             });
         this.showRange = levels.length > 0;
+        data.autoMode = this.autoMode;
+        data.showRange = this.showRange;
         if (this.showRange) {
             this.lowestLevel = levels.reduce((a, b) => {
                 return a.bottom < b.bottom ? a : b;
@@ -66,77 +73,90 @@ export class BuildPanel extends Application {
             this.max = this.higestLevel.top + 5;
             this.min = this.lowestLevel.top;
             this.levels = levels;
+            data.levels = this.levels;
+            data.range = {
+                min: this.min,
+                max: this.max,
+                curr: this.currentRange ?? this.higestLevel.top + 5,
+            }
         }
         const b = game.user.isGM ? this.BUILD_PANEL_BUTTONS.filter((b) => b.visible()) : [];
         const c = this.CLIP_NAVIGATION_BUTTONS.filter(b => b.visible());
         document.querySelector(":root").style.setProperty("--build-panel-height", `${(b.length + c.length) * 40 + 50}px`);
         const showSeparator = b.length > 0 && c.length > 0;
         return {
+            ...data,
             showSeparator,
             buttons: b,
             clipNavigation: c,
         };
     }
 
-    activateListeners(html) {
-        super.activateListeners(html);
-        html.find("#clip-navigation-fog").addClass("clip-navigation-enabled");
+    _onRender(context, options) {
+        super._onRender(context, options);
+        const html = this.element;
+
+        html.querySelectorAll(":scope > li").forEach(li => li.remove());
+        html.querySelectorAll("li").forEach(li => this.element.appendChild(li));
+        
+        html.querySelector("#clip-navigation-fog")?.classList.add("clip-navigation-enabled");
+        this.insertMinimizeButton(true);
         this.insertMinimizeButton();
-        html.find("#game-camera-toggle").toggleClass("clip-navigation-enabled", game.Levels3DPreview.GameCamera.enabled);
-        setTimeout(() => { 
+        html.querySelector("#game-camera-toggle")?.classList.toggle("clip-navigation-enabled", game.Levels3DPreview.GameCamera.enabled);
+        setTimeout(() => {
             if (this._autoHide) {
-                html.addClass("minimized");
+                html.classList.add("minimized");
             }
         }, 10000);
-        $("#sidebar-tabs menu").after(html);
-        html.on("click", "#build-panel-minimize", () => { 
-            html.toggleClass("minimized");
-        });
-        html.on("click", ".build-panel-button", (event) => { 
+        document.querySelector("#sidebar-tabs menu").after(html);
+
+        html.addEventListener("click", (event) => {
+            if (event.target.closest("#build-panel-minimize")) {
+                html.classList.toggle("minimized");
+            }
+        }, { signal: this.options.signal });
+
+        html.querySelectorAll(".build-panel-button").forEach(btn => btn.addEventListener("click", (event) => {
             this._autoHide = false;
-            const action = event.currentTarget.dataset.action;
-            const btn = [
+            const action = btn.dataset.action;
+            const button = [
                 ...this.BUILD_PANEL_BUTTONS,
                 ...this.CLIP_NAVIGATION_BUTTONS
             ].find((b) => b.id === action);
-            btn.callback(event);
-        });
+            button.callback(event);
+        }));
+
         if (game.Levels3DPreview.sharing.apps.MapBrowser?.contest?.active) {
-            html.find(`i[data-action="community-maps"]`).addClass("contest-active");
-            const trophyIcon = $(`<i class="fas fa-trophy-star"></i>`);
-            const li = html.find(`i[data-action="community-maps"]`).closest("li");
-            li.css("position", "relative");
-            trophyIcon.css({
+            html.querySelector(`i[data-action="community-maps"]`).classList.add("contest-active");
+            const li = html.querySelector(`i[data-action="community-maps"]`).closest("li");
+            li.style.position = "relative";
+            const trophyIcon = document.createElement("i");
+            trophyIcon.className = "fas fa-trophy-star";
+            Object.assign(trophyIcon.style, {
                 position: "absolute",
                 left: "-3px",
                 top: "2px",
-                "font-size": "0.8rem",
+                fontSize: "0.8rem",
                 color: "#ffc200",
-                "pointer-events": "none",
-                "text-shadow": "0 0 3px black"
-            })
+                pointerEvents: "none",
+                textShadow: "0 0 3px black"
+            });
             li.append(trophyIcon);
         }
-        html.on("input", "input", this._onRangeChange.bind(this));
-        html.find("#clip-navigation-range input").on("change", this._onRangeSnap.bind(this));
-        html.find("#clip-navigation-range input").trigger("change");
-        html.find("#game-camera-toggle").toggleClass("clip-navigation-enabled", game.Levels3DPreview.GameCamera.enabled);
-        html.find("#clip-navigation-fog").toggleClass("clip-navigation-enabled", (canvas.scene.getFlag("levels-3d-preview", "fogDistance") ?? 3000) / factor == game.Levels3DPreview.scene.fog?.far);
-        
-        html.on("click", ".clip-navigation-btn", (e) => { 
-            const id = e.currentTarget.id;
-            const button = this.CLIP_NAVIGATION_BUTTONS.find((b) => b.id === id);
-            if (button) button.callback(e);
-        });
 
-        if (!this._setOnLoad) {
-            this.setToClosest();
-            this._setOnLoad = true;
-        }
+        html.querySelectorAll("input").forEach(el => el.addEventListener("input", (event) => this._onRangeChange(event)));
+
+        html.querySelector("#game-camera-toggle")?.classList.toggle("clip-navigation-enabled", game.Levels3DPreview.GameCamera.enabled);
+        html.querySelector("#clip-navigation-fog")?.classList.toggle("clip-navigation-enabled", (canvas.scene.getFlag("levels-3d-preview", "fogDistance") ?? 3000) / factor === game.Levels3DPreview.scene.fog?.far);
+
+        html.querySelectorAll(".clip-navigation-btn").forEach(btn => btn.addEventListener("click", (event) => {
+            const button = this.CLIP_NAVIGATION_BUTTONS.find((b) => b.id === btn.id);
+            if (button) button.callback(event);
+        }));
     }
 
     insertMinimizeButton(remove = false){
-        if(remove) return document.querySelectorAll("#build-panel-minimize").forEach(b => b.remove());
+        if(remove) return document.querySelectorAll("#build-panel-minimize").forEach(b => b.closest("li").remove());
 
         const button = document.createElement("button")
         button.id = "build-panel-minimize";
@@ -144,9 +164,7 @@ export class BuildPanel extends Application {
         const li = document.createElement("li");
         li.appendChild(button)
         document.querySelector(`button[data-tab="settings"]`).closest("li").after(li)
-        button.addEventListener("click", ()=>{
-            this.element.toggleClass("minimized")
-        })
+        button.addEventListener("click", () => this.element.classList.toggle("minimized"));
     }
 
     async close(...args){
@@ -168,31 +186,16 @@ export class BuildPanel extends Application {
             });
         });
 
-        Hooks.on("controlToken", (token, controlled) => {
-            if (!game.Levels3DPreview?._active) return;
-            if (controlled) {
-                game.Levels3DPreview.BuildPanel.setToClosest();
-            }
-        });
-
-        Hooks.on("updateToken", (token, updates) => {
-            if (!game.Levels3DPreview?._active) return;
-            if ("elevation" in updates && token.object?.controlled) {
-                game.Levels3DPreview.BuildPanel.setToClosest();
-            }
-        });
-
         Hooks.on("renderTokenConfig", async (app, html) => {
-            html = $(html);
             function wait(ms) {
                 return new Promise((resolve) => setTimeout(resolve, ms));
             }
             await wait(100);
         
-            while (!html.find(`[name="flags.levels-3d-preview.model3d"]`).length) {
+            while (!html.querySelectorAll(`[name="flags.levels-3d-preview.model3d"]`).length) {
                 await wait(100);
             }
-            const filepicker = html.find(`[name="flags.levels-3d-preview.model3d"]`).closest(".form-group");
+            const filepicker = html.querySelector(`[name="flags.levels-3d-preview.model3d"]`)?.closest(".form-group");
             TokenBrowser.create(filepicker, app);
         });
         
@@ -236,59 +239,20 @@ export class BuildPanel extends Application {
         });
     }
 
-    update() {
-        if (!this.showRange) return;
-        $(this.element).find("#clip-navigation-range input").trigger("change");
-    }
-
-    set(val) {
-        if (!this.showRange) return;
-        this.currentRange = val;
-        this.render(true);
-    }
-
-        setToClosest(value) {
-        if (!this.showRange) return;
-        if (!value && this.autoMode) value = (canvas.tokens.controlled[0] ?? _token)?.document.elevation;
-        if (isNaN(value)) return;
-        const input = $(this.element).find("#clip-navigation-range input");
-        const closest = this.levels.reduce((a, b) => {
-            return Math.abs(a.bottom - value) < Math.abs(b.bottom - value) ? a : b;
-        });
-        if (closest.top === this.currentRange) return;
-        input.val(closest.top);
-        this.currentRange = closest.top;
-        this.currentLevel = closest;
-        this._onRangeChange();
-    }
-
-    _onRangeSnap(e) {
-        const input = $(e.currentTarget);
-        const value = parseFloat(input.val());
-        const closest = this.levels.reduce((a, b) => {
-            return Math.abs(a.top - value) < Math.abs(b.top - value) ? a : b;
-        });
-        input.val(closest.top);
-        this.currentRange = closest.top;
-        this.currentLevel = closest;
-        this._onRangeChange();
-    }
-
+    // RememberV14
     _onRangeChange() {
-        const input = $(this.element).find("#clip-navigation-range input");
-        const value = parseFloat(input.val());
+        const input = this.element.querySelector("#clip-navigation-range input");
+        const value = parseFloat(input.value);
         const disabled = value == this.offLevel.top;
 
         const closest = this.levels.reduce((a, b) => {
             return Math.abs(a.top - value) < Math.abs(b.top - value) ? a : b;
         });
 
-        $(this.element)
-            .find(".clip-navigation-range-label")
-            .each((i, e) => {
-                const top = $(e).data("top");
-                $(e).toggleClass("level-active", top == closest.top);
-            });
+        this.element.querySelectorAll(".clip-navigation-range-label").forEach((e) => {
+            const top = e.dataset.top;
+            e.classList.toggle("level-active", top == closest.top);
+        });
 
         if (disabled) {
             game.Levels3DPreview.scene.traverse((c) => {
@@ -336,7 +300,7 @@ export class BuildPanel extends Application {
             callback: (e) => {
                 this.autoMode = !this.autoMode;
                 game.settings.set("levels-3d-preview", "clipNavigatorFollowClient", this.autoMode);
-                $(e.currentTarget).toggleClass("clip-navigation-enabled");
+                e.target.classList.toggle("clip-navigation-enabled");
             },
         },
         {
@@ -347,7 +311,7 @@ export class BuildPanel extends Application {
             visible: () => this.isGC,
             callback: (e) => {
                 game.Levels3DPreview.GameCamera.lock = !game.Levels3DPreview.GameCamera.lock;
-                $(e.currentTarget).toggleClass("clip-navigation-enabled", game.Levels3DPreview.GameCamera.lock);
+                e.target.classList.toggle("clip-navigation-enabled", game.Levels3DPreview.GameCamera.lock);
             },
         },
         //GM
@@ -359,19 +323,20 @@ export class BuildPanel extends Application {
             visible: () => this.isGM && this.isGC,
             callback: (e) => {
                 game.Levels3DPreview.GameCamera.toggle();
-                $(e.currentTarget).toggleClass("clip-navigation-enabled", game.Levels3DPreview.GameCamera.enabled);
+                e.target.classList.toggle("clip-navigation-enabled", game.Levels3DPreview.GameCamera.enabled);
             },
         },
-        {
-            id: "clip-navigation-sync",
-            name: "levels3dpreview.clipNavigator.sync",
-            icon: "fas fa-random",
-            visible: () => this.isGM && this.showRange,
-            callback: () => {
-                Socket.syncClipNavigator({range: this.currentRange});
-                ui.notifications.info(game.i18n.localize("levels3dpreview.clipNavigator.syncNotification").replace("{{level}}", this.currentLevel.name));
-            },
-        },
+        // RememberV14
+        // {
+        //     id: "clip-navigation-sync",
+        //     name: "levels3dpreview.clipNavigator.sync",
+        //     icon: "fas fa-random",
+        //     visible: () => this.isGM && this.showRange,
+        //     callback: () => {
+        //         Socket.syncClipNavigator({range: this.currentRange});
+        //         ui.notifications.info(game.i18n.localize("levels3dpreview.clipNavigator.syncNotification").replace("{{level}}", this.currentLevel.name));
+        //     },
+        // },
         {
             id: "clip-navigation-fog",
             name: "levels3dpreview.clipNavigator.fog",
@@ -390,7 +355,7 @@ export class BuildPanel extends Application {
                     game.Levels3DPreview.camera.far = fogDistance;
                     game.Levels3DPreview.camera.updateProjectionMatrix()
                 }
-                $(e.currentTarget).toggleClass("clip-navigation-enabled", game.Levels3DPreview.scene.fog.far == fogDistance);
+                e.target.classList.toggle("clip-navigation-enabled", game.Levels3DPreview.scene.fog.far == fogDistance);
             },
         },
         {
@@ -401,7 +366,7 @@ export class BuildPanel extends Application {
             visible: () => this.isGM,
             callback: (e) => {
                 this.wireframe = !this.wireframe;
-                $(e.currentTarget).toggleClass("clip-navigation-enabled", this.wireframe);
+                e.target.classList.toggle("clip-navigation-enabled", this.wireframe);
             },
         },
         {
@@ -420,10 +385,14 @@ export class BuildPanel extends Application {
             visible: () => true,
             callback: (e) => {
                 if (!game.Levels3DPreview._ready) return;
-                $("#levels-3d-preview-loading-bar").hide();
-                $("#clip-navigation-higlight-arrow").remove();
-                $(".levels-3d-preview-loading-screen").fadeToggle(200);
-                $("#close-loading-screen").css("display", "flex");
+                document.querySelector("#levels-3d-preview-loading-bar").style.display = "none";
+                document.querySelector("#clip-navigation-higlight-arrow")?.remove();
+
+                const loadingScreen = document.querySelector(".levels-3d-preview-loading-screen");
+                loadingScreen.style.transition = "opacity 0.2s";
+                loadingScreen.style.opacity = loadingScreen.style.opacity === "0" ? "1" : "0";
+
+                document.querySelector("#close-loading-screen").style.display = "flex";
             },
         },
         {

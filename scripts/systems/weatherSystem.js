@@ -131,27 +131,31 @@ export class WeatherSystem {
         };
         //createMacro();
 
-        new Dialog({
-            title: game.i18n.localize("levels3dpreview.macrodialog.title"),
+        new foundry.applications.api.DialogV2({
+            window: { title: "levels3dpreview.macrodialog.title" },
             content: `<form id="document-create"><div class="form-group">
             <label> ${game.i18n.localize("levels3dpreview.macrodialog.label")}</label>
             <div class="form-fields">
                 <input type="text" name="macroname" placeholder="${game.i18n.localize("levels3dpreview.macrodialog.placeholder")}" required="">
             </div>
         </div></form>`,
-            buttons: {
-                export: {
-                    label: `<i class="far fa-save"></i> ` + game.i18n.localize("levels3dpreview.macrodialog.export"),
+            buttons: [
+                {
+                    action: "export",
+                    icon: "far fa-save",
+                    label: "levels3dpreview.macrodialog.export",
                     callback: (html) => {
-                        const macroname = html.find("input[name='macroname']").val();
+                        const macroname = html.querySelector("input[name='macroname']").value;
                         if (macroname) createMacro(macroname);
                     },
                 },
-                cancel: {
-                    label: `<i class="fas fa-times"></i> ` + game.i18n.localize("levels3dpreview.macrodialog.cancel"),
+                {
+                    action: "cancel",
+                    icon: "fas fa-times",
+                    label: "levels3dpreview.macrodialog.cancel",
                     callback: () => {},
                 },
-            },
+            ],
             default: "cancel",
         }).render(true);
 

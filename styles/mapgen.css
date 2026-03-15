@@ -10,6 +10,10 @@
     width: 100%;
 }
 
+#mapgen .window-content > div {
+    height: 100%;
+}
+
 #mapgen .action-buttons{
     height: var(--form-field-height);
     margin-bottom: 8px;
@@ -43,7 +47,8 @@
     margin: 0;
 }
 
-#mapgen .material-panel li, #mapgen #add-material{
+/* #mapgen .material-panel li, */
+#mapgen #add-material{
     background-color: #0000001a;
     padding: 0.2rem 0.3rem;
     border-radius: 5px;
@@ -80,6 +85,7 @@
     border: none;
     padding: 0;
     margin: 0;
+    color: black;
 }
 
 #mapgen .grid-row{

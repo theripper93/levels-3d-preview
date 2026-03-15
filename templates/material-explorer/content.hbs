@@ -1,0 +1,65 @@
+<div style="max-height: 100%;overflow: hidden;position: relative;display: flex;flex-direction: column;">
+    {{#if isAssetBrowser}}
+
+    <div class="search-container" style="margin-top: 0.5rem; display: flex;align-items: center;">
+        <input style="margin: 0rem 0.1rem;" data-tooltip="Only the first 200 results shown - Start typing to Search..."
+            type="text" id="search" placeholder="Only the first 400 results shown - Start typing to Search...">
+        <select name="asset-packs" id="asset-packs" data-tooltip="Size" style="border: none;margin: 0rem 0.1rem;">
+            <option value="all">All</option>
+            {{#each assetPacks}}
+            <optgroup label="{{this.name}}">
+                {{#each this.packs}}
+                <option value="{{this.query}}">{{this.name}}</option>
+                {{/each}}
+            {{/each}}
+        </select>
+    </div>
+
+    <a id="selected-notification" class="notification info"
+        style="pointer-events: none; font-size: small;position: absolute;bottom: 0px;width: 100%;z-index: 100;">One or
+        more Assets selected - Hold Shift and click to place.</a>
+    {{else}}
+    {{#if isEffectBrowser}}
+    <div style="display: flex; gap: 0.2rem;">
+        <input type="text" id="search" placeholder="Search...">
+        <select name="scale" id="scale" data-tooltip="Size" style="color: var(--color-text-light-primary);">
+            {{selectOptions sizeSelect selected=scale localize=false}}
+        </select>
+    </div>
+    {{else}}
+    <input type="text" id="search" placeholder="Search...">
+    {{#unless hasInput}}
+    <form>
+        <div class="form-group">
+            <label>Texture Repeat</label>
+            <div class="form-fields">
+                <input type="range" name="texture-repeat" value="1" min="1" max="128" step="0.1">
+                <span class="range-value">1</span>
+            </div>
+        </div>
+    </form>
+    {{/unless}}
+    {{/if}}
+    {{/if}}
+
+    <ol>
+        {{#unless isAssetBrowser}}
+        {{#each materials}}
+        <li {{#if isAssetBrowser}}draggable="true" data-tooltip="{{displayName}} ({{output}})" {{/if}}
+            data-search="{{search}}" data-output="{{output}}" data-displayname="{{displayName}}" data-src="{{preview}}">
+            <img src="{{preview}}" alt="" loading="lazy">
+            <i data-tooltip="{{displayName}}" class="material-name">{{displayName}}</i>
+            <div class="material-confirm">
+                <i class="fas fa-check"></i>
+            </div>
+            {{#if isNew}}<span class="new">New!</span>{{/if}}
+        </li>
+        {{/each}}
+        {{/unless}}
+
+    </ol>
+    {{#if isTokenBrowser}}
+    <a style="text-align: center;border-top: 1px solid var(--color-text-light-heading);padding-top: 0.3rem;"
+        href="https://jerbo.featurebase.app/">Request Token</a>
+    {{/if}}
+</div>

@@ -69,18 +69,20 @@ export function showPerformanceDialog() {
     const report = showSceneReport();
     const dpr = game.settings.get("core", "pixelRatioResolutionScaling") ? window.devicePixelRatio : 1;
     const resMulti = game.settings.get("levels-3d-preview", "resolutionMultiplier");
-    const dialogData = { "3D Canvas Engine": game.modules.get("levels-3d-preview").version, "Mapmaking Pack": game.modules.get("canvas3dcompendium")?.version, "FVTT CORE": SupportDetails.generateSupportReport().coreVersion, GPU: SupportDetails.generateSupportReport().gpu, Resolution: `${window.innerWidth * dpr * resMulti}x${window.innerHeight * dpr * resMulti}`, ...report };
+    const dialogData = { "3D Canvas Engine": game.modules.get("levels-3d-preview").version, "Mapmaking Pack": game.modules.get("canvas3dcompendium")?.version, "FVTT CORE": foundry.applications.sidebar.apps.SupportDetails.generateSupportReport().coreVersion, GPU: foundry.applications.sidebar.apps.SupportDetails.generateSupportReport().gpu, Resolution: `${window.innerWidth * dpr * resMulti}x${window.innerHeight * dpr * resMulti}`, ...report };
     dialogData["Shared Context"] = game.settings.get("levels-3d-preview", "sharedContext") ? "Yes" : "No";
     delete dialogData.color;
     delete dialogData.grade;
-    const dialog = new Dialog({
-        title: "3D Canvas | Scene Report",
+    const dialog = new foundry.applications.api.DialogV2({
+        window: { title: "3D Canvas | Scene Report" },
         content: `<div style="color: ${report.color}; font-size: 1.8em;">${report.grade}</div><table><thead><tr><th>Property</th><th>Value</th></tr></thead><tbody>${Object.entries(dialogData)
             .map(([k, v]) => `<tr><td>${k}</td><td>${v}</td></tr>`)
             .join("")}</tbody></table>`,
-        buttons: {
-            copytoclipboard: {
-                label: '<i class="fas fa-copy"></i> Copy to Clipboard',
+        buttons: [
+            {
+                label: "Copy to Clipboard",
+                action: "copy",
+                icon: "fas fa-copy",
                 callback: (e) => {
                     dialogData.Grade = report.grade;
                     const text = Object.entries(dialogData)
@@ -89,11 +91,13 @@ export function showPerformanceDialog() {
                     game.clipboard.copyPlainText("```" + text + "```");
                 },
             },
-            close: {
-                label: '<i class="fas fa-times"></i> Close',
+            {
+                label: "Close",
+                action: "close",
+                icon: "fas fa-times",
                 callback: () => dialog.close(),
             },
-        },
+        ],
     });
     dialog.render(true);
 }

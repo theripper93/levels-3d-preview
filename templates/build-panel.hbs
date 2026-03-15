@@ -1,15 +1,18 @@
-<div id="build-panel">
-    <ul>
+
+    <div class="flexcol">
         {{#each buttons}}
-        <button class="ui-control plain {{icon}} build-panel-button" data-action={{id}} data-tooltip="{{name}}">
-        </button>
+        <li>
+            <button class="ui-control plain {{icon}} build-panel-button" data-action={{id}} data-tooltip="{{name}}"></button>
+        </li>
         {{/each}}
         {{#if showSeparator}}
-        <li style="border-top: 1px solid; width: 70%;margin: 0.2rem 0rem;"></li>
+        <li>
+            <button class="ui-control plain fas fa-horizontal-rule build-panel-button" style="background: transparent; border: none; pointer-events: none"></button>
+        </li>
         {{/if}}
         {{#each clipNavigation}}
-        <button class="ui-control plain {{icon}} build-panel-button" data-action={{id}} data-tooltip="{{name}}">
-        </button>
+        <li>
+            <button class="ui-control plain {{icon}} build-panel-button" data-action={{id}} data-tooltip="{{name}}"></button>
+        </li>
         {{/each}}
-    </ul>
-</div>
+    </div>

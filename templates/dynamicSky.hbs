@@ -1,18 +1,17 @@
-<form action="submit">
-
-<div class="form-group">
-            <label>{{localize "levels3dpreview.dynamicSkyConfig.enabled.label"}}</label>
-            <div class="form-fields">
-                <input type="checkbox" name="flags.levels-3d-preview.dynamicSky.enabled" {{checked enabled}}>
-            </div>
+<div>
+    <div class="form-group">
+        <label>{{localize "levels3dpreview.dynamicSkyConfig.enabled.label"}}</label>
+        <div class="form-fields">
+            <input type="checkbox" name="flags.levels-3d-preview.dynamicSky.enabled" {{checked enabled}}>
         </div>
+    </div>
 
     <div class="form-group">
             <label>{{localize "levels3dpreview.dynamicSkyConfig.turbidity.label"}}</label>
             <div class="form-fields">
                 {{rangePicker name="flags.levels-3d-preview.dynamicSky.turbidity" value=turbidity min=0 max=20 step=0.1}}
             </div>
-            <p class="notes">{{localize "levels3dpreview.dynamicSkyConfig.turbidity.notes"}}</p>
+            <p class="hint">{{localize "levels3dpreview.dynamicSkyConfig.turbidity.notes"}}</p>
     </div>
 
     <div class="form-group">
@@ -20,7 +19,7 @@
             <div class="form-fields">
                 {{rangePicker name="flags.levels-3d-preview.dynamicSky.rayleigh" value=rayleigh min=0 max=4 step=0.1}}
             </div>
-            <p class="notes">{{localize "levels3dpreview.dynamicSkyConfig.rayleigh.notes"}}</p>
+            <p class="hint">{{localize "levels3dpreview.dynamicSkyConfig.rayleigh.notes"}}</p>
     </div>
 
     <div class="form-group">
@@ -28,7 +27,7 @@
             <div class="form-fields">
                 {{rangePicker name="flags.levels-3d-preview.dynamicSky.mieCoefficient" value=mieCoefficient min=0 max=0.1 step=0.001}}
             </div>
-            <p class="notes">{{localize "levels3dpreview.dynamicSkyConfig.mieCoefficient.notes"}}</p>
+            <p class="hint">{{localize "levels3dpreview.dynamicSkyConfig.mieCoefficient.notes"}}</p>
     </div>
 
     <div class="form-group">
@@ -44,7 +43,7 @@
             <div class="form-fields">
                 {{rangePicker name="flags.levels-3d-preview.dynamicSky.starDensity" value=starDensity min=0 max=2 step=0.1}}
             </div>
-            <p class="notes">{{localize "levels3dpreview.dynamicSkyConfig.starDensity.notes"}}</p>
+            <p class="hint">{{localize "levels3dpreview.dynamicSkyConfig.starDensity.notes"}}</p>
     </div>
 
     <div class="form-group">
@@ -53,7 +52,7 @@
         <div class="form-fields">
             {{colorPicker name="flags.levels-3d-preview.dynamicSky.color" value=color default="#ffffff"}}
         </div>
-        <p class="notes">{{localize "levels3dpreview.dynamicSkyConfig.color.notes"}}</p>
+        <p class="hint">{{localize "levels3dpreview.dynamicSkyConfig.color.notes"}}</p>
     
     </div>
 
@@ -101,6 +100,4 @@
         </div>
 
     </div>
-
-
-</form>
+</div>

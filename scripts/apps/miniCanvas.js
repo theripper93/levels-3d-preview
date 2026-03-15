@@ -1,4 +1,6 @@
-export class MiniCanvas extends Application {
+import { HandlebarsApplication, mergeClone } from "../lib/utils.js";
+
+export class MiniCanvas extends HandlebarsApplication {
     constructor(actor) {
         super();
         this.actor = actor;
@@ -8,20 +10,29 @@ export class MiniCanvas extends Application {
         }, 100);
     }
 
-    static get defaultOptions() {
-        const aspectRatio = window.innerWidth / window.innerHeight;
-        const position = game.settings.get("levels-3d-preview", "minicanvasposition");
-        return {
-            ...super.defaultOptions,
-            title: "Canvas",
+    static get DEFAULT_OPTIONS() {
+        return mergeClone(super.DEFAULT_OPTIONS, {
+            classes: ["mini-canvas"],
             id: "miniCanvas",
-            template: `modules/levels-3d-preview/templates/minicanvas.hbs`,
-            resizable: true,
-            width: position.width ?? 300 * aspectRatio,
-            height: position.height ?? 300,
-            left: position.left,
-            top: position.top,
-        };
+            window: {
+                resizable: true,
+                title: "Canvas",
+            },
+            position: {
+                width: position.width ?? 300 * aspectRatio,
+                height: position.height ?? 300,
+                left: position.left,
+                top: position.top,
+            }
+        });
+    }
+
+    static get PARTS() {
+        return {
+            content: {
+                template: `modules/levels-3d-preview/templates/minicanvas.hbs`,
+            }
+        }
     }
 
     setPosition({ left, top, width, height, scale } = {}) {
@@ -31,42 +42,48 @@ export class MiniCanvas extends Application {
         this.savePosition();
     }
 
-    getData() {
+    _prepareContext(options) {
+        super._prepareContext(options);
         return {};
     }
 
-    async activateListeners(html) {
+    _onRender(context, options) {
+        super._onRender(context, options);
+        const html = this.element;
         this.updateControls(true);
-        html.find(".canvas-container").append($("#board"));
-        $("#board").css({
-            width: "100%",
-            height: "100%",
-        });
-        $("#board").show();
+        const canvasContainer = html.querySelector(".canvas-container");
+        const board = document.getElementById("board");
+
+        canvasContainer.append(board);
+        board.style.width = "100%";
+        board.style.height = "100%";
+        board.style.display = "block";
         canvas.stage.renderable = true;
     }
 
     resize() {
-        $("#board").css({
-            width: "100%",
-            height: "100%",
-        });
+        // $("#board").css({
+        //     width: "100%",
+        //     height: "100%",
+        // });
+        this.element.querySelector("#board").style.width = "100%";
+        this.element.querySelector("#board").style.height = "100%";
     }
 
     _onResize(e) {
         super._onResize(e);
     }
 
-    updateControls(toggle) {
-        return;
-        $(`li[data-tool="miniCanvas"]`).toggleClass("active", toggle);
-        ui.controls.controls.find((c) => c.name == "token").tools.find((t) => t.name == "miniCanvas").active = toggle;
-    }
+    // updateControls(toggle) {
+    //     return;
+    //     $(`li[data-tool="miniCanvas"]`).toggleClass("active", toggle);
+    //     ui.controls.controls.find((c) => c.name == "token").tools.find((t) => t.name == "miniCanvas").active = toggle;
+    // }
 
     close() {
-        $(".vtt ").append($(this.element).find("#board"));
+        document.querySelector(".vtt").append(this.element.querySelector("#board"));
         if (game.Levels3DPreview._active) {
-            $("#board").hide();
+            document.getElementById("board").style.display = "none";
             canvas.stage.renderable = false;
         }
         super.close();

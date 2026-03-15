@@ -1,9 +1,12 @@
-let ROT = null;
 
+import { HandlebarsApplication, mergeClone } from "../lib/utils.js";
 import { SimplexNoise, Perlin, FractionalBrownianMotion } from "../lib/noiseFunctions.js";
 import { tTypes } from "../helpers/helpers.js";
 
-export class MapGen extends FormApplication {
+let ROT = null;
+
+export class MapGen extends HandlebarsApplication {
+
     constructor(document) {
         super();
         this.document = document;
@@ -11,7 +14,54 @@ export class MapGen extends FormApplication {
         this.document.setFlag("levels-3d-preview", "dynaMesh", "mapGen");
         if (!data) this.document.setFlag("levels-3d-preview", "mapgen", this.generateDefaultData());
     }
+    
+    // static get defaultOptions() {
+    //     return foundry.utils.mergeObject(super.defaultOptions, {
+    //         title: game.i18n.localize("levels3dpreview.mapgen.title"),
+    //         id: `mapgen`,
+    //         template: `modules/levels-3d-preview/templates/mapgen/squareGrid.hbs`,
+    //         width: 800,
+    //         height: 600,
+    //         closeOnSubmit: false,
+    //         submitOnClose: true,
+    //         submitOnChange: true,
+    //         resizable: true,
+    //         tabs: [{ navSelector: ".tabs", contentSelector: ".content" }],
+    //         filepickers: [],
+    //     });
+    // }
 
+    static get DEFAULT_OPTIONS() {
+        return mergeClone(super.DEFAULT_OPTIONS, {
+            id: "mapgen",
+            tag: "form",
+            window: {
+                title: "levels3dpreview.mapgen.title",
+            },
+            position: {
+                width: 1000,
+                height: 600,
+            },
+            form: {
+                handler: this._updateObject,
+                submitOnChange: true,
+                closeOnSubmit: false,
+            }
+        });
+    }
+
+    static get PARTS() {
+        return {
+            content: {
+                template: `modules/levels-3d-preview/templates/mapgen/squareGrid.hbs`,
+            }
+        }
+    }
+    
+    get title() {
+        return game.i18n.localize("levels3dpreview.mapgen.title") + `${canvas.scene.grid.distance} ${canvas.scene.grid.units}`;
+    }
+    
     async generate(gen, event) {
         if (!ROT) ROT = await import("../generators/ROT/index.js");
         if (game.keyboard.downKeys.has("ShiftLeft") || game.keyboard.downKeys.has("ShiftRight")) {
@@ -24,7 +74,7 @@ export class MapGen extends FormApplication {
             title: game.i18n.localize("levels3dpreview.mapgen.generator.title"),
             content: game.i18n.localize("levels3dpreview.mapgen.generator.content") + `<hr><span>${game.i18n.localize("levels3dpreview.mapgen.generator.height")}: <input type="number" id="mapgen-count" value="${this.cellHeight ?? 3}" min="1"/></span><hr>`,
             yes: async (html) => {
-                const count = parseFloat(html.find("#mapgen-count").val());
+                const count = parseFloat(html.querySelector("#mapgen-count").value);
                 this.cellHeight = count;
                 const genFn = this._getGenerator(gen).bind(this);
                 this.setCells(this._getMaps(genFn, 1, count, gen), gen !== "rogue" && gen !== "cellular-caves", count);
@@ -42,7 +92,6 @@ export class MapGen extends FormApplication {
             default:
                 return this._generateLandscape.bind(this);
         }
-        return this._generateLandscape.bind(this);
     }
 
     _getMaps(genFn, count = 1, cHeight, gen) {
@@ -199,27 +248,7 @@ export class MapGen extends FormApplication {
         return map;
     }
 
-    static get defaultOptions() {
-        return foundry.utils.mergeObject(super.defaultOptions, {
-            title: game.i18n.localize("levels3dpreview.mapgen.title"),
-            id: `mapgen`,
-            template: `modules/levels-3d-preview/templates/mapgen/squareGrid.hbs`,
-            width: 800,
-            height: 600,
-            closeOnSubmit: false,
-            submitOnClose: true,
-            submitOnChange: true,
-            resizable: true,
-            tabs: [{ navSelector: ".tabs", contentSelector: ".content" }],
-            filepickers: [],
-        });
-    }
-
-    get title() {
-        return game.i18n.localize("levels3dpreview.mapgen.title") + `${canvas.scene.grid.distance} ${canvas.scene.grid.units}`;
-    }
-
-    getData() {
+    async _prepareContext(options) {
         const flag = this.document.getFlag("levels-3d-preview", "mapgen");
         if (!flag) return this.generateDefaultData();
         const rows = flag.rows;
@@ -264,75 +293,89 @@ export class MapGen extends FormApplication {
         return flag;
     }
 
-    activateListeners(html) {
-        super.activateListeners(html);
+    _onRender(context, options) {
+        super._onRender(context, options);
+        const html = this.element;
 
         this._restoreGridDisplay();
-        html.on("change", "#zoom-level", (event) => {
+        html.querySelector("#zoom-level").addEventListener("change", (event) => {
             const zoomLevel = event.target.value;
             this._zoomLevel = zoomLevel;
             document.documentElement.style.setProperty("--mapgen-cellsize", `${zoomLevel * 100}px`);
         });
-        html.on("mousedown", ".grid-cell", (event) => {
-            this.toggleCell(event.target, !event.target.classList.contains("selected"));
+
+        html.addEventListener("mousedown", (event) => {
+            if (!event.target.closest(".grid-cell")) return;
+            const cell = event.target.closest(".grid-cell");
+            this.toggleCell(cell, !cell.classList.contains("selected"));
             this._cellMouseDown = true;
-            this._dragActionToggle = $(event.target).hasClass("selected");
+            this._dragActionToggle = cell.classList.contains("selected");
         });
-        html.on("mouseup", ".grid-cell", (event) => {
+
+        html.addEventListener("mouseup", (event) => {
+            if (!event.target.closest(".grid-cell")) return;
             this._cellMouseDown = false;
         });
-        html.on("mouseover", ".grid-cell", (event) => {
+
+        html.addEventListener("mouseover", (event) => {
+            if (!event.target.closest(".grid-cell")) return;
             if (this._cellMouseDown) {
-                this.toggleCell(event.target, this._dragActionToggle);
+                this.toggleCell(event.target.closest(".grid-cell"), this._dragActionToggle);
             }
         });
-        html.on("click", "#set-elevation", (event) => {
-            const elevation = this.element.find("#elevation").val();
-            this.selected.each((index, element) => {
-                $(element).find(".elevation").val(elevation);
+
+        html.querySelector("#set-elevation").addEventListener("click", (event) => {
+            const elevation = html.querySelector("#elevation").value;
+            this.selected.forEach((element) => {
+                element.querySelector(".elevation").value = elevation;
             });
         });
-        html.on("click", "#deselect-all", (event) => {
-            this.selected.each((index, element) => {
+
+        html.querySelector("#deselect-all").addEventListener("click", (event) => {
+            this.selected.forEach((element) => {
                 this.toggleCell(element, false);
             });
         });
-        html.on("click", "#select-all", (event) => {
-            this.element.find(`.grid-cell`).each((index, element) => {
+
+        html.querySelector("#select-all").addEventListener("click", (event) => {
+            html.querySelectorAll(".grid-cell").forEach((element) => {
                 this.toggleCell(element, true);
             });
         });
-        html.on("click", "#select-elevation", (event) => {
-            const elevation = this.element.find("#elevation").val();
-            this.element.find(`.grid-cell`).each((index, element) => {
-                const cellElevation = $(element).find(".elevation").val();
+
+        html.querySelector("#select-elevation").addEventListener("click", (event) => {
+            const elevation = html.querySelector("#elevation").value;
+            html.querySelectorAll(".grid-cell").forEach((element) => {
+                const cellElevation = element.querySelector(".elevation").value;
                 if (elevation == cellElevation) this.toggleCell(element, true);
             });
         });
-        html.on("click", "#invert", (event) => {
-            this.element.find(`.grid-cell`).each((index, element) => {
+
+        html.querySelector("#invert").addEventListener("click", (event) => {
+            html.querySelectorAll(".grid-cell").forEach((element) => {
                 this.toggleCell(element, !element.classList.contains("selected"));
             });
         });
-        html.on("click", "#clear-material", (event) => {
-            this.selected.each((index, element) => {
-                $(element).find("input.material-id").val("");
+
+        html.querySelector("#clear-material").addEventListener("click", (event) => {
+            this.selected.forEach((element) => {
+                element.querySelector("input.material-id").value = "";
             });
         });
-        html.on("click", "#apply-material", (event) => {
-            const materialEl = $(event.target).closest(".material-item");
-            const materialId = materialEl.data("material-id");
-            this.selected.each((index, element) => {
-                $(element).find("input.material-id").val(materialId);
+
+        html.querySelector("#apply-material").addEventListener("click", (event) => {
+            const materialEl = event.target.closest(".material-item");
+            const materialId = materialEl.dataset.materialId;
+            this.selected.forEach((element) => {
+                element.querySelector("input.material-id").value = materialId;
             });
             this.submit();
         });
-        html.on("click", "#add-material", async (event) => {
+
+        html.querySelector("#add-material").addEventListener("click", async (event) => {
             const flag = this.document.getFlag("levels-3d-preview", "mapgen");
             flag.materials.push({
-                texture: {
-                    repeat: 1,
-                },
+                texture: { repeat: 1 },
                 collapsed: false,
                 metalness: 0,
                 roughness: 1,
@@ -342,27 +385,28 @@ export class MapGen extends FormApplication {
             await this.document.setFlag("levels-3d-preview", "mapgen", flag);
             this.saveGridAndRefresh();
         });
-        html.on("click", "#delete-material", async (event) => {
-            const materialIndex = parseInt($(event.target).closest(".material-item").data("material-index"));
+
+        html.querySelector("#delete-material").addEventListener("click", async (event) => {
+            const materialIndex = parseInt(event.target.closest(".material-item").dataset.materialIndex);
             const flag = this.document.getFlag("levels-3d-preview", "mapgen");
             flag.materials.splice(materialIndex, 1);
             await this.document.setFlag("levels-3d-preview", "mapgen", flag);
             this.saveGridAndRefresh();
         });
-        html.on("click", "#toggle-material", (event) => {
-            const checkbox = $(event.target).closest(".material-item").find("#collapsed-toggle");
-            checkbox.prop("checked", !checkbox.prop("checked"));
+
+        html.querySelector("#toggle-material").addEventListener("click", (event) => {
+            const checkbox = event.target.closest(".material-item").querySelector("#collapsed-toggle");
+            checkbox.checked = !checkbox.checked;
         });
-        html.on("click", "#select-all-material", (event) => {
-            const materialId = $(event.target).closest(".material-item").data("material-id");
-            this.element
-                .find(`.grid-cell input.material-id[value="${materialId}"]`)
-                .closest(".grid-cell")
-                .each((index, element) => {
-                    this.toggleCell(element, true);
-                });
+
+        html.querySelector("#select-all-material").addEventListener("click", (event) => {
+            const materialId = event.target.closest(".material-item").dataset.materialId;
+            html.querySelectorAll(`.grid-cell input.material-id[value="${materialId}"]`).forEach((input) => {
+                this.toggleCell(input.closest(".grid-cell"), true);
+            });
         });
-        html.on("click", "#fit-to-scene", (event) => {
+
+        html.querySelector("#fit-to-scene").addEventListener("click", (event) => {
             const flag = this.document.getFlag("levels-3d-preview", "mapgen");
             const rows = flag.cells.length;
             const columns = flag.cells[0].length;
@@ -396,7 +440,6 @@ export class MapGen extends FormApplication {
                 case 4:
                     y += w / 2;
             }
-
             this.document.update({
                 width,
                 height,
@@ -411,38 +454,38 @@ export class MapGen extends FormApplication {
     }
 
     toggleCell(cell, toggle) {
-        $(cell).toggleClass("selected", toggle);
-        $(cell).find("input[type='checkbox']").prop("checked", toggle);
+        cell.classList.toggle("selected", toggle);
+        cell.querySelector("input[type='checkbox']").checked = toggle;
     }
 
     _saveGridDisplay() {
-        const grid = this.element.find(".grid-container");
+        const grid = this.element.querySelector(".grid-container");
         this._gridDisplay = {
-            scrollX: grid.scrollLeft(),
-            scrollY: grid.scrollTop(),
+            scrollX: grid.scrollLeft,
+            scrollY: grid.scrollTop,
         };
-        const materialPanel = this.element.find(".material-panel");
+        const materialPanel = this.element.querySelector(".material-panel");
         this._materialDisplay = {
-            scrollX: materialPanel.scrollLeft(),
-            scrollY: materialPanel.scrollTop(),
+            scrollX: materialPanel.scrollLeft,
+            scrollY: materialPanel.scrollTop,
         };
     }
 
     _restoreGridDisplay() {
         if (this._gridDisplay) {
-            const grid = this.element.find(".grid-container");
-            grid.scrollLeft(this._gridDisplay.scrollX);
-            grid.scrollTop(this._gridDisplay.scrollY);
+            const grid = this.element.querySelector(".grid-container");
+            grid.scrollLeft = this._gridDisplay.scrollX;
+            grid.scrollTop = this._gridDisplay.scrollY;
         }
         if (this._materialDisplay) {
-            const materialPanel = this.element.find(".material-panel");
-            materialPanel.scrollLeft(this._materialDisplay.scrollX);
-            materialPanel.scrollTop(this._materialDisplay.scrollY);
+            const materialPanel = this.element.querySelector(".material-panel");
+            materialPanel.scrollLeft = this._materialDisplay.scrollX;
+            materialPanel.scrollTop = this._materialDisplay.scrollY;
         }
     }
 
     get selected() {
-        return this.element.find(".grid-cell.selected");
+        return this.element.querySelectorAll(".grid-cell.selected");
     }
 
     generateDefaultData() {
@@ -488,8 +531,9 @@ export class MapGen extends FormApplication {
         return await super._onChangeInput(event);
     }
 
-    async _updateObject(event, formData) {
-        formData = expandObject(formData);
+    static async _updateObject() {
+        const form = this.element;
+        const formData = foundry.utils.expandObject(new foundry.applications.ux.FormDataExtended(form).object);
         formData.materials = Object.values(formData.materials);
         formData.cells = Object.values(formData.cells);
         for (let i = 0; i < formData.cells.length; i++) {
@@ -504,20 +548,20 @@ export class MapGen extends FormApplication {
         this.render(true);
     }
 
-    _getHeaderButtons() {
-        const buttons = super._getHeaderButtons();
+    _getHeaderControls() {
+        const buttons = super._getHeaderControls();
         buttons.unshift(
             {
                 label: "levels3dpreview.mapgen.generator.generate",
                 class: "generate-dd",
                 icon: "fas fa-dice-d20",
-                onclick: (event) => {},
+                onClick: (event) => {},
             },
             {
                 label: "levels3dpreview.mapgen.generator.theme",
                 class: "generate-theme",
                 icon: "fas fa-palette",
-                onclick: (event) => {},
+                onClick: (event) => {},
             },
         );
         return buttons;

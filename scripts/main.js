@@ -59,7 +59,6 @@ import { applyHeightmap } from "./helpers/applyHeightmap.js";
 import { BuildPanel } from "./apps/buildPanel.js";
 import { AssetBrowser } from "./apps/assetBrowser.js";
 import { TokenBrowser, setHudHook } from "./apps/tokenBrowser.js";
-import { RoomBuilder } from "./apps/roomBuilder.js";
 
 import { createTargetGeometry } from "./entities/effects/target.js";
 import { UberPass } from "./lib/UberPass.js";
@@ -123,25 +122,10 @@ Hooks.once("ready", () => {
     if (!game.settings.get("levels-3d-preview", "removeKeybindingsPrompt")) game.Levels3DPreview.interactionManager.removeWASDBindings();
     Hooks.callAll("3DCanvasReady", game.Levels3DPreview);
 
-    const navHooks = ["updateTile", "createTile", "deleteTile", "updateWall", "createWall", "deleteWall"];
-    navHooks.forEach((h) => {
-        Hooks.on(h, () => {
-            if (game.Levels3DPreview?._active) game.Levels3DPreview.BuildPanel?.update();
-        });
-    });
-
     Hooks.on("updateScene", () => {
         if (game.Levels3DPreview?._active) game.Levels3DPreview.BuildPanel?.render(true);
     });
 });
-
-// Hooks.on("3DCanvasConfig", (config) => {
-//     const UI = config.UI;
-//     UI.AssetBrowser = AssetBrowser;
-//     UI.TokenBrowser = TokenBrowser;
-//     UI.BuildPanel = BuildPanel;
-//     UI.RoomBuilder = RoomBuilder;
-// });
 
 Hooks.once("ready", () => {
     // Module title
@@ -166,16 +150,22 @@ Hooks.once("ready", () => {
         config: false,
     });
     if (game.user.isGM && !game.settings.get(MODULE_ID, DONT_REMIND_AGAIN_KEY)) {
-        new Dialog({
-            title: FALLBACK_MESSAGE_TITLE,
+        new foundry.applications.api.DialogV2({
+            window: { title: FALLBACK_MESSAGE_TITLE },
             content: FALLBACK_MESSAGE,
-            buttons: {
-                ok: { icon: '<i class="fas fa-check"></i>', label: "I Accept", callback: () => game.settings.set(MODULE_ID, DONT_REMIND_AGAIN_KEY, true), },
-                dont_remind: {
-                    icon: '<i class="fas fa-times"></i>',
-                    label: "I Refuse",
+            buttons: [
+                { 
+                    action: "ok",
+                    label: "I Accept",
+                    icon: "fas fa-check",
+                    callback: () => game.settings.set(MODULE_ID, DONT_REMIND_AGAIN_KEY, true), 
                 },
-            },
+                {
+                    action: "dont_remind",
+                    label: "I Refuse",
+                    icon: "fas fa-times",
+                },
+            ],
         }).render(true);
     }
 });
@@ -442,7 +432,6 @@ class Levels3DPreview {
         this.CONFIG.UI.AssetBrowser = AssetBrowser;
         this.CONFIG.UI.TokenBrowser = TokenBrowser;
         this.CONFIG.UI.BuildPanel = BuildPanel;
-        this.CONFIG.UI.RoomBuilder = RoomBuilder;
         Hooks.callAll("3DCanvasConfig", this.CONFIG);
         for (let [k, v] of Object.entries(this.CONFIG.tokenAnimations)) {
             v.name = game.i18n.localize(`levels3dpreview.tokenAnimations.${k}`);
@@ -502,7 +491,6 @@ class Levels3DPreview {
         this.helpers = new Helpers();
         OutlineHandler.setHooks();
         Socket.register("socketCamera", this.helpers.socketCamera);
-        Socket.register("syncClipNavigator", this.helpers.syncClipNavigator);
         Socket.register("playTokenAnimationSocket", this.helpers.playTokenAnimationSocket);
         Socket.register("dispatchPing", this.helpers.dispatchPing);
         Socket.register("playCutscene", this.cutsceneSocket);
@@ -1576,7 +1564,6 @@ class Levels3DPreview {
             }
             if (!cToken) return;
             if (cToken.isOwner) cToken.control();
-            this.BuildPanel.setToClosest(cToken.document.elevation);
             token3D = this.tokens[cToken.id];
             if (!token3D) return;
         } else {

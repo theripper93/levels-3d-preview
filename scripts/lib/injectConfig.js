@@ -142,9 +142,7 @@ export const injectConfig = {
     inject: function injectConfig(app, html, data, _object) {
         moduleId = data.moduleId;
         object = _object || app.document;
-        html = $(html);
         html = html.closest(".app, .application") ?? html;
-        html = html[0];
 
         try {
             this._processData(data);
@@ -162,7 +160,7 @@ export const injectConfig = {
         let injectHtml = this._generateInnerHtml(app, data, tabSize);
 
         try {
-            app.activateListeners($(injectHtml));
+            app.activateListeners(injectHtml);
         } catch (error) {}
 
         if (data.tab) {
@@ -197,7 +195,7 @@ export const injectConfig = {
         }
 
         if (app) app?.setPosition({ height: "auto"});
-        return $(injectHtml);
+        return injectHtml;
     },
     quickInject: function quickInject(injectData, data) {
         injectData = Array.isArray(injectData) ? injectData : [injectData];
@@ -218,7 +216,7 @@ export const injectConfig = {
         if (isTabs || !useTabs) return;
         const tabSize = data.tab?.width || 100;
         const layer = app?.object?.layer?.options?.name;
-        const icon = $(".main-controls").find(`li[data-canvas-layer="${layer}"]`).find("i").attr("class");
+        const icon = document.querySelector(`.main-controls li[data-canvas-layer="${layer}"] i`)?.className;
 
         const tabsInner = `<nav class="sheet-tabs tabs">
         <a class="item active" data-tab="basic"><i class="${icon}"></i> ${game.i18n.localize("AMBIENT_LIGHT.SECTIONS.BASIC")}</a>

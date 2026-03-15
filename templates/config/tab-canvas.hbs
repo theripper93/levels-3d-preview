@@ -1,0 +1,97 @@
+<section class='tab {{tab.cssClass}}' data-group='primary' data-tab='canvas'>
+
+    <div class="form-group">
+    <label>{{localize "levels3dpreview.settings.preventNegative.name"}}</label>
+    <input type="checkbox" name="preventNegative" data-dtype="Boolean" {{checked preventNegative}} />
+    <p class="hint">{{localize "levels3dpreview.settings.preventNegative.hint"}}</p>
+    </div>
+
+    <div class="form-group">
+    <label>{{localize "levels3dpreview.settings.outline.name"}}</label>
+    <input type="checkbox" name="outline" data-dtype="Boolean" {{checked outline}} />
+    <p class="hint">{{localize "levels3dpreview.settings.outline.hint"}}</p>
+    </div>
+
+    <div class="form-group">
+    <label>{{localize "levels3dpreview.settings.fullTransparency.name"}}</label>
+    <input type="checkbox" name="fullTransparency" data-dtype="Boolean" {{checked fullTransparency}} />
+    <p class="hint">{{localize "levels3dpreview.settings.fullTransparency.hint"}}</p>
+    </div>
+
+    <div class="form-group">
+    <label>{{localize "levels3dpreview.settings.paddingAppearance.name"}}</label>
+    <select name="paddingAppearance" data-dtype="String">
+        {{!-- {{selectOptions renderTable selected=paddingAppearance localize=true}} --}}
+        {{#select paddingAppearance}}
+        <option value="none">{{localize "levels3dpreview.flags.renderTable.options.none"}}</option>
+        <option value="table">{{localize "levels3dpreview.flags.renderTable.options.table"}}</option>
+        <option value="matpaper">{{localize "levels3dpreview.flags.renderTable.options.matpaper"}}</option>
+        <option value="matwood">{{localize "levels3dpreview.flags.renderTable.options.matwood"}}</option>
+        <option value="matcloth">{{localize "levels3dpreview.flags.renderTable.options.matcloth"}}</option>
+        <option value="matblueprint">{{localize "levels3dpreview.flags.renderTable.options.matblueprint"}}</option>
+        <option value="matcustom">{{localize "levels3dpreview.flags.renderTable.options.matcustom"}}</option>
+        {{/select}}
+    </select>
+    <p class="hint">{{localize "levels3dpreview.settings.paddingAppearance.hint"}}</p>
+    </div>
+
+    <div class="form-group">
+    <label>{{localize "levels3dpreview.settings.templateSyle.name"}}</label>
+    <select name="templateSyle" data-dtype="String">
+        {{#select templateSyle}}
+        <option value="wireframe">{{localize "levels3dpreview.settings.templateSyle.options.wireframe"}}</option>
+        <option value="solid">{{localize "levels3dpreview.settings.templateSyle.options.solid"}}</option>
+        {{/select}}
+    </select>
+    <p class="hint">{{localize "levels3dpreview.settings.templateSyle.hint"}}</p>
+    </div>
+
+    <div class="form-group">
+    <label>{{localize "levels3dpreview.settings.templateEffects.name"}}</label>
+    <input type="checkbox" name="templateEffects" data-dtype="Boolean" {{checked templateEffects}} />
+    <p class="hint">{{localize "levels3dpreview.settings.templateEffects.hint"}}</p>
+    </div>
+
+    <div class="form-group">
+    <label>{{localize "levels3dpreview.settings.templateAuto3D.name"}}</label>
+    <input type="checkbox" name="templateAuto3D" data-dtype="Boolean" {{checked templateAuto3D}} />
+    <p class="hint">{{localize "levels3dpreview.settings.templateAuto3D.hint"}}</p>
+    </div>
+
+    <div class="form-group">
+    <label>{{localize "levels3dpreview.settings.lightHelpers.name"}}</label>
+    <input type="checkbox" name="lightHelpers" data-dtype="Boolean" {{checked lightHelpers}} />
+    <p class="hint">{{localize "levels3dpreview.settings.lightHelpers.hint"}}</p>
+    </div>
+
+    <div class="form-group">
+    <label>{{localize "levels3dpreview.settings.useRaycastRuler.name"}}</label>
+    <input type="checkbox" name="useRaycastRuler" data-dtype="Boolean" {{checked useRaycastRuler}} />
+    <p class="hint">{{localize "levels3dpreview.settings.useRaycastRuler.hint"}}</p>
+    </div>
+
+    <div class="form-group">
+    <label>{{localize "levels3dpreview.settings.rangeFinder.name"}}</label>
+    <select name="rangeFinder" data-dtype="String">
+        {{#select rangeFinder}}
+        <option value="none">{{localize "levels3dpreview.settings.rangeFinder.options.none"}}</option>
+        <option value="combat">{{localize "levels3dpreview.settings.rangeFinder.options.combat"}}</option>
+        <option value="always">{{localize "levels3dpreview.settings.rangeFinder.options.always"}}</option>
+        {{/select}}
+    </select>
+    <p class="hint">{{localize "levels3dpreview.settings.rangeFinder.hint"}}</p>
+    </div>
+
+    <div class="form-group">
+    <label>{{localize "levels3dpreview.settings.autoPan.name"}}</label>
+    <select name="autoPan" data-dtype="String">
+        {{#select autoPan}}
+        <option value="none">{{localize "levels3dpreview.settings.autoPan.options.none"}}</option>
+        <option value="player">{{localize "levels3dpreview.settings.autoPan.options.player"}}</option>
+        <option value="all">{{localize "levels3dpreview.settings.autoPan.options.all"}}</option>
+        {{/select}}
+    </select>
+    <p class="hint">{{localize "levels3dpreview.settings.autoPan.hint"}}</p>
+    </div>
+
+</section>

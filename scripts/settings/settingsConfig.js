@@ -1,39 +1,126 @@
-class canvas3dConfig extends FormApplication {
-    static get defaultOptions() {
-        return foundry.utils.mergeObject(super.defaultOptions, {
-            title: game.i18n.localize("levels3dpreview.settings.configApp.title"),
-            template: "modules/levels-3d-preview/templates/config.hbs",
+import { HandlebarsApplication, mergeClone } from "../lib/utils.js";
+
+class canvas3dConfig extends HandlebarsApplication {
+
+    static get DEFAULT_OPTIONS() {
+        return mergeClone(super.DEFAULT_OPTIONS, {
             id: "levels-3d-preview-settings",
-            width: 520,
-            height: "auto",
-            closeOnSubmit: true,
-            tabs: [{ navSelector: ".tabs", contentSelector: ".content", initial: "canvas" }],
-            filepickers: [],
+            tag: "form",
+            window: {
+                title: "levels3dpreview.settings.configApp.title",
+                contentClasses: ["standard-form"],
+            },
+            position: {
+                width: 520,
+                height: 600,
+            },
+            form: {
+                handler: this._updateObject,
+                closeOnSubmit: false,
+                submitOnChange: false,
+            }
         });
     }
 
-    async getData(options) {
+    // static get PARTS() {
+    //     return {
+    //         content: {
+    //             template: `modules/levels-3d-preview/templates/config.hbs`,
+    //             classes: ["standard-form", "scrollable"],
+    //         },
+    //         footer: {
+    //             template: "templates/generic/form-footer.hbs",
+    //         }
+    //     }
+    // }
+
+    static get PARTS() {
+        return {
+            tabs: {
+                // template: 'modules/levels-3d-preview/templates/config/tab-navigation.hbs',
+                template: 'templates/generic/tab-navigation.hbs',
+            },
+            base: {
+                template: 'modules/levels-3d-preview/templates/config/tab-base.hbs',
+                classes: ["scrollable"],
+            },
+            canvas: {
+                template: 'modules/levels-3d-preview/templates/config/tab-canvas.hbs',
+                classes: ["scrollable"],
+            },
+            token: {
+                template: 'modules/levels-3d-preview/templates/config/tab-token.hbs',
+                classes: ["scrollable"],
+            },
+            perm: {
+                template: 'modules/levels-3d-preview/templates/config/tab-perm.hbs',
+                classes: ["scrollable"],
+            },
+            gc: {
+                template: 'modules/levels-3d-preview/templates/config/tab-gc.hbs',
+                classes: ["scrollable"],
+            },
+            misc: {
+                template: 'modules/levels-3d-preview/templates/config/tab-misc.hbs',
+                classes: ["scrollable"],
+            },
+            footer: {
+                template: "templates/generic/form-footer.hbs",
+            }
+        }
+    };
+
+    static get TABS() {
+        return {
+            primary: {
+                tabs: [
+                    { id: "canvas", icon: "fas fa-map", label: "levels3dpreview.settings.configApp.tabs.canvas" },
+                    { id: "token", icon: "fas fa-user-alt", label: "levels3dpreview.settings.configApp.tabs.token" },
+                    { id: "base", icon: "fas fa-dot-circle", label: "levels3dpreview.settings.configApp.tabs.base" },
+                    { id: "perm", icon: "fas fa-user-lock", label: "levels3dpreview.settings.configApp.tabs.perm" },
+                    { id: "gc", icon: "fas fa-video", label: "levels3dpreview.settings.configApp.tabs.gc" },
+                    { id: "misc", icon: "fas fa-cogs", label: "levels3dpreview.settings.configApp.tabs.misc" },
+                ],
+                initial: "canvas",
+            },
+        }
+    };
+
+    async _prepareContext(options) {
         const data = {};
         const settingsKeys = ["useRaycastRuler", "paddingAppearance", "lightCacheSize", "pingsound", "lightHelpers", "templateEffects", "templateAuto3D", "enableReticule", "fullTransparency", "outline", "gameCameraWarnings", "gameCameraAutoLock", "gameCameraDefaultGm", "gameCameraClipping", "gameCameraMaxZoom", "gameCameraMinAzimuth", "gameCameraMaxAzimuth", "gameCameraMinAngle", "gameCameraMaxAngle", "enableGameCamera", "rangeFinder", "sharedContext", "rotateIndicator", "navigatorAuto", "showAdvanced", "canpingpan", "canping", "baseStyle", "solidBaseMode", "solidBaseColor", "highlightCombat", "startMarker", "hideTarget", "hideEffects", "templateSyle", "autoPan", "flatTokenStyle", "preventNegative", "miniCanvas", "debugMode", "cameralockzero"];
         for (let key of settingsKeys) {
             data[key] = game.settings.get("levels-3d-preview", key);
         }
         data.CONFIG = game.Levels3DPreview.CONFIG;
+        data.tabs = this._prepareTabs("primary");
+        data.buttons = [{
+            type: "submit",
+            action: "submit",
+            icon: "fas fa-save",
+            label: "levels3dpreview.settings.configApp.save",
+        }];
         return data;
     }
-    activateListeners(html) {
-        super.activateListeners(html);
-        html.on("change", `input[type="color"]`, this._colorChange.bind(this));
+
+    _onRender(context, options) {
+        super._onRender(context, options);
+        const html = this.element;
+        html.querySelectorAll('input[type="color"]').forEach(el => {
+            el.addEventListener("change", this._colorChange.bind(this));
+        });
     }
 
     _colorChange(e) {
-        const input = $(e.target);
-        const edit = input.data("edit");
-        const value = input.val();
-        this.element.find(`input[name="${edit}"]`).val(value);
+        const input = e.target;
+        const edit = input.dataset.edit;
+        const value = input.value;
+        this.element.querySelector(`input[name="${edit}"]`).value = value;
     }
 
-    async _updateObject(event, formData) {
+    static async _updateObject(event) {
+        const form = this.element;
+        const formData = new foundry.applications.ux.FormDataExtended(form).object;
         for (let [key, value] of Object.entries(formData)) {
             await game.settings.set("levels-3d-preview", key, value);
         }
@@ -709,50 +796,58 @@ export function registerSettings() {
         const showWelcomeMessage = !game.settings.get("levels-3d-preview", "oneTimeMessages").welcome;
 
         if (showWelcomeMessage && !showNewUserExperience) {
-            const dialog = new Dialog({
-                title: game.i18n.localize("levels3dpreview.welcome.title"),
+            const dialog = new foundry.applications.api.DialogV2({
+                window: { title: "levels3dpreview.welcome.title" },
                 content: game.i18n.localize("levels3dpreview.welcome.content"),
-                buttons: {
-                    ok: {
-                        label: `<i class="fas fa-times"></i> ` + game.i18n.localize("levels3dpreview.welcome.ok"),
+                buttons: [
+                    {
+                        action: "ok",
+                        icon: "fas fa-times",
+                        label: "levels3dpreview.welcome.ok",
                     },
-                    dontshowagain: {
-                        label: `<i class="fas fa-check-double"></i> ` + game.i18n.localize("levels3dpreview.welcome.dontshowagain"),
+                    {
+                        action: "dontshowagain",
+                        icon: "fas fa-check-double",
+                        label: "levels3dpreview.welcome.dontshowagain",
                         callback: () => {
                             setSetting("welcome");
                         },
                     },
-                    opencompendium: {
-                        label: `<i class="fas fa-book"></i> ` + game.i18n.localize("levels3dpreview.welcome.opencompendium"),
+                    {
+                        action: "opencompendium",
+                        icon: "fas fa-book",
+                        label: "levels3dpreview.welcome.opencompendium",
                         callback: () => {
                             game.packs.get("levels-3d-preview.documentation").render(true);
                         },
                     },
-                },
+                ],
                 default: "ok",
             });
             dialog.render(true);
             Hooks.once("renderDialog", (app, html) => {
-                html.find("button").css({
-                    height: "3rem",
+                html.querySelectorAll("button").forEach(btn => {
+                    btn.style.height = "3rem";
                 });
                 app.setPosition({ width: 500, height: "auto", left: window.innerWidth / 2 - 250 });
             });
         }
 
         if (showNewUserExperience) {
-            const dialog = new Dialog({
-                title: game.i18n.localize("levels3dpreview.newuserexperience.title"),
+            const dialog = new foundry.applications.api.DialogV2({
+                window: { title: "levels3dpreview.newuserexperience.title" },
                 content: game.i18n.localize("levels3dpreview.newuserexperience.content"),
-                buttons: {
-                    starttour: {
-                        label: `<i class="fas fa-person-hiking"></i> ` + game.i18n.localize("levels3dpreview.newuserexperience.starttour"),
+                buttons: [
+                    {
+                        action: "starttour",
+                        icon: "fas fa-person-hiking",
+                        label: "levels3dpreview.newuserexperience.starttour",
                         callback: () => {
                             game.tours.get("levels-3d-preview.first-scene").start();
                             setSetting("newuserexperience");
                         },
                     },
-                },
+                ],
                 default: "starttour",
             });
             dialog.render(true);

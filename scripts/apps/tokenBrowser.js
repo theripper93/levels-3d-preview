@@ -1,3 +1,4 @@
+import { HandlebarsApplication } from "../lib/utils.js";
 import { AssetBrowser } from "./assetBrowser.js";
 
 let fileCache = null;
@@ -19,7 +20,15 @@ async function initFuse(data) {
     fuseSearch = new Fuse(data.materials.concat(heroforgeList), options);
 }
 
-export class TokenBrowser extends foundry.applications.api.HandlebarsApplicationMixin(foundry.applications.api.ApplicationV2) {
+export class TokenBrowser extends HandlebarsApplication {
+
+    constructor(input, app) {
+        super();
+        this.input = input;
+        this._app = app;
+        this.document = app.document ?? app.object?.document ?? app.object;
+    }
+    
     static DEFAULT_OPTIONS = {
         id: "token-browser",
         classes: ["three-canvas-compendium-app", "three-canvas-compendium-app-v2"],
@@ -38,16 +47,9 @@ export class TokenBrowser extends foundry.applications.api.HandlebarsApplication
 
     static PARTS = {
         content: {
-            template: `modules/levels-3d-preview/templates/material-explorer.hbs`,
+            template: `modules/levels-3d-preview/templates/material-explorer/content.hbs`,
         },
     };
-
-    constructor(input, app) {
-        super();
-        this.input = input;
-        this._app = app;
-        this.document = app.document ?? app.object?.document ?? app.object;
-    }
 
     get sources() {
         const allTokens = game.settings.get("levels-3d-preview", "allTokens");
@@ -168,7 +170,7 @@ export class TokenBrowser extends foundry.applications.api.HandlebarsApplication
     _onRender(html) {
         super._onRender(html);
 
-        this.element.querySelectorAll(".material-confirm").forEach(el => el.style.display = "none");
+        this.element.querySelectorAll(".material-confirm").forEach(el => el.classList.add("hidden"));
 
         this.element.querySelector("#search").addEventListener("keyup", (e) => {
             const value = e.target.value.toLowerCase();
@@ -354,13 +356,13 @@ export function setHudHook() {
         if (!game.canvas3D?._active) return;
         const model3d = hud.object.document.getFlag("levels-3d-preview", "model3d");
         if (model3d) return;
-        const colRight = html.find(".col.left");
-        const quickMatchBtn = $(`
-        <div class="control-icon" data-action="quickmatch">
-            <img src="icons/tools/scribal/magnifying-glass.webp" width="36" height="36" title="Quick-Match 3D Token">
-        </div>
-        `);
-        quickMatchBtn.on("click", async (e) => {
+        const colRight = html.querySelector(".col.left");
+        const quickMatchBtn = document.createElement("div");
+        quickMatchBtn.classList.add("control-icon");
+        quickMatchBtn.dataset.action = "quickmatch";
+        quickMatchBtn.innerHTML = `<img src="icons/tools/scribal/magnifying-glass.webp" width="36" height="36" title="Quick-Match 3D Token">`;
+
+        quickMatchBtn.addEventListener("click", async (e) => {
             for (const token of canvas.tokens.controlled) {
                 const tokenModel3d = token.document.getFlag("levels-3d-preview", "model3d");
                 if (tokenModel3d) continue;
