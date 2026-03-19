@@ -1,0 +1,36 @@
+<section class='tab {{tab.cssClass}}' data-group='primary' data-tab='tools'>
+
+    <div class="form-group">
+        <label>{{localize "levels3dpreview.settings.allTokens.name"}}</label>
+        <input type="checkbox" name="allTokens" data-dtype="Boolean" {{checked allTokens}} />
+        <p class="hint">{{localize "levels3dpreview.settings.allTokens.hint"}}</p>
+  </div>
+
+  <div class="form-group">
+        <label>{{localize "levels3dpreview.settings.autoAssignToken.name"}}</label>
+        <select name="autoAssignToken" data-dtype="String">
+            <option {{#if (eq autoAssignToken 0)}}selected{{/if}} value="0">{{localize "levels3dpreview.settings.autoAssignToken.options.0"}}</option>
+            <option {{#if (eq autoAssignToken 1)}}selected{{/if}} value="1">{{localize "levels3dpreview.settings.autoAssignToken.options.1"}}</option>
+            <option {{#if (eq autoAssignToken 2)}}selected{{/if}} value="2">{{localize "levels3dpreview.settings.autoAssignToken.options.2"}}</option>
+        </select>
+        <p class="hint">{{localize "levels3dpreview.settings.autoAssignToken.hint"}}</p>
+    </div>
+
+    <div class="form-group">
+        <label>{{localize "levels3dpreview.settings.assetBrowserCustomPath.name"}}</label>
+        <input type="text" name="assetBrowserCustomPath" value="{{assetBrowserCustomPath}}" />
+        <p class="hint">{{localize "levels3dpreview.settings.assetBrowserCustomPath.hint"}}</p>
+    </div>
+
+    <div class="form-group">
+        <label>{{localize "levels3dpreview.settings.autoApply.name"}}</label>
+        <input type="checkbox" name="autoApply" data-dtype="Boolean" {{checked autoApply}} />
+        <p class="hint">{{localize "levels3dpreview.settings.autoApply.hint"}}</p>
+    </div>
+
+    <div class="form-group">
+        <label>{{localize "levels3dpreview.settings.autoClose.name"}}</label>
+        <input type="checkbox" name="autoClose" data-dtype="Boolean" {{checked autoClose}} />
+    <p class="hint">{{localize "levels3dpreview.settings.autoClose.hint"}}</p>
+
+</section>

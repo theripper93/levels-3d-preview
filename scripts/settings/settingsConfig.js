@@ -11,8 +11,8 @@ class canvas3dConfig extends HandlebarsApplication {
                 contentClasses: ["standard-form"],
             },
             position: {
-                width: 520,
-                height: 600,
+                width: 600,
+                // height: 600,
             },
             form: {
                 handler: this._updateObject,
@@ -60,6 +60,10 @@ class canvas3dConfig extends HandlebarsApplication {
                 template: 'modules/levels-3d-preview/templates/config/tab-gc.hbs',
                 classes: ["scrollable"],
             },
+            tools: {
+                template: 'modules/levels-3d-preview/templates/config/tab-tools.hbs',
+                classes: ["scrollable"],
+            },
             misc: {
                 template: 'modules/levels-3d-preview/templates/config/tab-misc.hbs',
                 classes: ["scrollable"],
@@ -79,6 +83,7 @@ class canvas3dConfig extends HandlebarsApplication {
                     { id: "base", icon: "fas fa-dot-circle", label: "levels3dpreview.settings.configApp.tabs.base" },
                     { id: "perm", icon: "fas fa-user-lock", label: "levels3dpreview.settings.configApp.tabs.perm" },
                     { id: "gc", icon: "fas fa-video", label: "levels3dpreview.settings.configApp.tabs.gc" },
+                    { id: "tools", icon: "fas fa-tools", label: "levels3dpreview.settings.configApp.tabs.tools" },
                     { id: "misc", icon: "fas fa-cogs", label: "levels3dpreview.settings.configApp.tabs.misc" },
                 ],
                 initial: "canvas",
@@ -88,7 +93,7 @@ class canvas3dConfig extends HandlebarsApplication {
 
     async _prepareContext(options) {
         const data = {};
-        const settingsKeys = ["useRaycastRuler", "paddingAppearance", "lightCacheSize", "pingsound", "lightHelpers", "templateEffects", "templateAuto3D", "enableReticule", "fullTransparency", "outline", "gameCameraWarnings", "gameCameraAutoLock", "gameCameraDefaultGm", "gameCameraClipping", "gameCameraMaxZoom", "gameCameraMinAzimuth", "gameCameraMaxAzimuth", "gameCameraMinAngle", "gameCameraMaxAngle", "enableGameCamera", "rangeFinder", "sharedContext", "rotateIndicator", "navigatorAuto", "showAdvanced", "canpingpan", "canping", "baseStyle", "solidBaseMode", "solidBaseColor", "highlightCombat", "startMarker", "hideTarget", "hideEffects", "templateSyle", "autoPan", "flatTokenStyle", "preventNegative", "miniCanvas", "debugMode", "cameralockzero"];
+        const settingsKeys = ["useRaycastRuler", "paddingAppearance", "lightCacheSize", "pingsound", "lightHelpers", "templateEffects", "templateAuto3D", "enableReticule", "fullTransparency", "outline", "gameCameraWarnings", "gameCameraAutoLock", "gameCameraDefaultGm", "gameCameraClipping", "gameCameraMaxZoom", "gameCameraMinAzimuth", "gameCameraMaxAzimuth", "gameCameraMinAngle", "gameCameraMaxAngle", "enableGameCamera", "rangeFinder", "sharedContext", "rotateIndicator", "navigatorAuto", "showAdvanced", "canpingpan", "canping", "baseStyle", "solidBaseMode", "solidBaseColor", "highlightCombat", "startMarker", "hideTarget", "hideEffects", "templateSyle", "autoPan", "flatTokenStyle", "preventNegative", "miniCanvas", "debugMode", "cameralockzero", "allTokens", "autoAssignToken", "assetBrowserCustomPath", "autoApply", "autoClose"];
         for (let key of settingsKeys) {
             data[key] = game.settings.get("levels-3d-preview", key);
         }
@@ -711,33 +716,33 @@ export function registerSettings() {
         });
 
         game.settings.register("levels-3d-preview", "allTokens", {
-            name: "Show All Tokens",
-            hint: "When disabled, show only colorized tokens, if enabled, show every token available.",
+            name: "",
+            hint: "",
             scope: "world",
-            config: true,
+            config: false,
             type: Boolean,
             default: false,
         });
 
         game.settings.register("levels-3d-preview", "autoAssignToken", {
-            name: "Auto Assign 3D Model",
-            hint: "When placing an Unlinked token on the canvas, automatically assign a 3D model to it if none is assigned.",
+            name: "",
+            hint: "",
             scope: "world",
-            config: true,
+            config: false,
             choices: {
-            0: "Disabled",
-            1: "3D Model Only",
-            2: "3D Model and Top Down Token",
+                0: "Disabled",
+                1: "3D Model Only",
+                2: "3D Model and Top Down Token",
             },
             type: Number,
             default: 1,
         });
 
         game.settings.register("levels-3d-preview", "assetBrowserCustomPath", {
-            name: "Custom Asset Path",
-            hint: "If you want to use a custom path for the asset browser, set it here.",
+            name: "",
+            hint: "",
             scope: "world",
-            config: true,
+            config: false,
             filePicker: "folder",
             type: String,
             default: "",
@@ -755,6 +760,24 @@ export function registerSettings() {
             config: false,
             type: Boolean,
             default: false,
+        });
+
+        game.settings.register("levels-3d-preview", "autoApply", {
+            name: "",
+            hint: "",
+            scope: "world",
+            config: false,
+            type: Boolean,
+            default: true,
+        });
+
+        game.settings.register("levels-3d-preview", "autoClose", {
+            name: "",
+            hint: "",
+            scope: "world",
+            config: false,
+            type: Boolean,
+            default: true,
         });
 
     });

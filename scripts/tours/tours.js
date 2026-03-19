@@ -14,7 +14,7 @@ export const GettingStartedTour = () => {
 };
 
 export const First3DTile = () => {
-    return new GenericTour("first-tile", [`.control[data-control="tiles"]`, `.control[data-tool="browse"]`, `li.dir[data-name="modules"]`, `li.dir[data-name="canvas3dcompendium"]`, `li.dir[data-name="assets"]`, `li.dir[data-name="Tiles"]`, `li.dir[data-name="Nature"]`, `.app.window-app.filepicker`], {
+    return new GenericTour("first-tile", [`.control[data-control="tiles"]`, `.control[data-tool="browse"]`, `li.dir[data-name="modules"]`, `li.dir[data-name="canvas3dcompendium"]`, `li.dir[data-name="assets"]`, `li.dir[data-name="Tiles"]`, `li.dir[data-name="Nature"]`, `#file-picker input[type="file"]`], {
         moduleId: "levels-3d-preview",
         localizationRoot: "levels3dpreview.tours",
         display: true,
@@ -62,14 +62,14 @@ export const First3DScene = () => {
         },
         init: () => {
             game.Levels3DPreview.CONFIG.UI.BUILD_PANEL.FORCE_AUTOHIDE_OFF = true;
-            Object.values(ui.windows).forEach((window) => window instanceof Dialog && window.close());
+            foundry.applications.instances.values().forEach((window) => window instanceof Dialog && window.close());
         },
         onComplete: () => {},
     });
 };
 
 export const AdvancedTileConfiguration = () => {
-    return new GenericTour("tile-configuration", [`a[data-tab="levels-3d-preview"]`, `.form-group:has(label[for="flags.levels-3d-preview.model3d"])`, `.form-group:has(label[for="flags.levels-3d-preview.dynaMesh"])`, `.form-group:has(label[for="flags.levels-3d-preview.imageTexture"])`, `.form-group:has(label[for="flags.levels-3d-preview.collision"])`, `button[data-key="shader-config"]`, `#levels-3d-preview-shader-config`], {
+    return new GenericTour("tile-configuration", [`a[data-tab="levels-3d-preview"]`, `.form-group:has(label[for="flags.levels-3d-preview.model3d"])`, `.form-group:has(label[for="flags.levels-3d-preview.dynaMesh"])`, `.form-group:has(label[for="flags.levels-3d-preview.imageTexture"])`, `.form-group:has(label[for="flags.levels-3d-preview.collision"])`, `button[data-action="shader-config"]`, `#levels-3d-preview-shader-config`], {
         moduleId: "levels-3d-preview",
         localizationRoot: "levels3dpreview.tours",
         display: true,
@@ -107,36 +107,36 @@ export const Tokens = () => {
 };
 
 export const AssetBrowser = () => {
-    return new GenericTour("asset-browser", [`#asset-browser .window-content`, `#asset-browser #search`, `#asset-browser ol`, `#asset-browser #ab-randomization`, `#asset-browser #ab-placement`, `#asset-browser #ab-collision`, `#asset-browser #ab-painting`, `#asset-browser #ab-appearance`, `#asset-browser .tab-button[data-tab="utility"]`, `#asset-browser #ab-optimization`], {
+    return new GenericTour("asset-browser", [`#asset-browser .window-content`, `#asset-browser #search`, `#asset-browser ol`, `#asset-browser #ab-randomization`, `#asset-browser #ab-placement`, `#asset-browser #ab-collision`, `#asset-browser #ab-painting`, `#asset-browser #ab-appearance`, `#asset-browser a[data-tab="utility"]`, `#asset-browser #ab-optimization`], {
         moduleId: "levels-3d-preview",
         localizationRoot: "levels3dpreview.tours",
         display: true,
         restricted: true,
         autoRegister: true,
         requires: () => {
-            return game.modules.get("canvas3dcompendium")?.active && Object.values(ui.windows).find((window) => window instanceof game.Levels3DPreview.CONFIG.UI.AssetBrowser);
+            return game.modules.get("canvas3dcompendium")?.active && foundry.applications.instances.values().find((window) => window instanceof game.Levels3DPreview.CONFIG.UI.AssetBrowser);
         },
         init: () => {},
     });
 };
 
 export const AssetBrowserPaint = () => {
-    return new GenericTour("asset-browser-paint", [`#asset-browser #ab-painting`, `#asset-browser li`, `#asset-browser #selected-notification`, `.control-tool[data-tool="tile"]`, `.control-tool[data-tool="tile3dPolygon"]`, `.control-tool[data-tool="select"]`], {
+    return new GenericTour("asset-browser-paint", [`#asset-browser #ab-painting`, `#asset-browser li`, `#asset-browser #selected-notification`, `.ui-control.tool[data-tool="tile"]`, `.ui-control.tool[data-tool="tile3dPolygon"]`, `.ui-control.tool[data-tool="select"]`], {
         moduleId: "levels-3d-preview",
         localizationRoot: "levels3dpreview.tours",
         display: true,
         restricted: true,
         autoRegister: true,
         requires: () => {
-            return game.modules.get("canvas3dcompendium")?.active && Object.values(ui.windows).find((window) => window instanceof game.Levels3DPreview.CONFIG.UI.AssetBrowser);
+            return game.modules.get("canvas3dcompendium")?.active && foundry.applications.instances.values().find((window) => window instanceof game.Levels3DPreview.CONFIG.UI.AssetBrowser);
         },
         init: () => {
             canvas.tiles.activate();
-            const w = Object.values(ui.windows).find((window) => window instanceof game.Levels3DPreview.CONFIG.UI.AssetBrowser);
-            w.element.find("li").each((i, e) => {
+            const w = foundry.applications.instances.values().find((window) => window instanceof game.Levels3DPreview.CONFIG.UI.AssetBrowser);
+            w.element.querySelectorAll("li").forEach((e, i) => {
                 if (i < 3) e.classList.add("selected");
             });
-            w.element.find("#selected-notification").show();
+            w.element.querySelector("#selected-notification").style.display = "unset";
         },
     });
 };
@@ -149,7 +149,7 @@ const Environment = () => {
         restricted: false,
         autoRegister: true,
         requires: () => {
-            return game.modules.get("canvas3dcompendium")?.active && Object.values(ui.windows).find((window) => window instanceof game.Levels3DPreview.CONFIG.UI.QuickEnvironment);
+            return game.modules.get("canvas3dcompendium")?.active && foundry.applications.instances.values().find((window) => window instanceof game.Levels3DPreview.CONFIG.UI.QuickEnvironment);
         },
     });
 };
@@ -162,7 +162,7 @@ const Terrain = () => {
         restricted: false,
         autoRegister: true,
         requires: () => {
-            return game.modules.get("canvas3dcompendium")?.active && Object.values(ui.windows).find((window) => window instanceof game.Levels3DPreview.CONFIG.UI.QuickTerrain);
+            return game.modules.get("canvas3dcompendium")?.active && foundry.applications.instances.values().find((window) => window instanceof game.Levels3DPreview.CONFIG.UI.QuickTerrain);
         },
     });
 };
@@ -175,7 +175,7 @@ const Material = () => {
         restricted: false,
         autoRegister: true,
         requires: () => {
-            return game.modules.get("canvas3dcompendium")?.active && Object.values(ui.windows).find((window) => window instanceof game.Levels3DPreview.CONFIG.UI.MaterialBrowser);
+            return game.modules.get("canvas3dcompendium")?.active && foundry.applications.instances.values().find((window) => window instanceof game.Levels3DPreview.CONFIG.UI.MaterialBrowser);
         },
     });
 };
@@ -188,7 +188,7 @@ const Effects = () => {
         restricted: false,
         autoRegister: true,
         requires: () => {
-            return game.modules.get("canvas3dcompendium")?.active && Object.values(ui.windows).find((window) => window instanceof game.Levels3DPreview.CONFIG.UI.EffectBrowser);
+            return game.modules.get("canvas3dcompendium")?.active && foundry.applications.instances.values().find((window) => window instanceof game.Levels3DPreview.CONFIG.UI.EffectBrowser);
         },
     });
 };
@@ -201,7 +201,7 @@ const Cutscene = () => {
         restricted: false,
         autoRegister: true,
         requires: () => {
-            return game.modules.get("canvas3dcompendium")?.active && Object.values(ui.windows).find((window) => window instanceof game.Levels3DPreview.CONFIG.UI.CutscenePanel);
+            return game.modules.get("canvas3dcompendium")?.active && foundry.applications.instances.values().find((window) => window instanceof game.Levels3DPreview.CONFIG.UI.CutscenePanel);
         },
     });
 };
@@ -214,7 +214,7 @@ const RoomBuilder = () => {
         restricted: false,
         autoRegister: true,
         requires: () => {
-            return game.modules.get("canvas3dcompendium")?.active && Object.values(ui.windows).find((window) => window instanceof game.Levels3DPreview.CONFIG.UI.RoomBuilder);
+            return game.modules.get("canvas3dcompendium")?.active && foundry.applications.instances.values().find((window) => window instanceof game.Levels3DPreview.CONFIG.UI.RoomBuilder);
         },
     });
 };

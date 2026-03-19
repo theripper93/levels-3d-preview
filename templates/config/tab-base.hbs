@@ -4,11 +4,9 @@
   <div class="form-group">
     <label>{{localize "levels3dpreview.settings.baseStyle.name"}}</label>
     <select name="baseStyle" data-dtype="String">
-      {{#select baseStyle}}
       {{#each CONFIG.tokenBase}}
-      <option value="{{id}}">{{name}}</option>
+        <option {{#if (eq id ../baseStyle)}}selected{{/if}} value="{{id}}">{{name}}</option>
       {{/each}}
-      {{/select}}
     </select>
     <p class="hint">{{localize "levels3dpreview.settings.baseStyle.hint"}}</p>
   </div>
@@ -16,10 +14,8 @@
   <div class="form-group">
     <label>{{localize "levels3dpreview.settings.solidBaseMode.name"}}</label>
     <select name="solidBaseMode" data-dtype="String">
-      {{#select solidBaseMode}}
-      <option value="merge">{{localize "levels3dpreview.settings.solidBaseMode.options.merge"}}</option>
-      <option value="ontop">{{localize "levels3dpreview.settings.solidBaseMode.options.ontop"}}</option>
-      {{/select}}
+      <option {{#if (eq solidBaseMode "merge")}}selected{{/if}} value="merge">{{localize "levels3dpreview.settings.solidBaseMode.options.merge"}}</option>
+      <option {{#if (eq solidBaseMode "ontop")}}selected{{/if}} value="ontop">{{localize "levels3dpreview.settings.solidBaseMode.options.ontop"}}</option>
     </select>
     <p class="hint">{{localize "levels3dpreview.settings.solidBaseMode.hint"}}</p>
   </div>

@@ -1,4 +1,4 @@
-<section class='tab {{tab.cssClass}}' data-group='primary' data-tab='canvas'>
+<section class='tab active {{tab.cssClass}}' data-group='primary' data-tab='canvas'>
 
     <div class="form-group">
     <label>{{localize "levels3dpreview.settings.preventNegative.name"}}</label>
@@ -21,16 +21,13 @@
     <div class="form-group">
     <label>{{localize "levels3dpreview.settings.paddingAppearance.name"}}</label>
     <select name="paddingAppearance" data-dtype="String">
-        {{!-- {{selectOptions renderTable selected=paddingAppearance localize=true}} --}}
-        {{#select paddingAppearance}}
-        <option value="none">{{localize "levels3dpreview.flags.renderTable.options.none"}}</option>
-        <option value="table">{{localize "levels3dpreview.flags.renderTable.options.table"}}</option>
-        <option value="matpaper">{{localize "levels3dpreview.flags.renderTable.options.matpaper"}}</option>
-        <option value="matwood">{{localize "levels3dpreview.flags.renderTable.options.matwood"}}</option>
-        <option value="matcloth">{{localize "levels3dpreview.flags.renderTable.options.matcloth"}}</option>
-        <option value="matblueprint">{{localize "levels3dpreview.flags.renderTable.options.matblueprint"}}</option>
-        <option value="matcustom">{{localize "levels3dpreview.flags.renderTable.options.matcustom"}}</option>
-        {{/select}}
+        <option {{#if (eq paddingAppearance "none")}}selected{{/if}} value="none">{{localize "levels3dpreview.flags.renderTable.options.none"}}</option>
+        <option {{#if (eq paddingAppearance "table")}}selected{{/if}} value="table">{{localize "levels3dpreview.flags.renderTable.options.table"}}</option>
+        <option {{#if (eq paddingAppearance "matpaper")}}selected{{/if}} value="matpaper">{{localize "levels3dpreview.flags.renderTable.options.matpaper"}}</option>
+        <option {{#if (eq paddingAppearance "matwood")}}selected{{/if}} value="matwood">{{localize "levels3dpreview.flags.renderTable.options.matwood"}}</option>
+        <option {{#if (eq paddingAppearance "matcloth")}}selected{{/if}} value="matcloth">{{localize "levels3dpreview.flags.renderTable.options.matcloth"}}</option>
+        <option {{#if (eq paddingAppearance "matblueprint")}}selected{{/if}} value="matblueprint">{{localize "levels3dpreview.flags.renderTable.options.matblueprint"}}</option>
+        <option {{#if (eq paddingAppearance "matcustom")}}selected{{/if}} value="matcustom">{{localize "levels3dpreview.flags.renderTable.options.matcustom"}}</option>
     </select>
     <p class="hint">{{localize "levels3dpreview.settings.paddingAppearance.hint"}}</p>
     </div>
@@ -38,10 +35,8 @@
     <div class="form-group">
     <label>{{localize "levels3dpreview.settings.templateSyle.name"}}</label>
     <select name="templateSyle" data-dtype="String">
-        {{#select templateSyle}}
-        <option value="wireframe">{{localize "levels3dpreview.settings.templateSyle.options.wireframe"}}</option>
-        <option value="solid">{{localize "levels3dpreview.settings.templateSyle.options.solid"}}</option>
-        {{/select}}
+        <option {{#if (eq templateSyle "wireframe")}}selected{{/if}} value="wireframe">{{localize "levels3dpreview.settings.templateSyle.options.wireframe"}}</option>
+        <option {{#if (eq templateSyle "solid")}}selected{{/if}} value="solid">{{localize "levels3dpreview.settings.templateSyle.options.solid"}}</option>
     </select>
     <p class="hint">{{localize "levels3dpreview.settings.templateSyle.hint"}}</p>
     </div>
@@ -73,11 +68,9 @@
     <div class="form-group">
     <label>{{localize "levels3dpreview.settings.rangeFinder.name"}}</label>
     <select name="rangeFinder" data-dtype="String">
-        {{#select rangeFinder}}
-        <option value="none">{{localize "levels3dpreview.settings.rangeFinder.options.none"}}</option>
-        <option value="combat">{{localize "levels3dpreview.settings.rangeFinder.options.combat"}}</option>
-        <option value="always">{{localize "levels3dpreview.settings.rangeFinder.options.always"}}</option>
-        {{/select}}
+        <option {{#if (eq rangeFinder "none")}}selected{{/if}} value="none">{{localize "levels3dpreview.settings.rangeFinder.options.none"}}</option>
+        <option {{#if (eq rangeFinder "combat")}}selected{{/if}} value="combat">{{localize "levels3dpreview.settings.rangeFinder.options.combat"}}</option>
+        <option {{#if (eq rangeFinder "always")}}selected{{/if}} value="always">{{localize "levels3dpreview.settings.rangeFinder.options.always"}}</option>
     </select>
     <p class="hint">{{localize "levels3dpreview.settings.rangeFinder.hint"}}</p>
     </div>
@@ -85,11 +78,9 @@
     <div class="form-group">
     <label>{{localize "levels3dpreview.settings.autoPan.name"}}</label>
     <select name="autoPan" data-dtype="String">
-        {{#select autoPan}}
-        <option value="none">{{localize "levels3dpreview.settings.autoPan.options.none"}}</option>
-        <option value="player">{{localize "levels3dpreview.settings.autoPan.options.player"}}</option>
-        <option value="all">{{localize "levels3dpreview.settings.autoPan.options.all"}}</option>
-        {{/select}}
+        <option {{#if (eq autoPan "none")}}selected{{/if}} value="none">{{localize "levels3dpreview.settings.autoPan.options.none"}}</option>
+        <option {{#if (eq autoPan "player")}}selected{{/if}} value="player">{{localize "levels3dpreview.settings.autoPan.options.player"}}</option>
+        <option {{#if (eq autoPan "all")}}selected{{/if}} value="all">{{localize "levels3dpreview.settings.autoPan.options.all"}}</option>
     </select>
     <p class="hint">{{localize "levels3dpreview.settings.autoPan.hint"}}</p>
     </div>

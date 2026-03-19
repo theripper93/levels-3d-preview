@@ -1,7 +1,7 @@
 import { AssetBrowser } from "./assetBrowser.js";
 import { TokenBrowser } from "./tokenBrowser.js";
 import { Socket } from "../lib/socket.js";
-import { factor } from "../main.js";
+import { factor, toggleLoadingScreen } from "../main.js";
 import { HandlebarsApplication, mergeClone } from "../lib/utils.js";
 
 export class BuildPanel extends HandlebarsApplication {
@@ -18,9 +18,18 @@ export class BuildPanel extends HandlebarsApplication {
         }
         const BUILD_PANEL_BUTTONS_PREMIUM = game.Levels3DPreview.CONFIG.UI.BUILD_PANEL_BUTTONS_PREMIUM ?? [];
         this.BUILD_PANEL_BUTTONS = [
-            ...this.BUILD_PANEL_BUTTONS_BASE,
-            ...BUILD_PANEL_BUTTONS_PREMIUM
+            ...this.BUILD_PANEL_BUTTONS_BASE
         ];
+        for (let button of BUILD_PANEL_BUTTONS_PREMIUM) {
+            const baseButton = this.BUILD_PANEL_BUTTONS.find((b) => b.id === button.id);
+            if (!baseButton) {
+                this.BUILD_PANEL_BUTTONS.push(button);
+                continue;
+            }
+            baseButton.disabled = false;
+            baseButton.callback = button.callback;
+            delete baseButton.tooltip;
+        }
     }
 
     static get DEFAULT_OPTIONS() {
@@ -123,6 +132,7 @@ export class BuildPanel extends HandlebarsApplication {
                 ...this.BUILD_PANEL_BUTTONS,
                 ...this.CLIP_NAVIGATION_BUTTONS
             ].find((b) => b.id === action);
+            if (!button.callback) return;
             button.callback(event);
         }));
 
@@ -291,18 +301,18 @@ export class BuildPanel extends HandlebarsApplication {
             visible: () => true,
             callback: () => game.Levels3DPreview.setCameraToControlled(),
         },
-        {
-            id: "clip-navigation-automode",
-            name: "levels3dpreview.clipNavigator.automode",
-            icon: "fas fa-street-view",
-            toggle: true,
-            visible: () => this.showRange,
-            callback: (e) => {
-                this.autoMode = !this.autoMode;
-                game.settings.set("levels-3d-preview", "clipNavigatorFollowClient", this.autoMode);
-                e.target.classList.toggle("clip-navigation-enabled");
-            },
-        },
+        // {
+        //     id: "clip-navigation-automode",
+        //     name: "levels3dpreview.clipNavigator.automode",
+        //     icon: "fas fa-street-view",
+        //     toggle: true,
+        //     visible: () => this.showRange,
+        //     callback: (e) => {
+        //         this.autoMode = !this.autoMode;
+        //         game.settings.set("levels-3d-preview", "clipNavigatorFollowClient", this.autoMode);
+        //         e.target.classList.toggle("clip-navigation-enabled");
+        //     },
+        // },
         {
             id: "clip-navigation-lock",
             name: "levels3dpreview.clipNavigator.lockon",
@@ -388,11 +398,7 @@ export class BuildPanel extends HandlebarsApplication {
                 document.querySelector("#levels-3d-preview-loading-bar").style.display = "none";
                 document.querySelector("#clip-navigation-higlight-arrow")?.remove();
 
-                const loadingScreen = document.querySelector(".levels-3d-preview-loading-screen");
-                loadingScreen.style.transition = "opacity 0.2s";
-                loadingScreen.style.opacity = loadingScreen.style.opacity === "0" ? "1" : "0";
-
-                document.querySelector("#close-loading-screen").style.display = "flex";
+                toggleLoadingScreen();
             },
         },
         {
@@ -416,7 +422,7 @@ export class BuildPanel extends HandlebarsApplication {
             },
         },
     ];
-
+    
     BUILD_PANEL_BUTTONS_BASE = [
         {
             id: "props",
@@ -425,6 +431,80 @@ export class BuildPanel extends HandlebarsApplication {
             visible: () => true,
             callback: () => {
                 new AssetBrowser().render(true);
+            },
+        },
+        {
+            id: "environment",
+            name: "Environment",
+            icon: "fas fa-cloud-bolt-sun",
+            visible: () => true,
+            disabled: true,
+            img: "modules/levels-3d-preview/assets/previews/preview-environment.webp",
+            tooltip: "Change the skybox, time of day and weather",
+        },
+        {
+            id: "terrain",
+            name: "Terrain",
+            icon: "fas fa-mountain",
+            visible: () => true,
+            disabled: true,
+            img: "modules/levels-3d-preview/assets/previews/preview-terrain.webp",
+            tooltip: "Quickly generate terrain with a variety of options",
+        },
+        {
+            id: "materials",
+            name: "Materials",
+            icon: "fas fa-circle-half-stroke",
+            visible: () => true,
+            disabled: true,
+            img: "modules/levels-3d-preview/assets/previews/preview-materials.webp",
+            tooltip: "Assign materials to tiles and quickly change their appearance",
+        },
+        {
+            id: "roombuilder",
+            name: "Dungeons & Interiors",
+            icon: "fas fa-block-brick",
+            visible: () => true,
+            disabled: true,
+            img: "modules/levels-3d-preview/assets/previews/preview-roombuilder.webp",
+            tooltip: "Create dungeons, caves and buildings interiors",
+        },
+        {
+            id: "effects",
+            name: "Effects",
+            icon: "fas fa-fire",
+            visible: () => true,
+            disabled: true,
+            img: "modules/levels-3d-preview/assets/previews/preview-effects.webp",
+            tooltip: "Drop effects on tiles and quickly change their appearance",
+        },
+        {
+            id: "cutscenes",
+            name: "Cutscenes",
+            icon: "fas fa-clapperboard-play",
+            visible: () => true,
+            disabled: true,
+            img: "modules/levels-3d-preview/assets/previews/preview-cutscenes.webp",
+            tooltip: "Record cinematic cuts and play them for your players",
+        },
+        {
+            id: "tutorials",
+            name: "More Tours",
+            icon: "fas fa-person-hiking",
+            visible: () => {
+                return !Array.from(game.tours)
+                    .filter((t) => t.moduleId == "levels-3d-preview")
+                    .every((t) => t.status == "completed");
+            },
+            disabled: true,
+        },
+        {
+            id: "community-maps",
+            name: "Community Maps",
+            icon: "fas fa-map",
+            visible: () => true,
+            callback: () => {
+                new game.Levels3DPreview.sharing.apps.MapBrowser().render(true);
             },
         },
     ];

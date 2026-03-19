@@ -598,7 +598,7 @@ export function registerConfigs() {
         });
         html.querySelector(`[name="flags.levels-3d-preview.particlePreset"]`).dispatchEvent(new Event("change"));
 
-        const ppInputs = Array.from(injected[0].querySelectorAll("[name]")).filter((input) => input.name.includes("pp."));
+        const ppInputs = Array.from(html.querySelectorAll("[name^='flags.levels-3d-preview.']")).filter((input) => input.name.includes("pp."));
 
         ppInputs.forEach((input) => {
             input.addEventListener("change", (e) => {
@@ -619,7 +619,7 @@ export function registerConfigs() {
         hideParams(app, html, `[name="flags.levels-3d-preview.enableFog"]`, fogFlags, false);
 
         if (canvas.scene.id !== app.document.id) return;
-        html.on("change", "[name^='flags.levels-3d-preview.']", (e) => {
+        html.querySelectorAll("[name^='flags.levels-3d-preview.']").forEach(el => el.addEventListener("change", (e) => {
             if (!game.Levels3DPreview._active) return;
             const sunPosition = html.querySelector("[name='flags.levels-3d-preview.sunPosition']").value;
             const sunDistance = html.querySelector("[name='flags.levels-3d-preview.sunDistance']").value;
@@ -633,13 +633,13 @@ export function registerConfigs() {
                 exposure: exposure,
                 tilt: sunTilt,
             });
-        });
-        html.on("click", "#clear-3d-view", (e) => {
+        }));
+        html.querySelector("#clear-3d-view")?.addEventListener("click", (e) => {
             e.preventDefault();
             canvas.scene.update({ "flags.levels-3d-preview.-=initialPosition": null }, { render: false });
             ui.notifications.notify(game.i18n.localize("levels3dpreview.notifications.initialviewcleared"));
         });
-        html.on("click", "#capture-3d-view", (e) => {
+        html.querySelector("#capture-3d-view")?.addEventListener("click", (e) => {
             e.preventDefault();
             canvas.scene.update(
                 {
@@ -654,19 +654,20 @@ export function registerConfigs() {
             ui.notifications.notify(game.i18n.localize("levels3dpreview.notifications.initialviewcaptured"));
         });
 
-        html.querySelector("#dynamic-sky-config-button").after(`
-        <div class="form-group submenu">
-            <label>${game.i18n.localize("levels3dpreview.dynamicSkyConfig.sceneConfig.label")}</label>
-            <button type="button" data-key="sky-config">
-            <i class="fa-solid fa-clouds-sun"></i>
-                <label>${game.i18n.localize("levels3dpreview.dynamicSkyConfig.sceneConfig.button")}</label>
-            </button>
-            <p class="hint">${game.i18n.localize("levels3dpreview.dynamicSkyConfig.sceneConfig.notes")}</p>
-        </div>`);
-        html.querySelector("button[data-key='sky-config']")?.addEventListener("click", (e) => {
-            e.preventDefault();
-            new game.Levels3DPreview.lights.globalIllumination.DynamicSkyConfig(app.document).render(true);
-        });
+        // html.querySelector("#dynamic-sky-config-button").insertAdjacentHTML("afterend", `
+        //     <div class="form-group submenu">
+        //         <label>${game.i18n.localize("levels3dpreview.dynamicSkyConfig.sceneConfig.label")}</label>
+        //         <button type="button" data-key="sky-config">
+        //         <i class="fa-solid fa-clouds-sun"></i>
+        //             <label>${game.i18n.localize("levels3dpreview.dynamicSkyConfig.sceneConfig.button")}</label>
+        //         </button>
+        //         <p class="hint">${game.i18n.localize("levels3dpreview.dynamicSkyConfig.sceneConfig.notes")}</p>
+        //     </div>`
+        // );
+        // html.querySelector("button[data-key='sky-config']")?.addEventListener("click", (e) => {
+        //     e.preventDefault();
+        //     new game.Levels3DPreview.lights.globalIllumination.DynamicSkyConfig(app.document).render(true);
+        // });
     });
 
 
@@ -1804,8 +1805,7 @@ export function registerConfigs() {
     });
 
     Hooks.on("renderMeasuredTemplateConfig", (app, html) => {
-        html = $(html);
-        if (html[0].querySelector(`[name="flags.levels-3d-preview.tilt"]`)) return;
+        if (html.querySelector(`[name="flags.levels-3d-preview.tilt"]`)) return;
 
         injectConfig.inject(app, html, {
             moduleId: "levels-3d-preview",
@@ -1833,8 +1833,7 @@ export function registerConfigs() {
     });
 
     Hooks.on("renderNoteConfig", (app, html) => {
-        html = $(html);
-        if (html[0].querySelector(`[name="flags.levels-3d-preview.rotation"]`)) return;
+        if (html.querySelector(`[name="flags.levels-3d-preview.rotation"]`)) return;
 
         injectConfig.inject(app, html, {
             moduleId: "levels-3d-preview",
@@ -2081,7 +2080,7 @@ export function registerConfigs() {
     });
 
     Hooks.on("updateTile", (tile, updates) => {
-        const mapGenForm = Object.values(ui.windows).find((w) => w instanceof MapGen);
+        const mapGenForm = foundry.applications.instances.values().find((w) => w instanceof MapGen);
         if (mapGenForm && mapGenForm.document === tile) mapGenForm.saveGridAndRefresh();
     });
 
@@ -2123,7 +2122,7 @@ export function registerConfigs() {
             onDown: () => {
                 if (!game.Levels3DPreview._active || !game.Levels3DPreview.hasFocus) return;
                 game.Levels3DPreview.GameCamera.lock = !game.Levels3DPreview.GameCamera.lock;
-                $("#clip-navigation-lock").toggleClass("clip-navigation-enabled", game.Levels3DPreview.GameCamera.lock);
+                document.querySelector("#clip-navigation-lock")?.classList.toggle("clip-navigation-enabled", game.Levels3DPreview.GameCamera.lock);
             },
         });
         game.keybindings.register("levels-3d-preview", "gameCameraTopDown", {

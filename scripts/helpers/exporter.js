@@ -81,7 +81,7 @@ export class Exporter {
         }, {});
         return new Promise((resolve) => {
             Hooks.once("renderDialog", (app) => {
-                app.element.css({ width: "auto" });
+                app.element.style.width = "auto";
             });
             new foundry.applications.api.DialogV2({
                 window: { title: "levels3dpreview.exporter.title" },

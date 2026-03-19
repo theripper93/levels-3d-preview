@@ -126,13 +126,20 @@ export class Token3D {
         if (isVideo) {
             let video;
             let videoTexture;
-            video = $(`<video id="video" loop crossOrigin="anonymous" autoplay="true" muted="muted" playsinline style="display:none;height:auto;width:auto;">
-        <source src="${this.imageTexture}"
-          type='video/${extension};'>
-      </video>`);
-            $("body").append(video);
-            await resolveMetadata(video[0]);
-            videoTexture = new THREE.VideoTexture(video[0]);
+            video = document.createElement("video");
+            video.id = "video";
+            video.loop = true;
+            video.crossOrigin = "anonymous";
+            video.autoplay = true;
+            video.muted = true;
+            video.playsinline = true;
+            video.style.display = "none";
+            video.style.height = "auto";
+            video.style.width = "auto";
+            video.innerHTML = `<source src="${this.imageTexture}" type='video/${extension};'>`;
+            document.body.append(video);
+            await resolveMetadata(video);
+            videoTexture = new THREE.VideoTexture(video);
             videoTexture.format = THREE.RGBAFormat;
             this.isVideo = true;
             return videoTexture;
@@ -594,7 +601,7 @@ export class Token3D {
         };
         if (!game.user.isGM) {
             if (game.paused) return false;
-            const center = canvas.grid.getCenter(x, y);
+            const center = canvas.grid.getCenterPoint({ x, y });
             const geometryCollisions = game.Levels3DPreview?.object3dSight;
             let collides;
             if (geometryCollisions) {
@@ -652,7 +659,7 @@ export class Token3D {
         const unconstrainedMovement = game.user.isGM && ui.controls.controls.tokens.tools.unconstrainedMovement.active;
         if (!game.user.isGM || !unconstrainedMovement) {
             if (game.paused) return false;
-            const center = canvas.grid.getCenter(x, y);
+            const center = canvas.grid.getCenterPoint({ x, y });
             const geometryCollisions = game.Levels3DPreview?.object3dSight;
             let collides;
             if (geometryCollisions) {

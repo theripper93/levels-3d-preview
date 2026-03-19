@@ -47,15 +47,17 @@ export class RangeFinder {
 
         const RFCurve = new THREE.Mesh(geometry, this.getMaterial());
 
-        const label = $(`<div id="levels3d-ruler-text" class="rangefinder"></div>`);
-        if (this.options.style) label.css(this.options.style);
-        $("body").append(label);
+        const label = document.createElement("div");
+        label.id = "levels3d-ruler-text";
+        label.classList.add("rangefinder");
+        if (this.options.style) label.style.cssText = this.options.style;
+        document.body.append(label);
         let text = this.options.text ?? `${distance.toFixed(1)} ${canvas.scene.grid.units}.`;
         if (this.isHoverDistance) {
             const rangeBand = DistanceTooltip.getRangeBand(distance);
             if (rangeBand) text = `${rangeBand} (${text})`;
         }
-        label.text(text);
+        label.innerHTML = text;
         Ruler3D.centerElement(label, midcurve);
         RFCurve.userData.label = label;
         RFCurve.userData.textPos = midcurve;
@@ -124,7 +126,7 @@ export class RangeFinder {
 
     static setHooks() {
         Hooks.on("hoverToken", (token, hover) => {
-            if (!game.Levels3DPreview._active) return;
+            if (!game.Levels3DPreview?._active) return;
             if (hover) {
                 new RangeFinder(token);
             } else {
@@ -136,7 +138,7 @@ export class RangeFinder {
             }
         });
         Hooks.on("controlToken", (token, controlled) => {
-            if (!game.Levels3DPreview._active) return;
+            if (!game.Levels3DPreview?._active) return;
             game.Levels3DPreview.rangeFinders.forEach((rf) => {
                 if (rf.tokenId === token.id) {
                     rf.destroy();

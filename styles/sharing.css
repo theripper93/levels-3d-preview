@@ -87,12 +87,14 @@ i[data-action="community-maps"].contest-next {
     top: 0;
     right: 0.2rem;
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     align-items: center;
 
     button {
         width: 2rem;
         height: 1.5rem;
+        border: none;
+        background: transparent;
     }
 }
 

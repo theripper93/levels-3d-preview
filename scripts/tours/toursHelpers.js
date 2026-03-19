@@ -99,23 +99,23 @@ class TourEnhanced extends foundry.nue.Tour{
         }
         await this.init();
         await super.start(...args);
-        Object.values(ui.windows).find(w => w instanceof ToursManagement)?.minimize();
+        foundry.applications.instances.values().find(w => w instanceof foundry.applications.sidebar.apps.ToursManagement)?.minimize();
     }
 
     async complete(...args){
         await super.complete(...args);
         this.onComplete();
-        Object.values(ui.windows).find(w => w instanceof ToursManagement)?.maximize();
+        foundry.applications.instances.values().find(w => w instanceof foundry.applications.sidebar.apps.ToursManagement)?.maximize();
     }
 
     exit(...args){
         super.exit(...args);
-        Object.values(ui.windows).find(w => w instanceof ToursManagement)?.maximize();
+        foundry.applications.instances.values().find(w => w instanceof foundry.applications.sidebar.apps.ToursManagement)?.maximize();
     }
 
     async next(fromFadeElement = false) { 
         if (!fromFadeElement) {
-            $(this.fadeElement)?.click()
+            this.fadeElement?.click()
         }
         else await super.next();
     }
@@ -123,29 +123,31 @@ class TourEnhanced extends foundry.nue.Tour{
     async _renderStep(...args) {
         await super._renderStep(...args);
         this.overlayElement.style.zIndex = "calc(var(--z-index-tooltip) - 3)";
-        $(this.fadeElement).on("click", async ()=>{
+        this.fadeElement.addEventListener("click", async () => {
             const nextStep = this.steps[this.stepIndex + 1];
             const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
             const timeout = 5000;
             let currentWait = 0;
             this.activateTab();
             await wait(100);
-            $(this.currentStep.selector)[0]?.click()
-            if(!nextStep) return this.next(true);
+            document.querySelector(this.currentStep.selector)?.click();
+            if (!nextStep) return this.next(true);
             await wait(100);
-            while(!$(nextStep.selector + ":visible").length && currentWait < timeout) {
+            while (currentWait < timeout) {
+                const el = document.querySelector(nextStep.selector);
+                if (el && el.offsetWidth && el.offsetHeight) break;
                 await wait(50);
                 currentWait += 50;
             }
             this.next(true);
-         });
+        });
     }
 
     activateTab() {
         const nextStep = this.steps[this.stepIndex + 1];
-        if(!nextStep?.selector) return;
-        const el = $(nextStep.selector)[0];
-        if(!el) return;
+        if (!nextStep?.selector) return;
+        const el = document.querySelector(nextStep.selector);
+        if (!el) return;
         const tab = el.closest(".tab");
         if (!tab) return;
         const tabId = tab.dataset.tab;
@@ -154,11 +156,11 @@ class TourEnhanced extends foundry.nue.Tour{
         tabButton.click();
     }
 
-    _getTargetElement(selector){
-        return $(selector)[0];
-    }
+        _getTargetElement(selector){
+            return document.querySelector(selector);
+        }
 
-}
+    }
 
 export function promptForTour(){
     Dialog.confirm({

@@ -15,36 +15,6 @@
       "lang": "en",
       "name": "English",
       "path": "languages/en.json"
-    },
-    {
-      "lang": "ja",
-      "name": "日本語",
-      "path": "languages/ja.json"
-    },
-    {
-      "lang": "de",
-      "name": "Deutsch",
-      "path": "languages/de.json"
-    },
-    {
-      "lang": "fr",
-      "name": "Français",
-      "path": "languages/fr.json"
-    },
-    {
-      "lang": "es",
-      "name": "Español",
-      "path": "languages/es.json"
-    },
-    {
-      "lang": "pt-br",
-      "name": "Português (Brasil)",
-      "path": "languages/pt-br.json"
-    },
-    {
-      "lang": "it",
-      "name": "Italiano",
-      "path": "languages/it.json"
     }
   ],
   "esmodules": [
@@ -110,6 +80,11 @@
       },
       {
         "id": "canvas3dtokencompendium",
+        "type": "module",
+        "compatibility": {}
+      },
+      {
+        "id": "canvas3d-premium",
         "type": "module",
         "compatibility": {}
       },

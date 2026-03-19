@@ -1467,7 +1467,9 @@ export class Tile3D {
             return model;
         }
         //make 1x1 cube
-        const errText = game.i18n.localize("levels3dpreview.errors.filenotsupported") + "(" + extension + "): " + filePath + " Tile: " + this.tile.id;
+        const errText = isMapgen ?
+            game.i18n.localize("levels3dpreview.errors.nomapgencells") + " Tile: " + this.tile.id :
+            game.i18n.localize("levels3dpreview.errors.filenotsupported") + "(" + extension + "): " + filePath + " Tile: " + this.tile.id;
         console.error(errText);
         ui.notifications.error(errText);
         const obj = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshStandardMaterial({ color: 0xff0000 }));
@@ -2835,7 +2837,7 @@ export function extractPointsFromDrawing() {
     ui.notifications.info("Please create a polygon drawing to extract points from");
     Hooks.once("renderSceneControls", () => {
         setTimeout(() => {
-            $(`li[data-tool="polygon"]`)[0].click();
+            document.querySelector(`li[data-tool="polygon"]`).click();
         }, 500);
     });
     Hooks.once("createDrawing", async (drawing) => {

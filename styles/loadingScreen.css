@@ -1,9 +1,11 @@
-.levels-3d-preview-loading-screen{
+.levels-3d-preview-loading-screen {
     pointer-events: none;
     display: flex;
     align-items: center;
     justify-content: center;
     color: var(--color-text-light-0);
+    transition: opacity 0.3s ease-in-out;
+    opacity: 0;
 }
 
 .levels-3d-preview-loading-screen p{
@@ -33,6 +35,7 @@
 }
 
 .levels-3d-preview-loading-screen h1{
+    color: var(--color-text-light-0);
     border: none;
     font-weight: 500;
     margin: 0;
@@ -40,7 +43,7 @@
 }
 
 .levels-3d-preview-loading-screen .control-highlighted{
-    color: var(--color-text-hyperlink);
+    color: var(--color-warm-2);
     text-shadow: rgba(0, 0, 0, 0.266) 0 0 5px;
     font-style: unset;
     font-weight: bold;
@@ -65,7 +68,7 @@
 }
 
 .levels-3d-preview-loading-screen .controls-container{
-    background: url(/../ui/denim075.png) repeat;
+    background: var(--color-cool-5-90);
     border-radius: 5px;
     margin: 0.2em;
     padding: 0.3em 0.5em;
@@ -99,7 +102,7 @@
 
 #levels-3d-preview-loading-bar #levels-3d-preview-loading-bar-inner{
     position: absolute;
-    background-color: var(--color-text-hyperlink);
+    background-color: var(--color-warm-2);
     height: 100%;
     width: 0%;
     transition: width 0.5s ease-in-out;
@@ -118,7 +121,7 @@
     z-index: 10000;
     font-size: 4rem;
     pointer-events: none;
-    color: var(--color-text-hyperlink);
+    color: var(--color-warm-2);
     text-shadow: 0 0 8px var(--color-shadow-highlight);
     transform: translateX(-20%);
     animation-name: higlight-arrow-anim;
@@ -136,7 +139,7 @@
 #close-loading-screen{
     position: absolute;
     right: 0;
-    background-color: var(--color-text-hyperlink);
+    background-color: var(--color-warm-2);
     aspect-ratio: 1;
     height: 1rem;
     display: flex;
@@ -145,7 +148,7 @@
     align-content: center;
     align-items: center;
     justify-content: center;
-        pointer-events: all;
+    pointer-events: all;
     cursor: pointer;
     box-shadow: 0px 0px 5px 1px black;
     border: 1px solid rgba(255, 255, 255, 0.327);

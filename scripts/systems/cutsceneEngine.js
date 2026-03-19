@@ -82,9 +82,13 @@ class Cutscene{
         this.initializeKeyframes();
         this._currentKeyframe = 0;
         if (this.immersive) {
-            $("#interface").fadeOut(this.keyframes[0].time/2);
-            Object.values(ui.windows).forEach((window) => {
-                window.element.closest(".window-app").fadeOut(this.keyframes[0].time/2);
+            const iface = document.querySelector("#interface");
+            iface.style.opacity = 0;
+
+            foundry.applications.instances.values().forEach((window) => {
+                window.element?.animate([{ opacity: 1 }, { opacity: 0 }], { duration: this.keyframes[0].time / 2, fill: "forwards" }).finished.then(() => {
+                    window.element?.classList.add("hidden");
+                });
             });
         }
     }
@@ -123,9 +127,14 @@ class Cutscene{
         this.canvasEl.style.backdropFilter = "";
         this.canvasEl.style.transition = "";
         if (this.immersive) {
-            $("#interface").fadeIn(200);
-            Object.values(ui.windows).forEach((window) => {
-                window.element.closest(".window-app").fadeIn(200);
+            const iface = document.querySelector("#interface");
+            iface.style.opacity = 1;
+
+            foundry.applications.instances.values().forEach((window) => {
+                const el = window.element;
+                if (!el) return;
+                el.classList.remove("hidden");
+                el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 200, fill: "forwards" });
             });
         }
     }

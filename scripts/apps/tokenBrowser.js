@@ -170,6 +170,8 @@ export class TokenBrowser extends HandlebarsApplication {
     _onRender(html) {
         super._onRender(html);
 
+        if (this._assetCount === 0) ui.notifications.warn("Token Browser: No assets found. Please make sure you have the <a href='https://foundryvtt.com/packages/canvas3dtokencompendium/' target='_blank'>3DCanvas Token Collection</a> module installed.", { permanent: true });
+
         this.element.querySelectorAll(".material-confirm").forEach(el => el.classList.add("hidden"));
 
         this.element.querySelector("#search").addEventListener("keyup", (e) => {
@@ -223,27 +225,26 @@ export class TokenBrowser extends HandlebarsApplication {
     }
 
     static create(filepicker, app) {
-        filepicker = $(filepicker);
+        if (typeof filepicker === "string") filepicker = document.querySelector(filepicker);
         const fpFG = filepicker.closest(".form-group").length ? filepicker.closest(".form-group") : filepicker;
-        const button = $(`
-        <button type="button" data-tooltip="Token Browser - Ctrl + Click for Quick Match">
-        <i class="fa-regular fa-person" style="margin: 0;"></i>
-        </button>
-        `);
-        const input = fpFG.find("file-picker").first();
-        const fpButton = fpFG.find("button").first();
+        const button = document.createElement("button");
+        button.type = "button";
+        button.dataset.tooltip = "Token Browser - Ctrl + Click for Quick Match";
+        button.innerHTML = `<i class="fa-regular fa-person" style="margin: 0;"></i>`;
+        const input = fpFG.querySelector("file-picker");
+        const fpButton = fpFG.querySelector("button");
         fpButton.before(button);
-        button.on("mouseup", async (e) => {
+        button.addEventListener("mouseup", async (e) => {
             e.preventDefault();
             const isLeftClick = e.button === 0;
             const isRightClick = e.button === 2;
             const isCtrlClick = e.ctrlKey;
-            if (isLeftClick && !isCtrlClick) new TokenBrowser(input[0], app).render(true);
+            if (isLeftClick && !isCtrlClick) new TokenBrowser(input, app).render(true);
             if (isRightClick || isCtrlClick) {
                 const name = app.document.name;
                 const closestMatch = await this.findByName(name, { returnFirst: true, async: true });
                 if (closestMatch) {
-                    input.val(closestMatch);
+                    input.value = closestMatch;
                     if (game.settings.get("levels-3d-preview", "autoApply")) app.document.setFlag("levels-3d-preview", "model3d", closestMatch); //app._onSubmit(e, { preventClose: true, preventRender: true });
                 }
             }

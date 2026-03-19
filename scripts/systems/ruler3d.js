@@ -84,10 +84,13 @@ export class Ruler3D {
         const ring2 = new THREE.Mesh(tGeo2, this.dragRingMaterial);
         this.dragRing.add(ring1);
         this.dragRing.add(ring2);
-        this.textElement = $(`<div id="levels3d-ruler-text" class="ruler"><span class="distance"></span></div>`);
-        this.textDistance = this.textElement.find(".distance")[0];
-        this.textElement.hide();
-        $("body").append(this.textElement);
+        this.textElement = document.createElement("div");
+        this.textElement.id = "levels3d-ruler-text";
+        this.textElement.classList.add("ruler");
+        this.textElement.innerHTML = `<span class="distance"></span>`;
+        this.textDistance = this.textElement.querySelector(".distance");
+        this.textElement.style.display = "none";
+        document.body.append(this.textElement);
         if (!this.enableRuler) {
             this.sphere1.visible = false;
             this.sphere2.visible = false;
@@ -114,7 +117,7 @@ export class Ruler3D {
             const isToken = this.isToken;
             this._object = null;
             this.template?.destroy();
-            this.textElement.hide();
+            this.textElement.style.display = "none";
             this._parent.scene.remove(this.line);
             this.removeMarkers(isToken);
         } else {
@@ -124,7 +127,7 @@ export class Ruler3D {
             const target = value.userData.isHitbox ? value.parent : value;
             this._object = target;
             this.origin = new THREE.Vector3(target.position.x, target.position.y, target.position.z);
-            if (this.enableRuler) this.textElement.show();
+            if (this.enableRuler) this.textElement.style.display = "unset";
             const isToken = this._object?.userData?.entity3D?.token;
             if (isToken) {
                 this.dragRing.scale.set(0, 1, 0);

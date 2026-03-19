@@ -3,11 +3,9 @@
   <div class="form-group">
     <label>{{localize "levels3dpreview.settings.flatTokenStyle.name"}}</label>
     <select name="flatTokenStyle" data-dtype="String">
-      {{#select flatTokenStyle}}
-      <option value="flat">{{localize "levels3dpreview.settings.flatTokenStyle.options.flat"}}</option>
-      <option value="extruded">{{localize "levels3dpreview.settings.flatTokenStyle.options.extruded"}}</option>
-      <option value="coin">{{localize "levels3dpreview.settings.flatTokenStyle.options.coin"}}</option>
-      {{/select}}
+      <option {{#if (eq flatTokenStyle "flat")}}selected{{/if}} value="flat">{{localize "levels3dpreview.settings.flatTokenStyle.options.flat"}}</option>
+      <option {{#if (eq flatTokenStyle "extruded")}}selected{{/if}} value="extruded">{{localize "levels3dpreview.settings.flatTokenStyle.options.extruded"}}</option>
+      <option {{#if (eq flatTokenStyle "coin")}}selected{{/if}} value="coin">{{localize "levels3dpreview.settings.flatTokenStyle.options.coin"}}</option>
     </select>
     <p class="hint">{{localize "levels3dpreview.settings.flatTokenStyle.hint"}}</p>
   </div>

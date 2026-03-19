@@ -1,22 +1,22 @@
 <div action="" class="standard-form">
     <div class="action-buttons form-group">
         <div class="form-fields" style="justify-content: space-between;">
-            <button data-tooltip="{{localize "levels3dpreview.mapgen.tooltips.fit-to-scene"}}" id="fit-to-scene"><i
+            <button type="button" data-tooltip="{{localize "levels3dpreview.mapgen.tooltips.fit-to-scene"}}" id="fit-to-scene"><i
                     class="fas fa-expand-arrows-alt"></i></button>
-            <button data-tooltip="{{localize "levels3dpreview.mapgen.tooltips.select-all"}}" id="select-all"><i
+            <button type="button" data-tooltip="{{localize "levels3dpreview.mapgen.tooltips.select-all"}}" id="select-all"><i
                     class="fas fa-object-group"></i></button>
-            <button data-tooltip="{{localize "levels3dpreview.mapgen.tooltips.deselect-all"}}" id="deselect-all"><i
+            <button type="button" data-tooltip="{{localize "levels3dpreview.mapgen.tooltips.deselect-all"}}" id="deselect-all"><i
                     class="fas fa-ban"></i></button>
-            <button data-tooltip="{{localize "levels3dpreview.mapgen.tooltips.invert"}}" id="invert"><i
+            <button type="button" data-tooltip="{{localize "levels3dpreview.mapgen.tooltips.invert"}}" id="invert"><i
                     class="fas fa-exchange-alt"></i></button>
-            <button data-tooltip="{{localize "levels3dpreview.mapgen.tooltips.clear-material"}}" id="clear-material"><i
+            <button type="button" data-tooltip="{{localize "levels3dpreview.mapgen.tooltips.clear-material"}}" id="clear-material"><i
                     class="fas fa-minus-square"></i></button>
-            <button data-tooltip="{{localize "levels3dpreview.mapgen.tooltips.select-elevation"}}"
+            <button type="button" data-tooltip="{{localize "levels3dpreview.mapgen.tooltips.select-elevation"}}"
                 id="select-elevation"><i class="fas fa-expand-alt"></i></button>
         </div>
         <div class="form-fields">
             <input type="number" id="elevation" name="elevation" value="{{elevation}}" step="any" min="0">
-            <button data-tooltip="{{localize "levels3dpreview.mapgen.tooltips.set-elevation"}}" id="set-elevation"><i
+            <button type="button" data-tooltip="{{localize "levels3dpreview.mapgen.tooltips.set-elevation"}}" id="set-elevation"><i
                     class="fas fa-mountain"></i></button>
             <label>{{localize "levels3dpreview.mapgen.bevel"}}</label>
             <input type="number" name="bevel" value="{{bevel}}" step="any" min="0" max="0.5">
@@ -50,16 +50,24 @@
             {{/each}}
         </div>
         <div class="material-panel standard-form">
+            <div class="flexrow" style="gap: 0.5rem;">
+                <button type="button" style="flex: 1;" class="generate-dd">
+                    <i class="fas fa-dice-d20"></i>
+                    {{localize "levels3dpreview.mapgen.generator.generate"}}
+                </button>
+                <button type="button" style="flex: 1;" class="generate-theme">
+                    <i class="fas fa-palette"></i>
+                    {{localize "levels3dpreview.mapgen.generator.theme"}}
+                </button>
+            </div>
             <ol class="material-list">
                 {{#each materials}}
                 <li class="material-item" data-material-id="{{materialId}}" data-material-index="{{@index}}">
                     <fieldset>
                         <div class="form-group" style="position: relative;">
                             <label {{#if collapsed}}style="display: none;" {{/if}}>{{localize "levels3dpreview.mapgen.material.name"}}</label>
-                            {{#if collapsed}}<div class="material-image" style="background-image: url({{colorSrc}});"></div>{{/if}}<input {{#if collapsed}}style="pointer-events: none; background-color: {{cellColor}}; text-align: center;" {{/if}} type="text" name="materials.{{@index}}.materialId" value="{{materialId}}">
+                            {{#if collapsed}}<div class="material-image" style="background-image: url({{colorSrc}});"></div>{{/if}}<input {{#if collapsed}}style="pointer-events: none; background-color: {{cellColor}}; text-align: center; color: black;" {{/if}} type="text" name="materials.{{@index}}.materialId" value="{{materialId}}">
                             <div {{#if collapsed}}style="display: none;" {{/if}} class="hide-color-input">
-                                {{!-- {{colorPicker name=(concat "materials." @index ".cellColor")
-                                value=cellColor default="#ffffff"}} --}}
                                 <color-picker name="materials.{{@index}}.cellColor" value="{{cellColor}}" default="#ffffff"></color-picker>
                             </div>
                         </div>
@@ -69,9 +77,6 @@
                                 <label for="materials.{{@index}}.texture.src">{{localize
                                     "levels3dpreview.mapgen.material.texture"}}</label>
                                 <div class="form-fields">
-                                    {{!-- <input class="image" type="text" name="materials.{{@index}}.texture.src"
-                                        placeholder="path/image.png" value="{{texture.src}}">
-                                    {{filePicker type="image" target=(concat "materials." @index ".texture.src")}} --}}
                                     <file-picker name="materials.{{@index}}.texture.src" value="{{texture.src}}" type="image"></file-picker>
                                 </div>
                             </div>
@@ -79,8 +84,6 @@
                             <div class="form-group">
                                 <label>{{localize "levels3dpreview.mapgen.material.tint"}}</label>
                                 <div class="form-fields">
-                                    {{!-- {{colorPicker name=(concat "materials." @index ".texture.tint") value=texture.tint
-                                    default="#ffffff"}} --}}
                                     <color-picker name="materials.{{@index}}.texture.tint" value="{{texture.tint}}" default="#ffffff"></color-picker>
                                 </div>
                             </div>
@@ -88,8 +91,6 @@
                             <div class="form-group">
                                 <label>{{localize "levels3dpreview.mapgen.material.roughness"}}</label>
                                 <div class="form-fields">
-                                    {{!-- {{rangePicker name=(concat "materials." @index ".roughness") value=roughness
-                                    min=0 max=1 step=0.01}} --}}
                                     <range-picker name="materials.{{@index}}.roughness" value="{{roughness}}" min="0" max="1" step="0.01"></range-picker>
                                 </div>
                             </div>
@@ -97,8 +98,6 @@
                             <div class="form-group">
                                 <label>{{localize "levels3dpreview.mapgen.material.metalness"}}</label>
                                 <div class="form-fields">
-                                    {{!-- {{rangePicker name=(concat "materials." @index ".metalness") value=metalness
-                                    min=0 max=1 step=0.01}} --}}
                                     <range-picker name="materials.{{@index}}.metalness" value="{{metalness}}" min="0" max="1" step="0.01"></range-picker>
                                 </div>
                             </div>
@@ -106,8 +105,6 @@
                             <div class="form-group">
                                 <label>{{localize "levels3dpreview.mapgen.material.emissive"}}</label>
                                 <div class="form-fields">
-                                    {{!-- {{rangePicker name=(concat "materials." @index ".emissive") value=emissive
-                                    min=0 max=1 step=0.01}} --}}
                                     <range-picker name="materials.{{@index}}.emissive" value="{{emissive}}" min="0" max="1" step="0.01"></range-picker>
                                 </div>
                             </div>
@@ -115,8 +112,6 @@
                             <div class="form-group">
                                 <label>{{localize "levels3dpreview.mapgen.material.opacity"}}</label>
                                 <div class="form-fields">
-                                    {{!-- {{rangePicker name=(concat "materials." @index ".opacity") value=opacity
-                                    min=0 max=1 step=0.01}} --}}
                                     <range-picker name="materials.{{@index}}.opacity" value="{{opacity}}" min="0" max="1" step="0.01"></range-picker>
                                 </div>
                             </div>
@@ -124,9 +119,6 @@
                             <div class="form-group">
                                 <label>{{localize "levels3dpreview.mapgen.material.repeat"}}</label>
                                 <div class="form-fields">
-                                    {{!-- {{rangePicker name=(concat "materials." @index ".texture.repeat") value=texture.repeat
-                                    min=0.1 max=10
-                                    step=0.1}} --}}
                                     <range-picker name="materials.{{@index}}.texture.repeat" value="{{texture.repeat}}" min="0.1" max="10" step="0.1"></range-picker>
                                 </div>
                             </div>
@@ -140,13 +132,13 @@
                             </div>
                         </div>
                         <div class="form-group">
-                            <button data-tooltip="{{localize "levels3dpreview.mapgen.tooltips.apply-material"}}"
+                            <button type="button" data-tooltip="{{localize "levels3dpreview.mapgen.tooltips.apply-material"}}"
                                 id="apply-material"><i class="fas fa-check"></i></button>
-                            <button data-tooltip="{{localize "levels3dpreview.mapgen.tooltips.select-material"}}"
+                            <button type="button" data-tooltip="{{localize "levels3dpreview.mapgen.tooltips.select-material"}}"
                                 id="select-all-material"><i class="fas fa-object-group"></i></button>
-                            <button data-tooltip="{{localize "levels3dpreview.mapgen.tooltips.delete-material"}}"
+                            <button type="button" data-tooltip="{{localize "levels3dpreview.mapgen.tooltips.delete-material"}}"
                                 id="delete-material"><i class="fas fa-trash"></i></button>
-                            <button data-tooltip="{{localize "levels3dpreview.mapgen.tooltips.toggle-material"}}"
+                            <button type="button" data-tooltip="{{localize "levels3dpreview.mapgen.tooltips.toggle-material"}}"
                                 id="toggle-material"><i
                                     class="fas {{#if collapsed}}fa-caret-down{{else}}fa-caret-up{{/if}}"></i>
                                 <input type="checkbox" style="display:none;" id="collapsed-toggle" name="materials.{{@index}}.collapsed" {{#if
@@ -157,7 +149,7 @@
                 </li>
                 {{/each}}
             </ol>
-                                    <button data-tooltip="{{localize "levels3dpreview.mapgen.tooltips.add-material"}}" id="add-material"><i
+                                    <button type="button" data-tooltip="{{localize "levels3dpreview.mapgen.tooltips.add-material"}}" id="add-material"><i
                     class="fas fa-plus"></i> {{localize "levels3dpreview.mapgen.tooltips.add-material"}}</button>
         </div>
     </div>

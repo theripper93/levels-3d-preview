@@ -19,7 +19,7 @@
                                     <input type="number" name="{{@../key}}.{{@key}}" step="any" data-dtype="Number" value="{{this.value}}"/>
                                 {{/if}}
                                 {{#if this.isSlider}}
-                                    {{rangePicker name=(concat @../key "." @key) value=this.value min=this.min max=this.max step=this.step}}
+                                    <range-picker name="{{@../key}}.{{@key}}" value="{{this.value}}" min="{{this.min}}" max="{{this.max}}" step="{{this.step}}"></range-picker>
                                 {{/if}}
                                 {{#if this.isBoolean}}
                                     <input type="checkbox" name="{{@../key}}.{{@key}}" data-dtype="Boolean" {{checked this.value}}/>
@@ -29,7 +29,7 @@
                                 </file-picker>
                                 {{/if}}
                                 {{#if this.isColor}}
-                                    {{colorPicker name=(concat @../key "." @key) value=this.value}}
+                                    <color-picker name="{{@../key}}.{{@key}}" value="{{this.value}}"></color-picker>
                                 {{/if}}
                             </div>
                         </div>

@@ -62,10 +62,6 @@ export class MiniCanvas extends HandlebarsApplication {
     }
 
     resize() {
-        // $("#board").css({
-        //     width: "100%",
-        //     height: "100%",
-        // });
         this.element.querySelector("#board").style.width = "100%";
         this.element.querySelector("#board").style.height = "100%";
     }
@@ -73,12 +69,6 @@ export class MiniCanvas extends HandlebarsApplication {
     _onResize(e) {
         super._onResize(e);
     }
-
-    // updateControls(toggle) {
-    //     return;
-    //     $(`li[data-tool="miniCanvas"]`).toggleClass("active", toggle);
-    //     ui.controls.controls.find((c) => c.name == "token").tools.find((t) => t.name == "miniCanvas").active = toggle;
-    // }
 
     close() {
         document.querySelector(".vtt").append(this.element.querySelector("#board"));
@@ -91,7 +81,7 @@ export class MiniCanvas extends HandlebarsApplication {
     }
 
     static toggle() {
-        const currentInstance = Object.values(ui.windows)?.find((w) => w.id === "miniCanvas");
+        const currentInstance = foundry.applications.instances.values()?.find((w) => w.id === "miniCanvas");
         if (currentInstance) {
             currentInstance.close();
         } else {

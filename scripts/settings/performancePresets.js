@@ -1,10 +1,12 @@
 export function setPerformancePreset(){
 
+    const currentPreset = findCurrentPreset();
     const buttons = [];
     for(let [k,v] of Object.entries(performancePresets)){
         buttons.push({
             action: k,
             icon: v.icon,
+            default: k == currentPreset,
             label: `levels3dpreview.performance.${k}`,
             callback: () => { applyPreset(k,v) }
         });
@@ -12,9 +14,8 @@ export function setPerformancePreset(){
 
     const d = new foundry.applications.api.DialogV2({
         window: { title: "levels3dpreview.performance.dialog.title" },
-        content: game.i18n.localize(`levels3dpreview.performance.dialog.content`),
+        content: "<h3 class='divider'>" + game.i18n.localize(`levels3dpreview.performance.${currentPreset}`) + "</h3>" + game.i18n.localize(`levels3dpreview.performance.dialog.content`),
         buttons: buttons,
-        default: "medium",
         render: () => {},
         close: () => {}
     });
@@ -31,20 +32,23 @@ export function injectPresetButtons(html) {
     const resColor = finalResWidth > 3000 ? "red" : finalResWidth > 2000 ? "orange" : "green";
     let buttons = '';
     for (let [k, v] of Object.entries(performancePresets)) {
-        const c = k == currentPreset
+        const c = k == currentPreset;
         buttons += `<button ${c ? `style="border: 2px solid var(--color-shadow-primary);"` : ""} class="performance-preset" data-tooltip="${game.i18n.localize(`levels3dpreview.performance.buttonTooltip.${k}`)}" data-preset="${k}"><i class="${v.icon}"></i> ${game.i18n.localize(`levels3dpreview.performance.${k}`)}</button>`;
     }
-    let prestHtml = $(`<div><h3 class="border">${game.i18n.localize(`levels3dpreview.performance.settings.header`)}</h3><div class="form-group">${buttons}</div><p class="hint">${game.i18n.localize(`levels3dpreview.performance.settings.presetHint`)}</p><p class="hint">${game.i18n.localize(`levels3dpreview.performance.settings.resolution`).replace("{resolution}", `<strong data-tooltip="${game.i18n.localize(`levels3dpreview.performance.settings.resolutionTooltip`)}" style="cursor: help; color: ${resColor}">${window.innerWidth * dpr * resMulti}x${window.innerHeight * dpr * resMulti}</strong>`)}</p><hr></div>`);
-    prestHtml.on('click', '.performance-preset', (event) => {
-        let preset = event.currentTarget.dataset.preset;
-        applyPreset(preset, performancePresets[preset]);
+    const prestHtml = document.createElement("div");
+    prestHtml.innerHTML = `<h3 class="divider">${game.i18n.localize(`levels3dpreview.performance.settings.header`)}</h3><div class="form-group">${buttons}</div><p class="hint">${game.i18n.localize(`levels3dpreview.performance.settings.presetHint`)}</p><p class="hint">${game.i18n.localize(`levels3dpreview.performance.settings.resolution`).replace("{resolution}", `<strong data-tooltip="${game.i18n.localize(`levels3dpreview.performance.settings.resolutionTooltip`)}" style="cursor: help; color: ${resColor}">${window.innerWidth * dpr * resMulti}x${window.innerHeight * dpr * resMulti}</strong>`)}</p><hr>`;
+
+    prestHtml.addEventListener("click", (event) => {
+        const target = event.target.closest(".performance-preset");
+        if (!target) return;
+        applyPreset(target.dataset.preset, performancePresets[target.dataset.preset]);
     });
     html.querySelector('input[name="levels-3d-preview.enableShaders"]').closest('.form-group').before(prestHtml);
 
 }
 
 async function applyPreset(id, preset){
-    Object.values(ui.windows).find(w => w instanceof SettingsConfig)?.close();
+    foundry.applications.instances.values().find(w => w instanceof SettingsConfig)?.close();
     ui.notifications.notify(`${game.i18n.localize(`levels3dpreview.performance.notification`).replace("{performancemode}", game.i18n.localize(`levels3dpreview.performance.${id}`))}`);
     setTimeout(async () => {
     for(let [k,v] of Object.entries(preset)){

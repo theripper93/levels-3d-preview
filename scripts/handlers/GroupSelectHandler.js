@@ -5,7 +5,9 @@ import { SelectionBox } from "../lib/SelectionBox.js";
 export class GroupSelectHandler {
     constructor(parent) {
         this._parent = parent;
-        this.element = $(`<div id="levels-3d-preview-select-box"></div>`);
+        const div = document.createElement("div");
+        div.id = "levels-3d-preview-select-box";
+        this.element = div;
         this._selectedIds = {};
         this.init();
     }
@@ -31,7 +33,7 @@ export class GroupSelectHandler {
     }
 
     init() {
-        $("#levels-3d-preview-select-box").remove();
+        document.querySelector("#canvas-container")?.remove();
         this._selectionBox = new SelectionBox(this.camera, this.scene);
     }
 
@@ -45,19 +47,19 @@ export class GroupSelectHandler {
         this.controls.enabled = false;
         this._isSelecting = true;
         this._selectedIds = {};
-        $("body").append(this.element);
+        document.body.append(this.element);
         const mouseP = new THREE.Vector2(
             (event.clientX / window.innerWidth) * 2 - 1,
             -(event.clientY / window.innerHeight) * 2 + 1
         );
         this._selectionBox.startPoint.set(mouseP.x, mouseP.y, 0.5);
-        this.element.css({
-            position: "absolute",
-            top: event.clientY,
-            left: event.clientX,
-            height: 0,
-            width: 0,
-        });
+        this.element.style.cssText = `
+            position: absolute;
+            top: ${event.clientY}px;
+            left: ${event.clientX}px;
+            height: 0;
+            width: 0;
+        `;
         this.elementPosition = {
             top: event.clientY,
             left: event.clientX,
@@ -81,12 +83,12 @@ export class GroupSelectHandler {
         const elWidth = Math.abs((this.elementPosition?.left ?? 0) - event.clientX);
         const elHeight = Math.abs((this.elementPosition?.top ?? 0) - event.clientY);
 
-        this.element.css({
-            height: elHeight,
-            width: elWidth,
-            top: elTop,
-            left: elLeft,
-        });
+        this.element.style.cssText = `
+            height: ${elHeight}px;
+            width: ${elWidth}px;
+            top: ${elTop}px;
+            left: ${elLeft}px;
+        `;
         this._selectedIds = {};
         this._selected.forEach((entity) => {
             this.processEntity(entity);
@@ -117,7 +119,7 @@ export class GroupSelectHandler {
         this._isSelecting = false;
         this.controls.enabled = true;
         this._parent.interactionManager._groupSelect = false;
-        $("#levels-3d-preview-select-box").remove();
+        document.querySelector("#levels-3d-preview-select-box").remove();
         //handle selection
     }
 }

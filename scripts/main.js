@@ -65,6 +65,8 @@ import { UberPass } from "./lib/UberPass.js";
 
 import { Socket } from "./lib/socket.js";
 import { renderSceneToImage } from "./helpers/export2d.js";
+import { BuildPanelApp } from "./apps/BuildPanelApp.js";
+import { QuickTerrain } from "./apps/QuickTerrain.js";
 
 export const factor = 1000;
 
@@ -168,6 +170,61 @@ Hooks.once("ready", () => {
             ],
         }).render(true);
     }
+});
+
+Hooks.on("renderDialogV2", (dialog, html, data) => {
+    if (dialog.title !== game.i18n.format("DOCUMENT.Create", {type: game.i18n.localize("DOCUMENT.Scene")})) return;
+    
+    const checkbox = document.createElement('div');
+    checkbox.className = 'form-group';
+    checkbox.innerHTML = `
+            <label>Quick 3D Scene</label>
+            <div class="form-fields">
+                <input type="checkbox" name="scene3d">
+            </div>
+    `;
+
+    const lastFormGroup = dialog.element.querySelector(".form-group:last-child");
+    lastFormGroup.insertAdjacentElement('afterend', checkbox);
+
+    dialog.element.querySelector("button[data-action='ok']").addEventListener("click", () => {
+        const isChecked = dialog.element.querySelector("input[name=scene3d]").checked;
+        if (!isChecked) return;
+        
+        Hooks.once("preCreateScene", (scene, data) => {
+            scene.updateSource({
+                flags: {
+                    "levels-3d-preview": {
+                        auto3d: true,
+                        object3dSight: true,
+                        enablePlayers: true,
+                        exr: game.modules.get("canvas3dcompendium") ? "modules/canvas3dcompendium/assets/Beautiful-Sky/2K/Sky_LowPoly_01_Day_a.webp" : "modules/levels-3d-preview/assets/skybox/venice_sunrise_1k.exr",
+                        skybox: "",
+                        renderBackground: false,
+                    },
+                },
+            });
+        })
+
+        Hooks.once("createScene", (scene, data) => { 
+            scene.view();
+        })
+
+        Hooks.once("renderSceneConfig", (dialog, html, data) => {
+            setTimeout(() => {
+                dialog.close(true);
+            }, 1000);
+        });
+
+        Hooks.once("3DCanvasSceneReady", () => {
+            setTimeout(() => {
+                canvas.tiles.activate();
+                new QuickTerrain(true).render({ force: true });
+            }, 1000);
+        });
+    });
+
+    dialog.setPosition({height: "auto"});
 });
 
 class Levels3DPreview {
@@ -432,6 +489,7 @@ class Levels3DPreview {
         this.CONFIG.UI.AssetBrowser = AssetBrowser;
         this.CONFIG.UI.TokenBrowser = TokenBrowser;
         this.CONFIG.UI.BuildPanel = BuildPanel;
+        this.CONFIG.UI.QuickTerrain = QuickTerrain;
         Hooks.callAll("3DCanvasConfig", this.CONFIG);
         for (let [k, v] of Object.entries(this.CONFIG.tokenAnimations)) {
             v.name = game.i18n.localize(`levels3dpreview.tokenAnimations.${k}`);
@@ -627,7 +685,10 @@ class Levels3DPreview {
     }
 
     build3Dscene() {
-        $(".levels-3d-preview-loading-screen").fadeIn(300);
+        // $(".levels-3d-preview-loading-screen").fadeIn(300);
+        const el = document.querySelector(".levels-3d-preview-loading-screen");
+        el.classList.remove("hidden");
+        el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 300, fill: "forwards" });
         this._fullTransparency = game.settings.get("levels-3d-preview", "fullTransparency");
         this._ready = false;
         this._isFirstFrame = true;
@@ -1246,10 +1307,8 @@ class Levels3DPreview {
             const center = token3D.head;
             center.y += 0.03;
             //center.y += token3D.hitbox.geometry.boundingBox.max.y * 2;
-            $("body").append(bubble);
-            $(bubble).css({
-                "transform-origin": "bottom center",
-            });
+            document.body.append(bubble);
+            bubble.style.transformOrigin = "bottom center";
             Ruler3D.centerElement(bubble, center, true);
         });
     }
@@ -1623,6 +1682,7 @@ class Levels3DPreview {
             if (total === loaded) this._progressText = game.i18n.localize("levels3dpreview.controls.loading.env");
             else this._progressText = game.i18n.localize("levels3dpreview.controls.loading.load");
         }
+        this.setProgressBar(this._progressText, progress);
         if (total === loaded && this._envReady) {
             if (!this._finalizingLoad) {
                 this.renderer.domElement.style.opacity = 0;
@@ -1651,46 +1711,30 @@ class Levels3DPreview {
                 }, 200);
             }
         }
-        this.setProgressBar(this._progressText, progress);
     }
 
     setProgressBar(label, progress) {
-        $("#levels-3d-preview-loading-bar").show();
-        $("#close-loading-screen").css("display", "none");
-        const progressBar = $("#levels-3d-preview-loading-bar-inner");
-        const labelText = $("#levels-3d-preview-loading-bar-text");
-        progressBar.css("width", `${progress}%`);
-        labelText.text(label);
+        const progressBar = document.querySelector("#levels-3d-preview-loading-bar-inner");
+        const labelText = document.querySelector("#levels-3d-preview-loading-bar-text");
+        document.querySelector("#levels-3d-preview-loading-bar").style.display = "block";
+        document.querySelector("#close-loading-screen").classList.add("hidden");
+        progressBar.style.width = `${progress}%`;
+        labelText.innerText = label;
     }
 
     _onReady() {
         if (game.settings.get("levels-3d-preview", "loadingShown")) {
-            $(".levels-3d-preview-loading-screen").fadeOut(200, () => {
-                $("#levels-3d-preview-loading-bar-inner").css("width", `0%`);
-            });
+            setTimeout(() => {
+                const el = document.querySelector(".levels-3d-preview-loading-screen");
+                el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 200, fill: "forwards" }).finished.then(() => {
+                    el.classList.add("hidden");
+                    document.querySelector("#levels-3d-preview-loading-bar-inner").style.width = "0%";
+                });
+            }, 500);
         } else {
             this.CONFIG.UI.BUILD_PANEL.FORCE_AUTOHIDE_OFF = true;
-            // Hooks.once("renderClipNavigation", () => {
-            //     const isClipNav = $("#clip-navigation-controls").length > 0;
-            //     setTimeout(
-            //         () => {
-            //             const $qm = $("#clip-navigation-controls").length ? $("#clip-navigation-controls") : $("#build-panel");
-            //             $("#levels-3d-preview-loading-bar-text").html(game.i18n.localize("levels3dpreview.controls.loadingScreen.loadingdone"));
-            //             const $arrow = $('<i id="clip-navigation-higlight-arrow" class="fas fa-arrow-right"></i>').css({
-            //                 right: window.innerWidth - $qm.offset().left + 20,
-            //                 top: `calc(${$qm.offset().top + $qm.height() / 2}px - 2rem)`,
-            //             });
-            //             $("body").append($arrow);
-            //             $("#close-loading-screen").css("display", "flex");
-            //             ui.notifications.info(game.i18n.localize("levels3dpreview.controls.loadingScreen.loadingarrow"));
-            //         },
-            //         isClipNav ? 0 : 1000,
-            //     );
-            // });
             game.settings.set("levels-3d-preview", "loadingShown", true);
         }
-        // this.BuildPanel = new BuildPanel();
-        // this.BuildPanel.render(true);
         this.weather = new WeatherSystem(this);
 
         canvas.perception.update(
@@ -1726,13 +1770,15 @@ class Levels3DPreview {
                 filterValue = `${filter}(${filterStrength})`;
             }
             if (this._sharedContext) {
-                $("#board").css("filter", filterValue);
+                document.querySelector("#board").style.filter = filterValue;
             } else {
-                $("#levels3d").css("filter", filterValue);
+                document.querySelector("#levels3d").style.filter = filterValue;
             }
         } else {
-            $("#board").css({ filter: "" });
-            $("#levels3d").css({ filter: "" });
+            const board = document.querySelector("#board");
+            const levels3d = document.querySelector("#levels3d");
+            if (board) board.style.filter = "";
+            if (levels3d) levels3d.style.filter = "";
         }
     }
 
@@ -1759,32 +1805,32 @@ class Levels3DPreview {
         }
         this.build3Dscene();
         document.body.appendChild(this.renderer.domElement);
-        $("#hud").addClass("levels-3d-preview-hud");
+        document.querySelector("#hud").classList.add("levels-3d-preview-hud");
         if (this._sharedContext) {
             canvas.stage.renderable = false;
         } else {
             document.body.appendChild(this.renderer.domElement);
             if (game.settings.get("levels-3d-preview", "miniCanvas")) new MiniCanvas().render(true);
             else {
-                $("#board").hide();
+                document.querySelector("#board").style.display = "none";
                 canvas.stage.renderable = false;
             }
         }
     }
 
     close() {
-        $(".levels-3d-preview-loading-screen").hide();
+        document.querySelector(".levels-3d-preview-loading-screen").classList.add("hidden");
         this.setFilters(false);
         this._active = false;
         ui.controls.render({force:true, reset: true});
         this.BuildPanel?.close();
-        $("#hud").removeClass("levels-3d-preview-hud");
-        $("#levels3d").remove();
-        $(".rangefinder").remove();
-        Object.values(ui.windows)
+        document.querySelector("#hud").classList.remove("levels-3d-preview-hud");
+        document.querySelector("#levels3d")?.remove();
+        document.querySelector(".rangefinder")?.remove();
+        foundry.applications.instances.values()
             ?.find((w) => w.id === "miniCanvas")
             ?.close(true);
-        $("#board").show();
+        document.querySelector("#board").style.display = "unset";
         canvas.stage.renderable = true;
         this.clear3Dscene();
         if (this._sharedContext) {
@@ -1873,7 +1919,7 @@ class Levels3DPreview {
         this.renderer.domElement.style.cursor = cursor;
         return;
         if (this._sharedContext) {
-            $("body")[0].style.cursor = cursor;
+            document.body.style.cursor = cursor;
         } else {
             this.renderer.domElement.style.cursor = cursor;
         }
@@ -1979,7 +2025,7 @@ Hooks.on("controlTile", (tile, control) => {
     game.Levels3DPreview.interactionManager.setControlledGroup(tile3d, control);
 });
 
-$(document).on("keyup", (event) => {
+document.addEventListener("keyup", (event) => {
     if (event.key != "Shift" || !game.Levels3DPreview?._active) return;
     const ts = game.Levels3DPreview.transformControls;
     const snapSize = canvas.scene.dimensions.size / factor / 2;
@@ -1988,7 +2034,7 @@ $(document).on("keyup", (event) => {
     ts.setScaleSnap(snapSize);
 });
 
-$(document).on("keydown", (event) => {
+document.addEventListener("keydown", (event) => {
     if (event.key != "Shift" || !game.Levels3DPreview?._active) return;
     const ts = game.Levels3DPreview.transformControls;
     ts.setTranslationSnap(undefined);
@@ -2006,20 +2052,35 @@ Hooks.on("preUpdateToken", (token, updates) => {
     }
 });
 
+export function toggleLoadingScreen() {
+    const loadingScreen = document.querySelector(".levels-3d-preview-loading-screen");
+    const closeLoadingScreen = document.querySelector("#close-loading-screen");
+    if (loadingScreen.classList.contains("hidden")) {
+        loadingScreen.classList.remove("hidden");
+        closeLoadingScreen.classList.remove("hidden");
+        loadingScreen.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 300, fill: "forwards" });
+    } else {
+        loadingScreen.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 300, fill: "forwards" }).finished.then(() => {
+            loadingScreen.classList.add("hidden");
+        });
+    }
+}
+
 Hooks.on("ready", async () => {
     const html = await foundry.applications.handlebars.renderTemplate("modules/levels-3d-preview/templates/loadingScreen.hbs", { isGM: game.user.isGM });
-    const div = $(`<div class="levels-3d-preview-loading-screen">${html}</div>`);
-    // div.on("click", "#close-loading-screen", () => {
-    //     game.Levels3DPreview.CONFIG.UI.CLIP_NAVIGATION.BUTTONS.find((b) => b.id === "clip-navigation-controls").callback();
-    // });
-    div.hide();
-    $("#ui-top").after(div);
+    const div = document.createElement("div");
+    div.className = "levels-3d-preview-loading-screen";
+    div.innerHTML = html;
+    div.querySelector("#close-loading-screen").addEventListener("click", toggleLoadingScreen);
+    // div.style.display = "none";
+    div.classList.add("hidden");
+    document.querySelector("#ui-top").insertAdjacentElement("afterend", div);
 });
 
 window.addEventListener("resize", () => {
     if (game.Levels3DPreview?._active) {
         game.Levels3DPreview.resizeCanvasToDisplaySize();
-        const miniCanvas = Object.values(ui.windows)?.find((w) => w.id === "miniCanvas");
+        const miniCanvas = foundry.applications.instances.values()?.find((w) => w.id === "miniCanvas");
         setTimeout(() => {
             if (miniCanvas) miniCanvas.resize();
         }, 100);

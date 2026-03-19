@@ -2,7 +2,28 @@
     <div class="flexcol">
         {{#each buttons}}
         <li>
-            <button class="ui-control plain {{icon}} build-panel-button" data-action={{id}} data-tooltip="{{name}}"></button>
+            <button class="ui-control plain {{icon}} build-panel-button"
+                {{#if disabled}}disabled{{/if}}
+                data-action={{id}}
+                {{#if tooltip}} data-tooltip="
+                    <div class='toolclip'>
+                        <h4>{{name}}</h4>
+                        <p>{{tooltip}}</p>
+                        <div class='notification info'>
+                            <p>
+                                This is a premium feature, access it by installing 
+                                <a href='https://foundryvtt.com/packages/canvas3d-premium' target='_blank'>
+                                3D Canvas - Advanced Tools
+                                </a>
+                            </p>
+                        </div>
+                        <br>
+                        <img src='{{img}}' style='width: 100%; height: auto; object-fit: contain;'>
+                    </div>"
+                {{else}}
+                data-tooltip="{{name}}"
+                {{/if}}>
+            </button>
         </li>
         {{/each}}
         {{#if showSeparator}}

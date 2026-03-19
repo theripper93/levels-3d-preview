@@ -131,7 +131,7 @@ flex-direction: column;
     z-index: 999999;
 }
 
-#mapgen .tmc-icon{
+.tmc-icon{
     width: 1rem;
     border: none;
     transform: translateY(2px);

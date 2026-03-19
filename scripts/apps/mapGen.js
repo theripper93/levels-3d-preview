@@ -12,24 +12,9 @@ export class MapGen extends HandlebarsApplication {
         this.document = document;
         const data = this.document.getFlag("levels-3d-preview", "mapgen");
         this.document.setFlag("levels-3d-preview", "dynaMesh", "mapGen");
+        this.document.sheet.close();
         if (!data) this.document.setFlag("levels-3d-preview", "mapgen", this.generateDefaultData());
     }
-    
-    // static get defaultOptions() {
-    //     return foundry.utils.mergeObject(super.defaultOptions, {
-    //         title: game.i18n.localize("levels3dpreview.mapgen.title"),
-    //         id: `mapgen`,
-    //         template: `modules/levels-3d-preview/templates/mapgen/squareGrid.hbs`,
-    //         width: 800,
-    //         height: 600,
-    //         closeOnSubmit: false,
-    //         submitOnClose: true,
-    //         submitOnChange: true,
-    //         resizable: true,
-    //         tabs: [{ navSelector: ".tabs", contentSelector: ".content" }],
-    //         filepickers: [],
-    //     });
-    // }
 
     static get DEFAULT_OPTIONS() {
         return mergeClone(super.DEFAULT_OPTIONS, {
@@ -70,17 +55,17 @@ export class MapGen extends HandlebarsApplication {
             this.setCells(this._getMaps(genFn, 1, count, gen), gen !== "rogue" && gen !== "cellular-caves", count);
             return;
         }
-        Dialog.confirm({
-            title: game.i18n.localize("levels3dpreview.mapgen.generator.title"),
-            content: game.i18n.localize("levels3dpreview.mapgen.generator.content") + `<hr><span>${game.i18n.localize("levels3dpreview.mapgen.generator.height")}: <input type="number" id="mapgen-count" value="${this.cellHeight ?? 3}" min="1"/></span><hr>`,
-            yes: async (html) => {
-                const count = parseFloat(html.querySelector("#mapgen-count").value);
-                this.cellHeight = count;
-                const genFn = this._getGenerator(gen).bind(this);
-                this.setCells(this._getMaps(genFn, 1, count, gen), gen !== "rogue" && gen !== "cellular-caves", count);
-            },
-            no: () => {},
+        const content = game.i18n.localize("levels3dpreview.mapgen.generator.content") + `<hr><span>${game.i18n.localize("levels3dpreview.mapgen.generator.height")}: <input type="number" name="mapgen-count" value="${this.cellHeight ?? 3}" min="1"/></span><hr>`;
+        const result = await foundry.applications.api.DialogV2.input({
+            window: { title: game.i18n.localize("levels3dpreview.mapgen.generator.title") },
+            content: content,
         });
+        if (result) {
+            const count = result["mapgen-count"];
+            this.cellHeight = count;
+            const genFn = this._getGenerator(gen).bind(this);
+            this.setCells(this._getMaps(genFn, 1, count, gen), gen !== "rogue" && gen !== "cellular-caves", count);
+        }
     }
 
     _getGenerator(gen) {
@@ -101,7 +86,7 @@ export class MapGen extends HandlebarsApplication {
             let tries = 0;
             while (!map && tries < 10) {
                 try {
-                    const m = genFn(this.getData().columns, this.getData().rows, cHeight, gen);
+                    const m = genFn(this._prepareContext().columns, this._prepareContext().rows, cHeight, gen);
                     map = m;
                 } catch (e) {
                     console.warn("Failed to generate, retrying...");
@@ -248,7 +233,7 @@ export class MapGen extends HandlebarsApplication {
         return map;
     }
 
-    async _prepareContext(options) {
+    _prepareContext(options) {
         const flag = this.document.getFlag("levels-3d-preview", "mapgen");
         if (!flag) return this.generateDefaultData();
         const rows = flag.rows;
@@ -297,6 +282,8 @@ export class MapGen extends HandlebarsApplication {
         super._onRender(context, options);
         const html = this.element;
 
+        this._setupContextMenu();
+
         this._restoreGridDisplay();
         html.querySelector("#zoom-level").addEventListener("change", (event) => {
             const zoomLevel = event.target.value;
@@ -304,7 +291,8 @@ export class MapGen extends HandlebarsApplication {
             document.documentElement.style.setProperty("--mapgen-cellsize", `${zoomLevel * 100}px`);
         });
 
-        html.addEventListener("mousedown", (event) => {
+        const gridContainer = html.querySelector(".grid-container");
+        gridContainer.addEventListener("mousedown", (event) => {
             if (!event.target.closest(".grid-cell")) return;
             const cell = event.target.closest(".grid-cell");
             this.toggleCell(cell, !cell.classList.contains("selected"));
@@ -312,12 +300,12 @@ export class MapGen extends HandlebarsApplication {
             this._dragActionToggle = cell.classList.contains("selected");
         });
 
-        html.addEventListener("mouseup", (event) => {
+        gridContainer.addEventListener("mouseup", (event) => {
             if (!event.target.closest(".grid-cell")) return;
             this._cellMouseDown = false;
         });
 
-        html.addEventListener("mouseover", (event) => {
+        gridContainer.addEventListener("mouseover", (event) => {
             if (!event.target.closest(".grid-cell")) return;
             if (this._cellMouseDown) {
                 this.toggleCell(event.target.closest(".grid-cell"), this._dragActionToggle);
@@ -363,14 +351,14 @@ export class MapGen extends HandlebarsApplication {
             });
         });
 
-        html.querySelector("#apply-material").addEventListener("click", (event) => {
+        html.querySelectorAll("#apply-material").forEach(el => el.addEventListener("click", (event) => {
             const materialEl = event.target.closest(".material-item");
             const materialId = materialEl.dataset.materialId;
             this.selected.forEach((element) => {
                 element.querySelector("input.material-id").value = materialId;
             });
             this.submit();
-        });
+        }));
 
         html.querySelector("#add-material").addEventListener("click", async (event) => {
             const flag = this.document.getFlag("levels-3d-preview", "mapgen");
@@ -386,25 +374,27 @@ export class MapGen extends HandlebarsApplication {
             this.saveGridAndRefresh();
         });
 
-        html.querySelector("#delete-material").addEventListener("click", async (event) => {
+        html.querySelectorAll("#delete-material").forEach(el => el.addEventListener("click", async (event) => {
             const materialIndex = parseInt(event.target.closest(".material-item").dataset.materialIndex);
             const flag = this.document.getFlag("levels-3d-preview", "mapgen");
             flag.materials.splice(materialIndex, 1);
             await this.document.setFlag("levels-3d-preview", "mapgen", flag);
             this.saveGridAndRefresh();
-        });
+        }));
 
-        html.querySelector("#toggle-material").addEventListener("click", (event) => {
+        html.querySelectorAll("#toggle-material").forEach(el => el.addEventListener("click", (event) => {
             const checkbox = event.target.closest(".material-item").querySelector("#collapsed-toggle");
+            // checkbox.dispatchEvent(new Event("click"));
             checkbox.checked = !checkbox.checked;
-        });
+            this.form.dispatchEvent(new Event("change"));
+        }));
 
-        html.querySelector("#select-all-material").addEventListener("click", (event) => {
+        html.querySelectorAll("#select-all-material").forEach(el => el.addEventListener("click", (event) => {
             const materialId = event.target.closest(".material-item").dataset.materialId;
             html.querySelectorAll(`.grid-cell input.material-id[value="${materialId}"]`).forEach((input) => {
                 this.toggleCell(input.closest(".grid-cell"), true);
             });
-        });
+        }));
 
         html.querySelector("#fit-to-scene").addEventListener("click", (event) => {
             const flag = this.document.getFlag("levels-3d-preview", "mapgen");
@@ -548,25 +538,6 @@ export class MapGen extends HandlebarsApplication {
         this.render(true);
     }
 
-    _getHeaderControls() {
-        const buttons = super._getHeaderControls();
-        buttons.unshift(
-            {
-                label: "levels3dpreview.mapgen.generator.generate",
-                class: "generate-dd",
-                icon: "fas fa-dice-d20",
-                onClick: (event) => {},
-            },
-            {
-                label: "levels3dpreview.mapgen.generator.theme",
-                class: "generate-theme",
-                icon: "fas fa-palette",
-                onClick: (event) => {},
-            },
-        );
-        return buttons;
-    }
-
     async setTheme(k, e) {
         const flag = this.document.getFlag("levels-3d-preview", "mapgen");
         const theme = themes[k];
@@ -581,12 +552,11 @@ export class MapGen extends HandlebarsApplication {
         }
     }
 
-    async _render(...args) {
-        await super._render(...args);
+    _setupContextMenu() {
         if (this._contextEnabled) return;
-        new ContextMenu(
-            $("#mapgen"),
-            ".generate-dd",
+        new foundry.applications.ux.ContextMenu.implementation(
+            this.element,
+            "button.generate-dd",
             [
                 {
                     name: "levels3dpreview.mapgen.generator.dungeon",
@@ -653,21 +623,22 @@ export class MapGen extends HandlebarsApplication {
                     },
                 },
             ],
-            { eventName: "click" },
+            { eventName: "click", jQuery: false, fixed: true },
         );
 
         const themeButtons = [];
         for (let [k, v] of Object.entries(themes)) {
             themeButtons.push({
                 name: "levels3dpreview.mapgen.themes." + k,
-                icon: k.includes("tmc") ? `<i data-tooltip="The Mad Cartographer"><img src="modules/canvas3dcompendium/assets/TheMadCartographerTexturePack/MAD_Logo_Large_Circle.webp" class="tmc-icon"></i>` : `<i class="${v.icon}"></i>`,
+                // icon: k.includes("tmc") ? `<i data-tooltip="The Mad Cartographer"><img src="modules/canvas3dcompendium/assets/TheMadCartographerTexturePack/MAD_Logo_Large_Circle.webp" class="tmc-icon"></i>` : `<i class="${v.icon}"></i>`,
+                icon: k.includes("tmc") ? `<i class="fas fa-fw fa-levels-3d-preview" style="aspect-ratio: 1; background-size: contain; background-image: url('modules/canvas3dcompendium/assets/TheMadCartographerTexturePack/MAD_Logo_Large_Circle.webp')" data-tooltip="The Mad Cartographer"></i>` : `<i class="${v.icon}"></i>`,
                 callback: (e) => {
                     this.setTheme(k, e);
                 },
             });
         }
 
-        new ContextMenu($("#mapgen"), ".generate-theme", themeButtons, { eventName: "click" });
+        new foundry.applications.ux.ContextMenu.implementation(this.element, "button.generate-theme", themeButtons, { eventName: "click", jQuery: false, fixed: true });
 
         this._contextEnabled = true;
     }
