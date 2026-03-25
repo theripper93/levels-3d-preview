@@ -67,6 +67,7 @@ import { Socket } from "./lib/socket.js";
 import { renderSceneToImage } from "./helpers/export2d.js";
 import { BuildPanelApp } from "./apps/BuildPanelApp.js";
 import { QuickTerrain } from "./apps/QuickTerrain.js";
+import { Shape3D } from "./entities/shape3d.js";
 
 export const factor = 1000;
 
@@ -101,7 +102,7 @@ Hooks.once("ready", () => {
             scene.activate();
             ui.notifications.error(game.i18n.localize("levels3dpreview.errors.noActiveScene"), { permanent: true });
         } else {
-            NewUserExperience.prototype._createDefaultScene();
+            foundry.nue.NewUserExperienceManager.prototype.createDefaultScene();
             ui.notifications.error(game.i18n.localize("levels3dpreview.errors.noScenes"), { permanent: true });
         }
         return;
@@ -1099,13 +1100,17 @@ class Levels3DPreview {
     }
 
     createTemplates() {
-        for (let template of canvas.templates.placeables) {
-            this.createTemplate(template);
+        for (const region of canvas.regions.objects.children) {
+            for (const shape of region.document.shapes) {
+                this.createTemplate(shape);
+            }
         }
     }
 
-    createTemplate(template) {
-        this.templates[template.id] = new Template3D(template);
+    createTemplate(shape) {
+        if (this.templates[shape.x]) this.templates[shape.x].destroy();
+        this.templates[shape.x] = Shape3D.create({ shape });
+        this.templates[shape.x].addToScene();
     }
 
     createNotes() {
@@ -1516,7 +1521,7 @@ class Levels3DPreview {
     checkInFog() {
         let inFog = false;
         for (let template of Object.values(this.templates)) {
-            if (template.pointInFogmesh(this.camera.position)) {
+            if (template.containsPoint(this.camera.position)) {
                 inFog = true;
                 break;
             }

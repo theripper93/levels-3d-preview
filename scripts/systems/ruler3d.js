@@ -2,6 +2,7 @@ import * as THREE from "../lib/three.module.js";
 import { Template3D } from "../entities/template3d.js";
 import { factor } from "../main.js";
 import { sleep } from "../helpers/utils.js";
+import { Shape3D } from "../entities/shape3d.js";
 
 export class Ruler3D {
     constructor(parent) {
@@ -46,7 +47,13 @@ export class Ruler3D {
         if (this.allowedRulerDrag.some((a) => a === this._object?.userData?.entity3D?.placeable?.document?.documentName)) return;
         this.template?.destroy();
         const pos = Ruler3D.useSnapped() ? Ruler3D.snapped3DPosition(this._object.position) : this._object.position;
-        const template = new Template3D({ t: ui.controls.tool.name }, this._origin, pos);
+        const template = Shape3D.create({
+            shape: null,
+            type: ui.controls.tool.name,
+            origin: this._origin,
+            destination: pos
+        });
+        template.addToScene();
         this.template = template;
     }
 
@@ -71,7 +78,8 @@ export class Ruler3D {
     }
 
     init() {
-        this.sphere1 = new THREE.Mesh(new THREE.SphereGeometry(this.sphereRadius, 16, 16), this.roulerLineMaterial);
+        this.sphere1 = new THREE.Mesh(new THREE.SphereGeometry(this.sphereRadius,
+            16, 16), this.roulerLineMaterial);
         this.sphere1.renderOrder = 1e20 - 1;
         this.sphere2 = this.sphere1.clone();
         const tGeo1 = new THREE.TorusGeometry((canvas.grid.size / factor) * 0.5 * Math.SQRT2, this.lineRadius / 10, 8, 32);
@@ -412,6 +420,7 @@ export class Ruler3D {
             dest.y -= token.h / 2 + offset.y;
             dest.x = Math.round(dest.x);
             dest.y = Math.round(dest.y);
+
             dest.elevation = dest.z + offset.elevation;
             dest.elevation = parseFloat(dest.elevation.toFixed(2));
 
@@ -425,7 +434,7 @@ export class Ruler3D {
     }
 
     async _animateSegment(token, destination) {
-        await token.document.update(destination, {movement: {[token.document.id]: { autoRotate: game.settings.get("core", "tokenAutoRotate") }}});
+        await token.document.update({ ...destination }, {movement: {[token.document.id]: { autoRotate: game.settings.get("core", "tokenAutoRotate") }}});
         return token.movementAnimationPromise;
     }
 

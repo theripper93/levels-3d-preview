@@ -6,22 +6,22 @@ import { isLockedOnOrigin } from "../shaders/templateEffects.js";
 
 const basicMat = new THREE.MeshBasicMaterial();
 
-const validTemplateTypes = ["circle", "rect", "cone", "ray"];
+const validTemplateTypes = ["circle", "rectangle", "cone", "ray"];
 
 export class Template3D {
     constructor (template, A, B) {
         this.template = template;
-        if (this.template.t === "light") {
-            this.template.t = "circle";
+        if (this.template.type === "light") {
+            this.template.type = "circle";
             this.isLight = true;
-        } else if (this.template.t === "tile") {
-            this.template.t = "rect";
+        } else if (this.template.type === "tile") {
+            this.template.type = "rectangle";
             this.isTile = true;
-        } else if (this.template.t === "sound") {
-            this.template.t = "circle";
+        } else if (this.template.type === "sound") {
+            this.template.type = "circle";
             this.isSound = true;
         }
-        if (!validTemplateTypes.includes(this.template.t)) this.template.t = "rect";
+        if (!validTemplateTypes.includes(this.template.type)) this.template.type = "rectangle";
         this.embeddedName = "MeasuredTemplate";
         this.placeable = template;
         this.initialDirection = this.template.document?.direction;
@@ -64,7 +64,25 @@ export class Template3D {
 
     get fromData() {
         //if(this.isPreview) return false;
-        return this.template.document?.x !== undefined ? true : false;
+        return this.template?.x !== undefined ? true : false;
+    }
+
+    get elevationBottom() {
+        const elev = this.template?.parent?.elevation?.bottom;
+        if (Number.isFinite(elev)) return elev;
+        return 0;
+    }
+
+    get elevationTop() {
+        const elev = this.template?.parent?.elevation?.top;
+        if (Number.isFinite(elev)) return elev;
+        return 0;
+    }
+
+    get elevation() {
+        const elev = this.template?.parent?.elevation?.bottom;
+        if (Number.isFinite(elev)) return elev;
+        return 0;
     }
 
     updateVisibility() {
@@ -86,7 +104,8 @@ export class Template3D {
         this.mesh.remove(this.templateMesh);
         this.material = this._getMaterial();
         this._getTexture();
-        this.A = this._origin ?? Ruler3D.posCanvasTo3d({ x: this.template.document?.x, y: this.template.document?.y, z: this.template.document?.elevation ?? 0 });
+        // this.A = this._origin ?? Ruler3D.posCanvasTo3d({ x: this.template.document?.x, y: this.template.document?.y, z: this.template.document?.elevation ?? 0 });
+        this.A = this._origin ?? Ruler3D.posCanvasTo3d({ x: this.template?.x, y: this.template?.y, z: this.elevation });
         this.B = this._destination;
         this.pointsFromData();
         this.direction = (Math.atan2(this.B.z - this.A.z, this.B.x - this.A.x) * 180) / Math.PI;
@@ -148,8 +167,13 @@ export class Template3D {
 
     pointsFromData() {
         if (!this.fromData) return;
-        this.A = Ruler3D.posCanvasTo3d({ x: this.template.ray.A.x, y: this.template.ray.A.y, z: this.template.document?.elevation ?? 0 });
-        this.B = Ruler3D.posCanvasTo3d({ x: this.template.ray.B.x, y: this.template.ray.B.y, z: this.template.document?.elevation ?? 0 });
+        if (this.template.measuredSegments.length > 1) {
+            this.A = Ruler3D.posCanvasTo3d({ x: this.template.measuredSegments[0]?.ray.A.x, y: this.template.measuredSegments[0]?.ray.A.y, z: this.elevationBottom });
+            this.B = Ruler3D.posCanvasTo3d({ x: this.template.measuredSegments[0]?.ray.B.x, y: this.template.measuredSegments[1]?.ray.B.y, z: this.elevationTop });
+        } else {
+            this.A = Ruler3D.posCanvasTo3d({ x: this.template.measuredSegments[0]?.ray.A.x, y: this.template.measuredSegments[0]?.ray.A.y, z: this.elevationBottom });
+            this.B = Ruler3D.posCanvasTo3d({ x: this.template.measuredSegments[0]?.ray.B.x, y: this.template.measuredSegments[0]?.ray.B.y, z: this.elevationTop });
+        }
         if (this.shape !== "cylinder") this.B.y += Ruler3D.unitsToPixels(this.template.document?.flags?.levels?.special ?? 0);
     }
 
@@ -227,15 +251,22 @@ export class Template3D {
             canvas.scene.createEmbeddedDocuments("Tile", [tileData]);
             return this.destroy();
         }
+
+        // this.calcWidthHeightDepth();
+
+        const width = this.distance * Math.cos(Math.toRadians(this.direction)) * canvas.dimensions.size;
+        const height = this.distance * Math.sin(Math.toRadians(this.direction)) * canvas.dimensions.size;
+        const elevation = parseFloat((origin2d.z).toFixed(2)) * canvas.dimensions.size;
+
         const templateData = {
             angle: this.angle,
             distance: this.distance,
             direction: this.isPreview ? this.template.document?.direction : this.direction,
-            width: this.width,
+            width: width,
+            height: height,
             user: game.user.id,
             fillColor: game.user.color.css,
-            elevation: parseFloat((origin2d.z).toFixed(2)),
-            t: this._getBaseShape(),
+            type: this._getBaseShape(),
             x: origin2d.x,
             y: origin2d.y,
             flags: {
@@ -247,13 +278,18 @@ export class Template3D {
                 },
             },
         };
-        const currentTemplateData = this.template?.document?.toObject() ?? {};
+        const currentTemplateData =
+         this.template?.document?.toObject() ?? {};
         const finalTemplateData = foundry.utils.mergeObject(currentTemplateData, templateData);
         if (!create) {
             this.destroy();
             return finalTemplateData;
         } else {
-            const placeable = await canvas.scene.createEmbeddedDocuments("MeasuredTemplate", [finalTemplateData]);
+            const placeable = await canvas.scene.createEmbeddedDocuments("Region", [{
+                name: "3DCanvas",
+                elevation: { bottom: 0, top: Math.abs(elevation) },
+                shapes: [finalTemplateData],
+            }]);
             this.destroy();
             return placeable[0];
         }
@@ -316,7 +352,7 @@ export class Template3D {
 
     _getSphereGeometry() {
         const isWireframe = this.templateStyle === "wireframe";
-        const radius = this._origin && this._destination ? this._origin.distanceTo(this._destination) : Ruler3D.unitsToPixels(this.template.document?.distance);
+        const radius = this._origin && this._destination ? this._origin.distanceTo(this._destination) : Ruler3D.unitsToPixels(this.template.measuredSegments[0]?.distance ?? 0);
         const sphereGeometry = new THREE.SphereGeometry(radius, 16, 16);
         let torusGeo;
         if (isWireframe) {
@@ -347,33 +383,37 @@ export class Template3D {
         return group;
     }
 
-    _getSquareGeometry() {
+    calcWidthHeightDepth() {
         const vertexA = this.A;
-        let vertexB = this.B;
-        const width = vertexB.x - vertexA.x;
-        const height = this.template3dData.special !== undefined ? Ruler3D.unitsToPixels(this.template3dData.special) : vertexB.y - vertexA.y;
-        this.special = Ruler3D.pixelsToUnits(height);
-        const depth = vertexB.z - vertexA.z;
-        const geometry = new THREE.BoxGeometry(width, height, depth, 8, 8, 8);
+        const vertexB = this.B;
+        this.width = vertexB.x - vertexA.x;
+        this.height = this.template3dData.special !== undefined ? Ruler3D.unitsToPixels(this.template3dData.special) : vertexB.y - vertexA.y;
+        this.depth = vertexB.z - vertexA.z;
+    }
+
+    _getSquareGeometry() {
+        this.calcWidthHeightDepth();
+        this.special = Ruler3D.pixelsToUnits(this.height);
+        const geometry = new THREE.BoxGeometry(this.width, this.height, this.depth, 8, 8, 8);
         const mesh = this._makeMesh(geometry);
 
         if (this.isFog) {
             const cameraNear = game.Levels3DPreview.camera.near * 2;
-            const box = new THREE.BoxGeometry(width + cameraNear, height + cameraNear, depth + cameraNear);
+            const box = new THREE.BoxGeometry(this.width + cameraNear, this.height + cameraNear, this.depth + cameraNear);
             const boxMesh = new THREE.Mesh(box, new THREE.MeshBasicMaterial({ color: 0x000000 }));
             this.fogBB = new THREE.Box3().setFromObject(boxMesh);
-            this.fogBBOfset = new THREE.Vector3((width + cameraNear) / 2, (height + cameraNear) / 2, (depth + cameraNear) / 2);
+            this.fogBBOfset = new THREE.Vector3((this.width + cameraNear) / 2, (this.height + cameraNear) / 2, (this.depth + cameraNear) / 2);
         }
 
-        mesh.position.set(width / 2, height / 2, depth / 2);
+        mesh.position.set(this.width / 2, this.height / 2, this.depth / 2);
         const group = new THREE.Group();
         const effectOrigin = new THREE.Object3D();
-        effectOrigin.position.set(width / 2, 0, depth / 2);
+        effectOrigin.position.set(this.width / 2, 0, this.depth / 2);
         const effectTarget = new THREE.Object3D();
-        effectTarget.position.set(width / 2, height, depth / 2);
+        effectTarget.position.set(this.width / 2, this.height, this.depth / 2);
         this._effectOrigin = effectOrigin;
         this._effectTarget = effectTarget;
-        this._effectLength = height;
+        this._effectLength = this.height;
         geometry.computeBoundingSphere();
         this._effectRadius = geometry.boundingSphere.radius;
         group.add(mesh);
@@ -474,7 +514,8 @@ export class Template3D {
 
     _getOrigin(A) {
         if (A) return A;
-        return Ruler3D.posCanvasTo3d({ x: this.template.document?.x, y: this.template.document?.y, z: this.template.document?.elevation ?? 0 });
+        return Ruler3D.posCanvasTo3d({ x: this.template?.x, y: this.template?.y, z: this.elevation });
+        // return Ruler3D.posCanvasTo3d({ x: this.template.document?.x, y: this.template.document?.y, z: this.template.document?.elevation ?? 0 });
     }
 
     _getDestination(B) {
@@ -484,7 +525,8 @@ export class Template3D {
 
     _get3DData() {
         if (this.fromData) {
-            return this.template.document?.flags?.levels ?? { special: 0 };
+            return { special: this.template.parent.elevation.top - this.template.parent.elevation.bottom };
+            // return this.template.document?.flags?.levels ?? { special: 0 };
         } else {
             return { special: this.template.document?.flags?.levels?.special ?? CONFIG.Levels?.UI?.nextTemplateSpecial };
         }
@@ -497,7 +539,7 @@ export class Template3D {
             switch (baseShape) {
                 case "circle":
                     return "sphere";
-                case "rect":
+                case "rectangle":
                     return "square";
                 case "cone":
                     return "cone";
@@ -508,7 +550,7 @@ export class Template3D {
             switch (baseShape) {
                 case "circle":
                     return "cylinder";
-                case "rect":
+                case "rectangle":
                     return "square";
                 case "cone":
                     return "cone";
@@ -519,8 +561,8 @@ export class Template3D {
     }
 
     _getBaseShape() {
-        const t = this.template.document?.t ?? this.template.t;
-        return validTemplateTypes.includes(t) ? t : "rect";
+        const t = this.template.document?.type ?? this.template.type;
+        return validTemplateTypes.includes(t) ? t : "rectangle";
     }
 
     get templateStyle() {
@@ -682,7 +724,7 @@ export class Template3D {
 
         if (game.settings.get("levels-3d-preview", "templateAuto3D")) {
             const type = templateDocument.t;
-            if (type == "rect") {
+            if (type == "rectangle") {
                 const w = Math.cos(Math.toRadians(templateDocument.direction)) * templateDocument.distance;
                 const h = Math.sin(Math.toRadians(templateDocument.direction)) * templateDocument.distance;
                 special = Math.min(w, h);
@@ -753,10 +795,16 @@ export class Template3D {
             }
         });
 
-        Hooks.on("createMeasuredTemplate", (template) => {
-            Hooks.once("refreshMeasuredTemplate", () => {
-                if (game.Levels3DPreview?._active && template.object) game.Levels3DPreview.createTemplate(template.object);
-            });
+        Hooks.on("createRegion", (template) => {
+            for (const shape of template.shapes) {
+                if (game.Levels3DPreview?._active && template.object) game.Levels3DPreview.createTemplate(shape);
+            }
+        });
+
+        Hooks.on("updateRegion", (template) => {
+            for (const shape of template.shapes) {
+                if (game.Levels3DPreview?._active && template.object) game.Levels3DPreview.createTemplate(shape);
+            }
         });
 
         Hooks.on("deleteMeasuredTemplate", (template) => {

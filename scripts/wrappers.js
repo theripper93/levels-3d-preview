@@ -26,9 +26,11 @@ export function registerWrappers() {
 
         if (game[game.system.id]?.canvas?.AbilityTemplate?.prototype?.drawPreview) libWrapper.register("levels-3d-preview", `game.${game.system.id}.canvas.AbilityTemplate.prototype.drawPreview`, drawPreview, "MIXED");
 
-        if (CONFIG.MeasuredTemplate.objectClass.prototype.drawPreview) libWrapper.register("levels-3d-preview", "CONFIG.MeasuredTemplate.objectClass.prototype.drawPreview", drawPreview, "MIXED");
+        // if (CONFIG.MeasuredTemplate.objectClass.prototype.drawPreview) libWrapper.register("levels-3d-preview", "CONFIG.MeasuredTemplate.objectClass.prototype.drawPreview", drawPreview, "MIXED");
+        // if (CONFIG.Region.objectClass.prototype.draw) libWrapper.register("levels-3d-preview", "CONFIG.Region.objectClass.prototype.draw", drawPreview, "MIXED");
 
-        if (foundry.canvas.layers.TemplateLayer.prototype._createPreview) libWrapper.register("levels-3d-preview", "foundry.canvas.layers.TemplateLayer.prototype._createPreview", drawPreviewTemplateLayer, "MIXED");
+        // if (foundry.canvas.layers.TemplateLayer.prototype._createPreview) libWrapper.register("levels-3d-preview", "foundry.canvas.layers.TemplateLayer.prototype._createPreview", drawPreviewTemplateLayer, "MIXED");
+        // if (foundry.canvas.layers.RegionLayer.prototype._createPreview) libWrapper.register("levels-3d-preview", "foundry.canvas.layers.RegionLayer.prototype._createPreview", drawPreviewTemplateLayer, "MIXED");
 
         async function HandlePing(wrapped, ...args) {
             if (!game.Levels3DPreview?._active) return wrapped(...args);

@@ -214,7 +214,7 @@ export class InteractionManager {
     }
 
     get allowedRulerDrag() {
-        return ["MeasuredTemplate", "AmbientLight", "Tile", "AmbientSound"];
+        return ["Region", "MeasuredTemplate", "AmbientLight", "Tile", "AmbientSound"];
     }
 
     _onTransformStart(event) {
@@ -405,7 +405,7 @@ export class InteractionManager {
         if (this._parent.CONFIG.UI.windows.HeightmapPainter?.isPainting || ((this._parent.CONFIG.UI.windows.AssetBrowser?._hasSelected || this._parent.CONFIG.UI.windows.EffectBrowser?._hasSelected) && event.shiftKey)) {
             return canvas.tiles.releaseAll();
         }
-        if (this._groupSelect && this.activeLayerEntity != "MeasuredTemplate") return this.groupSelectHandler.startSelect(event);
+        if (this._groupSelect && this.activeLayerEntity != "Region") return this.groupSelectHandler.startSelect(event);
         if (this.preventSelect) return;
         const downId = foundry.utils.randomID();
         this._downId = downId;
