@@ -68,6 +68,7 @@ import { renderSceneToImage } from "./helpers/export2d.js";
 import { BuildPanelApp } from "./apps/BuildPanelApp.js";
 import { QuickTerrain } from "./apps/QuickTerrain.js";
 import { Shape3D } from "./entities/shape3d.js";
+import { Region3D } from "./entities/region3d.js";
 
 export const factor = 1000;
 
@@ -85,7 +86,8 @@ Note3D.setHooks();
 Token3D.setHooks();
 Wall3D.setHooks();
 Tile3D.setHooks();
-Template3D.setHooks();
+// Template3D.setHooks();
+Region3D.setHooks();
 RangeFinder.setHooks();
 InteractionManager.setHooks();
 GlobalIllumination.setHooks();
@@ -512,7 +514,7 @@ class Levels3DPreview {
         this.doors = {};
         this.tiles = {};
         this.sounds = {};
-        this.templates = {};
+        // this.templates = {};
         this.notes = {};
         this.pings = new Set();
         this.models = {
@@ -820,7 +822,8 @@ class Levels3DPreview {
         this.level = Infinity;
         if (isNaN(this.level)) this.level = Infinity;
         this.showSun = this.debugMode;
-        this.createTemplates();
+        // this.createTemplates();
+        this.createRegions();
         const drawFloors = canvas.scene.getFlag("levels-3d-preview", "showSceneFloors") ?? true;
         const drawLights = canvas.scene.getFlag("levels-3d-preview", "renderSceneLights") ?? true;
         this.standUpFaceCamera = game.settings.get("levels-3d-preview", "flatTokenStyle") == "flat";
@@ -1099,19 +1102,25 @@ class Levels3DPreview {
         if (wall.document.door) this.doors[wall.id] = this.walls[wall.id];
     }
 
-    createTemplates() {
+    createRegions() {
         for (const region of canvas.regions.objects.children) {
-            for (const shape of region.document.shapes) {
-                this.createTemplate(shape);
-            }
+            Region3D.handle(region);
         }
     }
 
-    createTemplate(shape) {
-        if (this.templates[shape.x]) this.templates[shape.x].destroy();
-        this.templates[shape.x] = Shape3D.create({ shape });
-        this.templates[shape.x].addToScene();
-    }
+    // createTemplates() {
+    //     for (const region of canvas.regions.objects.children) {
+    //         for (const shape of region.document.shapes) {
+    //             this.createTemplate(shape);
+    //         }
+    //     }
+    // }
+
+    // createTemplate(shape) {
+    //     if (this.templates[shape.x]) this.templates[shape.x].destroy();
+    //     this.templates[shape.x] = Shape3D.create({ shape });
+    //     this.templates[shape.x].addToScene();
+    // }
 
     createNotes() {
         for (let note of canvas.notes.placeables) {
@@ -1267,7 +1276,8 @@ class Levels3DPreview {
         this.tiles = {};
         this.sounds = {};
         this.notes = {};
-        this.templates = {};
+        // this.templates = {};
+        Region3D.clear();
         this.cursors.clear();
     }
 
@@ -1421,9 +1431,9 @@ class Levels3DPreview {
             Object.values(this.notes).forEach((note) => {
                 note.updateVisibility();
             });
-            Object.values(this.templates).forEach((template) => {
-                template.updateVisibility();
-            });
+            // Object.values(this.templates).forEach((template) => {
+            //     template.updateVisibility();
+            // });
             this.rangeFinders.forEach((rangeFinder) => {
                 rangeFinder.updateText();
             });
@@ -1519,13 +1529,7 @@ class Levels3DPreview {
     }
 
     checkInFog() {
-        let inFog = false;
-        for (let template of Object.values(this.templates)) {
-            if (template.containsPoint(this.camera.position)) {
-                inFog = true;
-                break;
-            }
-        }
+        let inFog = Region3D.checkInFog(this.camera.position);
         this.scene.visible = !inFog;
     }
 
