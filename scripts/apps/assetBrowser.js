@@ -1,7 +1,5 @@
 import { HandlebarsApplication, mergeClone } from "../lib/utils.js";
 
-let dataCache = null;
-
 let _this = null;
 
 const LIST_ITEM_TEMPLATE = `
@@ -564,7 +562,7 @@ export class AssetBrowser extends HandlebarsApplication {
         let count = 0;
 
         const results = [];
-        for (const material of dataCache.materials) {
+        for (const material of AssetBrowser.dataCache.materials) {
             const displayName = material.displayName;
             const search = material.search;
             const searchLC = search.toLowerCase();
