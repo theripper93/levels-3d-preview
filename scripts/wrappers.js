@@ -22,6 +22,7 @@ export function registerWrappers() {
         libWrapper.register("levels-3d-preview", "foundry.documents.collections.Scenes.prototype.preload", preload3D, "OVERRIDE");
         libWrapper.register("levels-3d-preview", "canvas.app.renderer.events.pointer.getLocalPosition", pointerPositionWrapper, "MIXED");
         libWrapper.register("levels-3d-preview", "foundry.canvas.layers.ControlsLayer.prototype.handlePing", HandlePing, "WRAPPER");
+        libWrapper.register("levels-3d-preview", "foundry.canvas.layers.RegionLayer.prototype.placeRegion", placeRegion, "MIXED");
         //game.Levels3DPreview.raycastWorker = raycastWorker;
 
         if (game[game.system.id]?.canvas?.AbilityTemplate?.prototype?.drawPreview) libWrapper.register("levels-3d-preview", `game.${game.system.id}.canvas.AbilityTemplate.prototype.drawPreview`, drawPreview, "MIXED");
@@ -424,6 +425,13 @@ export function registerWrappers() {
                 }
             }
             return wrapped(...args);
+        }
+
+        function placeRegion(wrapped, ...args) {
+            if (!game.Levels3DPreview?._active) return wrapped(...args);
+            const [data, options] = args;
+            const { create, createOptions, allowRotation, onMove, onRotate, preConfirm } = options;
+            
         }
     });
 }

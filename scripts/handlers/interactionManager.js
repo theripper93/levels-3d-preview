@@ -531,7 +531,7 @@ export class InteractionManager {
                 this.currentDragTarget.y -= RULER_TOKEN_OFFSET;
             }
             this.draggable.position.copy(this.currentDragTarget);
-            this.ruler.placeTemplate();
+            this.ruler.placeShape();
             if (entity3D.token) {
                 this._parent.ruler.addSegment();
                 entity3D.setPosition(false, true);
