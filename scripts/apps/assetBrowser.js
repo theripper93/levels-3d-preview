@@ -1,6 +1,5 @@
 import { HandlebarsApplication, mergeClone } from "../lib/utils.js";
 
-let fileCache = null;
 let dataCache = null;
 
 let _this = null;
@@ -79,6 +78,10 @@ export class AssetBrowser extends HandlebarsApplication {
         if (custom) sources.push(custom);
         return sources;
     }
+
+    static fileCache = null;
+    static dataCache = null;
+    static assetCache = [];
 
     static defaultSources = [];
 
@@ -423,19 +426,19 @@ export class AssetBrowser extends HandlebarsApplication {
     async _prepareContext(options) {
         const data = await super._prepareContext(options);
         data.assetPacks = AssetBrowser.assetPacks;
-        if (dataCache) {
-            this._assetCount = dataCache.materials.length;
-            dataCache.scale = AssetBrowser.scale || 1;
-            dataCache.density = AssetBrowser.density || 1;
-            dataCache.angle = AssetBrowser.angle || 0;
+        if (AssetBrowser.dataCache) {
+            this._assetCount = AssetBrowser.dataCache.materials.length;
+            AssetBrowser.dataCache.scale = AssetBrowser.scale || 1;
+            AssetBrowser.dataCache.density = AssetBrowser.density || 1;
+            AssetBrowser.dataCache.angle = AssetBrowser.angle || 0;
             return {
-                ...dataCache,
+                ...AssetBrowser.dataCache,
                 tabs: this._prepareTabs("primary"),
             };
         }
         const materials = [];
-        const files = fileCache ?? (await this.getSources());
-        fileCache = files;
+        const files = AssetBrowser.fileCache ?? (await this.getSources());
+        AssetBrowser.fileCache = files;
         for (let file of files) {
             const filename = file.split("/").pop().replaceAll("%20", "_");
             const cleanName = filename.replaceAll("_", " ").replace(".glb", "").replace(".gltf", "");
@@ -446,6 +449,7 @@ export class AssetBrowser extends HandlebarsApplication {
                 search: file.split("/assets/Tiles/").pop(),
             });
         }
+        materials.push(...AssetBrowser.assetCache);
         materials.sort((a, b) => a.displayName.localeCompare(b.displayName));
         data.materials = materials;
         data.isAssetBrowser = true;
@@ -453,7 +457,7 @@ export class AssetBrowser extends HandlebarsApplication {
         data.density = AssetBrowser.density || 1;
         data.angle = AssetBrowser.angle || 0;
         this._assetCount = materials.length;
-        dataCache = data;
+        AssetBrowser.dataCache = data;
         data.tabs = this._prepareTabs("primary");
         return data;
     }
@@ -646,6 +650,21 @@ export class AssetBrowser extends HandlebarsApplication {
             AssetBrowser.assetPacks[packId] = { name: packName, packs: assetPacks };
         } else {
             AssetBrowser.assetPacks[packId].packs.push(...assetPacks);
+        }
+    }
+
+    static registerAssets(assets) {
+        for (const asset of assets) {
+            const file = asset.output;
+            if (!file) throw new Error("Asset Browser: Asset has no file path in the 'output' property");
+            const filename = file.split("/").pop().replaceAll("%20", "_");
+            const cleanName = filename.replaceAll("_", " ").replace(".glb", "").replace(".gltf", "");
+            AssetBrowser.assetCache.push({
+                displayName: asset.displayName ?? cleanName,
+                preview: asset.preview ?? file.replace(".glb", ".webp").replace(".gltf", ".webp"),
+                output: file,
+                search: asset.search ?? file.split("/assets/Tiles/").pop(),
+            });
         }
     }
 
