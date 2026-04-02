@@ -7,9 +7,31 @@ import { factor } from "../main.js";
 export class Shape3D extends THREE.Object3D {
     constructor({ extrude, material, color }) {
         super();
-        this.extrude = extrude;
         this.material = material;
+        this.extrude = extrude || !!this.getSelectedRegion();
         this.color = color ?? this.getSelectedRegion()?.document?.color?.css ?? this.getRandomColor();
+    }
+    #extrude = false;
+    #height = 0.01;
+
+    set extrude(value) {
+        this.#extrude = value;
+    }
+
+    get extrude() {
+        const alwaysFlat = game.settings.get("levels-3d-preview", "regionsAlwaysFlat");
+        if (alwaysFlat) return true;
+        return this.#extrude;
+    }
+
+    set height(value) {
+        this.#height = value;
+    }
+
+    get height() {
+        const alwaysFlat = game.settings.get("levels-3d-preview", "regionsAlwaysFlat");
+        if (alwaysFlat) return 0.01;
+        return this.#height;
     }
 
     addToScene() {
@@ -36,7 +58,7 @@ export class Shape3D extends THREE.Object3D {
         return material;
     }
 
-    static create({ shape, type, origin, destination, material, extrude, color }) {
+    static create({ shape, type, origin, destination, material, extrude, hole = false, color }) {
         if (shape) {
             type = shape.type;
             extrude = shape.gridBased;
@@ -49,20 +71,32 @@ export class Shape3D extends THREE.Object3D {
             case "rectangle":
             case "rect":
             case "box":
-                return new Box3D({ shape, origin, destination, material, extrude, color, draw: true });
+                return new Box3D({ shape, origin, destination, material, extrude, hole, color, draw: true });
             case "circle":
-                return new Sphere3D({ shape, origin, destination, material, extrude, color, draw: true });
+                return new Sphere3D({ shape, origin, destination, material, extrude, hole, color, draw: true });
             case "ellipse":
-                return new Ellipse3D({ shape, origin, destination, material, extrude, color, draw: true });
+                return new Ellipse3D({ shape, origin, destination, material, extrude, hole, color, draw: true });
             case "cone":
-                return new Cone3D({ shape, origin, destination, material, extrude, color, draw: true });
+                return new Cone3D({ shape, origin, destination, material, extrude, hole, color, draw: true });
             case "ring":
-                return new Torus3D({ shape, origin, destination, material, extrude, color, draw: true });
+                return new Torus3D({ shape, origin, destination, material, extrude, hole, color, draw: true });
             case "line":
-                return new Ray3D({ shape, origin, destination, material, extrude, color, draw: true });
+                return new Ray3D({ shape, origin, destination, material, extrude, hole, color, draw: true });
+            case "emanation":
+                const baseType = shape?.base?.shape === 0 ? 0 : 4;
+                return new Emanation3D({ shape, origin, destination, material, baseType, extrude, hole, color, draw: true });
         }
         if (!shape) return false;
-        return new Extrude3D({ shape, origin, destination });
+        return new Extrude3D({ shape, origin, destination, material, extrude });
+    }
+
+    applySettings(mesh) {
+        mesh.userData.collision = false;
+        mesh.userData.cameraCollision = false;
+        mesh.userData.sight = false;
+        mesh.userData.ignoreHover = true;
+        mesh.userData.noIntersect = true;
+        // mesh.userData.noShaders = true;
     }
 
     _get3DData() {
@@ -92,6 +126,27 @@ export class Shape3D extends THREE.Object3D {
         destination.z = Math.max(tempOrigin.z, tempDestination.z);
     }
 
+    test() {
+        foundry.canvas.layers.RegionLayer.prototype.placeRegion({
+            name: "3DCanvas",
+            color: this.color,
+            elevation: {
+                bottom: 0,
+                top: 10
+            },
+            shapes: [
+                new foundry.data.CircleShapeData({
+                    type: "circle",
+                    hole: false,
+                    x: 0,
+                    y: 0,
+                    radius: 100,
+                    gridBased: false,
+                }, {})
+            ],
+        })
+    }
+
     async fromPreview(create = true) {
         let document;
         const selectedRegion = this.getSelectedRegion();
@@ -118,10 +173,13 @@ export class Shape3D extends THREE.Object3D {
     }
 
     drawExtrude() {
-        const geometry = Shape3D.extrudeGeometry(this.region, { depth: this.height });
-        geometry.translate(0, this.elevationBottom, 0);
+        if (!this.shape) return;
+        const geometry = Shape3D.extrudeGeometry(this.shape.polygonTree, { depth: this.height });
+        // geometry.center();
+        geometry.translate(0, this.height / 2, 0);
         const material = this.material ?? this.getDefaultMaterial();
         const mesh = new THREE.Mesh(geometry, material);
+        this.applySettings(mesh);
         this.add(mesh);
     }
 
@@ -150,6 +208,7 @@ export class Shape3D extends THREE.Object3D {
     }
 
     static _applyPointsToPath(pts, target) {
+        if (pts.length === 0) return;
         target.moveTo(pts[0] / factor, pts[1] / factor);
         for (let i = 2; i < pts.length; i += 2) {
             target.lineTo(pts[i] / factor, pts[i + 1] / factor);
@@ -174,7 +233,7 @@ export class Shape3D extends THREE.Object3D {
 }
 
 export class Box3D extends Shape3D {
-    constructor({ shape, origin, destination, material, color, extrude = false, draw = false }) {
+    constructor({ shape, origin, destination, material, color, hole, extrude = false, draw = false }) {
         super({ extrude, material, color });
         if (!shape) {
             this.normalizePoints(origin, destination);
@@ -184,7 +243,7 @@ export class Box3D extends Shape3D {
             this.elevation = origin.y;
             shape = new foundry.data.RectangleShapeData({
                 type: "rectangle",
-                hole: false,
+                hole: hole,
                 x: origin.x * factor,
                 y: origin.z * factor,
                 width: this.width * factor,
@@ -227,6 +286,7 @@ export class Box3D extends Shape3D {
         const geometry = new THREE.BoxGeometry(this.width, this.height, this.depth);
         const mesh = new THREE.Mesh(geometry, material);
         mesh.position.set(this.origin.x, this.origin.y, this.origin.z);
+        this.applySettings(mesh);
         this.add(mesh);
     }
 
@@ -242,7 +302,7 @@ export class Box3D extends Shape3D {
 }
 
 export class Sphere3D extends Shape3D {
-    constructor({ shape, origin, destination, material, color, extrude = false, draw = false }) {
+    constructor({ shape, origin, destination, material, color, hole, extrude = false, draw = false }) {
         super({ extrude, material, color });
         if (origin) origin = new THREE.Vector3(origin.x, origin.y, origin.z);
         if (destination) destination = new THREE.Vector3(destination.x, destination.y, destination.z);
@@ -251,24 +311,26 @@ export class Sphere3D extends Shape3D {
             this.elevation = origin.y;
             shape = new foundry.data.CircleShapeData({
                 type: "circle",
-                hole: false,
+                hole: hole,
                 x: origin.x * factor,
                 y: origin.z * factor,
                 radius: this.radius * factor,
                 gridBased: false,
             }, {});
         } else {
+            const top = Number.isFinite(shape.parent.elevation.top) ?
+                shape.parent.elevation.top * canvas.scene.dimensions.distancePixels / factor : 0;
             const bottom = Number.isFinite(shape.parent.elevation.bottom) ?
                 shape.parent.elevation.bottom * canvas.scene.dimensions.distancePixels / factor : 0;
             this.radius = shape.radius / factor;
-            this.elevation = bottom + this.radius;
+            this.elevation = (top + bottom) / 2;
             origin = {
                 x: shape.x / factor,
                 y: this.elevation,
                 z: shape.y / factor,
             };
         }
-        this.height = this.radius;
+        this.height = this.radius * 2;
         this.elevationBottom = this.elevation - this.radius;
         this.elevationTop = this.elevation + this.radius;
         this.shape = shape;
@@ -283,6 +345,7 @@ export class Sphere3D extends Shape3D {
         const geometry = new THREE.SphereGeometry(this.radius, 32, 32);
         const mesh = new THREE.Mesh(geometry, material);
         mesh.position.set(this.origin.x, this.origin.y, this.origin.z);
+        this.applySettings(mesh);
         this.add(mesh);
     }
 
@@ -304,7 +367,7 @@ export class Sphere3D extends Shape3D {
 }
 
 export class Ellipse3D extends Shape3D {
-    constructor({ shape, origin, destination, material, color, extrude = false, draw = false }) {
+    constructor({ shape, origin, destination, material, color, hole, extrude = false, draw = false }) {
         super({ extrude, material, color });
         if (!shape) {
             this.radiusX = Math.abs(destination.x - origin.x);
@@ -313,7 +376,7 @@ export class Ellipse3D extends Shape3D {
             this.elevation = origin.y;
             shape = new foundry.data.EllipseShapeData({
                 type: "ellipse",
-                hole: false,
+                hole: hole,
                 x: origin.x * factor,
                 y: origin.z * factor,
                 radiusX: this.radiusX * factor,
@@ -357,6 +420,7 @@ export class Ellipse3D extends Shape3D {
         geometry.scale(this.radiusX, this.height, this.radiusZ);
         const mesh = new THREE.Mesh(geometry, material);
         mesh.position.set(this.origin.x, this.origin.y, this.origin.z);
+        this.applySettings(mesh);
         this.add(mesh);
     }
 
@@ -373,7 +437,7 @@ export class Ellipse3D extends Shape3D {
 }
 
 export class Cone3D extends Shape3D {
-    constructor({ shape, origin, destination, material, color, extrude = false, draw = false }) {
+    constructor({ shape, origin, destination, material, color, hole, extrude = false, draw = false }) {
         super({ extrude, material, color });
         if (!shape) {
             const dx = destination.x - origin.x;
@@ -387,7 +451,7 @@ export class Cone3D extends Shape3D {
             this._rotation = Math.atan2(dz, dx) * (180 / Math.PI);
             shape = new foundry.data.ConeShapeData({
                 type: "cone",
-                hole: false,
+                hole: hole,
                 x: origin.x * factor,
                 y: origin.z * factor,
                 radius: shapeRadius * factor,
@@ -438,9 +502,9 @@ export class Cone3D extends Shape3D {
         this.elevationTop = this.elevation + this.baseRadius;
         this.shape = shape;
         this.origin = {
-            x: origin.x + (destination.x - origin.x) / 2,
+            x: (origin.x + destination.x) / 2,
             y: origin.y,
-            z: origin.z + (destination.z - origin.z) / 2,
+            z: (origin.z + destination.z) / 2,
         };
         if (!draw) return;
         if (this.extrude) return this.drawExtrude();
@@ -465,6 +529,7 @@ export class Cone3D extends Shape3D {
         geometry.rotateZ(Math.PI / 2);
         geometry.translate(this.origin.x, this.origin.y, this.origin.z);
         const mesh = new THREE.Mesh(geometry, material);
+        this.applySettings(mesh);
         this.add(mesh);
     }
 
@@ -492,6 +557,7 @@ export class Cone3D extends Shape3D {
         geometry.translate(this.origin.x, this.origin.y, this.origin.z);
         const material = this.material ?? this.getDefaultMaterial();
         const mesh = new THREE.Mesh(geometry, material);
+        this.applySettings(mesh);
         this.add(mesh);
     }
 
@@ -517,12 +583,13 @@ export class Cone3D extends Shape3D {
         geometry.translate(this.origin.x, this.origin.y, this.origin.z);
         const material = this.material ?? this.getDefaultMaterial();
         const mesh = new THREE.Mesh(geometry, material);
+        this.applySettings(mesh);
         this.add(mesh);
     }
 }
 
 export class Torus3D extends Shape3D {
-    constructor({ shape, origin, destination, material, color, extrude = false, draw = false }) {
+    constructor({ shape, origin, destination, material, color, hole, extrude = false, draw = false }) {
         super({ extrude, material, color });
         if (origin) origin = new THREE.Vector3(origin.x, origin.y, origin.z);
         if (destination) destination = new THREE.Vector3(destination.x, destination.y, destination.z);
@@ -533,7 +600,7 @@ export class Torus3D extends Shape3D {
             this.elevation = origin.y;
             shape = new foundry.data.RingShapeData({
                 type: "ring",
-                hole: false,
+                hole: hole,
                 x: origin.x * factor,
                 y: origin.z * factor,
                 radius: this.radius * factor,
@@ -566,11 +633,12 @@ export class Torus3D extends Shape3D {
     }
     
     drawShape() {
-        const material = this.material ?? new THREE.MeshBasicMaterial({ color: 0x00ffff, wireframe: true });
+        const material = this.material ?? this.getDefaultMaterial();
         const geometry = new THREE.TorusGeometry(this.radius + this.tubeRadius, this.tubeRadius, 16, 64);
         const mesh = new THREE.Mesh(geometry, material);
         mesh.rotation.x = Math.PI / 2;
         mesh.position.set(this.origin.x, this.origin.y, this.origin.z);
+        this.applySettings(mesh);
         this.add(mesh);
     }
     
@@ -595,23 +663,26 @@ export class Torus3D extends Shape3D {
 }
 
 export class Ray3D extends Shape3D {
-    constructor({ shape, origin, destination, material, color, extrude = false, draw = false }) {
+    constructor({ shape, origin, destination, material, color, hole, extrude = false, draw = false }) {
         super({ extrude, material, color });
-        if (origin) origin = new THREE.Vector3(origin.x, origin.y, origin.z);
-        if (destination) destination = new THREE.Vector3(destination.x, origin.y, destination.z);
+        let originVec, destVec;
+        
+        if (origin) originVec = new THREE.Vector3(origin.x, origin.y, origin.z);
+        if (destination) destVec = new THREE.Vector3(destination.x, origin.y, destination.z);
 
+        let angle;
         if (!shape) {
-            const length = destination.distanceTo(origin);
+            const length = destVec.distanceTo(originVec);
             const direction = new THREE.Vector3()
-                .subVectors(destination, origin)
+                .subVectors(originVec, destVec)
                 .normalize();
-            const angle = Math.atan2(direction.x, direction.z);
+            angle = 2 * Math.PI - Math.atan2(direction.x, direction.z) - Math.PI / 2;
             this.length = length;
             this.width = canvas.dimensions.size / factor;
             this.elevation = origin.y;
             shape = new foundry.data.LineShapeData({
                 type: "line",
-                hole: false,
+                hole: hole,
                 x: origin.x * factor,
                 y: origin.z * factor,
                 length: this.length * factor,
@@ -624,30 +695,43 @@ export class Ray3D extends Shape3D {
                 shape.parent.elevation.bottom * canvas.scene.dimensions.distancePixels / factor : 0;
             this.length = shape.length / factor;
             this.width = shape.width / factor;
-            this.elevation = bottom + this.width / 2;
-            const angle = Math.toRadians(shape.rotation ?? 0);
+            this.elevation = bottom;
+            angle = Math.toRadians(shape.rotation ?? 0);
             origin = {
                 x: shape.x / factor,
                 y: this.elevation,
                 z: shape.y / factor,
             };
-            destination = new THREE.Vector3(
-                origin.x + Math.sin(angle) * this.length,
+            originVec = new THREE.Vector3(origin.x, origin.y, origin.z);
+            destVec = new THREE.Vector3(
+                origin.x + Math.cos(angle) * this.length,
                 origin.y,
-                origin.z + Math.cos(angle) * this.length,
+                origin.z + Math.sin(angle) * this.length,
             );
         }
 
         this.direction = new THREE.Vector3()
-            .subVectors(destination, new THREE.Vector3(origin.x, origin.y, origin.z))
+            .subVectors(destVec, originVec)
             .normalize();
         this.halfWidth = this.width / 2;
         this.height = this.width;
-        this.elevationBottom = this.elevation - this.halfWidth;
-        this.elevationTop = this.elevation + this.halfWidth;
+        this.elevationBottom = this.elevation;
+        this.elevationTop = this.elevation + this.height;
         this.shape = shape;
-        this.origin = origin;
-        this.destination = destination;
+        
+        this.origin = {
+            x: originVec.x + (this.length * Math.cos(angle)) / 2,
+            y: originVec.y,
+            z: originVec.z + (this.length * Math.sin(angle)) / 2,
+        };
+        this.destination = {
+            x: this.origin.x - (this.length * Math.cos(angle)),
+            y: this.origin.y,
+            z: this.origin.z - (this.length * Math.sin(angle)),
+        }
+        
+        this.originVec = originVec;
+        this.destVec = destVec;
 
         if (!draw) return;
         if (this.extrude) return this.drawExtrude();
@@ -655,29 +739,125 @@ export class Ray3D extends Shape3D {
     }
 
     drawShape() {
-        const material = this.material ?? new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: true });
-        // Box with square cross-section (width x width) and length along Z
+        const material = this.material ?? this.getDefaultMaterial();
         const geometry = new THREE.BoxGeometry(this.width, this.width, this.length);
         const mesh = new THREE.Mesh(geometry, material);
-        // Position at midpoint
         const mid = new THREE.Vector3(
-            this.origin.x + this.direction.x * this.length / 2,
-            this.origin.y + this.direction.y * this.length / 2,
-            this.origin.z + this.direction.z * this.length / 2,
+            this.originVec.x + this.direction.x * this.length / 2,
+            this.originVec.y + this.direction.y * this.length / 2,
+            this.originVec.z + this.direction.z * this.length / 2,
         );
         mesh.position.copy(mid);
-        mesh.lookAt(
-            mid.x + this.direction.x,
-            mid.y,
-            mid.z + this.direction.z,
-        );
+        
+        // Rotate the mesh to align with the direction
+        const angle = Math.atan2(this.direction.x, this.direction.z);
+        mesh.rotation.y = angle;
+        
+        this.applySettings(mesh);
         this.add(mesh);
     }
 }
 
+export class Emanation3D extends Shape3D {
+    constructor({ shape, origin, destination, material, color, hole, baseType = 4, extrude = false, draw = false }) {
+        super({ extrude, material, color });
+        if (!shape) {
+            this.totalWidth = (destination.x - origin.x) * 2;
+            this.totalDepth = (destination.z - origin.z) * 2;
+            this.radius = 0.1;
+
+            this.width = this.totalWidth - 2 * this.radius;
+            this.depth = this.totalDepth - 2 * this.radius;
+            this.width = Math.abs(this.width);
+            this.depth = Math.abs(this.depth);
+            if (this.width <= 0.01) this.width = 0.01;
+            if (this.depth <= 0.01) this.depth = 0.01;
+            this.height = destination.y - origin.y;
+            this.elevation = origin.y;
+            
+            shape = new foundry.data.EmanationShapeData({
+                type: "emanation",
+                hole: hole,
+                base: {
+                    type: "token",
+                    shape: baseType, // rectangle
+                    width: this.width * factor / canvas.scene.dimensions.size,
+                    height: this.depth * factor / canvas.scene.dimensions.size,
+                    x: (origin.x - this.width / 2) * factor,
+                    y: (origin.z - this.depth / 2) * factor,
+                },
+                radius: this.radius * factor,
+                gridBased: false,
+            }, {});
+        } else {
+            const bottom = Number.isFinite(shape.parent.elevation.bottom) ?
+                shape.parent.elevation.bottom * canvas.scene.dimensions.distancePixels / factor : 0;
+            const top = Number.isFinite(shape.parent.elevation.top) ?
+                shape.parent.elevation.top * canvas.scene.dimensions.distancePixels / factor : 0;
+            this.radius = shape.radius / factor;
+            this.width = shape.base.width * canvas.scene.dimensions.size / factor;
+            this.depth = shape.base.height * canvas.scene.dimensions.size / factor;
+            this.elevation = bottom;
+            this.height = top - bottom;
+            this.totalWidth = this.width + 2 * this.radius;
+            this.totalDepth = this.depth + 2 * this.radius;
+            origin = {
+                x: shape.base.x / factor + this.width / 2,
+                y: bottom,
+                z: shape.base.y / factor + this.depth / 2,
+            };
+        }
+        this.baseType = baseType;
+        this.elevationBottom = this.elevation;
+        this.elevationTop = this.elevation + this.height;
+        this.shape = shape;
+        
+        this.origin = {
+            x: origin.x,
+            y: origin.y,
+            z: origin.z,
+        };
+        
+        if (!draw) return;
+        this.drawExtrude();
+    }
+
+    containsPoint(point) {
+        if (this.baseType === 0) {
+            const dx = (point.x - this.origin.x) * factor / this.shape.width;
+            const dz = (point.z - this.origin.z) * factor / this.shape.depth;
+            
+            if (dx * dx + dz * dz > 1) return false;
+            if (point.y < this.origin.y) return false;
+            if (point.y > this.origin.y + this.height) return false;
+            
+            return true;
+        }
+
+        if (point.y < this.origin.y - this.height / 2) return false;
+        if (point.y > this.origin.y + this.height / 2) return false;
+        
+        const halfWidth = this.width / 2;
+        const halfDepth = this.depth / 2;
+        
+        const dx = Math.abs(point.x - this.origin.x);
+        const dz = Math.abs(point.z - this.origin.z);
+        
+        if (dx <= halfWidth && dz <= halfDepth) return true;
+        
+        const closestX = Math.max(this.origin.x - halfWidth, Math.min(point.x, this.origin.x + halfWidth));
+        const closestZ = Math.max(this.origin.z - halfDepth, Math.min(point.z, this.origin.z + halfDepth));
+        
+        const distSq = (point.x - closestX) * (point.x - closestX) + 
+                       (point.z - closestZ) * (point.z - closestZ);
+        
+        return distSq <= this.radius * this.radius;
+    }
+}
+
 export class Extrude3D extends Shape3D {
-    constructor({ shape, material }) {
-        super();
+    constructor({ shape, material, color, extrude = false }) {
+        super({ extrude, material, color });
 
         const bottom = Number.isFinite(shape.parent.elevation.bottom)
             ? shape.parent.elevation.bottom * canvas.scene.dimensions.distancePixels / factor : 0;
@@ -692,19 +872,6 @@ export class Extrude3D extends Shape3D {
         };
 
         this.shape = shape;
-        const shapes = this._buildShapesFromTree(shape.polygonTree);
-
-        const geometry = new THREE.ExtrudeGeometry(shapes, {
-            depth: this.height,
-            bevelEnabled: false,
-        });
-
-        geometry.rotateX(Math.PI / 2);
-        geometry.center();
-
-        material ??= this.getDefaultMaterial();
-        const mesh = new THREE.Mesh(geometry, material);
-        mesh.position.set(this.origin.x, this.origin.y, this.origin.z);
-        this.add(mesh);
+        this.drawExtrude();
     }
 }

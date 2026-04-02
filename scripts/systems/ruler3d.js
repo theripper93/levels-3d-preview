@@ -48,8 +48,9 @@ export class Ruler3D {
         const pos = Ruler3D.useSnapped() ? Ruler3D.snapped3DPosition(this._object.position) : this._object.position;
         const shape = Shape3D.create({
             shape: null,
+            hole: ui.controls?.tools?.hole?.active,
             color: color,
-            type: ui.controls.tool.name,
+            type: ui.controls?.tool?.name ?? "rectangle",
             origin: this._origin,
             destination: pos
         });
@@ -487,7 +488,9 @@ export class Ruler3D {
     }
 
     static pos3DToCanvas(position) {
-        return new THREE.Vector3(position.x * factor, position.z * factor, ((position.y * factor) / canvas.scene.dimensions.size) * canvas.scene.dimensions.distance);
+        const vector = new THREE.Vector3(position.x * factor, position.z * factor, ((position.y * factor) / canvas.scene.dimensions.size) * canvas.scene.dimensions.distance);
+        vector.elevation = vector.z;
+        return vector;
     }
 
     static useSnapped() {

@@ -7,7 +7,6 @@ export class Region3D extends THREE.Object3D {
     constructor(region, hidden = false) {
         super();
         this.isFog = false;
-        if (region.document) region = region.document;
         this.region = region;
         this.top = Number.isFinite(this.region.elevation.top) ?
             this.region.elevation.top * canvas.scene.dimensions.distancePixels / factor : 0;
@@ -23,6 +22,28 @@ export class Region3D extends THREE.Object3D {
             this.drawShapes();
         }
         if (!hidden) this.addToScene();
+    }
+    #bottom = 0;
+    #height = 0.01;
+    
+    set height(value) {
+        this.#height = value;
+    }
+
+    get height() {
+        const alwaysFlat = game.settings.get("levels-3d-preview", "regionsAlwaysFlat");
+        if (alwaysFlat) return 0.01;
+        return this.#height;
+    }
+
+    set bottom(value) {
+        this.#bottom = value;
+    }
+
+    get bottom() {
+        const alwaysFlat = game.settings.get("levels-3d-preview", "regionsAlwaysFlat");
+        if (alwaysFlat) return 0;
+        return this.#bottom;
     }
 
     addToScene() {
@@ -61,52 +82,49 @@ export class Region3D extends THREE.Object3D {
         this.add(mesh);
     }
 
-    static #regions = {};
+    static #regions = new Map();
     
     static get regions() {
         return Region3D.#regions;
     }
 
     static handle(region) {
-        if (region.id in this.regions) {
+        if (region.document) region = region.document
+        if (this.regions.has(region)) {
             return this.update(region);
         }
         return this.create(region);
     }
 
     static update(region) {
-        this.regions[region.id].destroy();
+        this.regions.get(region).destroy();
         return this.create(region);
     }
 
     static create(region) {
         const region3d = new Region3D(region);
-        this.regions[region.id] = region3d;
+        this.regions.set(region, region3d);
         return region3d;
     }
 
     static destroy(region) {
-        if (region.id in this.regions) {
-            this.regions[region.id].destroy();
-            delete this.regions[region.id];
+        if (this.regions.has(region)) {
+            this.regions.get(region).destroy();
+            this.regions.delete(region);
         }
     }
 
     static clear() {
-        for (const region of Object.values(this.regions)) {
-            region.destroy();
-        }
-        this.#regions = {};
+        this.regions.forEach((region) => region.destroy());
+        this.#regions = new Map();
     }
 
     static updateVisibility() {
-        for (const region of Object.values(this.regions)) {
-            region.updateVisibility();
-        }
+        this.regions.forEach((region) => region.updateVisibility());
     }
 
     static checkInFog(point) {
-        for (const region of Object.values(this.regions)) {
+        for (const [key, region] of Array.from(this.regions)) {
             if (!region.isFog) continue;
             if (region.containsPoint(point)) return true;
         }
@@ -114,19 +132,34 @@ export class Region3D extends THREE.Object3D {
     }
 
     static setHooks() {
-        Hooks.on("createRegion", (region) => {
+        // Hooks.on("createRegion", (region) => {
+        //     if (!game.Levels3DPreview?._active || !region.object) return;
+        //     Region3D.handle(region);
+        // });
+
+        // Hooks.on("updateRegion", (region) => {
+        //     if (!game.Levels3DPreview?._active || !region.object) return;
+        //     Region3D.handle(region);
+        // });
+
+        // Hooks.on("deleteRegion", (region) => {
+        //     if (!game.Levels3DPreview?._active) return;
+        //     Region3D.destroy(region);
+        // });
+
+        Hooks.on("drawRegion", (region) => {
             if (!game.Levels3DPreview?._active || !region.object) return;
             Region3D.handle(region);
         });
 
-        Hooks.on("updateRegion", (region) => {
-            if (!game.Levels3DPreview?._active || !region.object) return;
-            Region3D.handle(region);
-        });
-
-        Hooks.on("deleteRegion", (region) => {
+        Hooks.on("refreshRegion", (region) => {
             if (!game.Levels3DPreview?._active) return;
-            Region3D.destroy(region);
+            Region3D.handle(region);
+        });
+
+        Hooks.on("destroyRegion", (region) => {
+            if (!game.Levels3DPreview?._active) return;
+            Region3D.destroy(region.document);
         });
     }
 }

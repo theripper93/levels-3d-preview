@@ -1,3 +1,7 @@
+import { Region3D } from "./entities/region3d.js";
+import { Shape3D } from "./entities/shape3d.js";
+import * as THREE from "./lib/three.module.js";
+
 export function registerWrappers() {
 
     Object.defineProperty(foundry.canvas.placeables.Token.prototype, "object3d", {
@@ -5,8 +9,6 @@ export function registerWrappers() {
             return game.Levels3DPreview.tokens[this.id];
         },
     });
-
-
 
     Hooks.once("ready", async function () {
 
@@ -22,7 +24,8 @@ export function registerWrappers() {
         libWrapper.register("levels-3d-preview", "foundry.documents.collections.Scenes.prototype.preload", preload3D, "OVERRIDE");
         libWrapper.register("levels-3d-preview", "canvas.app.renderer.events.pointer.getLocalPosition", pointerPositionWrapper, "MIXED");
         libWrapper.register("levels-3d-preview", "foundry.canvas.layers.ControlsLayer.prototype.handlePing", HandlePing, "WRAPPER");
-        libWrapper.register("levels-3d-preview", "foundry.canvas.layers.RegionLayer.prototype.placeRegion", placeRegion, "MIXED");
+        libWrapper.register("levels-3d-preview", "canvas.regions.placeRegion", placeRegion, "MIXED");
+        libWrapper.register("levels-3d-preview", "Scene.prototype.testSurfaceCollision", sceneTestSurfaceCollision, "MIXED");
         //game.Levels3DPreview.raycastWorker = raycastWorker;
 
         if (game[game.system.id]?.canvas?.AbilityTemplate?.prototype?.drawPreview) libWrapper.register("levels-3d-preview", `game.${game.system.id}.canvas.AbilityTemplate.prototype.drawPreview`, drawPreview, "MIXED");
@@ -130,7 +133,7 @@ export function registerWrappers() {
                 }
                 return;
             }
-            if (!game.Levels3DPreview?.object3dSight || !game.Levels3DPreview?.fogExploration || this.config.source.object instanceof Scene || this.config.type === "universal") return;
+            if (!game.Levels3DPreview?.object3dSight || !game.Levels3DPreview?.fogExploration || !this.config?.source?.object || this.config.source.object instanceof Scene || this.config.type === "universal") return;
             const id = this.config.type + "." + this.config.source.object.id;
             const worker = game.Levels3DPreview.workers;
             this.points = [0, -1, 1, -1, 1, 1, 0, 1];
@@ -427,11 +430,80 @@ export function registerWrappers() {
             return wrapped(...args);
         }
 
-        function placeRegion(wrapped, ...args) {
+        async function placeRegion(wrapped, ...args) {
+            console.log(args);
             if (!game.Levels3DPreview?._active) return wrapped(...args);
-            const [data, options] = args;
-            const { create, createOptions, allowRotation, onMove, onRotate, preConfirm } = options;
-            
+            const originalOn = canvas.stage.on;
+            const toRemove = {};
+            canvas.stage.on = (eventName, handler) => {
+                let height = undefined;
+                function listener(event) {
+                    event.getLocalPosition = (obj) => canvas.app.renderer.events.pointer.getLocalPosition(obj) ?? {x: 0, y: 0, z: 0};
+                    handler(event);
+                    if (!canvas.regions._placementContext?.preview?.document) return;
+                    const document = canvas.regions._placementContext.preview.document;
+                    const elevation = document.elevation;
+                    height ??= elevation.top - elevation.bottom;
+                    let bottom = canvas.app.renderer.events.pointer.getLocalPosition()?.z;
+                    if (bottom === undefined) return;
+                    const isNotCube = document.shapes[0].shape !== "rectangle";
+                    if (isNotCube) bottom -= height / 2;
+                    if (bottom != elevation.bottom) {
+                        canvas.regions._placementContext.preview?.document?.updateSource({ elevation: { bottom, top: bottom + height } });
+                    }
+                    console.log(bottom, height)
+                }
+                game.Levels3DPreview.renderer.domElement.addEventListener(eventName, listener);
+                toRemove[eventName] = listener;
+            }
+            const result = await wrapped(...args);
+            for (const [key, value] of Object.entries(toRemove)) {
+                game.Levels3DPreview.renderer.domElement.removeEventListener(key, value);
+            }
+            canvas.stage.on = originalOn;
+            return result;
+        }
+
+        function sceneTestSurfaceCollision(wrapped, ...args) {
+            const [ origin2d, destination2d, options ] = args;
+            const origin = {
+                x: origin2d.x,
+                y: origin2d.y,
+                z: origin2d.elevation,
+            }
+            const destination = {
+                x: destination2d.x,
+                y: destination2d.y,
+                z: destination2d.elevation,
+            }
+            if (!canvas?.scene?.flags["levels-3d-preview"]?.object3dSight) return wrapped(...args);
+            if (!game.Levels3DPreview?._active) return wrapped(...args);
+            if (!["move", "sight"].includes(options.type)) return wrapped(...args);
+            const type = options.type === "sight" ? "sight" : "collision";
+            if (options.mode === "any") {
+                const collisionCore = wrapped(...args);
+                const collision3d = !!game.Levels3DPreview.interactionManager.computeSightCollision(origin, destination, type);
+                return collisionCore || collision3d;
+            }
+            if (options.mode === "all") {
+                const collisions = [];
+                collisions.push(...game.Levels3DPreview.interactionManager.computeSightCollision(origin, destination, type, false, true, false, true));
+                collisions.push(...wrapped(...args));
+                collisions.sort()
+                return collisions;
+            }
+            if (options.mode === "closest") {
+                const collisionCore = wrapped(...args);
+                const collision3d = game.Levels3DPreview.interactionManager.computeSightCollision(origin, destination, type, false, true, false, false);
+                if (!collision3d && !collisionCore) return false;
+                if (!collision3d) return collisionCore;
+                if (!collisionCore) return collision3d;
+                const destinationCore = new THREE.Vector3(collisionCore.point.x, collisionCore.point.y, collisionCore.point.z);
+                const destination3d = new THREE.Vector3(collision3d.x, collision3d.y, collision3d.z);
+                if (origin.distanceTo(destinationCore) < origin.distanceTo(destination3d)) return collisionCore;
+                return collision3d;
+            }
+            return wrapped(...args);
         }
     });
 }

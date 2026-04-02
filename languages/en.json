@@ -1113,6 +1113,10 @@
             }
         },
         "settings": {
+            "regionsAlwaysFlat": {
+                "name": "Always Flat Regions",
+                "hint": "When enabled, all placed Regions will be flat."
+            },
             "autoApply": {
                 "name": "Automatically Apply Materials",
                 "hint": "When selecting a material, it will be immediatelly applied to the selected object."
