@@ -491,6 +491,8 @@ class Levels3DPreview {
         this.CONFIG.UI.BuildPanel = BuildPanel;
         this.CONFIG.UI.QuickTerrain = QuickTerrain;
         Hooks.callAll("3DCanvasConfig", this.CONFIG);
+        Hooks.callAll("3DCanvasMapmakingPackRegisterAssetPacks", this.CONFIG.UI.AssetBrowser);
+        Hooks.callAll("3DCanvasMapmakingPackRegisterTokenPacks", this.CONFIG.UI.TokenBrowser);
         for (let [k, v] of Object.entries(this.CONFIG.tokenAnimations)) {
             v.name = game.i18n.localize(`levels3dpreview.tokenAnimations.${k}`);
         }
