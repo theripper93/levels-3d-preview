@@ -821,6 +821,7 @@ export function registerSettings() {
         if (showWelcomeMessage && !showNewUserExperience) {
             const dialog = new foundry.applications.api.DialogV2({
                 window: { title: "levels3dpreview.welcome.title" },
+                classes: ["levels-3d-preview-welcome"],
                 content: game.i18n.localize("levels3dpreview.welcome.content"),
                 buttons: [
                     {
@@ -859,6 +860,7 @@ export function registerSettings() {
         if (showNewUserExperience) {
             const dialog = new foundry.applications.api.DialogV2({
                 window: { title: "levels3dpreview.newuserexperience.title" },
+                classes: ["levels-3d-preview-welcome"],
                 content: game.i18n.localize("levels3dpreview.newuserexperience.content"),
                 buttons: [
                     {
