@@ -8,7 +8,7 @@ export class Shape3D extends THREE.Object3D {
     constructor({ extrude, material, color }) {
         super();
         this.material = material;
-        this.extrude = extrude || !!this.getSelectedRegion();
+        this.extrude = extrude; // || !!this.getSelectedRegion();
         this.color = color ?? this.getSelectedRegion()?.document?.color?.css ?? this.getRandomColor();
     }
     #extrude = false;
@@ -258,13 +258,13 @@ export class Box3D extends Shape3D {
                 shape.parent.elevation.bottom * canvas.scene.dimensions.distancePixels / factor : 0;
             const top = Number.isFinite(shape.parent.elevation.top) ?
                 shape.parent.elevation.top * canvas.scene.dimensions.distancePixels / factor : 0;
-            origin = {
-                x: shape.x / factor,
-                y: bottom,
-                z: shape.y / factor,
-            };
             this.width = shape.width / factor;
             this.depth = shape.height / factor;
+            origin = {
+                x: (shape.x - shape.anchorX * shape.width) / factor,
+                y: bottom,
+                z: (shape.y - shape.anchorY * shape.height) / factor,
+            };
             this.elevation = bottom;
             this.height = top - bottom;
         }
@@ -665,16 +665,14 @@ export class Torus3D extends Shape3D {
 export class Ray3D extends Shape3D {
     constructor({ shape, origin, destination, material, color, hole, extrude = false, draw = false }) {
         super({ extrude, material, color });
-        let originVec, destVec;
-        
-        if (origin) originVec = new THREE.Vector3(origin.x, origin.y, origin.z);
-        if (destination) destVec = new THREE.Vector3(destination.x, origin.y, destination.z);
+        if (origin) origin = new THREE.Vector3(origin.x, origin.y, origin.z);
+        if (destination) destination = new THREE.Vector3(destination.x, origin.y, destination.z);
 
         let angle;
         if (!shape) {
-            const length = destVec.distanceTo(originVec);
+            const length = destination.distanceTo(origin);
             const direction = new THREE.Vector3()
-                .subVectors(originVec, destVec)
+                .subVectors(origin, destination)
                 .normalize();
             angle = 2 * Math.PI - Math.atan2(direction.x, direction.z) - Math.PI / 2;
             this.length = length;
@@ -697,13 +695,12 @@ export class Ray3D extends Shape3D {
             this.width = shape.width / factor;
             this.elevation = bottom;
             angle = Math.toRadians(shape.rotation ?? 0);
-            origin = {
-                x: shape.x / factor,
-                y: this.elevation,
-                z: shape.y / factor,
-            };
-            originVec = new THREE.Vector3(origin.x, origin.y, origin.z);
-            destVec = new THREE.Vector3(
+            origin = new THREE.Vector3(
+                shape.x / factor,
+                this.elevation,
+                shape.y / factor,
+            );
+            destination = new THREE.Vector3(
                 origin.x + Math.cos(angle) * this.length,
                 origin.y,
                 origin.z + Math.sin(angle) * this.length,
@@ -711,28 +708,29 @@ export class Ray3D extends Shape3D {
         }
 
         this.direction = new THREE.Vector3()
-            .subVectors(destVec, originVec)
+            .subVectors(destination, origin)
             .normalize();
         this.halfWidth = this.width / 2;
         this.height = this.width;
         this.elevationBottom = this.elevation;
         this.elevationTop = this.elevation + this.height;
         this.shape = shape;
-        
-        this.origin = {
-            x: originVec.x + (this.length * Math.cos(angle)) / 2,
-            y: originVec.y,
-            z: originVec.z + (this.length * Math.sin(angle)) / 2,
-        };
-        this.destination = {
-            x: this.origin.x - (this.length * Math.cos(angle)),
-            y: this.origin.y,
-            z: this.origin.z - (this.length * Math.sin(angle)),
-        }
-        
-        this.originVec = originVec;
-        this.destVec = destVec;
 
+        origin.x += this.length * Math.cos(angle);
+        origin.y += this.height / 2;
+        origin.z += this.length * Math.sin(angle);
+        destination.x -= this.length * Math.cos(angle);
+        destination.y -= this.height / 2;
+        destination.z -= this.length * Math.sin(angle);
+        this.origin = origin;
+        this.destination = destination;
+
+        // this.destination = {
+        //     x: this.origin.x - (this.length * Math.cos(angle)),
+        //     y: this.origin.y - (this.height / 2),
+        //     z: this.origin.z - (this.length * Math.sin(angle)),
+        // }
+        
         if (!draw) return;
         if (this.extrude) return this.drawExtrude();
         return this.drawShape();
@@ -743,10 +741,11 @@ export class Ray3D extends Shape3D {
         const geometry = new THREE.BoxGeometry(this.width, this.width, this.length);
         const mesh = new THREE.Mesh(geometry, material);
         const mid = new THREE.Vector3(
-            this.originVec.x + this.direction.x * this.length / 2,
-            this.originVec.y + this.direction.y * this.length / 2,
-            this.originVec.z + this.direction.z * this.length / 2,
+            this.origin.x - this.direction.x * this.length / 2,
+            this.origin.y - this.direction.y * this.length / 2,
+            this.origin.z - this.direction.z * this.length / 2,
         );
+        // const mid = this.origin;
         mesh.position.copy(mid);
         
         // Rotate the mesh to align with the direction

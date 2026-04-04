@@ -28,7 +28,7 @@ export function registerWrappers() {
         libWrapper.register("levels-3d-preview", "Scene.prototype.testSurfaceCollision", sceneTestSurfaceCollision, "MIXED");
         //game.Levels3DPreview.raycastWorker = raycastWorker;
 
-        if (game[game.system.id]?.canvas?.AbilityTemplate?.prototype?.drawPreview) libWrapper.register("levels-3d-preview", `game.${game.system.id}.canvas.AbilityTemplate.prototype.drawPreview`, drawPreview, "MIXED");
+        if (game[game.system.id]?.canvas?.AbilityTemplate?.prototype?.drawPreview) libWrapper.register("levels-3d-preview", `game.${game.system.id}.canvas.AbilityTemplate.prototype.drawPreview`, placeTemplate, "MIXED");
 
         // if (CONFIG.MeasuredTemplate.objectClass.prototype.drawPreview) libWrapper.register("levels-3d-preview", "CONFIG.MeasuredTemplate.objectClass.prototype.drawPreview", drawPreview, "MIXED");
         // if (CONFIG.Region.objectClass.prototype.draw) libWrapper.register("levels-3d-preview", "CONFIG.Region.objectClass.prototype.draw", drawPreview, "MIXED");
@@ -430,8 +430,52 @@ export function registerWrappers() {
             return wrapped(...args);
         }
 
+        async function placeTemplate(wrapped, ...args) {
+            if (!game.Levels3DPreview?._active) return wrapped(...args);
+            const template = this.document;
+            const region = foundry.documents.BaseRegion._migrateMeasuredTemplateData(template);
+            region.elevation.bottom /= canvas.scene.dimensions.distancePixels;
+            const shape = region.shapes[0];
+            let height;
+            switch (shape.type) {
+                case "rectangle":
+                    height = shape.width;
+                    break;
+                case "circle":
+                    height = shape.radius * 2;
+                    break;
+                case "ellipse":
+                    height = shape.radiusX * 2;
+                    break;
+                case "line":
+                    height = shape.width;
+                    break;
+                case "ring":
+                    height = shape.outerWidth;
+                    break;
+                case "cone":
+                    switch (shape.curvature) {
+                        case "flat":
+                            height = shape.radius * Math.tan(angleRad / 2) * 2;
+                            break;
+                        case "round":
+                            height = shape.radius * Math.sin(angleRad / 2) * 2;
+                            break;
+                        case "semicircle":
+                            const angleRad = shape.angle * (Math.PI / 180);
+                            const coneHeight = shape.radius / (1 + Math.tan(angleRad / 2));
+                            height = shape.radius - coneHeight * 2;
+                            break;
+                    }
+                    break;
+            }
+            height /= canvas.scene.dimensions.distancePixels;
+            if (!region.elevation.top) region.elevation.top = region.elevation.bottom + height;
+            wrapped(...args);
+            canvas.regions.placeRegion(region);
+        }
+
         async function placeRegion(wrapped, ...args) {
-            console.log(args);
             if (!game.Levels3DPreview?._active) return wrapped(...args);
             const originalOn = canvas.stage.on;
             const toRemove = {};
@@ -439,6 +483,8 @@ export function registerWrappers() {
                 let height = undefined;
                 function listener(event) {
                     event.getLocalPosition = (obj) => canvas.app.renderer.events.pointer.getLocalPosition(obj) ?? {x: 0, y: 0, z: 0};
+                    event.data = {};
+                    event.data.getLocalPosition = (obj) => canvas.app.renderer.events.pointer.getLocalPosition(obj) ?? {x: 0, y: 0, z: 0};
                     handler(event);
                     if (!canvas.regions._placementContext?.preview?.document) return;
                     const document = canvas.regions._placementContext.preview.document;
@@ -451,7 +497,6 @@ export function registerWrappers() {
                     if (bottom != elevation.bottom) {
                         canvas.regions._placementContext.preview?.document?.updateSource({ elevation: { bottom, top: bottom + height } });
                     }
-                    console.log(bottom, height)
                 }
                 game.Levels3DPreview.renderer.domElement.addEventListener(eventName, listener);
                 toRemove[eventName] = listener;

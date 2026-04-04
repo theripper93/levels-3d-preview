@@ -13,7 +13,7 @@ export class Region3D extends THREE.Object3D {
         this.bottom = Number.isFinite(this.region.elevation.bottom) ?
             this.region.elevation.bottom * canvas.scene.dimensions.distancePixels / factor : 0;
         this.height = this.top !== this.bottom ? this.top - this.bottom : 0.001;
-        const extrudeRegion = !region.isSingleShape || region.restriction.enabled;
+        const extrudeRegion = (region.shapes?.length > 1) || region.restriction.enabled;
         this.material = new DiagonalStripesMaterial({ color: region.color.css });
         this.material.side = this.height < 0.01 ? THREE.FrontSide : THREE.DoubleSide;
         if (extrudeRegion) {

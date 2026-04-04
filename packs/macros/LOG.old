@@ -1,8 +1,13 @@
-2026/03/30-19:02:12.673323 7efd361fd6c0 Log #3130: 0 ops saved to Table #3131 OK
-2026/03/30-19:02:12.673390 7efd361fd6c0 Archiving /home/mattia/.local/share/FoundryVTT_v14/Data/modules/levels-3d-preview/packs/macros/003130.log: OK
-2026/03/30-19:02:12.673416 7efd361fd6c0 Log #3110: 0 ops saved to Table #3132 OK
-2026/03/30-19:02:12.673445 7efd361fd6c0 Archiving /home/mattia/.local/share/FoundryVTT_v14/Data/modules/levels-3d-preview/packs/macros/003110.log: OK
-2026/03/30-19:02:12.673505 7efd361fd6c0 Table #2822: 9 entries OK
-2026/03/30-19:02:12.673609 7efd361fd6c0 Archiving /home/mattia/.local/share/FoundryVTT_v14/Data/modules/levels-3d-preview/packs/macros/MANIFEST-003129: OK
-2026/03/30-19:02:12.673655 7efd361fd6c0 Archiving /home/mattia/.local/share/FoundryVTT_v14/Data/modules/levels-3d-preview/packs/macros/MANIFEST-003109: OK
-2026/03/30-19:02:12.675212 7efd361fd6c0 **** Repaired leveldb /home/mattia/.local/share/FoundryVTT_v14/Data/modules/levels-3d-preview/packs/macros; recovered 1 files; 3825 bytes. Some data may have been lost. ****
+2026/04/04-05:37:15.682941 7fe82e1fd6c0 Recovering log #2826
+2026/04/04-05:37:15.686992 7fe82e1fd6c0 Delete type=0 #2826
+2026/04/04-05:37:15.687015 7fe82e1fd6c0 Delete type=3 #2825
+2026/04/04-11:45:46.367860 7fe818a096c0 Level-0 table #2830: started
+2026/04/04-11:45:46.367893 7fe818a096c0 Level-0 table #2830: 0 bytes OK
+2026/04/04-11:45:46.369724 7fe818a096c0 Delete type=0 #2828
+2026/04/04-11:45:46.369775 7fe818a096c0 Manual compaction at level-0 from '!macros!JwMcosUxZCVgh1bA' @ 72057594037927935 : 1 .. '!macros!reNcJJjUam4mfomu' @ 0 : 0; will stop at '!macros!reNcJJjUam4mfomu' @ 37 : 1
+2026/04/04-11:45:46.369780 7fe818a096c0 Compacting 1@0 + 0@1 files
+2026/04/04-11:45:46.371242 7fe818a096c0 Generated table #2831@0: 9 keys, 3825 bytes
+2026/04/04-11:45:46.371252 7fe818a096c0 Compacted 1@0 + 0@1 files => 3825 bytes
+2026/04/04-11:45:46.372874 7fe818a096c0 compacted to: files[ 0 1 0 0 0 0 0 ]
+2026/04/04-11:45:46.372922 7fe818a096c0 Delete type=2 #2822
+2026/04/04-11:45:46.372987 7fe818a096c0 Manual compaction at level-0 from '!macros!reNcJJjUam4mfomu' @ 37 : 1 .. '!macros!reNcJJjUam4mfomu' @ 0 : 0; will stop at (end)

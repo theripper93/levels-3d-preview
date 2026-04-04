@@ -47,8 +47,8 @@ export class Tile3D {
         this.bottom = tile.document.elevation;
         this.shaders = [];
         this.center2d = {
-            x: this.tile.document.x + Math.abs(this.tile.document.width) / 2,
-            y: this.tile.document.y + Math.abs(this.tile.document.height) / 2,
+            x: this.x + Math.abs(this.tile.document.width) / 2,
+            y: this.y + Math.abs(this.tile.document.height) / 2,
         };
         this.center = Ruler3D.posCanvasTo3d({ x: this.center2d.x, y: this.center2d.y, z: this.bottom });
         this.texture = this.tile.document.texture.src;
@@ -65,6 +65,14 @@ export class Tile3D {
         this.onAnimation = this.setupAnimationFunction();
         game.Levels3DPreview.particleSystem.stop(this.particleEffectId);
         this.initRandom();
+    }
+
+    get x() {
+        return this.tile.document.x - this.tile.document.shape.anchorX * this.tile.document.width;
+    }
+
+    get y() {
+        return this.tile.document.y - this.tile.document.shape.anchorY * this.tile.document.height;
     }
 
     async load() {
@@ -852,8 +860,8 @@ export class Tile3D {
                     },
                     width: Math.round(scale * mWidth * factor),
                     height: Math.round(scale * mHeight * factor),
-                    x: this.tile.document.x + wDiff,
-                    y: this.tile.document.y + hDiff,
+                    x: this.x + wDiff,
+                    y: this.y + hDiff,
                 });
                 this.tile.document.setFlag("levels-3d-preview", "depth");
             }
@@ -1743,8 +1751,8 @@ export class Tile3D {
         const newWidth = this.tile.document.width * scaleX;
         const newHeight = this.tile.document.height * scaleZ;
         const newDepth = this.depth * factor * scaleY;
-        const x = (update.x ?? this.tile.document.x) - (newWidth - this.tile.document.width) / 2;
-        const z = (update.y ?? this.tile.document.y) - (newHeight - this.tile.document.height) / 2;
+        const x = (update.x ?? this.x) - (newWidth - this.tile.document.width) / 2;
+        const z = (update.y ?? this.y) - (newHeight - this.tile.document.height) / 2;
         update.x = Math.round(x);
         update.y = Math.round(z);
         update.width = newWidth;
@@ -1822,8 +1830,8 @@ export class Tile3D {
             elevation: z,
         };
         const deltas = {
-            x: dest.x - this.tile.document.x,
-            y: dest.y - this.tile.document.y,
+            x: dest.x - this.x,
+            y: dest.y - this.y,
             elevation: dest.elevation - elevation,
         };
         let updates = [];
