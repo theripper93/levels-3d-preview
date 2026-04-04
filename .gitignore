@@ -5,9 +5,4 @@
 node_modules
 .DS_Store
 Thumbs.db
-packs/**/MANIFEST-*
-packs/**/LOCK
-packs/**/*.log
-packs/**/LOG
-packs/**/CURRENT
-packs/**/LOG.old
+packs/
