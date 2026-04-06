@@ -2,8 +2,9 @@
 import { HandlebarsApplication, mergeClone } from "../lib/utils.js";
 import { SimplexNoise, Perlin, FractionalBrownianMotion } from "../lib/noiseFunctions.js";
 import { tTypes } from "../helpers/helpers.js";
+import * as ROT from "../generators/ROT/index.js";
 
-let ROT = null;
+// let ROT = null;
 
 export class MapGen extends HandlebarsApplication {
 
@@ -48,7 +49,7 @@ export class MapGen extends HandlebarsApplication {
     }
     
     async generate(gen, event) {
-        if (!ROT) ROT = await import("../generators/ROT/index.js");
+        // if (!ROT) ROT = await import("../generators/ROT/index.js");
         if (game.keyboard.downKeys.has("ShiftLeft") || game.keyboard.downKeys.has("ShiftRight")) {
             const genFn = this._getGenerator(gen).bind(this);
             const count = this.cellHeight ?? 3;

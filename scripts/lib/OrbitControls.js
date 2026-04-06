@@ -473,6 +473,7 @@ class OrbitControls extends EventDispatcher {
         }
 
         function handleMouseWheel(event) {
+            if (canvas.regions._placementContext) return;
             if (event.deltaY < 0) {
                 dollyIn(getZoomScale());
             } else if (event.deltaY > 0) {

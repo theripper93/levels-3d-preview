@@ -46,13 +46,24 @@ export class Ruler3D {
         const color = this.shape?.color;
         this.shape?.destroy();
         const pos = Ruler3D.useSnapped() ? Ruler3D.snapped3DPosition(this._object.position) : this._object.position;
+        const selectedRegion = canvas.regions.controlled[0];
+        this.height = null;
+        if (selectedRegion) {
+            const top = Number.isFinite(selectedRegion.document.elevation.top) ?
+                selectedRegion.document.elevation.top * canvas.scene.dimensions.distancePixels / factor : 0;
+            const bottom = Number.isFinite(selectedRegion.document.elevation.bottom) ?
+                selectedRegion.document.elevation.bottom * canvas.scene.dimensions.distancePixels / factor : 0;
+            this.height = this.top !== this.bottom ? this.top - this.bottom : 0.001;
+        }
         const shape = Shape3D.create({
             shape: null,
             hole: ui.controls?.tools?.hole?.active,
             color: color,
             type: ui.controls?.tool?.name ?? "rectangle",
             origin: this._origin,
-            destination: pos
+            destination: pos,
+            extrude: !!canvas.regions.controlled[0],
+            regionHeight: this.height,
         });
         if (!shape) return; 
         shape.addToScene();

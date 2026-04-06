@@ -1,15 +1,11 @@
-
 import * as THREE from "../lib/three.module.js";
 import { mergeBufferGeometries } from "../lib/BufferGeometryUtils.js";
 import { DiagonalStripesMaterial } from "../shaders/regionMaterial.js";
 import { factor } from "../main.js";
 
 export class Shape3D extends THREE.Object3D {
-    constructor({ extrude, material, color }) {
+    constructor() {
         super();
-        this.material = material;
-        this.extrude = extrude; // || !!this.getSelectedRegion();
-        this.color = color ?? this.getSelectedRegion()?.document?.color?.css ?? this.getRandomColor();
     }
     #extrude = false;
     #height = 0.01;
@@ -41,24 +37,24 @@ export class Shape3D extends THREE.Object3D {
     destroy() {
         game.Levels3DPreview.scene.remove(this);
     }
-
-    getSelectedRegion() {
-        const selectedRegion = canvas.regions.controlled[0];
-        return selectedRegion;
-    }
-
-    getRandomColor() {
-        const rand = Math.floor(Math.random() * 16777215);
-        return '#' + (rand.toString(16).padStart(6, '0'));
-    }
-
+    
     getDefaultMaterial() {
         const material = new DiagonalStripesMaterial({ color: this.color });
         material.side = this.height < 0.01 ? THREE.FrontSide : THREE.DoubleSide;
         return material;
     }
 
-    static create({ shape, type, origin, destination, material, extrude, hole = false, color }) {
+    static getRandomColor() {
+        const rand = Math.floor(Math.random() * 16777215);
+        return '#' + (rand.toString(16).padStart(6, '0'));
+    }
+    
+    static getSelectedRegion() {
+        const selectedRegion = canvas.regions.controlled[0];
+        return selectedRegion;
+    }
+
+    static create({ shape, type, origin, destination, material, extrude, hole = false, color, regionHeight }) {
         if (shape) {
             type = shape.type;
             extrude = shape.gridBased;
@@ -67,25 +63,44 @@ export class Shape3D extends THREE.Object3D {
             origin = new THREE.Vector3(origin.x, origin.y, origin.z);
             destination = new THREE.Vector3(destination.x, destination.y, destination.z);
         }
+        let shape3d = null;
         switch (type) {
             case "rectangle":
             case "rect":
             case "box":
-                return new Box3D({ shape, origin, destination, material, extrude, hole, color, draw: true });
+                shape3d = new Box3D({ shape, origin, destination, hole });
+                break;
             case "circle":
-                return new Sphere3D({ shape, origin, destination, material, extrude, hole, color, draw: true });
+                shape3d = new Sphere3D({ shape, origin, destination, hole });
+                break;
             case "ellipse":
-                return new Ellipse3D({ shape, origin, destination, material, extrude, hole, color, draw: true });
+                shape3d = new Ellipse3D({ shape, origin, destination, hole });
+                break;
             case "cone":
-                return new Cone3D({ shape, origin, destination, material, extrude, hole, color, draw: true });
+                shape3d = new Cone3D({ shape, origin, destination, hole });
+                break;
             case "ring":
-                return new Torus3D({ shape, origin, destination, material, extrude, hole, color, draw: true });
+                shape3d = new Torus3D({ shape, origin, destination, hole });
+                break;
             case "line":
-                return new Ray3D({ shape, origin, destination, material, extrude, hole, color, draw: true });
+                shape3d = new Ray3D({ shape, origin, destination, hole });
+                break;
             case "emanation":
                 const baseType = shape?.base?.shape === 0 ? 0 : 4;
-                return new Emanation3D({ shape, origin, destination, material, baseType, extrude, hole, color, draw: true });
+                shape3d = new Emanation3D({ shape, origin, destination, baseType, hole });
+                break;
         }
+
+        if (shape3d) {
+            shape3d.extrude = extrude;
+            shape3d.material = material;
+            shape3d.regionHeight = regionHeight;
+            shape3d.color = color ?? Shape3D.getSelectedRegion()?.document?.color?.css ?? Shape3D.getRandomColor();
+            if (shape3d.extrude) shape3d.drawExtrude();
+            shape3d.drawShape();
+            return shape3d;
+        }
+
         if (!shape) return false;
         return new Extrude3D({ shape, origin, destination, material, extrude });
     }
@@ -149,7 +164,7 @@ export class Shape3D extends THREE.Object3D {
 
     async fromPreview(create = true) {
         let document;
-        const selectedRegion = this.getSelectedRegion();
+        const selectedRegion = Shape3D.getSelectedRegion();
         if (selectedRegion) {
             document = await selectedRegion.document.update({
                 shapes: [
@@ -174,9 +189,9 @@ export class Shape3D extends THREE.Object3D {
 
     drawExtrude() {
         if (!this.shape) return;
-        const geometry = Shape3D.extrudeGeometry(this.shape.polygonTree, { depth: this.height });
+        const geometry = Shape3D.extrudeGeometry(this.shape.polygonTree, { depth: this.regionHeight ?? this.height });
         // geometry.center();
-        geometry.translate(0, this.height / 2, 0);
+        // geometry.translate(0, 0, 0);
         const material = this.material ?? this.getDefaultMaterial();
         const mesh = new THREE.Mesh(geometry, material);
         this.applySettings(mesh);
@@ -233,13 +248,14 @@ export class Shape3D extends THREE.Object3D {
 }
 
 export class Box3D extends Shape3D {
-    constructor({ shape, origin, destination, material, color, hole, extrude = false, draw = false }) {
-        super({ extrude, material, color });
+    constructor({ shape, origin, destination, hole }) {
+        super();
         if (!shape) {
             this.normalizePoints(origin, destination);
             this.width = destination.x - origin.x;
-            this.height = destination.y - origin.y;
             this.depth = destination.z - origin.z;
+            // this.height = destination.y - origin.y;
+            this.height = Math.min(this.width, this.depth);
             this.elevation = origin.y;
             shape = new foundry.data.RectangleShapeData({
                 type: "rectangle",
@@ -276,9 +292,6 @@ export class Box3D extends Shape3D {
             z: origin.z + this.depth / 2,
             y: origin.y + this.height / 2,
         };
-        if (!draw) return;
-        if (this.extrude) return this.drawExtrude();
-        return this.drawShape();
     }
 
     drawShape() {
@@ -302,8 +315,8 @@ export class Box3D extends Shape3D {
 }
 
 export class Sphere3D extends Shape3D {
-    constructor({ shape, origin, destination, material, color, hole, extrude = false, draw = false }) {
-        super({ extrude, material, color });
+    constructor({ shape, origin, destination, hole }) {
+        super();
         if (origin) origin = new THREE.Vector3(origin.x, origin.y, origin.z);
         if (destination) destination = new THREE.Vector3(destination.x, destination.y, destination.z);
         if (!shape) {
@@ -335,9 +348,6 @@ export class Sphere3D extends Shape3D {
         this.elevationTop = this.elevation + this.radius;
         this.shape = shape;
         this.origin = origin;
-        if (!draw) return;
-        if (this.extrude) return this.drawExtrude();
-        return this.drawShape();
     }
 
     drawShape() {
@@ -367,8 +377,8 @@ export class Sphere3D extends Shape3D {
 }
 
 export class Ellipse3D extends Shape3D {
-    constructor({ shape, origin, destination, material, color, hole, extrude = false, draw = false }) {
-        super({ extrude, material, color });
+    constructor({ shape, origin, destination, hole }) {
+        super();
         if (!shape) {
             this.radiusX = Math.abs(destination.x - origin.x);
             this.radiusZ = Math.abs(destination.z - origin.z);
@@ -409,9 +419,6 @@ export class Ellipse3D extends Shape3D {
             y: origin.y,
             z: origin.z,
         };
-        if (!draw) return;
-        if (this.extrude) return this.drawExtrude();
-        return this.drawShape();
     }
 
     drawShape() {
@@ -437,8 +444,8 @@ export class Ellipse3D extends Shape3D {
 }
 
 export class Cone3D extends Shape3D {
-    constructor({ shape, origin, destination, material, color, hole, extrude = false, draw = false }) {
-        super({ extrude, material, color });
+    constructor({ shape, origin, destination, hole }) {
+        super();
         if (!shape) {
             const dx = destination.x - origin.x;
             const dz = destination.z - origin.z;
@@ -506,9 +513,6 @@ export class Cone3D extends Shape3D {
             y: origin.y,
             z: (origin.z + destination.z) / 2,
         };
-        if (!draw) return;
-        if (this.extrude) return this.drawExtrude();
-        return this.drawShape();
     }
 
     drawShape() {
@@ -589,8 +593,8 @@ export class Cone3D extends Shape3D {
 }
 
 export class Torus3D extends Shape3D {
-    constructor({ shape, origin, destination, material, color, hole, extrude = false, draw = false }) {
-        super({ extrude, material, color });
+    constructor({ shape, origin, destination, hole }) {
+        super();
         if (origin) origin = new THREE.Vector3(origin.x, origin.y, origin.z);
         if (destination) destination = new THREE.Vector3(destination.x, destination.y, destination.z);
 
@@ -627,9 +631,6 @@ export class Torus3D extends Shape3D {
         this.shape = shape;
         this.origin = origin;
         
-        if (!draw) return;
-        if (this.extrude) return this.drawExtrude();
-        return this.drawShape();
     }
     
     drawShape() {
@@ -663,10 +664,8 @@ export class Torus3D extends Shape3D {
 }
 
 export class Ray3D extends Shape3D {
-    constructor({ shape, origin, destination, material, color, hole, extrude = false, draw = false }) {
-        super({ extrude, material, color });
-        if (origin) origin = new THREE.Vector3(origin.x, origin.y, origin.z);
-        if (destination) destination = new THREE.Vector3(destination.x, origin.y, destination.z);
+    constructor({ shape, origin, destination, hole }) {
+        super();
 
         let angle;
         if (!shape) {
@@ -731,9 +730,6 @@ export class Ray3D extends Shape3D {
         //     z: this.origin.z - (this.length * Math.sin(angle)),
         // }
         
-        if (!draw) return;
-        if (this.extrude) return this.drawExtrude();
-        return this.drawShape();
     }
 
     drawShape() {
@@ -751,6 +747,14 @@ export class Ray3D extends Shape3D {
         // Rotate the mesh to align with the direction
         const angle = Math.atan2(this.direction.x, this.direction.z);
         mesh.rotation.y = angle;
+
+        if (canvas.regions._placementContext) {
+            const document = canvas.regions._placementContext?.preview?.document;
+            if (document) {
+                const rotation3d = document.rotation3d ?? 0;
+                mesh.rotation.y += rotation3d;
+            }
+        }
         
         this.applySettings(mesh);
         this.add(mesh);
@@ -758,8 +762,8 @@ export class Ray3D extends Shape3D {
 }
 
 export class Emanation3D extends Shape3D {
-    constructor({ shape, origin, destination, material, color, hole, baseType = 4, extrude = false, draw = false }) {
-        super({ extrude, material, color });
+    constructor({ shape, origin, destination, hole, baseType = 4 }) {
+        super();
         if (!shape) {
             this.totalWidth = (destination.x - origin.x) * 2;
             this.totalDepth = (destination.z - origin.z) * 2;
@@ -815,9 +819,10 @@ export class Emanation3D extends Shape3D {
             x: origin.x,
             y: origin.y,
             z: origin.z,
-        };
-        
-        if (!draw) return;
+        };        
+    }
+
+    drawShape() {
         this.drawExtrude();
     }
 
@@ -855,8 +860,8 @@ export class Emanation3D extends Shape3D {
 }
 
 export class Extrude3D extends Shape3D {
-    constructor({ shape, material, color, extrude = false }) {
-        super({ extrude, material, color });
+    constructor({ shape }) {
+        super();
 
         const bottom = Number.isFinite(shape.parent.elevation.bottom)
             ? shape.parent.elevation.bottom * canvas.scene.dimensions.distancePixels / factor : 0;

@@ -414,7 +414,7 @@ export function registerWrappers() {
 
         async function animatePan(wrapped, ...args) {
             if (game.Levels3DPreview?._active && game.Levels3DPreview.CONFIG.autoPan) {
-                const x = args[0].x;
+                if (canvas.regions._placementContext) return;                const x = args[0].x;
                 const y = args[0].y;
                 const dest = args[0].dest;
                 const token = canvas.tokens.placeables.find((t) => t.center?.x == x && t.center?.y == y);
@@ -430,6 +430,7 @@ export function registerWrappers() {
             return wrapped(...args);
         }
 
+        const _templateContext = { onFinish: null };
         async function placeTemplate(wrapped, ...args) {
             if (!game.Levels3DPreview?._active) return wrapped(...args);
             const template = this.document;
@@ -454,6 +455,7 @@ export function registerWrappers() {
                     height = shape.outerWidth;
                     break;
                 case "cone":
+                    const angleRad = shape.angle * (Math.PI / 180);
                     switch (shape.curvature) {
                         case "flat":
                             height = shape.radius * Math.tan(angleRad / 2) * 2;
@@ -462,7 +464,6 @@ export function registerWrappers() {
                             height = shape.radius * Math.sin(angleRad / 2) * 2;
                             break;
                         case "semicircle":
-                            const angleRad = shape.angle * (Math.PI / 180);
                             const coneHeight = shape.radius / (1 + Math.tan(angleRad / 2));
                             height = shape.radius - coneHeight * 2;
                             break;
@@ -472,6 +473,7 @@ export function registerWrappers() {
             height /= canvas.scene.dimensions.distancePixels;
             if (!region.elevation.top) region.elevation.top = region.elevation.bottom + height;
             wrapped(...args);
+            _templateContext.onFinish = this._finishPlacement.bind(this);
             canvas.regions.placeRegion(region);
         }
 
@@ -504,6 +506,10 @@ export function registerWrappers() {
             const result = await wrapped(...args);
             for (const [key, value] of Object.entries(toRemove)) {
                 game.Levels3DPreview.renderer.domElement.removeEventListener(key, value);
+            }
+            if (_templateContext.onFinish) {
+                _templateContext.onFinish({});
+                _templateContext.onFinish = null;
             }
             canvas.stage.on = originalOn;
             return result;

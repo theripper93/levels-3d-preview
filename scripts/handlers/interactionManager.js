@@ -674,6 +674,11 @@ export class InteractionManager {
                 changeElevation();
             }
         }
+        if (canvas.regions._placementContext) {
+            event.delta = event.deltaY;
+            canvas.regions._onMouseWheel(event);
+            return;
+        }
         const isSpecialKey = this.tiltX || this.tiltZ || this.scaleWidth || this.scaleHeight || this.scaleGap || this.scaleScale || this.scale;
         const dBig = canvas.grid.type > CONST.GRID_TYPES.SQUARE ? 60 : 45;
         let snap = event.shiftKey ? dBig : 15;

@@ -18,15 +18,11 @@
     }
   ],
   "esmodules": [
-    "scripts/main.js"
+    "index.js"
   ],
   "scripts": [],
   "styles": [
-    "styles/module.css",
-    "styles/loadingScreen.css",
-    "styles/mapgen.css",
-    "styles/sharing.css",
-    "styles/build-panel.css"
+    "styles/module.css"
   ],
   "packs": [
     {
