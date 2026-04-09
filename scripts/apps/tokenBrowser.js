@@ -5,9 +5,6 @@ import Fuse from "../lib/fuse.js";
 let fileCache = null;
 let dataCache = null;
 let fuseSearch = null;
-
-let _this = null;
-
 let _new = null;
 
 function initFuse(data) {

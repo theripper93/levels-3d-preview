@@ -1,7 +1,7 @@
-@import "./build-panel.scss";
-@import "./loadingScreen.scss";
-@import "./mapgen.scss";
-@import "./sharing.scss";
+@use "./build-panel.scss";
+@use "./loadingScreen.scss";
+@use "./mapgen.scss";
+@use "./sharing.scss";
 
 :root{
     --levels3d-ruler-font-size: 6rem;

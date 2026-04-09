@@ -3589,7 +3589,6 @@ var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "sy
 let fileCache = null;
 let dataCache = null;
 let fuseSearch = null;
-let _this = null;
 let _new = null;
 function initFuse(data) {
   const options = {
@@ -5116,7 +5115,7 @@ const _Region3D = class _Region3D extends _lib_three_module_js__WEBPACK_IMPORTED
       shape.updateVisibility();
     }
   }
-  containsPoint(point) {
+  testPoint(point) {
     for (const shape of this.children) {
       if (shape.containsPoint(point)) return true;
     }
@@ -5138,19 +5137,19 @@ const _Region3D = class _Region3D extends _lib_three_module_js__WEBPACK_IMPORTED
   static get regions() {
     return __privateGet(_Region3D, _regions);
   }
-  static handle(region) {
+  static handle(region, hidden) {
     if (region.document) region = region.document;
     if (this.regions.has(region)) {
-      return this.update(region);
+      return this.update(region, hidden);
     }
-    return this.create(region);
+    return this.create(region, hidden);
   }
-  static update(region) {
+  static update(region, hidden) {
     this.regions.get(region).destroy();
-    return this.create(region);
+    return this.create(region, hidden);
   }
-  static create(region) {
-    const region3d = new _Region3D(region);
+  static create(region, hidden) {
+    const region3d = new _Region3D(region, hidden);
     this.regions.set(region, region3d);
     return region3d;
   }
@@ -5170,7 +5169,7 @@ const _Region3D = class _Region3D extends _lib_three_module_js__WEBPACK_IMPORTED
   static checkInFog(point) {
     for (const [key, region] of Array.from(this.regions)) {
       if (!region.isFog) continue;
-      if (region.containsPoint(point)) return true;
+      if (region.testPoint(point)) return true;
     }
     return false;
   }
@@ -5266,6 +5265,14 @@ const _Shape3D = class _Shape3D extends _lib_three_module_js__WEBPACK_IMPORTED_M
     const selectedRegion = canvas.regions.controlled[0];
     return selectedRegion;
   }
+  static getMaterialFromTool(tool) {
+    return;
+  }
+  static getShapeFromTool(tool) {
+    if (tool === "light" || tool === "sound") return "circle";
+    if (tool === "tile") return "rectangle";
+    return tool;
+  }
   static create({ shape, type, origin, destination, material, extrude, hole = false, color, regionHeight }) {
     if (shape) {
       type = shape.type;
@@ -5276,26 +5283,25 @@ const _Shape3D = class _Shape3D extends _lib_three_module_js__WEBPACK_IMPORTED_M
       destination = new _lib_three_module_js__WEBPACK_IMPORTED_MODULE_0__.Vector3(destination.x, destination.y, destination.z);
     }
     let shape3d = null;
+    const options = { shape, origin, destination, hole };
     switch (type) {
       case "rectangle":
-      case "rect":
-      case "box":
-        shape3d = new Box3D({ shape, origin, destination, hole });
+        shape3d = new Box3D(options);
         break;
       case "circle":
-        shape3d = new Sphere3D({ shape, origin, destination, hole });
+        shape3d = new Sphere3D(options);
         break;
       case "ellipse":
-        shape3d = new Ellipse3D({ shape, origin, destination, hole });
+        shape3d = new Ellipse3D(options);
         break;
       case "cone":
-        shape3d = new Cone3D({ shape, origin, destination, hole });
+        shape3d = new Cone3D(options);
         break;
       case "ring":
-        shape3d = new Torus3D({ shape, origin, destination, hole });
+        shape3d = new Torus3D(options);
         break;
       case "line":
-        shape3d = new Ray3D({ shape, origin, destination, hole });
+        shape3d = new Ray3D(options);
         break;
       case "emanation":
         const baseType = shape?.base?.shape === 0 ? 0 : 4;
@@ -5679,7 +5685,9 @@ class Cone3D extends Shape3D {
     this.elevationBottom = this.elevation - this.baseRadius;
     this.elevationTop = this.elevation + this.baseRadius;
     this.shape = shape;
-    this.origin = {
+    this.origin = origin;
+    this.destination = destination;
+    this.drawOrigin = {
       x: (origin.x + destination.x) / 2,
       y: origin.y,
       z: (origin.z + destination.z) / 2
@@ -5700,7 +5708,7 @@ class Cone3D extends Shape3D {
     const geometry = new _lib_three_module_js__WEBPACK_IMPORTED_MODULE_0__.ConeGeometry(this.baseRadius, this.coneHeight, 32);
     geometry.rotateX(-this._rotation * (Math.PI / 180));
     geometry.rotateZ(Math.PI / 2);
-    geometry.translate(this.origin.x, this.origin.y, this.origin.z);
+    geometry.translate(this.drawOrigin.x, this.drawOrigin.y, this.drawOrigin.z);
     const mesh = new _lib_three_module_js__WEBPACK_IMPORTED_MODULE_0__.Mesh(geometry, material);
     this.applySettings(mesh);
     this.add(mesh);
@@ -5723,7 +5731,7 @@ class Cone3D extends Shape3D {
     geometry.translate(0, littleHeight / 2, 0);
     geometry.rotateX(-this._rotation * (Math.PI / 180));
     geometry.rotateZ(Math.PI / 2);
-    geometry.translate(this.origin.x, this.origin.y, this.origin.z);
+    geometry.translate(this.drawOrigin.x, this.drawOrigin.y, this.drawOrigin.z);
     const material = this.material ?? this.getDefaultMaterial();
     const mesh = new _lib_three_module_js__WEBPACK_IMPORTED_MODULE_0__.Mesh(geometry, material);
     this.applySettings(mesh);
@@ -5745,11 +5753,31 @@ class Cone3D extends Shape3D {
     geometry.translate(0, this.baseRadius / 2, 0);
     geometry.rotateX(-this._rotation * (Math.PI / 180));
     geometry.rotateZ(Math.PI / 2);
-    geometry.translate(this.origin.x, this.origin.y, this.origin.z);
+    geometry.translate(this.drawOrigin.x, this.drawOrigin.y, this.drawOrigin.z);
     const material = this.material ?? this.getDefaultMaterial();
     const mesh = new _lib_three_module_js__WEBPACK_IMPORTED_MODULE_0__.Mesh(geometry, material);
     this.applySettings(mesh);
     this.add(mesh);
+  }
+  containsPoint(point) {
+    const shapeRadius = this.shape.radius / _main_js__WEBPACK_IMPORTED_MODULE_3__.factor;
+    const angle = this.shape.angle * (Math.PI / 180);
+    const direction = this.shape.rotation * (Math.PI / 180);
+    if (!PointInSolid.inSphere(point, this.origin, shapeRadius)) return false;
+    const coneBaseCenter = {
+      x: this.origin.x + Math.cos(direction) * this.coneHeight,
+      y: this.origin.y,
+      z: this.origin.z + Math.sin(direction) * this.coneHeight
+    };
+    if (this.shape.curvature === "semicircle") {
+      if (!PointInSolid.inCone(point, this.origin, coneBaseCenter, angle, this.coneHeight)) {
+        const sphereRadius = shapeRadius - this.coneHeight;
+        if (!PointInSolid.inSphericalCap(point, this.origin, sphereRadius, direction, 0.5)) return false;
+      }
+    } else {
+      if (!PointInSolid.inCone(point, this.origin, coneBaseCenter, angle, this.coneHeight)) return false;
+    }
+    return true;
   }
 }
 class Torus3D extends Shape3D {
@@ -5891,6 +5919,17 @@ class Ray3D extends Shape3D {
     this.applySettings(mesh);
     this.add(mesh);
   }
+  containsPoint(point) {
+    if (Math.abs(point.y - this.origin.y) > this.height / 2) return false;
+    const p2d = new _lib_three_module_js__WEBPACK_IMPORTED_MODULE_0__.Vector3(point.x, 0, point.z);
+    const start2d = new _lib_three_module_js__WEBPACK_IMPORTED_MODULE_0__.Vector3(this.origin.x, 0, this.origin.z);
+    const end2d = new _lib_three_module_js__WEBPACK_IMPORTED_MODULE_0__.Vector3(this.destination.x, 0, this.destination.z);
+    const line = new _lib_three_module_js__WEBPACK_IMPORTED_MODULE_0__.Line3(start2d, end2d);
+    const closestPoint = new _lib_three_module_js__WEBPACK_IMPORTED_MODULE_0__.Vector3();
+    line.closestPointToPoint(p2d, true, closestPoint);
+    const distance = p2d.distanceTo(closestPoint);
+    return distance <= this.width / 2;
+  }
 }
 class Emanation3D extends Shape3D {
   constructor({ shape, origin, destination, hole, baseType = 4 }) {
@@ -5987,6 +6026,81 @@ class Extrude3D extends Shape3D {
     };
     this.shape = shape;
     this.drawExtrude();
+  }
+}
+class PointInSolid {
+  /**
+   * @param p coordinates of point to be tested
+   * @param c opposit corners of the parallelepiped
+   */
+  static inParallelepiped(p, c) {
+    const c0 = c[0];
+    const c1 = c[1];
+    const maxX = Math.max(c0.x, c1.x);
+    const maxY = Math.max(c0.y, c1.y);
+    const maxZ = Math.max(c0.z, c1.z);
+    const minX = Math.min(c0.x, c1.x);
+    const minY = Math.min(c0.y, c1.y);
+    const minZ = Math.min(c0.z, c1.z);
+    return minX <= p.x && p.x <= maxX && minY <= p.y && p.y <= maxY && minZ <= p.z && p.z <= maxZ;
+  }
+  /**
+   * @param p coordinates of point to be tested
+   * @param poly PIXI.Polygon defining the top\\bottom face
+   * @param z z points of the solid
+   */
+  static inRotatedParallelepiped(p, poly, z) {
+    if (p.z < z[0] || p.z > z[1]) return false;
+    return poly.contains(p.x, p.y);
+  }
+  /**
+   * @param p coordinates of point to be tested
+   * @param c coordinates of center of the sphere
+   * @param r radius of the sphere
+   */
+  static inSphere(p, c, r) {
+    return this.getDist(c, p) <= r;
+  }
+  /**
+  * @param p coordinates of point to be tested
+  * @param c coordinates of center of the base of the cylinder
+  * @param r radius of the cylinder
+  * @param h height of the cylinder
+  */
+  static inCylinder(p, c, r, h) {
+    const dist = this.getDist({ x: c.x, y: c.y, z: p.z }, p);
+    return dist <= r && p.z <= h && p.z >= c.z;
+  }
+  /**
+   * @param p coordinates of point to be tested
+   * @param t coordinates of apex point of cone
+   * @param c coordinates of center of basement circle
+   * @param a aperture in radians
+   * @param h height of the cone
+   */
+  static inCone(p, t, c, a, h) {
+    const a2 = a / 2;
+    const apexToXVect = this.dif(t, p);
+    const axisVect = this.dif(t, c);
+    const iic = this.dotProd(apexToXVect, axisVect) / this.magn(apexToXVect) / this.magn(axisVect) > Math.cos(a2);
+    if (!iic) return false;
+    return this.getDist(t, p) <= h;
+    // removed by dead control flow
+
+  }
+  static getDist(p0, p1) {
+    return Math.sqrt(
+      Math.pow(p1.x - p0.x, 2) + Math.pow(p1.y - p0.y, 2) + Math.pow(p1.z - p0.z, 2)
+    );
+  }
+  static dotProd(a, b) {
+    return a.x * b.x + a.y * b.y + a.z * b.z;
+  }
+  static dif(a, b) {
+    return { x: a.x - b.x, y: a.y - b.y, z: a.z - b.z };
+  }
+  static magn(a) {
+    return Math.sqrt(a.x * a.x + a.y * a.y + a.z * a.z);
   }
 }
 
@@ -18808,7 +18922,7 @@ class InteractionManager {
       originalIntersect: event.originalIntersect,
       intersectData: intersectData.intersectData
     };
-    if (event.which === 3 && (this.draggable?.userData?.entity3D?.token || ui.controls.tool.name === "tile3dPolygon")) {
+    if (event.which === 3 && (this.draggable?.userData?.entity3D?.token || ui.controls.tool.name === "tile3dPolygon" || ui.controls.tool.name === "polygon")) {
       this._parent.ruler.addSegment();
     } else {
       if (this.clicks === 1) {
@@ -80581,6 +80695,8 @@ class Levels3DPreview {
       entityClass: {
         RangeFinder: _systems_rangeFinder_js__WEBPACK_IMPORTED_MODULE_14__.RangeFinder,
         Template3D: _entities_template3d_js__WEBPACK_IMPORTED_MODULE_15__.Template3D,
+        Region3D: _entities_region3d_js__WEBPACK_IMPORTED_MODULE_66__.Region3D,
+        Shape3D: _entities_shape3d_js__WEBPACK_IMPORTED_MODULE_65__.Shape3D,
         Ruler3D: _systems_ruler3d_js__WEBPACK_IMPORTED_MODULE_6__.Ruler3D,
         Light3D: _entities_light3d_js__WEBPACK_IMPORTED_MODULE_7__.Light3D,
         Wall3D: _entities_wall3d_js__WEBPACK_IMPORTED_MODULE_9__.Wall3D,
@@ -80873,6 +80989,9 @@ class Levels3DPreview {
     _lib_socket_js__WEBPACK_IMPORTED_MODULE_61__.Socket.register("executeInteractiveDynamesh", _entities_tile3d_js__WEBPACK_IMPORTED_MODULE_11__.Tile3D.executeInteractiveDynamesh);
     this.exporter = new _helpers_exporter_js__WEBPACK_IMPORTED_MODULE_28__.Exporter(this);
     this.init3d();
+  }
+  get active() {
+    return this._active;
   }
   get hasFocus() {
     return document.activeElement.classList.contains("vtt");
@@ -94968,7 +95087,8 @@ class Ruler3D {
       shape: null,
       hole: ui.controls?.tools?.hole?.active,
       color,
-      type: ui.controls?.tool?.name ?? "rectangle",
+      type: _entities_shape3d_js__WEBPACK_IMPORTED_MODULE_2__.Shape3D.getShapeFromTool(ui.controls?.tool?.name ?? "rectangle"),
+      material: _entities_shape3d_js__WEBPACK_IMPORTED_MODULE_2__.Shape3D.getMaterialFromTool(ui.controls?.tool?.name ?? "rectangle"),
       origin: this._origin,
       destination: pos,
       extrude: !!canvas.regions.controlled[0],
@@ -96966,7 +97086,7 @@ function registerWrappers() {
     libWrapper.register("levels-3d-preview", "foundry.canvas.layers.TokenLayer.prototype.moveMany", moveMany, "MIXED");
     libWrapper.register("levels-3d-preview", "foundry.canvas.groups.InterfaceCanvasGroup.prototype.createScrollingText", showBouncingText, "WRAPPER");
     libWrapper.register("levels-3d-preview", "foundry.canvas.layers.TokenLayer.prototype.cycleTokens", cycleTokens, "WRAPPER");
-    libWrapper.register("levels-3d-preview", "foundry.canvas.Canvas.prototype.animatePan", animatePan, "WRAPPER");
+    libWrapper.register("levels-3d-preview", "foundry.canvas.Canvas.prototype.animatePan", animatePan, "MIXED");
     libWrapper.register("levels-3d-preview", "foundry.canvas.perception.FogManager.prototype.save", updateFog, "WRAPPER");
     libWrapper.register("levels-3d-preview", "foundry.canvas.layers.PlaceablesLayer.prototype.pasteObjects", pasteObjects, "WRAPPER");
     libWrapper.register("levels-3d-preview", "foundry.canvas.geometry.ClockwiseSweepPolygon.prototype._compute", computePolygonDispatch, "MIXED");
@@ -97350,6 +97470,9 @@ function registerWrappers() {
         case "ring":
           height = shape.outerWidth;
           break;
+        case "emanation":
+          height = shape.base.width * canvas.dimensions.size + shape.radius * 2;
+          break;
         case "cone":
           const angleRad = shape.angle * (Math.PI / 180);
           switch (shape.curvature) {
@@ -97370,7 +97493,7 @@ function registerWrappers() {
       if (!region.elevation.top) region.elevation.top = region.elevation.bottom + height;
       wrapped(...args);
       _templateContext.onFinish = this._finishPlacement.bind(this);
-      canvas.regions.placeRegion(region);
+      canvas.regions.placeRegion(region, {});
     }
     async function placeRegion(wrapped, ...args) {
       if (!game.Levels3DPreview?._active) return wrapped(...args);

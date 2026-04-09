@@ -17,7 +17,7 @@ export function registerWrappers() {
         libWrapper.register("levels-3d-preview", "foundry.canvas.layers.TokenLayer.prototype.moveMany", moveMany, "MIXED");
         libWrapper.register("levels-3d-preview", "foundry.canvas.groups.InterfaceCanvasGroup.prototype.createScrollingText", showBouncingText, "WRAPPER");
         libWrapper.register("levels-3d-preview", "foundry.canvas.layers.TokenLayer.prototype.cycleTokens", cycleTokens, "WRAPPER");
-        libWrapper.register("levels-3d-preview", "foundry.canvas.Canvas.prototype.animatePan", animatePan, "WRAPPER");
+        libWrapper.register("levels-3d-preview", "foundry.canvas.Canvas.prototype.animatePan", animatePan, "MIXED");
         libWrapper.register("levels-3d-preview", "foundry.canvas.perception.FogManager.prototype.save", updateFog, "WRAPPER");
         libWrapper.register("levels-3d-preview", "foundry.canvas.layers.PlaceablesLayer.prototype.pasteObjects", pasteObjects, "WRAPPER");
         libWrapper.register("levels-3d-preview", "foundry.canvas.geometry.ClockwiseSweepPolygon.prototype._compute", computePolygonDispatch, "MIXED");
@@ -414,7 +414,8 @@ export function registerWrappers() {
 
         async function animatePan(wrapped, ...args) {
             if (game.Levels3DPreview?._active && game.Levels3DPreview.CONFIG.autoPan) {
-                if (canvas.regions._placementContext) return;                const x = args[0].x;
+                if (canvas.regions._placementContext) return;
+                const x = args[0].x;
                 const y = args[0].y;
                 const dest = args[0].dest;
                 const token = canvas.tokens.placeables.find((t) => t.center?.x == x && t.center?.y == y);
@@ -454,6 +455,9 @@ export function registerWrappers() {
                 case "ring":
                     height = shape.outerWidth;
                     break;
+                case "emanation":
+                    height = shape.base.width * canvas.dimensions.size + shape.radius * 2;
+                    break;
                 case "cone":
                     const angleRad = shape.angle * (Math.PI / 180);
                     switch (shape.curvature) {
@@ -474,7 +478,7 @@ export function registerWrappers() {
             if (!region.elevation.top) region.elevation.top = region.elevation.bottom + height;
             wrapped(...args);
             _templateContext.onFinish = this._finishPlacement.bind(this);
-            canvas.regions.placeRegion(region);
+            canvas.regions.placeRegion(region, {});
         }
 
         async function placeRegion(wrapped, ...args) {

@@ -31,7 +31,10 @@ module.exports = {
                 exclude: /node_modules/,
                 use: [{
                     loader: 'esbuild-loader',
-                    options: { target: 'es2020', sourcemap: true }
+                    options: {
+                        target: 'es2020',
+                        sourcemap: true
+                    }
                 }],
             },
             {
@@ -53,7 +56,6 @@ module.exports = {
         
         new webpack.SourceMapDevToolPlugin({
             filename: '[file].map',
-            // [url] will be replaced by index.js.map
             append: '\n//# sourceMappingURL=[url]', 
             module: true,
             columns: true,

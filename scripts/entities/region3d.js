@@ -60,7 +60,7 @@ export class Region3D extends THREE.Object3D {
         }
     }
 
-    containsPoint(point) {
+    testPoint(point) {
         for (const shape of this.children) {
             if (shape.containsPoint(point)) return true;
         }
@@ -88,21 +88,21 @@ export class Region3D extends THREE.Object3D {
         return Region3D.#regions;
     }
 
-    static handle(region) {
+    static handle(region, hidden) {
         if (region.document) region = region.document
         if (this.regions.has(region)) {
-            return this.update(region);
+            return this.update(region, hidden);
         }
-        return this.create(region);
+        return this.create(region, hidden);
     }
 
-    static update(region) {
+    static update(region, hidden) {
         this.regions.get(region).destroy();
-        return this.create(region);
+        return this.create(region, hidden);
     }
 
-    static create(region) {
-        const region3d = new Region3D(region);
+    static create(region, hidden) {
+        const region3d = new Region3D(region, hidden);
         this.regions.set(region, region3d);
         return region3d;
     }
@@ -123,10 +123,11 @@ export class Region3D extends THREE.Object3D {
         this.regions.forEach((region) => region.updateVisibility());
     }
 
+
     static checkInFog(point) {
         for (const [key, region] of Array.from(this.regions)) {
             if (!region.isFog) continue;
-            if (region.containsPoint(point)) return true;
+            if (region.testPoint(point)) return true;
         }
         return false;
     }
@@ -145,6 +146,18 @@ export class Region3D extends THREE.Object3D {
         // Hooks.on("deleteRegion", (region) => {
         //     if (!game.Levels3DPreview?._active) return;
         //     Region3D.destroy(region);
+        // });
+
+        // Hooks.on("refreshAmbientLight", (light) => {
+        //     if (!game.Levels3DPreview?._active) return;
+        //     const region = {
+        //         elevation: {
+        //             bottom: light.document.elevation,
+        //             top: light.document.elevation + 10,
+        //         },
+        //         shapes: [light.document.shape],
+        //     }
+        //     Region3D.handle(region);
         // });
 
         Hooks.on("drawRegion", (region) => {

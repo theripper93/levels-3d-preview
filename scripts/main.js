@@ -268,6 +268,8 @@ class Levels3DPreview {
             entityClass: {
                 RangeFinder,
                 Template3D,
+                Region3D,
+                Shape3D,
                 Ruler3D,
                 Light3D,
                 Wall3D,
@@ -562,6 +564,10 @@ class Levels3DPreview {
         Socket.register("executeInteractiveDynamesh", Tile3D.executeInteractiveDynamesh);
         this.exporter = new Exporter(this);
         this.init3d();
+    }
+
+    get active() {
+        return this._active;
     }
 
     get hasFocus() {

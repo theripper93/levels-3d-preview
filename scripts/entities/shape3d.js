@@ -54,6 +54,16 @@ export class Shape3D extends THREE.Object3D {
         return selectedRegion;
     }
 
+    static getMaterialFromTool(tool) {
+        return;
+    }
+
+    static getShapeFromTool(tool) {
+        if (tool === "light" || tool === "sound") return "circle";
+        if (tool === "tile") return "rectangle";
+        return tool;
+    }
+
     static create({ shape, type, origin, destination, material, extrude, hole = false, color, regionHeight }) {
         if (shape) {
             type = shape.type;
@@ -64,26 +74,25 @@ export class Shape3D extends THREE.Object3D {
             destination = new THREE.Vector3(destination.x, destination.y, destination.z);
         }
         let shape3d = null;
+        const options = { shape, origin, destination, hole };
         switch (type) {
             case "rectangle":
-            case "rect":
-            case "box":
-                shape3d = new Box3D({ shape, origin, destination, hole });
+                shape3d = new Box3D(options);
                 break;
             case "circle":
-                shape3d = new Sphere3D({ shape, origin, destination, hole });
+                shape3d = new Sphere3D(options);
                 break;
             case "ellipse":
-                shape3d = new Ellipse3D({ shape, origin, destination, hole });
+                shape3d = new Ellipse3D(options);
                 break;
             case "cone":
-                shape3d = new Cone3D({ shape, origin, destination, hole });
+                shape3d = new Cone3D(options);
                 break;
             case "ring":
-                shape3d = new Torus3D({ shape, origin, destination, hole });
+                shape3d = new Torus3D(options);
                 break;
             case "line":
-                shape3d = new Ray3D({ shape, origin, destination, hole });
+                shape3d = new Ray3D(options);
                 break;
             case "emanation":
                 const baseType = shape?.base?.shape === 0 ? 0 : 4;
@@ -508,7 +517,14 @@ export class Cone3D extends Shape3D {
         this.elevationBottom = this.elevation - this.baseRadius;
         this.elevationTop = this.elevation + this.baseRadius;
         this.shape = shape;
-        this.origin = {
+        // this.origin = {
+        //     x: (origin.x + destination.x) / 2,
+        //     y: origin.y,
+        //     z: (origin.z + destination.z) / 2,
+        // };
+        this.origin = origin;
+        this.destination = destination;
+        this.drawOrigin = {
             x: (origin.x + destination.x) / 2,
             y: origin.y,
             z: (origin.z + destination.z) / 2,
@@ -531,7 +547,7 @@ export class Cone3D extends Shape3D {
         const geometry = new THREE.ConeGeometry(this.baseRadius, this.coneHeight, 32);
         geometry.rotateX(-this._rotation * (Math.PI / 180));
         geometry.rotateZ(Math.PI / 2);
-        geometry.translate(this.origin.x, this.origin.y, this.origin.z);
+        geometry.translate(this.drawOrigin.x, this.drawOrigin.y, this.drawOrigin.z);
         const mesh = new THREE.Mesh(geometry, material);
         this.applySettings(mesh);
         this.add(mesh);
@@ -558,7 +574,7 @@ export class Cone3D extends Shape3D {
         geometry.translate(0, littleHeight / 2, 0);
         geometry.rotateX(-this._rotation * (Math.PI / 180));
         geometry.rotateZ(Math.PI / 2);
-        geometry.translate(this.origin.x, this.origin.y, this.origin.z);
+        geometry.translate(this.drawOrigin.x, this.drawOrigin.y, this.drawOrigin.z);
         const material = this.material ?? this.getDefaultMaterial();
         const mesh = new THREE.Mesh(geometry, material);
         this.applySettings(mesh);
@@ -584,11 +600,36 @@ export class Cone3D extends Shape3D {
         geometry.translate(0, this.baseRadius / 2, 0);
         geometry.rotateX(-this._rotation * (Math.PI / 180));
         geometry.rotateZ(Math.PI / 2);
-        geometry.translate(this.origin.x, this.origin.y, this.origin.z);
+        geometry.translate(this.drawOrigin.x, this.drawOrigin.y, this.drawOrigin.z);
         const material = this.material ?? this.getDefaultMaterial();
         const mesh = new THREE.Mesh(geometry, material);
         this.applySettings(mesh);
         this.add(mesh);
+    }
+
+    containsPoint(point) {
+        const shapeRadius = this.shape.radius / factor;
+        const angle = this.shape.angle * (Math.PI / 180);
+        const direction = this.shape.rotation * (Math.PI / 180);
+
+        if (!PointInSolid.inSphere(point, this.origin, shapeRadius)) return false;
+
+        const coneBaseCenter = {
+            x: this.origin.x + Math.cos(direction) * this.coneHeight,
+            y: this.origin.y,
+            z: this.origin.z + Math.sin(direction) * this.coneHeight,
+        }
+        
+        if (this.shape.curvature === "semicircle") {
+            if (!PointInSolid.inCone(point, this.origin, coneBaseCenter, angle, this.coneHeight)) {
+                const sphereRadius = shapeRadius - this.coneHeight;
+                if (!PointInSolid.inSphericalCap(point, this.origin, sphereRadius, direction, 0.5)) return false;   
+            }
+        } else {
+            if (!PointInSolid.inCone(point, this.origin, coneBaseCenter, angle, this.coneHeight)) return false;
+        }
+
+        return true;
     }
 }
 
@@ -759,6 +800,22 @@ export class Ray3D extends Shape3D {
         this.applySettings(mesh);
         this.add(mesh);
     }
+
+    containsPoint(point) {
+        if (Math.abs(point.y - this.origin.y) > this.height / 2) return false;
+
+        const p2d = new THREE.Vector3(point.x, 0, point.z);
+        const start2d = new THREE.Vector3(this.origin.x, 0, this.origin.z);
+        const end2d = new THREE.Vector3(this.destination.x, 0, this.destination.z);
+
+        const line = new THREE.Line3(start2d, end2d);
+        const closestPoint = new THREE.Vector3();
+
+        line.closestPointToPoint(p2d, true, closestPoint);
+        const distance = p2d.distanceTo(closestPoint);
+
+        return distance <= this.width / 2;
+    }
 }
 
 export class Emanation3D extends Shape3D {
@@ -878,4 +935,101 @@ export class Extrude3D extends Shape3D {
         this.shape = shape;
         this.drawExtrude();
     }
+}
+
+class PointInSolid {
+  /**
+   * @param p coordinates of point to be tested
+   * @param c opposit corners of the parallelepiped
+   */
+
+  static inParallelepiped(p, c) {
+    const c0 = c[0];
+    const c1 = c[1];
+    const maxX = Math.max(c0.x, c1.x);
+    const maxY = Math.max(c0.y, c1.y);
+    const maxZ = Math.max(c0.z, c1.z);
+    const minX = Math.min(c0.x, c1.x);
+    const minY = Math.min(c0.y, c1.y);
+    const minZ = Math.min(c0.z, c1.z);
+    return minX <= p.x && p.x <= maxX && minY <= p.y && p.y <= maxY && minZ <= p.z && p.z <= maxZ;
+  }
+
+  /**
+   * @param p coordinates of point to be tested
+   * @param poly PIXI.Polygon defining the top\bottom face
+   * @param z z points of the solid
+   */
+
+   static inRotatedParallelepiped(p, poly, z) {
+    if(p.z < z[0] || p.z > z[1]) return false
+    return poly.contains(p.x,p.y)
+  }
+
+  /**
+   * @param p coordinates of point to be tested
+   * @param c coordinates of center of the sphere
+   * @param r radius of the sphere
+   */
+
+  static inSphere(p, c, r) {
+    return this.getDist(c, p) <= r;
+  }
+
+    /**
+   * @param p coordinates of point to be tested
+   * @param c coordinates of center of the base of the cylinder
+   * @param r radius of the cylinder
+   * @param h height of the cylinder
+   */
+
+  static inCylinder(p, c, r, h){
+    const dist = this.getDist({x:c.x,y:c.y,z:p.z}, p)
+    return dist <= r && p.z <= h && p.z >= c.z
+  }
+
+  /**
+   * @param p coordinates of point to be tested
+   * @param t coordinates of apex point of cone
+   * @param c coordinates of center of basement circle
+   * @param a aperture in radians
+   * @param h height of the cone
+   */
+
+  static inCone(p, t, c, a, h) {
+    const a2 = a / 2;
+    const apexToXVect = this.dif(t, p);
+    const axisVect = this.dif(t, c);
+    const iic =
+      this.dotProd(apexToXVect, axisVect) /
+        this.magn(apexToXVect) /
+        this.magn(axisVect) >
+      Math.cos(a2);
+    if (!iic) return false;
+    return this.getDist(t, p) <= h;
+    return (
+      this.dotProd(apexToXVect, axisVect) / this.magn(axisVect) <
+      this.magn(axisVect)
+    );
+  }
+
+  static getDist(p0, p1) {
+    return Math.sqrt(
+      Math.pow(p1.x - p0.x, 2) +
+        Math.pow(p1.y - p0.y, 2) +
+        Math.pow(p1.z - p0.z, 2)
+    );
+  }
+
+  static dotProd(a, b) {
+    return a.x * b.x + a.y * b.y + a.z * b.z;
+  }
+
+  static dif(a, b) {
+    return {x:a.x - b.x, y:a.y - b.y, z:a.z - b.z};
+  }
+
+  static magn(a) {
+    return Math.sqrt(a.x * a.x + a.y * a.y + a.z * a.z);
+  }
 }

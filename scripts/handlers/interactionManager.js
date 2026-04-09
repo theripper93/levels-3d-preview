@@ -462,7 +462,7 @@ export class InteractionManager {
             originalIntersect: event.originalIntersect,
             intersectData: intersectData.intersectData,
         };
-        if (event.which === 3 && (this.draggable?.userData?.entity3D?.token || ui.controls.tool.name === "tile3dPolygon")) {
+        if (event.which === 3 && (this.draggable?.userData?.entity3D?.token || ui.controls.tool.name === "tile3dPolygon" || ui.controls.tool.name === "polygon")) {
             this._parent.ruler.addSegment();
         } else {
             if (this.clicks === 1) {
