@@ -2,3 +2,5 @@
 # packs/**/*
 # Run to fix:
 # git rm -r --cached packs
+
+node_modules
