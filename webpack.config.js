@@ -11,9 +11,11 @@ module.exports = {
     },
     mode: "development",
     
-    // devtool: false, 
+    devtool: "source-map",
+    // devtool: false,
 
     optimization: {
+        usedExports: true, // Enables tree shaking
         minimize: true,
         minimizer: [
             new EsbuildPlugin({
@@ -54,12 +56,12 @@ module.exports = {
     plugins: [
         new MiniCssExtractPlugin({ filename: 'styles/module.css' }),
         
-        new webpack.SourceMapDevToolPlugin({
-            filename: '[file].map',
-            append: '\n//# sourceMappingURL=[url]', 
-            module: true,
-            columns: true,
-            noSources: false,
-        })
+        // new webpack.SourceMapDevToolPlugin({
+        //     filename: '[file].map',
+        //     append: '\n//# sourceMappingURL=[url]', 
+        //     module: true,
+        //     columns: true,
+        //     noSources: false,
+        // })
     ]
 };

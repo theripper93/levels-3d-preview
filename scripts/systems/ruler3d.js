@@ -1,6 +1,7 @@
 import * as THREE from "../lib/three.module.js";
 import { factor } from "../main.js";
 import { Shape3D } from "../entities/shape3d.js";
+import { Region3D } from "../entities/region3d.js";
 
 export class Ruler3D {
     constructor(parent) {
@@ -47,24 +48,19 @@ export class Ruler3D {
         this.shape?.destroy();
         const pos = Ruler3D.useSnapped() ? Ruler3D.snapped3DPosition(this._object.position) : this._object.position;
         const selectedRegion = canvas.regions.controlled[0];
-        this.height = null;
-        if (selectedRegion) {
-            const top = Number.isFinite(selectedRegion.document.elevation.top) ?
-                selectedRegion.document.elevation.top * canvas.scene.dimensions.distancePixels / factor : 0;
-            const bottom = Number.isFinite(selectedRegion.document.elevation.bottom) ?
-                selectedRegion.document.elevation.bottom * canvas.scene.dimensions.distancePixels / factor : 0;
-            this.height = this.top !== this.bottom ? this.top - this.bottom : 0.001;
-        }
+        const tool = ui.controls?.tool?.name ?? "rectangle";
         const shape = Shape3D.create({
             shape: null,
             hole: ui.controls?.tools?.hole?.active,
             color: color,
-            type: Shape3D.getShapeFromTool(ui.controls?.tool?.name ?? "rectangle"),
-            material: Shape3D.getMaterialFromTool(ui.controls?.tool?.name ?? "rectangle"),
+            type: Shape3D.getShapeFromTool(tool),
+            material: Shape3D.getMaterialFromTool(tool),
             origin: this._origin,
             destination: pos,
-            extrude: !!canvas.regions.controlled[0],
-            regionHeight: this.height,
+            segments: this.segments,
+            extrude: !!selectedRegion,
+            tool: tool,
+            region: selectedRegion?.document,
         });
         if (!shape) return; 
         shape.addToScene();
@@ -85,7 +81,8 @@ export class Ruler3D {
 
     placeShape() {
         if (!this.shape) return;
-        const data = this.shape.fromPreview(this._shapePreviewData?.create ?? true);
+        const data = Region3D.fromPreview(this.shape);
+        if (this.segments.length) this.clearSegments();
         if (this._shapePreviewData) this._shapePreviewData.resolve(data);
         this._shapePromiseResolve = null;
         this.shape = null;
