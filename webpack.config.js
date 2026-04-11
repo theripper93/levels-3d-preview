@@ -21,7 +21,7 @@ module.exports = {
             new EsbuildPlugin({
                 target: 'es2020',
                 sourcemap: true,
-                legalComments: 'none',
+                // legalComments: 'none',
             })
         ],
     },

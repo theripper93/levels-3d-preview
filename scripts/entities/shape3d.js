@@ -89,11 +89,15 @@ export class Shape3D extends THREE.Object3D {
         return selectedRegion;
     }
 
-    static getMaterialFromTool(tool) {
+    static getMaterialFromTool(tool, hole = false) {
         if (tool === "light") return new THREE.MeshBasicMaterial({ color: new THREE.Color("gold"), wireframe: true });
         if (tool === "sound") return new THREE.MeshBasicMaterial({ color: new THREE.Color("white"), wireframe: true });
         if (tool === "tile") return new THREE.MeshBasicMaterial({ color: new THREE.Color("chocolate"), transparent: true, depthWrite: false, opacity: 0.5 });
-        return;
+        if (hole) {
+            const material = new DiagonalStripesMaterial({ color: "grey" });
+            material.side = THREE.FrontSide;
+            return material;
+        }
     }
 
     static getShapeFromTool(tool) {
@@ -138,7 +142,7 @@ export class Shape3D extends THREE.Object3D {
                 break;
             case "emanation":
                 const baseType = shape?.base?.shape === 0 ? 0 : 4;
-                shape3d = new Emanation3D({ shape, origin, destination, baseType, hole });
+                shape3d = new Emanation3D({ ...options, baseType });
                 break;
         }
 
@@ -240,9 +244,9 @@ export class Box3D extends Shape3D {
         super();
         if (!shape) {
             this.normalizePoints(origin, destination);
-            this.elevationBottom = origin.y;
             const width = Math.abs(destination.x - origin.x);
             const depth = Math.abs(destination.z - origin.z);
+            this.elevationBottom = origin.y;
             this.elevationTop = origin.y + Math.min(width, depth);
             shape = new foundry.data.RectangleShapeData({
                 type: "rectangle",
@@ -261,11 +265,11 @@ export class Box3D extends Shape3D {
         this.shape = shape;
         this.width = shape.width / factor;
         this.depth = shape.height / factor;
-        
+
         this.origin = {
-            x: ((shape.x - shape.anchorX * shape.width) / factor) + this.width / 2,
-            z: this.elevationBottom + this.depth / 2,
-            y: ((shape.y - shape.anchorY * shape.height) / factor) + this.height / 2,
+            x: ((shape.x - shape.anchorX * this.width) / factor) + this.width / 2,
+            y: (this.elevationBottom + this.elevationTop) / 2,
+            z: ((shape.y - shape.anchorY * this.depth) / factor) + this.depth / 2,
         };
     }
 
@@ -293,14 +297,15 @@ export class Sphere3D extends Shape3D {
     constructor({ shape, origin, destination, hole }) {
         super();
         if (!shape) {
-            this.elevationBottom = origin.y - this.radius;
-            this.elevationTop = origin.y + this.radius;
+            const radius = destination.distanceTo(origin);
+            this.elevationBottom = origin.y - radius;
+            this.elevationTop = origin.y + radius;
             shape = new foundry.data.CircleShapeData({
                 type: "circle",
                 hole: hole,
                 x: origin.x * factor,
                 y: origin.z * factor,
-                radius: destination.distanceTo(origin) * factor,
+                radius: radius * factor,
                 gridBased: false,
             }, {});
         }
@@ -345,7 +350,9 @@ export class Ellipse3D extends Shape3D {
     constructor({ shape, origin, destination, hole }) {
         super();
         if (!shape) {
-            const height = Math.min(this.radiusX, this.radiusZ);
+            const radiusX = Math.abs(destination.x - origin.x);
+            const radiusY = Math.abs(destination.z - origin.z);
+            const height = Math.min(radiusX, radiusY);
             this.elevationBottom = origin.y - height / 2;
             this.elevationTop = origin.y + height / 2;
             shape = new foundry.data.EllipseShapeData({
@@ -353,8 +360,8 @@ export class Ellipse3D extends Shape3D {
                 hole: hole,
                 x: origin.x * factor,
                 y: origin.z * factor,
-                radiusX: Math.abs(destination.x - origin.x) * factor,
-                radiusY: Math.abs(destination.z - origin.z) * factor,
+                radiusX: radiusX * factor,
+                radiusY: radiusY * factor,
                 anchorX: 0,
                 anchorY: 0,
                 rotation: 0,
@@ -401,63 +408,60 @@ export class Cone3D extends Shape3D {
         if (!shape) {
             const dx = destination.x - origin.x;
             const dz = destination.z - origin.z;
-            this.angle = 60;
-            const angleRad = this.angle * (Math.PI / 180);
-            const shapeRadius = Math.sqrt(dx * dx + dz * dz);
-            this.coneHeight = shapeRadius * Math.cos(angleRad / 2);
-            this.baseRadius = shapeRadius * Math.sin(angleRad / 2);
-            this._rotation = Math.atan2(dz, dx) * (180 / Math.PI);
-            this.elevationBottom = origin.y - this.baseRadius;
-            this.elevationTop = origin.y + this.baseRadius;
+            const defaultAngle = 60;
+            const angle = Math.toRadians(defaultAngle);
+            const radius = Math.sqrt(dx * dx + dz * dz);
+            const baseRadius = radius * Math.sin(angle / 2);
+            const rotation = Math.atan2(dz, dx) * (180 / Math.PI);
+            this.elevationBottom = origin.y - baseRadius;
+            this.elevationTop = origin.y + baseRadius;
             shape = new foundry.data.ConeShapeData({
                 type: "cone",
                 hole: hole,
                 x: origin.x * factor,
                 y: origin.z * factor,
-                radius: shapeRadius * factor,
-                angle: this.angle,
-                rotation: this._rotation,
+                radius: radius * factor,
+                angle: defaultAngle,
+                rotation: rotation,
                 curvature: "round",
                 gridBased: false,
             }, {});
-        } else {
-            this.angle = shape.angle;
-            if (this.angle > 90) this.extrude = true;
-            const angleRad = this.angle * (Math.PI / 180);
-            this._rotation = shape.rotation;
-            const shapeRadius = shape.radius / factor;
-            switch (shape.curvature) {
-                case "flat":
-                    this.coneHeight = shapeRadius;
-                    this.baseRadius = shapeRadius * Math.tan(angleRad / 2);
-                    break;
-                case "round":
-                    this.coneHeight = shapeRadius * Math.cos(angleRad / 2);
-                    this.baseRadius = shapeRadius * Math.sin(angleRad / 2);
-                    break;
-                case "semicircle":
-                    this.coneHeight = shapeRadius / (1 + Math.tan(angleRad / 2));
-                    this.baseRadius = shapeRadius - this.coneHeight;
-                    break;
-            }
-            const rad = this._rotation * (Math.PI / 180);
-            origin = {
-                x: shape.x / factor,
-                y: (this.elevationBottom + this.elevationTop) / 2,
-                z: shape.y / factor,
-            };
-            destination = {
-                x: origin.x + shapeRadius * Math.cos(rad),
-                y: this.baseRadius,
-                z: origin.z + shapeRadius * Math.sin(rad),
-            };
         }
+
         this.shape = shape;
-        this.origin = origin;
+        this.angle = Math.toRadians(shape.angle);
+        if (this.angle > Math.PI / 2) this.extrude = true;
+        this._rotation = Math.toRadians(shape.rotation);
+        const radius = shape.radius / factor;
+        switch (shape.curvature) {
+            case "flat":
+                this.coneHeight = radius;
+                this.baseRadius = radius * Math.tan(this.angle / 2);
+                break;
+            case "round":
+                this.coneHeight = radius * Math.cos(this.angle / 2);
+                this.baseRadius = radius * Math.sin(this.angle / 2);
+                break;
+            case "semicircle":
+                this.coneHeight = radius / (1 + Math.tan(this.angle / 2));
+                this.baseRadius = radius - this.coneHeight;
+                break;
+        }
+        this.origin = {
+            x: shape.x / factor,
+            y: (this.elevationBottom + this.elevationTop) / 2,
+            z: shape.y / factor,
+        };
+        this.destination = {
+            x: this.origin.x + radius * Math.cos(this._rotation),
+            y: this.baseRadius,
+            z: this.origin.z + radius * Math.sin(this._rotation),
+        };
+        
         this.drawOrigin = {
-            x: (origin.x + destination.x) / 2,
-            y: origin.y,
-            z: (origin.z + destination.z) / 2,
+            x: (this.origin.x + this.destination.x) / 2,
+            y: this.origin.y,
+            z: (this.origin.z + this.destination.z) / 2,
         };
     }
 
@@ -475,7 +479,7 @@ export class Cone3D extends Shape3D {
     drawFlat() {
         const material = this.material ?? this.getDefaultMaterial();
         const geometry = new THREE.ConeGeometry(this.baseRadius, this.coneHeight, 32);
-        geometry.rotateX(-this._rotation * (Math.PI / 180));
+        geometry.rotateX(-this._rotation);
         geometry.rotateZ(Math.PI / 2);
         geometry.translate(this.drawOrigin.x, this.drawOrigin.y, this.drawOrigin.z);
         const mesh = new THREE.Mesh(geometry, material);
@@ -489,7 +493,7 @@ export class Cone3D extends Shape3D {
         const thetaStart = 0;
         const hypothenuse = Math.sqrt(this.baseRadius * this.baseRadius + this.coneHeight * this.coneHeight);
         const littleHeight = hypothenuse - this.coneHeight;
-        const thetaEnd = this.angle * Math.PI / 360;
+        const thetaEnd = this.angle / 2;
         
         const emisphereGeometry = new THREE.SphereGeometry(hypothenuse, 32, 16, phiStart, phiEnd, thetaStart, thetaEnd );
         emisphereGeometry.rotateX(Math.PI);
@@ -502,7 +506,7 @@ export class Cone3D extends Shape3D {
         ]);
 
         geometry.translate(0, littleHeight / 2, 0);
-        geometry.rotateX(-this._rotation * (Math.PI / 180));
+        geometry.rotateX(-this._rotation);
         geometry.rotateZ(Math.PI / 2);
         geometry.translate(this.drawOrigin.x, this.drawOrigin.y, this.drawOrigin.z);
         const material = this.material ?? this.getDefaultMaterial();
@@ -528,7 +532,7 @@ export class Cone3D extends Shape3D {
         ]);
 
         geometry.translate(0, this.baseRadius / 2, 0);
-        geometry.rotateX(-this._rotation * (Math.PI / 180));
+        geometry.rotateX(-this._rotation);
         geometry.rotateZ(Math.PI / 2);
         geometry.translate(this.drawOrigin.x, this.drawOrigin.y, this.drawOrigin.z);
         const material = this.material ?? this.getDefaultMaterial();
@@ -721,6 +725,7 @@ export class Polygon3D extends Shape3D {
                 type: "polygon",
                 points: points,
                 gridBased: false,
+                hole: hole,
             }, {});
         }
 

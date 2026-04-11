@@ -49,12 +49,13 @@ export class Ruler3D {
         const pos = Ruler3D.useSnapped() ? Ruler3D.snapped3DPosition(this._object.position) : this._object.position;
         const selectedRegion = canvas.regions.controlled[0];
         const tool = ui.controls?.tool?.name ?? "rectangle";
+        const hole = ui.controls?.tools?.hole?.active;
         const shape = Shape3D.create({
             shape: null,
-            hole: ui.controls?.tools?.hole?.active,
+            hole: hole,
             color: color,
             type: Shape3D.getShapeFromTool(tool),
-            material: Shape3D.getMaterialFromTool(tool),
+            material: Shape3D.getMaterialFromTool(tool, hole),
             origin: this._origin,
             destination: pos,
             segments: this.segments,
