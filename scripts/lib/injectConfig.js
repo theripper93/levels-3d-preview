@@ -58,8 +58,34 @@ export const injectConfig = {
         } else {
             injectPoint = data.inject;
         }
-        injectPoint = injectPoint ?? (data.tab ? [...html.querySelectorAll("section.window-content > .tab")].at(-1) ?? [...html.querySelectorAll(".tab")].at(-1) : [...html.querySelectorAll(".form-group").at(-1)]);
+        const tabs = html.querySelectorAll("section.window-content > .tab");
+        if (data.tab && !tabs.length) {
+            const lastDetails = html.querySelector("details:last-child");
+            if (lastDetails) return lastDetails;
+            const lastFieldset = html.querySelector("fieldset:last-child");
+            if (lastFieldset) return lastFieldset;
+            const lastFormGroup = html.querySelector(".form-group:last-child");
+            if (lastFormGroup) return lastFormGroup;
+        };
+        injectPoint = injectPoint ?? [...tabs].at(-1) ?? [...html.querySelectorAll(".tab")].at(-1);
         return injectPoint;
+    },
+
+    _createFieldset: function _createFieldset(label, icon) {
+        const fieldset = document.createElement("fieldset");
+        const legend = document.createElement("legend");
+        legend.innerHTML = `<i class="${icon}"></i> ${label}`;
+        legend.dataset.action = "closeDetails";
+        fieldset.append(legend);
+        return fieldset;
+    },
+
+    _createDetails: function _createDetails(label, icon) {
+        const details = document.createElement("details");
+        const summary = document.createElement("summary");
+        summary.innerHTML = label;
+        details.append(summary);
+        return details;
     },
 
     _createTab: function _createTab(html, name, label, icon) {
@@ -89,7 +115,16 @@ export const injectConfig = {
         tabContainer.style.height = "auto";
         tabContainer.dataset.tab = name;
         tabContainer.dataset.group = tabs.dataset.group;
+
         return tabContainer;
+    },
+
+    _trySetPosition: function _trySetPosition(app, options) {
+        return;
+        if (!app) return;
+        try {
+            app.setPosition(options);
+        } catch (error) { }
     },
 
     _generateInnerHtml: function _generateInnerHtml(app, data, tabSize) {
@@ -113,7 +148,7 @@ export const injectConfig = {
                     e.currentTarget.classList.add("active");
                     innerContainer.querySelectorAll(".tab").forEach((i) => i.classList.remove("active"));
                     innerContainer.querySelector(`.tab[data-tab="${tab}"]`).classList.add("active");
-                    app.setPosition({ height: "auto"});
+                    this._trySetPosition(app, { height: "auto"});
                 });
                 subTabNav.append(a);
                 const tabContents = document.createElement("div");
@@ -153,7 +188,7 @@ export const injectConfig = {
         const injectPoint = this._getInjectionPoint(app, html, data, object);
 
         const isTabs = !!html.querySelector(".sheet-tabs");
-        this._generateTabStruct(app, html, data, object);
+        // this._generateTabStruct(app, html, data, object);
 
         const tabSize = data.tab?.width ?? 100;
 
@@ -163,7 +198,9 @@ export const injectConfig = {
             app.activateListeners(injectHtml);
         } catch (error) {}
 
-        if (data.tab) {
+        const tabExist = !!html.querySelector(".sheet-tabs");
+
+        if (data.tab && tabExist) {
             const injectTab = this._createTab(html, data.tab.name, data.tab.label, data.tab.icon);
             
             //injectTab.append(injectHtml);
@@ -174,6 +211,16 @@ export const injectConfig = {
                     html.querySelectorAll(`.tab[data-group="${tg}"]`).forEach((i) => i.classList.remove("active"));
                     html.querySelector(`.tab[data-tab="${app.tabGroups[tg]}"]`).classList.add("active");
                 });
+            }
+        } else if (data.tab && !tabExist) {
+            const fieldset = this._createFieldset(data.tab.label, data.tab.icon);
+            Array.from(injectHtml.children).forEach((e) => fieldset.append(e));
+            if (app.classList.contains("placeable-palette")) {
+                const details = this._createDetails(data.tab.label, data.tab.icon);
+                details.append(fieldset);
+                injectPoint.after(details);
+            } else {
+                injectPoint.after(fieldset);
             }
         } else {
             injectPoint.after(injectHtml);
@@ -189,12 +236,13 @@ export const injectConfig = {
                     e.currentTarget.classList.add("active");
                     html.querySelectorAll(".tab").forEach((i) => i.classList.remove("active"));
                     html.querySelector(`.tab[data-tab="${e.currentTarget.dataset.tab}"]`).classList.add("active");
-                    app.setPosition({ height: "auto" });
+                    this._trySetPosition(app, { height: "auto"});
                 });
             });
         }
 
-        if (app) app?.setPosition({ height: "auto"});
+        this._trySetPosition(app, { height: "auto"});
+
         return injectHtml;
     },
     quickInject: function quickInject(injectData, data) {

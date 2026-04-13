@@ -71,10 +71,14 @@ export class Shape3D extends THREE.Object3D {
 
     destroy() {
         game.Levels3DPreview.scene.remove(this);
+        this.traverse((child) => {
+            child.geometry?.dispose?.();
+            child.material?.dispose?.();
+        });
     }
     
     getDefaultMaterial() {
-        const material = new DiagonalStripesMaterial({ color: this.color });
+        const material = new DiagonalStripesMaterial({ color: this.color, scale: this.uvScale ?? 50 });
         material.side = this.height < 0.01 ? THREE.FrontSide : THREE.DoubleSide;
         return material;
     }
@@ -90,26 +94,28 @@ export class Shape3D extends THREE.Object3D {
     }
 
     static getMaterialFromTool(tool, hole = false) {
-        if (tool === "light") return new THREE.MeshBasicMaterial({ color: new THREE.Color("gold"), wireframe: true });
+        if (tool === "light") {
+            const lightColor = foundry.applications.sheets.palette.AmbientLightPalette.createData.config.color;
+            return new THREE.MeshBasicMaterial({ color: new THREE.Color(lightColor?.css ?? "white"), wireframe: true });
+        }
         if (tool === "sound") return new THREE.MeshBasicMaterial({ color: new THREE.Color("white"), wireframe: true });
         if (tool === "tile") return new THREE.MeshBasicMaterial({ color: new THREE.Color("chocolate"), transparent: true, depthWrite: false, opacity: 0.5 });
-        if (hole) {
-            const material = new DiagonalStripesMaterial({ color: "grey" });
-            material.side = THREE.FrontSide;
-            return material;
-        }
     }
 
     static getShapeFromTool(tool) {
         if (tool === "light" || tool === "sound") return "circle";
         if (tool === "tile") return "rectangle";
+        if (tool === "tile3dPolygon") return "polygon";
         return tool;
     }
 
     static create({ shape, type, tool, origin, destination, segments, material, extrude, hole = false, color, region }) {
+        const defaults = foundry.applications.sheets.palette.RegionPalette.createData;
         if (shape) {
             type = shape.type;
             extrude = shape.gridBased;
+        } else {
+            extrude ||= defaults.restriction.enabled;
         }
         if (origin && destination) {
             origin = new THREE.Vector3(origin.x, origin.y, origin.z);
@@ -122,35 +128,34 @@ export class Shape3D extends THREE.Object3D {
             case "rectangle":
                 shape3d = new Box3D(options);
                 break;
-            case "circle":
+                case "circle":
                 shape3d = new Sphere3D(options);
                 break;
-            case "ellipse":
+                case "ellipse":
                 shape3d = new Ellipse3D(options);
                 break;
-            case "cone":
-                shape3d = new Cone3D(options);
+                case "cone":
+                    shape3d = new Cone3D(options);
                 break;
-            case "ring":
+                case "ring":
                 shape3d = new Torus3D(options);
                 break;
-            case "line":
-                shape3d = new Ray3D(options);
-                break;
-            case "polygon":
+                case "line":
+                    shape3d = new Ray3D(options);
+                    break;
+                    case "polygon":
                 shape3d = new Polygon3D({ ...options, segments });
                 break;
-            case "emanation":
+                case "emanation":
                 const baseType = shape?.base?.shape === 0 ? 0 : 4;
                 shape3d = new Emanation3D({ ...options, baseType });
                 break;
         }
-
         shape3d.region = region;
         shape3d.extrude = extrude;
         shape3d.material = material;
         shape3d.tool = tool;
-        shape3d.color = color ?? shape3d.region?.color?.css ?? Shape3D.getRandomColor();
+        shape3d.color = hole ? "grey" : color ?? region?.color?.css ?? defaults.color?.css ?? Shape3D.getRandomColor();
         if (shape3d.extrude) shape3d.drawExtrude();
         else shape3d.drawShape();
         return shape3d;
@@ -162,7 +167,6 @@ export class Shape3D extends THREE.Object3D {
         mesh.userData.sight = false;
         mesh.userData.ignoreHover = true;
         mesh.userData.noIntersect = true;
-        // mesh.userData.noShaders = true;
     }
 
     updateVisibility() { }
@@ -242,6 +246,7 @@ export class Shape3D extends THREE.Object3D {
 export class Box3D extends Shape3D {
     constructor({ shape, origin, destination, hole }) {
         super();
+        this.uvScale = 15;
         if (!shape) {
             this.normalizePoints(origin, destination);
             const width = Math.abs(destination.x - origin.x);
@@ -405,6 +410,7 @@ export class Ellipse3D extends Shape3D {
 export class Cone3D extends Shape3D {
     constructor({ shape, origin, destination, hole }) {
         super();
+        this.uvScale = 40;
         if (!shape) {
             const dx = destination.x - origin.x;
             const dz = destination.z - origin.z;
@@ -570,6 +576,7 @@ export class Cone3D extends Shape3D {
 export class Torus3D extends Shape3D {
     constructor({ shape, origin, destination, hole }) {
         super();
+        this.uvScale = 25;
         if (!shape) {
             const radius = destination.distanceTo(origin);
             const tubeRadius = 50 / factor;
@@ -631,6 +638,7 @@ export class Torus3D extends Shape3D {
 export class Ray3D extends Shape3D {
     constructor({ shape, origin, destination, hole }) {
         super();
+        this.uvScale = 10;
         if (!shape) {
             const direction = new THREE.Vector3()
                 .subVectors(origin, destination)

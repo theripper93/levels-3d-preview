@@ -10,8 +10,12 @@ module.exports = {
         path: path.resolve(__dirname),
     },
     mode: "development",
+    devtool: "eval-source-map", // Better for browser debugging
     
-    devtool: "source-map",
+    optimization: {
+        minimize: false, // Completely disables the minimizer
+        usedExports: true,
+    },
     // devtool: false,
 
     optimization: {
@@ -19,9 +23,8 @@ module.exports = {
         minimize: true,
         minimizer: [
             new EsbuildPlugin({
-                target: 'es2020',
+                target: 'esnext',
                 sourcemap: true,
-                // legalComments: 'none',
             })
         ],
     },
@@ -34,8 +37,8 @@ module.exports = {
                 use: [{
                     loader: 'esbuild-loader',
                     options: {
-                        target: 'es2020',
-                        sourcemap: true
+                        target: 'esnext',
+                        sourcemap: true,
                     }
                 }],
             },

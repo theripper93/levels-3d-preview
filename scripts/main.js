@@ -497,6 +497,7 @@ class Levels3DPreview {
         this.CONFIG.UI.TokenBrowser = TokenBrowser;
         this.CONFIG.UI.BuildPanel = BuildPanel;
         this.CONFIG.UI.QuickTerrain = QuickTerrain;
+        this.CONFIG.UI.InteractionManager = InteractionManager;
         Hooks.callAll("3DCanvasConfig", this.CONFIG);
         Hooks.callAll("3DCanvasMapmakingPackRegisterAssetPacks", this.CONFIG.UI.AssetBrowser);
         Hooks.callAll("3DCanvasMapmakingPackRegisterTokenPacks", this.CONFIG.UI.TokenBrowser);
@@ -575,6 +576,7 @@ class Levels3DPreview {
     }
 
     init3d() {
+        Hooks.callAll("3DCanvasPreInit", this);
         this._sharedContext = game.settings.get("levels-3d-preview", "sharedContext");
         this.camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.01, 100);
         this.camera.position.set(8, 2, 8).setLength(8);
@@ -627,7 +629,7 @@ class Levels3DPreview {
         this.controls._lockZero = game.settings.get("levels-3d-preview", "cameralockzero");
         game.settings.get("levels-3d-preview", "cameralockzero") && this.controls.addEventListener("change", this._onCameraChange.bind(this));
         this.ruler = new Ruler3D(this);
-        this.interactionManager = new InteractionManager(this);
+        this.interactionManager = new this.CONFIG.UI.InteractionManager(this);
         this.interactionManager.activateListeners();
         this.cursors = new Cursors3D(this);
         this.cutsceneEngine = new CutsceneEngine(this);
@@ -635,6 +637,7 @@ class Levels3DPreview {
         this.GameCamera = new GameCamera(this.camera, this.controls, this);
         //clipping
         this.renderer.localClippingEnabled = true;
+        Hooks.callAll("3DCanvasPostInit", this);
     }
 
     async cacheModels() {
@@ -1741,6 +1744,21 @@ class Levels3DPreview {
         labelText.innerText = label;
     }
 
+    _refreshPerception() {
+        canvas.perception.update(
+            {
+                initializeLighting: true,
+                initializeSounds: true,
+                initializeVision: true,
+                refreshLighting: true,
+                refreshSounds: true,
+                refreshOcclusion: true,
+                refreshVision: true,
+            },
+            true,
+        );
+    }
+
     _onReady() {
         if (game.settings.get("levels-3d-preview", "loadingShown")) {
             setTimeout(() => {
@@ -1756,21 +1774,11 @@ class Levels3DPreview {
         }
         this.weather = new WeatherSystem(this);
 
-        canvas.perception.update(
-            {
-                initializeLighting: true,
-                initializeSounds: true,
-                initializeVision: true,
-                refreshLighting: true,
-                refreshSounds: true,
-                refreshOcclusion: true,
-                refreshVision: true,
-            },
-            true,
-        );
-
+        this._refreshPerception();
+        
         this.setFilters(true);
         setTimeout(() => {
+            this._refreshPerception();
             this.helpers.showSceneReport();
         }, 1000);
         Hooks.callAll("3DCanvasSceneReady", game.Levels3DPreview);

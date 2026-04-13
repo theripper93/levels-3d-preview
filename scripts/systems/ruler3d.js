@@ -380,11 +380,13 @@ export class Ruler3D {
             polygonPoints.push(parseInt((point.x - minX) * factor), parseInt((point.z - minY) * factor));
         }
         isClosed && polygonPoints.push(polygonPoints[0], polygonPoints[1]);
+        const boundWidth = Math.max(width, 10);
+        const boundHeight = Math.max(height, 10);
         const tileData = {
-            width: Math.max(width, 10),
-            height: Math.max(height, 10),
-            x: minX * factor,
-            y: minY * factor,
+            width: boundWidth,
+            height: boundHeight,
+            x: minX * factor + boundWidth / 2,
+            y: minY * factor + boundHeight / 2,
             elevation: bottom,
             texture: {
                 src: "modules/levels-3d-preview/assets/blank.webp",

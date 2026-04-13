@@ -575,10 +575,29 @@ class MapBrowser extends HandlebarsApplication {
         let stringified = JSON.stringify(map.data);
         stringified = stringified.replaceAll(originalID, newID);
         map.data = JSON.parse(stringified);
-        const scene = await Scene.create(map.data, {keepId: true});
+        map.data = await this._migrateMap(map.data);
+        const scene = await Scene.create({name: map.data.name, id: map.data.id}, {keepId: true});
+        await scene.importFromJSON(JSON.stringify(map.data));
         if(CONFIG.Levels) await CONFIG.Levels.helpers.migration.migrateData(scene);
         increaseDownloadCount(id);
-        ui.notifications.info(game.i18n.localize("levels3dpreview.sharing.mapbrowser.imported") + `: ${map.data.name}`);
+        // ui.notifications.info(game.i18n.localize("levels3dpreview.sharing.mapbrowser.imported") + `: ${map.data.name}`);
+    }
+
+    async _migrateMap(mapData) {
+        const coreGeneration = parseInt(mapData._stats.coreVersion);
+        if (coreGeneration < 12) {
+            for (const collection of Object.values(mapData)) {
+                if (!Array.isArray(collection)) continue;
+                for (const document of collection) {
+                    const oldBottom = document.flags?.levels?.rangeBottom;
+                    if (Number.isNumeric(oldBottom)) {
+                        delete document.flags.levels.rangeBottom;
+                        document.elevation = oldBottom;
+                    }
+                }
+            }
+        }
+        return mapData;
     }
 
     _onFilter() {

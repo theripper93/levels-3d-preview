@@ -24,6 +24,11 @@
   "styles": [
     "styles/module.css"
   ],
+  "documentTypes": {
+    "RegionBehavior": {
+      "obscureVision": {}
+    }
+  },
   "packs": [
     {
       "name": "documentation",

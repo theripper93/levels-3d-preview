@@ -2,11 +2,12 @@ import * as THREE from "../lib/three.module.js";
 import { factor } from "../main.js";
 import { DiagonalStripesMaterial } from "../shaders/regionMaterial.js";
 import { Shape3D } from "./shape3d.js";
+import { ObscureVisionConfig, ObscureVisionRegionBehaviorType } from "../apps/obscureVisionRegionBehavior.js";
 
 export class Region3D extends THREE.Object3D {
     constructor(region, hidden = false) {
         super();
-        this.isFog = false;
+        this.isFog = region.behaviors.some((b) => b.type === "levels-3d-preview.obscureVision" && b.disabled === false);
         this.region = region;
         this.top = Number.isFinite(this.region.elevation.top) ?
             this.region.elevation.top * canvas.scene.dimensions.distancePixels / factor : 0;
@@ -14,14 +15,16 @@ export class Region3D extends THREE.Object3D {
             this.region.elevation.bottom * canvas.scene.dimensions.distancePixels / factor : 0;
         this.height = this.top !== this.bottom ? this.top - this.bottom : 0.001;
         const extrudeRegion = (region.shapes?.length > 1) || region.restriction.enabled;
-        this.material = new DiagonalStripesMaterial({ color: region.color.css });
-        this.material.side = this.height < 0.01 ? THREE.FrontSide : THREE.DoubleSide;
+        // this.material = new DiagonalStripesMaterial({ color: region.color.css });
+        // this.material.side = this.height < 0.01 ? THREE.FrontSide : THREE.DoubleSide;
         if (extrudeRegion) {
             this.drawExtrude();
         } else {
             this.drawShapes();
         }
-        if (!hidden) this.addToScene();
+        if (this.region?.object?.isVisible === false) return;
+        if (hidden) return;
+        this.addToScene();
     }
     #bottom = 0;
     #height = 0.01;
@@ -46,6 +49,10 @@ export class Region3D extends THREE.Object3D {
         return this.#bottom;
     }
 
+    get embeddedName() {
+        return "Region";
+    }
+
     addToScene() {
         game.Levels3DPreview.scene.add(this);
     }
@@ -67,19 +74,50 @@ export class Region3D extends THREE.Object3D {
         return false;
     }
 
+    applyHitbox() {
+        for (const shape of this.children) {
+            for (const shapeMesh of shape.children) {
+                shapeMesh.userData.entity3D = this;
+                shapeMesh.userData.noIntersect = false;
+            }
+        }
+        this.userData.hitbox = this;
+        this.userData.interactive = true;
+        this.userData.entity3D = this;
+        this.userData.isHitbox = true;
+    }
+
     drawShapes() {
         for (const shape of this.region.shapes) {
-            const shape3d = Shape3D.create({ shape, material: this.material });
+            const shape3d = Shape3D.create({ shape, region: this.region });
             this.add(shape3d);
         }
+        this.applyHitbox();
     }
 
     drawExtrude() {
         const geometry = Shape3D.extrudeGeometry(this.region.polygonTree, { depth: this.height });
         geometry.translate(0, this.bottom, 0);
-        const material = this.material ?? new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true });
+        const material = new DiagonalStripesMaterial({ color: this.region.color.css, scale: 30 });
+        material.side = this.height < 0.01 ? THREE.FrontSide : THREE.DoubleSide;
         const mesh = new THREE.Mesh(geometry, material);
         this.add(mesh);
+    }
+
+    _onClickLeft(e) {
+        this.region?.object?._onClickLeft(e);
+    }
+
+    _onClickLeft2(e) {
+        this.region?.object?._onClickLeft2(e);
+    }
+
+    _onClickRight(e) {
+        this.region?.object?._onClickRight(e);
+    }
+
+    _onClickRight2(e) {
+        this.region?.object?._onClickRight2(e);
     }
 
     static #regions = new Map();
@@ -137,31 +175,31 @@ export class Region3D extends THREE.Object3D {
         const shape = shape3d.shape;
 
         if (shape3d.tool === "light") {
+            const defaults = foundry.applications.sheets.palette.AmbientLightPalette.createData;
             const elevation = shape3d.origin.y * factor / canvas.scene.dimensions.distancePixels + 0.1;
-            const lightData = {
+            const lightData = foundry.utils.mergeObject(defaults, {
                 config: {
                     dim: shape.radius / canvas.scene.dimensions.distancePixels,
                     bright: shape.radius / (2 * canvas.scene.dimensions.distancePixels),
-                    color: null,
                 },
                 x: shape.x,
                 y: shape.y,
                 elevation: elevation * 2,
-                shape: shape,
-            };
+            });
             const lights = await canvas.scene.createEmbeddedDocuments("AmbientLight", [lightData]);
             shape3d.destroy();
             return lights;
         }
         
         if (shape3d.tool === "sound") {
+            const defaults = foundry.applications.sheets.palette.AmbientSoundPalette.createData;
             const elevation = shape3d.origin.y * factor / canvas.scene.dimensions.distancePixels + 0.1;
-            const soundData = {
+            const soundData = foundry.utils.mergeObject(defaults, {
                 radius: shape.radius / canvas.scene.dimensions.distancePixels,
                 x: shape.x,
                 y: shape.y,
                 elevation: elevation * 2,
-            };
+            });
             const sounds = await canvas.scene.createEmbeddedDocuments("AmbientSound", [soundData]);
             sounds[0].sheet.render(true);
             shape3d.destroy();
@@ -180,7 +218,8 @@ export class Region3D extends THREE.Object3D {
             if (depth < 0) elevation += depth / (2 * canvas.scene.dimensions.distancePixels);
             else elevation -= depth / (2 * canvas.scene.dimensions.distancePixels);
 
-            const tileData = {
+            const defaults = foundry.applications.sheets.palette.TilePalette.createData;
+            const tileData = foundry.utils.mergeObject(defaults, {
                 width: Math.abs(width),
                 height: Math.abs(height),
                 texture: {
@@ -196,7 +235,7 @@ export class Region3D extends THREE.Object3D {
                         depth: Math.abs(depth),
                     },
                 },
-            };
+            });
             const tiles = await canvas.scene.createEmbeddedDocuments("Tile", [tileData]);
             shape3d.destroy();
             return tiles;
@@ -214,48 +253,24 @@ export class Region3D extends THREE.Object3D {
             return document;
         }
 
-        const document = await canvas.scene.createEmbeddedDocuments("Region", [{
-            name: "3DCanvas",
-            color: shape3d.color,
-            elevation: {
-                bottom: shape3d.elevationBottom * factor / canvas.scene.dimensions.distancePixels,
-                top: shape3d.elevationTop * factor / canvas.scene.dimensions.distancePixels
-            },
-            shapes: [shape],
-        }])?.[0];
+        const defaults = foundry.applications.sheets.palette.RegionPalette.createData;
+        const document = await canvas.scene.createEmbeddedDocuments("Region", [
+            foundry.utils.mergeObject(defaults, {
+                name: "3DCanvas",
+                color: shape3d.color,
+                elevation: {
+                    bottom: shape3d.elevationBottom * factor / canvas.scene.dimensions.distancePixels,
+                    top: shape3d.elevationTop * factor / canvas.scene.dimensions.distancePixels
+                },
+                shapes: [shape],
+            })
+        ])?.[0];
 
         shape3d.destroy();
         return document;
     }
 
     static setHooks() {
-        // Hooks.on("createRegion", (region) => {
-        //     if (!game.Levels3DPreview?._active || !region.object) return;
-        //     Region3D.handle(region);
-        // });
-
-        // Hooks.on("updateRegion", (region) => {
-        //     if (!game.Levels3DPreview?._active || !region.object) return;
-        //     Region3D.handle(region);
-        // });
-
-        // Hooks.on("deleteRegion", (region) => {
-        //     if (!game.Levels3DPreview?._active) return;
-        //     Region3D.destroy(region);
-        // });
-
-        // Hooks.on("refreshAmbientLight", (light) => {
-        //     if (!game.Levels3DPreview?._active) return;
-        //     const region = {
-        //         elevation: {
-        //             bottom: light.document.elevation,
-        //             top: light.document.elevation + 10,
-        //         },
-        //         shapes: [light.document.shape],
-        //     }
-        //     Region3D.handle(region);
-        // });
-
         Hooks.on("drawRegion", (region) => {
             if (!game.Levels3DPreview?._active || !region.object) return;
             Region3D.handle(region);
@@ -272,3 +287,13 @@ export class Region3D extends THREE.Object3D {
         });
     }
 }
+
+Hooks.once('init', () => {
+    const behaviorKey = "levels-3d-preview.obscureVision";
+    Object.assign(CONFIG.RegionBehavior.dataModels, { [behaviorKey]: ObscureVisionRegionBehaviorType });
+    Object.assign(CONFIG.RegionBehavior.typeIcons, { [behaviorKey]: "fas fa-eye-slash" });
+    foundry.applications.apps.DocumentSheetConfig.registerSheet(RegionBehavior, "levels-3d-preview", ObscureVisionConfig, {
+        types: ["obscureVision"],
+        label: "Obscure Vision",
+    });
+});

@@ -1,4 +1,5 @@
 {
+    "TYPES.RegionBehavior.levels-3d-preview.obscureVision": "Obscure 3D Vision",
     "levels3dpreview": {
         "controls": {
             "preview3d": "Toggle 3D Mode",
@@ -498,7 +499,8 @@
                 "label": "Mirror Levels Tile Visibility"
             },
             "object3dSight": {
-                "label": "Use 3D Geometry for sight calculations"
+                "label": "Use 3D Geometry for sight calculations",
+                "notes": "Use Tiles instead of Walls for sight and collisions."
             },
             "enableGameCamera": {
                 "label": "Enable Game Camera",
@@ -1113,6 +1115,12 @@
             }
         },
         "settings": {
+            "highlighted": {
+                "important": {
+                    "legend": "3D Core Settings",
+                    "hint": "These settings should be enabled when using a scene as 3D Scene only."
+                }
+            },
             "regionsAlwaysFlat": {
                 "name": "Always Flat Regions",
                 "hint": "When enabled, all placed Regions will be flat."

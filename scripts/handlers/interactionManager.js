@@ -885,10 +885,11 @@ export class InteractionManager {
         if (buildPlane) intersectTargets.push(buildPlane);
         const table = this._parent.table;
         if (table) intersectTargets.push(table);
-        const intersects = this.raycaster
-            .intersectObjects(intersectTargets, true)
-            .filter(this._clippingFilter)
-            .filter((i) => !i?.object?.userData?.noIntersect);
+        const intersects0 = this.raycaster.intersectObjects(intersectTargets, true);
+        const intersects1 = intersects0.filter(this._clippingFilter);
+        const intersects = intersects1.filter((i) => !i?.object?.userData?.noIntersect);
+            // .filter(this._clippingFilter)
+            // .filter((i) => !i?.object?.userData?.noIntersect);
         const originalObject = intersects.length > 0 ? intersects[0].object : null;
         if (!intersects.length) return null;
         for (let int of intersects) {

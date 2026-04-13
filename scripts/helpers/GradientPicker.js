@@ -11,6 +11,7 @@ export class GradientPicker{
         div.style.display = "flex";
         div.style.flexDirection = "row";
         div.style.justifyContent = "space-evenly";
+        div.style.flexWrap = "wrap";
         div.style.alignItems = "center";
         div.style.width = "100%";
         div.style.padding = "0.5rem";

@@ -16,6 +16,12 @@
     background: #000000bd;
 }
 
+body:has(#levels3d) {
+    li:has(button[data-control='drawings']) {
+        display: none;
+    }
+}
+
 #levels3d-ruler-text {
     font-size: var(--levels3d-ruler-font-size);
     color: rgb(255, 255, 255);

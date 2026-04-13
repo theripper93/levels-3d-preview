@@ -938,6 +938,10 @@ i[data-action=community-maps].contest-next {
   background: rgba(0, 0, 0, 0.7411764706);
 }
 
+body:has(#levels3d) li:has(button[data-control=drawings]) {
+  display: none;
+}
+
 #levels3d-ruler-text {
   font-size: var(--levels3d-ruler-font-size);
   color: rgb(255, 255, 255);
@@ -1174,5 +1178,3 @@ i[data-action=community-maps].contest-next {
 .levels-3d-preview-welcome .dialog-content {
   display: inline-block;
 }
-
-/*# sourceMappingURL=module.css.map*/

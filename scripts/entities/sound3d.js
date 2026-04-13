@@ -17,21 +17,6 @@ export class Sound3D {
     init() {
         this.mesh = new THREE.Group();
         this._parent.scene.add(this.mesh);
-        this.sound3d = new THREE.Object3D();
-        const use3DSound = true;
-        /*if (use3DSound) {
-            this.sound3d = new THREE.PositionalAudio(this._parent.listener);
-            this._parent.audioLoader.load(this.sound.document.path, (buffer) => {
-                this.sound3d.setBuffer(buffer);
-                //this.sound3d.setRefDistance(this.radius);
-                this.sound3d.setDistanceModel("linear");
-                this.sound3d.setMaxDistance(this.radius);
-                this.sound3d.setLoop(true);
-                this.sound3d.setVolume(1);//this.sound.document.volume);
-                this.sound3d.play();
-            });
-            this.mesh.add(this.sound3d);
-        }*/
         if (game.user.isGM) this.createHandle();
         this.refresh();
     }
@@ -150,9 +135,8 @@ export class Sound3D {
 
     destroy() {
         this._parent.scene.remove(this.mesh);
-        this.soundHelper?.dispose();
-        this.sound3d?.stop();
-        this.sound3d?.disconnect();
+        this.soundHelper?.geometry?.dispose();
+        this.soundHelper?.material?.dispose();
     }
 
     _onClickLeft(e) {
