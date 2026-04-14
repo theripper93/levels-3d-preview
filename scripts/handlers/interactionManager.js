@@ -5,6 +5,7 @@ import { GroupSelectHandler } from "./GroupSelectHandler.js";
 import { isLockedOnOrigin } from "../shaders/templateEffects.js";
 import { TileCreationQueue } from "./TileCreationQueue.js";
 import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from "../lib/three-mesh-bvh.js";
+import { Note3D } from "../entities/note3d.js";
 THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
 THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
 THREE.Mesh.prototype.raycast = acceleratedRaycast;
@@ -445,6 +446,7 @@ export class InteractionManager {
         this._onMouseMove(event, true);
         const intersectData = this.findMouseIntersect(event);
         const intersect = intersectData?.object;
+        if (this._leftDown && this.activeLayerEntity === "Note" && ui.controls.tool.name === "journal") return Note3D.newNote(intersectData.point);
         if (this.isRulerDrag(event, intersectData)) this.toggleControls(false);
         if (!intersect || event.ctrlKey) return;
         if (intersect.userData?.entity3D?.embeddedName === this.activeLayerEntity && !(this._gizmoEnabled && this.activeLayerEntity === "Tile")) this.toggleControls(false);
@@ -1180,35 +1182,32 @@ export class InteractionManager {
     }
 
     async removeWASDBindings() {
-        Dialog.confirm({
+        foundry.applications.api.DialogV2.confirm({
             title: game.i18n.localize(`levels3dpreview.keybindings.dialog.title`),
             content: game.i18n.localize(`levels3dpreview.keybindings.dialog.content`),
-            yes: async () => {
-                await game.keybindings.set(
-                    "core",
-                    "panUp",
-                    game.keybindings.get("core", "panUp").filter((b) => b.key != "KeyW" && b.key != "ArrowUp" && b.key != "Numpad8"),
-                );
-                await game.keybindings.set(
-                    "core",
-                    "panDown",
-                    game.keybindings.get("core", "panDown").filter((b) => b.key != "KeyS" && b.key != "ArrowDown" && b.key != "Numpad2"),
-                );
-                await game.keybindings.set(
-                    "core",
-                    "panLeft",
-                    game.keybindings.get("core", "panLeft").filter((b) => b.key != "KeyA" && b.key != "ArrowLeft" && b.key != "Numpad4"),
-                );
-                await game.keybindings.set(
-                    "core",
-                    "panRight",
-                    game.keybindings.get("core", "panRight").filter((b) => b.key != "KeyD" && b.key != "ArrowRight" && b.key != "Numpad6"),
-                );
-                await game.settings.set("levels-3d-preview", "removeKeybindingsPrompt", true);
-            },
-            no: () => {
-                game.settings.set("levels-3d-preview", "removeKeybindingsPrompt", true);
-            },
+        }).then(async res => {
+            if (!res) return game.settings.set("levels-3d-preview", "removeKeybindingsPrompt", true);
+            await game.keybindings.set(
+                "core",
+                "panUp",
+                game.keybindings.get("core", "panUp").filter((b) => b.key != "KeyW" && b.key != "ArrowUp" && b.key != "Numpad8"),
+            );
+            await game.keybindings.set(
+                "core",
+                "panDown",
+                game.keybindings.get("core", "panDown").filter((b) => b.key != "KeyS" && b.key != "ArrowDown" && b.key != "Numpad2"),
+            );
+            await game.keybindings.set(
+                "core",
+                "panLeft",
+                game.keybindings.get("core", "panLeft").filter((b) => b.key != "KeyA" && b.key != "ArrowLeft" && b.key != "Numpad4"),
+            );
+            await game.keybindings.set(
+                "core",
+                "panRight",
+                game.keybindings.get("core", "panRight").filter((b) => b.key != "KeyD" && b.key != "ArrowRight" && b.key != "Numpad6"),
+            );
+            await game.settings.set("levels-3d-preview", "removeKeybindingsPrompt", true);
         });
     }
 
@@ -1306,12 +1305,12 @@ export const dropFunctions = {
         const useSnapped = grid ?? Ruler3D.useSnapped();
         let snapped;
         if (useSnapped) {
-            snapped = canvas.grid.getSnappedPoint({x: data.x - width / 2, y: data.y - height / 2}, {mode: CONST.GRID_SNAPPING_MODES.TOP_LEFT_CORNER});
+            snapped = canvas.grid.getSnappedPoint({x: data.x, y: data.y}, {mode: CONST.GRID_SNAPPING_MODES.TOP_LEFT_CORNER});
         }
         return await canvas.scene.createEmbeddedDocuments("Tile", [
             {
-                x: Math.round(snapped ? snapped.x : data.x - width / 2),
-                y: Math.round(snapped ? snapped.y : data.y - height / 2),
+                x: Math.round(snapped ? snapped.x : data.x),
+                y: Math.round(snapped ? snapped.y : data.y),
                 width: Math.round(width),
                 height: Math.round(height),
                 elevation: data.elevation,

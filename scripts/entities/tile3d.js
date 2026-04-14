@@ -2739,14 +2739,12 @@ export async function autoMergeTiles(tiles = canvas.tiles.placeables, skipContro
 
         const occlusionIdText = occlusionId == "noOcclusionId" ? "" : game.i18n.localize("levels3dpreview.mergeTiles.occlusionGroup") + occlusionId;
 
-        Dialog.confirm({
+        foundry.applications.api.DialogV2.confirm({
             title: game.i18n.localize("levels3dpreview.mergeTiles.title") + occlusionIdText,
             content: game.i18n.localize("levels3dpreview.mergeTiles.content").replace("%count%", mergedCount),
-            yes: async () => {
-                await merge();
-            },
-            no: () => { },
             defaultYes: false,
+        }).then(async res => {
+            if (res) await merge();
         });
 
         async function merge() {
@@ -2884,11 +2882,9 @@ export function extractPointsFromDrawing() {
 }
 
 export async function extrudeWalls(walls) {
-    const confirm = Dialog.confirm({
+    const confirm = foundry.applications.api.DialogV2.confirm({
         title: game.i18n.localize("levels3dpreview.extrudeWalls.title"),
         content: game.i18n.localize("levels3dpreview.extrudeWalls.content"),
-        yes: () => true,
-        no: () => false,
     });
 
     if (!(await confirm)) return false;

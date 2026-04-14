@@ -575,29 +575,45 @@ class MapBrowser extends HandlebarsApplication {
         let stringified = JSON.stringify(map.data);
         stringified = stringified.replaceAll(originalID, newID);
         map.data = JSON.parse(stringified);
-        map.data = await this._migrateMap(map.data);
+        const coreGeneration = parseInt(map.data._stats.coreVersion);
         const scene = await Scene.create({name: map.data.name, id: map.data.id}, {keepId: true});
         await scene.importFromJSON(JSON.stringify(map.data));
-        if(CONFIG.Levels) await CONFIG.Levels.helpers.migration.migrateData(scene);
+        await this._migrateMap(scene, coreGeneration);
         increaseDownloadCount(id);
+        // if(CONFIG.Levels) await CONFIG.Levels.helpers.migration.migrateData(scene);
         // ui.notifications.info(game.i18n.localize("levels3dpreview.sharing.mapbrowser.imported") + `: ${map.data.name}`);
     }
 
-    async _migrateMap(mapData) {
-        const coreGeneration = parseInt(mapData._stats.coreVersion);
+    async _migrateMap(scene, coreGeneration) {
         if (coreGeneration < 12) {
-            for (const collection of Object.values(mapData)) {
-                if (!Array.isArray(collection)) continue;
-                for (const document of collection) {
+            const collections = scene.collections;
+            for (const [collectionName, collection] of Object.entries(collections)) {
+                const documents = collection.contents;
+                const updates = [];
+                for (const document of documents) {
                     const oldBottom = document.flags?.levels?.rangeBottom;
+                    let update = {};
                     if (Number.isNumeric(oldBottom)) {
-                        delete document.flags.levels.rangeBottom;
-                        document.elevation = oldBottom;
+                        update = {
+                            _id: document.id,
+                            elevation: oldBottom,
+                            flags: {
+                                levels: {
+                                    "-=rangeBottom": null,
+                                },
+                            },
+                        };
+                        if (documents[0].documentName === "Drawing") {
+                            update.interface = false;
+                        }
+                        updates.push(update);
                     }
                 }
+                if (updates.length <= 0) continue;
+                await scene.updateEmbeddedDocuments(documents[0].documentName, updates);
             }
         }
-        return mapData;
+        return scene;
     }
 
     _onFilter() {

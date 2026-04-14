@@ -654,40 +654,40 @@ export class Template3D {
 
     _onClickLeft(e) {
         if (this.isPreview) return;
-        const event = {
-            data: {
-                originalEvent: e,
-            },
-        };
-        this.template._onClickLeft(event);
+        // const event = {
+        //     data: {
+        //         originalEvent: e,
+        //     },
+        // };
+        this.template._onClickLeft(e);
         this.template.control();
     }
 
     _onClickLeft2(e) {
-        const event = {
-            data: {
-                originalEvent: e,
-            },
-        };
-        this.template?._onClickLeft2(event);
+        // const event = {
+        //     data: {
+        //         originalEvent: e,
+        //     },
+        // };
+        this.template?._onClickLeft2(e);
     }
 
     _onClickRight(e) {
-        const event = {
-            data: {
-                originalEvent: e,
-            },
-        };
-        this.template?._onClickRight(event);
+        // const event = {
+        //     data: {
+        //         originalEvent: e,
+        //     },
+        // };
+        this.template?._onClickRight(e);
     }
 
     _onClickRight2(e) {
-        const event = {
-            data: {
-                originalEvent: e,
-            },
-        };
-        this.template?._onClickRight2(event);
+        // const event = {
+        //     data: {
+        //         originalEvent: e,
+        //     },
+        // };
+        this.template?._onClickRight2(e);
     }
 
     _onHoverIn(e) {

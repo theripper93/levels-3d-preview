@@ -125,10 +125,12 @@ export class AssetBrowser extends HandlebarsApplication {
         if (!isBox && !isPolygon) return;
         const depth = tileData.flags["levels-3d-preview"].depth;
         const elevation = tileData.elevation + (depth * canvas.scene.dimensions.distance) / canvas.scene.dimensions.size;
-        const { x, y, width, height } = tileData;
+        let { x, y, width, height } = tileData;
+        // x -= width / 2;
+        // y -= height / 2;
         const approxArea = width * height;
         const pointCount = (approxArea / Math.pow(canvas.grid.size, 2)) * AssetBrowser.density * 0.3;
-        const polygonToolPoints = isPolygon ? this.toWorldSpace(this.getPolygonFromTile(tileData).polygon, x, y) : [x, y, x + width, y, x + width, y + height, x, y + height, x, y].map((n) => parseInt(n));
+        const polygonToolPoints = isPolygon ? AssetBrowser.toWorldSpace(AssetBrowser.getPolygonFromTile(tileData).polygon, x, y) : [x, y, x + width, y, x + width, y + height, x, y + height, x, y].map((n) => parseInt(n));
         const isClosed = isPolygon ? polygonToolPoints[0] === polygonToolPoints[polygonToolPoints.length - 2] && polygonToolPoints[1] === polygonToolPoints[polygonToolPoints.length - 1] : true;
         const randomPoints = getRandomPointsInsidePolygon(polygonToolPoints, pointCount, isClosed);
         const pos3D = (...args) => game.Levels3DPreview.CONFIG.entityClass.Ruler3D.posCanvasTo3d(...args);
@@ -174,7 +176,7 @@ export class AssetBrowser extends HandlebarsApplication {
 
         const elevation = tile.document.elevation;
         const depth = tile.document.flags["levels-3d-preview"].depth;
-        const rect = [tile.data.x, tile.data.y, tile.data.width, tile.data.height];
+        const rect = [tile.document.x - tile.document.width / 2, tile.document.y - tile.document.height / 2, tile.document.width, tile.document.height];
         const nPointsMax = count || Math.max(1, Math.floor(rect[2] * rect[3] * AssetBrowser.density * 0.0001));
 
         if (scatterEdges) {
@@ -269,11 +271,9 @@ export class AssetBrowser extends HandlebarsApplication {
                     points.splice(index, 1);
                 }
             }
-            const proceed = await Dialog.confirm({
-                title: "Scatter on Edges",
+            const proceed = await foundry.applications.api.DialogV2.confirm({
+                window: { title: "Scatter on Edges" },
                 content: `<p>Scattering ${points.length} assets on edges of the selected tile. Proceed?</p>`,
-                yes: () => true,
-                no: () => false,
                 defaultYes: true,
             });
             if (proceed) {
@@ -319,11 +319,9 @@ export class AssetBrowser extends HandlebarsApplication {
                 }
             }
 
-            const proceed = await Dialog.confirm({
+            const proceed = await foundry.applications.api.DialogV2.confirm({
                 title: "Scatter on Surface",
                 content: `<p>Scattering ${points.length} assets on the surface of the selected tile. Proceed?</p>`,
-                yes: () => true,
-                no: () => false,
                 defaultYes: true,
             });
             if (proceed) {
@@ -337,25 +335,26 @@ export class AssetBrowser extends HandlebarsApplication {
 
     async autoScatterDialog() {
         let edges, surfaces;
-        const res = await Dialog.prompt({
-            title: "Smart Scatter",
-            content: `<p>Do you wish to scatter tiles on Edges, Surfaces or Both?</p>
-            <hr>
-            <div style="display: grid; grid-template-columns: 1fr 1fr;">
-            <div class="form-group" style="display: flex;align-items: center;">
-            <input type="checkbox" id="edges" name="edges" checked>
-                <label for="edges">Edges</label>
-            </div>
-            <div class="form-group" style="display: flex;align-items: center;">
-            <input type="checkbox" id="surfaces" name="surfaces" checked>
-                <label for="surfaces">Surfaces</label>
-            </div>
-            </div>
-            <hr>
+        const res = await foundry.applications.api.DialogV2.prompt({
+            window: { title: "Smart Scatter" },
+            content: `
+                <p>Do you wish to scatter tiles on Edges, Surfaces or Both?</p>
+                <hr>
+                <div style="display: grid; grid-template-columns: 1fr 1fr;">
+                    <div class="form-group" style="display: flex;align-items: center;">
+                        <input type="checkbox" id="edges" name="edges" checked>
+                        <label for="edges">Edges</label>
+                    </div>
+                    <div class="form-group" style="display: flex;align-items: center;">
+                        <input type="checkbox" id="surfaces" name="surfaces" checked>
+                        <label for="surfaces">Surfaces</label>
+                    </div>
+                </div>
+                <hr>
             `,
-            callback: (html) => {
-                edges = html.querySelector("#edges").checked;
-                surfaces = html.querySelector("#surfaces").checked;
+            submit: (res, dialog) => {
+                edges = dialog.element?.querySelector("#edges").checked;
+                surfaces = dialog.element?.querySelector("#surfaces").checked;
             },
             rejectClose: true,
         });
@@ -503,7 +502,29 @@ export class AssetBrowser extends HandlebarsApplication {
         html.querySelectorAll(".material-confirm").forEach(el => el.classList.add("hidden"));
         html.addEventListener("keyup", (e) => { if (e.target.matches("#search")) this.onSearch(e); });
         html.querySelectorAll("input").forEach(el => el.dispatchEvent(new Event("keyup")));
-        html.querySelectorAll("li").forEach(li => li.addEventListener("mouseup", (e) => {
+        html.querySelector("#asset-packs").addEventListener("change", e => this.onSearch(e) );
+        html.querySelectorAll(".quick-placement-toggle").forEach(btn => btn.addEventListener("click", (e) => {
+                btn.classList.toggle("active");
+                if (!this._paintTourDone && btn.dataset.action == "paint") {
+                    game.settings.set("levels-3d-preview", "assetbrowserpainttour", true);
+                    this._paintTourDone = true;
+                    setTimeout(() => {
+                        game.tours.get("levels-3d-preview.asset-browser-paint").start();
+                    }, 2000);
+                }
+        }));
+        html.querySelectorAll(".utility-button").forEach(btn => btn.addEventListener("click", (e) => {
+            const action = btn.dataset.action;
+            runScript.bind(this)(action);
+        }));
+        html.querySelector("#scale").addEventListener("change", (e) => AssetBrowser.scale = parseFloat(e.target.value));
+        html.querySelector("#density").addEventListener("change", (e) => AssetBrowser.density = parseFloat(e.target.value));
+        this.onSearch();
+    }
+
+    activateListElementListeners(li) {
+        const html = this.element;
+        li.addEventListener("mouseup", (e) => {
             const isSelect = e.target.closest("li").classList.contains("selected");
             if (!e.ctrlKey && !e.shiftKey) html.querySelectorAll("li").forEach(el => el.classList.remove("selected"));
             if (e.ctrlKey) e.target.closest("li").classList.toggle("selected");
@@ -527,26 +548,9 @@ export class AssetBrowser extends HandlebarsApplication {
             }
             this._hasSelected = html.querySelectorAll("li.selected").length > 0;
             html.querySelector("#selected-notification").style.display = this._hasSelected ? "" : "none";
+            li.addEventListener("dragstart", this._onDragStart);
             if (this._hasSelected) canvas.tiles.releaseAll();
-        }));
-        html.querySelector("#asset-packs").addEventListener("change", e => this.onSearch(e) );
-        html.querySelectorAll(".quick-placement-toggle").forEach(btn => btn.addEventListener("click", (e) => {
-                btn.classList.toggle("active");
-                if (!this._paintTourDone && btn.dataset.action == "paint") {
-                    game.settings.set("levels-3d-preview", "assetbrowserpainttour", true);
-                    this._paintTourDone = true;
-                    setTimeout(() => {
-                        game.tours.get("levels-3d-preview.asset-browser-paint").start();
-                    }, 2000);
-                }
-        }));
-        html.querySelectorAll(".utility-button").forEach(btn => btn.addEventListener("click", (e) => {
-            const action = btn.dataset.action;
-            runScript.bind(this)(action);
-        }));
-        html.querySelector("#scale").addEventListener("change", (e) => AssetBrowser.scale = parseFloat(e.target.value));
-        html.querySelector("#density").addEventListener("change", (e) => AssetBrowser.density = parseFloat(e.target.value));
-        this.onSearch();
+        });
     }
 
     onSearch() {
@@ -577,7 +581,7 @@ export class AssetBrowser extends HandlebarsApplication {
         const html = results.map((m) => this.generateListItem(m)).join("");
         this.element.querySelector("ol").innerHTML = html;
         this.element.querySelectorAll("li").forEach((li) => {
-            li.addEventListener("dragstart", this._onDragStart);
+            this.activateListElementListeners(li);
         });
     }
 
@@ -737,23 +741,22 @@ async function runScript(id) {
             break;
         case "vines":
             let radius;
-            const res = await Dialog.prompt({
-                title: "Vines",
-                content: `<p>Please confirm the vines propagation radius. Using values higher than 1000 is NOT suggested</p>
-                <hr>
-                <form>
-                <div class="form-group">
-                    <label for="radius">Radius <span class="units">(Pixels)</span></label>
-                    <div class="form-fields">
-                        <input type="number" value="500" max="1000" min="100" step="1" name="radius">
-                    </div>
-                </div>
-                </form>
-                <hr>
+            const res = await foundry.applications.api.DialogV2.prompt({
+                window: { title: "Vines" },
+                content: `
+                    <p>Please confirm the vines propagation radius. Using values higher than 1000 is NOT suggested</p>
+                    <hr>
+                    <form>
+                        <div class="form-group">
+                            <label for="radius">Radius <span class="units">(Pixels)</span></label>
+                            <div class="form-fields">
+                                <input type="number" value="500" max="1000" min="100" step="1" name="radius">
+                            </div>
+                        </div>
+                    </form>
+                    <hr>
                 `,
-                callback: (html) => {
-                    radius = parseInt(html.querySelector('[name="radius"]').value);
-                },
+                submit: (res, dialog) => radius = parseInt(dialog.element?.querySelector('[name="radius"]')?.value),
                 rejectClose: true,
             });
             if (res !== "ok") return;
