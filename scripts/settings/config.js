@@ -511,7 +511,7 @@ export function registerConfigs() {
                 mirrorLevels: {
                     type: "checkbox",
                     label: game.i18n.localize("levels3dpreview.flags.mirrorLevels.label"),
-                    default: false,
+                    default: true,
                 },
             },
             "postprocessing": {
@@ -1410,17 +1410,17 @@ export function registerConfigs() {
                 },
                 doorType: {
                     type: "select",
-                    label: game.i18n.localize("WALLS.Door"),
+                    label: game.i18n.localize("WALL.DoorTypes.DOOR"),
                     default: 0,
                     options: {
-                        0: game.i18n.localize("levels3dpreview.flags.doorType.options.none"),
-                        1: game.i18n.localize("levels3dpreview.flags.doorType.options.door"),
-                        2: game.i18n.localize("levels3dpreview.flags.doorType.options.secret"),
+                        0: "WALL.DoorTypes.NONE",
+                        1: "WALL.DoorTypes.DOOR",
+                        2: "WALL.DoorTypes.SECRET",
                     },
                 },
                 doorSound: {
                     type: "select",
-                    label: game.i18n.localize("WALLS.DoorSoundLabel"),
+                    label: game.i18n.localize("WALL.FIELDS.doorSound.label"),
                     default: "",
                     options: Object.entries(CONFIG.Wall.doorSounds).reduce(
                         (obj, [key, value]) => {
@@ -1432,12 +1432,12 @@ export function registerConfigs() {
                 },
                 doorState: {
                     type: "select",
-                    label: game.i18n.localize("WALLS.DoorState"),
+                    label: game.i18n.localize("WALL.FIELDS.ds.label"),
                     default: 0,
                     options: {
-                        0: game.i18n.localize("levels3dpreview.flags.doorState.options.closed"),
-                        1: game.i18n.localize("levels3dpreview.flags.doorState.options.open"),
-                        2: game.i18n.localize("levels3dpreview.flags.doorState.options.locked"),
+                        0: "WALL.DoorStates.CLOSED",
+                        1: "WALL.DoorStates.OPEN",
+                        2: "WALL.DoorStates.LOCKED",
                     },
                 },
                 doorStyle: {

@@ -189,13 +189,13 @@ export class Wall3D {
                 const isLevelsVisible = this.wall.visible;
                 meshVisible = isLevelsVisible;
             } else {
-                const elevation = WallHeight.tokenElevation;
+                // const elevation = WallHeight.tokenElevation;
                 const isControlled = canvas.tokens.controlled[0];
                 const isGM = game.user.isGM;
                 if (isGM && !isControlled && !this.showControlIcon) return;
-                if (elevation < this.bottom) {
-                    meshVisible = false;
-                }
+                // if (elevation < this.bottom) {
+                    // meshVisible = false;
+                // }
             }
         }
         if (meshVisible) {

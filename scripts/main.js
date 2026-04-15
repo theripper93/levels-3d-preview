@@ -827,7 +827,7 @@ class Levels3DPreview {
         this.scene.add(this.transformControls);
         this.interactionManager.initTransformControls();
         this.object3dSight = canvas.scene.getFlag("levels-3d-preview", "object3dSight") ?? false;
-        this.mirrorLevelsVisibility = canvas.scene.getFlag("levels-3d-preview", "mirrorLevels") ?? false;
+        this.mirrorLevelsVisibility = canvas.scene.getFlag("levels-3d-preview", "mirrorLevels") ?? true;
         this.debugMode = game.settings.get("levels-3d-preview", "debugMode");
         if (this.debugMode) {
             this.scene.overrideMaterial = new THREE.MeshBasicMaterial({
@@ -890,6 +890,7 @@ class Levels3DPreview {
         this.GameCamera.init();
         this.interactionManager._cacheKeybinds();
         this.interactionManager.initGroupSelect();
+        if (canvas.scene.levels?.size > 1) ui.notifications.warn("3D Canvas: Scene Levels are not supported yet.", { permanent: true });
     }
 
     setFog() {

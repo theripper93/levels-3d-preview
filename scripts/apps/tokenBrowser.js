@@ -73,6 +73,7 @@ export class TokenBrowser extends HandlebarsApplication {
             const words = slugName.split("-");
             const permutations = generatePermutations(words);
             const matches = fuseSearch.search(slugName);
+            if (!matches.length) return returnFirst ? "" : []; 
             if (returnFirst) {
                 //find best possible result
                 const multiMatchesArrays = [];
