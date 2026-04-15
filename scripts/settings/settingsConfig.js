@@ -851,7 +851,10 @@ export function registerSettings() {
                         icon: "fas fa-book",
                         label: "levels3dpreview.welcome.opencompendium",
                         callback: () => {
-                            game.packs.get("levels-3d-preview.documentation").render(true);
+                            const a = document.createElement("a");
+                            a.href = "https://wiki.theripper93.com/levels-3d-preview";
+                            a.target = "_blank";
+                            a.click();
                         },
                     },
                 ],

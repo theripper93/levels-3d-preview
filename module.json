@@ -61,6 +61,7 @@
   "download": "https://github.com/theripper93/levels-3d-preview/releases/download/9.0.0/module.zip",
   "compatibility": {
     "minimum": "14",
-    "verified": "14"
+    "verified": "14",
+    "maximum": "14"
   }
 }
