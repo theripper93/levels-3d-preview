@@ -260,5 +260,12 @@ export class Wall3D {
         Hooks.on("deleteWall", (wall) => {
             if (game.Levels3DPreview?._active) game.Levels3DPreview.walls[wall.id]?.destroy();
         });
+
+        
+        Hooks.on("activateWallsLayer", () => {
+            if (game.Levels3DPreview?._active) ui.notifications.info(`
+                3D Canvas is designed to use 3D Tiles geometry for sight and collision calculations, not walls. Because of this, the walls layer is view-only and exists solely to visualize walls from 2D maps. 2D walls can still block sight and movement if "<strong>Use 3D Objects for Sight Calculations</strong>" is disabled in the scene settings, but for 3D maps it is strongly recommended to keep that setting enabled so that 3D tiles handle all sight and collision logic instead.
+            `, { permanent: true });
+        });
     }
 }

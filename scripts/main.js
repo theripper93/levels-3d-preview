@@ -67,6 +67,10 @@ import { Socket } from "./lib/socket.js";
 import { renderSceneToImage } from "./helpers/export2d.js";
 import { BuildPanelApp } from "./apps/BuildPanelApp.js";
 import { QuickTerrain } from "./apps/QuickTerrain.js";
+import { Shape3D } from "./entities/shape3d.js";
+import { Region3D } from "./entities/region3d.js";
+
+import "../scss/module.scss";
 
 export const factor = 1000;
 
@@ -84,7 +88,8 @@ Note3D.setHooks();
 Token3D.setHooks();
 Wall3D.setHooks();
 Tile3D.setHooks();
-Template3D.setHooks();
+// Template3D.setHooks();
+Region3D.setHooks();
 RangeFinder.setHooks();
 InteractionManager.setHooks();
 GlobalIllumination.setHooks();
@@ -98,10 +103,14 @@ Hooks.once("ready", () => {
     if (!game.scenes.active) {
         const scene = Array.from(game.scenes)[0];
         if (scene) {
-            scene.activate();
+            scene.activate().then(() => {
+                window.location.reload();
+            });
             ui.notifications.error(game.i18n.localize("levels3dpreview.errors.noActiveScene"), { permanent: true });
         } else {
-            NewUserExperience.prototype._createDefaultScene();
+            game.nue.createDefaultScene({ active: true }).then(() => {
+                window.location.reload();
+            });
             ui.notifications.error(game.i18n.localize("levels3dpreview.errors.noScenes"), { permanent: true });
         }
         return;
@@ -263,6 +272,8 @@ class Levels3DPreview {
             entityClass: {
                 RangeFinder,
                 Template3D,
+                Region3D,
+                Shape3D,
                 Ruler3D,
                 Light3D,
                 Wall3D,
@@ -514,7 +525,7 @@ class Levels3DPreview {
         this.doors = {};
         this.tiles = {};
         this.sounds = {};
-        this.templates = {};
+        // this.templates = {};
         this.notes = {};
         this.pings = new Set();
         this.models = {
@@ -558,6 +569,10 @@ class Levels3DPreview {
         Socket.register("executeInteractiveDynamesh", Tile3D.executeInteractiveDynamesh);
         this.exporter = new Exporter(this);
         this.init3d();
+    }
+
+    get active() {
+        return this._active;
     }
 
     get hasFocus() {
@@ -708,7 +723,7 @@ class Levels3DPreview {
         this.shaderHandler = new ShaderHandler(this);
         this.shaderHandler.shaders.push(...toPreserve);
         this.scene = new THREE.Scene();
-        this.scene.background = new THREE.Color(canvas.scene.backgroundColor ?? 0xffffff);
+        this.scene.background = new THREE.Color(canvas.level.background.color ?? 0xffffff);
         this.rangeFinderMode = game.settings.get("levels-3d-preview", "rangeFinder");
         this.composer.removePass(this.renderPass);
         this.composer.removePass(this.bloomPass);
@@ -824,7 +839,8 @@ class Levels3DPreview {
         this.level = Infinity;
         if (isNaN(this.level)) this.level = Infinity;
         this.showSun = this.debugMode;
-        this.createTemplates();
+        // this.createTemplates();
+        this.createRegions();
         const drawFloors = canvas.scene.getFlag("levels-3d-preview", "showSceneFloors") ?? true;
         const drawLights = canvas.scene.getFlag("levels-3d-preview", "renderSceneLights") ?? true;
         this.standUpFaceCamera = game.settings.get("levels-3d-preview", "flatTokenStyle") == "flat";
@@ -880,7 +896,7 @@ class Levels3DPreview {
         const enableFog = canvas.scene.getFlag("levels-3d-preview", "enableFog") ?? false;
         const fogColor = canvas.scene.getFlag("levels-3d-preview", "fogColor") ?? "#000000";
         const fogDistance = (canvas.scene.getFlag("levels-3d-preview", "fogDistance") ?? 3000) / this.factor;
-        this.scene.background = enableFog ? new THREE.Color(fogColor) : new THREE.Color(canvas.scene.backgroundColor ?? 0xffffff);
+        this.scene.background = enableFog ? new THREE.Color(fogColor) : new THREE.Color(canvas.level.background.color ?? 0xffffff);
         if (enableFog) {
             this.scene.fog = new THREE.Fog(fogColor, 1, fogDistance);
             this.camera.far = fogDistance;
@@ -1103,15 +1119,25 @@ class Levels3DPreview {
         if (wall.document.door) this.doors[wall.id] = this.walls[wall.id];
     }
 
-    createTemplates() {
-        for (let template of canvas.templates.placeables) {
-            this.createTemplate(template);
+    createRegions() {
+        for (const region of canvas.regions.objects.children) {
+            Region3D.handle(region);
         }
     }
 
-    createTemplate(template) {
-        this.templates[template.id] = new Template3D(template);
-    }
+    // createTemplates() {
+    //     for (const region of canvas.regions.objects.children) {
+    //         for (const shape of region.document.shapes) {
+    //             this.createTemplate(shape);
+    //         }
+    //     }
+    // }
+
+    // createTemplate(shape) {
+    //     if (this.templates[shape.x]) this.templates[shape.x].destroy();
+    //     this.templates[shape.x] = Shape3D.create({ shape });
+    //     this.templates[shape.x].addToScene();
+    // }
 
     createNotes() {
         for (let note of canvas.notes.placeables) {
@@ -1137,7 +1163,7 @@ class Levels3DPreview {
             this.scene.background?.dispose?.();
             this.scene.environment?.dispose?.();
             this.scene.userData.envRt?.dispose?.();
-            this.scene.background = enableFog ? this.scene.fog.color : new THREE.Color(canvas.scene.backgroundColor ?? 0xffffff);
+            this.scene.background = enableFog ? this.scene.fog.color : new THREE.Color(canvas.level.background.color ?? 0xffffff);
             this.scene.environment = null;
             this.isEXR = false;
             this.scene.remove(this.skybox);
@@ -1267,7 +1293,8 @@ class Levels3DPreview {
         this.tiles = {};
         this.sounds = {};
         this.notes = {};
-        this.templates = {};
+        // this.templates = {};
+        Region3D.clear();
         this.cursors.clear();
     }
 
@@ -1305,7 +1332,7 @@ class Levels3DPreview {
         }
     }
 
-    allignChatBubbles() {
+    alignChatBubbles() {
         const bubbles = document.querySelectorAll(".chat-bubble");
         bubbles.forEach((bubble) => {
             const token3D = this.tokens[bubble.dataset.tokenId];
@@ -1423,9 +1450,9 @@ class Levels3DPreview {
             Object.values(this.notes).forEach((note) => {
                 note.updateVisibility();
             });
-            Object.values(this.templates).forEach((template) => {
-                template.updateVisibility();
-            });
+            // Object.values(this.templates).forEach((template) => {
+            //     template.updateVisibility();
+            // });
             this.rangeFinders.forEach((rangeFinder) => {
                 rangeFinder.updateText();
             });
@@ -1438,7 +1465,7 @@ class Levels3DPreview {
                 const t3d = this.tokens[e.dataset.tokenid];
                 if (t3d) this.helpers.ruler3d.centerElement(e, t3d.head);
             });
-            this.allignChatBubbles();
+            this.alignChatBubbles();
             this.lights?.globalIllumination?.update(delta);
             this.weather?.update(delta);
             this.GameCamera.update(delta);
@@ -1521,13 +1548,7 @@ class Levels3DPreview {
     }
 
     checkInFog() {
-        let inFog = false;
-        for (let template of Object.values(this.templates)) {
-            if (template.pointInFogmesh(this.camera.position)) {
-                inFog = true;
-                break;
-            }
-        }
+        let inFog = Region3D.checkInFog(this.camera.position);
         this.scene.visible = !inFog;
     }
 
@@ -1729,6 +1750,21 @@ class Levels3DPreview {
         labelText.innerText = label;
     }
 
+    _refreshPerception() {
+        canvas.perception.update(
+            {
+                initializeLighting: true,
+                initializeSounds: true,
+                initializeVision: true,
+                refreshLighting: true,
+                refreshSounds: true,
+                refreshOcclusion: true,
+                refreshVision: true,
+            },
+            true,
+        );
+    }
+
     _onReady() {
         if (game.settings.get("levels-3d-preview", "loadingShown")) {
             setTimeout(() => {
@@ -1744,21 +1780,11 @@ class Levels3DPreview {
         }
         this.weather = new WeatherSystem(this);
 
-        canvas.perception.update(
-            {
-                initializeLighting: true,
-                initializeSounds: true,
-                initializeVision: true,
-                refreshLighting: true,
-                refreshSounds: true,
-                refreshOcclusion: true,
-                refreshVision: true,
-            },
-            true,
-        );
-
+        this._refreshPerception();
+        
         this.setFilters(true);
         setTimeout(() => {
+            this._refreshPerception();
             this.helpers.showSceneReport();
         }, 1000);
         Hooks.callAll("3DCanvasSceneReady", game.Levels3DPreview);

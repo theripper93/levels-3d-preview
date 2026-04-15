@@ -101,8 +101,8 @@ export class Fog {
     async generateTexture() {
         const originalTint = canvas.fog.sprite.tint;
         canvas.fog.sprite.tint = 0x808080;
-        if (canvas.scene.fog.exploration) canvas.app.renderer.render(canvas.fog.sprite, { renderTexture: this.pixiRenderTexture, clear: true });
-        canvas.app.renderer.render(canvas.masks.vision.vision, { renderTexture: this.pixiRenderTexture, clear: !canvas.scene.fog.exploration });
+        if (canvas.scene.fog.mode) canvas.app.renderer.render(canvas.fog.sprite, { renderTexture: this.pixiRenderTexture, clear: true });
+        canvas.app.renderer.render(canvas.masks.vision.vision, { renderTexture: this.pixiRenderTexture, clear: !canvas.scene.fog.mode });
         canvas.fog.sprite.tint = originalTint;
         if (this._sharedContext) {
             const texProps = this._parent.renderer.properties.get(this.webglFogTexture);

@@ -9,41 +9,52 @@ import { injectConfig } from "../lib/injectConfig.js";
 import { TacticalPingPicker, loadUserEmotes } from "../entities/effects/ping.js";
 
 export function registerConfigs() {
+
+    const documentsToWiden = ["Scene", "Token", "Tile", "AmbientLight"];
+
+    for (const document of documentsToWiden) {
+        foundry.applications.sheets[`${document}Config`].DEFAULT_OPTIONS.position.width += 100;
+    }
+
     Hooks.on("getSceneControlButtons", (buttons) => {
-        buttons.tokens.tools.preview3d =
-                {
-                    name: "preview3d",
-                    title: game.i18n.localize("levels3dpreview.controls.preview3d"),
-                    icon: "fas fa-cube",
-                    button: true,
-                    visible: canvas?.scene?.getFlag("levels-3d-preview", "enablePlayers") || game.user.isGM,
-                    onChange: () => {
-                        game.Levels3DPreview.toggle();
-                    },
-                }
-            
-            const drawPolygonTool = {
-                name: "tile3dPolygon",
-                title: game.i18n.localize("levels3dpreview.controls.tile3dPolygon"),
-                icon: "fa-solid fa-draw-polygon",
-                toggle: true,
-                get visible(){
-                    return !!(game.Levels3DPreview?._active && game.user.isGM)
-                }
-            };
-            buttons.tiles.tools.tile3dPolygon = drawPolygonTool;
-            const oldOnChange = buttons.tiles.tools.browse.onChange;
-            buttons.tiles.tools.browse.onChange = () => {
-                if(game.Levels3DPreview?._active && game.user.isGM){
-                    game.Levels3DPreview.open3DFilePicker();
-                }else{
-                    return oldOnChange();
-                }
-            };
+        buttons.tokens.tools.preview3d = {
+            name: "preview3d",
+            title: game.i18n.localize("levels3dpreview.controls.preview3d"),
+            icon: "fas fa-cube",
+            button: true,
+            visible: canvas?.scene?.getFlag("levels-3d-preview", "enablePlayers") || game.user.isGM,
+            onChange: () => {
+                game.Levels3DPreview.toggle();
+            },
+        }
+        
+        const drawPolygonTool = {
+            name: "tile3dPolygon",
+            title: game.i18n.localize("levels3dpreview.controls.tile3dPolygon"),
+            icon: "fa-solid fa-draw-polygon",
+            control: true,
+            order: 2.5,
+            get visible(){
+                return !!(game.Levels3DPreview?._active && game.user.isGM)
+            }
+        };
+        buttons.tiles.tools.tile3dPolygon = drawPolygonTool;
+        const oldOnChange = buttons.tiles.tools.browse.onChange;
+        buttons.tiles.tools.browse.onChange = () => {
+            if(game.Levels3DPreview?._active && game.user.isGM){
+                game.Levels3DPreview.open3DFilePicker();
+            }else{
+                return oldOnChange();
+            }
+        };
     });
 
     Hooks.on("renderSceneConfig", (app, html) => {
         html.querySelector(`[data-tab="levels-3d-preview"]`)?.remove();
+
+        const importantSettingsEnabled = app.document.getFlag("levels-3d-preview", "enablePlayers") &&
+            app.document.getFlag("levels-3d-preview", "auto3d") &&
+            app.document.getFlag("levels-3d-preview", "object3dSight");
 
         const data = {
             moduleId: "levels-3d-preview",
@@ -57,6 +68,15 @@ export function registerConfigs() {
                 tabLabel: game.i18n.localize("levels3dpreview.flags.basic.header"),
                 tabNotes: game.i18n.localize("levels3dpreview.settings.headers.basics.notes"),
                 tabIcon: "fas fa-cube",
+                importantSettingsStart: {
+                    type: "custom",
+                    html: `
+                        <fieldset>
+                            <legend>${game.i18n.localize("levels3dpreview.settings.highlighted.important.legend")}</legend>
+                            <p class="hint notification ${importantSettingsEnabled ? "info" : "warning"}">
+                                ${game.i18n.localize("levels3dpreview.settings.highlighted.important.hint")}
+                            </p>`,
+                },
                 enablePlayers: {
                     type: "checkbox",
                     label: game.i18n.localize("levels3dpreview.flags.enablePlayers.label"),
@@ -71,7 +91,12 @@ export function registerConfigs() {
                 object3dSight: {
                     type: "checkbox",
                     label: game.i18n.localize("levels3dpreview.flags.object3dSight.label"),
+                    notes: game.i18n.localize("levels3dpreview.flags.object3dSight.notes"),
                     default: false,
+                },
+                importantSettingsEnd: {
+                    type: "custom",
+                    html: `</fieldset>`,
                 },
                 enableGameCamera: {
                     type: "checkbox",
@@ -594,7 +619,7 @@ export function registerConfigs() {
         html.querySelector(`[name="flags.levels-3d-preview.particlePreset"]`).addEventListener("change", (e) => {
             const value = e.target.value;
             html.querySelector(`#part-group`).classList.toggle("hidden", value !== "custom");
-            app.setPosition({ height: "auto" });
+            injectConfig._trySetPosition(app, { height: "auto" });
         });
         html.querySelector(`[name="flags.levels-3d-preview.particlePreset"]`).dispatchEvent(new Event("change"));
 
@@ -1029,7 +1054,7 @@ export function registerConfigs() {
             } else {
                 firstChange = false;
             }
-            app.setPosition({ height: "auto" });
+            injectConfig._trySetPosition(app, { height: "auto" });
         });
 
         html.querySelector("select[name='flags.levels-3d-preview.ParticleType']").dispatchEvent(new Event("change"));
@@ -1721,12 +1746,12 @@ export function registerConfigs() {
             } else {
                 firstChange = false;
             }
-            app.setPosition({ height: "auto" });
+            injectConfig._trySetPosition(app, { height: "auto" });
         });
 
         html.querySelector("select[name='flags.levels-3d-preview.ParticleType']").dispatchEvent(new Event("change"));
 
-        app.setPosition({ height: "auto" });
+        injectConfig._trySetPosition(app, { height: "auto" });
     });
 
     Hooks.on("renderWallConfig", (app, html) => {
@@ -1837,7 +1862,12 @@ export function registerConfigs() {
 
         injectConfig.inject(app, html, {
             moduleId: "levels-3d-preview",
-            inject: 'input[name="icon.custom"]',
+            tab: {
+                name: "levels-3d-preview",
+                label: "3D",
+                icon: "fas fa-cube",
+            },
+            // inject: 'input[name="icon.custom"]',
             model3d: {
                 type: "filepicker.any",
                 fpTypes: [".gltf", ".GLTF", ".glb", ".GLB", ".fbx", ".FBX"],
@@ -2027,35 +2057,50 @@ export function registerConfigs() {
         });
         let firstChange = true;
         const showSprite = ["mysteriouslights", "vortex", "sparks", "fairy", "magicsphere", "json"];
-        injhtml.on("change", "select[name='flags.levels-3d-preview.ParticleType']", (event) => {
-            const hide = event.target.value !== "custom";
+        html.addEventListener("change", (event) => {
+            if (!event.target.matches("select[name='flags.levels-3d-preview.ParticleType']")) return;
+
+            const value = event.target.value;
+            const hide = value !== "custom";
             const toHide = ["ParticleSprite", "ParticleAlphaStart", "ParticleAlphaEnd", "ParticleLife", "ParticleCount", "ParticleEmitTime", "ParticleForce", "ParticlePushX", "ParticlePushY", "ParticlePushZ", "ParticleGravity", "ParticleMass"];
-            for (const key of toHide) {
-                const el = injhtml.querySelector(`[name='flags.levels-3d-preview.${key}']`);
-                if (hide) el.closest(".form-group").style.display = "none";
-                else el.closest(".form-group").style.display = "";
-                if (key === "ParticleSprite" && showSprite.includes(event.target.value)) el.closest(".form-group").style.display = "";
-            }
-            injhtml.querySelector(`[name='flags.levels-3d-preview.ParticleIntensity']`).closest(".form-group").style.display = hide ? "" : "none";
+
+            toHide.forEach((key) => {
+                const el = html.querySelector(`[name='flags.levels-3d-preview.${key}']`);
+                const group = el.closest(".form-group");
+                
+                group.style.display = hide ? "none" : "";
+
+                if (key === "ParticleSprite" && showSprite.includes(value)) {
+                    group.style.display = "";
+                }
+            });
+
+            const intensityEl = html.querySelector(`[name='flags.levels-3d-preview.ParticleIntensity']`);
+            intensityEl.closest(".form-group").style.display = hide ? "" : "none";
+
             if (!firstChange) {
-                const defaultValues = PS.getDefaultLightData(event.target.value);
-                const scaleInput = injhtml.querySelector(`[name='flags.levels-3d-preview.ParticleScale']`);
-                const emitSizeInput = injhtml.querySelector(`[name='flags.levels-3d-preview.ParticleEmitterSizeMultiplier']`);
+                const defaultValues = PS.getDefaultLightData(value);
+                const scaleInput = html.querySelector(`[name='flags.levels-3d-preview.ParticleScale']`);
+                const emitSizeInput = html.querySelector(`[name='flags.levels-3d-preview.ParticleEmitterSizeMultiplier']`);
+                
                 scaleInput.value = defaultValues.scale;
                 emitSizeInput.value = defaultValues.emitterSize;
             } else {
                 firstChange = false;
             }
-            app.setPosition({ height: "auto" });
+
+            injectConfig._trySetPosition(app, { height: "auto" });
         });
 
-        injhtml.querySelector("select[name='flags.levels-3d-preview.ParticleType']").dispatchEvent(new Event("change"));
-        const color1 = injhtml.querySelector("[name='flags.levels-3d-preview.ParticleColor'] input");
-        const color2 = injhtml.querySelector("[name='flags.levels-3d-preview.ParticleColor2'] input");
+        // const particleType = html.querySelector("select[name='flags.levels-3d-preview.ParticleType']");
+        // particleType.dispatchEvent(new Event("change"));
+        html.querySelector("select[name='flags.levels-3d-preview.ParticleType']").dispatchEvent(new Event("change"));
+        const color1 = html.querySelector("[name='flags.levels-3d-preview.ParticleColor'] input");
+        const color2 = html.querySelector("[name='flags.levels-3d-preview.ParticleColor2'] input");
         const gradientPickerEl = GradientPicker.create(color1, color2);
-        injhtml.querySelector("[name='flags.levels-3d-preview.ParticleColor2']").closest(".form-group").after(gradientPickerEl);
+        html.querySelector("[name='flags.levels-3d-preview.ParticleColor2']").closest(".form-group").after(gradientPickerEl);
 
-        app.setPosition({ height: "auto" });
+        injectConfig._trySetPosition(app, { height: "auto" });
     });
 
     Hooks.on("renderUserConfig", (app, html) => {

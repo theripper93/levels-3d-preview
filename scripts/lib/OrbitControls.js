@@ -473,6 +473,7 @@ class OrbitControls extends EventDispatcher {
         }
 
         function handleMouseWheel(event) {
+            if (canvas.regions._placementContext) return;
             if (event.deltaY < 0) {
                 dollyIn(getZoomScale());
             } else if (event.deltaY > 0) {
@@ -507,33 +508,10 @@ class OrbitControls extends EventDispatcher {
                 pan(-scope.keyPanSpeed, 0);
                 needsUpdate = true;
             }
-            /*switch ( event.code ) {
-
-				case scope.keys.UP:
-					pan( 0, scope.keyPanSpeed );
-					needsUpdate = true;
-					break;
-
-				case scope.keys.BOTTOM:
-					pan( 0, - scope.keyPanSpeed );
-					needsUpdate = true;
-					break;
-
-				case scope.keys.LEFT:
-					pan( scope.keyPanSpeed, 0 );
-					needsUpdate = true;
-					break;
-
-				case scope.keys.RIGHT:
-					pan( - scope.keyPanSpeed, 0 );
-					needsUpdate = true;
-					break;
-
-			}*/
 
             if (needsUpdate) {
                 // prevent the browser from scrolling on cursor keys
-                //event.preventDefault();
+                // event.preventDefault();
                 game.Levels3DPreview.GameCamera.lock = false;
                 scope.update();
             }

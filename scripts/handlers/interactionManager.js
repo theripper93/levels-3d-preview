@@ -5,6 +5,7 @@ import { GroupSelectHandler } from "./GroupSelectHandler.js";
 import { isLockedOnOrigin } from "../shaders/templateEffects.js";
 import { TileCreationQueue } from "./TileCreationQueue.js";
 import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from "../lib/three-mesh-bvh.js";
+import { Note3D } from "../entities/note3d.js";
 THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
 THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
 THREE.Mesh.prototype.raycast = acceleratedRaycast;
@@ -214,7 +215,7 @@ export class InteractionManager {
     }
 
     get allowedRulerDrag() {
-        return ["MeasuredTemplate", "AmbientLight", "Tile", "AmbientSound"];
+        return ["Region", "MeasuredTemplate", "AmbientLight", "Tile", "AmbientSound"];
     }
 
     _onTransformStart(event) {
@@ -405,7 +406,7 @@ export class InteractionManager {
         if (this._parent.CONFIG.UI.windows.HeightmapPainter?.isPainting || ((this._parent.CONFIG.UI.windows.AssetBrowser?._hasSelected || this._parent.CONFIG.UI.windows.EffectBrowser?._hasSelected) && event.shiftKey)) {
             return canvas.tiles.releaseAll();
         }
-        if (this._groupSelect && this.activeLayerEntity != "MeasuredTemplate") return this.groupSelectHandler.startSelect(event);
+        if (this._groupSelect && this.activeLayerEntity != "Region") return this.groupSelectHandler.startSelect(event);
         if (this.preventSelect) return;
         const downId = foundry.utils.randomID();
         this._downId = downId;
@@ -445,6 +446,7 @@ export class InteractionManager {
         this._onMouseMove(event, true);
         const intersectData = this.findMouseIntersect(event);
         const intersect = intersectData?.object;
+        if (this._leftDown && this.activeLayerEntity === "Note" && ui.controls.tool.name === "journal") return Note3D.newNote(intersectData.point);
         if (this.isRulerDrag(event, intersectData)) this.toggleControls(false);
         if (!intersect || event.ctrlKey) return;
         if (intersect.userData?.entity3D?.embeddedName === this.activeLayerEntity && !(this._gizmoEnabled && this.activeLayerEntity === "Tile")) this.toggleControls(false);
@@ -462,7 +464,7 @@ export class InteractionManager {
             originalIntersect: event.originalIntersect,
             intersectData: intersectData.intersectData,
         };
-        if (event.which === 3 && (this.draggable?.userData?.entity3D?.token || ui.controls.tool.name === "tile3dPolygon")) {
+        if (event.which === 3 && (this.draggable?.userData?.entity3D?.token || ui.controls.tool.name === "tile3dPolygon" || ui.controls.tool.name === "polygon")) {
             this._parent.ruler.addSegment();
         } else {
             if (this.clicks === 1) {
@@ -531,7 +533,7 @@ export class InteractionManager {
                 this.currentDragTarget.y -= RULER_TOKEN_OFFSET;
             }
             this.draggable.position.copy(this.currentDragTarget);
-            this.ruler.placeTemplate();
+            this.ruler.placeShape();
             if (entity3D.token) {
                 this._parent.ruler.addSegment();
                 entity3D.setPosition(false, true);
@@ -673,6 +675,11 @@ export class InteractionManager {
             } else {
                 changeElevation();
             }
+        }
+        if (canvas.regions._placementContext) {
+            event.delta = event.deltaY;
+            canvas.regions._onMouseWheel(event);
+            return;
         }
         const isSpecialKey = this.tiltX || this.tiltZ || this.scaleWidth || this.scaleHeight || this.scaleGap || this.scaleScale || this.scale;
         const dBig = canvas.grid.type > CONST.GRID_TYPES.SQUARE ? 60 : 45;
@@ -880,10 +887,11 @@ export class InteractionManager {
         if (buildPlane) intersectTargets.push(buildPlane);
         const table = this._parent.table;
         if (table) intersectTargets.push(table);
-        const intersects = this.raycaster
-            .intersectObjects(intersectTargets, true)
-            .filter(this._clippingFilter)
-            .filter((i) => !i?.object?.userData?.noIntersect);
+        const intersects0 = this.raycaster.intersectObjects(intersectTargets, true);
+        const intersects1 = intersects0.filter(this._clippingFilter);
+        const intersects = intersects1.filter((i) => !i?.object?.userData?.noIntersect);
+            // .filter(this._clippingFilter)
+            // .filter((i) => !i?.object?.userData?.noIntersect);
         const originalObject = intersects.length > 0 ? intersects[0].object : null;
         if (!intersects.length) return null;
         for (let int of intersects) {
@@ -1174,35 +1182,32 @@ export class InteractionManager {
     }
 
     async removeWASDBindings() {
-        Dialog.confirm({
+        foundry.applications.api.DialogV2.confirm({
             title: game.i18n.localize(`levels3dpreview.keybindings.dialog.title`),
             content: game.i18n.localize(`levels3dpreview.keybindings.dialog.content`),
-            yes: async () => {
-                await game.keybindings.set(
-                    "core",
-                    "panUp",
-                    game.keybindings.get("core", "panUp").filter((b) => b.key != "KeyW" && b.key != "ArrowUp" && b.key != "Numpad8"),
-                );
-                await game.keybindings.set(
-                    "core",
-                    "panDown",
-                    game.keybindings.get("core", "panDown").filter((b) => b.key != "KeyS" && b.key != "ArrowDown" && b.key != "Numpad2"),
-                );
-                await game.keybindings.set(
-                    "core",
-                    "panLeft",
-                    game.keybindings.get("core", "panLeft").filter((b) => b.key != "KeyA" && b.key != "ArrowLeft" && b.key != "Numpad4"),
-                );
-                await game.keybindings.set(
-                    "core",
-                    "panRight",
-                    game.keybindings.get("core", "panRight").filter((b) => b.key != "KeyD" && b.key != "ArrowRight" && b.key != "Numpad6"),
-                );
-                await game.settings.set("levels-3d-preview", "removeKeybindingsPrompt", true);
-            },
-            no: () => {
-                game.settings.set("levels-3d-preview", "removeKeybindingsPrompt", true);
-            },
+        }).then(async res => {
+            if (!res) return game.settings.set("levels-3d-preview", "removeKeybindingsPrompt", true);
+            await game.keybindings.set(
+                "core",
+                "panUp",
+                game.keybindings.get("core", "panUp").filter((b) => b.key != "KeyW" && b.key != "ArrowUp" && b.key != "Numpad8"),
+            );
+            await game.keybindings.set(
+                "core",
+                "panDown",
+                game.keybindings.get("core", "panDown").filter((b) => b.key != "KeyS" && b.key != "ArrowDown" && b.key != "Numpad2"),
+            );
+            await game.keybindings.set(
+                "core",
+                "panLeft",
+                game.keybindings.get("core", "panLeft").filter((b) => b.key != "KeyA" && b.key != "ArrowLeft" && b.key != "Numpad4"),
+            );
+            await game.keybindings.set(
+                "core",
+                "panRight",
+                game.keybindings.get("core", "panRight").filter((b) => b.key != "KeyD" && b.key != "ArrowRight" && b.key != "Numpad6"),
+            );
+            await game.settings.set("levels-3d-preview", "removeKeybindingsPrompt", true);
         });
     }
 
@@ -1300,12 +1305,12 @@ export const dropFunctions = {
         const useSnapped = grid ?? Ruler3D.useSnapped();
         let snapped;
         if (useSnapped) {
-            snapped = canvas.grid.getSnappedPoint({x: data.x - width / 2, y: data.y - height / 2}, {mode: CONST.GRID_SNAPPING_MODES.TOP_LEFT_CORNER});
+            snapped = canvas.grid.getSnappedPoint({x: data.x, y: data.y}, {mode: CONST.GRID_SNAPPING_MODES.TOP_LEFT_CORNER});
         }
         return await canvas.scene.createEmbeddedDocuments("Tile", [
             {
-                x: Math.round(snapped ? snapped.x : data.x - width / 2),
-                y: Math.round(snapped ? snapped.y : data.y - height / 2),
+                x: Math.round(snapped ? snapped.x : data.x),
+                y: Math.round(snapped ? snapped.y : data.y),
                 width: Math.round(width),
                 height: Math.round(height),
                 elevation: data.elevation,
@@ -1344,6 +1349,7 @@ export const dropFunctions = {
 };
 
 async function dropImage(event, data) {
+    const size = canvas.grid.size * data.tileSize;
     data.flags["levels-3d-preview"] = {
         imageTexture: data.texture.src,
         dynaMesh: "decal",
@@ -1352,14 +1358,14 @@ async function dropImage(event, data) {
         transparency: 0.99,
         collision: false,
         sight: false,
+        depth: 1,
     };
-    const size = canvas.grid.size * data.tileSize;
     data.width = size;
     data.height = size;
-    data.depth = size;
+    // data.depth = 1; // size;
     data.elevation += canvas.scene.dimensions.distance * 2;
-    data.x -= size / 2;
-    data.y -= size / 2;
+    // data.x -= size / 2;
+    // data.y -= size / 2;
     data.texture.src = "modules/levels-3d-preview/assets/blank.webp";
 
     let isToken = false;

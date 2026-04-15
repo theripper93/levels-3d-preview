@@ -47,8 +47,8 @@ export class Tile3D {
         this.bottom = tile.document.elevation;
         this.shaders = [];
         this.center2d = {
-            x: this.tile.document.x + Math.abs(this.tile.document.width) / 2,
-            y: this.tile.document.y + Math.abs(this.tile.document.height) / 2,
+            x: this.x,
+            y: this.y,
         };
         this.center = Ruler3D.posCanvasTo3d({ x: this.center2d.x, y: this.center2d.y, z: this.bottom });
         this.texture = this.tile.document.texture.src;
@@ -65,6 +65,14 @@ export class Tile3D {
         this.onAnimation = this.setupAnimationFunction();
         game.Levels3DPreview.particleSystem.stop(this.particleEffectId);
         this.initRandom();
+    }
+
+    get x() {
+        return this.tile.document.x;
+    }
+
+    get y() {
+        return this.tile.document.y;
     }
 
     async load() {
@@ -852,8 +860,8 @@ export class Tile3D {
                     },
                     width: Math.round(scale * mWidth * factor),
                     height: Math.round(scale * mHeight * factor),
-                    x: this.tile.document.x + wDiff,
-                    y: this.tile.document.y + hDiff,
+                    x: this.x + wDiff,
+                    y: this.y + hDiff,
                 });
                 this.tile.document.setFlag("levels-3d-preview", "depth");
             }
@@ -1743,8 +1751,10 @@ export class Tile3D {
         const newWidth = this.tile.document.width * scaleX;
         const newHeight = this.tile.document.height * scaleZ;
         const newDepth = this.depth * factor * scaleY;
-        const x = (update.x ?? this.tile.document.x) - (newWidth - this.tile.document.width) / 2;
-        const z = (update.y ?? this.tile.document.y) - (newHeight - this.tile.document.height) / 2;
+        // const x = (update.x ?? this.x) - (newWidth - this.tile.document.width) / 2;
+        // const z = (update.y ?? this.y) - (newHeight - this.tile.document.height) / 2;
+        const x = (update.x ?? this.x);
+        const z = (update.y ?? this.y);
         update.x = Math.round(x);
         update.y = Math.round(z);
         update.width = newWidth;
@@ -1810,8 +1820,8 @@ export class Tile3D {
         const x3d = worldPosition.x;
         const y3d = worldPosition.y;
         const z3d = worldPosition.z;
-        const x = x3d * factor - this.tile.document.width / 2;
-        const y = z3d * factor - this.tile.document.height / 2;
+        const x = x3d * factor;
+        const y = z3d * factor;
         const z = (y3d * factor * canvas.dimensions.distance) / canvas.dimensions.size;
         const useSnapped = Ruler3D.useSnapped() && !transform;
         const snapped = canvas.grid.getSnappedPoint({ x, y }, { mode: CONST.GRID_SNAPPING_MODES.TOP_LEFT_CORNER });
@@ -1822,8 +1832,8 @@ export class Tile3D {
             elevation: z,
         };
         const deltas = {
-            x: dest.x - this.tile.document.x,
-            y: dest.y - this.tile.document.y,
+            x: dest.x - this.x,
+            y: dest.y - this.y,
             elevation: dest.elevation - elevation,
         };
         let updates = [];
@@ -2731,14 +2741,12 @@ export async function autoMergeTiles(tiles = canvas.tiles.placeables, skipContro
 
         const occlusionIdText = occlusionId == "noOcclusionId" ? "" : game.i18n.localize("levels3dpreview.mergeTiles.occlusionGroup") + occlusionId;
 
-        Dialog.confirm({
+        foundry.applications.api.DialogV2.confirm({
             title: game.i18n.localize("levels3dpreview.mergeTiles.title") + occlusionIdText,
             content: game.i18n.localize("levels3dpreview.mergeTiles.content").replace("%count%", mergedCount),
-            yes: async () => {
-                await merge();
-            },
-            no: () => { },
             defaultYes: false,
+        }).then(async res => {
+            if (res) await merge();
         });
 
         async function merge() {
@@ -2876,11 +2884,9 @@ export function extractPointsFromDrawing() {
 }
 
 export async function extrudeWalls(walls) {
-    const confirm = Dialog.confirm({
+    const confirm = foundry.applications.api.DialogV2.confirm({
         title: game.i18n.localize("levels3dpreview.extrudeWalls.title"),
         content: game.i18n.localize("levels3dpreview.extrudeWalls.content"),
-        yes: () => true,
-        no: () => false,
     });
 
     if (!(await confirm)) return false;

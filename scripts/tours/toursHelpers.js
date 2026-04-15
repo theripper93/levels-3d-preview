@@ -163,14 +163,13 @@ class TourEnhanced extends foundry.nue.Tour{
     }
 
 export function promptForTour(){
-    Dialog.confirm({
+    foundry.applications.api.DialogV2.confirm({
         title: game.i18n.localize(`levels3dpreview.tours.dialog.title`),
         content: game.i18n.localize(`levels3dpreview.tours.dialog.content`),
         defaultYes: true,
-        yes: () => {
-            game.tours.get(`levels-3d-preview.getting-started`).start();
-        }, 
-    })
+    }).then(res => {
+        if(res) game.tours.get(`levels-3d-preview.getting-started`).start();
+    });
 }
 
 

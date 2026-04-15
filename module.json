@@ -2,7 +2,7 @@
   "title": "3D Canvas",
   "id": "levels-3d-preview",
   "description": "Bring your games to the 3rd dimension!",
-  "version": "8.0.4",
+  "version": "9.0.0",
   "authors": [
     {
       "name": "theripper93",
@@ -18,51 +18,17 @@
     }
   ],
   "esmodules": [
-    "scripts/main.js"
+    "index.js"
   ],
   "scripts": [],
   "styles": [
-    "styles/module.css",
-    "styles/loadingScreen.css",
-    "styles/mapgen.css",
-    "styles/sharing.css",
-    "styles/build-panel.css"
+    "styles/module.css"
   ],
-  "packs": [
-    {
-      "name": "documentation",
-      "label": "3D Canvas Documentation",
-      "path": "packs/journals.db",
-      "type": "JournalEntry",
-      "private": false
-    },
-    {
-      "name": "macros",
-      "label": "3D Canvas Macros",
-      "path": "packs/macros.db",
-      "type": "Macro",
-      "private": false
-    },
-    {
-      "name": "partmacros",
-      "label": "3D Canvas Particle Effects",
-      "path": "packs/partmacros.db",
-      "type": "Macro",
-      "private": false
+  "documentTypes": {
+    "RegionBehavior": {
+      "obscureVision": {}
     }
-  ],
-  "packFolders": [
-    {
-      "name": "3D Canvas",
-      "sorting": "m",
-      "color": "#765c13",
-      "packs": [
-        "documentation",
-        "macros",
-        "partmacros"
-      ]
-    }
-  ],
+  },
   "socket": true,
   "relationships": {
     "requires": [
@@ -87,23 +53,15 @@
         "id": "canvas3d-premium",
         "type": "module",
         "compatibility": {}
-      },
-      {
-        "id": "levels",
-        "type": "module",
-        "compatibility": {}
-      },
-      {
-        "id": "wall-height",
-        "type": "module",
-        "compatibility": {}
       }
     ]
   },
+  "url": "https://github.com/theripper93/levels-3d-preview",
+  "manifest": "https://github.com/theripper93/levels-3d-preview/releases/latest/download/module.json",
+  "download": "https://github.com/theripper93/levels-3d-preview/releases/download/9.0.0/module.zip",
   "compatibility": {
-    "minimum": "13",
-    "verified": "13"
-  },
-  "manifest": "https://r2.foundryvtt.com/packages-public/levels-3d-preview/module.json",
-  "protected": false
+    "minimum": "14",
+    "verified": "14",
+    "maximum": "14"
+  }
 }

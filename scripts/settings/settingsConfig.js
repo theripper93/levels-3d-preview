@@ -93,7 +93,7 @@ class canvas3dConfig extends HandlebarsApplication {
 
     async _prepareContext(options) {
         const data = {};
-        const settingsKeys = ["useRaycastRuler", "paddingAppearance", "lightCacheSize", "pingsound", "lightHelpers", "templateEffects", "templateAuto3D", "enableReticule", "fullTransparency", "outline", "gameCameraWarnings", "gameCameraAutoLock", "gameCameraDefaultGm", "gameCameraClipping", "gameCameraMaxZoom", "gameCameraMinAzimuth", "gameCameraMaxAzimuth", "gameCameraMinAngle", "gameCameraMaxAngle", "enableGameCamera", "rangeFinder", "sharedContext", "rotateIndicator", "navigatorAuto", "showAdvanced", "canpingpan", "canping", "baseStyle", "solidBaseMode", "solidBaseColor", "highlightCombat", "startMarker", "hideTarget", "hideEffects", "templateSyle", "autoPan", "flatTokenStyle", "preventNegative", "miniCanvas", "debugMode", "cameralockzero", "allTokens", "autoAssignToken", "assetBrowserCustomPath", "autoApply", "autoClose"];
+        const settingsKeys = ["useRaycastRuler", "paddingAppearance", "lightCacheSize", "pingsound", "lightHelpers", "templateEffects", "templateAuto3D", "enableReticule", "fullTransparency", "outline", "gameCameraWarnings", "gameCameraAutoLock", "gameCameraDefaultGm", "gameCameraClipping", "gameCameraMaxZoom", "gameCameraMinAzimuth", "gameCameraMaxAzimuth", "gameCameraMinAngle", "gameCameraMaxAngle", "enableGameCamera", "rangeFinder", "sharedContext", "rotateIndicator", "navigatorAuto", "showAdvanced", "canpingpan", "canping", "baseStyle", "solidBaseMode", "solidBaseColor", "highlightCombat", "startMarker", "hideTarget", "hideEffects", "templateSyle", "autoPan", "flatTokenStyle", "preventNegative", "miniCanvas", "debugMode", "cameralockzero", "allTokens", "autoAssignToken", "assetBrowserCustomPath", "autoApply", "autoClose", "regionsAlwaysFlat"];
         for (let key of settingsKeys) {
             data[key] = game.settings.get("levels-3d-preview", key);
         }
@@ -780,6 +780,15 @@ export function registerSettings() {
             default: true,
         });
 
+        game.settings.register("levels-3d-preview", "regionsAlwaysFlat", {
+            name: "",
+            hint: "",
+            scope: "world",
+            config: false,
+            type: Boolean,
+            default: false,
+        })
+
     });
 
     Hooks.once("ready", () => {
@@ -814,7 +823,7 @@ export function registerSettings() {
             await game.settings.set("levels-3d-preview", "oneTimeMessages", oldSett);
         }
 
-        const showNewUserExperience = game.modules.get("canvas3dcompendium")?.active && !game.settings.get("levels-3d-preview", "oneTimeMessages").newuserexperience;
+        const showNewUserExperience = game.modules.get("canvas3dcompendium")?.active && game.tours.get("levels-3d-preview.first-scene").status === "unstarted";
 
         const showWelcomeMessage = !game.settings.get("levels-3d-preview", "oneTimeMessages").welcome;
 
@@ -842,7 +851,10 @@ export function registerSettings() {
                         icon: "fas fa-book",
                         label: "levels3dpreview.welcome.opencompendium",
                         callback: () => {
-                            game.packs.get("levels-3d-preview.documentation").render(true);
+                            const a = document.createElement("a");
+                            a.href = "https://wiki.theripper93.com/levels-3d-preview";
+                            a.target = "_blank";
+                            a.click();
                         },
                     },
                 ],
@@ -869,7 +881,6 @@ export function registerSettings() {
                         label: "levels3dpreview.newuserexperience.starttour",
                         callback: () => {
                             game.tours.get("levels-3d-preview.first-scene").start();
-                            setSetting("newuserexperience");
                         },
                     },
                 ],

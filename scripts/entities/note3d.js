@@ -97,6 +97,15 @@ export class Note3D {
         this.mesh.position.set(position.x, position.y, position.z);
     }
 
+    static async newNote(point) {
+        const cls = foundry.utils.getDocumentClass("Note");
+        await cls.createDialog({
+            x: point.x * factor,
+            y: point.z * factor,
+            elevation: point.y * factor / canvas.dimensions.distancePixels,
+        });
+    }
+
     updatePositionFrom3D(e) {
         this.skipMoveAnimation = true;
         const useSnapped = Ruler3D.useSnapped();
@@ -151,39 +160,39 @@ export class Note3D {
     }
 
     _onClickLeft(e) {
-        const event = {
-            data: {
-                originalEvent: e,
-            },
-        };
-        this.placeable._onClickLeft(event);
+        // const event = {
+        //     data: {
+        //         originalEvent: e,
+        //     },
+        // };
+        this.placeable._onClickLeft(e);
     }
 
     _onClickLeft2(e) {
-        const event = {
-            data: {
-                originalEvent: e,
-            },
-        };
-        this.placeable?._onClickLeft2(event);
+        // const event = {
+        //     data: {
+        //         originalEvent: e,
+        //     },
+        // };
+        this.placeable?._onClickLeft2(e);
     }
 
     _onClickRight(e) {
-        const event = {
-            data: {
-                originalEvent: e,
-            },
-        };
-        this.placeable?._onClickRight(event);
+        // const event = {
+        //     data: {
+        //         originalEvent: e,
+        //     },
+        // };
+        this.placeable?._onClickRight(e);
     }
 
     _onClickRight2(e) {
-        const event = {
-            data: {
-                originalEvent: e,
-            },
-        };
-        this.placeable?._onClickRight2(event);
+        // const event = {
+        //     data: {
+        //         originalEvent: e,
+        //     },
+        // };
+        this.placeable?._onClickRight2(e);
     }
 
     _onHoverIn(e) {

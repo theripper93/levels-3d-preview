@@ -2,5 +2,7 @@
 # packs/**/*
 # Run to fix:
 # git rm -r --cached packs
-
 node_modules
+.DS_Store
+Thumbs.db
+packs/

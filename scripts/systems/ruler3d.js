@@ -1,7 +1,7 @@
 import * as THREE from "../lib/three.module.js";
-import { Template3D } from "../entities/template3d.js";
 import { factor } from "../main.js";
-import { sleep } from "../helpers/utils.js";
+import { Shape3D } from "../entities/shape3d.js";
+import { Region3D } from "../entities/region3d.js";
 
 export class Ruler3D {
     constructor(parent) {
@@ -40,38 +40,58 @@ export class Ruler3D {
         return this._enableRuler || !this.isToken;
     }
 
-    drawTemplate() {
+    drawShape() {
         if (ui.controls.tool.name === "select" || ui.controls.tool.name === "tile3dPolygon" || !this.allowedRulerDrag.some((a) => a === canvas.activeLayer.options.objectClass.embeddedName)) return;
-        if (this.template?.isPreview) return;
+        if (this.shape?.isPreview) return;
         if (this.allowedRulerDrag.some((a) => a === this._object?.userData?.entity3D?.placeable?.document?.documentName)) return;
-        this.template?.destroy();
+        const color = this.shape?.color;
+        this.shape?.destroy();
         const pos = Ruler3D.useSnapped() ? Ruler3D.snapped3DPosition(this._object.position) : this._object.position;
-        const template = new Template3D({ t: ui.controls.tool.name }, this._origin, pos);
-        this.template = template;
+        const selectedRegion = canvas.regions.controlled[0];
+        const tool = ui.controls?.tool?.name ?? "rectangle";
+        const hole = ui.controls?.tools?.hole?.active;
+        const shape = Shape3D.create({
+            shape: null,
+            hole: hole,
+            color: color,
+            type: Shape3D.getShapeFromTool(tool),
+            material: Shape3D.getMaterialFromTool(tool, hole),
+            origin: this._origin,
+            destination: pos,
+            segments: this.segments,
+            extrude: !!selectedRegion,
+            tool: tool,
+            region: selectedRegion?.document,
+        });
+        if (!shape) return; 
+        shape.addToScene();
+        this.shape = shape;
     }
 
-    get template() {
-        return this._template;
+    get shape() {
+        return this._shape;
     }
 
-    set template(value) {
-        if (this._template) {
-            this._lastTemplate?.destroy();
-            this._lastTemplate = this._template;
+    set shape(value) {
+        if (this._shape) {
+            this._lastShape?.destroy();
+            this._lastShape = this._shape;
         }
-        this._template = value;
+        this._shape = value;
     }
 
-    placeTemplate() {
-        if (!this.template) return;
-        const data = this.template.fromPreview(this._templatePreviewData?.create ?? true);
-        if (this._templatePreviewData) this._templatePreviewData.resolve(data);
-        this._templatePromiseResolve = null;
-        this.template = null;
+    placeShape() {
+        if (!this.shape) return;
+        const data = Region3D.fromPreview(this.shape);
+        if (this.segments.length) this.clearSegments();
+        if (this._shapePreviewData) this._shapePreviewData.resolve(data);
+        this._shapePromiseResolve = null;
+        this.shape = null;
     }
 
     init() {
-        this.sphere1 = new THREE.Mesh(new THREE.SphereGeometry(this.sphereRadius, 16, 16), this.roulerLineMaterial);
+        this.sphere1 = new THREE.Mesh(new THREE.SphereGeometry(this.sphereRadius,
+            16, 16), this.roulerLineMaterial);
         this.sphere1.renderOrder = 1e20 - 1;
         this.sphere2 = this.sphere1.clone();
         const tGeo1 = new THREE.TorusGeometry((canvas.grid.size / factor) * 0.5 * Math.SQRT2, this.lineRadius / 10, 8, 32);
@@ -116,7 +136,7 @@ export class Ruler3D {
             //this.clearSegments();
             const isToken = this.isToken;
             this._object = null;
-            this.template?.destroy();
+            this.shape?.destroy();
             this.textElement.style.display = "none";
             this._parent.scene.remove(this.line);
             this.removeMarkers(isToken);
@@ -268,7 +288,7 @@ export class Ruler3D {
         //draw ruler
         let curve;
         let midcurve;
-        if (this.template?.isPreview && !this.template?.temporary) {
+        if (this.shape?.isPreview && !this.shape?.temporary) {
             midcurve = this._origin.clone().lerp(targetPos, 0.8); //new THREE.Vector3(this._origin.x + (targetPos.x - this._origin.x)/2, this._origin.y + (targetPos.y - this._origin.y)/2, this._origin.z + (targetPos.z - this._origin.z)/2);
             midcurve.y += 2;
             const bezCtrlg = midcurve.clone();
@@ -282,7 +302,7 @@ export class Ruler3D {
             this._curveLength = curve.getLength();
         }
 
-        const geometry = new THREE.TubeGeometry(curve, this.template?.isPreview || useRaycastPoints ? 64 : 1, this.lineRadius, 8);
+        const geometry = new THREE.TubeGeometry(curve, this.shape?.isPreview || useRaycastPoints ? 64 : 1, this.lineRadius, 8);
         const c = this.getColor(distance, targetPos);
         this.roulerLineMaterial.color = c;
         this.dragRingMaterial.color = c;
@@ -291,8 +311,8 @@ export class Ruler3D {
         this.lineOuter = new THREE.Mesh(geometry, this.dragRingMaterial);
         this.lineOuter.userData.ignoreHover = true;
         this.line.add(this.lineOuter);
-        if (!this.template?.isPreview) {
-            const geometry2 = new THREE.TubeGeometry(curve, this.template?.isPreview || useRaycastPoints ? 64 : 1, this.lineRadius / 5, 8);
+        if (!this.shape?.isPreview) {
+            const geometry2 = new THREE.TubeGeometry(curve, this.shape?.isPreview || useRaycastPoints ? 64 : 1, this.lineRadius / 5, 8);
             this.lineInner = new THREE.Mesh(geometry2, this.roulerLineMaterial);
             this.lineInner.userData.ignoreHover = true;
             this.lineInner.renderOrder = 1e20;
@@ -305,12 +325,12 @@ export class Ruler3D {
         const text = `${distance} ${canvas.scene.grid.units}.`;
         this.textDistance.innerHTML = text;
         //get mid point of ruler
-        const midPoint = this.template?.isPreview ? midcurve : new THREE.Vector3(this._origin.x + (targetPos.x - this._origin.x) / 2, this._origin.y + (targetPos.y - this._origin.y) / 2, this._origin.z + (targetPos.z - this._origin.z) / 2);
+        const midPoint = this.shape?.isPreview ? midcurve : new THREE.Vector3(this._origin.x + (targetPos.x - this._origin.x) / 2, this._origin.y + (targetPos.y - this._origin.y) / 2, this._origin.z + (targetPos.z - this._origin.z) / 2);
         const textPoint = targetPos;
         textPoint.y += 0.05;
         Ruler3D.centerElement(this.textElement, targetPos);
         this._parent.scene.add(this.line);
-        this.drawTemplate();
+        this.drawShape();
     }
 
     cacheSpeedProvider(token) {
@@ -360,11 +380,13 @@ export class Ruler3D {
             polygonPoints.push(parseInt((point.x - minX) * factor), parseInt((point.z - minY) * factor));
         }
         isClosed && polygonPoints.push(polygonPoints[0], polygonPoints[1]);
+        const boundWidth = Math.max(width, 10);
+        const boundHeight = Math.max(height, 10);
         const tileData = {
-            width: Math.max(width, 10),
-            height: Math.max(height, 10),
-            x: minX * factor,
-            y: minY * factor,
+            width: boundWidth,
+            height: boundHeight,
+            x: minX * factor + boundWidth / 2,
+            y: minY * factor + boundHeight / 2,
             elevation: bottom,
             texture: {
                 src: "modules/levels-3d-preview/assets/blank.webp",
@@ -412,6 +434,7 @@ export class Ruler3D {
             dest.y -= token.h / 2 + offset.y;
             dest.x = Math.round(dest.x);
             dest.y = Math.round(dest.y);
+
             dest.elevation = dest.z + offset.elevation;
             dest.elevation = parseFloat(dest.elevation.toFixed(2));
 
@@ -425,7 +448,7 @@ export class Ruler3D {
     }
 
     async _animateSegment(token, destination) {
-        await token.document.update(destination, {movement: {[token.document.id]: { autoRotate: game.settings.get("core", "tokenAutoRotate") }}});
+        await token.document.update({ ...destination }, {movement: {[token.document.id]: { autoRotate: game.settings.get("core", "tokenAutoRotate") }}});
         return token.movementAnimationPromise;
     }
 
@@ -477,7 +500,9 @@ export class Ruler3D {
     }
 
     static pos3DToCanvas(position) {
-        return new THREE.Vector3(position.x * factor, position.z * factor, ((position.y * factor) / canvas.scene.dimensions.size) * canvas.scene.dimensions.distance);
+        const vector = new THREE.Vector3(position.x * factor, position.z * factor, ((position.y * factor) / canvas.scene.dimensions.size) * canvas.scene.dimensions.distance);
+        vector.elevation = vector.z;
+        return vector;
     }
 
     static useSnapped() {

@@ -1,16 +1,13 @@
 import { HandlebarsApplication } from "../lib/utils.js";
 import { AssetBrowser } from "./assetBrowser.js";
+import Fuse from "../lib/fuse.js";
 
 let fileCache = null;
 let dataCache = null;
 let fuseSearch = null;
-
-let _this = null;
-
 let _new = null;
 
-async function initFuse(data) {
-    const Fuse = (await import("../lib/fuse.js")).default;
+function initFuse(data) {
     const options = {
         includeScore: true,
         keys: ["slug"],

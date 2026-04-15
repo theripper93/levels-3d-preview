@@ -144,12 +144,14 @@ export class QuickTerrain extends BuildPanelApp {
         const selectedTerrain = this.element.querySelector("select[name='terrain']").value;
         const terrains = selectedTerrain == "random" ? fileCache : fileCache.filter((f) => f.includes(selectedTerrain));
         const heightmap = terrains[Math.floor(Math.random() * terrains.length)];
-        const depth = Math.max(canvas.scene.dimensions.sceneWidth, canvas.scene.dimensions.sceneHeight) / 4;
+        const width = canvas.scene.dimensions.sceneWidth;
+        const height = canvas.scene.dimensions.sceneHeight;
+        const depth = Math.max(width, height) / 4;
         const tileData = {
-            width: canvas.scene.dimensions.sceneWidth,
-            height: canvas.scene.dimensions.sceneHeight,
-            x: canvas.scene.dimensions.sceneX,
-            y: canvas.scene.dimensions.sceneY,
+            width: width,
+            height: height,
+            x: canvas.scene.dimensions.sceneX + width / 2,
+            y: canvas.scene.dimensions.sceneY + height / 2,
             elevation: 0,
             flags: {
                 "levels-3d-preview": {
@@ -206,11 +208,13 @@ export class QuickTerrain extends BuildPanelApp {
     }
 
     async createWater() {
+        const width = canvas.scene.dimensions.sceneWidth;
+        const height = canvas.scene.dimensions.sceneHeight;
         const tileData = {
-            width: canvas.scene.dimensions.sceneWidth - 10,
-            height: canvas.scene.dimensions.sceneHeight - 10,
-            x: canvas.scene.dimensions.sceneX + 5,
-            y: canvas.scene.dimensions.sceneY + 5,
+            width: width - 10,
+            height: height - 10,
+            x: canvas.scene.dimensions.sceneX + 5 + width / 2,
+            y: canvas.scene.dimensions.sceneY + 5 + height / 2,
             elevation: 0,
             flags: {
                 "levels-3d-preview": {
@@ -233,11 +237,13 @@ export class QuickTerrain extends BuildPanelApp {
     }
 
     async createLava() {
+        const width = canvas.scene.dimensions.sceneWidth;
+        const height = canvas.scene.dimensions.sceneHeight;
         const tileData = {
-            width: canvas.scene.dimensions.sceneWidth - 10,
-            height: canvas.scene.dimensions.sceneHeight - 10,
-            x: canvas.scene.dimensions.sceneX + 5,
-            y: canvas.scene.dimensions.sceneY + 5,
+            width: width - 10,
+            height: height - 10,
+            x: canvas.scene.dimensions.sceneX + 5 + width / 2,
+            y: canvas.scene.dimensions.sceneY + 5 + height / 2,
             elevation: 0,
             flags: {
                 "levels-3d-preview": {
@@ -259,11 +265,13 @@ export class QuickTerrain extends BuildPanelApp {
     }
 
     async createAcid() {
+        const width = canvas.scene.dimensions.sceneWidth;
+        const height = canvas.scene.dimensions.sceneHeight;
         const tileData = {
-            width: canvas.scene.dimensions.sceneWidth - 10,
-            height: canvas.scene.dimensions.sceneHeight - 10,
-            x: canvas.scene.dimensions.sceneX + 5,
-            y: canvas.scene.dimensions.sceneY + 5,
+            width: width - 10,
+            height: height - 10,
+            x: canvas.scene.dimensions.sceneX + 5 + width / 2,
+            y: canvas.scene.dimensions.sceneY + 5 + height / 2,
             elevation: 0,
             flags: {
                 "levels-3d-preview": {

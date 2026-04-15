@@ -24,10 +24,7 @@ export const First3DTile = () => {
             return game.Levels3DPreview._active && game.modules.get("canvas3dcompendium")?.active;
         },
         init: () => {
-            FilePicker.LAST_BROWSED_DIRECTORY = "";
-        },
-        onComplete: () => {
-            game.packs.get("levels-3d-preview.macros").render(true);
+            foundry.applications.apps.FilePicker.implementation.LAST_BROWSED_DIRECTORY = "";
         },
     });
 };
@@ -149,7 +146,7 @@ const Environment = () => {
         restricted: false,
         autoRegister: true,
         requires: () => {
-            return game.modules.get("canvas3dcompendium")?.active && foundry.applications.instances.values().find((window) => window instanceof game.Levels3DPreview.CONFIG.UI.QuickEnvironment);
+            return game.modules.get("canvas3d-premium")?.active && foundry.applications.instances.values().find((window) => window instanceof game.Levels3DPreview.CONFIG.UI.QuickEnvironment);
         },
     });
 };
@@ -162,7 +159,7 @@ const Terrain = () => {
         restricted: false,
         autoRegister: true,
         requires: () => {
-            return game.modules.get("canvas3dcompendium")?.active && foundry.applications.instances.values().find((window) => window instanceof game.Levels3DPreview.CONFIG.UI.QuickTerrain);
+            return game.modules.get("canvas3d-premium")?.active && foundry.applications.instances.values().find((window) => window instanceof game.Levels3DPreview.CONFIG.UI.QuickTerrain);
         },
     });
 };
@@ -175,7 +172,7 @@ const Material = () => {
         restricted: false,
         autoRegister: true,
         requires: () => {
-            return game.modules.get("canvas3dcompendium")?.active && foundry.applications.instances.values().find((window) => window instanceof game.Levels3DPreview.CONFIG.UI.MaterialBrowser);
+            return game.modules.get("canvas3d-premium")?.active && foundry.applications.instances.values().find((window) => window instanceof game.Levels3DPreview.CONFIG.UI.MaterialBrowser);
         },
     });
 };
@@ -188,7 +185,7 @@ const Effects = () => {
         restricted: false,
         autoRegister: true,
         requires: () => {
-            return game.modules.get("canvas3dcompendium")?.active && foundry.applications.instances.values().find((window) => window instanceof game.Levels3DPreview.CONFIG.UI.EffectBrowser);
+            return game.modules.get("canvas3d-premium")?.active && foundry.applications.instances.values().find((window) => window instanceof game.Levels3DPreview.CONFIG.UI.EffectBrowser);
         },
     });
 };
@@ -201,7 +198,7 @@ const Cutscene = () => {
         restricted: false,
         autoRegister: true,
         requires: () => {
-            return game.modules.get("canvas3dcompendium")?.active && foundry.applications.instances.values().find((window) => window instanceof game.Levels3DPreview.CONFIG.UI.CutscenePanel);
+            return game.modules.get("canvas3d-premium")?.active && foundry.applications.instances.values().find((window) => window instanceof game.Levels3DPreview.CONFIG.UI.CutscenePanel);
         },
     });
 };
@@ -214,7 +211,7 @@ const RoomBuilder = () => {
         restricted: false,
         autoRegister: true,
         requires: () => {
-            return game.modules.get("canvas3dcompendium")?.active && foundry.applications.instances.values().find((window) => window instanceof game.Levels3DPreview.CONFIG.UI.RoomBuilder);
+            return game.modules.get("canvas3d-premium")?.active && foundry.applications.instances.values().find((window) => window instanceof game.Levels3DPreview.CONFIG.UI.RoomBuilder);
         },
     });
 };
