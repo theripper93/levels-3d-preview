@@ -1596,7 +1596,7 @@
         },
         "welcome": {
             "title": "Welcome to 3D Canvas",
-            "content": "<h1>Welcome to 3D!</h1>\nWelcome to 3D Canvas! First, thanks for supporting my development endevour and making this project possible!\nSimply <b>Click the <i class='fas fa-cube'></i> button</b> (Token controls, top left) to switch a scene to 3D.<p><h2>Important Modules</h2>\nBefore starting with 3D Canvas, install: <ul><li><a href='https://wiki.theripper93.com/levels-3d-preview/canvas3dcompendium'>Mapmaking Pack</a></li><li><a href='https://wiki.theripper93.com/levels-3d-preview/canvas3dtokencompendium'>Token Collection</a></li></ul> You'll get a ton of 3D Props, Tokens and many easy-building tools!<p><h2>Getting Started</h2>\n After enabling the <b>Mapmaking Pack</b> you will get access to an easy and fast <b>Quickstart Tutorial</b>. After the Quickstart, if you want to dive into the advanced settings, it's highly advised to <b>read the documentation</b> (by clicking the <b><i class='fas fa-book'></i> Getting Started</b> button below). You can always find the documentation later in your compendiums! The documentation also has a collection of video tutorials that you can reference.<p><h2>Troubleshooting</h2>\nIf you experience any <b>issue</b> or have trouble with <b>configuration</b> or <b>3d models</b> do not esitate to <b>reach out</b> on the discord channel!<hr>",
+            "content": "<h1>Welcome to 3D!</h1>Welcome to 3D Canvas! First, thanks for supporting my development endevour and making thisproject possible!Simply <b>Click the <i class='fas fa-cube'></i> button</b> (Token controls, top left) to switch a sceneto 3D.<p><h2>Important Modules</h2>Before starting with 3D Canvas, install: <ul><li><a href='https://foundryvtt.com/packages/canvas3dcompendium' target='_blank'>Mapmaking Pack</a></li><li><a href='https://foundryvtt.com/packages/canvas3dtokencompendium' target='_blank'>Token Collection</a></li></ul> You'll get a ton of 3D Props and Tokens!<p><a href='https://join.theripper93.com' target='_blank'>Patreon Supporters</a> willalso get access to many additionals advanced build tools:</p><ul><li><a href='https://foundryvtt.com/packages/canvas3d-premium' target='_blank'>Advanced Tools</a></li></ul><p><h2>Getting Started</h2> After enabling the <b>Mapmaking Pack</b> you will get access to an easy and fast <b>QuickstartTutorial</b>. After the Quickstart, if you want to dive into the advanced settings, it's highly advised to <ahref='https://wiki.theripper93.com/levels-3d-preview' target='_blank'>read the documentation</a> (by clicking the <b><iclass='fas fa-book'></i> Getting Started</b> button below). You can always find the documentation later in yourcompendiums! The documentation also has a collection of video tutorials that you can reference.<p><h2>Troubleshooting</h2>If you experience any <b>issue</b> or have trouble with <b>configuration</b> or <b>3d models</b>do not esitate to <b>reach out</b> on the <a href='https://discord.theripper93.com' target='_blank'>discord</a> channel!<hr>",
             "ok": "Dismiss",
             "dontshowagain": "Don't show again",
             "opencompendium": "Getting Started"
@@ -2028,7 +2028,7 @@
                 },
                 "step-7": {
                     "title": "Drag & Drop",
-                    "content": "Drag & Drop a 3D Model the same way you would do with a 2D Tile. Use the Controls Reference to manipulate the Tile as you prefer. The 3D Canvas Macro Compendium includes useful macros to manipulate tiles."
+                    "content": "Drag & Drop a 3D Model the same way you would do with a 2D Tile. Use the Controls Reference to manipulate the Tile as you prefer."
                 }
             },
             "scene-configuration": {
@@ -2197,7 +2197,7 @@
                 },
                 "step-4": {
                     "title": "Placement",
-                    "content": "You can use these toggles to determine how assets are placed. For example if you want them grid alligned."
+                    "content": "You can use these toggles to determine how assets are placed. For example if you want them grid aligned."
                 },
                 "step-5": {
                     "title": "Collision",
@@ -2223,7 +2223,7 @@
             "quick-environment": {
                 "title": "Panels: Environment",
                 "description": "This tour will guide you through the Environment Panel.",
-                "requires": "You need to have the 3D Canvas Mapmaking Pack installed and the Environment Panel open to start this tour.",
+                "requires": "You need to have the 3D Canvas - Advanced Tools installed and the Environment Panel open to start this tour.",
                 "step-0": {
                     "title": "Environment Panel",
                     "content": "This panel allows you to quickly setup a scene feel with a few clicks."
@@ -2244,7 +2244,7 @@
             "quick-terrain": {
                 "title": "Panels: Terrain",
                 "description": "This tour will guide you through the Terrain Panel.",
-                "requires": "You need to have the 3D Canvas Mapmaking Pack installed and the Terrain Panel open to start this tour.",
+                "requires": "You need to have the 3D Canvas - Advanced Tools installed and the Terrain Panel open to start this tour.",
                 "step-0": {
                     "title": "Terrain Panel",
                     "content": "This panel allows you to quickly setup a terrain to use as a base for your scene."
@@ -2269,7 +2269,7 @@
             "material-browser": {
                 "title": "Panels: Materials",
                 "description": "This tour will guide you through the Material Panel.",
-                "requires": "You need to have the 3D Canvas Mapmaking Pack installed and the Material Panel open to start this tour.",
+                "requires": "You need to have the 3D Canvas - Advanced Tools installed and the Material Panel open to start this tour.",
                 "step-0": {
                     "title": "Material Panel",
                     "content": "This panel allows you to quickly browse and change materials on selected tiles."
@@ -2290,7 +2290,7 @@
             "effect-browser": {
                 "title": "Panels: Effects",
                 "description": "This tour will guide you through the Effect Panel.",
-                "requires": "You need to have the 3D Canvas Mapmaking Pack installed and the Effect Panel open to start this tour.",
+                "requires": "You need to have the 3D Canvas - Advanced Tools installed and the Effect Panel open to start this tour.",
                 "step-0": {
                     "title": "Effect Panel",
                     "content": "This panel allows you to drag and drop effects onto the scene.<hr>Effects are textures projected as decals, once placed you will see a red cone indicating the projection direction. This is only visible to GMs while on the tile layer."
@@ -2311,7 +2311,7 @@
             "cutscene-panel": {
                 "title": "Panels: Cutscene",
                 "description": "This tour will guide you through the Cutscene Panel.",
-                "requires": "You need to have the 3D Canvas Mapmaking Pack installed and the Cutscene Panel open to start this tour.",
+                "requires": "You need to have the 3D Canvas - Advanced Tools installed and the Cutscene Panel open to start this tour.",
                 "step-0": {
                     "title": "Cutscene Panel",
                     "content": "This panel allows you to quickly setup one or more cinematics for your scene."
@@ -2360,7 +2360,7 @@
             "room-builder": {
                 "title": "Panels: Dungeons & Interiors",
                 "description": "This tour will guide you through the Dungeons & Interiors Panel.",
-                "requires": "You need to have the 3D Canvas Mapmaking Pack installed and the Dungeons & Interiors Panel open to start this tour.",
+                "requires": "You need to have the 3D Canvas - Advanced Tools installed and the Dungeons & Interiors Panel open to start this tour.",
                 "step-0": {
                     "title": "Dungeons & Interiors Panel",
                     "content": "This panel allows you to create dungeons, caves and buildings interiors."

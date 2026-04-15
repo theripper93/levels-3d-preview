@@ -823,7 +823,7 @@ export function registerSettings() {
             await game.settings.set("levels-3d-preview", "oneTimeMessages", oldSett);
         }
 
-        const showNewUserExperience = game.modules.get("canvas3dcompendium")?.active && !game.settings.get("levels-3d-preview", "oneTimeMessages").newuserexperience;
+        const showNewUserExperience = game.modules.get("canvas3dcompendium")?.active && game.tours.get("levels-3d-preview.first-scene").status === "unstarted";
 
         const showWelcomeMessage = !game.settings.get("levels-3d-preview", "oneTimeMessages").welcome;
 
@@ -878,7 +878,6 @@ export function registerSettings() {
                         label: "levels3dpreview.newuserexperience.starttour",
                         callback: () => {
                             game.tours.get("levels-3d-preview.first-scene").start();
-                            setSetting("newuserexperience");
                         },
                     },
                 ],

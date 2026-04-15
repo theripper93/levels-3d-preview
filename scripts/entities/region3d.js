@@ -99,7 +99,7 @@ export class Region3D extends THREE.Object3D {
         const geometry = Shape3D.extrudeGeometry(this.region.polygonTree, { depth: this.height });
         geometry.translate(0, this.bottom, 0);
         const material = new DiagonalStripesMaterial({ color: this.region.color.css, scale: 30 });
-        material.side = this.height < 0.01 ? THREE.FrontSide : THREE.DoubleSide;
+        material.side = this.height <= 0.01 ? THREE.FrontSide : THREE.BackSide;
         const mesh = new THREE.Mesh(geometry, material);
         this.add(mesh);
     }

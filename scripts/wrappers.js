@@ -15,6 +15,7 @@ export function registerWrappers() {
         //Register Core Wrappers
 
         libWrapper.register("levels-3d-preview", "foundry.canvas.layers.TokenLayer.prototype.moveMany", moveMany, "MIXED");
+        libWrapper.register("levels-3d-preview", "foundry.canvas.layers.TilesLayer.prototype.moveMany", moveManyTiles, "MIXED");
         libWrapper.register("levels-3d-preview", "foundry.canvas.groups.InterfaceCanvasGroup.prototype.createScrollingText", showBouncingText, "WRAPPER");
         libWrapper.register("levels-3d-preview", "foundry.canvas.layers.TokenLayer.prototype.cycleTokens", cycleTokens, "WRAPPER");
         libWrapper.register("levels-3d-preview", "foundry.canvas.Canvas.prototype.animatePan", animatePan, "MIXED");
@@ -300,14 +301,14 @@ export function registerWrappers() {
 
         async function moveMany(wrapped, ...args) {
             if (!game.Levels3DPreview?._active || args[0].rotate) return wrapped(...args);
-            let {dx, dy, dz, rotate, ids, includeLocked} = args[0];
-            if ( ![-1, 0, 1].includes(dx) ) throw new Error("Invalid argument: dx must be -1, 0, or 1");
-            if ( ![-1, 0, 1].includes(dy) ) throw new Error("Invalid argument: dy must be -1, 0, or 1");
-            if ( ![-1, 0, 1].includes(dz) ) throw new Error("Invalid argument: dz must be -1, 0, or 1");
-            if ( !dx && !dy && !dz ) return [];
-            if ( game.paused && !game.user.isGM ) {
-            ui.notifications.warn("GAME.PausedWarning", {localize: true});
-            return [];
+                let {dx, dy, dz, rotate, ids, includeLocked} = args[0];
+                if ( ![-1, 0, 1].includes(dx) ) throw new Error("Invalid argument: dx must be -1, 0, or 1");
+                if ( ![-1, 0, 1].includes(dy) ) throw new Error("Invalid argument: dy must be -1, 0, or 1");
+                if ( ![-1, 0, 1].includes(dz) ) throw new Error("Invalid argument: dz must be -1, 0, or 1");
+                if ( !dx && !dy && !dz ) return [];
+                if ( game.paused && !game.user.isGM ) {
+                ui.notifications.warn("GAME.PausedWarning", {localize: true});
+                return [];
             }
 
             // Identify the objects requested for movement
@@ -376,9 +377,16 @@ export function registerWrappers() {
                     updateData = updateData.filter(e => e._id !== token.id);
                 }
             
-            await canvas.scene.updateEmbeddedDocuments(this.constructor.documentName, updateData, updateOptions);
+                await canvas.scene.updateEmbeddedDocuments(this.constructor.documentName, updateData, updateOptions);
             }
             return objects;
+        }
+
+        async function moveManyTiles(wrapped, ...args) {
+            // TODO: Investigate move tiles in 3D with WASD
+            if (game.Levels3DPreview?._active) return [];
+            // if (game.Levels3DPreview?._active && game.Levels3DPreview.interactionManager._gizmoEnabled) return [];
+            return wrapped(...args);
         }
 
         function handleArrowKeys(originalDeltas) {

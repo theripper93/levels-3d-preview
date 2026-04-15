@@ -114,7 +114,7 @@ export class AssetBrowser extends HandlebarsApplication {
         if (!_this._hasSelected || (event.which !== 1 && !fromDrag) || !currentIntersect) return;
         canvas.tiles.releaseAll();
         const dragData = _this.buildTileData();
-
+        if (!dragData) return;
         game.Levels3DPreview.interactionManager._onDrop(event, dragData);
     }
 
@@ -126,8 +126,8 @@ export class AssetBrowser extends HandlebarsApplication {
         const depth = tileData.flags["levels-3d-preview"].depth;
         const elevation = tileData.elevation + (depth * canvas.scene.dimensions.distance) / canvas.scene.dimensions.size;
         let { x, y, width, height } = tileData;
-        // x -= width / 2;
-        // y -= height / 2;
+        x -= width / 2;
+        y -= height / 2;
         const approxArea = width * height;
         const pointCount = (approxArea / Math.pow(canvas.grid.size, 2)) * AssetBrowser.density * 0.3;
         const polygonToolPoints = isPolygon ? AssetBrowser.toWorldSpace(AssetBrowser.getPolygonFromTile(tileData).polygon, x, y) : [x, y, x + width, y, x + width, y + height, x, y + height, x, y].map((n) => parseInt(n));
@@ -141,6 +141,7 @@ export class AssetBrowser extends HandlebarsApplication {
             const collision = game.Levels3DPreview.interactionManager.computeSightCollisionFrom3DPositions(origin, target, "collision", false, false, false, true);
             if (collision) {
                 const dragData = _this.buildTileData(null, collision[0]);
+                if (!dragData) return false;
                 game.Levels3DPreview.interactionManager._onDrop(new Event("click"), dragData);
             }
         }
@@ -285,6 +286,7 @@ export class AssetBrowser extends HandlebarsApplication {
                     const collision = game.Levels3DPreview.interactionManager.computeSightCollisionFrom3DPositions(origin, target, "collision", false, false, false, true);
                     if (collision?.length) point.point = collision[0].point;
                     const dragData = this.buildTileData(null, point);
+                    if (!dragData) return;
                     game.Levels3DPreview.interactionManager._onDrop(new Event("click"), dragData);
                 }
             }
@@ -327,6 +329,7 @@ export class AssetBrowser extends HandlebarsApplication {
             if (proceed) {
                 for (const point of points) {
                     const dragData = this.buildTileData(null, point);
+                    if (!dragData) return;
                     game.Levels3DPreview.interactionManager._onDrop(new Event("click"), dragData);
                 }
             }
@@ -371,6 +374,7 @@ export class AssetBrowser extends HandlebarsApplication {
         const srcs = [];
         src ? srcs.push(src) : _this.element.querySelectorAll("li.selected").forEach(el => srcs.push(el.dataset.output));
         const randomSrc = srcs[Math.floor(Math.random() * srcs.length)];
+        if (!randomSrc) return false;
         const angle = parseFloat(_this.element.querySelector("#angle").value || 0);
         let color = _this.element.querySelector("#color").value;
         const options = _this.quickPlacementOptions;
@@ -417,6 +421,7 @@ export class AssetBrowser extends HandlebarsApplication {
         canvas.tiles.releaseAll();
         const src = event.currentTarget.dataset.output;
         const dragData = _this.buildTileData(src);
+        if (!dragData) return;
         event.dataTransfer.setData("text/plain", JSON.stringify(dragData));
     }
 
@@ -524,6 +529,7 @@ export class AssetBrowser extends HandlebarsApplication {
 
     activateListElementListeners(li) {
         const html = this.element;
+        li.addEventListener("dragstart", this._onDragStart);
         li.addEventListener("mouseup", (e) => {
             const isSelect = e.target.closest("li").classList.contains("selected");
             if (!e.ctrlKey && !e.shiftKey) html.querySelectorAll("li").forEach(el => el.classList.remove("selected"));
@@ -548,7 +554,6 @@ export class AssetBrowser extends HandlebarsApplication {
             }
             this._hasSelected = html.querySelectorAll("li.selected").length > 0;
             html.querySelector("#selected-notification").style.display = this._hasSelected ? "" : "none";
-            li.addEventListener("dragstart", this._onDragStart);
             if (this._hasSelected) canvas.tiles.releaseAll();
         });
     }

@@ -1349,6 +1349,7 @@ export const dropFunctions = {
 };
 
 async function dropImage(event, data) {
+    const size = canvas.grid.size * data.tileSize;
     data.flags["levels-3d-preview"] = {
         imageTexture: data.texture.src,
         dynaMesh: "decal",
@@ -1357,14 +1358,14 @@ async function dropImage(event, data) {
         transparency: 0.99,
         collision: false,
         sight: false,
+        depth: 1,
     };
-    const size = canvas.grid.size * data.tileSize;
     data.width = size;
     data.height = size;
-    data.depth = size;
+    // data.depth = 1; // size;
     data.elevation += canvas.scene.dimensions.distance * 2;
-    data.x -= size / 2;
-    data.y -= size / 2;
+    // data.x -= size / 2;
+    // data.y -= size / 2;
     data.texture.src = "modules/levels-3d-preview/assets/blank.webp";
 
     let isToken = false;

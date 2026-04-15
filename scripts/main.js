@@ -103,10 +103,14 @@ Hooks.once("ready", () => {
     if (!game.scenes.active) {
         const scene = Array.from(game.scenes)[0];
         if (scene) {
-            scene.activate();
+            scene.activate().then(() => {
+                window.location.reload();
+            });
             ui.notifications.error(game.i18n.localize("levels3dpreview.errors.noActiveScene"), { permanent: true });
         } else {
-            foundry.nue.NewUserExperienceManager.prototype.createDefaultScene();
+            game.nue.createDefaultScene({ active: true }).then(() => {
+                window.location.reload();
+            });
             ui.notifications.error(game.i18n.localize("levels3dpreview.errors.noScenes"), { permanent: true });
         }
         return;
@@ -719,7 +723,7 @@ class Levels3DPreview {
         this.shaderHandler = new ShaderHandler(this);
         this.shaderHandler.shaders.push(...toPreserve);
         this.scene = new THREE.Scene();
-        this.scene.background = new THREE.Color(canvas.scene.backgroundColor ?? 0xffffff);
+        this.scene.background = new THREE.Color(canvas.level.background.color ?? 0xffffff);
         this.rangeFinderMode = game.settings.get("levels-3d-preview", "rangeFinder");
         this.composer.removePass(this.renderPass);
         this.composer.removePass(this.bloomPass);
@@ -892,7 +896,7 @@ class Levels3DPreview {
         const enableFog = canvas.scene.getFlag("levels-3d-preview", "enableFog") ?? false;
         const fogColor = canvas.scene.getFlag("levels-3d-preview", "fogColor") ?? "#000000";
         const fogDistance = (canvas.scene.getFlag("levels-3d-preview", "fogDistance") ?? 3000) / this.factor;
-        this.scene.background = enableFog ? new THREE.Color(fogColor) : new THREE.Color(canvas.scene.backgroundColor ?? 0xffffff);
+        this.scene.background = enableFog ? new THREE.Color(fogColor) : new THREE.Color(canvas.level.background.color ?? 0xffffff);
         if (enableFog) {
             this.scene.fog = new THREE.Fog(fogColor, 1, fogDistance);
             this.camera.far = fogDistance;
@@ -1159,7 +1163,7 @@ class Levels3DPreview {
             this.scene.background?.dispose?.();
             this.scene.environment?.dispose?.();
             this.scene.userData.envRt?.dispose?.();
-            this.scene.background = enableFog ? this.scene.fog.color : new THREE.Color(canvas.scene.backgroundColor ?? 0xffffff);
+            this.scene.background = enableFog ? this.scene.fog.color : new THREE.Color(canvas.level.background.color ?? 0xffffff);
             this.scene.environment = null;
             this.isEXR = false;
             this.scene.remove(this.skybox);
@@ -1328,7 +1332,7 @@ class Levels3DPreview {
         }
     }
 
-    allignChatBubbles() {
+    alignChatBubbles() {
         const bubbles = document.querySelectorAll(".chat-bubble");
         bubbles.forEach((bubble) => {
             const token3D = this.tokens[bubble.dataset.tokenId];
@@ -1459,7 +1463,7 @@ class Levels3DPreview {
                 const t3d = this.tokens[e.dataset.tokenid];
                 if (t3d) this.helpers.ruler3d.centerElement(e, t3d.head);
             });
-            this.allignChatBubbles();
+            this.alignChatBubbles();
             this.lights?.globalIllumination?.update(delta);
             this.weather?.update(delta);
             this.GameCamera.update(delta);

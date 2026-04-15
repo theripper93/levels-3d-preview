@@ -77,9 +77,9 @@ export class Shape3D extends THREE.Object3D {
         });
     }
     
-    getDefaultMaterial() {
+    getDefaultMaterial(forceDoubleSide = false) {
         const material = new DiagonalStripesMaterial({ color: this.color, scale: this.uvScale ?? 50 });
-        material.side = this.height < 0.01 ? THREE.FrontSide : THREE.DoubleSide;
+        material.side = forceDoubleSide ? THREE.DoubleSide : this.height <= 0.01 ? THREE.FrontSide : THREE.BackSide;
         return material;
     }
 
@@ -326,7 +326,7 @@ export class Sphere3D extends Shape3D {
     }
 
     drawShape() {
-        const material = this.material ?? this.getDefaultMaterial();
+        const material = this.material ?? this.getDefaultMaterial(true);
         const geometry = new THREE.SphereGeometry(this.radius, 32, 32);
         const mesh = new THREE.Mesh(geometry, material);
         mesh.position.set(this.origin.x, this.origin.y, this.origin.z);
@@ -483,7 +483,7 @@ export class Cone3D extends Shape3D {
     }
 
     drawFlat() {
-        const material = this.material ?? this.getDefaultMaterial();
+        const material = this.material ?? this.getDefaultMaterial(true);
         const geometry = new THREE.ConeGeometry(this.baseRadius, this.coneHeight, 32);
         geometry.rotateX(-this._rotation);
         geometry.rotateZ(Math.PI / 2);
@@ -515,7 +515,7 @@ export class Cone3D extends Shape3D {
         geometry.rotateX(-this._rotation);
         geometry.rotateZ(Math.PI / 2);
         geometry.translate(this.drawOrigin.x, this.drawOrigin.y, this.drawOrigin.z);
-        const material = this.material ?? this.getDefaultMaterial();
+        const material = this.material ?? this.getDefaultMaterial(true);
         const mesh = new THREE.Mesh(geometry, material);
         this.applySettings(mesh);
         this.add(mesh);
@@ -541,7 +541,7 @@ export class Cone3D extends Shape3D {
         geometry.rotateX(-this._rotation);
         geometry.rotateZ(Math.PI / 2);
         geometry.translate(this.drawOrigin.x, this.drawOrigin.y, this.drawOrigin.z);
-        const material = this.material ?? this.getDefaultMaterial();
+        const material = this.material ?? this.getDefaultMaterial(true);
         const mesh = new THREE.Mesh(geometry, material);
         this.applySettings(mesh);
         this.add(mesh);
