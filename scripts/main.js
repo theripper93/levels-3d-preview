@@ -1339,6 +1339,8 @@ class Levels3DPreview {
             const center = token3D.head;
             center.y += 0.03;
             //center.y += token3D.hitbox.geometry.boundingBox.max.y * 2;
+            bubble.classList.add("themed")
+            bubble.classList.add("theme-light");
             document.body.append(bubble);
             bubble.style.transformOrigin = "bottom center";
             Ruler3D.centerElement(bubble, center, true);
