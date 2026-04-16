@@ -59,6 +59,7 @@ import { applyHeightmap } from "./helpers/applyHeightmap.js";
 import { BuildPanel } from "./apps/buildPanel.js";
 import { AssetBrowser } from "./apps/assetBrowser.js";
 import { TokenBrowser, setHudHook } from "./apps/tokenBrowser.js";
+import { setLevelsHooks } from "./systems/sceneLevels.js";
 
 import { createTargetGeometry } from "./entities/effects/target.js";
 import { UberPass } from "./lib/UberPass.js";
@@ -94,6 +95,7 @@ RangeFinder.setHooks();
 InteractionManager.setHooks();
 GlobalIllumination.setHooks();
 BuildPanel.setHooks();
+setLevelsHooks();
 setHudHook();
 setSharingHooks();
 
@@ -890,7 +892,8 @@ class Levels3DPreview {
         this.GameCamera.init();
         this.interactionManager._cacheKeybinds();
         this.interactionManager.initGroupSelect();
-        if (canvas.scene.levels?.size > 1) ui.notifications.warn("3D Canvas: Scene Levels are not supported yet.", { permanent: true });
+        // if (canvas.scene.levels?.size > 1) ui.notifications.warn("3D Canvas: 
+        // Scene Levels are not supported yet.", { permanent: true });
     }
 
     setFog() {
@@ -962,7 +965,7 @@ class Levels3DPreview {
         const height = canvas.scene.dimensions.sceneHeight / this.factor;
         const center = this.canvasCenter;
         const depth = 0.02;
-        const texture = await this.helpers.loadTexture(canvas.scene.background.src, { linear: false });
+        const texture = await this.helpers.loadTexture(canvas.level.background.src, { linear: false });
         if (texture) {
             texture.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
         }

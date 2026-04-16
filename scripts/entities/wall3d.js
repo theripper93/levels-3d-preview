@@ -5,9 +5,9 @@ import {factor} from "../main.js";
 const doorIconMaterialCache = {};
 
 const getWallColor = (wall) => {
-    if (game.user.isGM) return wall._getWallColor();
+    if (game.user.isGM) return wall._getWallColor().toString();
     if(wall.document.door === CONST.WALL_DOOR_TYPES.SECRET) return 0xFFFFBB
-    return wall._getWallColor();
+    return wall._getWallColor().toString();
 }
 
 export class Wall3D {
@@ -17,10 +17,10 @@ export class Wall3D {
         this.embeddedName = "Wall";
         this.placeable = wall;
         this._parent = parent;
-        this.top = wall.document.flags["wall-height"]?.top ?? canvas.scene.dimensions.distance * 2;
+        this.bottom = Number.isFinite(canvas.level.elevation.bottom) ? canvas.level.elevation.bottom : 0;
+        this.top = Number.isFinite(canvas.level.elevation.top) ? canvas.level.elevation.top : this.bottom + canvas.scene.dimensions.distance * 2;
         this.externalWall = wall.document.flags.betterroofs?.externalWall ?? false;
         if (this.externalWall) this.top++;
-        this.bottom = wall.document.flags["wall-height"]?.bottom ?? 0;
         this.vec1 = Ruler3D.posCanvasTo3d({ x: wall.document.c[0], y: wall.document.c[1], z: this.top });
         this.vec2 = Ruler3D.posCanvasTo3d({ x: wall.document.c[2], y: wall.document.c[3], z: this.bottom });
         this.center = Ruler3D.posCanvasTo3d({ x: wall.center.x, y: wall.center.y, z: (this.top + this.bottom) / 2 });

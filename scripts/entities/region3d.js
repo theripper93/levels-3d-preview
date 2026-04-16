@@ -208,11 +208,11 @@ export class Region3D extends THREE.Object3D {
         
         if (shape3d.tool === "tile") {
             let elevation = shape3d.origin.y * factor / canvas.scene.dimensions.distancePixels + 0.1;
-            const width = shape.width;
-            const height = shape.height;
+            const width = shape3d.width * factor;
+            const height = shape3d.depth * factor;
             const depth = shape3d.height * factor;
-            let x = shape.x + shape.width / 2;
-            let y = shape.y + shape.height / 2;
+            let x = shape3d.origin.x * factor;
+            let y = shape3d.origin.z * factor;
             if (width < 0) x += width;
             if (height < 0) y += height;
             if (depth < 0) elevation += depth / (2 * canvas.scene.dimensions.distancePixels);

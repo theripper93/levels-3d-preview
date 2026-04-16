@@ -10,6 +10,7 @@ export class Shape3D extends THREE.Object3D {
     }
     #region = null;
     #extrude = false;
+    #height = null;
     #elevationTop = 0;
     #elevationBottom = 0;
 
@@ -31,11 +32,12 @@ export class Shape3D extends THREE.Object3D {
         return this.#extrude;
     }
 
-    // set height(value) {
-    //     this.#height = value;
-    // }
+    set height(value) {
+        this.#height = value;
+    }
 
     get height() {
+        if (this.#height !== null) return this.#height;
         const alwaysFlat = game.settings.get("levels-3d-preview", "regionsAlwaysFlat");
         if (alwaysFlat) return 0.01;
         return this.elevationTop - this.elevationBottom;
@@ -99,17 +101,17 @@ export class Shape3D extends THREE.Object3D {
             return new THREE.MeshBasicMaterial({ color: new THREE.Color(lightColor?.css ?? "white"), wireframe: true });
         }
         if (tool === "sound") return new THREE.MeshBasicMaterial({ color: new THREE.Color("white"), wireframe: true });
-        if (tool === "tile") return new THREE.MeshBasicMaterial({ color: new THREE.Color("chocolate"), transparent: true, depthWrite: false, opacity: 0.5 });
+        if (tool === "tile") return new THREE.MeshBasicMaterial({ color: new THREE.Color("chocolate"), wireframe: true });
     }
 
     static getShapeFromTool(tool) {
         if (tool === "light" || tool === "sound") return "circle";
-        if (tool === "tile") return "rectangle";
+        if (tool === "tile") return game.Levels3DPreview.CONFIG.UI.windows.RoomBuilder._shape === "ellipse" ? "ellipse" : "rectangle";
         if (tool === "tile3dPolygon") return "polygon";
         return tool;
     }
 
-    static create({ shape, type, tool, origin, destination, segments, material, extrude, hole = false, color, region }) {
+    static create({ shape, type, tool, origin, destination, segments, material, extrude, hole = false, color, region, height }) {
         const defaults = foundry.applications.sheets.palette.RegionPalette.createData;
         if (shape) {
             type = shape.type;
@@ -121,18 +123,21 @@ export class Shape3D extends THREE.Object3D {
             origin = new THREE.Vector3(origin.x, origin.y, origin.z);
             destination = new THREE.Vector3(destination.x, destination.y, destination.z);
         }
+        if (Number.isFinite(height)) {
+            height /= factor;
+        }
         
         let shape3d = null;
         const options = { shape, origin, destination, hole, extrude };
         switch (type) {
             case "rectangle":
-                shape3d = new Box3D(options);
+                shape3d = new Box3D({ ...options, height });
                 break;
                 case "circle":
                 shape3d = new Sphere3D(options);
                 break;
                 case "ellipse":
-                shape3d = new Ellipse3D(options);
+                shape3d = new Ellipse3D({ ...options, height });
                 break;
                 case "cone":
                     shape3d = new Cone3D(options);
@@ -244,15 +249,17 @@ export class Shape3D extends THREE.Object3D {
 }
 
 export class Box3D extends Shape3D {
-    constructor({ shape, origin, destination, hole }) {
+    constructor({ shape, origin, destination, hole, height }) {
         super();
         this.uvScale = 15;
+        if (height) this.height = height;
         if (!shape) {
             this.normalizePoints(origin, destination);
             const width = Math.abs(destination.x - origin.x);
             const depth = Math.abs(destination.z - origin.z);
             this.elevationBottom = origin.y;
-            this.elevationTop = origin.y + Math.min(width, depth);
+            this.elevationTop = height ? this.elevationBottom + height : destination.y;
+            // this.elevationTop = origin.y + Math.min(width, depth);
             shape = new foundry.data.RectangleShapeData({
                 type: "rectangle",
                 hole: hole,
@@ -352,14 +359,14 @@ export class Sphere3D extends Shape3D {
 }
 
 export class Ellipse3D extends Shape3D {
-    constructor({ shape, origin, destination, hole }) {
+    constructor({ shape, origin, destination, hole, height }) {
         super();
+        if (height) this.height = height;
         if (!shape) {
             const radiusX = Math.abs(destination.x - origin.x);
             const radiusY = Math.abs(destination.z - origin.z);
-            const height = Math.min(radiusX, radiusY);
-            this.elevationBottom = origin.y - height / 2;
-            this.elevationTop = origin.y + height / 2;
+            this.elevationBottom = origin.y;
+            this.elevationTop = height ? this.elevationBottom + height : destination.y;
             shape = new foundry.data.EllipseShapeData({
                 type: "ellipse",
                 hole: hole,
@@ -377,6 +384,8 @@ export class Ellipse3D extends Shape3D {
         this.shape = shape;
         this.radiusX = shape.radiusX / factor;
         this.radiusZ = shape.radiusY / factor;
+        this.width = shape.radiusX * 2 / factor;
+        this.depth = shape.radiusY * 2 / factor;
 
         this.origin = {
             x: shape.x / factor,

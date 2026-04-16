@@ -1549,7 +1549,7 @@ export function registerConfigs() {
                 randomSeed: {
                     type: "text",
                     label: game.i18n.localize("levels3dpreview.flags.randomSeed.label"),
-                    default: app.document.id.substring(0, 7),
+                    default: app.document.id?.substring(0, 7) ?? foundry.utils.randomID(7),
                 },
             },
             "effects-3d": {

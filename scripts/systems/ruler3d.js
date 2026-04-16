@@ -62,6 +62,7 @@ export class Ruler3D {
             extrude: !!selectedRegion,
             tool: tool,
             region: selectedRegion?.document,
+            height: game.Levels3DPreview.CONFIG.UI.windows.RoomBuilder?.height,
         });
         if (!shape) return; 
         shape.addToScene();
