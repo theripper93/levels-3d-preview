@@ -106,7 +106,7 @@ export class Shape3D extends THREE.Object3D {
 
     static getShapeFromTool(tool) {
         if (tool === "light" || tool === "sound") return "circle";
-        if (tool === "tile") return game.Levels3DPreview.CONFIG.UI.windows.RoomBuilder._shape === "ellipse" ? "ellipse" : "rectangle";
+        if (tool === "tile") return game.Levels3DPreview.CONFIG.UI.windows.RoomBuilder?._shape === "ellipse" ? "ellipse" : "rectangle";
         if (tool === "tile3dPolygon") return "polygon";
         return tool;
     }
