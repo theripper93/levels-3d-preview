@@ -1740,9 +1740,9 @@ export function registerConfigs() {
             if (!firstChange) {
                 const defaultValues = PS.getDefaultLightData(event.target.value);
                 const scaleInput = html.querySelector(`[name='flags.levels-3d-preview.ParticleScale']`);
-                const emitSizeInput = html.querySelector(`[name='flags.levels-3d-preview.ParticleEmitterSizeMultiplier']`);
+                // const emitSizeInput = html.querySelector(`[name='flags.levels-3d-preview.ParticleEmitterSizeMultiplier']`);
                 scaleInput.value = defaultValues.scale;
-                emitSizeInput.value = defaultValues.emitterSize;
+                // emitSizeInput.value = defaultValues.emitterSize;
             } else {
                 firstChange = false;
             }
