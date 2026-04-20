@@ -970,4 +970,19 @@ const overlayPresets = {
         });
         canvas.scene.updateEmbeddedDocuments(canvas.activeLayer.options.objectClass.embeddedName, updates);
     },
+    clear: () => {
+        if (!canvas.activeLayer.controlled.length) return ui.notifications.error("No object selected, please select at least one object.");
+        const updates = [];
+        canvas.activeLayer.controlled.forEach((obj) => {
+            updates.push({
+                _id: obj.id,
+                flags: {
+                    "levels-3d-preview": {
+                        "-=shaders": null
+                    }
+                }
+            })
+        });
+        canvas.scene.updateEmbeddedDocuments(canvas.activeLayer.options.objectClass.embeddedName, updates);
+    }
 };

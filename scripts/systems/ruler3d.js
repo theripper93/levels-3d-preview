@@ -566,7 +566,7 @@ export class Ruler3D {
         const targetLos = target.losHeight ?? target.elevation;
         origin = origin.document;
         target = target.document;
-        const scene = origin.document.parent;
+        const scene = origin.parent;
         const originMin = new THREE.Vector3(
             origin.x,
             origin.elevation * scene.dimensions.distancePixels,
