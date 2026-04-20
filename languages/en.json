@@ -1607,7 +1607,8 @@
         "newuserexperience": {
             "title": "Welcome to 3D Canvas",
             "content": "<h1>3D Quick Start!</h1> Welcome to 3D Canvas, this is a quick start tutorial to get you making maps right away and easly! Click the <b>Start Tour!</b> button to begin the tour.<hr>",
-            "starttour": "Start Tour!"
+            "starttour": "Start Tour!",
+            "importdemo": "Import Demo Scene"
         },
         "performance": {
             "verylow": "Very Low",

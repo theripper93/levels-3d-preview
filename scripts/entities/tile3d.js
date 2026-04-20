@@ -47,8 +47,8 @@ export class Tile3D {
         this.bottom = tile.document.elevation;
         this.shaders = [];
         this.center2d = {
-            x: this.x,
-            y: this.y,
+            x: this.x + Math.abs(this.tile.document.width) / 2,
+            y: this.y + Math.abs(this.tile.document.height) / 2,
         };
         this.center = Ruler3D.posCanvasTo3d({ x: this.center2d.x, y: this.center2d.y, z: this.bottom });
         this.texture = this.tile.document.texture.src;
@@ -68,11 +68,11 @@ export class Tile3D {
     }
 
     get x() {
-        return this.tile.document.x;
+        return this.tile.document.x - this.tile.document.shape.anchorX * this.tile.document.width;
     }
 
     get y() {
-        return this.tile.document.y;
+        return this.tile.document.y - this.tile.document.shape.anchorY * this.tile.document.height;
     }
 
     async load() {
@@ -2459,7 +2459,7 @@ export class Tile3D {
 
     static setHooks() {
         Hooks.on("updateTile", (tile, updates) => {
-            if (!game.Levels3DPreview?._active && tile.object) return;
+            if (!game.Levels3DPreview?._active || tile.parent !== game.scenes.viewed) return;
 
             if (isDoorUpdate(updates)) {
                 game.Levels3DPreview.tiles[tile.id]?.setDoorsMaterials(true);

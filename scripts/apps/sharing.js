@@ -289,7 +289,7 @@ class ShareMap extends HandlebarsApplication {
     }
 }
 
-class MapBrowser extends HandlebarsApplication {
+export class MapBrowser extends HandlebarsApplication {
 
     constructor() {
         super();
@@ -555,15 +555,14 @@ class MapBrowser extends HandlebarsApplication {
         this._onFilter();
     }
 
-    async _onMapDownload(e) {
-        e.preventDefault();
+    async _onMapDownload(e, id) {
+        e?.preventDefault();
+        id = id ?? e?.target.dataset.mapid;
         const createJournal = game.settings.get("levels-3d-preview", "mapsharingJournal");
-        const id = e.target.dataset.mapid;
-        const thumb = e.target.dataset.thumb;
         const map = await getMap(id);
         const mapData = this._mapList.find((m) => m.id == id);
         const journalData = createJournal ? await this.getJournalEntry(mapData.name + ` (${mapData.author})`, mapData.description) : {};
-        map.data.thumb = thumb;
+        map.data.thumb = mapData.image;
         const originalID = map.data._id;
         const newID = foundry.utils.randomID();
         map.data.active = false;
@@ -580,8 +579,14 @@ class MapBrowser extends HandlebarsApplication {
         await scene.importFromJSON(JSON.stringify(map.data));
         await this._migrateMap(scene, coreGeneration);
         increaseDownloadCount(id);
-        // if(CONFIG.Levels) await CONFIG.Levels.helpers.migration.migrateData(scene);
-        // ui.notifications.info(game.i18n.localize("levels3dpreview.sharing.mapbrowser.imported") + `: ${map.data.name}`);
+        return scene;
+    }
+
+    static async importDemoScene() {
+        const mapBrowser = new MapBrowser();
+        await mapBrowser._prepareContext({});
+        const scene = await mapBrowser._onMapDownload(null, "71");
+        scene.view();
     }
 
     async _migrateMap(scene, coreGeneration) {

@@ -1,4 +1,5 @@
 import { HandlebarsApplication, mergeClone } from "../lib/utils.js";
+import { MapBrowser } from "../apps/sharing.js";
 
 class canvas3dConfig extends HandlebarsApplication {
 
@@ -12,7 +13,6 @@ class canvas3dConfig extends HandlebarsApplication {
             },
             position: {
                 width: 600,
-                // height: 600,
             },
             form: {
                 handler: this._updateObject,
@@ -22,22 +22,9 @@ class canvas3dConfig extends HandlebarsApplication {
         });
     }
 
-    // static get PARTS() {
-    //     return {
-    //         content: {
-    //             template: `modules/levels-3d-preview/templates/config.hbs`,
-    //             classes: ["standard-form", "scrollable"],
-    //         },
-    //         footer: {
-    //             template: "templates/generic/form-footer.hbs",
-    //         }
-    //     }
-    // }
-
     static get PARTS() {
         return {
             tabs: {
-                // template: 'modules/levels-3d-preview/templates/config/tab-navigation.hbs',
                 template: 'templates/generic/tab-navigation.hbs',
             },
             base: {
@@ -883,6 +870,14 @@ export function registerSettings() {
                             game.tours.get("levels-3d-preview.first-scene").start();
                         },
                     },
+                    {
+                        action: "importdemo",
+                        icon: "fas fa-download",
+                        label: "levels3dpreview.newuserexperience.importdemo",
+                        callback: () => {
+                            MapBrowser.importDemoScene();
+                        },
+                    }
                 ],
                 default: "starttour",
             });
