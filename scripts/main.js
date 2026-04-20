@@ -556,7 +556,6 @@ class Levels3DPreview {
         this.animationMixers = [];
         this.clock = new THREE.Clock();
         this.loader = new this.CONFIG.LOADERS.GLTFLoader();
-        this.audioLoader = new THREE.AudioLoader();
         this.FBXLoader = new FBXLoader();
         this._active = false;
         this._ready = false;
@@ -588,9 +587,6 @@ class Levels3DPreview {
         this.camera.position.set(8, 2, 8).setLength(8);
         this.camera.zoom = 1;
         this.camera.updateProjectionMatrix();
-
-        this.listener = new THREE.AudioListener();
-        this.camera.add(this.listener);
 
         this.scene = new THREE.Scene();
         this.material = new THREE.MeshNormalMaterial();

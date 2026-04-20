@@ -1,5 +1,5 @@
 import * as THREE from "../lib/three.module.js";
-import { factor } from "../main.js";
+import { factor, MODULE_ID } from "../main.js";
 import { Light3D } from "./light3d.js";
 import { TokenAnimationHandler } from "../handlers/tokenAnimationHandler.js";
 import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from "../lib/three-mesh-bvh.js";
@@ -29,6 +29,7 @@ export class Token3D {
         this.placeable = this.token;
         this.document = this.token.document;
         this.documentSource = this.document._source;
+        this.#tokenHeight = Math.min(this.document.width, this.document.height) * this.document.parent.dimensions.distance * 0.89;
         this._shaderSize = Math.max(this.baseDocumentWidth, this.baseDocumentHeight);
         this.isOwner = this.token.isOwner;
         this._parent = parent;
@@ -58,6 +59,7 @@ export class Token3D {
         this.drawHeightIndicatorDebounced = foundry.utils.debounce(this.drawHeightIndicator, 100);
         this.animationHandler = new TokenAnimationHandler(this);
     }
+    #tokenHeight = null;
 
     getFlags() {
         this.gtflPath = this.document.getFlag("levels-3d-preview", "model3d") ?? "";
@@ -605,7 +607,6 @@ export class Token3D {
             const geometryCollisions = game.Levels3DPreview?.object3dSight;
             let collides;
             if (geometryCollisions) {
-                const tokenHeight = this.losHeight - this.document.elevation;
                 collides = game.Levels3DPreview.interactionManager.computeSightCollision(
                     {
                         x: this.token.center.x,
@@ -615,7 +616,7 @@ export class Token3D {
                     {
                         x: dest.x + this.baseDocumentWidth * canvas.grid.size * 0.5,
                         y: dest.y + this.baseDocumentHeight * canvas.grid.size * 0.5,
-                        z: dest.elevation + tokenHeight,
+                        z: dest.elevation + this.tokenHeight,
                     },
                     "collision",
                 );
@@ -656,14 +657,13 @@ export class Token3D {
             y: y,
             elevation: z,
         };
-        const unconstrainedMovement = game.user.isGM && ui.controls.controls.tokens.tools.unconstrainedMovement.active;
+        const unconstrainedMovement = game.user.isGM && game.settings.get("core", "unconstrainedMovement");
         if (!game.user.isGM || !unconstrainedMovement) {
             if (game.paused) return false;
             const center = canvas.grid.getCenterPoint({ x, y });
             const geometryCollisions = game.Levels3DPreview?.object3dSight;
             let collides;
             if (geometryCollisions) {
-                const tokenHeight = this.losHeight - this.document.elevation;
                 collides = game.Levels3DPreview.interactionManager.computeSightCollision(
                     {
                         x: this.token.center.x,
@@ -673,7 +673,7 @@ export class Token3D {
                     {
                         x: dest.x + this.baseDocumentWidth * canvas.grid.size * 0.5,
                         y: dest.y + this.baseDocumentHeight * canvas.grid.size * 0.5,
-                        z: dest.elevation + tokenHeight,
+                        z: dest.elevation + this.tokenHeight,
                     },
                     "collision",
                 );
@@ -681,7 +681,7 @@ export class Token3D {
                 collides = this.token.checkCollision({ x: center[0], y: center[1] });
             }
             if (collides) {
-                ui.notifications.error("ERROR.TokenCollide", { localize: true });
+                ui.notifications.warn("levels3dpreview.ERROR.TokenCollide", { localize: true });
                 return false;
             }
         }
@@ -763,9 +763,13 @@ export class Token3D {
             y: this.document.y + (this.baseDocumentHeight / 2) * canvas.grid.size,
         };
     }
+    
+    get tokenHeight() {
+        return this.#tokenHeight;
+    }
 
     get losHeight() {
-        return this.token.losHeight ?? this.token.document.elevation;
+        return this.token.document.elevation + this.tokenHeight * 0.89;
     }
 
     get visionSourceElevation() {
@@ -1750,7 +1754,8 @@ export class Token3D {
             const object = tokenDocument.object;
             const x = (updates.x ?? tokenDocument.x) + tokenDocument.width * (canvas.grid.size / 2);
             const y = (updates.y ?? tokenDocument.y) + tokenDocument.height * (canvas.grid.size / 2);
-            const height = (object.losHeight ?? object.document.elevation) - object.document.elevation;
+            const token3d = game.Levels3DPreview.tokens[object.id];
+            const height = (token3d.losHeight ?? object.document.elevation) - object.document.elevation;
             const elevation = (updates.elevation ?? tokenDocument.elevation) + height;
             const collision = game.Levels3DPreview.interactionManager.computeSightCollision({ x, y, z: elevation }, { x, y, z: -100000 });
             if (!collision) return;

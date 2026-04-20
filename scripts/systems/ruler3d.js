@@ -449,7 +449,10 @@ export class Ruler3D {
     }
 
     async _animateSegment(token, destination) {
-        await token.document.update({ ...destination }, {movement: {[token.document.id]: { autoRotate: game.settings.get("core", "tokenAutoRotate") }}});
+        const unconstrainedMovement = game.user.isGM && game.settings.get("core", "unconstrainedMovement");
+        const constrainOptions = { ignoreWalls: true, ignoreCost: unconstrainedMovement };
+        const autoRotate = game.settings.get("core", "tokenAutoRotate");
+        await token.document.move(destination, { constrainOptions, autoRotate });
         return token.movementAnimationPromise;
     }
 
@@ -555,10 +558,43 @@ export class Ruler3D {
             ],
             { gridSpaces: true },
         ).distance;
-        return d
+        return d;
     }
 
     static measureMinTokenDistance(origin, target) {
+        const originLos = origin.losHeight ?? origin.elevation;
+        const targetLos = target.losHeight ?? target.elevation;
+        origin = origin.document;
+        target = target.document;
+        const scene = origin.document.parent;
+        const originMin = new THREE.Vector3(
+            origin.x,
+            origin.elevation * scene.dimensions.distancePixels,
+            origin.y
+        );
+        const originMax = new THREE.Vector3(
+            origin.x + origin.width * scene.dimensions.size,
+            originLos * scene.dimensions.distancePixels,
+            origin.y + origin.height * scene.dimensions.size
+        );
+        const targetMin = new THREE.Vector3(
+            target.x,
+            target.elevation * scene.dimensions.distancePixels,
+            target.y
+        );
+        const targetMax = new THREE.Vector3(
+            target.x + target.width * scene.dimensions.size,
+            targetLos * scene.dimensions.distancePixels,
+            target.y + target.height * scene.dimensions.size
+        );
+        const dx = Math.max(0, Math.max(originMin.x, targetMin.x) - Math.min(originMax.x, targetMax.x));
+        const dy = Math.max(0, Math.max(originMin.y, targetMin.y) - Math.min(originMax.y, targetMax.y));
+        const dz = Math.max(0, Math.max(originMin.z, targetMin.z) - Math.min(originMax.z, targetMax.z));
+
+        return Math.sqrt(dx ** 2 + dy ** 2 + dz ** 2);
+    }
+
+    static measureMinTokenDistance_old(origin, target) {
         const square = canvas.scene.dimensions.size / factor;
         const halfSquare = square / 2;
         const generatePoints = (token) => {

@@ -326,15 +326,16 @@ export function registerWrappers() {
 
             if (game.Levels3DPreview?.object3dSight) {
                 for (const token of objects) {
+                    const token3d = game.Levels3DPreview.tokens[token.id];
                     const oldPos = {
                         x: token.center.x,
                         y: token.center.y,
-                        z: token.losHeight ?? token.document.elevation,
+                        z: token3d.losHeight ?? token.document.elevation,
                     };
                     const newPos = {
                         x: oldPos.x + dx * canvas.grid.size,
                         y: oldPos.y + dy * canvas.grid.size,
-                        z: token.losHeight ?? token.document.elevation,
+                        z: token3d.losHeight ?? token.document.elevation,
                     };
                     const collision = game.Levels3DPreview.interactionManager.computeSightCollision(oldPos, newPos, "collision");
                     if (collision) {
@@ -344,15 +345,16 @@ export function registerWrappers() {
                 }
             }
             for (const token of objects) {
+                const token3d = game.Levels3DPreview.tokens[token.id];
                 const oldPos = {
                     x: token.center.x,
                     y: token.center.y,
-                    z: token.losHeight ?? token.document.elevation,
+                    z: token3d.losHeight ?? token.document.elevation,
                 };
                 const newPos = {
                     x: oldPos.x + dx * canvas.grid.size,
                     y: oldPos.y + dy * canvas.grid.size,
-                    z: token.losHeight ?? token.document.elevation,
+                    z: token3d.losHeight ?? token.document.elevation,
                 };
                 const collisionPos = {
                     x: newPos.x,

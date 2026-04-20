@@ -1,6 +1,9 @@
 {
     "TYPES.RegionBehavior.levels-3d-preview.obscureVision": "Obscure 3D Vision",
     "levels3dpreview": {
+        "ERROR": {
+            "TokenCollide": "The attempted movement collides with at least one object."
+        },
         "controls": {
             "preview3d": "Toggle 3D Mode",
             "miniCanvas": "Popout/Restore Canvas",
