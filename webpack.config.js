@@ -7,6 +7,7 @@ module.exports = {
     entry: "./scripts/main.js",
     output: {
         filename: "index.js",
+        chunkFilename: "index.worker.js",
         path: path.resolve(__dirname),
     },
     mode: "development",

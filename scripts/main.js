@@ -1634,6 +1634,8 @@ class Levels3DPreview {
     loadInitialCameraPosition() {
         const initialPos = canvas.scene.getFlag("levels-3d-preview", "initialPosition");
         if (!initialPos) return false;
+        if (!Number.isFinite(initialPos.position.x)) return false;
+        if (!Number.isFinite(initialPos.target.x)) return false;
         this.camera.position.set(initialPos.position.x, initialPos.position.y, initialPos.position.z);
         this.controls.target.set(initialPos.target.x, initialPos.target.y, initialPos.target.z);
         this.camera.lookAt(initialPos.target);

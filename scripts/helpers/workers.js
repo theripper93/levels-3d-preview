@@ -1,4 +1,5 @@
 import * as THREE from "../lib/three.module.js";
+
 export class WorkerHandler {
     constructor() {
         this.raycastWorker = null;
@@ -17,7 +18,7 @@ export class WorkerHandler {
 
     initRaycastWorker() {
         const path = window.location.pathname.split("/game")[1] ?? "";
-        const raycastWorker = new SharedWorker(path + "/modules/levels-3d-preview/scripts/helpers/raycastWorker.js", { type: "module" });
+        const raycastWorker = new SharedWorker(new URL("./raycastWorker.js", import.meta.url), { type: "module" });
         this.raycastWorker = raycastWorker;
         raycastWorker.port.onmessageerror = (e) => {
             throw new Error(e);

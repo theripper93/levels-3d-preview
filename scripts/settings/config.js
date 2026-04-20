@@ -669,8 +669,16 @@ export function registerConfigs() {
             canvas.scene.update(
                 {
                     "flags.levels-3d-preview.initialPosition": {
-                        target: game.Levels3DPreview.controls.target.clone(),
-                        position: game.Levels3DPreview.camera.position.clone(),
+                        target: {
+                            x: game.Levels3DPreview.controls.target.x,
+                            y: game.Levels3DPreview.controls.target.y,
+                            z: game.Levels3DPreview.controls.target.z,
+                        },
+                        position: {
+                            x: game.Levels3DPreview.camera.position.x,
+                            y: game.Levels3DPreview.camera.position.y,
+                            z: game.Levels3DPreview.camera.position.z,
+                        },
                         firstPersonMode: game.Levels3DPreview.firstPersonMode,
                     },
                 },
