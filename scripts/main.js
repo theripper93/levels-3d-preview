@@ -70,6 +70,7 @@ import { BuildPanelApp } from "./apps/BuildPanelApp.js";
 import { QuickTerrain } from "./apps/QuickTerrain.js";
 import { Shape3D } from "./entities/shape3d.js";
 import { Region3D } from "./entities/region3d.js";
+import { check3DToggleConflicts } from "./helpers/conflict-manager.js";
 
 import "../scss/module.scss";
 
@@ -1624,8 +1625,8 @@ class Levels3DPreview {
         this.controls.target.set(center.x, center.y, center.z);
         const loaded = topdown ? false : this.loadInitialCameraPosition();
         if (!loaded) {
-            this.camera.lookAt(center);
             this.camera.position.set(center.x * 1.5, center.y + 1, center.z * 2);
+            this.camera.lookAt(center);
         }
         if (topdown) this.camera.position.set(center.x, center.y + 4, center.z);
         this.controls.update();
@@ -1833,6 +1834,7 @@ class Levels3DPreview {
     open() {
         this._pauseRendering = false;
         if (this._active) return;
+        if (check3DToggleConflicts()) return;
         this.setFilters(true);
         if (this._sharedContext) {
             //canvas.app.renderer.reset();
