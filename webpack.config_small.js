@@ -1,5 +1,4 @@
 const path = require("path");
-const webpack = require("webpack");
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const { EsbuildPlugin } = require('esbuild-loader');
 
@@ -11,24 +10,17 @@ module.exports = {
         path: path.resolve(__dirname),
     },
     mode: "development",
-    devtool: "source-map", // Better for browser debugging
-    
-    optimization: {
-        minimize: false, // Completely disables the minimizer
-        usedExports: true,
-    },
-    // devtool: false,
+    devtool: "source-map",
 
     optimization: {
-        usedExports: true, // Enables tree shaking
+        usedExports: true,
         minimize: true,
         minimizer: [
             new EsbuildPlugin({
                 target: 'esnext',
-                sourcemap: true,
-                minifyIdentifiers: false, // Prevents renaming classes and variables
-                minifySyntax: true,      // Still optimizes code structure
-                minifyWhitespace: true,  // Still removes unnecessary spaces
+                minifyIdentifiers: false,
+                minifySyntax: true,
+                minifyWhitespace: true,
             })
         ],
     },
@@ -62,13 +54,5 @@ module.exports = {
 
     plugins: [
         new MiniCssExtractPlugin({ filename: 'styles/module.css' }),
-        
-        // new webpack.SourceMapDevToolPlugin({
-        //     filename: '[file].map',
-        //     append: '\n//# sourceMappingURL=[url]', 
-        //     module: true,
-        //     columns: true,
-        //     noSources: false,
-        // })
     ]
 };

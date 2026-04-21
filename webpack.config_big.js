@@ -1,4 +1,5 @@
 const path = require("path");
+const webpack = require("webpack");
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const { EsbuildPlugin } = require('esbuild-loader');
 
@@ -7,21 +8,24 @@ module.exports = {
     output: {
         filename: "index.js",
         chunkFilename: "index.worker.js",
-        publicPath: "/modules/levels-3d-preview/",
         path: path.resolve(__dirname),
     },
     mode: "development",
-    devtool: "source-map",
+    devtool: "eval-source-map", // Better for browser debugging
+    
+    optimization: {
+        minimize: false, // Completely disables the minimizer
+        usedExports: true,
+    },
+    // devtool: false,
 
     optimization: {
-        usedExports: true,
+        usedExports: true, // Enables tree shaking
         minimize: true,
         minimizer: [
             new EsbuildPlugin({
                 target: 'esnext',
-                minifyIdentifiers: false,
-                minifySyntax: true,
-                minifyWhitespace: true,
+                sourcemap: true,
             })
         ],
     },
@@ -55,5 +59,13 @@ module.exports = {
 
     plugins: [
         new MiniCssExtractPlugin({ filename: 'styles/module.css' }),
+        
+        // new webpack.SourceMapDevToolPlugin({
+        //     filename: '[file].map',
+        //     append: '\n//# sourceMappingURL=[url]', 
+        //     module: true,
+        //     columns: true,
+        //     noSources: false,
+        // })
     ]
 };

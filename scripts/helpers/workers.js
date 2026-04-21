@@ -18,12 +18,13 @@ export class WorkerHandler {
 
     initRaycastWorker() {
         const path = window.location.pathname.split("/game")[1] ?? "";
+        // __webpack_public_path__ = window.location.origin + "/modules/levels-3d-preview/";
         const raycastWorker = new SharedWorker(new URL("./raycastWorker.js", import.meta.url), { type: "module" });
         this.raycastWorker = raycastWorker;
-        raycastWorker.port.onmessageerror = (e) => {
+        this.raycastWorker.port.onmessageerror = (e) => {
             throw new Error(e);
         };
-        raycastWorker.port.onmessage = (e) => {
+        this.raycastWorker.port.onmessage = (e) => {
             //console.log(e.data);
             if (e.data.type == "polygon") {
                 const callback = this.callbacks[e.data.callbackId];
