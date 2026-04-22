@@ -1809,7 +1809,7 @@ export class Tile3D {
         this.mesh.visible = !this.tile.document.hidden || game.user.isGM;
         if (this.sightMesh) this.sightMesh.visible = this._parent.BuildPanel.wireframe;
         if (this._decalCone) this._decalCone.visible = !!canvas?.tiles?.active;
-        if (game.Levels3DPreview.mirrorLevelsVisibility && this.tile.mesh) {
+        if (game.Levels3DPreview.mirrorLevelsVisibility && this.tile.mesh && !this.tile._preview) {
             this.mesh.visible = this.tile.occluded || !this.tile.mesh?.visible ? false : this.tile.visible;
         }
     }
