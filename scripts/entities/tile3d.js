@@ -1820,8 +1820,10 @@ export class Tile3D {
         const x3d = worldPosition.x;
         const y3d = worldPosition.y;
         const z3d = worldPosition.z;
-        const x = x3d * factor;
-        const y = z3d * factor;
+        // const x = x3d * factor;
+        // const y = z3d * factor;
+        const x = x3d * factor - this.tile.document.width * this.tile.document.texture.anchorX;
+        const y = z3d * factor - this.tile.document.height * this.tile.document.texture.anchorY;
         const z = (y3d * factor * canvas.dimensions.distance) / canvas.dimensions.size;
         const useSnapped = Ruler3D.useSnapped() && !transform;
         const snapped = canvas.grid.getSnappedPoint({ x, y }, { mode: CONST.GRID_SNAPPING_MODES.TOP_LEFT_CORNER });
