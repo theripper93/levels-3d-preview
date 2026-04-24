@@ -591,7 +591,7 @@ export class Ruler3D {
         const dy = Math.max(0, Math.max(originMin.y, targetMin.y) - Math.min(originMax.y, targetMax.y));
         const dz = Math.max(0, Math.max(originMin.z, targetMin.z) - Math.min(originMax.z, targetMax.z));
 
-        return Math.sqrt(dx ** 2 + dy ** 2 + dz ** 2);
+        return Math.sqrt(dx ** 2 + dy ** 2 + dz ** 2) / scene.dimensions.distancePixels;
     }
 
     static measureMinTokenDistance_old(origin, target) {
