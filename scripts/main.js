@@ -1912,6 +1912,11 @@ class Levels3DPreview {
     }
 
     toggleDoor({ tileId, sceneId, userId, subDoorId }) {
+        if (!game.user.isGM) {
+            const GMConnected = game.users.some(u => u.isGM && u.active);
+            if (!GMConnected) return ui.notifications.warn("levels3dpreview.errors.gmNotConnected", { localize: true });
+            return;
+        };
         const user = game.users.get(userId);
         if (!user.can("WALL_DOORS")) return;
         if (game.paused && !game.user.isGM) return ui.notifications.warn("GAME.PausedWarning", { localize: true });

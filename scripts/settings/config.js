@@ -1421,9 +1421,9 @@ export function registerConfigs() {
                     label: game.i18n.localize("WALL.DoorTypes.DOOR"),
                     default: 0,
                     options: {
-                        0: "WALL.DoorTypes.NONE",
-                        1: "WALL.DoorTypes.DOOR",
-                        2: "WALL.DoorTypes.SECRET",
+                        0: game.i18n.localize("WALL.DoorTypes.NONE"),
+                        1: game.i18n.localize("WALL.DoorTypes.DOOR"),
+                        2: game.i18n.localize("WALL.DoorTypes.SECRET"),
                     },
                 },
                 doorSound: {
@@ -1443,9 +1443,9 @@ export function registerConfigs() {
                     label: game.i18n.localize("WALL.FIELDS.ds.label"),
                     default: 0,
                     options: {
-                        0: "WALL.DoorStates.CLOSED",
-                        1: "WALL.DoorStates.OPEN",
-                        2: "WALL.DoorStates.LOCKED",
+                        0: game.i18n.localize("WALL.DoorStates.CLOSED"),
+                        1: game.i18n.localize("WALL.DoorStates.OPEN"),
+                        2: game.i18n.localize("WALL.DoorStates.LOCKED"),
                     },
                 },
                 doorStyle: {

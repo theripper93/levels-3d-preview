@@ -64,7 +64,8 @@
                 "onend": "Particle system: .onEnd() - one or more arguments were not an instance of Particle3D."
             },
             "critical": "3D Canvas: A Fatal Error was encountered in the Rendering Loop. Attempting to recover...",
-            "notarget": "3D Canvas: No target found for drag and drop. Please ensure you have at least one 3D Object or the Background Enabled."
+            "notarget": "3D Canvas: No target found for drag and drop. Please ensure you have at least one 3D Object or the Background Enabled.",
+            "gmNotConnected": "A GM must be connected to use this feature" 
         },
         "notifications": {
             "initialviewcleared": "Initial View Position Cleared",
