@@ -38,7 +38,7 @@ export class ShaderConfig extends foundry.applications.api.HandlebarsApplication
 
     _onSubmit(event, options) {
         event.preventDefault();
-        const formData = new FormDataExtended(this.form);
+        const formData = new foundry.applications.ux.FormDataExtended(this.form);
         const data = foundry.utils.expandObject(formData.object);
         return this.document.setFlag("levels-3d-preview", "shaders", data)
     }

@@ -477,8 +477,8 @@ export class Ruler3D {
             element.dataset.cachedSize = cachedFontSize;
         }
 
-        const dist = game.Levels3DPreview.camera.position.distanceTo(position);
-        const scale = Math.max(0.5, 1.2 / dist) / game.Levels3DPreview.resolutionMulti; //*(canvas.grid.size/100);
+        const dist = game.Levels3DPreview.camera.position.distanceTo(position) / (canvas.grid.size / 100);
+        const scale = Math.max(0.5, 1.2 / dist) / (game.Levels3DPreview.resolutionMulti);
         if (element.id == "levels3d-ruler-text") {
             element.style.fontSize = `${cachedFontSize * scale}px`;
         } else {
@@ -592,39 +592,6 @@ export class Ruler3D {
         const dz = Math.max(0, Math.max(originMin.z, targetMin.z) - Math.min(originMax.z, targetMax.z));
 
         return Math.sqrt(dx ** 2 + dy ** 2 + dz ** 2) / scene.dimensions.distancePixels;
-    }
-
-    static measureMinTokenDistance_old(origin, target) {
-        const square = canvas.scene.dimensions.size / factor;
-        const halfSquare = square / 2;
-        const generatePoints = (token) => {
-            const tokenHeight = ((token.token.losHeight ?? (token.token.document.elevation + 0.001)) - token.token.document.elevation) / canvas.scene.dimensions.distance;
-            const tokenPositions = [];
-            const tokenStart = token.mesh.position.clone();
-            tokenStart.x += -token.token.document.width * halfSquare + halfSquare;
-            tokenStart.y += halfSquare;
-            tokenStart.z += -token.token.document.height * halfSquare + halfSquare;
-
-            for (let i = 0; i < token.token.document.width; i++) {
-                for (let j = 0; j < token.token.document.height; j++) {
-                    for (let k = 0; k < tokenHeight; k++) {
-                        const position = new THREE.Vector3(tokenStart.x + i * square, tokenStart.y + k * square, tokenStart.z + j * square);
-                        tokenPositions.push(position);
-                    }
-                }
-            }
-            return tokenPositions;
-        };
-        const measurements = [];
-        const originPoints = generatePoints(origin);
-        const targetPoints = generatePoints(target);
-        for (const oPoint of originPoints) {
-            for (const tPoint of targetPoints) {
-                const distance = Ruler3D.measureDistance(oPoint, tPoint);
-                measurements.push(distance);
-            }
-        }
-        return Math.min(...measurements);
     }
 }
 
