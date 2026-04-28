@@ -345,8 +345,10 @@ export class MapBrowser extends HandlebarsApplication {
     }
 
     static get contest() {
-        const startTimestamp = 1715731200000;
-        const endTimestamp = 1719788400000;
+        // const startTimestamp = 1715731200000;
+        // const endTimestamp = 1719788400000;
+        const startTimestamp = 1777766400000;
+        const endTimestamp = 1782860400000;
 
         const rulesUrl = "";
 
