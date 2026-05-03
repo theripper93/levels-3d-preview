@@ -621,7 +621,7 @@ export class Token3D {
                     "collision",
                 );
             } else {
-                collides = this.token.checkCollision({ x: center[0], y: center[1] });
+                collides = this.token.checkCollision(center);
             }
             if (collides) {
                 ui.notifications.error("RULER.MovementCollision", { localize: true });
@@ -678,7 +678,7 @@ export class Token3D {
                     "collision",
                 );
             } else {
-                collides = this.token.checkCollision({ x: center[0], y: center[1] });
+                collides = this.token.checkCollision(center);
             }
             if (collides) {
                 ui.notifications.warn("levels3dpreview.ERROR.TokenCollide", { localize: true });

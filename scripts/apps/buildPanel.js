@@ -137,21 +137,24 @@ export class BuildPanel extends HandlebarsApplication {
         }));
 
         if (game.Levels3DPreview.sharing.apps.MapBrowser?.contest?.active) {
-            html.querySelector(`i[data-action="community-maps"]`).classList.add("contest-active");
-            const li = html.querySelector(`i[data-action="community-maps"]`).closest("li");
-            li.style.position = "relative";
-            const trophyIcon = document.createElement("i");
-            trophyIcon.className = "fas fa-trophy-star";
-            Object.assign(trophyIcon.style, {
-                position: "absolute",
-                left: "-3px",
-                top: "2px",
-                fontSize: "0.8rem",
-                color: "#ffc200",
-                pointerEvents: "none",
-                textShadow: "0 0 3px black"
-            });
-            li.append(trophyIcon);
+            const communityMaps = html.querySelector(`i[data-action="community-maps"]`);
+            if (communityMaps) {
+                communityMaps.classList.add("contest-active");
+                const li = communityMaps.closest("li");
+                li.style.position = "relative";
+                const trophyIcon = document.createElement("i");
+                trophyIcon.className = "fas fa-trophy-star";
+                Object.assign(trophyIcon.style, {
+                    position: "absolute",
+                    left: "-3px",
+                    top: "2px",
+                    fontSize: "0.8rem",
+                    color: "#ffc200",
+                    pointerEvents: "none",
+                    textShadow: "0 0 3px black"
+                });
+                li.append(trophyIcon);
+            }
         }
 
         html.querySelectorAll("input").forEach(el => el.addEventListener("input", (event) => this._onRangeChange(event)));
