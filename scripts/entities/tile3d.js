@@ -68,11 +68,27 @@ export class Tile3D {
     }
 
     get x() {
-        return this.tile.document.x - this.tile.document.shape.anchorX * this.tile.document.width;
+        return this.tile.document.x - this.anchorX * this.tile.document.width;
     }
 
     get y() {
-        return this.tile.document.y - this.tile.document.shape.anchorY * this.tile.document.height;
+        return this.tile.document.y - this.anchorY * this.tile.document.height;
+    }
+
+    get anchorX() {
+        return this.tile.document.shape.anchorX;
+    }
+
+    get anchorY() {
+        return this.tile.document.shape.anchorY;
+    }
+
+    get anchorOffsetX() {
+        return this.anchorX * this.tile.document.width;
+    }
+
+    get anchorOffsetY() {
+        return this.anchorY * this.tile.document.height;
     }
 
     async load() {
@@ -1751,10 +1767,9 @@ export class Tile3D {
         const newWidth = this.tile.document.width * scaleX;
         const newHeight = this.tile.document.height * scaleZ;
         const newDepth = this.depth * factor * scaleY;
-        // const x = (update.x ?? this.x) - (newWidth - this.tile.document.width) / 2;
-        // const z = (update.y ?? this.y) - (newHeight - this.tile.document.height) / 2;
-        const x = (update.x ?? this.x);
-        const z = (update.y ?? this.y);
+        const x = (update.x ?? this.x) - (0.5 - this.anchorX) * (newWidth - this.tile.document.width);
+        const z = (update.y ?? this.y) - (0.5 - this.anchorY) * (newHeight - this.tile.document.height);
+
         update.x = Math.round(x);
         update.y = Math.round(z);
         update.width = newWidth;
@@ -1820,10 +1835,8 @@ export class Tile3D {
         const x3d = worldPosition.x;
         const y3d = worldPosition.y;
         const z3d = worldPosition.z;
-        // const x = x3d * factor;
-        // const y = z3d * factor;
-        const x = x3d * factor - this.tile.document.width * this.tile.document.texture.anchorX;
-        const y = z3d * factor - this.tile.document.height * this.tile.document.texture.anchorY;
+        const x = x3d * factor + this.tile.document.width * (this.tile.document.texture.anchorX - 0.5);
+        const y = z3d * factor + this.tile.document.height * (this.tile.document.texture.anchorY - 0.5);
         const z = (y3d * factor * canvas.dimensions.distance) / canvas.dimensions.size;
         const useSnapped = Ruler3D.useSnapped() && !transform;
         const snapped = canvas.grid.getSnappedPoint({ x, y }, { mode: CONST.GRID_SNAPPING_MODES.TOP_LEFT_CORNER });
@@ -1834,8 +1847,8 @@ export class Tile3D {
             elevation: z,
         };
         const deltas = {
-            x: dest.x - this.x,
-            y: dest.y - this.y,
+            x: dest.x - this.tile.document.x,
+            y: dest.y - this.tile.document.y,
             elevation: dest.elevation - elevation,
         };
         let updates = [];
