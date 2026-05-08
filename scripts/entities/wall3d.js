@@ -46,6 +46,7 @@ export class Wall3D {
         this.distance += wall.document.getFlag("levels-3d-preview", "joinWall") ? this.depth : 0;
         this.roughness = wall.document.getFlag("levels-3d-preview", "roughness") ?? 1;
         this.metalness = wall.document.getFlag("levels-3d-preview", "metalness") ?? 1;
+        this.mesh = new THREE.Group();
 
         this.init();
     }
@@ -85,7 +86,6 @@ export class Wall3D {
             sidesTexture.wrapT = THREE.RepeatWrapping;
         }
         const materials = await this._getMaterials(texture, sidesTexture);
-        this.mesh = new THREE.Group();
         const wallMesh = new THREE.Mesh(geometry, materials);
         this.wallMesh = wallMesh;
         this.mesh.add(wallMesh);

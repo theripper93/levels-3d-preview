@@ -2,6 +2,7 @@ import * as THREE from "../lib/three.module.js";
 import { factor } from "../main.js";
 import { Shape3D } from "../entities/shape3d.js";
 import { Region3D } from "../entities/region3d.js";
+import { FALSE } from "sass";
 
 export class Ruler3D {
     constructor(parent) {
@@ -275,22 +276,48 @@ export class Ruler3D {
         const hasChanged = !this._prevPosition || targetPos.distanceTo(this._prevPosition) > 0.01;
         this._prevPosition = targetPos.clone();
         const useRaycastPoints = this.useRaycastRuler && this._points?.length && isToken && !this._object?.userData?.entity3D?.wasFreeMode;
-        if (isToken) {
-            if (hasChanged) this._object.userData.entity3D.drawHeightIndicatorDebounced();
-            if (this.useRaycastRuler) this._parent.workers.updateRulerPoints([this._origin, targetPos]);
-            //this.dragRing.scale.x = isToken.document.width;
-            //this.dragRing.scale.z = isToken.document.height;
-        }
         this.dragRing.visible = !!isToken;
         this._parent.scene.remove(this.line);
         this.lineInner?.geometry?.dispose();
         this.lineOuter?.geometry?.dispose();
+        let totalDistance;
+        let partialDistance;
+        let overrideColor;
         const distance = (this.getCurrentDistance() + this._distanceOffset).toFixed(1);
+        if (isToken) {
+            if (hasChanged) this._object.userData.entity3D.drawHeightIndicatorDebounced();
+            if (this.useRaycastRuler) this._parent.workers.updateRulerPoints([this._origin, targetPos]);
+            const waypoints = [];
+            if (this.segments.length) {
+                waypoints.push(this.segments[0].origin);
+                for (const segment of this.segments) {
+                    waypoints.push(segment.target);
+                }
+            } else {
+                waypoints.push(this._origin);
+            }
+            waypoints.push(targetPos);
+            const totalTokenDistance = Ruler3D.measureTokenPath(isToken, waypoints, true);
+            const partialTokenDistance = Ruler3D.measureTokenPath(isToken, waypoints, false);
+            const cost = totalTokenDistance.cost;
+            if (Number.isFinite(cost)) {
+                totalDistance = cost.toFixed(1);
+            }
+            const partialCost = partialTokenDistance.cost;
+            if (partialCost !== cost) {
+                if (Number.isFinite(partialCost)) {
+                    partialDistance = partialCost.toFixed(1);
+                }
+            }
+            if (totalTokenDistance.color) {
+                overrideColor = totalTokenDistance.color;
+            }
+        }
         //draw ruler
         let curve;
         let midcurve;
         if (this.shape?.isPreview && !this.shape?.temporary) {
-            midcurve = this._origin.clone().lerp(targetPos, 0.8); //new THREE.Vector3(this._origin.x + (targetPos.x - this._origin.x)/2, this._origin.y + (targetPos.y - this._origin.y)/2, this._origin.z + (targetPos.z - this._origin.z)/2);
+            midcurve = this._origin.clone().lerp(targetPos, 0.8);
             midcurve.y += 2;
             const bezCtrlg = midcurve.clone();
             curve = new THREE.QuadraticBezierCurve3(this._origin, bezCtrlg, targetPos);
@@ -304,7 +331,7 @@ export class Ruler3D {
         }
 
         const geometry = new THREE.TubeGeometry(curve, this.shape?.isPreview || useRaycastPoints ? 64 : 1, this.lineRadius, 8);
-        const c = this.getColor(distance, targetPos);
+        const c = overrideColor ? new THREE.Color(overrideColor) : this.getColor(distance, targetPos);
         this.roulerLineMaterial.color = c;
         this.dragRingMaterial.color = c;
         this.line = new THREE.Group();
@@ -323,7 +350,12 @@ export class Ruler3D {
         this.sphere2.position.copy(targetPos);
         this.dragRing.position.copy(targetPos);
         //draw floating text
-        const text = `${distance} ${canvas.scene.grid.units}.`;
+        let text;
+        if (totalDistance) {
+            text = `${totalDistance}${canvas.scene.grid.units}.${partialDistance ? ` (+${partialDistance})` : ""}`;
+        } else {
+            text = `${distance} ${canvas.scene.grid.units}.`;
+        }
         this.textDistance.innerHTML = text;
         //get mid point of ruler
         const midPoint = this.shape?.isPreview ? midcurve : new THREE.Vector3(this._origin.x + (targetPos.x - this._origin.x) / 2, this._origin.y + (targetPos.y - this._origin.y) / 2, this._origin.z + (targetPos.z - this._origin.z) / 2);
@@ -538,6 +570,37 @@ export class Ruler3D {
             z: canvasPosition.z,
         };
         return Ruler3D.posCanvasTo3d(snappedPos);
+    }
+
+    static measureTokenPath(token, waypoints, history) {
+        waypoints = waypoints.map((w) => {
+            const pos = Ruler3D.pos3DToCanvas(w);
+            return {
+                x: Math.round(pos.x - token.document.width / 2),
+                y: Math.round(pos.y - token.document.height / 2),
+                elevation: pos.z,
+            }
+        });
+        if (history) {
+            waypoints.unshift(...token.document.movementHistory);
+        }
+        
+        let path = token.createTerrainMovementPath(waypoints, { preview: true });
+        [path] = token.constrainMovementPath(path, {ignoreWalls: true, ignoreCost: false, measureOptions: {}, preview: true });
+        const tokenDistance = token.measureMovementPath(path, { preview: true, gridSpaces: true });
+
+        if (history) {
+            path.forEach(w => w.measurement = { cost: tokenDistance.cost });
+            token._plannedMovement[game.user.id] = {};
+            const wayStyle = token.ruler._getSegmentStyle({
+                ...path.at(-1),
+                actionConfig: CONFIG.Token.movement.actions[path.at(-1).action],
+            });
+            delete token._plannedMovement[game.user.id];
+            tokenDistance.color = wayStyle.color;
+        }
+
+        return tokenDistance;
     }
 
     static measureDistance(position1, position2) {

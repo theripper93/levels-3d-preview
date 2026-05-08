@@ -1325,7 +1325,7 @@ class Levels3DPreview {
         }
         hud = canvas.hud.tile;
         if (hud.object) {
-            hud.element[0].style.height = "auto";
+            hud.element.style.height = "auto";
             const tile3D = this.tiles[hud.object.id];
             if (!tile3D || !tile3D.mesh) return;
             const center = tile3D.center;
