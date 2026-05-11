@@ -630,29 +630,43 @@ export class Ruler3D {
         origin = origin.document;
         target = target.document;
         const scene = origin.parent;
+        const cellSize = scene.dimensions.size;
+        // Shrink the box to half a cell smaller than the actual size
+        // in order to have 1 cell distance for adjacent tokens
+        const sizeOffsetOrigin = new THREE.Vector3(
+            Math.min(origin.width * cellSize, cellSize) / 2,
+            Math.min(originLos * scene.dimensions.distancePixels, cellSize) / 2,
+            Math.min(origin.height * cellSize, cellSize) / 2
+        );
+        const sizeOffsetTarget = new THREE.Vector3(
+            Math.min(target.width * cellSize, cellSize) / 2,
+            Math.min(targetLos * scene.dimensions.distancePixels, cellSize) / 2,
+            Math.min(target.height * cellSize, cellSize) / 2
+        );
         const originMin = new THREE.Vector3(
-            origin.x,
-            origin.elevation * scene.dimensions.distancePixels,
-            origin.y
+            origin.x + sizeOffsetOrigin.x,
+            origin.elevation * scene.dimensions.distancePixels + sizeOffsetOrigin.y,
+            origin.y + sizeOffsetOrigin.z
         );
         const originMax = new THREE.Vector3(
-            origin.x + origin.width * scene.dimensions.size,
-            originLos * scene.dimensions.distancePixels,
-            origin.y + origin.height * scene.dimensions.size
+            origin.x + origin.width * cellSize - sizeOffsetOrigin.x,
+            originLos * scene.dimensions.distancePixels - sizeOffsetOrigin.y,
+            origin.y + origin.height * cellSize - sizeOffsetOrigin.z
         );
         const targetMin = new THREE.Vector3(
-            target.x,
-            target.elevation * scene.dimensions.distancePixels,
-            target.y
+            target.x + sizeOffsetTarget.x,
+            target.elevation * scene.dimensions.distancePixels + sizeOffsetTarget.y,
+            target.y + sizeOffsetTarget.z
         );
         const targetMax = new THREE.Vector3(
-            target.x + target.width * scene.dimensions.size,
-            targetLos * scene.dimensions.distancePixels,
-            target.y + target.height * scene.dimensions.size
+            target.x + target.width * cellSize - sizeOffsetTarget.x,
+            targetLos * scene.dimensions.distancePixels - sizeOffsetTarget.y,
+            target.y + target.height * cellSize - sizeOffsetTarget.z
         );
-        const dx = Math.max(0, Math.max(originMin.x, targetMin.x) - Math.min(originMax.x, targetMax.x));
-        const dy = Math.max(0, Math.max(originMin.y, targetMin.y) - Math.min(originMax.y, targetMax.y));
-        const dz = Math.max(0, Math.max(originMin.z, targetMin.z) - Math.min(originMax.z, targetMax.z));
+
+        const dx = Math.round(Math.max(0, Math.max(originMin.x, targetMin.x) - Math.min(originMax.x, targetMax.x)));
+        const dy = Math.round(Math.max(0, Math.max(originMin.y, targetMin.y) - Math.min(originMax.y, targetMax.y)));
+        const dz = Math.round(Math.max(0, Math.max(originMin.z, targetMin.z) - Math.min(originMax.z, targetMax.z)));
 
         return Math.sqrt(dx ** 2 + dy ** 2 + dz ** 2) / scene.dimensions.distancePixels;
     }
