@@ -664,9 +664,9 @@ export class Ruler3D {
             target.y + target.height * cellSize - sizeOffsetTarget.z
         );
 
-        const dx = Math.round(Math.max(0, Math.max(originMin.x, targetMin.x) - Math.min(originMax.x, targetMax.x)));
-        const dy = Math.round(Math.max(0, Math.max(originMin.y, targetMin.y) - Math.min(originMax.y, targetMax.y)));
-        const dz = Math.round(Math.max(0, Math.max(originMin.z, targetMin.z) - Math.min(originMax.z, targetMax.z)));
+        const dx = Math.max(0, Math.max(originMin.x, targetMin.x) - Math.min(originMax.x, targetMax.x));
+        const dy = Math.max(0, Math.max(originMin.y, targetMin.y) - Math.min(originMax.y, targetMax.y));
+        const dz = Math.max(0, Math.max(originMin.z, targetMin.z) - Math.min(originMax.z, targetMax.z));
 
         return Math.sqrt(dx ** 2 + dy ** 2 + dz ** 2) / scene.dimensions.distancePixels;
     }
