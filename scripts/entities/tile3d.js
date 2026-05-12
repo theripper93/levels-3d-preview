@@ -2664,10 +2664,12 @@ export async function mergeTiles(tileDocuments) {
     const minXYZ = { x: Infinity, y: Infinity, z: Infinity };
     const maxXYZ = { x: -Infinity, y: -Infinity, z: -Infinity };
     for (let td of tileDocuments) {
-        minXYZ.x = Math.min(minXYZ.x, td.x);
-        minXYZ.y = Math.min(minXYZ.y, td.y);
-        maxXYZ.x = Math.max(maxXYZ.x, td.x + td.width);
-        maxXYZ.y = Math.max(maxXYZ.y, td.y + td.height);
+        const tileX = td.x - td.width * td.texture.anchorX;
+        const tileY = td.y - td.height * td.texture.anchorY;
+        minXYZ.x = Math.min(minXYZ.x, tileX);
+        minXYZ.y = Math.min(minXYZ.y, tileY);
+        maxXYZ.x = Math.max(maxXYZ.x, tileX + td.width);
+        maxXYZ.y = Math.max(maxXYZ.y, tileY + td.height);
         minXYZ.z = Math.min(minXYZ.z, td.elevation);
         maxXYZ.z = Math.max(maxXYZ.z, td.elevation + td.flags["levels-3d-preview"].depth);
     }
@@ -2675,6 +2677,9 @@ export async function mergeTiles(tileDocuments) {
     baseData.y = minXYZ.y;
     baseData.width = maxXYZ.x - minXYZ.x;
     baseData.height = maxXYZ.y - minXYZ.y;
+    baseData.texture ??= {};
+    baseData.texture.anchorX = 0;
+    baseData.texture.anchorY = 0;
     baseData.elevation = minXYZ.z;
     baseData.flags["levels-3d-preview"].depth = maxXYZ.z - minXYZ.z;
 
@@ -2683,8 +2688,10 @@ export async function mergeTiles(tileDocuments) {
             width: td.width / factor,
             height: td.height / factor,
             depth: td.flags["levels-3d-preview"].depth / factor,
-            x: (td.x - minXYZ.x) / factor,
-            y: (td.y - minXYZ.y) / factor,
+            anchorX: td.texture.anchorX,
+            anchorY: td.texture.anchorY,
+            x: (td.x - td.width * td.texture.anchorX - minXYZ.x) / factor,
+            y: (td.y - td.height * td.texture.anchorY - minXYZ.y) / factor,
             z: Ruler3D.unitsToPixels(td.elevation - minXYZ.z),
             color: td.flags["levels-3d-preview"].color ?? "#ffffff",
             rotation: td.rotation ?? 0,
@@ -2788,8 +2795,10 @@ export async function unmergeTile(tile) {
         delete newTileData.flags["levels-3d-preview"].originalDimensions;
         newTileData.width = instance.width * factor;
         newTileData.height = instance.height * factor;
-        newTileData.x = instance.x * factor + originalX;
-        newTileData.y = instance.y * factor + originalY;
+        newTileData.x = (instance.x + instance.width * instance.anchorX) * factor + originalX;
+        newTileData.y = (instance.y + instance.height * instance.anchorY) * factor + originalY;
+        newTileData.texture.anchorX = instance.anchorX;
+        newTileData.texture.anchorY = instance.anchorY;
         newTileData.elevation = (instance.z * factor) / (canvas.scene.dimensions.size / canvas.scene.dimensions.distance) + originalZ;
         newTileData.flags["levels-3d-preview"].depth = instance.depth * factor;
         newTileData.flags["levels-3d-preview"].color = instance.color;

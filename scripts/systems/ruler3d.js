@@ -576,9 +576,9 @@ export class Ruler3D {
         waypoints = waypoints.map((w) => {
             const pos = Ruler3D.pos3DToCanvas(w);
             return {
-                x: Math.round(pos.x - token.document.width / 2),
-                y: Math.round(pos.y - token.document.height / 2),
-                elevation: pos.z,
+                x: Math.round(pos.x - canvas.dimensions.size * token.document.width / 2),
+                y: Math.round(pos.y - canvas.dimensions.size * token.document.height / 2),
+                elevation: pos.z + canvas.dimensions.distance * 0.1,
             }
         });
         if (history) {
