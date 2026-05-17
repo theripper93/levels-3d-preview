@@ -2,7 +2,6 @@ import * as THREE from "../lib/three.module.js";
 import { factor } from "../main.js";
 import { Shape3D } from "../entities/shape3d.js";
 import { Region3D } from "../entities/region3d.js";
-import { FALSE } from "sass";
 
 export class Ruler3D {
     constructor(parent) {

@@ -61,7 +61,7 @@ export class InteractionManager {
     generateSightCollisions(p0, p1) {
         const tileQuadtree = [];
         const wallsQuadtree = [];
-        if (p0 && p1 && p0.x == p1.x && p0.z == p1.z) {
+        if (p0 && p1 && p0.x == p1.x && p0.y == p1.y) {
             p0 = null;
             p1 = null;
         }

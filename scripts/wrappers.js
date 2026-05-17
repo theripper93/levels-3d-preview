@@ -27,15 +27,107 @@ export function registerWrappers() {
         libWrapper.register("levels-3d-preview", "foundry.canvas.layers.ControlsLayer.prototype.handlePing", HandlePing, "WRAPPER");
         libWrapper.register("levels-3d-preview", "canvas.regions.placeRegion", placeRegion, "MIXED");
         libWrapper.register("levels-3d-preview", "Scene.prototype.testSurfaceCollision", sceneTestSurfaceCollision, "MIXED");
-        //game.Levels3DPreview.raycastWorker = raycastWorker;
+        libWrapper.register("levels-3d-preview", "foundry.documents.TokenDocument.prototype.getVisibilityTestPoints", getVisibilityTestPoints, "MIXED");
+        libWrapper.register("levels-3d-preview", "foundry.documents.TokenDocument.prototype.getVisionOrigin", getVisionOrigin, "WRAPPER");
+        libWrapper.register("levels-3d-preview", "foundry.canvas.geometry.ClockwiseSweepPolygon.prototype.contains", containsWrapper, "MIXED");
 
         if (game[game.system.id]?.canvas?.AbilityTemplate?.prototype?.drawPreview) libWrapper.register("levels-3d-preview", `game.${game.system.id}.canvas.AbilityTemplate.prototype.drawPreview`, placeTemplate, "MIXED");
 
-        // if (CONFIG.MeasuredTemplate.objectClass.prototype.drawPreview) libWrapper.register("levels-3d-preview", "CONFIG.MeasuredTemplate.objectClass.prototype.drawPreview", drawPreview, "MIXED");
-        // if (CONFIG.Region.objectClass.prototype.draw) libWrapper.register("levels-3d-preview", "CONFIG.Region.objectClass.prototype.draw", drawPreview, "MIXED");
+        function containsWrapper(wrapped, ...args) {
+            if (!game.Levels3DPreview?._active) return wrapped(...args);
+            return true;
+            // const LevelsConfig = CONFIG.Levels;
+            // const testTarget = LevelsConfig.visibilityTestObject;
+            // if (!this.config?.source?.object || !(testTarget instanceof foundry.canvas.placeables.Token) || this.config.source instanceof foundry.canvas.sources.GlobalLightSource) return wrapped(...args);
+            // let result;
+            // if (this.config.source instanceof foundry.canvas.sources.PointLightSource) {
+            //     result = LevelsConfig.handlers.SightHandler.testInLight(this.config.source.object, testTarget, this, wrapped(...args));
+            // } else if (this.config.source.object instanceof foundry.canvas.placeables.Token) {
+            //     const point = {
+            //         x: args[0],
+            //         y: args[1],
+            //         z: testTarget.losHeight,
+            //         object: testTarget,
+            //     };
+            //     result = LevelsConfig.handlers.SightHandler.performLOSTest(this.config.source.object, point, this, this.config.type);
+            //     //if(canvas.effects.darknessSources.size) result = result && wrapped(...args);
+            // } else {
+            //     result = wrapped(...args);
+            // }
+            // return result;
+        }
 
-        // if (foundry.canvas.layers.TemplateLayer.prototype._createPreview) libWrapper.register("levels-3d-preview", "foundry.canvas.layers.TemplateLayer.prototype._createPreview", drawPreviewTemplateLayer, "MIXED");
-        // if (foundry.canvas.layers.RegionLayer.prototype._createPreview) libWrapper.register("levels-3d-preview", "foundry.canvas.layers.RegionLayer.prototype._createPreview", drawPreviewTemplateLayer, "MIXED");
+        function getVisionOrigin(wrapped, ...args) {
+            const visionOrigin = wrapped(...args);
+            const token3d = game.Levels3DPreview?._active ? this.object?.object3d : null;
+            
+            if (token3d) visionOrigin.elevation = token3d.losHeight;
+            return visionOrigin;
+        }
+
+        const exactTokenVisibility = true;
+        const dynamicTokenVisibility = true;
+
+        function getVisibilityTestPoints(wrapped, ...args) {
+            const testPoints = [];
+            if (!exactTokenVisibility) return wrapped(...args);
+            const token3d = game.Levels3DPreview?._active ? this.object?.object3d : null;
+
+            if (!token3d) return wrapped(...args);
+
+            const { tokenHeight, document: { elevation, width, height } } = token3d;
+            const gridSize = canvas.grid.size;
+            const center = token3d.documentCenter;
+            const origin = {
+                x: center.x - width * gridSize / 2,
+                y: center.y - height * gridSize / 2,
+            };
+
+            if (!dynamicTokenVisibility) {
+                // Center point
+                testPoints.push({ x: center.x - width * gridSize / 2, y: center.y - height * gridSize / 2, elevation: (elevation + tokenHeight) / 2 });
+                // Bottom square
+                testPoints.push({ x: center.x - width * gridSize / 2, y: center.y - height * gridSize / 2, elevation: elevation });
+                testPoints.push({ x: center.x + width * gridSize / 2, y: center.y - height * gridSize / 2, elevation: elevation });
+                testPoints.push({ x: center.x - width * gridSize / 2, y: center.y + height * gridSize / 2, elevation: elevation });
+                testPoints.push({ x: center.x + width * gridSize / 2, y: center.y + height * gridSize / 2, elevation: elevation });
+                // Top square
+                testPoints.push({ x: center.x - width * gridSize / 2, y: center.y - height * gridSize / 2, elevation: elevation + tokenHeight });
+                testPoints.push({ x: center.x + width * gridSize / 2, y: center.y - height * gridSize / 2, elevation: elevation + tokenHeight });
+                testPoints.push({ x: center.x - width * gridSize / 2, y: center.y + height * gridSize / 2, elevation: elevation + tokenHeight });
+                testPoints.push({ x: center.x + width * gridSize / 2, y: center.y + height * gridSize / 2, elevation: elevation + tokenHeight });
+
+                return testPoints;
+            }
+
+            for (let w = 0; w <= width; w++) {
+                for (let h = 0; h <= height; h++) {
+                    // Bottom square
+                    testPoints.push({
+                        x: origin.x + w * gridSize,
+                        y: origin.y + h * gridSize,
+                        elevation: elevation,
+                    });
+                    // Top square
+                    testPoints.push({
+                        x: origin.x + w * gridSize,
+                        y: origin.y + h * gridSize,
+                        elevation: tokenHeight,
+                    });
+                }
+            }
+            // Center points
+            const integerHeight = Math.floor(tokenHeight / canvas.dimensions.distance);
+            for (let d = 0; d <= integerHeight; d++) {
+                testPoints.push({
+                    x: center.x,
+                    y: center.y,
+                    elevation: elevation + tokenHeight / 2 + d * canvas.dimensions.distance,
+                });
+            }
+
+            return testPoints;
+        }
 
         async function HandlePing(wrapped, ...args) {
             if (!game.Levels3DPreview?._active) return wrapped(...args);
