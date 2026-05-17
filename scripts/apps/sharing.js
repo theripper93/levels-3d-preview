@@ -258,10 +258,10 @@ class ShareMap extends HandlebarsApplication {
         if (!formData.secret) formData.secret = foundry.utils.randomID(40);
         if (!formData.image || !formData.description || !formData.assetpacks.length) return ui.notifications.error(game.i18n.localize("levels3dpreview.sharing.sharemap.missingfields"));
         if (formData.author.toLowerCase() == "gamemaster") return ui.notifications.error(game.i18n.localize("levels3dpreview.sharing.sharemap.gamemaster"));
-        const result = await confirm({
-            title: "levels3dpreview.sharing.sharemap.confirm.title",
-            content: "levels3dpreview.sharing.sharemap.confirm.content",
-        });
+        const result = await confirm(
+            "levels3dpreview.sharing.sharemap.confirm.title",
+            "levels3dpreview.sharing.sharemap.confirm.content",
+        );
         if (result) {
             const res = await game.Levels3DPreview.sharing.shareMap(formData);
             if (res.error) return this.displaySubmissionError(res.error, res.status);
@@ -275,17 +275,17 @@ class ShareMap extends HandlebarsApplication {
     }
 
     displaySubmissionError(error, status) {
-        prompt({
-            title: game.i18n.localize("levels3dpreview.sharing.sharemap.error") + `: ${error.code} - ${status}`,
-            content: `<p><strong>${error.details}</strong></p><p>${error.message}</p>`,
-        });
+        prompt(
+            game.i18n.localize("levels3dpreview.sharing.sharemap.error") + `: ${error.code} - ${status}`,
+            `<p><strong>${error.details}</strong></p><p>${error.message}</p>`,
+        );
     }
 
     displaySubmissionSuccess(update = false) {
-        prompt({
-            title: game.i18n.localize(`levels3dpreview.sharing.sharemap.success.title` + (update ? "updated" : "")),
-            content: `<p>${game.i18n.localize("levels3dpreview.sharing.sharemap.success.content")}</p>`,
-        });
+        prompt(
+            game.i18n.localize(`levels3dpreview.sharing.sharemap.success.title` + (update ? "updated" : "")),
+            `<p>${game.i18n.localize("levels3dpreview.sharing.sharemap.success.content")}</p>`,
+        );
     }
 }
 
