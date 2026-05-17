@@ -1,6 +1,12 @@
 import { HandlebarsApplication, mergeClone } from "../lib/utils.js";
 import { MapBrowser } from "../apps/sharing.js";
 
+const settingCache = {};
+
+export function getSetting(key) {
+    return settingCache[key] ?? game.settings.get("levels-3d-preview", key);
+}
+
 class canvas3dConfig extends HandlebarsApplication {
 
     static get DEFAULT_OPTIONS() {
@@ -80,7 +86,7 @@ class canvas3dConfig extends HandlebarsApplication {
 
     async _prepareContext(options) {
         const data = {};
-        const settingsKeys = ["useRaycastRuler", "paddingAppearance", "lightCacheSize", "pingsound", "lightHelpers", "templateEffects", "templateAuto3D", "enableReticule", "fullTransparency", "outline", "gameCameraWarnings", "gameCameraAutoLock", "gameCameraDefaultGm", "gameCameraClipping", "gameCameraMaxZoom", "gameCameraMinAzimuth", "gameCameraMaxAzimuth", "gameCameraMinAngle", "gameCameraMaxAngle", "enableGameCamera", "rangeFinder", "sharedContext", "rotateIndicator", "navigatorAuto", "showAdvanced", "canpingpan", "canping", "baseStyle", "solidBaseMode", "solidBaseColor", "highlightCombat", "startMarker", "hideTarget", "hideEffects", "templateSyle", "autoPan", "flatTokenStyle", "preventNegative", "miniCanvas", "debugMode", "cameralockzero", "allTokens", "autoAssignToken", "assetBrowserCustomPath", "autoApply", "autoClose", "regionsAlwaysFlat"];
+        const settingsKeys = ["useRaycastRuler", "paddingAppearance", "lightCacheSize", "pingsound", "lightHelpers", "templateEffects", "templateAuto3D", "enableReticule", "fullTransparency", "outline", "gameCameraWarnings", "gameCameraAutoLock", "gameCameraDefaultGm", "gameCameraClipping", "gameCameraMaxZoom", "gameCameraMinAzimuth", "gameCameraMaxAzimuth", "gameCameraMinAngle", "gameCameraMaxAngle", "enableGameCamera", "rangeFinder", "sharedContext", "rotateIndicator", "navigatorAuto", "showAdvanced", "canpingpan", "canping", "baseStyle", "solidBaseMode", "solidBaseColor", "highlightCombat", "startMarker", "hideTarget", "hideEffects", "templateSyle", "autoPan", "flatTokenStyle", "preventNegative", "miniCanvas", "debugMode", "cameralockzero", "allTokens", "autoAssignToken", "assetBrowserCustomPath", "autoApply", "autoClose", "regionsAlwaysFlat", "exactTokenVisibility", "dynamicTokenVisibility"];
         for (let key of settingsKeys) {
             data[key] = game.settings.get("levels-3d-preview", key);
         }
@@ -146,6 +152,7 @@ export function registerSettings() {
     });
 
     Hooks.once("init", function () {
+
         game.settings.register("levels-3d-preview", "sceneReload", {
             scope: "world",
             config: false,
@@ -544,6 +551,30 @@ export function registerSettings() {
             default: "extruded",
         });
 
+        game.settings.register("levels-3d-preview", "exactTokenVisibility", {
+            name: game.i18n.localize("levels3dpreview.settings.exactTokenVisibility.name"),
+            hint: game.i18n.localize("levels3dpreview.settings.exactTokenVisibility.hint"),
+            scope: "world",
+            config: false,
+            type: Boolean,
+            default: true,
+            onChange: (value) => {
+                settingCache.exactTokenVisibility = value;
+            },
+        });
+
+        game.settings.register("levels-3d-preview", "dynamicTokenVisibility", {
+            name: game.i18n.localize("levels3dpreview.settings.dynamicTokenVisibility.name"),
+            hint: game.i18n.localize("levels3dpreview.settings.dynamicTokenVisibility.hint"),
+            scope: "world",
+            config: false,
+            type: Boolean,
+            default: false,
+            onChange: (value) => {
+                settingCache.dynamicTokenVisibility = value;
+            },
+        });
+
         game.settings.register("levels-3d-preview", "preventNegative", {
             name: game.i18n.localize("levels3dpreview.settings.preventNegative.name"),
             hint: game.i18n.localize("levels3dpreview.settings.preventNegative.hint"),
@@ -774,7 +805,10 @@ export function registerSettings() {
             config: false,
             type: Boolean,
             default: false,
-        })
+        });
+
+        settingCache.exactTokenVisibility = game.settings.get("levels-3d-preview", "exactTokenVisibility");
+        settingCache.dynamicTokenVisibility = game.settings.get("levels-3d-preview", "dynamicTokenVisibility");
 
     });
 

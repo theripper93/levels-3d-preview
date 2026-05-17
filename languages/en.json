@@ -1119,6 +1119,14 @@
             }
         },
         "settings": {
+            "exactTokenVisibility": {
+                "name": "Exact Token Visibility",
+                "hint": "When enabled, tokens visibility will be tested for different points along the height of the token."
+            },
+            "dynamicTokenVisibility": {
+                "name": "Dynamic Big Token Visibility",
+                "hint": "When enabled, larger tokens visibility will be tested for more points than smaller tokens. WARNING: this feature can be computationally expensive."
+            },
             "highlighted": {
                 "important": {
                     "legend": "3D Core Settings",

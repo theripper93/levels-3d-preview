@@ -1,5 +1,6 @@
 import { Region3D } from "./entities/region3d.js";
 import { Shape3D } from "./entities/shape3d.js";
+import { getSetting } from "./settings/settingsConfig.js";
 import * as THREE from "./lib/three.module.js";
 
 export function registerWrappers() {
@@ -65,11 +66,9 @@ export function registerWrappers() {
             return visionOrigin;
         }
 
-        const exactTokenVisibility = true;
-        const dynamicTokenVisibility = true;
-
         function getVisibilityTestPoints(wrapped, ...args) {
             const testPoints = [];
+            const exactTokenVisibility = getSetting("exactTokenVisibility");
             if (!exactTokenVisibility) return wrapped(...args);
             const token3d = game.Levels3DPreview?._active ? this.object?.object3d : null;
 
@@ -83,6 +82,7 @@ export function registerWrappers() {
                 y: center.y - height * gridSize / 2,
             };
 
+            const dynamicTokenVisibility = getSetting("dynamicTokenVisibility");
             if (!dynamicTokenVisibility) {
                 // Center point
                 testPoints.push({ x: center.x - width * gridSize / 2, y: center.y - height * gridSize / 2, elevation: (elevation + tokenHeight) / 2 });
