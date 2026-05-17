@@ -275,17 +275,17 @@ class ShareMap extends HandlebarsApplication {
     }
 
     displaySubmissionError(error, status) {
-        prompt({
-            title: game.i18n.localize("levels3dpreview.sharing.sharemap.error") + `: ${error.code} - ${status}`,
-            content: `<p><strong>${error.details}</strong></p><p>${error.message}</p>`,
-        });
+        prompt(
+            game.i18n.localize("levels3dpreview.sharing.sharemap.error") + `: ${error.code} - ${status}`,
+            `<p><strong>${error.details}</strong></p><p>${error.message}</p>`,
+        );
     }
 
     displaySubmissionSuccess(update = false) {
-        prompt({
-            title: game.i18n.localize(`levels3dpreview.sharing.sharemap.success.title` + (update ? "updated" : "")),
-            content: `<p>${game.i18n.localize("levels3dpreview.sharing.sharemap.success.content")}</p>`,
-        });
+        prompt(
+            game.i18n.localize(`levels3dpreview.sharing.sharemap.success.title` + (update ? "updated" : "")),
+            `<p>${game.i18n.localize("levels3dpreview.sharing.sharemap.success.content")}</p>`,
+        );
     }
 }
 
