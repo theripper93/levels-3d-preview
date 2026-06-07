@@ -84,18 +84,20 @@ export function registerWrappers() {
 
             const dynamicTokenVisibility = getSetting("dynamicTokenVisibility");
             if (!dynamicTokenVisibility) {
+                const tokenW = width * gridSize;
+                const tokenH = height * gridSize;
                 // Center point
-                testPoints.push({ x: center.x - width * gridSize / 2, y: center.y - height * gridSize / 2, elevation: (elevation + tokenHeight) / 2 });
+                testPoints.push({ x: center.x, y: center.y, elevation: (elevation + tokenHeight / 2) });
                 // Bottom square
-                testPoints.push({ x: center.x - width * gridSize / 2, y: center.y - height * gridSize / 2, elevation: elevation });
-                testPoints.push({ x: center.x + width * gridSize / 2, y: center.y - height * gridSize / 2, elevation: elevation });
-                testPoints.push({ x: center.x - width * gridSize / 2, y: center.y + height * gridSize / 2, elevation: elevation });
-                testPoints.push({ x: center.x + width * gridSize / 2, y: center.y + height * gridSize / 2, elevation: elevation });
+                testPoints.push({ x: origin.x, y: origin.y, elevation: elevation });
+                testPoints.push({ x: origin.x, y: origin.y + tokenH, elevation: elevation });
+                testPoints.push({ x: origin.x + tokenW, y: origin.y, elevation: elevation });
+                testPoints.push({ x: origin.x + tokenW, y: origin.y + tokenH, elevation: elevation });
                 // Top square
-                testPoints.push({ x: center.x - width * gridSize / 2, y: center.y - height * gridSize / 2, elevation: elevation + tokenHeight });
-                testPoints.push({ x: center.x + width * gridSize / 2, y: center.y - height * gridSize / 2, elevation: elevation + tokenHeight });
-                testPoints.push({ x: center.x - width * gridSize / 2, y: center.y + height * gridSize / 2, elevation: elevation + tokenHeight });
-                testPoints.push({ x: center.x + width * gridSize / 2, y: center.y + height * gridSize / 2, elevation: elevation + tokenHeight });
+                testPoints.push({ x: origin.x, y: origin.y, elevation: elevation + tokenHeight });
+                testPoints.push({ x: origin.x, y: origin.y + tokenH, elevation: elevation + tokenHeight });
+                testPoints.push({ x: origin.x + tokenW, y: origin.y, elevation: elevation + tokenHeight });
+                testPoints.push({ x: origin.x + tokenW, y: origin.y + tokenH, elevation: elevation + tokenHeight });
 
                 return testPoints;
             }
@@ -117,12 +119,12 @@ export function registerWrappers() {
                 }
             }
             // Center points
-            const integerHeight = Math.floor(tokenHeight / canvas.dimensions.distance);
-            for (let d = 0; d <= integerHeight; d++) {
+            const centerPoints = Math.max(tokenHeight / canvas.dimensions.distance, 1);
+            for (let d = 0; d < centerPoints; d++) {
                 testPoints.push({
                     x: center.x,
                     y: center.y,
-                    elevation: elevation + tokenHeight / 2 + d * canvas.dimensions.distance,
+                    elevation: (elevation + tokenHeight / 2) + d * canvas.dimensions.distance,
                 });
             }
 
