@@ -19,7 +19,8 @@ export class WorkerHandler {
     initRaycastWorker() {
         const path = window.location.pathname.split("/game")[1] ?? "";
         // __webpack_public_path__ = window.location.origin + "/modules/levels-3d-preview/";
-        const raycastWorker = new SharedWorker(new URL("./raycastWorker.js", import.meta.url), { type: "module" });
+        // const raycastWorker = new SharedWorker(new URL("./raycastWorker.js", import.meta.url), { type: "module" });
+        const raycastWorker = new SharedWorker(path + "/modules/levels-3d-preview/scripts/helpers/raycastWorker.js", { type: "module" });
         this.raycastWorker = raycastWorker;
         this.raycastWorker.port.onmessageerror = (e) => {
             throw new Error(e);
