@@ -72,7 +72,7 @@ import { Shape3D } from "./entities/shape3d.js";
 import { Region3D } from "./entities/region3d.js";
 import { check3DToggleConflicts } from "./helpers/conflict-manager.js";
 
-import "../scss/module.scss";
+// import "../scss/module.scss";
 
 export const factor = 1000;
 

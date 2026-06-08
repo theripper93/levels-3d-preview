@@ -4,7 +4,10 @@ export function setLevelsHooks() {
         Hooks.on(hookName, (document, options, userId) => {
             if (!game.canvas3D.active) return;
             if (!document.flags["levels-3d-preview"]) return;
-            if (document.levels.size > 1) return;
+            if (document.levels?.size > 1) return;
+            if (document.documentName === "Token") {
+                return document.updateSource({ level: canvas.level.id });
+            }
             document.updateSource({ levels: [canvas.level.id] }); 
         });
     })
