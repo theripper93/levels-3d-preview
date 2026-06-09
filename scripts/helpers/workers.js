@@ -1,4 +1,5 @@
 import * as THREE from "../lib/three.module.js";
+import { forgeWorker } from "./raycastWorker.js";
 
 export class WorkerHandler {
     constructor() {
@@ -9,6 +10,7 @@ export class WorkerHandler {
         this._visionReady = false;
         this._waitingForInit = false;
         this.deleteDebounced = foundry.utils.debounce(this.deleteDebounced.bind(this), 10);
+        this.forgeWorker = forgeWorker;
         this.initRaycastWorker();
     }
 
