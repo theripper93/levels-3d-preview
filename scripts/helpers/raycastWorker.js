@@ -8,8 +8,6 @@ THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
 THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
 THREE.Mesh.prototype.raycast = acceleratedRaycast;
 
-export const forgeWorker = "lmao";
-
 const scene = new THREE.Scene();
 
 scene.tiles = {};
