@@ -503,32 +503,6 @@ export class AssetBrowser extends HandlebarsApplication {
         html.querySelectorAll(".material-confirm").forEach(el => el.classList.add("hidden"));
         html.addEventListener("keyup", (e) => { if (e.target.matches("#search")) this.onSearch(e); });
         html.querySelectorAll("input").forEach(el => el.dispatchEvent(new Event("keyup")));
-        html.querySelectorAll("li").forEach(li => li.addEventListener("mouseup", (e) => {
-            const isSelect = e.target.closest("li").classList.contains("selected");
-            if (!e.ctrlKey && !e.shiftKey) html.querySelectorAll("li").forEach(el => el.classList.remove("selected"));
-            if (e.ctrlKey) e.target.closest("li").classList.toggle("selected");
-            if (e.shiftKey) {
-                const selected = html.querySelectorAll("li.selected");
-                if (selected.length === 0) {
-                    e.target.closest("li").classList.add("selected");
-                } else {
-                    const allLis = [...html.querySelectorAll("li")];
-                    const start = allLis.indexOf(selected[0]);
-                    const end = allLis.indexOf(li);
-                    const min = Math.min(start, end);
-                    const max = Math.max(start, end);
-                    allLis.forEach((el, i) => {
-                        if (i >= min && i <= max) el.classList.add("selected");
-                    });
-                }
-            }
-            if (!isSelect) {
-                e.target.closest("li").classList.add("selected");
-            }
-            this._hasSelected = html.querySelectorAll("li.selected").length > 0;
-            html.querySelector("#selected-notification").style.display = this._hasSelected ? "" : "none";
-            if (this._hasSelected) canvas.tiles.releaseAll();
-        }));
         html.querySelector("#asset-packs").addEventListener("change", e => this.onSearch(e) );
         html.querySelectorAll(".quick-placement-toggle").forEach(btn => btn.addEventListener("click", (e) => {
                 btn.classList.toggle("active");
@@ -577,7 +551,38 @@ export class AssetBrowser extends HandlebarsApplication {
         const html = results.map((m) => this.generateListItem(m)).join("");
         this.element.querySelector("ol").innerHTML = html;
         this.element.querySelectorAll("li").forEach((li) => {
-            li.addEventListener("dragstart", this._onDragStart);
+            this.activateListElementListeners(li);
+        });
+    }
+
+    activateListElementListeners(li) {
+        const html = this.element;
+        li.addEventListener("dragstart", this._onDragStart);
+        li.addEventListener("mouseup", (e) => {
+            const isSelect = e.target.closest("li").classList.contains("selected");
+            if (!e.ctrlKey && !e.shiftKey) html.querySelectorAll("li").forEach(el => el.classList.remove("selected"));
+            if (e.ctrlKey) e.target.closest("li").classList.toggle("selected");
+            if (e.shiftKey) {
+                const selected = html.querySelectorAll("li.selected");
+                if (selected.length === 0) {
+                    e.target.closest("li").classList.add("selected");
+                } else {
+                    const allLis = [...html.querySelectorAll("li")];
+                    const start = allLis.indexOf(selected[0]);
+                    const end = allLis.indexOf(li);
+                    const min = Math.min(start, end);
+                    const max = Math.max(start, end);
+                    allLis.forEach((el, i) => {
+                        if (i >= min && i <= max) el.classList.add("selected");
+                    });
+                }
+            }
+            if (!isSelect) {
+                e.target.closest("li").classList.add("selected");
+            }
+            this._hasSelected = html.querySelectorAll("li.selected").length > 0;
+            html.querySelector("#selected-notification").style.display = this._hasSelected ? "" : "none";
+            if (this._hasSelected) canvas.tiles.releaseAll();
         });
     }
 
