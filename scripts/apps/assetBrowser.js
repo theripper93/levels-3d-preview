@@ -174,7 +174,7 @@ export class AssetBrowser extends HandlebarsApplication {
 
         const elevation = tile.document.elevation;
         const depth = tile.document.flags["levels-3d-preview"].depth;
-        const rect = [tile.data.x, tile.data.y, tile.data.width, tile.data.height];
+        const rect = [tile.document.x, tile.document.y, tile.document.width, tile.document.height];
         const nPointsMax = count || Math.max(1, Math.floor(rect[2] * rect[3] * AssetBrowser.density * 0.0001));
 
         if (scatterEdges) {
@@ -269,11 +269,9 @@ export class AssetBrowser extends HandlebarsApplication {
                     points.splice(index, 1);
                 }
             }
-            const proceed = await Dialog.confirm({
-                title: "Scatter on Edges",
+            const proceed = await foundry.applications.api.DialogV2.confirm({
+                window: { title: "Scatter on Edges" },
                 content: `<p>Scattering ${points.length} assets on edges of the selected tile. Proceed?</p>`,
-                yes: () => true,
-                no: () => false,
                 defaultYes: true,
             });
             if (proceed) {
@@ -285,6 +283,7 @@ export class AssetBrowser extends HandlebarsApplication {
                     const collision = game.Levels3DPreview.interactionManager.computeSightCollisionFrom3DPositions(origin, target, "collision", false, false, false, true);
                     if (collision?.length) point.point = collision[0].point;
                     const dragData = this.buildTileData(null, point);
+                    if (!dragData) return;
                     game.Levels3DPreview.interactionManager._onDrop(new Event("click"), dragData);
                 }
             }
@@ -319,16 +318,15 @@ export class AssetBrowser extends HandlebarsApplication {
                 }
             }
 
-            const proceed = await Dialog.confirm({
+            const proceed = await foundry.applications.api.DialogV2.confirm({
                 title: "Scatter on Surface",
                 content: `<p>Scattering ${points.length} assets on the surface of the selected tile. Proceed?</p>`,
-                yes: () => true,
-                no: () => false,
                 defaultYes: true,
             });
             if (proceed) {
                 for (const point of points) {
                     const dragData = this.buildTileData(null, point);
+                    if (!dragData) return;
                     game.Levels3DPreview.interactionManager._onDrop(new Event("click"), dragData);
                 }
             }
