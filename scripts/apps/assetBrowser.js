@@ -337,25 +337,26 @@ export class AssetBrowser extends HandlebarsApplication {
 
     async autoScatterDialog() {
         let edges, surfaces;
-        const res = await Dialog.prompt({
-            title: "Smart Scatter",
-            content: `<p>Do you wish to scatter tiles on Edges, Surfaces or Both?</p>
-            <hr>
-            <div style="display: grid; grid-template-columns: 1fr 1fr;">
-            <div class="form-group" style="display: flex;align-items: center;">
-            <input type="checkbox" id="edges" name="edges" checked>
-                <label for="edges">Edges</label>
-            </div>
-            <div class="form-group" style="display: flex;align-items: center;">
-            <input type="checkbox" id="surfaces" name="surfaces" checked>
-                <label for="surfaces">Surfaces</label>
-            </div>
-            </div>
-            <hr>
+        const res = await foundry.applications.api.DialogV2.prompt({
+            window: { title: "Smart Scatter" },
+            content: `
+                <p>Do you wish to scatter tiles on Edges, Surfaces or Both?</p>
+                <hr>
+                <div style="display: grid; grid-template-columns: 1fr 1fr;">
+                    <div class="form-group" style="display: flex;align-items: center;">
+                        <input type="checkbox" id="edges" name="edges" checked>
+                        <label for="edges">Edges</label>
+                    </div>
+                    <div class="form-group" style="display: flex;align-items: center;">
+                        <input type="checkbox" id="surfaces" name="surfaces" checked>
+                        <label for="surfaces">Surfaces</label>
+                    </div>
+                </div>
+                <hr>
             `,
-            callback: (html) => {
-                edges = html.querySelector("#edges").checked;
-                surfaces = html.querySelector("#surfaces").checked;
+            submit: (res, dialog) => {
+                edges = dialog.element?.querySelector("#edges").checked;
+                surfaces = dialog.element?.querySelector("#surfaces").checked;
             },
             rejectClose: true,
         });
