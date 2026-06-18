@@ -253,6 +253,13 @@
     border-color: #ffffff42;
 } */
 
+.three-canvas-compendium-app-slim .window-content {
+    > div,
+    > form {
+        overflow: hidden auto;
+    }
+}
+
 .three-canvas-compendium-app-slim ul{
     margin: 0;
     padding: 0;

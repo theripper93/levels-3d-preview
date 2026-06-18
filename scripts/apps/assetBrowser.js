@@ -741,23 +741,22 @@ async function runScript(id) {
             break;
         case "vines":
             let radius;
-            const res = await Dialog.prompt({
-                title: "Vines",
-                content: `<p>Please confirm the vines propagation radius. Using values higher than 1000 is NOT suggested</p>
-                <hr>
-                <form>
-                <div class="form-group">
-                    <label for="radius">Radius <span class="units">(Pixels)</span></label>
-                    <div class="form-fields">
-                        <input type="number" value="500" max="1000" min="100" step="1" name="radius">
-                    </div>
-                </div>
-                </form>
-                <hr>
+            const res = await foundry.applications.api.DialogV2.prompt({
+                window: { title: "Vines" },
+                content: `
+                    <p>Please confirm the vines propagation radius. Using values higher than 1000 is NOT suggested</p>
+                    <hr>
+                    <form>
+                        <div class="form-group">
+                            <label for="radius">Radius <span class="units">(Pixels)</span></label>
+                            <div class="form-fields">
+                                <input type="number" value="500" max="1000" min="100" step="1" name="radius">
+                            </div>
+                        </div>
+                    </form>
+                    <hr>
                 `,
-                callback: (html) => {
-                    radius = parseInt(html.querySelector('[name="radius"]').value);
-                },
+                submit: (res, dialog) => radius = parseInt(dialog.element?.querySelector('[name="radius"]')?.value),
                 rejectClose: true,
             });
             if (res !== "ok") return;
