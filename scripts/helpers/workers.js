@@ -16,55 +16,81 @@ export class WorkerHandler {
         return game.Levels3DPreview?.CONFIG?.useMultithreading && game.Levels3DPreview?.object3dSight; // && game.Levels3DPreview?.fogExploration;
     }
 
-    initRaycastWorker() {
-        const path = window.location.pathname.split("/game")[1] ?? "";
-        // __webpack_public_path__ = window.location.origin + "/modules/levels-3d-preview/";
-        const raycastWorker = new SharedWorker(new URL("./raycastWorker.js", import.meta.url), { type: "module" });
-        this.raycastWorker = raycastWorker;
-        this.raycastWorker.port.onmessageerror = (e) => {
-            throw new Error(e);
-        };
-        this.raycastWorker.port.onmessage = (e) => {
-            //console.log(e.data);
-            if (e.data.type == "polygon") {
-                const callback = this.callbacks[e.data.callbackId];
-                if (callback) {
-                    this._lastResults[e.data.id] = e.data.polygonPoints;
-                    this._lastKnownValid[e.data.id] = e.data.polygonPoints;
-                    callback(e.data.polygonPoints);
-                    delete this.callbacks[e.data.callbackId];
-                }
-            }
-            if (e.data.type == "refresh") {
-                if (this._waitingForInit) this._visionReady = true;
-                this.refresh();
-            }
-            if (e.data.type == "rulerPoints" && game.Levels3DPreview.ruler.useRaycastRuler) {
-                game.Levels3DPreview.ruler._points = e.data.points.length > 2 ? e.data.points.map((p) => new THREE.Vector3(p.x, p.y, p.z)) : 0;
-            }
-            if (e.data.type == "error") {
-                console.error(e.data.error);
-            }
-            ///debug
+    async initRaycastWorker() {
+        const workerUrl = new URL("./raycastWorker.js", import.meta.url).href;
+        const workerBase = workerUrl.substring(0, workerUrl.lastIndexOf("/") + 1);
 
-            /*
-            if (e.data.type == "removed") {
-                console.log("Removed", e.data.data);
-            }
-            if (e.data.type == "added") {
-                console.log("Added", e.data.data);
-            }
-            if (e.data.type == "geoType") { 
-                console.log("GeoType", e.data.data);
-            }
-            if (e.data.type == "mergedGeometry") {
-                console.log("Merged", e.data.data);
-                game.Levels3DPreview.scene.remove(game.Levels3DPreview.scene.getObjectByName("shadowWorld"));
-                const mesh = new THREE.ObjectLoader().parse(e.data.data.g);
-                mesh.name = "shadowWorld";
-                game.Levels3DPreview.scene.add(mesh);
-            }*/
+        const trySharedWorker = (url) => {
+            try { return new SharedWorker(url, { type: "module" }); }
+            catch { return null; }
         };
+
+        const setupPort = (w) => {
+            w.port.onmessageerror = (e) => { throw new Error(e); };
+            w.port.onmessage = (e) => {
+                if (e.data.type == "polygon") {
+                    const callback = this.callbacks[e.data.callbackId];
+                    if (callback) {
+                        this._lastResults[e.data.id] = e.data.polygonPoints;
+                        this._lastKnownValid[e.data.id] = e.data.polygonPoints;
+                        callback(e.data.polygonPoints);
+                        delete this.callbacks[e.data.callbackId];
+                    }
+                }
+                if (e.data.type == "refresh") {
+                    if (this._waitingForInit) this._visionReady = true;
+                    this.refresh();
+                }
+                if (e.data.type == "rulerPoints" && game.Levels3DPreview.ruler.useRaycastRuler) {
+                    game.Levels3DPreview.ruler._points = e.data.points.length > 2 ? e.data.points.map((p) => new THREE.Vector3(p.x, p.y, p.z)) : 0;
+                }
+                if (e.data.type == "error") {
+                    console.error(e.data.error);
+                }
+            };
+        };
+
+        let raycastWorker = trySharedWorker(workerUrl);
+        if (raycastWorker) {
+            setupPort(raycastWorker);
+            this.raycastWorker = raycastWorker;
+            const connected = await this._awaitWorkerConnect(raycastWorker);
+            if (connected) return;
+        }
+
+        console.warn("3D Canvas: SharedWorker failed to connect, trying blob fallback.");
+        try {
+            const res = await fetch(workerUrl);
+            if (!res.ok) throw new Error(`Fetch failed: ${res.status}`);
+            let text = await res.text();
+            text = text.replace(
+                /(from\s+["'])(\.\.?\/[^"']+)(["'])/g,
+                (_, pre, p, post) => pre + new URL(p, workerBase).href + post
+            );
+            const blob = new Blob([text], { type: "application/javascript" });
+            const blobUrl = URL.createObjectURL(blob);
+            raycastWorker = trySharedWorker(blobUrl);
+            if (!raycastWorker) { URL.revokeObjectURL(blobUrl); throw new Error("SharedWorker constructor threw"); }
+            this._blobUrl = blobUrl;
+            setupPort(raycastWorker);
+            this.raycastWorker = raycastWorker;
+        } catch (err) {
+            console.error("3D Canvas: SharedWorker unavailable, multithreading disabled.", err);
+            this.raycastWorker = null;
+        }
+    }
+
+    async _awaitWorkerConnect(w, timeout = 3000) {
+        return new Promise((resolve) => {
+            const timer = setTimeout(() => resolve(false), timeout);
+            w.port.addEventListener("message", function handler(e) {
+                if (e.data.type === "connected") {
+                    clearTimeout(timer);
+                    w.port.removeEventListener("message", handler);
+                    resolve(true);
+                }
+            });
+        });
     }
 
     refresh() {
@@ -85,6 +111,7 @@ export class WorkerHandler {
     }
 
     requestWorkerRaycast(data, callback) {
+        if (!this.raycastWorker) return;
         data.callbackId = foundry.utils.randomID(20);
         this.raycastWorker.port.postMessage(data);
         this.callbacks[data.callbackId] = callback;
@@ -128,5 +155,9 @@ export class WorkerHandler {
         this.callbacks = {};
         this._lastResults = {};
         this._lastKnownValid = {};
+        if (this._blobUrl) {
+            URL.revokeObjectURL(this._blobUrl);
+            this._blobUrl = null;
+        }
     }
 }
