@@ -19,16 +19,22 @@ export default function initTemplateEffects(){
     }
 }
 
+export function applyShaderToRegion(region) {
+    const handler = handlers[game.system.id];
+    if (handler) return handler(region);
+} 
+
 const handlers = {
-    "dnd5e": (templateDocument, preCreate = false) => {
+    "dnd5e": (regionDocument, preCreate = false) => {
         const effects = shaderData[game.system.id]
-        const activity = fromUuidSync(templateDocument.flags?.dnd5e?.origin)
+        const activity = fromUuidSync(regionDocument.flags?.dnd5e?.origin)
         if (!activity) return;
         const isInstant = !activity.duration?.value
         const damageTypes = activity.damage.parts.map(part => Array.from(part.types)).flat();
-        const damageType = damageTypes.find(type => effects[type]) ?? "default"
-        if(isInstant && !preCreate) return playVFX(templateDocument, damageType);
-        if(preCreate && !isInstant) applyEffect(templateDocument, effects[damageType])
+        const damageType = damageTypes.find(type => effects[type]) ?? "default";
+        // if (isInstant && !preCreate) return playVFX(templateDocument, damageType);
+        // if (preCreate && !isInstant) applyEffect(templateDocument, effects[damageType]);
+        return applyEffect(regionDocument, effects[damageType]);
     },
     "pf2e": (templateDocument) => { 
         const effects = shaderData.dnd5e;
@@ -37,7 +43,7 @@ const handlers = {
         let effect = effects[damageTypes[0]]
         if(!effect) damageTypes.forEach(type => {if(effects[type]) effect = effects[type]})
         if(!effect) effect = effects["default"];
-        applyEffect(templateDocument, effect)
+        return applyEffect(templateDocument, effect)
     },
 }
 
@@ -106,8 +112,8 @@ const shaderData = {
     }
 }
 
-function applyEffect(templateDocument, effect){
-    templateDocument.updateSource({fillColor: effect.fillColor, flags: {"levels-3d-preview": {shaders: effect.shaderData}}})
+function applyEffect(regionDocument, effect) {
+    return regionDocument.updateSource({ color: effect.fillColor, flags: { "levels-3d-preview": { shaders: effect.shaderData } } });
 }
 
 export function isLockedOnOrigin(item) {

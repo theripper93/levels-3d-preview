@@ -588,7 +588,7 @@ class BaseParticleEffect {
         this.params.tokenAnimation.to = null;
         const origin = this._origin.clone();
         const target = this._target.clone();
-        const collision = game.Levels3DPreview.interactionManager.computeSightCollisionFrom3DPositions(origin, target, "collision", false, false, false, false);
+        const collision = game.Levels3DPreview.interactionManager.computeSightCollisionFrom3DPositions(origin, target, "move", false, false, false, false);
         if (collision) {
             this._target = collision;
         } else {
@@ -690,7 +690,7 @@ class BaseParticleEffect {
         const position = this._target.clone();
         const targetp = this._target.clone();
         targetp.y -= 99999;
-        const collision = game.Levels3DPreview.interactionManager.computeSightCollisionFrom3DPositions(position, targetp, "collision", false, false, false, true);
+        const collision = game.Levels3DPreview.interactionManager.computeSightCollisionFrom3DPositions(position, targetp, "move", false, false, false, true);
         return collision[0]?.point?.y ?? this._target.y;
     }
 

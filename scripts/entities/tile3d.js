@@ -1127,7 +1127,7 @@ export class Tile3D {
                             realTarget.y = this.center.y;
                             const rcTarget = realTarget.clone();
                             rcTarget.y -= 10;
-                            const collision = raycaster.computeSightCollisionFrom3DPositions(realTarget, rcTarget, "collision", false, false, false, true);
+                            const collision = raycaster.computeSightCollisionFrom3DPositions(realTarget, rcTarget, "move", false, false, false, true);
 
                             if (collision) {
                                 positionsArray[j] = collision[0].point.y;
@@ -1436,7 +1436,7 @@ export class Tile3D {
                 target3d.rotation.set(this.tiltX, -this.angle * this.rotSign, this.tiltZ);
                 const targetp = raycastTarget.getWorldPosition(new THREE.Vector3());
                 //targetp.y -= 999999;
-                const intersects = this._parent.interactionManager.computeSightCollisionFrom3DPositions(position, targetp, "collision", false, false, false, true);
+                const intersects = this._parent.interactionManager.computeSightCollisionFrom3DPositions(position, targetp, "move", false, false, false, true);
                 if (!intersects[0]) {
                     this.dynaMesh = "box";
                 } else {

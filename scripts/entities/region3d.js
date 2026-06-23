@@ -20,9 +20,9 @@ export class Region3D extends THREE.Object3D {
         this.shaders = this.region?.getFlag("levels-3d-preview", "shaders") ?? {};
         this.hasShaders = Object.values(this.shaders).some((v) => v.enabled);
         if (extrudeRegion) {
-            this.drawExtrude();
+            this.drawExtrude(this.hasShaders);
         } else {
-            this.drawShapes();
+            this.drawShapes(this.hasShaders);
         }
         if (this.region?.object?.isVisible === false) return;
         if (hidden) return;
@@ -100,9 +100,13 @@ export class Region3D extends THREE.Object3D {
         this.userData.isHitbox = true;
     }
 
-    drawShapes() {
+    getShaderMaterial() {
+        return new THREE.MeshStandardMaterial({ color: this.region?.color.css ?? 0xffffff, opacity: 0.7, transparent: true });
+    }
+
+    drawShapes(useStandardMaterial) {
         for (const shape of this.region.shapes) {
-            const shape3d = Shape3D.create({ shape, region: this.region });
+            const shape3d = Shape3D.create({ shape, region: this.region, material: useStandardMaterial ? this.getShaderMaterial() : null });
             this.add(shape3d);
         }
         this.applyHitbox();

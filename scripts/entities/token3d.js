@@ -618,7 +618,7 @@ export class Token3D {
                         y: dest.y + this.baseDocumentHeight * canvas.grid.size * 0.5,
                         z: dest.elevation + this.tokenHeight,
                     },
-                    "collision",
+                    "move",
                 );
             } else {
                 collides = this.token.checkCollision(center);
@@ -675,7 +675,7 @@ export class Token3D {
                         y: dest.y + this.baseDocumentHeight * canvas.grid.size * 0.5,
                         z: dest.elevation + this.tokenHeight,
                     },
-                    "collision",
+                    "move",
                 );
             } else {
                 collides = this.token.checkCollision(center);
@@ -897,7 +897,7 @@ export class Token3D {
         const pos = this.mesh.position.clone();
         const targetPos = this.mesh.position.clone();
         targetPos.y = -100000;
-        const collision = game.Levels3DPreview.interactionManager.computeSightCollisionFrom3DPositions(pos, targetPos, "collision", true, true, false, true);
+        const collision = game.Levels3DPreview.interactionManager.computeSightCollisionFrom3DPositions(pos, targetPos, "move", true, true, false, true);
         if (!collision[0] || (collision[0] && collision[0].distance < 0.1)) return;
 
         const grid = canvas.dimensions.size / factor;

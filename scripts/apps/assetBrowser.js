@@ -138,7 +138,7 @@ export class AssetBrowser extends HandlebarsApplication {
         for (const point of randomPoints) {
             const origin = pos3D({ x: point.x, y: point.y, z: elevation + canvas.scene.dimensions.distance });
             const target = pos3D({ x: point.x, y: point.y, z: elevation - 1000 });
-            const collision = game.Levels3DPreview.interactionManager.computeSightCollisionFrom3DPositions(origin, target, "collision", false, false, false, true);
+            const collision = game.Levels3DPreview.interactionManager.computeSightCollisionFrom3DPositions(origin, target, "move", false, false, false, true);
             if (collision) {
                 const dragData = _this.buildTileData(null, collision[0]);
                 if (!dragData) return false;
@@ -257,7 +257,7 @@ export class AssetBrowser extends HandlebarsApplication {
                     const origin = point.clone();
                     const target = point.clone();
                     target.y -= 1000;
-                    const collision = game.Levels3DPreview.interactionManager.computeSightCollisionFrom3DPositions(origin, target, "collision", false, false, false, true);
+                    const collision = game.Levels3DPreview.interactionManager.computeSightCollisionFrom3DPositions(origin, target, "move", false, false, false, true);
                     if (collision?.length && Math.abs(collision[0].point.y - origin.y) > 0.01) invalid = true;
                 }
                 if (invalid) continue;
@@ -283,7 +283,7 @@ export class AssetBrowser extends HandlebarsApplication {
                     const target = point.point.clone();
                     target.y -= 1000;
                     origin.y += 0.05;
-                    const collision = game.Levels3DPreview.interactionManager.computeSightCollisionFrom3DPositions(origin, target, "collision", false, false, false, true);
+                    const collision = game.Levels3DPreview.interactionManager.computeSightCollisionFrom3DPositions(origin, target, "move", false, false, false, true);
                     if (collision?.length) point.point = collision[0].point;
                     const dragData = this.buildTileData(null, point);
                     if (!dragData) return;
@@ -310,7 +310,7 @@ export class AssetBrowser extends HandlebarsApplication {
                 if (Math.random() > noise) continue;
                 const target = origin.clone();
                 target.y -= 1000;
-                const collision = game.Levels3DPreview.interactionManager.computeSightCollisionFrom3DPositions(origin, target, "collision", false, false, false, true);
+                const collision = game.Levels3DPreview.interactionManager.computeSightCollisionFrom3DPositions(origin, target, "move", false, false, false, true);
                 if (collision?.length) {
                     let isCorrectTile = collision[0].object.userData?.entity3D == tile3d;
                     collision[0].object.traverseAncestors((obj) => {

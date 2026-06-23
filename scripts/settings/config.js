@@ -1866,18 +1866,13 @@ export function registerConfigs() {
     });
 
     Hooks.on("renderRegionConfig", (app, html) => {
-        if (html.querySelector(`[name="flags.levels-3d-preview.tilt"]`)) return;
+        if (html.querySelector(`#regionShaderButton`)) return;
 
-        injectConfig.inject(app, html, {
-            moduleId: "levels-3d-preview",
-            tab: {
-                name: "levels-3d-preview",
-                label: "3D",
-                icon: "fas fa-cube",
-            }
-        });
+        html.querySelector(`.tab[data-tab="appearance"]`).insertAdjacentHTML("beforeend", `<fieldset id='regionShaderButton'>
+            <legend>3D Canvas</legend>
+        </fieldset>`);
 
-        ShaderConfig.injectButton(app, html, html.querySelector(`.tab[data-tab="levels-3d-preview"]`));
+        ShaderConfig.injectButton(app, html, html.querySelector(`#regionShaderButton legend`));
     });
 
     Hooks.on("renderNoteConfig", (app, html) => {

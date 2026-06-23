@@ -115,14 +115,14 @@ export class InteractionManager {
         }
 
         this._sightCollisions = {
-            collision: collisionObjects,
+            move: collisionObjects,
             sight: sightObjects,
             camera: cameraObjects,
         };
         //if (!p0 && !p1) canvas.tokens.controlled.forEach((t) => t.updateSource());
     }
 
-    computeSightCollision(v1, v2, type = "collision", elongate = false, useDistance = true, useClipping = false, returnAll = false) {
+    computeSightCollision(v1, v2, type = "move", elongate = false, useDistance = true, useClipping = false, returnAll = false) {
         const origin = Ruler3D.posCanvasTo3d(v1);
         const target = Ruler3D.posCanvasTo3d(v2);
         return this.computeSightCollisionFrom3DPositions(origin, target, type, elongate, useDistance, useClipping, returnAll);
@@ -137,8 +137,7 @@ export class InteractionManager {
         this.sightRaycaster.firstHitOnly = !useClipping;
         this.sightRaycaster.set(origin, direction);
         this.forceSightCollisions(rectp0, rectp1);
-        //if(!this._sightCollisions[type] && !this._sightCollisions["collision"])  this.forceSightCollisions(rectp0,rectp1);
-        let collisions = this.sightRaycaster.intersectObjects(this._sightCollisions[type] ?? this._sightCollisions["collision"], true);
+        let collisions = this.sightRaycaster.intersectObjects(this._sightCollisions[type] ?? this._sightCollisions["move"], true);
         if (!collisions.length) return false;
         if (useClipping && !returnAll) {
             collisions = collisions.filter((c) => c.point.y < (game.Levels3DPreview.BuildPanel._clipHeight ?? Infinity));

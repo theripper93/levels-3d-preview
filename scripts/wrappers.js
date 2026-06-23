@@ -2,6 +2,7 @@ import { Region3D } from "./entities/region3d.js";
 import { Shape3D } from "./entities/shape3d.js";
 import { getSetting } from "./settings/settingsConfig.js";
 import * as THREE from "./lib/three.module.js";
+import { applyShaderToRegion } from "./shaders/templateEffects.js";
 
 export function registerWrappers() {
 
@@ -42,38 +43,15 @@ export function registerWrappers() {
         }
 
         function containsWrapper(wrapped, ...args) {
-            console.log(this, args);
             const originalResult = wrapped(...args);
             
             if (originalResult || !game.Levels3DPreview?._active || !testTarget) return originalResult;
             if (this.config.type !== "sight" && this.config.type !== "move") return originalResult;
             if (this.config.source instanceof foundry.canvas.sources.GlobalLightSource) return originalResult;
             
-            const origin = this.origin;
-            const destination = testTarget.point;
-            const collision = game.Levels3DPreview.interactionManager.computeSightCollision(origin, destination, this.config.type, false, true, false, true);
-
-
-            // if (!this.config?.source?.object || !(testTarget instanceof foundry.canvas.placeables.Token) || this.config.source instanceof foundry.canvas.sources.GlobalLightSource) return originalResult;
-            return true;
-            // const LevelsConfig = CONFIG.Levels;
-            // const testTarget = LevelsConfig.visibilityTestObject;
-            // let result;
-            // if (this.config.source instanceof foundry.canvas.sources.PointLightSource) {
-            //     result = LevelsConfig.handlers.SightHandler.testInLight(this.config.source.object, testTarget, this, wrapped(...args));
-            // } else if (this.config.source.object instanceof foundry.canvas.placeables.Token) {
-            //     const point = {
-            //         x: args[0],
-            //         y: args[1],
-            //         z: testTarget.losHeight,
-            //         object: testTarget,
-            //     };
-            //     result = LevelsConfig.handlers.SightHandler.performLOSTest(this.config.source.object, point, this, this.config.type);
-            //     //if(canvas.effects.darknessSources.size) result = result && wrapped(...args);
-            // } else {
-            //     result = wrapped(...args);
-            // }
-            // return result;
+            const collision = game.Levels3DPreview.interactionManager.computeSightCollision(this.origin, testTarget.point, this.config.type);
+            testTarget = null;
+            return !collision;
         }
 
         function getVisionOrigin(wrapped, ...args) {
@@ -449,7 +427,7 @@ export function registerWrappers() {
                         y: oldPos.y + dy * canvas.grid.size,
                         z: token3d.losHeight ?? token.document.elevation,
                     };
-                    const collision = game.Levels3DPreview.interactionManager.computeSightCollision(oldPos, newPos, "collision");
+                    const collision = game.Levels3DPreview.interactionManager.computeSightCollision(oldPos, newPos, "move");
                     if (collision) {
                         dx = 0;
                         dy = 0;
@@ -473,13 +451,13 @@ export function registerWrappers() {
                     y: newPos.y,
                     z: -100000,
                 };
-                const collision = token.document.getFlag("levels-3d-preview", "wasFreeMode") ? null : game.Levels3DPreview.interactionManager.computeSightCollision(newPos, collisionPos, "collision");
+                const collision = token.document.getFlag("levels-3d-preview", "wasFreeMode") ? null : game.Levels3DPreview.interactionManager.computeSightCollision(newPos, collisionPos, "move");
                 let targetElevation = token.document.elevation;
                 if (collision) {
                     let point2d = game.Levels3DPreview.helpers.ruler3d.pos3DToCanvas(collision);
                     targetElevation = point2d.z.toFixed(2);
                 }
-                const movementCollision = game.Levels3DPreview.interactionManager.computeSightCollision(oldPos, newPos, "collision");
+                const movementCollision = game.Levels3DPreview.interactionManager.computeSightCollision(oldPos, newPos, "move");
 
                 if (!movementCollision){
                     const waypoint = updateOptions.movement[token.id].waypoints[0];
@@ -607,6 +585,7 @@ export function registerWrappers() {
             if (!game.Levels3DPreview?._active) return wrapped(...args);
             const originalOn = canvas.stage.on;
             const toRemove = {};
+            let appliedShader = false;
             canvas.stage.on = (eventName, handler) => {
                 let height = undefined;
                 function listener(event) {
@@ -624,6 +603,10 @@ export function registerWrappers() {
                     if (isNotCube) bottom -= height / 2;
                     if (bottom != elevation.bottom) {
                         canvas.regions._placementContext.preview?.document?.updateSource({ elevation: { bottom, top: bottom + height } });
+                    }
+                    if (!appliedShader) {
+                        applyShaderToRegion(canvas.regions._placementContext.preview?.document);
+                        appliedShader = true;
                     }
                 }
                 game.Levels3DPreview.renderer.domElement.addEventListener(eventName, listener);
@@ -656,7 +639,7 @@ export function registerWrappers() {
             if (!canvas?.scene?.flags["levels-3d-preview"]?.object3dSight) return wrapped(...args);
             if (!game.Levels3DPreview?._active) return wrapped(...args);
             if (!["move", "sight"].includes(options.type)) return wrapped(...args);
-            const type = options.type === "sight" ? "sight" : "collision";
+            const type = options.type === "sight" ? "sight" : "move";
             if (options.mode === "any") {
                 const collisionCore = wrapped(...args);
                 const collision3d = !!game.Levels3DPreview.interactionManager.computeSightCollision(origin, destination, type);
