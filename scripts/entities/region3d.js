@@ -32,7 +32,7 @@ export class Region3D extends THREE.Object3D {
             width: box.z,
             depth: box.y,
         };
-        game.Levels3DPreview.shaderHandler.applyShader(this, this.userData.entity3D, this.shaders);
+        game.Levels3DPreview.shaderHandler.applyShader(this, this, this.shaders);
         this.addToScene();
     }
     #bottom = 0;
@@ -112,11 +112,11 @@ export class Region3D extends THREE.Object3D {
         this.applyHitbox();
     }
 
-    drawExtrude() {
+    drawExtrude(useStandardMaterial) {
         const geometry = Shape3D.extrudeGeometry(this.region.polygonTree, { depth: this.height });
         geometry.translate(0, this.bottom, 0);
-        const material = new DiagonalStripesMaterial({ color: this.region.color.css, scale: 30 });
-        material.side = this.height <= 0.01 ? THREE.FrontSide : THREE.BackSide;
+        const material = useStandardMaterial ? this.getShaderMaterial() : new DiagonalStripesMaterial({ color: this.region.color.css, scale: 30 });
+        if (!useStandardMaterial) material.side = this.height <= 0.01 ? THREE.FrontSide : THREE.BackSide;
         const mesh = new THREE.Mesh(geometry, material);
         this.add(mesh);
     }
