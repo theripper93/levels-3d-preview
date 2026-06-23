@@ -1865,6 +1865,21 @@ export function registerConfigs() {
         ShaderConfig.injectButton(app, html, html.querySelector(`input[name="flags.levels-3d-preview.isFog"]`).closest(".form-group"));
     });
 
+    Hooks.on("renderRegionConfig", (app, html) => {
+        if (html.querySelector(`[name="flags.levels-3d-preview.tilt"]`)) return;
+
+        injectConfig.inject(app, html, {
+            moduleId: "levels-3d-preview",
+            tab: {
+                name: "levels-3d-preview",
+                label: "3D",
+                icon: "fas fa-cube",
+            }
+        });
+
+        ShaderConfig.injectButton(app, html, html.querySelector(`.tab[data-tab="levels-3d-preview"]`));
+    });
+
     Hooks.on("renderNoteConfig", (app, html) => {
         if (html.querySelector(`[name="flags.levels-3d-preview.rotation"]`)) return;
 

@@ -31,15 +31,33 @@ export function registerWrappers() {
         libWrapper.register("levels-3d-preview", "foundry.documents.TokenDocument.prototype.getVisibilityTestPoints", getVisibilityTestPoints, "MIXED");
         libWrapper.register("levels-3d-preview", "foundry.documents.TokenDocument.prototype.getVisionOrigin", getVisionOrigin, "WRAPPER");
         libWrapper.register("levels-3d-preview", "foundry.canvas.geometry.ClockwiseSweepPolygon.prototype.contains", containsWrapper, "MIXED");
+        libWrapper.register("levels-3d-preview", "DetectionMode._testCollision", _testCollisionWrapped, "WRAPPER");
 
         if (game[game.system.id]?.canvas?.AbilityTemplate?.prototype?.drawPreview) libWrapper.register("levels-3d-preview", `game.${game.system.id}.canvas.AbilityTemplate.prototype.drawPreview`, placeTemplate, "MIXED");
 
+        let testTarget;
+        function _testCollisionWrapped(wrapped, ...args) {
+            testTarget = args[1];
+            return wrapped(...args);
+        }
+
         function containsWrapper(wrapped, ...args) {
-            if (!game.Levels3DPreview?._active) return wrapped(...args);
+            console.log(this, args);
+            const originalResult = wrapped(...args);
+            
+            if (originalResult || !game.Levels3DPreview?._active || !testTarget) return originalResult;
+            if (this.config.type !== "sight" && this.config.type !== "move") return originalResult;
+            if (this.config.source instanceof foundry.canvas.sources.GlobalLightSource) return originalResult;
+            
+            const origin = this.origin;
+            const destination = testTarget.point;
+            const collision = game.Levels3DPreview.interactionManager.computeSightCollision(origin, destination, this.config.type, false, true, false, true);
+
+
+            // if (!this.config?.source?.object || !(testTarget instanceof foundry.canvas.placeables.Token) || this.config.source instanceof foundry.canvas.sources.GlobalLightSource) return originalResult;
             return true;
             // const LevelsConfig = CONFIG.Levels;
             // const testTarget = LevelsConfig.visibilityTestObject;
-            // if (!this.config?.source?.object || !(testTarget instanceof foundry.canvas.placeables.Token) || this.config.source instanceof foundry.canvas.sources.GlobalLightSource) return wrapped(...args);
             // let result;
             // if (this.config.source instanceof foundry.canvas.sources.PointLightSource) {
             //     result = LevelsConfig.handlers.SightHandler.testInLight(this.config.source.object, testTarget, this, wrapped(...args));

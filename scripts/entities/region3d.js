@@ -17,6 +17,8 @@ export class Region3D extends THREE.Object3D {
         const extrudeRegion = (region.shapes?.length > 1) || region.restriction.enabled;
         // this.material = new DiagonalStripesMaterial({ color: region.color.css });
         // this.material.side = this.height < 0.01 ? THREE.FrontSide : THREE.DoubleSide;
+        this.shaders = this.region?.getFlag("levels-3d-preview", "shaders") ?? {};
+        this.hasShaders = Object.values(this.shaders).some((v) => v.enabled);
         if (extrudeRegion) {
             this.drawExtrude();
         } else {
@@ -24,10 +26,21 @@ export class Region3D extends THREE.Object3D {
         }
         if (this.region?.object?.isVisible === false) return;
         if (hidden) return;
+        const box = new THREE.Box3().setFromObject(this).getSize(new THREE.Vector3());
+        this.bb = {
+            height: box.x,
+            width: box.z,
+            depth: box.y,
+        };
+        game.Levels3DPreview.shaderHandler.applyShader(this, this.userData.entity3D, this.shaders);
         this.addToScene();
     }
     #bottom = 0;
     #height = 0.01;
+
+    get mesh() {
+        return this;
+    }
     
     set height(value) {
         this.#height = value;
