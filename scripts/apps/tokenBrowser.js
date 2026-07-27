@@ -4,6 +4,7 @@ import { AssetBrowser } from "./assetBrowser.js";
 let fileCache = null;
 let dataCache = null;
 let fuseSearch = null;
+let addedFiles = [];
 
 let _this = null;
 
@@ -127,6 +128,7 @@ export class TokenBrowser extends HandlebarsApplication {
                 slug: cleanName.slugify({ strict: true }),
             });
         }
+        Hooks.callAll("3DCanvasTokenBrowserInit", { data: materials });
         materials.sort((a, b) => a.displayName.localeCompare(b.displayName));
         materials.sort((a, b) => {
             if (a.isNew && !b.isNew) return -1;
@@ -150,7 +152,7 @@ export class TokenBrowser extends HandlebarsApplication {
         if (this.usingTheForge) {
             source = "forge-bazaar";
         }
-        const files = [];
+        const files = [...addedFiles];
         for (let target of TokenBrowser.defaultSources.concat(this.sources)) {
             let sourceFiles;
             try {
@@ -267,6 +269,12 @@ export class TokenBrowser extends HandlebarsApplication {
             TokenBrowser.assetPacks[packId] = { name: packName, packs: assetPacks };
         } else {
             TokenBrowser.assetPacks[packId].packs.push(...assetPacks);
+        }
+    }
+
+    static registerFiles(files) {
+        for (const file of files) {
+            addedFiles.push(file);
         }
     }
 }
