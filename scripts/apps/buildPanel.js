@@ -175,6 +175,7 @@ export class BuildPanel extends HandlebarsApplication {
         button.id = "build-panel-minimize";
         button.className = "ui-control plain icon fa-solid fa-cube";
         const li = document.createElement("li");
+        li.setAttribute("data-tooltip", "3D Canvas");
         li.appendChild(button)
         document.querySelector(`button[data-tab="settings"]`).closest("li").after(li)
         button.addEventListener("click", () => this.element.classList.toggle("minimized"));
