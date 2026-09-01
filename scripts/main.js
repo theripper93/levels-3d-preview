@@ -1842,7 +1842,7 @@ class Levels3DPreview {
         }
         this.build3Dscene();
         document.body.appendChild(this.renderer.domElement);
-        document.querySelector("#hud").classList.add("levels-3d-preview-hud");
+        document.body.classList.add("levels-3d-preview-active");
         if (this._sharedContext) {
             canvas.stage.renderable = false;
         } else {
@@ -1861,7 +1861,7 @@ class Levels3DPreview {
         this._active = false;
         ui.controls.render({force:true, reset: true});
         this.BuildPanel?.close();
-        document.querySelector("#hud").classList.remove("levels-3d-preview-hud");
+        document.body.classList.remove("levels-3d-preview-active");
         document.querySelector("#levels3d")?.remove();
         document.querySelector(".rangefinder")?.remove();
         foundry.applications.instances.values()

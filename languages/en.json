@@ -6,6 +6,7 @@
         },
         "controls": {
             "preview3d": "Toggle 3D Mode",
+            "3dtools": "3D Canvas Tools",
             "miniCanvas": "Popout/Restore Canvas",
             "tile3dPolygon": "Draw Shape to Extrude",
             "tips": {

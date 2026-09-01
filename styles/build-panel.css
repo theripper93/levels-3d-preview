@@ -3,10 +3,8 @@
     --build-panel-height: 30vh;
 }
 
-#sidebar:has(#build-panel) {
-    nav {
-        align-items: flex-start;
-    }
+.levels-3d-preview-active #sidebar nav {
+    align-items: flex-start;
 }
 
 #build-panel{
