@@ -211,7 +211,8 @@ export function registerWrappers() {
         function getSourceElevation(source) {
             if (source?.object?.b !== undefined) return source.object.b;
             const object3d = source?.object?.object3d;
-            if (object3d) return object3d.visionSourceElevation;
+            if (object3d) return object3d.losHeight;
+            // if (object3d) return object3d.visionSourceElevation;
             return source.elevation ?? 0;
         }
 

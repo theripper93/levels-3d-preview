@@ -765,16 +765,13 @@ export class Token3D {
     }
     
     get tokenHeight() {
-        return this.#tokenHeight;
+        const modelHeight = (this.d || 0) * factor / canvas.dimensions.distancePixels;
+        if (modelHeight < canvas.dimensions.distance / 3) return this.#tokenHeight
+        return modelHeight;
     }
 
     get losHeight() {
         return this.token.document.elevation + this.tokenHeight * 0.89;
-    }
-
-    get visionSourceElevation() {
-        const heightOffset = (this.d * factor * 0.9) / (canvas.scene.dimensions.size / canvas.scene.dimensions.distance);
-        return this.token.document.elevation + ((this.d * factor * 0.9) / (canvas.scene.dimensions.size / canvas.scene.dimensions.distance));
     }
 
     setPositionFrom2D(force = false) {
