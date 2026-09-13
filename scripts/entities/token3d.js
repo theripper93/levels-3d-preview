@@ -1065,7 +1065,8 @@ export class Token3D {
         const defeated = this.token?.actor?.effects.some((e) => e.statuses.has(CONFIG.specialStatusEffects.DEFEATED)) || this.token?.combatant?.defeated;
         this.isProne = defeated || this.isTokenProne ? true : false;
         if (oldProne !== this.isProne) this.toggleProne();
-        const actorEffects = this.token.actor?.temporaryEffects || [];
+        // const actorEffects = this.token.actor?.temporaryEffects || [];
+        const actorEffects = this.token.actor?.appliedEffects.filter(e => ((e.showIcon === CONST.ACTIVE_EFFECT_SHOW_ICON.ALWAYS) || ((e.showIcon === CONST.ACTIVE_EFFECT_SHOW_ICON.CONDITIONAL) && e.isTemporary))) ?? [];
         const effects = actorEffects.map((e) => e.img ?? e);
         if (effects.length === this.effectsContainer.children.length) return;
         if (!firstDraw && effects.length > this.effectsContainer.children.length) {
