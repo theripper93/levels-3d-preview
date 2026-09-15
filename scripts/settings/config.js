@@ -50,7 +50,7 @@ export function registerConfigs() {
     });
 
     Hooks.on("renderSceneConfig", (app, html) => {
-        html.querySelector(`[data-tab="levels-3d-preview"]`)?.remove();
+        html.querySelectorAll(`[data-tab="levels-3d-preview"]`).forEach(el => el.remove());
 
         const importantSettingsEnabled = app.document.getFlag("levels-3d-preview", "enablePlayers") &&
             app.document.getFlag("levels-3d-preview", "auto3d") &&
@@ -706,7 +706,7 @@ export function registerConfigs() {
 
 
     const renderTokenConfig = (app, html) => {
-        html.querySelector(`[data-tab="levels-3d-preview"]`)?.remove();
+        html.querySelectorAll(`[data-tab="levels-3d-preview"]`).forEach(el => el.remove());
         const dmSelect = {};
         game.Levels3DPreview.CONFIG.presetMaterials.forEach((m) => {
             dmSelect["preset-" + m.id] = m.name || game.i18n.localize(`levels3dpreview.flags.material.options.presets.${m.id}`);
@@ -1073,7 +1073,7 @@ export function registerConfigs() {
     Hooks.on("renderTokenConfig", renderTokenConfig);
 
     Hooks.on("renderTileConfig", (app, html) => {
-        html.querySelector(`[data-tab="levels-3d-preview"]`)?.remove();
+        html.querySelectorAll(`[data-tab="levels-3d-preview"]`).forEach(el => el.remove());
         let meshStats;
         const tile3d = game.Levels3DPreview.tiles[app.document.id];
         try {
