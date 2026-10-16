@@ -6,7 +6,7 @@ class GLTFLoader extends Loader {
 
         this.dracoDecode = new drcLoader();
         this.dracoDecode.setDecoderConfig({ type: "js" });
-        this.dracoDecode.setDecoderPath("https://www.gstatic.com/draco/v1/decoders/");
+        this.dracoDecode.setDecoderPath("https://www.gstatic.com/draco/versioned/decoders/1.5.7/");
         this.dracoLoader = this.dracoDecode;
         this.ktx2Loader = null;
         this.meshoptDecoder = null;
