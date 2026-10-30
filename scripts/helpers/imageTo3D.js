@@ -1,4 +1,4 @@
-import * as THREE from "../lib/three.module.js";
+import * as THREE from "three";
 
 const pathCache = {};
 
@@ -54,7 +54,7 @@ export async function imageTo3d(image, returnGeometry = false, MAX_SIDE = 64, AL
             bevelThickness: 0.1 * bevelRatio,
             bevelSize: 2 * bevelRatio,
         };
-        geometry = new THREE.ExtrudeBufferGeometry(shape, extrudeSettings);
+        geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
 
         //uv mapping
         const uvAttribute = geometry.getAttribute("uv");

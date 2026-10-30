@@ -3,9 +3,12 @@ const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const { EsbuildPlugin } = require('esbuild-loader');
 
 module.exports = {
-    entry: "./scripts/main.js",
+    entry: {
+        index: "./scripts/main.js",
+        raycastWorker: "./scripts/helpers/raycastWorker.js",
+    },
     output: {
-        filename: "index.js",
+        filename: "[name].js",
         chunkFilename: "index.worker.js",
         publicPath: "/modules/levels-3d-preview/",
         path: path.resolve(__dirname),
@@ -28,6 +31,10 @@ module.exports = {
 
     module: {
         rules: [
+            {
+                test: /DRACOLoader\.js$/,
+                parser: { url: false },
+            },
             {
                 test: /\.js$/,
                 exclude: /node_modules/,

@@ -1,5 +1,5 @@
-import { mergeBufferGeometries } from "../../lib/BufferGeometryUtils.js";
-import * as THREE from "../../lib/three.module.js";
+import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
+import * as THREE from "three";
 import { radialGradientShaderMaterial, coneFadeGradientShaderMaterial, radialRingGradientShaderMaterial } from "../../shaders/shaderMaterials.js";
 
 const CONFIG = {
@@ -199,7 +199,7 @@ async function getSpecialPingSprite(ping) {
         return specialPing.sprite.clone();
     }
     const texture = await new THREE.TextureLoader().load(specialPing.texture);
-    texture.encoding = THREE.sRGBEncoding;
+    texture.colorSpace = THREE.SRGBColorSpace;
     const spriteMaterial = new THREE.SpriteMaterial({
         map: texture,
         transparent: true,

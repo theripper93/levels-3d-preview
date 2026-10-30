@@ -1,7 +1,7 @@
-import * as THREE from "../lib/three.module.js";
+import * as THREE from "three";
 import { Ruler3D } from "../systems/ruler3d.js";
 import { factor } from "../main.js";
-import { mergeBufferGeometries } from "../lib/BufferGeometryUtils.js";
+import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { isLockedOnOrigin } from "../shaders/templateEffects.js";
 
 const basicMat = new THREE.MeshBasicMaterial();
@@ -361,7 +361,7 @@ export class Template3D {
             const torus3 = torus1.clone();
             torus2.rotateX(Math.PI / 2);
             torus3.rotateY(Math.PI / 2);
-            torusGeo = mergeBufferGeometries([torus1, torus2, torus3]);
+            torusGeo = mergeGeometries([torus1, torus2, torus3]);
         }
         const geometry = isWireframe ? torusGeo : sphereGeometry;
 

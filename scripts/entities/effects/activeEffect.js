@@ -1,4 +1,4 @@
-import * as THREE from "../../lib/three.module.js";
+import * as THREE from "three";
 import {radialDomeFadeShaderMaterial} from "../../shaders/shaderMaterials.js";
 import { factor } from "../../main.js";
 

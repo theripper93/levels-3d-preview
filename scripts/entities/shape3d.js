@@ -1,5 +1,5 @@
-import * as THREE from "../lib/three.module.js";
-import { mergeBufferGeometries } from "../lib/BufferGeometryUtils.js";
+import * as THREE from "three";
+import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { DiagonalStripesMaterial } from "../shaders/regionMaterial.js";
 import { factor } from "../main.js";
 
@@ -515,7 +515,7 @@ export class Cone3D extends Shape3D {
         emisphereGeometry.translate(0, this.coneHeight / 2, 0);
         const coneGeometry = new THREE.ConeGeometry(this.baseRadius, this.coneHeight, 32, 1, true);
 
-        const geometry = mergeBufferGeometries([
+        const geometry = mergeGeometries([
             coneGeometry,
             emisphereGeometry
         ]);
@@ -541,7 +541,7 @@ export class Cone3D extends Shape3D {
         emisphereGeometry.translate(0, -this.coneHeight / 2, 0);
         const coneGeometry = new THREE.ConeGeometry(this.baseRadius, this.coneHeight, 32, 1, true);
 
-        const geometry = mergeBufferGeometries([
+        const geometry = mergeGeometries([
             coneGeometry,
             emisphereGeometry
         ]);

@@ -1,5 +1,5 @@
-import {mergeBufferGeometries} from "../../lib/BufferGeometryUtils.js"
-import * as THREE from "../../lib/three.module.js"
+import {mergeGeometries} from "three/addons/utils/BufferGeometryUtils.js"
+import * as THREE from "three"
 
 const CONE_RADIUS = 0.5
 const CONE_HEIGHT = 1.8
@@ -20,7 +20,7 @@ export function createTargetGeometry(radius = 1, spokeMultiplier = 1) {
     cone1Geometry.scale(0.001, 1, 1)
     cone2Geometry.scale(0.001, 1, 1)
     spokeGeometries.push(cone1Geometry, cone2Geometry)
-    const spokeGeometry = mergeBufferGeometries(spokeGeometries)
+    const spokeGeometry = mergeGeometries(spokeGeometries)
     spokeGeometry.scale(SPOKE_SIZE * spokeMultiplier, SPOKE_SIZE * spokeMultiplier, SPOKE_SIZE * spokeMultiplier)
     spokeGeometry.center()
     spokeGeometry.translate(0, -radius, 0)
@@ -35,7 +35,7 @@ export function createTargetGeometry(radius = 1, spokeMultiplier = 1) {
         targetGeometries.push(spoke)
     }
 
-    const targetGeometry = mergeBufferGeometries(targetGeometries)
+    const targetGeometry = mergeGeometries(targetGeometries)
 
     targetGeometry.center()
     targetGeometry.rotateZ(Math.PI / 2)

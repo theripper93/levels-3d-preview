@@ -1,4 +1,4 @@
-import * as THREE from "../lib/three.module.js";
+import * as THREE from "three";
 
 export function showSceneReport() {
     const scene = game.Levels3DPreview.scene;

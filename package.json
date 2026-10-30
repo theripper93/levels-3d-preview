@@ -20,5 +20,10 @@
     "watch": "npx webpack --config webpack.config.js --watch",
     "ignore-compendiums": "node skip-worktree.js packs/ ignore",
     "update-compendiums": "node skip-worktree.js packs/ update"
+  },
+  "dependencies": {
+    "three": "^0.187.0",
+    "three-mesh-bvh": "^0.9.1",
+    "three.quarks": "^0.17.1"
   }
 }

@@ -1,4 +1,4 @@
-import * as THREE from "../lib/three.module.js";
+import * as THREE from "three";
 
 export async function applyHeightmap(geometry, src, offset=10, zeroRadius=0) {
 

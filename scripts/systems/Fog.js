@@ -1,5 +1,15 @@
-import * as THREE from "../lib/three.module.js";
+import * as THREE from "three";
 import { factor } from "../main.js";
+import { rawTexture } from "../three/rawTexture.js";
+
+export const fogUniforms = {
+    fogTexture: { value: null },
+    fogOverlay: { value: null },
+    useOverlay: { value: false },
+    overlayRepeat: { value: new THREE.Vector2(1, 1) },
+    sceneDimensions: { value: new THREE.Vector2() },
+    sceneOrigin: { value: new THREE.Vector2() },
+};
 
 export class Fog {
     constructor(parent) {
@@ -25,22 +35,7 @@ export class Fog {
     }
 
     initTexture() {
-        const forceTextureInitialization = () => {
-            const material = new THREE.MeshBasicMaterial();
-            const geometry = new THREE.PlaneBufferGeometry();
-            const scene = new THREE.Scene();
-            scene.add(new THREE.Mesh(geometry, material));
-            const camera = new THREE.Camera();
-            const renderer = this._parent.renderer;
-            return function forceTextureInitialization(texture) {
-                material.map = texture;
-                renderer.render(scene, camera);
-            };
-        };
-
-        const texture = new THREE.Texture();
-        forceTextureInitialization(texture);
-        this.webglFogTexture = texture;
+        this.webglFogTexture = new THREE.ExternalTexture();
     }
 
     initPixiRT() {
@@ -50,9 +45,9 @@ export class Fog {
         this.pixiRenderTexture.baseTexture.alphaMode = PIXI.ALPHA_MODES.NO_PREMULTIPLIED_ALPHA;
     }
 
-    async initOverlay() {
-        if (!canvas.fog.overlay) return;
-        const overlay = await game.Levels3DPreview.helpers.loadTexture(canvas.fog.overlay);
+    async initOverlay(src = canvas.fog.overlay) {
+        if (!src) return;
+        const overlay = rawTexture(await game.Levels3DPreview.helpers.loadTexture(src));
         overlay.flipY = false;
         overlay.wrapS = THREE.RepeatWrapping;
         overlay.wrapT = THREE.RepeatWrapping;
@@ -85,17 +80,12 @@ export class Fog {
 
     updateShaders() {
         if (!this._ready) return;
-        const particleMaterials = this._parent.particleSystem.system.children.map((c) => c.material);
-        Object.values(this._parent.materialProgramCache)
-            .concat(particleMaterials)
-            .forEach((m) => {
-                m.uniforms.fogTexture = { value: this.fogTexture };
-                m.uniforms.fogOverlay = { value: this._overlay };
-                m.uniforms.useOverlay = { value: !!this._overlay };
-                m.uniforms.overlayRepeat = { value: this.overlayRepeat };
-                m.uniforms.sceneDimensions = { value: this.sceneDimensions };
-                m.uniforms.sceneOrigin = { value: this.sceneOrigin };
-            });
+        fogUniforms.fogTexture.value = this.fogTexture;
+        fogUniforms.fogOverlay.value = this._overlay;
+        fogUniforms.useOverlay.value = !!this._overlay;
+        fogUniforms.overlayRepeat.value = this.overlayRepeat;
+        fogUniforms.sceneDimensions.value = this.sceneDimensions;
+        fogUniforms.sceneOrigin.value = this.sceneOrigin;
     }
 
     async generateTexture() {
@@ -105,8 +95,7 @@ export class Fog {
         canvas.app.renderer.render(canvas.masks.vision.vision, { renderTexture: this.pixiRenderTexture, clear: !canvas.scene.fog.mode });
         canvas.fog.sprite.tint = originalTint;
         if (this._sharedContext) {
-            const texProps = this._parent.renderer.properties.get(this.webglFogTexture);
-            texProps.__webglTexture = Object.values(this.pixiRenderTexture.baseTexture._glTextures)[0]?.texture;
+            this.webglFogTexture.sourceTexture = Object.values(this.pixiRenderTexture.baseTexture._glTextures)[0]?.texture ?? null;
             return this.webglFogTexture;
         } else {
             let base64 = await this.extractor.extract({
@@ -135,12 +124,11 @@ export class Fog {
         this.fogTexture?.dispose();
         this.webglFogTexture?.dispose();
         this.pixiRenderTexture?.destroy(true);
-        Object.values(this._parent.materialProgramCache).forEach((m) => {
-            m.uniforms.fogTexture = { value: null };
-            m.uniforms.sceneDimensions = { value: new THREE.Vector2(0, 0) };
-            m.uniforms.sceneOrigin = { value: new THREE.Vector2(0, 0) };
-        });
-        this._parent.materialProgramCache = {};
+        fogUniforms.fogTexture.value = null;
+        fogUniforms.fogOverlay.value = null;
+        fogUniforms.useOverlay.value = false;
+        fogUniforms.sceneDimensions.value = new THREE.Vector2(0, 0);
+        fogUniforms.sceneOrigin.value = new THREE.Vector2(0, 0);
     }
 
     destroy() {
@@ -148,7 +136,33 @@ export class Fog {
     }
 }
 
+const PARTICLE_OFFSET_ATTRIBUTE = "attribute vec3 offset;";
+
+function injectParticleFoW(shader) {
+    shader.vertexShader = "#define FOW_FROM_OFFSET\n" + shader.vertexShader.replace("void main() {", "void main() {\n\tvWorldPositionFoW = ( modelMatrix * vec4( offset, 1.0 ) ).xyz;\n\tvWorldPositionFoW.y = 9999.0;");
+    if (!shader.fragmentShader.includes("#include <fog_fragment>")) shader.fragmentShader = shader.fragmentShader.replace("#include <tonemapping_fragment>", "#include <fog_fragment>\n#include <tonemapping_fragment>");
+}
+
+function injectFogUniforms(shader, renderer) {
+    this._userOnBeforeCompile?.call(this, shader, renderer);
+    Object.assign(shader.uniforms, fogUniforms);
+    if (shader.vertexShader.includes(PARTICLE_OFFSET_ATTRIBUTE)) injectParticleFoW(shader);
+}
+
 export function injectFoWShaders(THREELIB) {
+    Object.defineProperty(THREELIB.Material.prototype, "onBeforeCompile", {
+        configurable: true,
+        get() {
+            return injectFogUniforms;
+        },
+        set(callback) {
+            this._userOnBeforeCompile = callback;
+        },
+    });
+    THREELIB.Material.prototype.customProgramCacheKey = function () {
+        return this._userOnBeforeCompile?.toString() ?? "";
+    };
+
     THREELIB.ShaderChunk.common += `
     varying vec3 vWorldPositionFoW;
     uniform vec2 sceneDimensions;
@@ -160,10 +174,12 @@ export function injectFoWShaders(THREELIB) {
     `;
 
     THREELIB.ShaderChunk.fog_vertex += `
+    #ifndef FOW_FROM_OFFSET
     #ifdef USE_INSTANCING
         vWorldPositionFoW = (modelMatrix * (instanceMatrix * vec4( position , 1.0 ))).xyz;
     #else
         vWorldPositionFoW = (modelMatrix * vec4( position , 1.0 )).xyz;
+    #endif
     #endif
     `;
 

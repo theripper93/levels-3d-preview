@@ -1,12 +1,14 @@
-import * as THREE from "../lib/three.module.js";
+import * as THREE from "three";
 import { MersenneTwister } from "../lib/mersenneTwister.js";
 import { SimplexNoise, Perlin, FractionalBrownianMotion } from "../lib/noiseFunctions.js";
 import { Ruler3D } from "../systems/ruler3d.js";
 import { factor } from "../main.js";
 import { DynaMesh } from "../helpers/dynaMesh.js";
-import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from "../lib/three-mesh-bvh.js";
+import { computeBoundsTree, disposeBoundsTree } from "three-mesh-bvh";
+import { acceleratedRaycast } from "../three/acceleratedRaycast.js";
 import { getMergedMeshFromInstanced, meshesToSingleMesh } from "../helpers/geometryUtils.js";
 import { Socket } from "../lib/socket.js";
+import { applyLegacyUv, applyLegacyUvMatrix } from "../three/legacyUv.js";
 THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
 THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
 THREE.Mesh.prototype.raycast = acceleratedRaycast;
@@ -1562,13 +1564,8 @@ export class Tile3D {
         const uvMatrix = new THREE.Matrix3().set(this.textureRepeat, 0, 0, 0, this.textureRepeat, 0, 0, 0, 1);
         this.mesh.traverse((child) => {
             if (child.isMesh) {
-                if (child.material instanceof Array) {
-                    child.material.forEach((m) => {
-                        m.userData.uvMatrix = uvMatrix;
-                    });
-                } else {
-                    child.material.userData.uvMatrix = uvMatrix;
-                }
+                const materials = child.material instanceof Array ? child.material : [child.material];
+                materials.forEach((m) => applyLegacyUvMatrix(m, uvMatrix));
             }
         });
     }
@@ -1676,7 +1673,7 @@ export class Tile3D {
 
     setPathTraced() {
         if (this.pathTraced) {
-            const customBlendMap = "#ifdef USE_MAP\n\tvec4 texelColor = texture2D( map, vUv );\n\ttexelColor = mapTexelToLinear( texelColor );\n\tdiffuseColor.rgb = mix(diffuseColor.rgb, texelColor.rgb, texelColor.a);\n#endif";
+            const customBlendMap = "#ifdef USE_MAP\n\tvec4 texelColor = texture2D( map, vMapUv );\n\tdiffuseColor.rgb = mix(diffuseColor.rgb, texelColor.rgb, texelColor.a);\n#endif";
             this.mesh.traverse((child) => {
                 if (child.isMesh && !(child.material instanceof Array)) {
                     child.material.onBeforeCompile = (shader) => {
@@ -2221,6 +2218,7 @@ export class Tile3D {
             return "mapgen_shader";
         };
         mat.onBeforeCompile = (shader) => {
+            applyLegacyUv(shader);
             shader.uniforms.bevelSize = { value: bevelSize };
             shader.uniforms.tex_repeat = { value: matData.texture.repeat ?? 1 };
             shader.vertexShader = "attribute float shader_cell_size;\nuniform float tex_repeat;\nuniform float bevelSize;\nattribute float shader_random_rotation;\n" + shader.vertexShader;

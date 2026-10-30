@@ -1,8 +1,8 @@
-import * as THREE from "./lib/three.module.js";
-import { OrbitControls } from "./lib/OrbitControls.js";
+import * as THREE from "three";
+import { OrbitControls } from "./three/OrbitControls.js";
 import { GameCamera } from "./handlers/GameCamera.js";
-import { TransformControls } from "./lib/TransformControls.js";
-import { GLTFLoader } from "./lib/GLTFLoader.js";
+import { TransformControls } from "./three/TransformControls.js";
+import { GLTFLoader } from "./three/GLTFLoader.js";
 import { Token3D } from "./entities/token3d.js";
 import { Ruler3D, RULER_TOKEN_OFFSET } from "./systems/ruler3d.js";
 import { Light3D } from "./entities/light3d.js";
@@ -15,16 +15,16 @@ import { Grid3D } from "./systems/grid3d.js";
 import { RangeFinder } from "./systems/rangeFinder.js";
 import { Template3D } from "./entities/template3d.js";
 import { Cursors3D } from "./systems/cursors.js";
-import { FBXLoader } from "./lib/FBXLoader.js";
+import { FBXLoader } from "three/addons/loaders/FBXLoader.js";
 import { GlobalIllumination } from "./systems/globalIllumination.js";
 import { InteractionManager, dropFunctions } from "./handlers/interactionManager.js";
 import initTemplateEffects from "./shaders/templateEffects.js";
 import { Helpers } from "./helpers/helpers.js";
 import { WeatherSystem } from "./systems/weatherSystem.js";
-import { EXRLoader } from "./lib/EXRLoader.js";
-import { EffectComposer } from "./lib/EffectComposer.js";
-import { RenderPass } from "./lib/RenderPass.js";
-import { UnrealBloomPass } from "./lib/UnrealBloomPass.js";
+import { EXRLoader } from "three/addons/loaders/EXRLoader.js";
+import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
+import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
+import { UnrealBloomPass } from "./three/LegacyUnrealBloomPass.js";
 import { Fog, injectFoWShaders } from "./systems/Fog.js";
 import { Exporter } from "./helpers/exporter.js";
 import { turnStartMarker } from "./systems/turnStartMarker.js";
@@ -32,23 +32,23 @@ import { ParticleEngine } from "./systems/particleSystem.js";
 import { Particle3D } from "./systems/particleSystem.js";
 import { defaultTokenAnimations } from "./handlers/tokenAnimationHandler.js";
 import { presetMaterials, PresetMaterialHandler, populateScene } from "./helpers/presetMaterials.js";
-import { FXAAShader } from "./lib/FXAA.js";
-import { SMAAPass } from "./lib/SMAAPass.js";
-import { RenderPixelatedPass } from "./lib/RendererPixelPass.js";
-import { ShaderPass } from "./lib/ShaderPass.js";
+import { FXAAShader } from "three/addons/shaders/FXAAShader.js";
+import { SMAAPass } from "three/addons/postprocessing/SMAAPass.js";
+import { RenderPixelatedPass } from "three/addons/postprocessing/RenderPixelatedPass.js";
+import { ShaderPass } from "three/addons/postprocessing/ShaderPass.js";
 import { OutlineHandler } from "./handlers/OutlineHandler.js";
 import { ShaderHandler, shaders } from "./shaders/ShaderLib.js";
-import { DecalGeometry } from "./lib/DecalGeometry.js";
+import { DecalGeometry } from "three/addons/geometries/DecalGeometry.js";
 import { WorkerHandler } from "./helpers/workers.js";
 import { MiniCanvas } from "./apps/miniCanvas.js";
 import { throttle, sleep } from "./helpers/utils.js";
-import { BokehPass } from "./lib/BokehPass.js";
+import { BokehPass } from "three/addons/postprocessing/BokehPass.js";
 import { loadUserEmotes, Ping } from "./entities/effects/ping.js";
 import { injectThreeModifications } from "./threejsmodifications.js";
 import { ActiveEffectEffect } from "./entities/effects/activeEffect.js";
 import { RangeRingEffect } from "./entities/effects/rangeRing.js";
 import { CutsceneEngine } from "./systems/cutsceneEngine.js";
-import { ImprovedNoise } from "./lib/imporovedNoise.js";
+import { ImprovedNoise } from "three/addons/math/ImprovedNoise.js";
 import { registerWrappers } from "./wrappers.js";
 import { ProceduralVines } from "./helpers/ProceduralVines.js";
 import { PARTICLE_SYSTEMS } from "./systems/particleSystem.js";
@@ -63,6 +63,8 @@ import { setLevelsHooks } from "./systems/sceneLevels.js";
 
 import { createTargetGeometry } from "./entities/effects/target.js";
 import { UberPass } from "./lib/UberPass.js";
+import { LegacyOutputRenderTarget } from "./three/LegacyOutputRenderTarget.js";
+import { injectLegacyLights } from "./three/legacyLights.js";
 
 import { Socket } from "./lib/socket.js";
 import { renderSceneToImage } from "./helpers/export2d.js";
@@ -80,6 +82,7 @@ export const MODULE_ID = "levels-3d-preview";
 
 injectFoWShaders(THREE);
 injectThreeModifications(THREE);
+injectLegacyLights();
 
 registerConfigs();
 registerSettings();
@@ -241,7 +244,6 @@ Hooks.on("renderDialogV2", (dialog, html, data) => {
 
 class Levels3DPreview {
     constructor() {
-        this.materialProgramCache = {};
         THREE.Cache.enabled = true;
         this.THREE = THREE;
         this.populateScene = populateScene;
@@ -596,7 +598,7 @@ class Levels3DPreview {
         this.renderer.setSize(window.innerWidth, window.innerHeight);
         this.renderer.setAnimationLoop(this.animation.bind(this));
         this.renderer.shadowMap.enabled = true;
-        this.renderer.outputEncoding = THREE.sRGBEncoding;
+        this.renderer.outputColorSpace = THREE.SRGBColorSpace;
 
         const pixelRatio = game.settings.get("core", "pixelRatioResolutionScaling") ? window.devicePixelRatio : 1;
 
@@ -611,15 +613,7 @@ class Levels3DPreview {
 
         //composer
 
-        let target;
-        if (this.renderer.capabilities.isWebGL2) {
-            target = new THREE.WebGLMultisampleRenderTarget(window.innerWidth, window.innerHeight, {
-                //use WebGLRenderTarget for 150
-                format: THREE.RGBAFormat,
-                encoding: THREE.sRGBEncoding,
-            });
-            target.samples = 8;
-        }
+        const target = new LegacyOutputRenderTarget(window.innerWidth, window.innerHeight, { samples: 8 });
 
         this.composer = new EffectComposer(this.renderer, target);
         this.composer.setPixelRatio(this.resolutionMulti);
@@ -709,6 +703,7 @@ class Levels3DPreview {
         el.classList.remove("hidden");
         el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 300, fill: "forwards" });
         this._fullTransparency = game.settings.get("levels-3d-preview", "fullTransparency");
+        THREE.ColorManagement.enabled = !!canvas.scene.getFlag("levels-3d-preview", "colorManagement");
         this._ready = false;
         this._isFirstFrame = true;
         this._finalizingLoad = false;
@@ -728,9 +723,11 @@ class Levels3DPreview {
         this.composer.removePass(this.bloomPass);
         this.composer.removePass(this.bokeh);
         this.composer.removePass(this.pixelPass);
+        this.composer.removePass(this.uberPass);
         this.bokeh = null;
         this.renderPass = new RenderPass(this.scene, this.camera);
         this.composer.addPass(this.renderPass);
+        this.outline?.destroy();
         this.outline = new OutlineHandler(this);
         this.initAA();
 
@@ -823,7 +820,7 @@ class Levels3DPreview {
             },
         };
         this.scene.add(this.controlledGroup);
-        this.scene.add(this.transformControls);
+        this.scene.add(this.transformControls.getHelper());
         this.interactionManager.initTransformControls();
         this.object3dSight = canvas.scene.getFlag("levels-3d-preview", "object3dSight") ?? false;
         this.mirrorLevelsVisibility = canvas.scene.getFlag("levels-3d-preview", "mirrorLevels") ?? true;
@@ -1199,7 +1196,7 @@ class Levels3DPreview {
             }
             const loader = new THREE.CubeTextureLoader();
             const textureCube = loader.load(textureArray);
-            textureCube.encoding = THREE.sRGBEncoding;
+            textureCube.colorSpace = THREE.SRGBColorSpace;
             if (!enableFog) this.scene.background = textureCube;
             this._sceneBackground = textureCube;
             if (!exr) {
@@ -1379,13 +1376,6 @@ class Levels3DPreview {
             if (this._sharedContext) {
                 //canvas.app.renderer.reset();
                 this.renderer.resetState();
-            }
-            if (this.fogExploration) {
-                const shaderCount = Object.values(this.materialProgramCache).length;
-                if (shaderCount != this.fogExploration._shaderCount) {
-                    this.fogExploration._shaderCount = shaderCount;
-                    this.fogExploration.updateShaders();
-                }
             }
             if (this.bokeh) {
                 const dist = this.interactionManager.findCameraLookatDistance();
@@ -2020,6 +2010,7 @@ Hooks.on("updateScene", (scene, updates) => {
         "mirrorLevels" in flags ||
         "grid" in updates ||
         "enableFogOfWar" in flags ||
+        "colorManagement" in flags ||
         "bloom" in flags
     ) {
         game.Levels3DPreview.reload();
@@ -2082,6 +2073,11 @@ document.addEventListener("keydown", (event) => {
     ts.setTranslationSnap(undefined);
     ts.setRotationSnap(undefined);
     ts.setScaleSnap(undefined);
+});
+
+Hooks.on("preCreateScene", (scene, data) => {
+    if (foundry.utils.getProperty(data, "flags.levels-3d-preview")) return;
+    scene.updateSource({ "flags.levels-3d-preview.colorManagement": true });
 });
 
 Hooks.on("preUpdateToken", (token, updates) => {

@@ -1,5 +1,5 @@
-import * as THREE from "../lib/three.module.js";
-import { OutlinePass } from "../lib/OutlinePass.js";
+import * as THREE from "three";
+import { OutlinePass } from "three/addons/postprocessing/OutlinePass.js";
 
 export class OutlineHandler {
     constructor(_parent) {
@@ -65,6 +65,14 @@ export class OutlineHandler {
     clearAllOutlines() {
         this.controlledOutline.selectedObjects = [];
         this.hoveredOutline.selectedObjects = [];
+    }
+
+    destroy() {
+        if (!this._enabled) return;
+        this.composer.removePass(this.controlledOutline);
+        this.composer.removePass(this.hoveredOutline);
+        this.controlledOutline.dispose();
+        this.hoveredOutline.dispose();
     }
 
     static setHooks() {

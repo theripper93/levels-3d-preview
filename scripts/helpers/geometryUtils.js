@@ -1,9 +1,9 @@
-import * as THREE from "../lib/three.module.js";
-import { mergeBufferGeometries, toTrianglesDrawMode } from "../lib/BufferGeometryUtils.js";
+import * as THREE from "three";
+import { mergeGeometries, toTrianglesDrawMode } from "three/addons/utils/BufferGeometryUtils.js";
 
 export function getMergedMeshFromInstanced(instancedMesh) {
     const geometries = applyMatrixWorldToGeometryInstanced(instancedMesh);
-    const mergedGeometry = mergeBufferGeometries(geometries);
+    const mergedGeometry = mergeGeometries(geometries);
     const mergedMesh = new THREE.Mesh(mergedGeometry, instancedMesh.material);
     return mergedMesh;
 }
@@ -36,7 +36,7 @@ function applyMatrixWorldToGeometryInstanced(mesh) {
 
 function applyMatrixWorldToGeometry(mesh) {
     if (mesh.isInstancedMesh) return applyMatrixWorldToGeometryInstanced(mesh)    
-    const geometry = mergeBufferGeometries([mesh.geometry.clone()]);
+    const geometry = mergeGeometries([mesh.geometry.clone()]);
     mesh.updateMatrixWorld(true,true)
     geometry.applyMatrix4(mesh.matrixWorld);
     const attributes = geometry.attributes;
@@ -57,7 +57,7 @@ export function meshesToSingleMesh(meshes) {
             }
         });
     }
-    const mergedGeometry = mergeBufferGeometries(geometries);
+    const mergedGeometry = mergeGeometries(geometries);
     const mergedMesh = new THREE.Mesh(mergedGeometry, new THREE.MeshBasicMaterial());
     return mergedMesh;
 }

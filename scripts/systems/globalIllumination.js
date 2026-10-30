@@ -1,6 +1,6 @@
-import * as THREE from "../lib/three.module.js";
+import * as THREE from "three";
 import { factor } from "../main.js";
-import { Sky } from "../lib/Sky.js";
+import { Sky } from "../three/Sky.js";
 import {DynamicSkyConfig} from "../settings/dynamicSkyConfig.js";
 
 let worldClockDelta = 0;
@@ -133,7 +133,7 @@ export class GlobalIllumination {
 
     _setShadowQuality() {
         const sunlight = this.global.sunlight;
-        sunlight.shadow.bias = canvas.scene.getFlag("levels-3d-preview", "shadowBias") ?? -0.00018;
+        sunlight.shadow.bias = -0.000018;
         sunlight.castShadow = game.settings.get("levels-3d-preview", "shadowQuality") > 0;
         sunlight.shadow.radius = 1;
         sunlight.shadow.camera.fov = 90;
@@ -142,6 +142,10 @@ export class GlobalIllumination {
         const shadowRes = game.settings.get("levels-3d-preview", "shadowQuality");
         sunlight.shadow.mapSize.width = 1024 * shadowRes;
         sunlight.shadow.mapSize.height = 1024 * shadowRes;
+        if (!shadowRes) return;
+        const shadowCamera = sunlight.shadow.camera;
+        const texelSize = Math.max(shadowCamera.right - shadowCamera.left, shadowCamera.top - shadowCamera.bottom) / sunlight.shadow.mapSize.width;
+        sunlight.shadow.normalBias = texelSize * 1.5;
     }
 
     setTarget(flags = true, animate = true) {

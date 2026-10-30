@@ -1,9 +1,9 @@
-import * as THREE from "../lib/three.module.js";
+import * as THREE from "three";
 import { factor } from "../main.js";
 import { Ruler3D } from "../systems/ruler3d.js";
-import { mergeVertices } from "../lib/BufferGeometryUtils.js";
+import { mergeVertices } from "three/addons/utils/BufferGeometryUtils.js";
 import { setPerformancePreset, injectPresetButtons } from "../settings/performancePresets.js";
-import { SimplifyModifier } from "../lib/Simplify.js";
+import { SimplifyModifier } from "three/addons/modifiers/SimplifyModifier.js";
 import { showSceneReport, showPerformanceDialog } from "../settings/performanceReport.js";
 import { Ping } from "../entities/effects/ping.js";
 import {Socket} from "../lib/socket.js";
@@ -34,7 +34,7 @@ export class Helpers {
         if (this.textureCache[texturePath] && !options.noCache) return this.textureCache[texturePath];
         texturePath = this.testSequencer(texturePath);
         const texture = await this.getTexture(texturePath);
-        texture.encoding = options.linear ? THREE.LinearEncoding : THREE.sRGBEncoding;
+        texture.colorSpace = options.linear ? THREE.NoColorSpace : THREE.SRGBColorSpace;
         texture.wrapS = THREE.RepeatWrapping;
         texture.wrapT = THREE.RepeatWrapping;
         this.textureCache[texturePath] = texture;
@@ -365,10 +365,10 @@ export class Helpers {
         });
         const textures = {
             map: await this.loadTexture(tPaths[0], options),
-            roughnessMap: await this.loadTexture(tPaths[1], options),
-            metalnessMap: await this.loadTexture(tPaths[2], options),
-            aoMap: await this.loadTexture(tPaths[3], options),
-            normalMap: await this.loadTexture(tPaths[4], options),
+            roughnessMap: await this.loadTexture(tPaths[1], { ...options, linear: true }),
+            metalnessMap: await this.loadTexture(tPaths[2], { ...options, linear: true }),
+            aoMap: await this.loadTexture(tPaths[3], { ...options, linear: true }),
+            normalMap: await this.loadTexture(tPaths[4], { ...options, linear: true }),
             emissiveMap: await this.loadTexture(tPaths[5], options),
             side: options.doubleSided ? THREE.DoubleSide : THREE.FrontSide,
         };

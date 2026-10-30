@@ -1,4 +1,4 @@
-import * as THREE from "../../lib/three.module.js";
+import * as THREE from "three";
 import {factor} from "../../main.js";
 import { Token3D } from "../token3d.js";
 

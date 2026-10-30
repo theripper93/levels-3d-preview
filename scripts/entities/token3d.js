@@ -1,8 +1,9 @@
-import * as THREE from "../lib/three.module.js";
+import * as THREE from "three";
 import { factor, MODULE_ID } from "../main.js";
 import { Light3D } from "./light3d.js";
 import { TokenAnimationHandler } from "../handlers/tokenAnimationHandler.js";
-import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from "../lib/three-mesh-bvh.js";
+import { computeBoundsTree, disposeBoundsTree } from "three-mesh-bvh";
+import { acceleratedRaycast } from "../three/acceleratedRaycast.js";
 import { heightHighlightShaderMaterial, radialGradientShaderMaterial } from "../shaders/shaderMaterials.js";
 import { ActiveEffectEffect } from "./effects/activeEffect.js";
 import { RangeRingEffect } from "./effects/rangeRing.js";
@@ -210,7 +211,7 @@ export class Token3D {
                 };
             } else if (this.flatTokenStyle == "flat" || !this.texture.image) {
                 const texture = this.texture;
-                texture.encoding = THREE.sRGBEncoding;
+                texture.colorSpace = THREE.SRGBColorSpace;
                 const geometry = new THREE.PlaneGeometry((texture.image?.width || texture.image?.videoWidth || 1) / 1000, (texture.image?.height || texture.image?.videoHeight || 1) / 1000);
                 const material = new THREE.MeshBasicMaterial();
                 const standupModel = new THREE.Mesh(geometry, material);
@@ -479,7 +480,7 @@ export class Token3D {
         const material = materialType === "basic" ? new THREE.MeshBasicMaterial(matData) : new THREE.MeshStandardMaterial(matData);
 
         if (this.pathTraced) {
-            const customBlendMap = "#ifdef USE_MAP\n\tvec4 texelColor = texture2D( map, vUv );\n\ttexelColor = mapTexelToLinear( texelColor );\n\tdiffuseColor.rgb = mix(diffuseColor.rgb, texelColor.rgb, texelColor.a);\n#endif";
+            const customBlendMap = "#ifdef USE_MAP\n\tvec4 texelColor = texture2D( map, vMapUv );\n\tdiffuseColor.rgb = mix(diffuseColor.rgb, texelColor.rgb, texelColor.a);\n#endif";
             material.onBeforeCompile = (shader) => {
                 shader.fragmentShader = shader.fragmentShader.replace("#include <map_fragment>", customBlendMap);
             };

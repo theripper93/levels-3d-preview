@@ -1,7 +1,8 @@
 //web worker for raycasing
-import * as THREE from "../lib/three.module.js";
-import {computeBoundsTree, disposeBoundsTree, acceleratedRaycast} from "../lib/three-mesh-bvh.js";
-import { mergeBufferGeometries, toTrianglesDrawMode } from "../lib/BufferGeometryUtils.js";
+import * as THREE from "three";
+import { computeBoundsTree, disposeBoundsTree } from "three-mesh-bvh";
+import { acceleratedRaycast } from "../three/acceleratedRaycast.js";
+import { mergeGeometries, toTrianglesDrawMode } from "three/addons/utils/BufferGeometryUtils.js";
 import { isMath } from "./utils.js";
 //import * as Math from "https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.5.0/math.js";
 THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
@@ -210,7 +211,7 @@ function createMergedGeometry() {
                 geometries.push(...worldSpaceGeometry);
             }
         });
-        const mergedGeometry = mergeBufferGeometries(geometries);
+        const mergedGeometry = mergeGeometries(geometries);
         geometries.forEach((geometry) => geometry.dispose());
         if (!mergedGeometry) return mergedMesh.geometry;
         mergedGeometry.computeBoundsTree();

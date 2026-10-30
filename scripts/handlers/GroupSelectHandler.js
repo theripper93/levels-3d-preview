@@ -1,6 +1,6 @@
-import * as THREE from "../lib/three.module.js";
+import * as THREE from "three";
 import { factor } from "../main.js";
-import { SelectionBox } from "../lib/SelectionBox.js";
+import { SelectionBox } from "three/addons/interactive/SelectionBox.js";
 
 export class GroupSelectHandler {
     constructor(parent) {

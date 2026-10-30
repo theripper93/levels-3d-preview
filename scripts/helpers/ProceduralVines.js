@@ -1,9 +1,9 @@
-import * as THREE from "../lib/three.module.js";
+import * as THREE from "three";
 import { factor } from "../main.js";
-import {DecalGeometry} from "../lib/DecalGeometry.js";
+import {DecalGeometry} from "three/addons/geometries/DecalGeometry.js";
 import {meshesToSingleMesh} from "./geometryUtils.js";
 import {LoopSubdivision} from "../lib/LoopSubdivision.js";
-import { mergeBufferGeometries, mergeVertices } from "../lib/BufferGeometryUtils.js";
+import { mergeGeometries, mergeVertices } from "three/addons/utils/BufferGeometryUtils.js";
 
 export class ProceduralVines{
     constructor (point, direction, radius, maxGenerations = 8) {
@@ -309,7 +309,7 @@ export class VineGeometry{
             colorAttribute.setXYZ(i, color.r, color.g, color.b);
         }
 
-        this.geometry = mergeBufferGeometries([this.geometry, ...this.leaves]);
+        this.geometry = mergeGeometries([this.geometry, ...this.leaves]);
     }
 
     _createLeafGeometry() {
@@ -341,8 +341,8 @@ export class VineGeometry{
 
         const curve = new THREE.CatmullRomCurve3(curvePoints);
         const curveGeometry = new THREE.TubeGeometry(curve, 8, this.radius, 3, false);
-        this.geometry = !this.geometry ? curveGeometry : mergeBufferGeometries([this.geometry, curveGeometry]);
-        this.complexVinesGeometry = !this.complexVinesGeometry ? curveGeometry : mergeBufferGeometries([this.complexVinesGeometry, new THREE.TubeGeometry(curve, 100, this.radius, 1, false)]);
+        this.geometry = !this.geometry ? curveGeometry : mergeGeometries([this.geometry, curveGeometry]);
+        this.complexVinesGeometry = !this.complexVinesGeometry ? curveGeometry : mergeGeometries([this.complexVinesGeometry, new THREE.TubeGeometry(curve, 100, this.radius, 1, false)]);
         if (vine.children?.length) {
             for (const child of vine.children) {
                 this._createVineGeometry(child);

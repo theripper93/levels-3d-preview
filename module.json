@@ -18,7 +18,8 @@
     }
   ],
   "esmodules": [
-    "scripts/main.js"
+    "index.js",
+    "raycastWorker.js"
   ],
   "scripts": [],
   "styles": [

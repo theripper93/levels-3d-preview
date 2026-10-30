@@ -110,6 +110,12 @@ export function registerConfigs() {
                     //notes: game.i18n.localize("levels3dpreview.flags.enableFogOfWar.notes"),
                     default: true,
                 },
+                colorManagement: {
+                    type: "checkbox",
+                    label: game.i18n.localize("levels3dpreview.flags.colorManagement.label"),
+                    notes: game.i18n.localize("levels3dpreview.flags.colorManagement.notes"),
+                    default: false,
+                },
                 grounding: {
                     type: "select",
                     label: game.i18n.localize("levels3dpreview.flags.grounding.label"),
@@ -333,13 +339,6 @@ export function registerConfigs() {
                     type: "color",
                     label: game.i18n.localize("levels3dpreview.flags.ambientLightColor.label"),
                     default: "#ffffff",
-                },
-                shadowBias: {
-                    type: "number",
-                    label: game.i18n.localize("levels3dpreview.flags.shadowBias.label"),
-                    notes: game.i18n.localize("levels3dpreview.flags.shadowBias.notes"),
-                    default: -0.000018,
-                    step: 0.000001,
                 },
             },
             "particles-3d": {

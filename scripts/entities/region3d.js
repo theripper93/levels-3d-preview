@@ -1,4 +1,4 @@
-import * as THREE from "../lib/three.module.js";
+import * as THREE from "three";
 import { factor } from "../main.js";
 import { DiagonalStripesMaterial } from "../shaders/regionMaterial.js";
 import { Shape3D } from "./shape3d.js";

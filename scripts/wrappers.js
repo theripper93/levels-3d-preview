@@ -1,7 +1,7 @@
 import { Region3D } from "./entities/region3d.js";
 import { Shape3D } from "./entities/shape3d.js";
 import { getSetting } from "./settings/settingsConfig.js";
-import * as THREE from "./lib/three.module.js";
+import * as THREE from "three";
 import { applyShaderToRegion } from "./shaders/templateEffects.js";
 
 export function registerWrappers() {

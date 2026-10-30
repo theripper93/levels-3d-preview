@@ -1,4 +1,5 @@
-import * as THREE from "../lib/three.module.js";
+import * as THREE from "three";
+import { MODULE_ID } from "../main.js";
 
 export class WorkerHandler {
     constructor() {
@@ -17,7 +18,7 @@ export class WorkerHandler {
     }
 
     async initRaycastWorker() {
-        const workerUrl = new URL("./raycastWorker.js", import.meta.url).href;
+        const workerUrl = new URL(foundry.utils.getRoute(`modules/${MODULE_ID}/raycastWorker.js`), window.location.href).href;
         const workerBase = workerUrl.substring(0, workerUrl.lastIndexOf("/") + 1);
 
         const trySharedWorker = (url) => {

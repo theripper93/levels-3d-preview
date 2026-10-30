@@ -1,4 +1,4 @@
-import * as THREE from "../lib/three.module.js";
+import * as THREE from "three";
 import { Ruler3D } from "../systems/ruler3d.js";
 import {factor} from "../main.js";
 

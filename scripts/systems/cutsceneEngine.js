@@ -1,5 +1,5 @@
 import {Socket} from "../lib/socket.js";
-import * as THREE from "../lib/three.module.js";
+import * as THREE from "three";
 
 export class CutsceneEngine{
     constructor (parent) {

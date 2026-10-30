@@ -8,9 +8,9 @@ import {
 	UniformsUtils,
     Vector3,
     Color
-} from "./three.module.js";
+} from "three";
 
-import * as THREE from "./three.module.js";
+import * as THREE from "three";
 
 /**
  * Based on "A Practical Analytic Model for Daylight"
@@ -302,7 +302,7 @@ Sky.SkyShader = {
 			gl_FragColor = vec4( retColor, 1.0 );
 
 			#include <tonemapping_fragment>
-			#include <encodings_fragment>
+			#include <colorspace_fragment>
 
 		}`,
 };
@@ -454,7 +454,7 @@ Sky.CloudsShader = {
             gl_FragColor = vec4( result, resultAlpha * cloudsAlpha );
 
 			#include <tonemapping_fragment>
-			#include <encodings_fragment>
+			#include <colorspace_fragment>
 
 		}`,
 };

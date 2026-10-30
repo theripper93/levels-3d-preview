@@ -1,6 +1,8 @@
-import * as THREE from "../lib/three.module.js";
+import * as THREE from "three";
 import { factor } from "../main.js";
 import { noiseShaders } from "./noise.js";
+import { applyLegacyUv } from "../three/legacyUv.js";
+import { rawTexture } from "../three/rawTexture.js";
 
 export class ShaderConfig extends foundry.applications.api.HandlebarsApplicationMixin(foundry.applications.api.ApplicationV2) {
     constructor(document) {
@@ -310,7 +312,7 @@ export class ShaderHandler {
             this.setUniforms(shader, shaderParams);
             this.shaders.push(shader);
             if (entity3D.pathTraced) {
-                const customBlendMap = "#ifdef USE_MAP\n\tvec4 texelColor = texture2D( map, vUv );\n\ttexelColor = mapTexelToLinear( texelColor );\n\tdiffuseColor.rgb = mix(diffuseColor.rgb, texelColor.rgb, texelColor.a);\n#endif";
+                const customBlendMap = "#ifdef USE_MAP\n\tvec4 texelColor = texture2D( map, vMapUv );\n\tdiffuseColor.rgb = mix(diffuseColor.rgb, texelColor.rgb, texelColor.a);\n#endif";
                 shader.fragmentShader = shader.fragmentShader.replace("#include <map_fragment>", customBlendMap);
             }
         };
@@ -336,8 +338,7 @@ export class ShaderHandler {
             shader.vertexShader = noiseShaders.snoise + "\n" + shader.vertexShader;
             shader.fragmentShader = noiseShaders.snoise + "\n" + shader.fragmentShader;
         }
-        shader.vertexShader = shader.vertexShader.replace("#include <fog_vertex>", "shader_vPosition = vec3(transformed);\nshader_vUv = ( uvTransform * vec3( uv, 1 ) ).xy;\nshader_vNormal = normal;\n#include <fog_vertex>");
-        shader.vertexShader = shader.vertexShader.replace("#include <uv_pars_vertex>", "#include <uv_pars_vertex>\n #ifdef USE_UV\n#else\nuniform mat3 uvTransform;\n#endif");
+        shader.vertexShader = shader.vertexShader.replace("#include <fog_vertex>", "shader_vPosition = vec3(transformed);\nshader_vUv = legacyUv;\nshader_vNormal = normal;\n#include <fog_vertex>");
         shader.vertexShader = shader.vertexShader.replace(
             "#include <begin_vertex>",
             `#include <begin_vertex>
@@ -396,6 +397,7 @@ export class ShaderHandler {
             shader.vertexShader = uniformsVarying + shader.vertexShader;
             shader.fragmentShader = uniformsVarying + shader.fragmentShader;
         }
+        applyLegacyUv(shader);
     }
 
     injectString(inject, shader, shaderId) {
@@ -435,7 +437,7 @@ export class ShaderHandler {
                         finalValue = new THREE.CanvasTexture(game.Levels3DPreview._heightmapPainter.canvas);
                         game.Levels3DPreview._heightmapPainter.CanvasTexture = finalValue;
                     } else {
-                        finalValue = game.Levels3DPreview.helpers.loadTextureSync(paramValue);
+                        finalValue = rawTexture(game.Levels3DPreview.helpers.loadTextureSync(paramValue));
                     }
                     if (finalValue) {
                         finalValue.wrapS = THREE.RepeatWrapping;
@@ -444,7 +446,7 @@ export class ShaderHandler {
                         shader.uniforms[`${name + "_" + uniformName}`] = { value: finalValue };
                     } else {
                         game.Levels3DPreview.helpers.loadTexture(paramValue).then((texture) => {
-                            finalValue = texture;
+                            finalValue = rawTexture(texture);
                             if (!finalValue) return;
                             finalValue.wrapS = THREE.RepeatWrapping;
                             finalValue.wrapT = THREE.RepeatWrapping;
@@ -1595,7 +1597,7 @@ export const shaders = {
                 if(shader_vNormal.y > 0.0) {
                     vec2 mask_vUv = vec2(vUv.x, vUv.y) * (mask_repeat);
                     vec4 maskTexture = texture( mask_textureMask, vUv );
-                    vec4 maskDiffuseTexture = sRGBToLinear(texture( mask_textureDiffuse, mask_vUv ));
+                    vec4 maskDiffuseTexture = sRGBTransferEOTF(texture( mask_textureDiffuse, mask_vUv ));
                     maskDiffuseTexture.a *= texelColor.a;
                     maskDiffuseTexture.rgb *= mask_color;
                     texelColor = mix(texelColor, maskDiffuseTexture, maskTexture.r);
@@ -1686,7 +1688,7 @@ export const shaders = {
                 if(noiseMask_invert) maskTexture = vec4(1.0) - maskTexture;
                 if(maskTexture.r > noiseMask_maskThreshold){
                     vec2 mask_vUv = vec2(vUv.x, vUv.y) * (noiseMask_repeat);
-                    vec4 maskDiffuseTexture = sRGBToLinear(texture( noiseMask_textureDiffuse, mask_vUv ));
+                    vec4 maskDiffuseTexture = sRGBTransferEOTF(texture( noiseMask_textureDiffuse, mask_vUv ));
                     maskDiffuseTexture.rgb *= noiseMask_color;
                     texelColor = mix(texelColor, maskDiffuseTexture, maskTexture.r * noiseMask_strength);
                     diffuseColor = texelColor;
@@ -1824,7 +1826,7 @@ export const shaders = {
                 overlay_vUv = mat2(cos(overlay_rotation_angle), -sin(overlay_rotation_angle), sin(overlay_rotation_angle), cos(overlay_rotation_angle)) * overlay_vUv;
                 overlay_vUv += rotation_center;
 
-                vec4 overlayTexture = sRGBToLinear(texture( overlay_textureDiffuse, overlay_vUv ));
+                vec4 overlayTexture = sRGBTransferEOTF(texture( overlay_textureDiffuse, overlay_vUv ));
                 overlayTexture.a *= texelColor.a;
                 if(overlay_black_alpha && overlayTexture.rgb == vec3(0.0)){}
                 else{
@@ -1986,7 +1988,7 @@ export const shaders = {
                 vec3 triW = GetTriplanarWeights(triplanar_wNormal);
                 vec4 easedColor = vec4( xColor * triW.x + yColor * triW.y + zColor * triW.z, 1.0);
                 vec4 gammaCorrectedColor = vec4( pow(abs(easedColor.x),1.0), pow(abs(easedColor.y),1.0), pow(abs(easedColor.z),1.0), 1.0);
-                vec4 texelColor3 = mapTexelToLinear( gammaCorrectedColor );
+                vec4 texelColor3 = gammaCorrectedColor;
                 diffuseColor = texelColor3;
                 #endif
                 `,
@@ -2003,7 +2005,7 @@ export const shaders = {
                     vec3 triWR = GetTriplanarWeights(triplanar_wNormal);
                     vec4 easedColorR = vec4( xColorR * triWR.x + yColorR * triWR.y + zColorR * triWR.z, 1.0);
                     vec4 gammaCorrectedColorR = vec4( pow(abs(easedColorR.x),1.0), pow(abs(easedColorR.y),1.0), pow(abs(easedColorR.z),1.0), 1.0);
-                    vec4 texelColorR = mapTexelToLinear( gammaCorrectedColorR );
+                    vec4 texelColorR = sRGBTransferEOTF( gammaCorrectedColorR );
                     roughnessFactor *= texelColorR.g * triplanar_roughnessAdjust;
                 #endif
                 `,
@@ -2149,25 +2151,25 @@ export const shaders = {
                     float splatA = splatMapTexture.a;
                     vec4 finalColor = diffuseColor;
                     if(splatR > 0.0){
-                        vec4 R_CHANNEL_TEX = sRGBToLinear(texture( splatMap_textureDiffuse0, vUv * splatMap_repeat0 ));
+                        vec4 R_CHANNEL_TEX = sRGBTransferEOTF(texture( splatMap_textureDiffuse0, vUv * splatMap_repeat0 ));
                         R_CHANNEL_TEX.a *= diffuseColor.a;
                         R_CHANNEL_TEX.rgb *= splatMap_color0;
                         finalColor = mix(finalColor, R_CHANNEL_TEX, splatR);
                     }
                     if(splatG > 0.0){
-                        vec4 G_CHANNEL_TEX = sRGBToLinear(texture( splatMap_textureDiffuse1, vUv * splatMap_repeat1 ));
+                        vec4 G_CHANNEL_TEX = sRGBTransferEOTF(texture( splatMap_textureDiffuse1, vUv * splatMap_repeat1 ));
                         G_CHANNEL_TEX.a *= diffuseColor.a;
                         G_CHANNEL_TEX.rgb *= splatMap_color1;
                         finalColor = mix(finalColor, G_CHANNEL_TEX, splatG);
                     }
                     if(splatB > 0.0){
-                        vec4 B_CHANNEL_TEX = sRGBToLinear(texture( splatMap_textureDiffuse2, vUv * splatMap_repeat2 ));
+                        vec4 B_CHANNEL_TEX = sRGBTransferEOTF(texture( splatMap_textureDiffuse2, vUv * splatMap_repeat2 ));
                         B_CHANNEL_TEX.a *= diffuseColor.a;
                         B_CHANNEL_TEX.rgb *= splatMap_color2;
                         finalColor = mix(finalColor, B_CHANNEL_TEX, splatB);
                     }
                     if(splatMap_useAlpha && splatA > 0.0){
-                        vec4 A_CHANNEL_TEX = sRGBToLinear(texture( splatMap_textureDiffuse3, vUv * splatMap_repeat3 ));
+                        vec4 A_CHANNEL_TEX = sRGBTransferEOTF(texture( splatMap_textureDiffuse3, vUv * splatMap_repeat3 ));
                         A_CHANNEL_TEX.a *= diffuseColor.a;
                         A_CHANNEL_TEX.rgb *= splatMap_color3;
                         finalColor = mix(finalColor, A_CHANNEL_TEX, splatA);
@@ -2302,14 +2304,14 @@ export const shaders = {
                 vec4 finalColor = texelColor;
                 if(percent >= textureGradient_tex0Begin && percent <= (textureGradient_tex1Begin + blend) && textureGradient_texCount > 0.0){
                     vec2 textureGradient_vUv = vec2(vUv.x, vUv.y) * (textureGradient_repeat0);
-                    vec4 textureGradientTexture = sRGBToLinear(texture( textureGradient_textureDiffuse0, textureGradient_vUv ));
+                    vec4 textureGradientTexture = sRGBTransferEOTF(texture( textureGradient_textureDiffuse0, textureGradient_vUv ));
                     textureGradientTexture.a *= texelColor.a;
                     textureGradientTexture.rgb *= textureGradient_color0;
                     finalColor = mix(finalColor, textureGradientTexture, textureGradientTexture.a);
                 }
                 if(percent >= (textureGradient_tex1Begin - blend) && textureGradient_texCount > 1.0){
                     vec2 textureGradient_vUv = vec2(vUv.x, vUv.y) * (textureGradient_repeat1);
-                    vec4 textureGradientTexture = sRGBToLinear(texture( textureGradient_textureDiffuse1, textureGradient_vUv ));
+                    vec4 textureGradientTexture = sRGBTransferEOTF(texture( textureGradient_textureDiffuse1, textureGradient_vUv ));
                     textureGradientTexture.a *= texelColor.a;
                     textureGradientTexture.rgb *= textureGradient_color1;
                     float fac = 1.0;
@@ -2320,7 +2322,7 @@ export const shaders = {
                 }
                 if(percent >= (textureGradient_tex2Begin - blend) && textureGradient_texCount > 2.0){
                     vec2 textureGradient_vUv = vec2(vUv.x, vUv.y) * (textureGradient_repeat2);
-                    vec4 textureGradientTexture = sRGBToLinear(texture( textureGradient_textureDiffuse2, textureGradient_vUv ));
+                    vec4 textureGradientTexture = sRGBTransferEOTF(texture( textureGradient_textureDiffuse2, textureGradient_vUv ));
                     textureGradientTexture.a *= texelColor.a;
                     textureGradientTexture.rgb *= textureGradient_color2;
                     float fac = 1.0;
@@ -2331,7 +2333,7 @@ export const shaders = {
                 }
                 if(percent >= (textureGradient_tex3Begin - blend) && textureGradient_texCount > 3.0){
                     vec2 textureGradient_vUv = vec2(vUv.x, vUv.y) * (textureGradient_repeat3);
-                    vec4 textureGradientTexture = sRGBToLinear(texture( textureGradient_textureDiffuse3, textureGradient_vUv ));
+                    vec4 textureGradientTexture = sRGBTransferEOTF(texture( textureGradient_textureDiffuse3, textureGradient_vUv ));
                     textureGradientTexture.a *= texelColor.a;
                     textureGradientTexture.rgb *= textureGradient_color3;
                     float fac = 1.0;

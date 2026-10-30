@@ -1,4 +1,4 @@
-import * as THREE from "../lib/three.module.js";
+import * as THREE from "three";
 import { factor } from "../main.js";
 
 export function renderSceneToImage({elevation = 1000, name, shift = [0,0]} = {}) {
@@ -40,7 +40,7 @@ function _renderSceneToImage(scene, xMin, xMax, zMin, zMax, width, height, origi
 
     const renderTarget = new THREE.WebGLRenderTarget(width, height, {
         format: THREE.RGBAFormat,
-        encoding: THREE.sRGBEncoding,
+        colorSpace: THREE.SRGBColorSpace,
         type: THREE.UnsignedByteType,
     });
 

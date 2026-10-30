@@ -1,4 +1,4 @@
-import {ImprovedNoise} from "./imporovedNoise.js";
+import {ImprovedNoise} from "three/addons/math/ImprovedNoise.js";
 
 const noise3d = new ImprovedNoise();
 

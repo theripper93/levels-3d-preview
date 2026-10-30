@@ -1,9 +1,12 @@
-import * as THREE from "../lib/three.module.js";
+import * as THREE from "three";
 import { factor } from "../main.js";
-import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from "../lib/three-mesh-bvh.js";
-import {mergeBufferGeometries, toTrianglesDrawMode, mergeVertices} from "../lib/BufferGeometryUtils.js";
-import {DecalGeometry} from "../lib/DecalGeometry.js";
-import {ImprovedNoise} from "../lib/imporovedNoise.js";
+import { computeBoundsTree, disposeBoundsTree } from "three-mesh-bvh";
+import { acceleratedRaycast } from "../three/acceleratedRaycast.js";
+import {mergeGeometries, toTrianglesDrawMode, mergeVertices} from "three/addons/utils/BufferGeometryUtils.js";
+import {DecalGeometry} from "three/addons/geometries/DecalGeometry.js";
+import {ImprovedNoise} from "three/addons/math/ImprovedNoise.js";
+import { TextGeometry } from "three/addons/geometries/TextGeometry.js";
+import { FontLoader } from "three/addons/loaders/FontLoader.js";
 import {fbm3d} from "../lib/noiseFunctions.js";
 import {VineGeometry} from "./ProceduralVines.js";
 import { imageTo3d } from "./imageTo3D.js";
@@ -59,7 +62,7 @@ export class DynaMesh {
         plane1.rotateY(Math.PI / 3);
         plane2.rotateY(0);
         plane3.rotateY(-Math.PI / 3);
-        const geometry = mergeBufferGeometries([plane1, plane2, plane3]);
+        const geometry = mergeGeometries([plane1, plane2, plane3]);
         return geometry;
     }
 
@@ -67,7 +70,7 @@ export class DynaMesh {
         const plane1 = new THREE.PlaneGeometry(this.width, this.height, Math.ceil(this.resolution), Math.ceil(this.resolution));
         const plane2 = new THREE.PlaneGeometry(this.width, this.height, Math.ceil(this.resolution), Math.ceil(this.resolution));
         plane1.rotateY(Math.PI / 2);
-        const geometry = mergeBufferGeometries([plane1, plane2]);
+        const geometry = mergeGeometries([plane1, plane2]);
         return geometry;
     }
 
@@ -85,7 +88,7 @@ export class DynaMesh {
         placeholderPlane.scale(0.0000001, 0.0000001, 0.0000001);
 
 
-        return mergeBufferGeometries([geometry, placeholderPlane]);
+        return mergeGeometries([geometry, placeholderPlane]);
     }
 
     _constructsphere() {
@@ -121,10 +124,10 @@ export class DynaMesh {
 
     async _constructtext() {
         const font = fonts[this.font] || (fonts[this.font] = await loadTextFont(this.font));
-        const geometry = new THREE.TextGeometry(this.text, {
+        const geometry = new TextGeometry(this.text, {
             font: font,
             size: (this.width + this.depth) / 2,
-            height: this.height,
+            depth: this.height,
             curveSegments: this.resolution,
         });
         geometry.center();
@@ -133,10 +136,10 @@ export class DynaMesh {
 
     async _constructcounter() {
         const font = fonts[this.font] || (fonts[this.font] = await loadTextFont(this.font));
-        const textGeometry = new THREE.TextGeometry(this.text || "0", {
+        const textGeometry = new TextGeometry(this.text || "0", {
             font: font,
             size: (this.width + this.depth),
-            height: this.height,
+            depth: this.height,
             curveSegments: this.resolution,
         });
         textGeometry.center();
@@ -204,7 +207,7 @@ export class DynaMesh {
 
 
 
-        const mergedGeometry = mergeBufferGeometries([textGeometry, roundedRectGeometry]);
+        const mergedGeometry = mergeGeometries([textGeometry, roundedRectGeometry]);
 
 
 
@@ -303,7 +306,7 @@ export class DynaMesh {
             sliceGeometry.rotateZ(sliceAngle);
         }
         
-        const mergedPieSliceGeometry = mergeBufferGeometries(pieSlices);
+        const mergedPieSliceGeometry = mergeGeometries(pieSlices);
         mergedPieSliceGeometry.rotateX(Math.PI / 2);
         mergedPieSliceGeometry.rotateY((Math.PI/2 - sliceAngle/2))
         mergedPieSliceGeometry.translate(0, this.depth, 0);
@@ -317,7 +320,7 @@ export class DynaMesh {
             textColorBuffAttribute.setXYZ(i, 1, 1, 1);
         }
 
-        const mergedGeometry = mergeBufferGeometries([mergedPieSliceGeometry, roundedRectGeometry]);
+        const mergedGeometry = mergeGeometries([mergedPieSliceGeometry, roundedRectGeometry]);
 
         return mergedGeometry;
     }
@@ -393,7 +396,7 @@ export class DynaMesh {
         const geometry = new THREE.ExtrudeGeometry(shape, { depth: this.depth, bevelEnabled: false });
         geometry.rotateX(Math.PI / 2);
         geometry.center();
-        return mergeBufferGeometries([geometry]);
+        return mergeGeometries([geometry]);
     }
 
     _constructpolygonbevel() {
@@ -423,7 +426,7 @@ export class DynaMesh {
         const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
         geometry.rotateX(Math.PI / 2);
         geometry.center();
-        return mergeBufferGeometries([geometry]);
+        return mergeGeometries([geometry]);
     }
 
     _constructpolygonsolidify() {
@@ -442,7 +445,7 @@ export class DynaMesh {
         const geometry = new THREE.ExtrudeGeometry(shape, { depth: this.depth, bevelEnabled: false });
         geometry.rotateX(Math.PI / 2);
         geometry.center();
-        return mergeBufferGeometries([geometry]);
+        return mergeGeometries([geometry]);
     }
 
     _constructpolygonbevelsolidify() {
@@ -470,7 +473,7 @@ export class DynaMesh {
         const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
         geometry.rotateX(Math.PI / 2);
         geometry.center();
-        return mergeBufferGeometries([geometry]);
+        return mergeGeometries([geometry]);
     }
 
     _constructpolygonbevelsolidifyjagged() {
@@ -504,7 +507,7 @@ export class DynaMesh {
         geometry.rotateX(Math.PI / 2);
         geometry.center();
         
-        return mergeBufferGeometries([geometry]);
+        return mergeGeometries([geometry]);
     }
 
     _constructpolygonbevelsolidifyjaggeddouble() {
@@ -538,7 +541,7 @@ export class DynaMesh {
         geometry.rotateX(Math.PI / 2);
         geometry.center();
         
-        return mergeBufferGeometries([geometry]);
+        return mergeGeometries([geometry]);
     }
 
     _constructpolygonbevelsolidifyjaggedstraight() {
@@ -572,7 +575,7 @@ export class DynaMesh {
         geometry.rotateX(Math.PI / 2);
         geometry.center();
         
-        return mergeBufferGeometries([geometry]);
+        return mergeGeometries([geometry]);
     }
 
     _constructpolygonlathe() { 
@@ -590,7 +593,7 @@ export class DynaMesh {
         const geometry = new THREE.LatheGeometry(vector2Points, this.resolution * 4, 0, phiLength);
         geometry.rotateX(Math.PI);
         geometry.center();
-        return mergeBufferGeometries([geometry]);
+        return mergeGeometries([geometry]);
     }
 
     _constructpolygonchain() {
@@ -624,7 +627,7 @@ export class DynaMesh {
             geometry.translate(position.x, position.y, 0);
             geometries.push(geometry);
         }
-        const geometry = mergeBufferGeometries(geometries);
+        const geometry = mergeGeometries(geometries);
         geometry.rotateX(Math.PI / 2);
         geometry.center();
         return geometry;
@@ -662,7 +665,7 @@ export class DynaMesh {
             ladderPillar2.translate(0, this.depth / 2, this.height / 2);
             geometries.push(ladderPillar2);
 
-            const geometry = mergeBufferGeometries(geometries);
+            const geometry = mergeGeometries(geometries);
             geometry.center();
             return geometry;
 
@@ -694,7 +697,7 @@ export class DynaMesh {
     
             const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
             geometry.center();
-            return mergeBufferGeometries([geometry]);
+            return mergeGeometries([geometry]);
         }
 
     }
@@ -743,7 +746,7 @@ export class DynaMesh {
 
 export async function loadTextFont(fontPath) {
     try {        
-        const loader = new THREE.FontLoader();
+        const loader = new FontLoader();
         const font = await loader.loadAsync(fontPath || defaultFont);
         return font;
     } catch (error) {

@@ -1,4 +1,4 @@
-import { GLTFExporter } from "../lib/GLTFExporter.js";
+import { GLTFExporter } from "three/addons/exporters/GLTFExporter.js";
 import { injectConfig } from "../lib/injectConfig.js";
 
 export class Exporter {

@@ -1,10 +1,11 @@
-import * as THREE from "../lib/three.module.js";
+import * as THREE from "three";
 import { factor } from "../main.js";
 import { Ruler3D, RULER_TOKEN_OFFSET } from "../systems/ruler3d.js";
 import { GroupSelectHandler } from "./GroupSelectHandler.js";
 import { isLockedOnOrigin } from "../shaders/templateEffects.js";
 import { TileCreationQueue } from "./TileCreationQueue.js";
-import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from "../lib/three-mesh-bvh.js";
+import { computeBoundsTree, disposeBoundsTree } from "three-mesh-bvh";
+import { acceleratedRaycast } from "../three/acceleratedRaycast.js";
 import { Note3D } from "../entities/note3d.js";
 THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
 THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;

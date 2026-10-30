@@ -415,6 +415,10 @@
                 "label": "Enable Animation Scripts",
                 "notes": "WARNING: Make sure you trust the source of the scene, this can be potentially used to run malicious code. Enable the execution of animation scripts for tiles."
             },
+            "colorManagement": {
+                "label": "Accurate Colors",
+                "notes": "Interpret colors (tints, lights, backgrounds) as sRGB so they match the color picker. Scenes created before this option existed keep the legacy, lighter color interpretation unless enabled."
+            },
             "enableFogOfWar": {
                 "label": "Enable Fog of War (Performance Heavy)",
                 "notes": "Performance Heavy. This option will enable Fog of War in 3D, if 'Use 3D Geometry for Sight calculations' is enabled, Fog of War will be calculated based on 3D Geometry (it will still be two dimensional)."
@@ -470,10 +474,6 @@
             },
             "ambientLightColor": {
                 "label": "Ambient Light Color"
-            },
-            "shadowBias": {
-                "label": "Shadow Bias",
-                "notes": "Number that determines how shadows are rendered, if you notice black stripes on entities in the scene, you can adjust this number. Correct values for this number tend to be very small, it's suggested to make increments or decrements of 0.00001 or less."
             },
             "showSceneWalls": {
                 "label": "Render Walls"
