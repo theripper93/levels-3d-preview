@@ -26,6 +26,7 @@ import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "./three/LegacyUnrealBloomPass.js";
 import { Fog, injectFoWShaders } from "./systems/Fog.js";
+import { disposeScene } from "./helpers/disposeScene.js";
 import { Exporter } from "./helpers/exporter.js";
 import { turnStartMarker } from "./systems/turnStartMarker.js";
 import { ParticleEngine } from "./systems/particleSystem.js";
@@ -1265,6 +1266,7 @@ class Levels3DPreview {
 
     clear3Dscene() {
         this.workers.clearMeshes();
+        disposeScene(this.scene);
         this.scene.background?.dispose?.();
         this.scene.environment?.dispose?.();
         this.scene.userData.envRt?.dispose?.();
