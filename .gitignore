@@ -6,7 +6,3 @@ node_modules
 .DS_Store
 Thumbs.db
 packs/
-index.js
-index.js.map
-raycastWorker.js
-raycastWorker.js.map
