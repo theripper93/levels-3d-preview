@@ -110,12 +110,6 @@ export function registerConfigs() {
                     //notes: game.i18n.localize("levels3dpreview.flags.enableFogOfWar.notes"),
                     default: true,
                 },
-                colorManagement: {
-                    type: "checkbox",
-                    label: game.i18n.localize("levels3dpreview.flags.colorManagement.label"),
-                    notes: game.i18n.localize("levels3dpreview.flags.colorManagement.notes"),
-                    default: false,
-                },
                 grounding: {
                     type: "select",
                     label: game.i18n.localize("levels3dpreview.flags.grounding.label"),

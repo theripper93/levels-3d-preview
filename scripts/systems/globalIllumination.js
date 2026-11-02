@@ -235,7 +235,7 @@ export class GlobalIllumination {
             foundry.utils.mergeObject(updates, {
                 flags: {
                     "levels-3d-preview": {
-                        exposure: 0.2 + lightness * 0.8,
+                        exposure: 0.26 + lightness * 0.8,
                     },
                 },
             });

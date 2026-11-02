@@ -90,7 +90,7 @@ def add_folder_to_zip(zip_file, folder):
 def create_zip(module_id, module_version, folders):
     zip_filename = f'dist/{module_id}-{module_version}.zip'
     with zipfile.ZipFile(zip_filename, 'w', zipfile.ZIP_DEFLATED) as zip_file:
-        files_to_zip = ['module.json', 'index.js', 'index.js.map']
+        files_to_zip = ['module.json', 'index.js', 'index.js.map', 'raycastWorker.js', 'raycastWorker.js.map']
         for file_to_zip in files_to_zip:
             if os.path.exists(file_to_zip):
                 zip_file.write(file_to_zip)

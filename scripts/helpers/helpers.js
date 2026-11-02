@@ -344,7 +344,7 @@ export class Helpers {
 
     convertPhysicalToStandard(material) {
         if (material instanceof THREE.MeshPhysicalMaterial) {
-            const standard = new THREE.MeshStandardMaterial(material);
+            const standard = new THREE.MeshStandardMaterial().copy(material);
             return standard;
         } else {
             return material;

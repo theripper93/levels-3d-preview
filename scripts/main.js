@@ -704,7 +704,6 @@ class Levels3DPreview {
         el.classList.remove("hidden");
         el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 300, fill: "forwards" });
         this._fullTransparency = game.settings.get("levels-3d-preview", "fullTransparency");
-        THREE.ColorManagement.enabled = !!canvas.scene.getFlag("levels-3d-preview", "colorManagement");
         this._ready = false;
         this._isFirstFrame = true;
         this._finalizingLoad = false;
@@ -2012,7 +2011,6 @@ Hooks.on("updateScene", (scene, updates) => {
         "mirrorLevels" in flags ||
         "grid" in updates ||
         "enableFogOfWar" in flags ||
-        "colorManagement" in flags ||
         "bloom" in flags
     ) {
         game.Levels3DPreview.reload();
@@ -2075,11 +2073,6 @@ document.addEventListener("keydown", (event) => {
     ts.setTranslationSnap(undefined);
     ts.setRotationSnap(undefined);
     ts.setScaleSnap(undefined);
-});
-
-Hooks.on("preCreateScene", (scene, data) => {
-    if (foundry.utils.getProperty(data, "flags.levels-3d-preview")) return;
-    scene.updateSource({ "flags.levels-3d-preview.colorManagement": true });
 });
 
 Hooks.on("preUpdateToken", (token, updates) => {

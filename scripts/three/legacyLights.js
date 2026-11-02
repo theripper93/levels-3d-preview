@@ -1,6 +1,7 @@
 import { Scene } from "three";
 
 const LEGACY_INTENSITY_SCALE = Math.PI;
+const COLOR_MANAGEMENT_EXPOSURE_SCALE = 1.1;
 const FIT_SAMPLES = 120;
 const FIT_RANGE = 1.5;
 const FIT_RADII = [0.3, 1, 3];
@@ -79,7 +80,8 @@ function toPhysical(light) {
 const pendingRestores = new WeakMap();
 
 function onBeforeRender(renderer, scene) {
-    const restores = [];
+    const restores = [[renderer, { toneMappingExposure: renderer.toneMappingExposure }]];
+    renderer.toneMappingExposure *= COLOR_MANAGEMENT_EXPOSURE_SCALE;
     scene.traverseVisible((object) => {
         if (object.isLight) restores.push([object, toPhysical(object)]);
     });
@@ -89,7 +91,7 @@ function onBeforeRender(renderer, scene) {
 function onAfterRender(renderer, scene) {
     const restores = pendingRestores.get(scene);
     if (!restores) return;
-    for (const [light, legacy] of restores) Object.assign(light, legacy);
+    for (const [target, legacy] of restores) Object.assign(target, legacy);
     pendingRestores.delete(scene);
 }
 
