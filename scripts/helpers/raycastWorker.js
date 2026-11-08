@@ -237,9 +237,7 @@ function applyMatrixWorldToGeometry(mesh) {
     geometry.applyMatrix4(mesh.matrixWorld);
     const attributes = geometry.attributes;
     for (const key in attributes) {
-        if (key != "position" && key != "uv" && key != "normal") {
-            delete attributes[key];
-        }
+        if (key != "position") delete attributes[key];
     }
     return [geometry];
 }
@@ -249,14 +247,8 @@ function applyMatrixWorldToGeometryInstanced(mesh) {
     mesh.updateMatrixWorld(true, true);
     const attributes = geometry.attributes;
     for (const key in attributes) {
-        if (key != "position" && key != "uv" && key != "normal") {
-            delete attributes[key];
-        }
+        if (key != "position") delete attributes[key];
     }
-    geometry.computeVertexNormals();
-    geometry.attributes.position.needsUpdate = true;
-    geometry.attributes.uv.needsUpdate = true;
-    geometry.attributes.normal.needsUpdate = true;
     const geometries = [];
     const count = mesh.count;
     const instanceMatrix = new THREE.Matrix4();

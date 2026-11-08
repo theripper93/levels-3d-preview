@@ -19,7 +19,7 @@ function applyMatrixWorldToGeometryInstanced(mesh) {
     }
     geometry.computeVertexNormals();
     geometry.attributes.position.needsUpdate = true;
-    geometry.attributes.uv.needsUpdate = true;
+    if (geometry.attributes.uv) geometry.attributes.uv.needsUpdate = true;
     geometry.attributes.normal.needsUpdate = true;
     const geometries = [];
     const count = mesh.count;
