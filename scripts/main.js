@@ -32,6 +32,7 @@ import { disposeScene } from "./helpers/disposeScene.js";
 import { Exporter } from "./helpers/exporter.js";
 import { turnStartMarker } from "./systems/turnStartMarker.js";
 import { ParticleEngine } from "./systems/particleSystem.js";
+import { LightWarmup } from "./systems/lightWarmup.js";
 import { Particle3D } from "./systems/particleSystem.js";
 import { defaultTokenAnimations } from "./handlers/tokenAnimationHandler.js";
 import { presetMaterials, PresetMaterialHandler, populateScene } from "./helpers/presetMaterials.js";
@@ -536,10 +537,6 @@ class Levels3DPreview {
         this.loadingTokens = {};
         this.lights = {
             sceneLights: {},
-            lightCache: {
-                point: [],
-                spot: [],
-            },
             _lightIndex: 0,
         };
         this.walls = {};
@@ -612,6 +609,7 @@ class Levels3DPreview {
 
         this.renderer = this._sharedContext ? new THREE.WebGLRenderer({ context: canvas.app.renderer.context.gl }) : new THREE.WebGLRenderer();
         this.renderer.setSize(window.innerWidth, window.innerHeight);
+        this.lightWarmup = new LightWarmup(this);
         this.renderer.setAnimationLoop(this.animation.bind(this));
         this.renderer.shadowMap.enabled = true;
         this.renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -687,29 +685,6 @@ class Levels3DPreview {
     initPS() {
         this.particleSystem?.destroy();
         this.particleSystem = new ParticleEngine(this);
-    }
-
-    cacheLights(cacheSize) {
-        this.lights.lightCache.point = [];
-        this.lights.lightCache.spot = [];
-
-        cacheSize = cacheSize ?? game.settings.get("levels-3d-preview", "lightCacheSize");
-
-        if (!game.user.isGM) cacheSize = Math.min(cacheSize, 4);
-
-        for (let i = 0; i < cacheSize; i++) {
-            const pointLight = new THREE.PointLight(0xffffff, 0.0001, 0.0001, 2);
-            pointLight.position.set(-100, -100, -100);
-            this.lights.lightCache.point.push(pointLight);
-            this.scene.add(pointLight);
-        }
-
-        for (let i = 0; i < cacheSize / 2; i++) {
-            const spotLight = new THREE.SpotLight(0xffffff, 0.0001, 0.0001, 1, 1, 2);
-            spotLight.position.set(-100, -100, -100);
-            this.lights.lightCache.spot.push(spotLight);
-            this.scene.add(spotLight);
-        }
     }
 
     build3Dscene() {
@@ -864,7 +839,8 @@ class Levels3DPreview {
         this.createNotes();
         this.createBoard();
         this.createTable();
-        this.cacheLights();
+        this.lightWarmup.createEffectPool();
+        this.scene.add(Shape3D.createWarmupProxies());
         for (let token of canvas.tokens.placeables) {
             this.addToken(token);
         }
@@ -1281,6 +1257,7 @@ class Levels3DPreview {
     }
 
     clear3Dscene() {
+        this.lightWarmup.clear();
         Ruler3D.clearAll3D();
         TokenRuler3D.clearAll3D();
         this.workers.clearMeshes();
@@ -1405,6 +1382,7 @@ class Levels3DPreview {
                 //canvas.app.renderer.reset();
                 this.renderer.resetState();
             }
+            this.lightWarmup.update();
             if (this.bokeh) {
                 const dist = this.interactionManager.findCameraLookatDistance();
                 this.bokeh.uniforms.focus.value = dist;

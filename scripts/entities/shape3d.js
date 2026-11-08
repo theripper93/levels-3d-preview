@@ -2,6 +2,7 @@ import * as THREE from "three";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { DiagonalStripesMaterial } from "../shaders/regionMaterial.js";
 import { factor } from "../main.js";
+import { WARMUP_LAYER } from "../systems/lightWarmup.js";
 
 export class Shape3D extends THREE.Object3D {
     constructor() {
@@ -75,7 +76,7 @@ export class Shape3D extends THREE.Object3D {
         game.Levels3DPreview.scene.remove(this);
         this.traverse((child) => {
             child.geometry?.dispose?.();
-            child.material?.dispose?.();
+            if (!child.material?.userData?.persistent) child.material?.dispose?.();
         });
     }
     
@@ -95,13 +96,33 @@ export class Shape3D extends THREE.Object3D {
         return selectedRegion;
     }
 
-    static getMaterialFromTool(tool, hole = false) {
-        if (tool === "light") {
-            const lightColor = foundry.applications.sheets.palette.AmbientLightPalette.createData.config.color;
-            return new THREE.MeshBasicMaterial({ color: new THREE.Color(lightColor?.css ?? "white"), wireframe: true });
+    static #toolMaterials = new Map();
+
+    static createWarmupProxies() {
+        const group = new THREE.Group();
+        const geometry = new THREE.SphereGeometry(0.001, 4, 2);
+        for (const tool of ["light", "sound", "tile"]) {
+            const mesh = new THREE.Mesh(geometry, Shape3D.getMaterialFromTool(tool));
+            mesh.layers.set(WARMUP_LAYER);
+            group.add(mesh);
         }
-        if (tool === "sound") return new THREE.MeshBasicMaterial({ color: new THREE.Color("white"), wireframe: true });
-        if (tool === "tile") return new THREE.MeshBasicMaterial({ color: new THREE.Color("chocolate"), wireframe: true });
+        return group;
+    }
+
+    static getMaterialFromTool(tool, hole = false) {
+        let color;
+        if (tool === "light") color = foundry.applications.sheets.palette.AmbientLightPalette.createData.config.color?.css ?? "white";
+        else if (tool === "sound") color = "white";
+        else if (tool === "tile") color = "chocolate";
+        else return;
+        let material = Shape3D.#toolMaterials.get(tool);
+        if (!material) {
+            material = new THREE.MeshBasicMaterial({ wireframe: true });
+            material.userData.persistent = true;
+            Shape3D.#toolMaterials.set(tool, material);
+        }
+        material.color.set(color);
+        return material;
     }
 
     static getShapeFromTool(tool) {

@@ -180,7 +180,7 @@ export class ParticleEngine {
             s.markForDestroy = true;
         });
         if (force) {
-            ParticleEngine.returnLightInstances(effect.emitter);
+            ParticleEngine.disposeLights(effect.emitter);
             this.scene.remove(effect.emitter);
         } else {
             this.toCleanup.add(effect);
@@ -190,7 +190,7 @@ export class ParticleEngine {
 
     cleanUpEffect(effect) {
         if (effect.particleSystems.every((s) => s.particleNum === 0)) {
-            ParticleEngine.returnLightInstances(effect.emitter);
+            ParticleEngine.disposeLights(effect.emitter);
             this.scene.remove(effect.emitter);
             this.toCleanup.delete(effect);
         }
@@ -237,16 +237,15 @@ export class ParticleEngine {
         });
     }
 
-    static getLightInstance() {
-        const cache = game.Levels3DPreview.lights.lightCache;
-        let light = null;
-        if (cache.point.length) {
-            light = cache.point.pop();
-        }
+    static createLight() {
+        const pooled = game.Levels3DPreview.lightWarmup.acquireEffectLight();
+        if (pooled) return pooled;
+        const light = new THREE.PointLight();
+        game.Levels3DPreview.lightWarmup.add(light);
         return light;
     }
 
-    static returnLightInstances(object3d) {
+    static disposeLights(object3d) {
         if (!object3d) return;
         const lights = [];
         object3d.traverse((child) => {
@@ -255,12 +254,14 @@ export class ParticleEngine {
             }
         });
 
-        const cache = game.Levels3DPreview.lights.lightCache;
-
         for (let light of lights) {
-            light.position.set(-10000, -10000, -10000);
-            cache.point.push(light);
-            game.Levels3DPreview.scene.add(light);
+            if (light.userData.pooled) {
+                game.Levels3DPreview.lightWarmup.releaseEffectLight(light);
+                continue;
+            }
+            game.Levels3DPreview.lightWarmup.remove(light);
+            light.removeFromParent();
+            light.dispose();
         }
     }
 
@@ -991,7 +992,7 @@ class ProjectileParticle extends BaseParticleEffect {
     }
 
     addLight() {
-        const light = ParticleEngine.getLightInstance();
+        const light = ParticleEngine.createLight();
         if (light) {
             this._light = light;
             this._lightIntensity = 10;
@@ -2322,7 +2323,7 @@ class JB2AExplosion extends ExplosionParticle {
     }
 
     addLight() {
-        const light = ParticleEngine.getLightInstance();
+        const light = ParticleEngine.createLight();
         if (light) {
             this._light = light;
             this._lightIntensity = 10;
@@ -2472,7 +2473,7 @@ class CastingSign extends ExplosionParticle {
     }
 
     addLight() {
-        const light = ParticleEngine.getLightInstance();
+        const light = ParticleEngine.createLight();
         if (light) {
             this._light = light;
             this._lightIntensity = 10;
@@ -2580,7 +2581,7 @@ class Lightning extends ExplosionParticle {
     }
 
     addLight() {
-        const light = ParticleEngine.getLightInstance();
+        const light = ParticleEngine.createLight();
         if (light) {
             this._light = light;
             this._lightIntensity = 10;
@@ -3140,7 +3141,7 @@ class MagicBurst extends ExplosionParticle {
     }
 
     addLight() {
-        const light = ParticleEngine.getLightInstance();
+        const light = ParticleEngine.createLight();
         if (light) {
             this._light = light;
             this._lightIntensity = 10;
@@ -3312,7 +3313,7 @@ class StarBurst extends ExplosionParticle {
     }
 
     addLight() {
-        const light = ParticleEngine.getLightInstance();
+        const light = ParticleEngine.createLight();
         if (light) {
             this._light = light;
             this._lightIntensity = 10;

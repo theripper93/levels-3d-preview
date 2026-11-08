@@ -1207,10 +1207,6 @@
                 "name": "Pre-Load Shaders",
                 "hint": "If Enabled, the shaders will be applied before the render loop starts. This will prevent stutters when activating shaders for the first time, but might cause a minor impact on performance and/or load times."
             },
-            "lightCacheSize": {
-                "name": "Light Cache Size",
-                "hint": "The number of lights to cache for each scene. This amount of lights can be placed/enabled without causing stutters."
-            },
             "showAdvanced": {
                 "show": "Show Advanced Settings",
                 "wiki": "Learn More",

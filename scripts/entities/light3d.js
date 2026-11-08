@@ -22,7 +22,8 @@ export class Light3D {
 
     init() {
         this.noise = new SimplexNoise();
-        this.light3d = this.getLightInstance();
+        this.light3d = this.angle != 360 ? new THREE.SpotLight(0xffffff, 0.0001, 0.0001, 1, 1, 2) : new THREE.PointLight();
+        this._parent.lightWarmup.add(this.light3d);
         this.isPointLight = this.angle == 360;
         this.mesh = new THREE.Group();
         const shadowRes = game.settings.get("levels-3d-preview", "shadowQuality");
@@ -37,20 +38,6 @@ export class Light3D {
             this._parent.scene.add(this.mesh);
             if (game.user.isGM) this.createHandle();
         }
-    }
-
-    getLightInstance() {
-        const isSpotLight = this.angle != 360;
-        const cache = this._parent.lights.lightCache;
-        let light;
-        if (isSpotLight && cache.spot.length) {
-            light = cache.spot.pop();
-        } else if (!isSpotLight && cache.point.length) {
-            light = cache.point.pop();
-        } else {
-            light = isSpotLight ? new THREE.SpotLight(0xffffff, 0.0001, 0.0001, 1, 1, 2) : new THREE.PointLight();
-        }
-        return light;
     }
 
     get useHelper() {
@@ -162,23 +149,25 @@ export class Light3D {
         if (this.dragHandle) {
             this.dragHandle.position.set(0, 0, 0);
         }
-        // Set explicitly: light3d instances are pooled, so a reused light must not keep a previous shadow.
         const castShadow = !!light.document.getFlag("levels-3d-preview", "castShadow") && game.settings.get("levels-3d-preview", "shadowQuality") > 0;
-        if (castShadow) this.light3d.shadow.autoUpdate = true;
-        this.light3d.castShadow = castShadow;
-        let top = light.document.flags.levels?.rangeTop ?? 1;
-        let bottom = light.document.elevation;
-        const z = ((top + bottom) * canvas.scene.dimensions.size) / canvas.scene.dimensions.distance / 2;
-        this.z = (top + bottom) / 2;
-        const color = this.color || "#ffffff";
-        const radius = (Math.max(this.dim, this.bright) * (canvas.scene.dimensions.size / canvas.scene.dimensions.distance)) / factor;
-        const alpha = this.alpha * 9;
-        const decay = (this.dim / (this.bright + 10)) * 2;
-        const position = {
-            x: light.document.x / factor,
-            y: z / factor,
-            z: light.document.y / factor,
-        };
+        if (castShadow && this.isEmitting) this.light3d.shadow.autoUpdate = true;
+        if (castShadow !== this.light3d.castShadow) {
+            this.light3d.castShadow = castShadow;
+            this._parent.lightWarmup.add(this.light3d);
+        }
+        const params = Light3D.computeParams({
+            x: light.document.x,
+            y: light.document.y,
+            elevation: light.document.elevation,
+            rangeTop: light.document.flags.levels?.rangeTop ?? 1,
+            dim: this.dim,
+            bright: this.bright,
+            alpha: this.alpha,
+            color: this.color,
+        });
+        this.z = params.z;
+        const { color, radius, decay, position } = params;
+        const alpha = params.intensity;
         if (!this.isToken) {
             this.mesh.position.set(position.x, position.y, position.z);
         }
@@ -234,14 +223,40 @@ export class Light3D {
         if (particleChanged && enableParticle) this.initParticle();
     }
 
+    static computeParams({ x, y, elevation, rangeTop, dim, bright, alpha, color }) {
+        const { size, distance } = canvas.scene.dimensions;
+        const z = ((rangeTop + elevation) * size) / distance / 2;
+        return {
+            z: (rangeTop + elevation) / 2,
+            color: color || "#ffffff",
+            radius: (Math.max(dim, bright) * (size / distance)) / factor,
+            intensity: alpha * 9,
+            decay: (dim / (bright + 10)) * 2,
+            position: { x: x / factor, y: z / factor, z: y / factor },
+        };
+    }
+
+    get isEmitting() {
+        return (this.light.emitsLight && !this.light.document.hidden) || !!this.light.document.flags?.["levels-3d-preview"]?.visibleWhenDisabled;
+    }
+
     update(delta) {
-        this.light3d.visible = (this.light.emitsLight && !this.light.document.hidden) || !!this.light.document.flags?.["levels-3d-preview"]?.visibleWhenDisabled;
+        this.light3d.intensity = this.initialLightParams.intensity;
         this.animationFn(delta);
+        const shadow = this.light3d.shadow;
+        if (this.isEmitting) {
+            if (this.light3d.castShadow) shadow.autoUpdate = true;
+            return;
+        }
+        this.light3d.intensity = 0;
+        shadow.autoUpdate = false;
+        shadow.needsUpdate = false;
     }
 
     destroy() {
-        this._parent.scene.add(this.light3d);
-        this.light3d.position.set(-10000, -10000, -10000);
+        this._parent.lightWarmup.remove(this.light3d);
+        this.light3d.removeFromParent();
+        this.light3d.dispose();
         this._parent.scene.remove(this.mesh);
         if (this.particleEffectId) Particle3D.stop(this.particleEffectId);
         this.lightHelper?.dispose();
@@ -254,10 +269,6 @@ export class Light3D {
             sprite?.material?.dispose();
             this.dragHandle = null;
         }
-        const cache = this._parent.lights.lightCache;
-        const isSpotLight = this.angle != 360;
-        if (isSpotLight) cache.spot.push(this.light3d);
-        else cache.point.push(this.light3d);
     }
 
     get particleEffectId() {
@@ -414,7 +425,9 @@ export class Light3D {
         });
 
         Hooks.on("deleteAmbientLight", (lightDocument) => {
-            if (game.Levels3DPreview?._active) game.Levels3DPreview.lights.sceneLights[lightDocument.id]?.destroy();
+            if (!game.Levels3DPreview?._active) return;
+            game.Levels3DPreview.lights.sceneLights[lightDocument.id]?.destroy();
+            delete game.Levels3DPreview.lights.sceneLights[lightDocument.id];
         });
 
         Hooks.on("pasteAmbientLight", (copy, data) => {

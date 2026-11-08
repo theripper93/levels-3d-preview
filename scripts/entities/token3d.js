@@ -546,6 +546,21 @@ export class Token3D {
         this.setPosition(true);
     }
 
+    refreshLight() {
+        if (!this.light) {
+            if (this.document.light.bright !== 0 || this.document.light.dim) this.loadLight();
+            return;
+        }
+        if (this.light.isPointLight !== (this.document.light.angle == 360)) {
+            this.light.destroy();
+            this.loadLight();
+            return;
+        }
+        this.light.refresh();
+        this.light.light3d.position.set(0, this.d / 2, 0);
+        this.setPosition();
+    }
+
     draw() {
         const token = this.token;
         const f = this.factor;
@@ -1796,8 +1811,10 @@ export class Token3D {
             if (animChanged) {
                 game.Levels3DPreview.tokens[token.id]?.updateAnimation();
             }
-            if ((updates?.flags && updates?.flags["levels-3d-preview"] && !wasFreeUpdated && !onlyAnim) || ("light" in updates && !foundry.utils.isEmpty(updates.light)) || "width" in updates || "height" in updates || "texture" in updates) {
+            if ((updates?.flags && updates?.flags["levels-3d-preview"] && !wasFreeUpdated && !onlyAnim) || "width" in updates || "height" in updates || "texture" in updates) {
                 game.Levels3DPreview.tokens[token.id]?.refresh();
+            } else if ("light" in updates && !foundry.utils.isEmpty(updates.light)) {
+                game.Levels3DPreview.tokens[token.id]?.refreshLight();
             }
         });
 

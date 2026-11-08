@@ -220,22 +220,27 @@ export class Region3D extends THREE.Object3D {
         return false;
     }
 
+    static getLightData(shape3d) {
+        const shape = shape3d.shape;
+        const defaults = foundry.applications.sheets.palette.AmbientLightPalette.createData;
+        const elevation = shape3d.origin.y * factor / canvas.scene.dimensions.distancePixels + 0.1;
+        return foundry.utils.mergeObject(defaults, {
+            config: {
+                dim: shape.radius / canvas.scene.dimensions.distancePixels,
+                bright: shape.radius / (2 * canvas.scene.dimensions.distancePixels),
+            },
+            x: shape.x,
+            y: shape.y,
+            elevation: elevation * 2,
+        }, { inplace: false });
+    }
+
     static async fromPreview(shape3d) {
 
         const shape = shape3d.shape;
 
         if (shape3d.tool === "light") {
-            const defaults = foundry.applications.sheets.palette.AmbientLightPalette.createData;
-            const elevation = shape3d.origin.y * factor / canvas.scene.dimensions.distancePixels + 0.1;
-            const lightData = foundry.utils.mergeObject(defaults, {
-                config: {
-                    dim: shape.radius / canvas.scene.dimensions.distancePixels,
-                    bright: shape.radius / (2 * canvas.scene.dimensions.distancePixels),
-                },
-                x: shape.x,
-                y: shape.y,
-                elevation: elevation * 2,
-            });
+            const lightData = this.getLightData(shape3d);
             const lights = await canvas.scene.createEmbeddedDocuments("AmbientLight", [lightData]);
             shape3d.destroy();
             return lights;
