@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { factor } from "../main.js";
-import { Ruler3D } from "../systems/ruler3d.js";
+import * as coords3d from "../helpers/coords3d.js";
 import { SimplexNoise } from "../lib/noiseFunctions.js";
 
 export class Light3D {
@@ -92,7 +92,7 @@ export class Light3D {
 
     async updatePositionFrom3D(e) {
         this.skipMoveAnimation = true;
-        const useSnapped = Ruler3D.useSnapped();
+        const useSnapped = coords3d.useSnapped();
         const x3d = this.mesh.position.x;
         const y3d = this.mesh.position.y;
         const z3d = this.mesh.position.z;

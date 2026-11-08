@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { Ruler3D } from "../systems/ruler3d.js";
+import * as coords3d from "../helpers/coords3d.js";
 import { factor } from "../main.js";
 
 export class Note3D {
@@ -102,7 +102,7 @@ export class Note3D {
     }
 
     setPosition() {
-        const position = Ruler3D.posCanvasTo3d({
+        const position = coords3d.posCanvasTo3d({
             x: this.note.center.x,
             y: this.note.center.y,
             z: this.bottom,
@@ -121,7 +121,7 @@ export class Note3D {
 
     updatePositionFrom3D(e) {
         this.skipMoveAnimation = true;
-        const useSnapped = Ruler3D.useSnapped();
+        const useSnapped = coords3d.useSnapped();
         const x3d = this.mesh.position.x;
         const y3d = this.mesh.position.y;
         const z3d = this.mesh.position.z;

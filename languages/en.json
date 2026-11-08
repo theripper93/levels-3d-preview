@@ -41,8 +41,23 @@
                 "dragdrop": "Drag & Drop",
                 "tap": "Tap",
                 "scroll": "Scroll",
+                "waypoint": "Add Waypoint",
+                "ctrlclick": "Ctrl + Click",
+                "removewaypoint": "Remove Waypoint",
                 "loadingdone": "3D Canvas Ready! - Press <i class='fas fa-question control-highlighted'></i> to close this screen.",
                 "loadingarrow": "Click the '?' icon where the Arrow is pointing to close the loading screen."
+            },
+            "movementReference": {
+                "title": "3D Canvas Token Movement and Ruler Controls",
+                "addWaypoint": "Add Waypoint",
+                "addWaypointKeys": "Ctrl + Left Click while dragging (or release the mouse with Ctrl held to keep placing waypoints)",
+                "removeWaypoint": "Remove Last Waypoint",
+                "removeWaypointKeys": "Right Click (cancels the drag when there are no waypoints)",
+                "elevation": "Change Elevation",
+                "elevationKeys": "Mouse Wheel while dragging (Shift for fine steps); the token then stops following the 3D surface",
+                "hidden": "Hidden Ruler",
+                "hiddenKeys": "Hold Alt when starting the drag",
+                "freeMode": "Free Placement (hold, release to snap back to the 3D surface)"
             }
         },
         "errors": {
@@ -201,7 +216,8 @@
             },
             "lockcamera": "Enable Camera Auto Mode (Game Camera Only)",
             "gameCameraTopDown": "Toggle Top-Down Camera (Game Camera Only)",
-            "removeWaypoint": "Remove Ruler Waypoint",
+            "removeWaypoint": "Remove Last Waypoint",
+            "removeWaypointHint": "While dragging a token, measuring with the ruler tool or drawing a 3D shape, remove the last waypoint (cancels a token drag or ruler measurement when there are no waypoints left). Same as Right Click.",
             "toggleFirstPerson": "Toggle First-Person Camera",
             "toggleCameraLockPosition": "Lock Camera in-place (Hold)",
             "rotate": "Tile Editor: Rotate",
@@ -215,7 +231,8 @@
             "panDown": "Camera: Pan Down",
             "panLeft": "Camera: Pan Left",
             "panRight": "Camera: Pan Right",
-            "freeMode": "Free Placement mode",
+            "freeMode": "Free Placement Mode (Hold)",
+            "freeModeHint": "3D only. While held, dragged tokens, rulers and objects ignore the 3D surface and keep their elevation (change it with the Mouse Wheel). Releasing the key snaps the drag back to the surface.",
             "pingcamera": "Ping and move Camera to Current view for all Clients",
             "ping": "Ping current mouse position location for all Clients",
             "scaleWidth": "Tile Editor: Scale Width",
@@ -410,7 +427,8 @@
                 "label": "Enable Grid"
             },
             "enableRuler": {
-                "label": "Enable Ruler"
+                "label": "Enable Token Drag Ruler",
+                "notes": "When disabled, the token movement ruler (path and distance labels) is hidden in 3D for this scene. The Ruler tool is not affected."
             },
             "enableAnimationScripts": {
                 "label": "Enable Animation Scripts",
@@ -1170,8 +1188,8 @@
                 }
             },
             "useRaycastRuler": {
-                "name": "EXPERIMENTAL: Adaptive Ruler",
-                "hint": "When this setting is enabled, the ruler will stick to the terrain below it as long as the token is not flying"
+                "name": "Terrain-Following Token Ruler",
+                "hint": "When enabled, the token ruler follows the 3D terrain between waypoints instead of drawing straight lines (not for flying, burrowing or teleporting movement). Display only: measured distances are not changed."
             },
             "resolutionMultiplier": {
                 "name": "Resolution Multiplier",

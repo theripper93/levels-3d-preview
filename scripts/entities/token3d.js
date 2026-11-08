@@ -8,7 +8,7 @@ import { heightHighlightShaderMaterial, radialGradientShaderMaterial } from "../
 import { ActiveEffectEffect } from "./effects/activeEffect.js";
 import { RangeRingEffect } from "./effects/rangeRing.js";
 import { imageTo3d } from "../helpers/imageTo3D.js";
-import { Ruler3D } from "../systems/ruler3d.js";
+import * as coords3d from "../helpers/coords3d.js";
 import { meshesToSingleMesh } from "../helpers/geometryUtils.js";
 import { createTargetGeometry } from "./effects/target.js";
 THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
@@ -45,7 +45,6 @@ export class Token3D {
         this.targetSize = 0.1;
         this.baseDepth = 0.008 * (canvas.grid.size / 100);
         this.elevation3d = 0;
-        this.rulerOffset = 0;
         this.materialsCache = {};
         this._effectsCache = {};
         this.proneHandler = {};
@@ -58,6 +57,7 @@ export class Token3D {
         this.drawBars = foundry.utils.debounce(this.drawBars, 100);
         this.drawName = foundry.utils.debounce(this.drawName, 100);
         this.drawHeightIndicatorDebounced = foundry.utils.debounce(this.drawHeightIndicator, 100);
+        this.updateGhostHeightIndicatorDebounced = foundry.utils.debounce(this.updateGhostHeightIndicator, 60);
         this.animationHandler = new TokenAnimationHandler(this);
     }
     #tokenHeight = null;
@@ -652,90 +652,91 @@ export class Token3D {
         return true;
     }
 
-    testCollision({ x, y, z } = {}) {
-        const dest = {
-            x: x,
-            y: y,
-            elevation: z,
-        };
-        const unconstrainedMovement = game.user.isGM && game.settings.get("core", "unconstrainedMovement");
-        if (!game.user.isGM || !unconstrainedMovement) {
-            if (game.paused) return false;
-            const center = canvas.grid.getCenterPoint({ x, y });
-            const geometryCollisions = game.Levels3DPreview?.object3dSight;
-            let collides;
-            if (geometryCollisions) {
-                collides = game.Levels3DPreview.interactionManager.computeSightCollision(
-                    {
-                        x: this.token.center.x,
-                        y: this.token.center.y,
-                        z: this.losHeight,
-                    },
-                    {
-                        x: dest.x + this.baseDocumentWidth * canvas.grid.size * 0.5,
-                        y: dest.y + this.baseDocumentHeight * canvas.grid.size * 0.5,
-                        z: dest.elevation + this.tokenHeight,
-                    },
-                    "move",
-                );
-            } else {
-                collides = this.token.checkCollision(center);
+    createDragGhost() {
+        if (this.hasClone) return this.hasClone;
+        if (!this.mesh) return null;
+        const userDataCache = new Map();
+        this.mesh.traverse((child) => {
+            if (child.userData) {
+                userDataCache.set(child, child.userData);
+                child.userData = {};
             }
-            if (collides) {
-                ui.notifications.warn("levels3dpreview.ERROR.TokenCollide", { localize: true });
-                return false;
-            }
+        });
+        let ghost;
+        try {
+            ghost = this.mesh.clone();
+        } finally {
+            this.mesh.traverse((child) => {
+                if (userDataCache.has(child)) child.userData = userDataCache.get(child);
+            });
         }
-        return true;
+        const lights = [];
+        ghost.traverse((child) => {
+            if (child.isLight) lights.push(child);
+            child.userData.ignoreHover = true;
+            child.userData.noIntersect = true;
+        });
+        lights.forEach((light) => light.removeFromParent());
+        for (const child of ghost.children.filter((c) => c.name === "heightIndicator")) ghost.remove(child);
+        ghost.userData.original = this;
+        ghost.head = this.head;
+        ghost.mid = this.mid;
+        this.hasClone = ghost;
+        this.updateHiden();
+        this._parent.scene.add(ghost);
+        return ghost;
+    }
+
+    updateDragGhost(destination, { immediate = false } = {}) {
+        const ghost = this.hasClone;
+        if (!ghost || !destination) return;
+        const center = this.document.getCenterPoint(destination);
+        const target = coords3d.posCanvasTo3d({ x: center.x, y: center.y, z: destination.elevation ?? this.document.elevation });
+        if (immediate || ghost.position.distanceTo(target) > 50) ghost.position.copy(target);
+        else ghost.position.lerp(target, 0.4);
+        if (this.mesh) ghost.rotation.copy(this.mesh.rotation);
+        if (!ghost._indicatorTarget || ghost._indicatorTarget.distanceToSquared(target) > 1e-8) {
+            ghost._indicatorTarget = target.clone();
+            this.updateGhostHeightIndicatorDebounced();
+        }
+    }
+
+    updateGhostHeightIndicator() {
+        const ghost = this.hasClone;
+        if (!ghost) return;
+        if (ghost.heightIndicator) {
+            ghost.remove(ghost.heightIndicator);
+            ghost.heightIndicator = null;
+        }
+        const group = this._buildHeightIndicator(ghost._indicatorTarget ?? ghost.position);
+        if (!group) return;
+        ghost.heightIndicator = group;
+        ghost.add(group);
+    }
+
+    destroyDragGhost() {
+        const ghost = this.hasClone;
+        if (!ghost) return;
+        this._parent.scene.remove(ghost);
+        this.hasClone = null;
+        this.updateHiden();
     }
 
     setPosition(force = false) {
         const mesh = this.mesh;
+        if (!mesh) return;
         const token = this.token;
         const f = this.factor;
 
         this.setPositionFrom2D(force);
 
-        const y = (token.document.elevation * canvas.scene.dimensions.size) / canvas.dimensions.distance / f;
-
-        if (force) mesh.position.y = y;
-
-        const placeablePosition = new THREE.Vector2(token.center.x / f, token.center.y / f);
-
-        const targetPosition = new THREE.Vector2(this.documentCenter.x / f, this.documentCenter.y / f);
-
-        const initialPosition = new THREE.Vector2(placeablePosition.x, placeablePosition.y);
-
-        const currentAnimation = foundry.canvas.animation.CanvasAnimation.animations[token.animationName];
-
-        let animationElevation = undefined;
-
-        if (currentAnimation) {
-            const attrX = currentAnimation.attributes.find((a) => a.attribute === "x");
-            const attrY = currentAnimation.attributes.find((a) => a.attribute === "y");
-            const attrElevation = currentAnimation.attributes.find((a) => a.attribute === "animationElevation");
-            if (attrElevation) animationElevation = token.animationElevation;
-
-            initialPosition.x = attrX?.from !== undefined ? (attrX.from + (token.document.width * canvas.grid.size) / 2) / f : placeablePosition.x;
-            initialPosition.y = attrY?.from !== undefined ? (attrY.from + (token.document.height * canvas.grid.size) / 2) / f : placeablePosition.y;
-
-            targetPosition.x = attrX?.to !== undefined ? (attrX.to + (token.document.width * canvas.grid.size) / 2) / f : this.documentCenter.x / f;
-            targetPosition.y = attrY?.to !== undefined ? (attrY.to + (token.document.height * canvas.grid.size) / 2) / f : this.documentCenter.y / f;
-        }
-
-        const maxDistance = initialPosition.distanceTo(targetPosition);
-        const distance = initialPosition.distanceTo(placeablePosition);
-        const alpha = maxDistance === 0 ? 1 : distance / maxDistance;
-
-        if (!mesh) return;
-
-        const lerp = (a, b, n) => {
-            return (1 - n) * a + n * b;
-        };
-
-        const yPosition = lerp(mesh.position.y, y, animationElevation ?? alpha);
-
+        const yPosition = (token.document.elevation * canvas.scene.dimensions.size) / canvas.dimensions.distance / f;
         mesh.position.y = yPosition;
+        this.elevation3d = yPosition;
+        if (this._indicatorElevation !== token.document.elevation) {
+            this._indicatorElevation = token.document.elevation;
+            if (this.heightIndicator?.parent || token.controlled || token.hover) this.drawHeightIndicatorDebounced();
+        }
 
         const rotations = {
             x: 0,
@@ -743,16 +744,15 @@ export class Token3D {
             z: 0,
         };
         mesh.rotation.set(rotations.x, rotations.y, rotations.z);
-        this.elevation3d = yPosition;
         if (this.border && !this.rotateIndicator) {
             this.border.rotation.set(-rotations.x, -rotations.y, -rotations.z);
         }
         if (this.light && this.document.light.angle != 360) {
             const rotationy = rotations.y;
             const distance = 1;
-            const lx = Math.sin(rotationy) * distance + placeablePosition.x;
+            const lx = Math.sin(rotationy) * distance + mesh.position.x;
             const ly = yPosition + this.d / 2;
-            const lz = Math.cos(rotationy) * distance + placeablePosition.y;
+            const lz = Math.cos(rotationy) * distance + mesh.position.z;
             this.light.light3d.target.position.set(lx, ly, lz);
             this.light.light3d.target.updateMatrixWorld();
         }
@@ -897,11 +897,18 @@ export class Token3D {
             this.mesh.remove(this.heightIndicator);
         }
         if (!this.token.controlled && !this.token.hover) return;
-        const pos = this.mesh.position.clone();
-        const targetPos = this.mesh.position.clone();
+        const group = this._buildHeightIndicator(this.mesh.position);
+        if (!group) return;
+        this.heightIndicator = group;
+        this.mesh.add(group);
+    }
+
+    _buildHeightIndicator(position) {
+        const pos = position.clone();
+        const targetPos = position.clone();
         targetPos.y = -100000;
         const collision = game.Levels3DPreview.interactionManager.computeSightCollisionFrom3DPositions(pos, targetPos, "move", true, true, false, true);
-        if (!collision[0] || (collision[0] && collision[0].distance < 0.1)) return;
+        if (!collision[0] || (collision[0] && collision[0].distance < 0.1)) return null;
 
         const grid = canvas.dimensions.size / factor;
         const color = this.getHeightIndicatorColor();
@@ -918,18 +925,17 @@ export class Token3D {
         const indicatorGeometry = new THREE.CylinderGeometry(0.001, 0.001, height, 4);
         indicatorGeometry.translate(0, -height / 2, 0);
         const indicatorMaterial = this.getHeightIndicatorMaterial(color, grid, "height");
-        this.heightIndicator = heightIndicatorGroup;
         const indicatorMesh = new THREE.Mesh(indicatorGeometry, indicatorMaterial);
         indicatorMesh.rotation.x = Math.PI;
         indicatorMesh.position.y = -height;
-        this.heightIndicator.add(indicatorMesh);
+        heightIndicatorGroup.add(indicatorMesh);
 
         //Create the base
         const radialMaterial = this.getHeightIndicatorMaterial(color, grid, "base");
         const baseGeometry = new THREE.CylinderGeometry(grid / 2, grid / 2, 0.01, 16);
         const baseMesh = new THREE.Mesh(baseGeometry, radialMaterial);
         baseMesh.position.y = -height;
-        this.heightIndicator.add(baseMesh);
+        heightIndicatorGroup.add(baseMesh);
 
         //Create the diamond indicators
         const diamondMaterial = this.getHeightIndicatorMaterial(color, grid, "diamond");
@@ -938,17 +944,17 @@ export class Token3D {
         for (let i = 0; i < count; i++) {
             const diamond = diamondMesh.clone();
             diamond.position.y = -height + grid * (i + 1);
-            this.heightIndicator.add(diamond);
+            heightIndicatorGroup.add(diamond);
         }
 
-        // Add the group to the mesh
-        this.heightIndicator.traverse((child) => {
+        heightIndicatorGroup.traverse((child) => {
             child.userData.ignoreHover = true;
             child.userData.interactive = false;
             child.userData.ignoreIntersect = true;
+            child.userData.noIntersect = true;
         });
-        this.heightIndicator.visible = true;
-        this.mesh.add(this.heightIndicator);
+        heightIndicatorGroup.visible = true;
+        return heightIndicatorGroup;
     }
 
     getHeightIndicatorMaterial(color, grid, type) {
@@ -1621,6 +1627,7 @@ export class Token3D {
 
     destroy() {
         if (this._destroyed) return;
+        this.destroyDragGhost();
         this.light?.destroy();
         this._parent.scene.remove(this.mesh);
         this._destroyed = true;
@@ -1765,6 +1772,7 @@ export class Token3D {
     static setHooks() {
         Hooks.on("refreshToken", (token, renderFlags) => {
             if (!game.Levels3DPreview?._active) return;
+            if (token.isPreview) return;
             const token3d = game.Levels3DPreview.tokens[token.id];
             if (!token3d || token3d.isCaptured) return;
             if (renderFlags.refreshNameplate) token3d.drawName();
@@ -1782,6 +1790,7 @@ export class Token3D {
             game.Levels3DPreview.tokens[tokenDocument.id]?.drawEffects();
             const token = tokenDocument.object;
             const wasFreeUpdated = updates?.flags && updates?.flags["levels-3d-preview"] && updates?.flags["levels-3d-preview"].wasFreeMode !== undefined;
+            if (wasFreeUpdated && game.Levels3DPreview.tokens[tokenDocument.id]) game.Levels3DPreview.tokens[tokenDocument.id].wasFreeMode = !!updates.flags["levels-3d-preview"].wasFreeMode;
             const animChanged = updates?.flags && updates?.flags["levels-3d-preview"] && updates?.flags["levels-3d-preview"].animIndex !== undefined;
             const onlyAnim = animChanged === true && Object.values(updates?.flags["levels-3d-preview"]).length === 1;
             if (animChanged) {
@@ -1789,29 +1798,6 @@ export class Token3D {
             }
             if ((updates?.flags && updates?.flags["levels-3d-preview"] && !wasFreeUpdated && !onlyAnim) || ("light" in updates && !foundry.utils.isEmpty(updates.light)) || "width" in updates || "height" in updates || "texture" in updates) {
                 game.Levels3DPreview.tokens[token.id]?.refresh();
-            }
-            const updateX = updates?.x !== undefined;
-            const updateY = updates?.y !== undefined;
-            const updateElevation = updates?.elevation !== undefined;
-            if (!updateX && !updateY && updateElevation) {
-                token.animationElevation = 0;
-                foundry.canvas.animation.CanvasAnimation.animate(
-                    [
-                        {
-                            attribute: "animationElevation",
-                            from: token.animationElevation,
-                            to: 1,
-                            parent: token,
-                        },
-                    ],
-                    {
-                        duration: 250,
-                        easing: foundry.canvas.animation.CanvasAnimation.easeInCircle,
-                        name: token.animationName,
-                        priority: PIXI.UPDATE_PRIORITY.OBJECTS + 1,
-                        ontick: () => token.refresh(),
-                    },
-                );
             }
         });
 
@@ -1834,7 +1820,7 @@ export class Token3D {
             const elevation = (updates.elevation ?? tokenDocument.elevation) + height;
             const collision = game.Levels3DPreview.interactionManager.computeSightCollision({ x, y, z: elevation }, { x, y, z: -100000 });
             if (!collision) return;
-            const pos2d = Ruler3D.pos3DToCanvas(collision);
+            const pos2d = coords3d.pos3DToCanvas(collision);
             const distanceFromGround = (updates.elevation ?? tokenDocument.elevation) - pos2d.z;
             const maxDist = canvas.scene.dimensions.distance * 0.5;
             if (distanceFromGround > maxDist) {

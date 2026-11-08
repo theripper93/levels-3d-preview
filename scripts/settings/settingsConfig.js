@@ -8,7 +8,6 @@ export function getSetting(key) {
 }
 
 class canvas3dConfig extends HandlebarsApplication {
-
     static get DEFAULT_OPTIONS() {
         return mergeClone(super.DEFAULT_OPTIONS, {
             id: "levels-3d-preview-settings",
@@ -153,7 +152,6 @@ export function registerSettings() {
     });
 
     Hooks.once("init", function () {
-
         game.settings.register("levels-3d-preview", "sceneReload", {
             scope: "world",
             config: false,
@@ -303,8 +301,8 @@ export function registerSettings() {
             config: false,
             type: Boolean,
             default: false,
-            onChange: (value) => {
-                game.Levels3DPreview.ruler.useRaycastRuler = value;
+            onChange: () => {
+                canvas?.tokens?.placeables.forEach((t) => t.renderFlags.set({ refreshRuler: true }));
             },
         });
 
@@ -810,7 +808,6 @@ export function registerSettings() {
 
         settingCache.exactTokenVisibility = game.settings.get("levels-3d-preview", "exactTokenVisibility");
         settingCache.dynamicTokenVisibility = game.settings.get("levels-3d-preview", "dynamicTokenVisibility");
-
     });
 
     Hooks.once("ready", () => {

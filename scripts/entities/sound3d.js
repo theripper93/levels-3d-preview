@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { factor } from "../main.js";
-import { Ruler3D } from "../systems/ruler3d.js";
+import * as coords3d from "../helpers/coords3d.js";
 
 export class Sound3D {
     constructor(sound, parent) {
@@ -59,7 +59,7 @@ export class Sound3D {
 
     async updatePositionFrom3D(e) {
         this.skipMoveAnimation = true;
-        const useSnapped = Ruler3D.useSnapped();
+        const useSnapped = coords3d.useSnapped();
         const x3d = this.mesh.position.x;
         const y3d = this.mesh.position.y;
         const z3d = this.mesh.position.z;

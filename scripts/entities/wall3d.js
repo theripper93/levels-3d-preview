@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { Ruler3D } from "../systems/ruler3d.js";
+import * as coords3d from "../helpers/coords3d.js";
 import {factor} from "../main.js";
 
 const doorIconMaterialCache = {};
@@ -21,9 +21,9 @@ export class Wall3D {
         this.top = Number.isFinite(canvas.level.elevation.top) ? canvas.level.elevation.top : this.bottom + canvas.scene.dimensions.distance * 2;
         this.externalWall = wall.document.flags.betterroofs?.externalWall ?? false;
         if (this.externalWall) this.top++;
-        this.vec1 = Ruler3D.posCanvasTo3d({ x: wall.document.c[0], y: wall.document.c[1], z: this.top });
-        this.vec2 = Ruler3D.posCanvasTo3d({ x: wall.document.c[2], y: wall.document.c[3], z: this.bottom });
-        this.center = Ruler3D.posCanvasTo3d({ x: wall.center.x, y: wall.center.y, z: (this.top + this.bottom) / 2 });
+        this.vec1 = coords3d.posCanvasTo3d({ x: wall.document.c[0], y: wall.document.c[1], z: this.top });
+        this.vec2 = coords3d.posCanvasTo3d({ x: wall.document.c[2], y: wall.document.c[3], z: this.bottom });
+        this.center = coords3d.posCanvasTo3d({ x: wall.center.x, y: wall.center.y, z: (this.top + this.bottom) / 2 });
         this.p1 = new THREE.Vector2(wall.document.c[0], wall.document.c[1]);
         this.p2 = new THREE.Vector2(wall.document.c[2], wall.document.c[3]);
         this.distance = this.p1.distanceTo(this.p2) / factor;
@@ -264,7 +264,6 @@ export class Wall3D {
             if (game.Levels3DPreview?._active) game.Levels3DPreview.walls[wall.id]?.destroy();
         });
 
-        
         Hooks.on("activateWallsLayer", () => {
             if (game.Levels3DPreview?._active) ui.notifications.info(`
                 3D Canvas is designed to use 3D Tiles geometry for sight and collision calculations, not walls. Because of this, the walls layer is view-only and exists solely to visualize walls from 2D maps. 2D walls can still block sight and movement if "<strong>Use 3D Objects for Sight Calculations</strong>" is disabled in the scene settings, but for 3D maps it is strongly recommended to keep that setting enabled so that 3D tiles handle all sight and collision logic instead.

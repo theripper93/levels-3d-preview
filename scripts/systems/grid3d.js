@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { Ruler3D } from "./ruler3d.js";
+import * as coords3d from "../helpers/coords3d.js";
 import { factor } from "../main.js";
 
 export class Grid3D {
@@ -43,7 +43,7 @@ export class Grid3D {
         const texture = await new THREE.TextureLoader().load(base64);
         const plane = new THREE.Mesh(new THREE.PlaneGeometry(canvas.grid.width / factor, canvas.grid.height / factor), new THREE.MeshBasicMaterial({ map: texture, transparent: true }));
         plane.rotateX(-Math.PI / 2);
-        plane.position.set(canvas.grid.width / factor / 2 + canvas.grid.grid._localBounds.minX / factor, 0.01 + Ruler3D.unitsToPixels(canvas.primary.background.elevation), canvas.grid.height / factor / 2 + canvas.grid.grid._localBounds.minY / factor);
+        plane.position.set(canvas.grid.width / factor / 2 + canvas.grid.grid._localBounds.minX / factor, 0.01 + coords3d.unitsToPixels(canvas.primary.background.elevation), canvas.grid.height / factor / 2 + canvas.grid.grid._localBounds.minY / factor);
         this.grid = plane;
         this.scene.add(plane);
     }

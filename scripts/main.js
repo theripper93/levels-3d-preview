@@ -4,7 +4,9 @@ import { GameCamera } from "./handlers/GameCamera.js";
 import { TransformControls } from "./three/TransformControls.js";
 import { GLTFLoader } from "./three/GLTFLoader.js";
 import { Token3D } from "./entities/token3d.js";
-import { Ruler3D, RULER_TOKEN_OFFSET } from "./systems/ruler3d.js";
+import { Ruler3D, registerRuler3D, redrawRulers3D } from "./systems/ruler3d.js";
+import { TokenRuler3D, registerTokenRuler3D, recreateTokenRulers3D } from "./systems/tokenRuler3d.js";
+import { unitsToPixels, centerElement } from "./helpers/coords3d.js";
 import { Light3D } from "./entities/light3d.js";
 import { Sound3D } from "./entities/sound3d.js";
 import { Wall3D } from "./entities/wall3d.js";
@@ -105,6 +107,16 @@ setHudHook();
 setSharingHooks();
 
 globalThis.Particle3D = Particle3D;
+
+Hooks.once("setup", () => {
+    registerRuler3D();
+    registerTokenRuler3D();
+});
+
+Hooks.on("canvasInit", () => {
+    registerRuler3D();
+    registerTokenRuler3D();
+});
 
 Hooks.once("ready", () => {
     if (!game.scenes.active) {
@@ -283,6 +295,7 @@ class Levels3DPreview {
                 Region3D,
                 Shape3D,
                 Ruler3D,
+                TokenRuler3D,
                 Light3D,
                 Wall3D,
                 Token3D,
@@ -628,7 +641,6 @@ class Levels3DPreview {
         this.controls.keyPanSpeed = 35;
         this.controls._lockZero = game.settings.get("levels-3d-preview", "cameralockzero");
         game.settings.get("levels-3d-preview", "cameralockzero") && this.controls.addEventListener("change", this._onCameraChange.bind(this));
-        this.ruler = new Ruler3D(this);
         this.interactionManager = new this.CONFIG.UI.InteractionManager(this);
         this.interactionManager.activateListeners();
         this.cursors = new Cursors3D(this);
@@ -978,7 +990,7 @@ class Levels3DPreview {
         plane.castShadow = true;
         const offsetX = -canvas.scene.background.offsetX / this.factor;
         const offsetY = -canvas.scene.background.offsetY / this.factor;
-        plane.position.set(center.x + offsetX, center.y - depth / 2 - 0.00001 + Ruler3D.unitsToPixels(canvas.primary.background.elevation), center.z + offsetY);
+        plane.position.set(center.x + offsetX, center.y - depth / 2 - 0.00001 + unitsToPixels(canvas.primary.background.elevation), center.z + offsetY);
         //plane.rotation.x = -Math.PI / 2;
         this.board = plane;
         plane.userData.isBackground = true;
@@ -1040,7 +1052,7 @@ class Levels3DPreview {
         material.color = new THREE.Color(color);
         const plane = new THREE.Mesh(geometry, material);
         plane.receiveShadow = true;
-        plane.position.set(center.x, center.y - (depth / 2 + 0.011) + Ruler3D.unitsToPixels(canvas.primary.background.elevation), center.z);
+        plane.position.set(center.x, center.y - (depth / 2 + 0.011) + unitsToPixels(canvas.primary.background.elevation), center.z);
         this.table = plane;
         this.table.renderOrder = -1e20;
         this.table.material.polygonOffset = true;
@@ -1269,6 +1281,8 @@ class Levels3DPreview {
     }
 
     clear3Dscene() {
+        Ruler3D.clearAll3D();
+        TokenRuler3D.clearAll3D();
         this.workers.clearMeshes();
         disposeScene(this.scene);
         this.scene.background?.dispose?.();
@@ -1327,7 +1341,7 @@ class Levels3DPreview {
             if (!token3D) return;
             const center = token3D.mesh.position.clone();
             center.y += token3D.hitbox.geometry.boundingBox.max.y;
-            Ruler3D.centerElement(hud.element, center);
+            centerElement(hud.element, center);
         }
         hud = canvas.hud.tile;
         if (hud.object) {
@@ -1335,7 +1349,7 @@ class Levels3DPreview {
             const tile3D = this.tiles[hud.object.id];
             if (!tile3D || !tile3D.mesh) return;
             const center = tile3D.center;
-            Ruler3D.centerElement(hud.element, center);
+            centerElement(hud.element, center);
         }
     }
 
@@ -1354,7 +1368,7 @@ class Levels3DPreview {
                 bubble.style.transformOrigin = "bottom center";
                 bubble.dataset.l3dAligned = "1";
             }
-            Ruler3D.centerElement(bubble, center, true);
+            centerElement(bubble, center, true);
         });
     }
 
@@ -1416,7 +1430,7 @@ class Levels3DPreview {
             const tokenPositionsArray = this._tokenPositionsArray;
             while (tokenPositionsArray.length < length) tokenPositionsArray.push(new THREE.Vector4());
             tokenPositionsArray.length = length;
-            tokenPositionsArray[0].set(ctPos?.x ?? 0, (ctPos?.y ?? 0) - (cToken?.hasClone ? RULER_TOKEN_OFFSET : 0), ctPos?.z ?? 0, tokensArray.length);
+            tokenPositionsArray[0].set(ctPos?.x ?? 0, ctPos?.y ?? 0, ctPos?.z ?? 0, tokensArray.length);
             for (let i = 1; i < length; i++) {
                 const pos = tokensArray[i - 1]?.mesh?.position;
                 if (!pos) {
@@ -1469,6 +1483,9 @@ class Levels3DPreview {
             this.checkInFog();
             this.animateCamera(delta);
             this.centerHUD();
+            Ruler3D.updateAllLabels();
+            TokenRuler3D.updateAllLabels();
+            this.placementPreview?.updateLabels();
             if (!this._scrollingTextCollection) this._scrollingTextCollection = document.getElementsByClassName("scrolling-text");
             if (this._scrollingTextCollection.length) {
                 document.querySelectorAll("#levels3d-ruler-text.scrolling-text").forEach((e) => {
@@ -1556,9 +1573,9 @@ class Levels3DPreview {
 
     _onCameraChange() {
         const centerPosition = this.controls.target.clone();
-        centerPosition.y = Ruler3D.unitsToPixels(canvas.primary.background.elevation);
+        centerPosition.y = unitsToPixels(canvas.primary.background.elevation);
         const groundPosition = this.camera.position.clone();
-        groundPosition.y = Ruler3D.unitsToPixels(canvas.primary.background.elevation);
+        groundPosition.y = unitsToPixels(canvas.primary.background.elevation);
         const d = centerPosition.distanceTo(groundPosition);
 
         const origin = new THREE.Vector2(this.controls.target.y - 0.05, 0);
@@ -1836,6 +1853,7 @@ class Levels3DPreview {
             this.renderer.resetState();
         }
         this.build3Dscene();
+        this.refreshRulers();
         document.body.appendChild(this.renderer.domElement);
         document.body.classList.add("levels-3d-preview-active");
         if (this._sharedContext) {
@@ -1851,6 +1869,7 @@ class Levels3DPreview {
 
     close() {
         document.querySelector(".levels-3d-preview-loading-screen").classList.add("hidden");
+        const wasActive = this._active;
         this.setFilters(false);
         this._active = false;
         ui.controls.render({force:true, reset: true});
@@ -1864,10 +1883,17 @@ class Levels3DPreview {
         document.querySelector("#board").style.display = "unset";
         canvas.stage.renderable = true;
         this.clear3Dscene();
+        if (wasActive) this.refreshRulers();
         if (this._sharedContext) {
             this.renderer.resetState();
             canvas.app.renderer.reset();
         }
+    }
+
+    refreshRulers() {
+        if (!canvas?.ready) return;
+        redrawRulers3D();
+        recreateTokenRulers3D();
     }
 
     reload() {

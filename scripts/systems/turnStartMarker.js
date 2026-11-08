@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { Ruler3D } from "./ruler3d.js";
+import * as coords3d from "../helpers/coords3d.js";
 import { factor } from "../main.js";
 import { radialGradientShaderMaterial } from "../shaders/shaderMaterials.js";
 import { createTargetGeometry } from "../entities/effects/target.js";
@@ -38,7 +38,7 @@ export class turnStartMarker {
         if (!this.mesh) return;
         if (!this.token) return;
         const token = this.token;
-        const tokenPos = Ruler3D.posCanvasTo3d({ x: token.center.x, y: token.center.y, z: token.document.elevation });
+        const tokenPos = coords3d.posCanvasTo3d({ x: token.center.x, y: token.center.y, z: token.document.elevation });
         this.mesh.position.set(tokenPos.x, tokenPos.y, tokenPos.z);
         const size = Math.min(token.document.width, token.document.height);
         this.mesh.scale.set(size, size, size);

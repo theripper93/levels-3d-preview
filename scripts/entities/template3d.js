@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { Ruler3D } from "../systems/ruler3d.js";
+import * as coords3d from "../helpers/coords3d.js";
 import { factor } from "../main.js";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { isLockedOnOrigin } from "../shaders/templateEffects.js";
@@ -92,7 +92,7 @@ export class Template3D {
     }
 
     contains(point, convertSpace = true) {
-        if (convertSpace) point = Ruler3D.posCanvasTo3d(point);
+        if (convertSpace) point = coords3d.posCanvasTo3d(point);
         return this._parent.interactionManager.inMesh(point, this.collisionMesh ?? this.templateMesh);
     }
 
@@ -104,14 +104,13 @@ export class Template3D {
         this.mesh.remove(this.templateMesh);
         this.material = this._getMaterial();
         this._getTexture();
-        // this.A = this._origin ?? Ruler3D.posCanvasTo3d({ x: this.template.document?.x, y: this.template.document?.y, z: this.template.document?.elevation ?? 0 });
-        this.A = this._origin ?? Ruler3D.posCanvasTo3d({ x: this.template?.x, y: this.template?.y, z: this.elevation });
+        this.A = this._origin ?? coords3d.posCanvasTo3d({ x: this.template?.x, y: this.template?.y, z: this.elevation });
         this.B = this._destination;
         this.pointsFromData();
         this.direction = (Math.atan2(this.B.z - this.A.z, this.B.x - this.A.x) * 180) / Math.PI;
         const vec2A = new THREE.Vector2(this.A.x, this.A.z);
         const vec2B = new THREE.Vector2(this.B.x, this.B.z);
-        this.distance = this.useVec2 ? Ruler3D.pixelsToUnits(vec2A.distanceTo(vec2B)) : Ruler3D.pixelsToUnits(this.A.distanceTo(this.B));
+        this.distance = this.useVec2 ? coords3d.pixelsToUnits(vec2A.distanceTo(vec2B)) : coords3d.pixelsToUnits(this.A.distanceTo(this.B));
         this.angle = 0;
         this.width = 1;
         const mesh = this._getMesh();
@@ -168,17 +167,17 @@ export class Template3D {
     pointsFromData() {
         if (!this.fromData) return;
         if (this.template.measuredSegments.length > 1) {
-            this.A = Ruler3D.posCanvasTo3d({ x: this.template.measuredSegments[0]?.ray.A.x, y: this.template.measuredSegments[0]?.ray.A.y, z: this.elevationBottom });
-            this.B = Ruler3D.posCanvasTo3d({ x: this.template.measuredSegments[0]?.ray.B.x, y: this.template.measuredSegments[1]?.ray.B.y, z: this.elevationTop });
+            this.A = coords3d.posCanvasTo3d({ x: this.template.measuredSegments[0]?.ray.A.x, y: this.template.measuredSegments[0]?.ray.A.y, z: this.elevationBottom });
+            this.B = coords3d.posCanvasTo3d({ x: this.template.measuredSegments[0]?.ray.B.x, y: this.template.measuredSegments[1]?.ray.B.y, z: this.elevationTop });
         } else {
-            this.A = Ruler3D.posCanvasTo3d({ x: this.template.measuredSegments[0]?.ray.A.x, y: this.template.measuredSegments[0]?.ray.A.y, z: this.elevationBottom });
-            this.B = Ruler3D.posCanvasTo3d({ x: this.template.measuredSegments[0]?.ray.B.x, y: this.template.measuredSegments[0]?.ray.B.y, z: this.elevationTop });
+            this.A = coords3d.posCanvasTo3d({ x: this.template.measuredSegments[0]?.ray.A.x, y: this.template.measuredSegments[0]?.ray.A.y, z: this.elevationBottom });
+            this.B = coords3d.posCanvasTo3d({ x: this.template.measuredSegments[0]?.ray.B.x, y: this.template.measuredSegments[0]?.ray.B.y, z: this.elevationTop });
         }
-        if (this.shape !== "cylinder") this.B.y += Ruler3D.unitsToPixels(this.template.document?.flags?.levels?.special ?? 0);
+        if (this.shape !== "cylinder") this.B.y += coords3d.unitsToPixels(this.template.document?.flags?.levels?.special ?? 0);
     }
 
     async fromPreview(create = true) {
-        const origin2d = this.isPreview ? Ruler3D.pos3DToCanvas(this.mesh.position) : Ruler3D.pos3DToCanvas(this.A);
+        const origin2d = this.isPreview ? coords3d.pos3DToCanvas(this.mesh.position) : coords3d.pos3DToCanvas(this.A);
 
         if (this.isLight) {
             const lightData = {
@@ -226,7 +225,7 @@ export class Template3D {
             let y = origin2d.y;
             if (width < 0) x += width;
             if (height < 0) y += height;
-            if (depth < 0) elevation += Ruler3D.pixelsToUnits(depth) / factor;
+            if (depth < 0) elevation += coords3d.pixelsToUnits(depth) / factor;
 
             const tileData = {
                 width: Math.abs(width),
@@ -352,7 +351,7 @@ export class Template3D {
 
     _getSphereGeometry() {
         const isWireframe = this.templateStyle === "wireframe";
-        const radius = this._origin && this._destination ? this._origin.distanceTo(this._destination) : Ruler3D.unitsToPixels(this.template.measuredSegments[0]?.distance ?? 0);
+        const radius = this._origin && this._destination ? this._origin.distanceTo(this._destination) : coords3d.unitsToPixels(this.template.measuredSegments[0]?.distance ?? 0);
         const sphereGeometry = new THREE.SphereGeometry(radius, 16, 16);
         let torusGeo;
         if (isWireframe) {
@@ -387,13 +386,13 @@ export class Template3D {
         const vertexA = this.A;
         const vertexB = this.B;
         this.width = vertexB.x - vertexA.x;
-        this.height = this.template3dData.special !== undefined ? Ruler3D.unitsToPixels(this.template3dData.special) : vertexB.y - vertexA.y;
+        this.height = this.template3dData.special !== undefined ? coords3d.unitsToPixels(this.template3dData.special) : vertexB.y - vertexA.y;
         this.depth = vertexB.z - vertexA.z;
     }
 
     _getSquareGeometry() {
         this.calcWidthHeightDepth();
-        this.special = Ruler3D.pixelsToUnits(this.height);
+        this.special = coords3d.pixelsToUnits(this.height);
         const geometry = new THREE.BoxGeometry(this.width, this.height, this.depth, 8, 8, 8);
         const mesh = this._makeMesh(geometry);
 
@@ -459,7 +458,7 @@ export class Template3D {
     _getCylinderGeometry() {
         const vertexA = this.A;
         let vertexB = this.B;
-        const height = Ruler3D.unitsToPixels(this.template3dData.special);
+        const height = coords3d.unitsToPixels(this.template3dData.special);
         this.special = this.template3dData.special;
         const radius = vertexB.distanceTo(vertexA);
         const geometry = new THREE.CylinderGeometry(radius, radius, height, 32);
@@ -486,10 +485,10 @@ export class Template3D {
         const vertexA = this.A;
         let vertexB = this.B;
         const width = vertexB.distanceTo(vertexA);
-        const height = this.template3dData.special !== undefined ? Ruler3D.unitsToPixels(this.template3dData.special) : vertexB.y - vertexA.y;
-        this.special = Ruler3D.pixelsToUnits(height);
-        const depth = Ruler3D.unitsToPixels(this.template?.document?.width ?? 5);
-        this.width = Ruler3D.pixelsToUnits(depth);
+        const height = this.template3dData.special !== undefined ? coords3d.unitsToPixels(this.template3dData.special) : vertexB.y - vertexA.y;
+        this.special = coords3d.pixelsToUnits(height);
+        const depth = coords3d.unitsToPixels(this.template?.document?.width ?? 5);
+        this.width = coords3d.pixelsToUnits(depth);
         const geometry = new THREE.BoxGeometry(width, height, depth, 5, 5, 5);
         const mesh = this._makeMesh(geometry);
         mesh.position.set(width / 2, height / 2, 0);
@@ -514,8 +513,7 @@ export class Template3D {
 
     _getOrigin(A) {
         if (A) return A;
-        return Ruler3D.posCanvasTo3d({ x: this.template?.x, y: this.template?.y, z: this.elevation });
-        // return Ruler3D.posCanvasTo3d({ x: this.template.document?.x, y: this.template.document?.y, z: this.template.document?.elevation ?? 0 });
+        return coords3d.posCanvasTo3d({ x: this.template?.x, y: this.template?.y, z: this.elevation });
     }
 
     _getDestination(B) {
@@ -745,14 +743,14 @@ export class Template3D {
         template3d.angle = templateDocument?.angle;
         template3d.distance = templateDocument?.distance;
         template3d.direction = templateDocument?.direction;
-        template3d.arcDelta = Ruler3D.unitsToPixels(template3d.distance);
-        game.Levels3DPreview.interactionManager.ruler.template = template3d;
+        template3d.arcDelta = coords3d.unitsToPixels(template3d.distance);
+        game.Levels3DPreview.interactionManager.placementPreview.template = template3d;
         game.Levels3DPreview.interactionManager.draggable = template3d.dragHandle;
         game.Levels3DPreview.controls.enableZoom = false;
         const token = game.Levels3DPreview.tokens[_token.id]?.token ?? template.item?.actor?.getActiveTokens()[0];
         if (token && game.Levels3DPreview.tokens[token.id]) {
             template3d.mesh.position.copy(game.Levels3DPreview.tokens[token.id].mesh.position);
-            game.Levels3DPreview.interactionManager.ruler.origin = game.Levels3DPreview.tokens[token.id].mesh.position;
+            game.Levels3DPreview.interactionManager.placementPreview.origin = game.Levels3DPreview.tokens[token.id].mesh.position;
         }
 
         // Hide the sheet that originated the preview
@@ -764,7 +762,7 @@ export class Template3D {
         const promise = new Promise((resolve) => {
             res = resolve;
         });
-        game.Levels3DPreview.interactionManager.ruler._templatePreviewData = {
+        game.Levels3DPreview.interactionManager.placementPreview._templatePreviewData = {
             resolve: res,
             create: create,
         };

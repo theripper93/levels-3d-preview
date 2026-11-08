@@ -1,8 +1,9 @@
 import * as THREE from "three";
 import { factor } from "../main.js";
-import { Ruler3D, RULER_TOKEN_OFFSET } from "../systems/ruler3d.js";
+import { posCanvasTo3d, pos3DToCanvas, unitsToPixels } from "../helpers/coords3d.js";
+import * as coords3d from "../helpers/coords3d.js";
+import { PlacementPreview3D } from "../systems/placementPreview3d.js";
 import { GroupSelectHandler } from "./GroupSelectHandler.js";
-import { isLockedOnOrigin } from "../shaders/templateEffects.js";
 import { TileCreationQueue } from "./TileCreationQueue.js";
 import { computeBoundsTree, disposeBoundsTree } from "three-mesh-bvh";
 import { acceleratedRaycast } from "../three/acceleratedRaycast.js";
@@ -69,7 +70,10 @@ export class InteractionManager {
         this.controls = levels3dPreview.controls;
         this.camera = levels3dPreview.camera;
         this.domElement = levels3dPreview.renderer.domElement;
-        this.ruler = levels3dPreview.ruler;
+        this.placementPreview = new PlacementPreview3D(levels3dPreview);
+        this._tokenDrag = null;
+        this._freeRuler = null;
+        levels3dPreview.placementPreview = this.placementPreview;
         this.factor = levels3dPreview.factor;
         this.clicks = 0;
         this.lcTime = 0;
@@ -167,8 +171,8 @@ export class InteractionManager {
     }
 
     computeSightCollision(v1, v2, type = "move", elongate = false, useDistance = true, useClipping = false, returnAll = false) {
-        const origin = Ruler3D.posCanvasTo3d(v1);
-        const target = Ruler3D.posCanvasTo3d(v2);
+        const origin = posCanvasTo3d(v1);
+        const target = posCanvasTo3d(v2);
         return this.computeSightCollisionFrom3DPositions(origin, target, type, elongate, useDistance, useClipping, returnAll);
     }
 
@@ -222,6 +226,7 @@ export class InteractionManager {
         this.domElement.addEventListener("mousedown", this._onMouseDown.bind(this), false);
         //this.domElement.addEventListener("mousedown", this._onEnableRuler.bind(this), false);
         this.domElement.addEventListener("mouseup", this._onMouseUp.bind(this), false);
+        this.domElement.addEventListener("pointerup", this._onPointerUp.bind(this), false);
         this.domElement.addEventListener("mousemove", this._onMouseMove.bind(this), false);
         this.domElement.addEventListener("wheel", this._onWheel.bind(this), false);
         this.domElement.addEventListener("drop", this._onDrop.bind(this));
@@ -401,8 +406,7 @@ export class InteractionManager {
             rulerObj.position.set(intersectPos.x, intersectPos.y, intersectPos.z);
             this.draggable = rulerObj;
         } else if (event.which === 3 && this.draggable) {
-            //this.ruler.template?.destroy();
-            this.ruler.template = null;
+            this.placementPreview.template = null;
             this.draggable = null;
         }
     }
@@ -420,7 +424,7 @@ export class InteractionManager {
             }
         }
         try {
-            const coord3d = data.coord3d ? Ruler3D.pos3DToCanvas(data.coord3d) : this.screen3DtoCanvas2DWithCollision(event);
+            const coord3d = data.coord3d ? pos3DToCanvas(data.coord3d) : this.screen3DtoCanvas2DWithCollision(event);
             data.x = coord3d.x;
             data.y = coord3d.y;
             data.elevation = coord3d.z;
@@ -452,6 +456,8 @@ export class InteractionManager {
         if (this._parent.CONFIG.UI.windows.HeightmapPainter?.isPainting || ((this._parent.CONFIG.UI.windows.AssetBrowser?._hasSelected || this._parent.CONFIG.UI.windows.EffectBrowser?._hasSelected) && event.shiftKey)) {
             return canvas.tiles.releaseAll();
         }
+        if (this._tokenDrag) return this._onTokenDragMouseDown(event);
+        if (this._freeRuler) return this._onFreeRulerMouseDown(event);
         if (this._groupSelect && this.activeLayerEntity != "Region") return this.groupSelectHandler.startSelect(event);
         if (this.preventSelect) return;
         const downId = foundry.utils.randomID();
@@ -514,8 +520,8 @@ export class InteractionManager {
             originalIntersect: event.originalIntersect,
             intersectData: intersectData.intersectData,
         };
-        if (event.which === 3 && (this.draggable?.userData?.entity3D?.token || ui.controls.tool.name === "tile3dPolygon" || ui.controls.tool.name === "polygon")) {
-            this._parent.ruler.addSegment();
+        if (event.which === 3 && (ui.controls.tool.name === "tile3dPolygon" || ui.controls.tool.name === "polygon")) {
+            this.addWaypoint();
         } else {
             if (this.clicks === 1) {
                 // The single click is dispatched on mouseup; here we only decide whether this press becomes a drag.
@@ -567,6 +573,8 @@ export class InteractionManager {
 
     _onMouseUp(event) {
         if (this._groupSelect) return this.groupSelectHandler.endSelect(event);
+        if (this._tokenDrag) return this._onTokenDragMouseUp(event);
+        if (this._freeRuler) return this._onFreeRulerMouseUp(event);
         if (event.which === 1) this._leftDown = false;
         if (event.which === 3) this._rightDown = false;
         if (!this._leftDown && !this._rightDown) this.toggleControls(true);
@@ -586,18 +594,11 @@ export class InteractionManager {
             if (!this.currentDragTarget) this.currentDragTarget = (this.draggable.userData.isHitbox ? this.draggable.parent : this.draggable).position.clone();
             this.forceDraggablePosition(event);
             const entity3D = this.draggable?.userData?.entity3D;
-            if (entity3D.token) {
-                this.currentDragTarget.y -= RULER_TOKEN_OFFSET;
-            }
             this.draggable.position.copy(this.currentDragTarget);
-            this.ruler.placeShape();
-            if (entity3D.token) {
-                this._parent.ruler.addSegment();
-                entity3D.setPosition(false, true);
-                this._parent.ruler.executeAllMovement(entity3D.token);
-            } else if (ui.controls.tool.name === "tile3dPolygon") {
-                this._parent.ruler.addSegment();
-                this._parent.ruler.createTile();
+            this.placementPreview.placeShape();
+            if (ui.controls.tool.name === "tile3dPolygon") {
+                this.placementPreview.addSegment();
+                this.placementPreview.createTile();
             } else {
                 if (!entity3D.updatePositionFrom3D(event)) this.cancelDrag();
             }
@@ -652,6 +653,7 @@ export class InteractionManager {
             this.domMousePosition = { x: event.clientX, y: event.clientY };
             this.mousemove.x = (event.clientX / window.innerWidth) * 2 - 1;
             this.mousemove.y = -(event.clientY / window.innerHeight) * 2 + 1;
+            if (this._tokenDrag) this._tokenDrag.manualPoint = null;
             if (this._pendingDrag) this._checkPendingDrag(event);
         }
         if (this.draggable) return;
@@ -662,7 +664,7 @@ export class InteractionManager {
         //Handle placeable hover event
         if (!event) return;
         if (intersect?.point) {
-            this.canvas2dMousePosition = Ruler3D.pos3DToCanvas(intersect.point);
+            this.canvas2dMousePosition = pos3DToCanvas(intersect.point);
             canvas.mousePosition = this.canvas2dMousePosition;
             this.canvas3dMousePosition = intersect.point;
         }
@@ -719,7 +721,7 @@ export class InteractionManager {
         if (!i.object.material?.clippingPlanes && !isClippingShader) return true;
         if (isClippingShader) {
             const t3d = game.Levels3DPreview.tokens[canvas.tokens.controlled[0].id];
-            const tY = t3d.mesh?.position?.y - (t3d.hasClone ? RULER_TOKEN_OFFSET : 0);
+            const tY = t3d.mesh?.position?.y;
             const yConstant = tY + entity3D.shaders.clipping.heightOffset / factor;
             return yConstant > i.point.y;
         } else {
@@ -757,6 +759,8 @@ export class InteractionManager {
 
     _onWheel(event) {
         this._parent.stopCameraAnimation();
+        if (this._tokenDrag) return this._onTokenDragWheel(event);
+        if (this._freeRuler) return this._onFreeRulerWheel(event);
         if (this.draggable) {
             const delta = Math.sign(event.deltaY);
             const entity3D = this.draggable.userData.entity3D;
@@ -768,8 +772,8 @@ export class InteractionManager {
                 if (event.shiftKey) elevationDiff = canvas.scene.dimensions.distance / 5;
                 if (event.ctrlKey && !isTemplate) elevationDiff = canvas.scene.dimensions.distance / 50;
                 entity3D.elevation3d += -delta * this.elevationTick * elevationDiff;
-                if (game.settings.get("levels-3d-preview", "preventNegative") && entity3D.elevation3d < Ruler3D.unitsToPixels(canvas.primary.background.elevation)) {
-                    entity3D.elevation3d = Ruler3D.unitsToPixels(canvas.primary.background.elevation);
+                if (game.settings.get("levels-3d-preview", "preventNegative") && entity3D.elevation3d < unitsToPixels(canvas.primary.background.elevation)) {
+                    entity3D.elevation3d = unitsToPixels(canvas.primary.background.elevation);
                 }
             };
             if (isTemplate) {
@@ -836,6 +840,7 @@ export class InteractionManager {
     }
 
     startDrag(event, intersectData) {
+        if (ui.controls.tool.name === "ruler" && CONFIG.Canvas.rulerClass.canMeasure) return this.startFreeRuler(event, intersectData);
         if (this.isRulerDrag(event, intersectData)) return this._onEnableRuler(event);
         const entity = event.entity;
         if (!entity || entity.isCaptured) return this.abortDrag();
@@ -853,10 +858,25 @@ export class InteractionManager {
                 intersect = this._parent.controlledGroup;
             }
         }
+        if (entity.token) {
+            if (!this.startTokenDrag(entity, event, intersect)) return this.abortDrag();
+            return;
+        }
         entity.isAnimating = false;
         entity.setPosition?.();
         this.draggable = intersect;
+        const target = intersect.userData?.isHitbox ? intersect.parent : intersect;
+        const base = this._dragSurfaceIntersect(this.isFreeMode || this.forceFree)?.point;
+        if (base && target?.position) this._dragOffset = new THREE.Vector3(target.position.x - base.x, 0, target.position.z - base.z);
         this.toggleControls(false);
+    }
+
+    _dragSurfaceIntersect(isFree) {
+        const geometries = this._collisionGeometries ?? [];
+        this.raycaster.setFromCamera(this.mousemove, this.camera);
+        let intersects = this.raycaster.intersectObjects(geometries.length && !isFree ? geometries : [this.dragplane], true).filter(this._clippingFilter);
+        if (!intersects?.length) intersects = this.raycaster.intersectObjects([this.dragplane], true);
+        return intersects[0] ?? null;
     }
 
     abortDrag() {
@@ -911,6 +931,7 @@ export class InteractionManager {
     }
 
     _onKeyDown(event) {
+        if (event.key === "Escape" && this._freeRuler) this.endFreeRuler();
         if (event.ctrlKey) {
             this.isCtrl = true;
             this.controls.enableZoom = false;
@@ -1021,66 +1042,24 @@ export class InteractionManager {
     set draggable(object) {
         this._lockTemplateElevation = false;
         this._draggable = object;
+        this._dragOffset = null;
         const center = this._parent.canvasCenter;
         if (object) {
             this.currentDragTarget = null;
             this.buildCollisionGeos();
             this.forceFree = object.userData.entity3D.wasFreeMode;
+            this._dragOriginY = (object.userData.isHitbox ? object.parent : object).position.y;
             this.dragplane.position.set(center.x, object.userData.entity3D.mesh.position.y, center.z);
-            this.makeClone();
-            this.ruler.cacheSpeedProvider(object?.userData?.entity3D?.token);
         } else {
             this.forceFree = false;
+            this._dragOriginY = undefined;
             this.dragplane.position.set(center.x, -99999999, center.z);
-            this.removeClone();
         }
-        if (this.ruler) this.ruler.object = object;
+        if (this.placementPreview) this.placementPreview.object = object?.userData?.entity3D?.token ? null : object;
     }
 
     get draggable() {
         return this._draggable;
-    }
-
-    makeClone() {
-        const entity3D = this.draggable?.userData?.entity3D;
-        if (!entity3D?.token) return;
-        const userDataCache = {};
-        entity3D.mesh.traverse((child) => {
-            if (child.userData) {
-                userDataCache[child.uuid] = child.userData;
-                child.userData = {};
-            }
-        });
-        this.clone = entity3D.mesh.clone();
-        const lights = [];
-        this.clone.traverse((child) => {
-            //remove all lights from clone
-            if (child.type === "PointLight" || child.type === "DirectionalLight") {
-                lights.push(child);
-            }
-        });
-        lights.forEach((light) => light.removeFromParent());
-        this.clone.userData.original = entity3D;
-        this.clone.head = entity3D.head;
-        this.clone.mid = entity3D.mid;
-        entity3D.mesh.traverse((child) => {
-            if (child.userData) {
-                child.userData = userDataCache[child.uuid];
-            }
-        });
-        entity3D.hasClone = this.clone;
-        entity3D.updateHiden();
-        this._parent.scene.add(this.clone);
-    }
-
-    removeClone() {
-        if (this.clone) {
-            const entity3D = this.clone.userData.original;
-            this._parent.scene.remove(this.clone);
-            entity3D.hasClone = null;
-            entity3D.updateHiden();
-            this.clone = null;
-        }
     }
 
     buildCollisionGeos(dId) {
@@ -1133,12 +1112,12 @@ export class InteractionManager {
         screenPosition = new THREE.Vector2(screenPosition.x, screenPosition.y);
         this.raycaster.setFromCamera(screenPosition, this.camera);
         const intersects = this.raycaster.intersectObjects([this.dragplane], true);
-        return intersects.length > 0 ? Ruler3D.pos3DToCanvas(intersects[0].point) : undefined;
+        return intersects.length > 0 ? pos3DToCanvas(intersects[0].point) : undefined;
     }
 
     screen3DtoCanvas2DWithCollision(event) {
         const intersect = this.findMouseIntersect(event);
-        const pos = intersect ? Ruler3D.pos3DToCanvas(intersect.point) : undefined;
+        const pos = intersect ? pos3DToCanvas(intersect.point) : undefined;
         return pos;
     }
 
@@ -1165,71 +1144,459 @@ export class InteractionManager {
     }
 
     dragObject() {
+        if (this._tokenDrag) return this.updateTokenDrag();
+        if (this._freeRuler) return this.updateFreeRuler();
         if (!this.draggable) return;
         if (this.groupSelectHandler._isSelecting) this.groupSelectHandler.endSelect();
-        const collisionGeometries = this._collisionGeometries;
-        const token = this.draggable.userData?.entity3D?.token;
-        const statuses = Array.from(token?.document?.actor?.statuses ?? []);
-        const isFlying = token && (token?.document?.movementAction === "fly" || (statuses.some(s => s.includes("fly")) ?? token?.document?.flags?.["levels-3d-preview"]?.forceFlyingMode));
         const target = this.draggable.userData.isHitbox ? this.draggable.parent : this.draggable;
-        const isFree = this.isFreeMode || this.forceFree || isFlying || (this.draggable.userData.entity3D.template && this.draggable.userData.entity3D.wasFreeMode);
+        const isFree = this.isFreeMode || this.forceFree || (this.draggable.userData.entity3D.template && this.draggable.userData.entity3D.wasFreeMode);
         this.draggable.userData.entity3D.wasFreeMode = isFree;
         const center = this._parent.canvasCenter;
         if (this.draggable.userData.entity3D.mesh.position.y < 0) {
             this.dragplane.position.set(center.x, this.draggable.userData.entity3D.mesh.position.y, center.z);
         }
 
-        this.raycaster.setFromCamera(this.mousemove, this.camera);
-        let intersects = this.raycaster.intersectObjects(collisionGeometries.length && !isFree ? collisionGeometries : [this.dragplane], true).filter(this._clippingFilter);
-        if (!intersects?.length) intersects = this.raycaster.intersectObjects([this.dragplane], true);
-
-        if (intersects.length > 0) {
+        const intersect = this._dragSurfaceIntersect(isFree);
+        if (intersect) {
             const entity3D = this.draggable.userData.entity3D;
-            const intersect = intersects[0];
             if (this._parent.CONFIG.UI.windows.RoomBuilder && ui.controls.tool.name == "tile") {
-                intersect.point.y = this.ruler.origin.y;
+                intersect.point.y = this.placementPreview.origin?.y ?? this._dragOriginY ?? intersect.point.y;
             }
-            const distance = target.position.distanceTo(intersect.point);
+            const offset = this._dragOffset;
+            this.currentDragTarget = new THREE.Vector3(intersect.point.x + (offset?.x ?? 0), !isFree ? intersect.point.y : entity3D.elevation3d, intersect.point.z + (offset?.z ?? 0));
+            const distance = target.position.distanceTo(this.currentDragTarget);
             let lerpFactor = 1 / (1 + distance * 20);
             if (lerpFactor < 0.1) lerpFactor = 0.1;
-            const isToken = !!entity3D.token;
-            this.currentDragTarget = new THREE.Vector3(intersect.point.x, !isFree ? intersect.point.y : entity3D.elevation3d, intersect.point.z);
-            if (isToken) this.currentDragTarget.y += RULER_TOKEN_OFFSET;
+            this.canvas2dMousePosition = pos3DToCanvas(this.currentDragTarget);
+            canvas.mousePosition = this.canvas2dMousePosition;
+            this.canvas3dMousePosition = this.currentDragTarget.clone();
             target.position.lerp(this.currentDragTarget, lerpFactor);
             if (!isFree) {
                 entity3D.elevation3d = intersect.point.y;
                 this.dragplane.position.set(center.x, intersect.point.y, center.z);
             }
             if (entity3D.template) entity3D.onMove();
-            this.ruler.update();
+            this.updateDragMeasure();
         }
     }
 
     forceDraggablePosition(event) {
         const target = this.draggable.userData.isHitbox ? this.draggable.parent : this.draggable;
         target.position.copy(this.currentDragTarget);
-        this.ruler.update();
+        this.updateDragMeasure();
+    }
+
+    updateDragMeasure() {
+        if (this.placementPreview.active) this.placementPreview.update();
+    }
+
+    addWaypoint() {
+        const drag = this._tokenDrag;
+        if (drag) {
+            if (!drag.token.ruler || !this.canvas2dMousePosition) return false;
+            drag.token._addDragWaypoint(this.canvas2dMousePosition, { snap: !game.keyboard.isModifierActive("Shift") });
+            return true;
+        }
+        if (this.placementPreview.active) return this.placementPreview.addSegment();
+        return false;
+    }
+
+    removeWaypoint() {
+        const drag = this._tokenDrag;
+        if (drag) {
+            if (drag.token.ruler) drag.token._removeDragWaypoint();
+            else drag.token._triggerDragLeftCancel();
+            return true;
+        }
+        if (this._freeRuler) {
+            const ruler = canvas.controls.ruler;
+            ruler._removeDragWaypoint();
+            if (!ruler.active) this.endFreeRuler();
+            return true;
+        }
+        if (this.placementPreview.active) return this.placementPreview.removeSegment();
+        return false;
     }
 
     cancelDrag(force = false) {
+        if (this._tokenDrag) return this.cancelTokenDrag();
+        if (this._freeRuler) return this.endFreeRuler();
         if (!this.draggable) return;
         const entity3D = this.draggable.userData.entity3D;
-        const isToken = !!entity3D.token;
-        if (isToken && !force) {
-            this.clicks = 0;
-            return this._parent.ruler.addSegment();
-        }
         entity3D.dragCanceled = true;
         this.draggable = undefined;
-        this.ruler.template = undefined;
-        if (this.ruler._templatePreviewData) {
-            this.ruler._templatePreviewData.resolve(false);
-            this.ruler._templatePreviewData = null;
-        }
-        if (entity3D.token) Hooks.call("updateToken", entity3D.token.document, { x: entity3D.token.document.x });
+        this.placementPreview.cancel();
         if (entity3D.template) Hooks.call("updateMeasuredTemplate", entity3D.template.document, { x: entity3D.template.document.x });
         if (entity3D.tile) Hooks.call("updateTile", entity3D.tile.document, { x: entity3D.tile.document.x });
         this.clicks = 0;
+    }
+
+    isTokenDragFree(token) {
+        if (this.isFreeMode || this.forceFree) return true;
+        const document = token?.document;
+        if (!document) return false;
+        if (document.movementAction === "fly") return true;
+        if (document.flags?.["levels-3d-preview"]?.forceFlyingMode) return true;
+        const statuses = Array.from(document.actor?.statuses ?? []);
+        return statuses.some((s) => s.includes("fly"));
+    }
+
+    _setCanvasPointer(x, y, elevation, point3d = null) {
+        const position = new THREE.Vector3(x, y, elevation);
+        position.elevation = elevation;
+        this.canvas2dMousePosition = position;
+        canvas.mousePosition = position;
+        this.canvas3dMousePosition = point3d ?? posCanvasTo3d(position);
+    }
+
+    _createSyntheticPointerEvent(type, target, { button = 0, buttons = 0, shiftKey = false, altKey = false, ctrlKey = false, metaKey = false, screen = null } = {}) {
+        const eventSystem = canvas.app.renderer.events;
+        const event = eventSystem.rootBoundary.createPointerEvent(eventSystem.pointer, type, target);
+        event.defaultPrevented = false;
+        event.path = null;
+        event.button = button;
+        event.buttons = buttons;
+        event.shiftKey = shiftKey;
+        event.altKey = altKey;
+        event.ctrlKey = ctrlKey;
+        event.metaKey = metaKey;
+        event.timeStamp = performance.now();
+        if (screen) {
+            for (const point of [event.global, event.client, event.screen, event.page]) point?.set(screen.x, screen.y);
+        }
+        const interactionManager = this;
+        event.getLocalPosition = function (displayObject, point) {
+            const position = interactionManager.canvas2dMousePosition;
+            const out = point ?? new PIXI.Point();
+            out.x = position?.x ?? 0;
+            out.y = position?.y ?? 0;
+            return out;
+        };
+        return event;
+    }
+
+    _freeSyntheticPointerEvent(event) {
+        delete event.getLocalPosition;
+        canvas.app.renderer.events.rootBoundary.freeEvent(event);
+    }
+
+    _beginCoreTokenDrag(token, { shiftKey = false, altKey = false } = {}) {
+        const MouseInteractionManager = foundry.canvas.interaction.MouseInteractionManager;
+        const mim = token.mouseInteractionManager;
+        const states = mim.states;
+        if (mim.state > states.HOVER) mim.cancel();
+        if (mim.state < states.HOVER) mim.state = states.HOVER;
+        mim.lcTime = 0;
+        mim.dragTime = 0;
+        const source = token.document._source;
+        const center = token.document.getCenterPoint(source);
+        this._setCanvasPointer(center.x, center.y, source.elevation);
+        const screen = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+        const resistance = (mim.options?.dragResistance || MouseInteractionManager.DEFAULT_DRAG_RESISTANCE_PX) + 1;
+        const drag = this._tokenDrag;
+        drag.dispatching = true;
+        try {
+            const down = this._createSyntheticPointerEvent("pointerdown", token, { button: 0, buttons: 1, altKey, screen });
+            down.interactionData = mim.interactionData;
+            try {
+                mim.handleEvent(down);
+            } finally {
+                this._freeSyntheticPointerEvent(down);
+            }
+            if (mim.state === states.GRABBED) {
+                const move = this._createSyntheticPointerEvent("pointermove", token, { button: -1, buttons: 1, shiftKey, altKey, screen: { x: screen.x + resistance, y: screen.y } });
+                move.interactionData = mim.interactionData;
+                try {
+                    mim.layer.emit("pointermove", move);
+                } finally {
+                    this._freeSyntheticPointerEvent(move);
+                }
+            }
+        } finally {
+            drag.dispatching = false;
+        }
+        if (canvas.tokens._draggedToken === token && mim.state === states.DRAG) return true;
+        clearTimeout(MouseInteractionManager.longPressTimeout);
+        if (mim.state > states.HOVER) {
+            mim.interactionData.cancelled = true;
+            mim.cancel();
+        }
+        return false;
+    }
+
+    _resolveToken3D(target) {
+        if (!target) return null;
+        if (typeof target === "string") return this._parent.tokens[target] ?? null;
+        if (target instanceof foundry.canvas.placeables.Token) return this._parent.tokens[target.id] ?? null;
+        if (target.token && target.mesh) return target;
+        return this._parent.tokens[target.id ?? target.document?.id] ?? null;
+    }
+
+    startTokenDrag(target, { shiftKey = false, altKey = false } = {}, dragObject = null) {
+        if (this._tokenDrag || this._freeRuler) return false;
+        const token3d = this._resolveToken3D(target);
+        const token = token3d?.token;
+        if (!token || token.isPreview || token.destroyed || token3d.isCaptured || !token.mouseInteractionManager) return false;
+        if (!canvas.tokens?.active || game.activeTool !== "select" || canvas.tokens._draggedToken) return false;
+        if (!token.controlled) token.control({ releaseOthers: true });
+        this._tokenDrag = { token, token3d, ghosts: new Set(), dispatching: false, released: false, manualPoint: null, lastKey: null };
+        let started = false;
+        try {
+            started = this._beginCoreTokenDrag(token, { shiftKey: !!shiftKey, altKey: !!altKey });
+        } catch (e) {
+            console.error(e);
+        }
+        if (!started) {
+            this._tokenDrag = null;
+            return false;
+        }
+        token3d.isAnimating = false;
+        token3d.setPosition?.();
+        this.draggable = dragObject ?? token3d.mesh;
+        this.toggleControls(false);
+        const contexts = token.mouseInteractionManager.interactionData.contexts ?? {};
+        for (const id of Object.keys(contexts)) {
+            const ghostOwner = this._parent.tokens[id];
+            if (!ghostOwner?.createDragGhost?.()) continue;
+            this._tokenDrag.ghosts.add(ghostOwner);
+        }
+        this.updateTokenDrag();
+        return true;
+    }
+
+    _raycastTokenDrag(drag, context) {
+        const free = this.isTokenDragFree(drag.token);
+        drag.token3d.wasFreeMode = free;
+        const center = this._parent.canvasCenter;
+        this.raycaster.setFromCamera(this.mousemove, this.camera);
+        if (free) {
+            this.dragplane.updateMatrixWorld();
+            return this.raycaster.intersectObjects([this.dragplane], true)[0]?.point ?? null;
+        }
+        const collisionGeometries = this._collisionGeometries ?? [];
+        let intersects = collisionGeometries.length ? this.raycaster.intersectObjects(collisionGeometries, true).filter(this._clippingFilter) : [];
+        if (!intersects.length) intersects = this.raycaster.intersectObjects([this.dragplane], true);
+        const point = intersects[0]?.point;
+        if (!point) return null;
+        this.dragplane.position.set(center.x, point.y, center.z);
+        return point;
+    }
+
+    updateTokenDrag(point = null) {
+        const drag = this._tokenDrag;
+        if (!drag) return false;
+        const token = drag.token;
+        if (token.destroyed || canvas.tokens?._draggedToken !== token) {
+            this.onCoreDragEnd(token);
+            return false;
+        }
+        if (point) drag.manualPoint = point;
+        const contexts = token.mouseInteractionManager.interactionData.contexts ?? {};
+        const context = contexts[token.document.id];
+        let point3d;
+        if (drag.manualPoint) {
+            const p = drag.manualPoint;
+            point3d = p.elevation !== undefined ? posCanvasTo3d({ x: p.x, y: p.y, z: p.elevation }) : new THREE.Vector3(p.x, p.y, p.z);
+            drag.token3d.wasFreeMode = this.isTokenDragFree(token);
+        } else {
+            point3d = this._raycastTokenDrag(drag, context);
+        }
+        if (point3d) {
+            const position = pos3DToCanvas(point3d);
+            this.canvas2dMousePosition = position;
+            canvas.mousePosition = position;
+            this.canvas3dMousePosition = point3d;
+            const snap = !game.keyboard.isModifierActive("Shift");
+            const key = [position.x, position.y, position.z, snap, this.isTokenDragFree(token)].join("|");
+            if (key !== drag.lastKey) {
+                drag.lastKey = key;
+                drag.dispatching = true;
+                try {
+                    token._updateDragDestination({ x: position.x, y: position.y }, { snap });
+                } finally {
+                    drag.dispatching = false;
+                }
+            }
+        }
+        for (const ghostOwner of drag.ghosts) {
+            const destination = contexts[ghostOwner.token?.document?.id]?.destination;
+            if (destination) ghostOwner.updateDragGhost(destination);
+        }
+        return true;
+    }
+
+    dropTokenDrag({ ctrlKey = false, metaKey = false } = {}) {
+        const drag = this._tokenDrag;
+        if (!drag) return false;
+        const token = drag.token;
+        if (token.destroyed || canvas.tokens?._draggedToken !== token) {
+            this.onCoreDragEnd(token);
+            return false;
+        }
+        if (token._shouldPreventDragLeftDrop({ ctrlKey, metaKey })) {
+            drag.released = true;
+            token.mouseInteractionManager.interactionData.released = true;
+            return false;
+        }
+        token._triggerDragLeftDrop();
+        if (this._tokenDrag === drag) this.onCoreDragEnd(token);
+        return true;
+    }
+
+    cancelTokenDrag() {
+        const drag = this._tokenDrag;
+        if (!drag) return false;
+        const token = drag.token;
+        if (!token.destroyed && canvas.tokens?._draggedToken === token) token._triggerDragLeftCancel();
+        if (this._tokenDrag === drag) this.onCoreDragEnd(token);
+        return true;
+    }
+
+    onCoreDragEnd(token) {
+        const drag = this._tokenDrag;
+        if (!drag || (token && drag.token !== token)) return;
+        this._tokenDrag = null;
+        for (const ghostOwner of drag.ghosts) ghostOwner.destroyDragGhost?.();
+        drag.token3d.destroyDragGhost?.();
+        if (this.draggable?.userData?.entity3D?.token) this.draggable = null;
+        this.clicks = 0;
+        this._pendingDrag = null;
+        this.toggleControls(true);
+    }
+
+    _onTokenDragMouseDown(event) {
+        const drag = this._tokenDrag;
+        this._parent.stopCameraAnimation();
+        this.mousedown = true;
+        if (event.which === 1) this._leftDown = true;
+        if (event.which === 3) this._rightDown = true;
+        this.mousePosition = { x: event.clientX, y: event.clientY };
+        const token = drag.token;
+        if (event.which === 3) {
+            if (token.ruler) token._removeDragWaypoint();
+            else token._triggerDragLeftCancel();
+            return;
+        }
+        if (event.which !== 1 || !drag.released) return;
+        this.updateTokenDrag();
+        if (event.ctrlKey || event.metaKey) {
+            if (token.ruler && this.canvas2dMousePosition) token._addDragWaypoint(this.canvas2dMousePosition, { snap: !event.shiftKey });
+            return;
+        }
+        drag.released = false;
+        this.dropTokenDrag();
+    }
+
+    _onPointerUp(event) {
+        if (!this._tokenDrag) return;
+        this._onTokenDragMouseUp(event);
+        if (this._tokenDrag) event.preventDefault();
+    }
+
+    _onTokenDragMouseUp(event) {
+        const drag = this._tokenDrag;
+        if (event.which === 1) this._leftDown = false;
+        if (event.which === 3) this._rightDown = false;
+        this.mousedown = this._leftDown || this._rightDown;
+        this._upCameraPosition = this._parent.camera.position.clone();
+        this._pendingDrag = null;
+        if (event.type !== "pointerup" || event.which !== 1 || drag.released) return;
+        this.updateTokenDrag();
+        this.dropTokenDrag({ ctrlKey: event.ctrlKey, metaKey: event.metaKey });
+    }
+
+    _onTokenDragWheel(event) {
+        const drag = this._tokenDrag;
+        const delta = Math.sign(event.deltaY);
+        if (!delta) return;
+        this.forceFree = true;
+        drag.token3d.wasFreeMode = true;
+        drag.token._changeDragElevation(-delta, { precise: event.shiftKey });
+    }
+
+    startFreeRuler(event, intersectData) {
+        const ruler = canvas.controls?.ruler;
+        if (!ruler || this._tokenDrag || this._freeRuler) return this.abortDrag();
+        const start = intersectData?.point ? pos3DToCanvas(intersectData.point) : this.canvas2dMousePosition;
+        if (!start) return this.abortDrag();
+        const current = this.canvas2dMousePosition ?? start;
+        const interactionData = { origin: { x: start.x, y: start.y }, destination: { x: current.x, y: current.y }, ruler: true, cancelled: false, released: false };
+        const pointer = this.canvas2dMousePosition;
+        this._setCanvasPointer(start.x, start.y, start.z ?? 0, intersectData?.point ?? null);
+        ruler._onDragStart({ interactionData, shiftKey: !!event.shiftKey, altKey: !!event.altKey, ctrlKey: !!event.ctrlKey, metaKey: !!event.metaKey });
+        if (pointer) {
+            this.canvas2dMousePosition = pointer;
+            canvas.mousePosition = pointer;
+        }
+        this._freeRuler = { interactionData, released: false, lastKey: null };
+        this.clicks = 0;
+        this.toggleControls(false);
+        return true;
+    }
+
+    updateFreeRuler() {
+        const freeRuler = this._freeRuler;
+        const ruler = canvas.controls?.ruler;
+        if (!ruler?.active) return this.endFreeRuler();
+        const position = this.canvas2dMousePosition;
+        if (!position) return;
+        const shiftKey = game.keyboard.isModifierActive("Shift");
+        const key = [position.x, position.y, position.z, shiftKey, !!(this.isFreeMode || this.forceFree)].join("|");
+        if (key === freeRuler.lastKey) return;
+        freeRuler.lastKey = key;
+        freeRuler.interactionData.destination = { x: position.x, y: position.y };
+        ruler._onMouseMove({ interactionData: freeRuler.interactionData, shiftKey });
+    }
+
+    endFreeRuler() {
+        if (!this._freeRuler) return;
+        this._freeRuler = null;
+        this.forceFree = false;
+        const ruler = canvas.controls?.ruler;
+        if (ruler?.active) ruler.reset();
+        this.clicks = 0;
+        this.toggleControls(true);
+    }
+
+    _onFreeRulerMouseDown(event) {
+        const freeRuler = this._freeRuler;
+        const ruler = canvas.controls.ruler;
+        this.mousedown = true;
+        if (event.which === 1) this._leftDown = true;
+        if (event.which === 3) this._rightDown = true;
+        if (event.which === 3) {
+            ruler._removeDragWaypoint();
+            if (!ruler.active) this.endFreeRuler();
+            return;
+        }
+        if (event.which !== 1) return;
+        if (event.ctrlKey || event.metaKey) {
+            if (this.canvas2dMousePosition) ruler._addDragWaypoint(this.canvas2dMousePosition, { snap: !event.shiftKey });
+            return;
+        }
+        if (freeRuler.released) this.endFreeRuler();
+    }
+
+    _onFreeRulerMouseUp(event) {
+        const freeRuler = this._freeRuler;
+        if (event.which === 1) this._leftDown = false;
+        if (event.which === 3) this._rightDown = false;
+        this.mousedown = this._leftDown || this._rightDown;
+        this._pendingDrag = null;
+        if (event.which !== 1 || freeRuler.released) return;
+        if (event.ctrlKey || event.metaKey) {
+            freeRuler.released = true;
+            freeRuler.interactionData.released = true;
+            return;
+        }
+        this.endFreeRuler();
+    }
+
+    _onFreeRulerWheel(event) {
+        const delta = Math.sign(event.deltaY);
+        if (!delta) return;
+        this.forceFree = true;
+        canvas.controls.ruler._changeDragElevation(-delta, { precise: event.shiftKey });
     }
 
     broadcastCursorPosition(pos3d) {
@@ -1266,30 +1633,44 @@ export class InteractionManager {
         game.triggers._executeTriggers(downTriggers);
     }
 
+    _getKeybindingDisplay(action) {
+        const binding = game.keybindings.get("levels-3d-preview", action)?.[0];
+        if (!binding?.key) return "-";
+        const KeyboardManager = foundry.helpers.interaction.KeyboardManager;
+        const key = KeyboardManager.getKeycodeDisplayString?.(binding.key) ?? binding.key.replace("Key", "");
+        return [...(binding.modifiers ?? []), key].join(" + ");
+    }
+
     showControlReference() {
-        const keybindings = ["translate", "rotate", "scale", "toggleGizmo"];
-        const kbObj = {};
-        keybindings.forEach((key) => {
-            kbObj[key] = game.keybindings.get("levels-3d-preview", key)[0];
-            kbObj[key].key = kbObj[key].key.replace("Key", "");
-        });
+        const tileKeybindings = ["translate", "rotate", "scale", "toggleGizmo"];
+        const tileReference = "levels3dpreview.tileEditor.controlsReference";
+        const movementReference = "levels3dpreview.controls.movementReference";
 
         let controlsReference = `
-    <h2>${game.i18n.localize(`levels3dpreview.tileEditor.controlsReference.title`)}</h2>
+    <h2>${game.i18n.localize(`${tileReference}.title`)}</h2>
     `;
-        for (let [k, v] of Object.entries(kbObj)) {
-            const mods = (v.modifiers.length = v.modifiers.join("+"));
-            controlsReference += `<p><strong>${game.i18n.localize(`levels3dpreview.tileEditor.controlsReference.${k}`)}</strong>: ${mods + (v.modifiers.length ? " + " : "") + v.key}</p>`;
+        for (const key of tileKeybindings) {
+            controlsReference += `<p><strong>${game.i18n.localize(`${tileReference}.${key}`)}</strong>: ${this._getKeybindingDisplay(key)}</p>`;
         }
-        controlsReference += `<p>${game.i18n.localize(`levels3dpreview.tileEditor.controlsReference.nogizmo`)}</p>`;
-        controlsReference += `<p>${game.i18n.localize(`levels3dpreview.tileEditor.controlsReference.clone`)}</p>`;
+        controlsReference += `<p>${game.i18n.localize(`${tileReference}.nogizmo`)}</p>`;
+        controlsReference += `<p>${game.i18n.localize(`${tileReference}.clone`)}</p>`;
 
-        //controlsReference += `<p>${game.i18n.localize(`levels3dpreview.tileEditor.controlsReference.wheel`)}</p>`
+        controlsReference += `<h2>${game.i18n.localize(`${movementReference}.title`)}</h2>`;
+        const movementControls = [
+            ["addWaypoint", game.i18n.localize(`${movementReference}.addWaypointKeys`)],
+            ["removeWaypoint", `${game.i18n.localize(`${movementReference}.removeWaypointKeys`)} / ${this._getKeybindingDisplay("removeWaypoint")}`],
+            ["elevation", game.i18n.localize(`${movementReference}.elevationKeys`)],
+            ["hidden", game.i18n.localize(`${movementReference}.hiddenKeys`)],
+            ["freeMode", this._getKeybindingDisplay("freeMode")],
+        ];
+        for (const [key, keys] of movementControls) {
+            controlsReference += `<p><strong>${game.i18n.localize(`${movementReference}.${key}`)}</strong>: ${keys}</p>`;
+        }
 
         ChatMessage.create({
             content: controlsReference,
             whisper: [game.user.id],
-            flavor: game.i18n.localize(`levels3dpreview.tileEditor.controlsReference.title`),
+            flavor: game.i18n.localize(`${tileReference}.title`),
             flags: {
                 core: {
                     canPopout: true,
@@ -1419,7 +1800,7 @@ export const dropFunctions = {
             data.flags["levels-3d-preview"].autoCenter = true;
         }
 
-        const useSnapped = grid ?? Ruler3D.useSnapped();
+        const useSnapped = grid ?? coords3d.useSnapped();
         let snapped;
         if (useSnapped) {
             snapped = canvas.grid.getSnappedPoint({x: data.x, y: data.y}, {mode: CONST.GRID_SNAPPING_MODES.TOP_LEFT_CORNER});

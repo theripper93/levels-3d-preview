@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { Ruler3D } from "./ruler3d.js";
+import * as coords3d from "../helpers/coords3d.js";
 import { factor } from "../main.js";
 import * as QUARKS from "three.quarks";
 import {Socket} from "../lib/socket.js";
@@ -813,7 +813,7 @@ class BaseParticleEffect {
     inferPosition(object, isTarget) {
         if (!object) return null;
         if (object.x !== undefined && object.y !== undefined && object.z !== undefined) {
-            return Ruler3D.posCanvasTo3d(object);
+            return coords3d.posCanvasTo3d(object);
         }
         if (object instanceof Token) {
             if (isTarget) {
@@ -867,7 +867,7 @@ class BaseParticleEffect {
             return tokenPos;
         }
         const z = object.document.elevation;
-        return Ruler3D.posCanvasTo3d({
+        return coords3d.posCanvasTo3d({
             x: object.center.x,
             y: object.center.y,
             z: z,

@@ -1,15 +1,13 @@
-import { toggleAdvancedSettings, injectAdvancedToggle, hideParams } from "../helpers/helpers.js";
+import { hideParams } from "../helpers/helpers.js";
 import { ShaderConfig } from "../shaders/ShaderLib.js";
 import { RegisterTours } from "../tours/tours.js";
 import { MapGen } from "../apps/mapGen.js";
-import { promptForTour } from "../tours/toursHelpers.js";
 import { getTimeSyncDefault } from "../systems/globalIllumination.js";
 import { GradientPicker } from "../helpers/GradientPicker.js";
 import { injectConfig } from "../lib/injectConfig.js";
 import { TacticalPingPicker, loadUserEmotes } from "../entities/effects/ping.js";
 
 export function registerConfigs() {
-
     const documentsToWiden = ["Scene", "Token", "Tile", "AmbientLight"];
 
     for (const document of documentsToWiden) {
@@ -130,6 +128,7 @@ export function registerConfigs() {
                 enableRuler: {
                     type: "checkbox",
                     label: game.i18n.localize("levels3dpreview.flags.enableRuler.label"),
+                    notes: game.i18n.localize("levels3dpreview.flags.enableRuler.notes"),
                     default: true,
                 },
                 enableAnimationScripts: {
@@ -606,7 +605,6 @@ export function registerConfigs() {
                     default: 0.4,
                 },
             },
-
         };
         const injected = injectConfig.inject(app, html, data);
         html.querySelector(`[name="flags.levels-3d-preview.particlePreset"]`).addEventListener("change", (e) => {
@@ -695,8 +693,6 @@ export function registerConfigs() {
         //     new game.Levels3DPreview.lights.globalIllumination.DynamicSkyConfig(app.document).render(true);
         // });
     });
-
-
 
     const renderTokenConfig = (app, html) => {
         html.querySelectorAll(`[data-tab="levels-3d-preview"]`).forEach(el => el.remove());
@@ -1896,9 +1892,7 @@ export function registerConfigs() {
     });
 
     Hooks.on("renderAmbientLightConfig", (app, html) => {
-
         if (html.querySelector(`[name="flags.levels-3d-preview.castShadow"]`)) return;
-
 
         const PS = game.Levels3DPreview.CONFIG.PARTICLE_SYSTEMS;
 
@@ -2163,12 +2157,21 @@ export function registerConfigs() {
 
         game.keybindings.register("levels-3d-preview", "removeWaypoint", {
             name: "levels3dpreview.keybindings.removeWaypoint",
+            hint: "levels3dpreview.keybindings.removeWaypointHint",
             editable: [
                 {
                     key: "Space",
                 },
             ],
-            onDown: () => game.Levels3DPreview.ruler.removeSegment(),
+            onDown: () => {
+                if (!game.Levels3DPreview?._active) return false;
+                const draggedToken = canvas.tokens?._draggedToken;
+                if (draggedToken) {
+                    draggedToken._removeDragWaypoint();
+                    return true;
+                }
+                return game.Levels3DPreview.interactionManager?.removeWaypoint() ?? false;
+            },
             precedence: -1,
         });
 
@@ -2268,12 +2271,26 @@ export function registerConfigs() {
             },
         });
 
+        const consumeIn3D = (context, action) => {
+            if (!game.Levels3DPreview?._active || !context) return false;
+            const KeyboardManager = foundry.helpers.interaction.KeyboardManager;
+            let matching;
+            try {
+                matching = KeyboardManager._getMatchingActions?.(context) ?? game.keybindings.activeKeys.get(context.key) ?? [];
+            } catch (e) {
+                matching = game.keybindings.activeKeys.get(context.key) ?? [];
+            }
+            const own = matching.filter((a) => a.namespace === "levels-3d-preview");
+            return own.length ? own[own.length - 1].action === action : true;
+        };
+
         game.keybindings.register("levels-3d-preview", "pingcamera", {
             name: game.i18n.localize("levels3dpreview.keybindings.pingcamera"),
             editable: [{ key: "KeyQ", modifiers: [SHIFT] }],
-            onDown: () => {
-                if (!game.Levels3DPreview._active || !game.Levels3DPreview.hasFocus) return;
+            onDown: (context) => {
+                if (!game.Levels3DPreview._active || !game.Levels3DPreview.hasFocus) return false;
                 game.Levels3DPreview.helpers.focusCameraToCursor();
+                return consumeIn3D(context, "pingcamera");
             },
         });
 
@@ -2282,28 +2299,34 @@ export function registerConfigs() {
         game.keybindings.register("levels-3d-preview", "ping", {
             name: game.i18n.localize("levels3dpreview.keybindings.ping"),
             editable: [{ key: "KeyE", modifiers: [SHIFT] }],
-            onDown: (e) => {
-                if (!game.Levels3DPreview._active || !game.Levels3DPreview.hasFocus) return;
+            onDown: (context) => {
+                if (!game.Levels3DPreview._active || !game.Levels3DPreview.hasFocus) return false;
                 pingPicker = new TacticalPingPicker();
+                return consumeIn3D(context, "ping");
             },
-            onUp: () => {
+            onUp: (context) => {
+                if (!pingPicker) return false;
                 const type = pingPicker?.close() ?? null;
                 pingPicker = null;
                 game.Levels3DPreview.helpers._ping(type);
+                return consumeIn3D(context, "ping");
             },
         });
 
         game.keybindings.register("levels-3d-preview", "freeMode", {
             name: game.i18n.localize("levels3dpreview.keybindings.freeMode"),
+            hint: game.i18n.localize("levels3dpreview.keybindings.freeModeHint"),
             editable: [{ key: "KeyF" }],
-            onDown: () => {
+            onDown: (context) => {
                 game.Levels3DPreview.interactionManager.isFreeMode = true;
+                return consumeIn3D(context, "freeMode");
             },
-            onUp: () => {
+            onUp: (context) => {
                 const entity3D = game.Levels3DPreview.interactionManager.draggable?.userData?.entity3D;
                 if (entity3D?.template && !game.Levels3DPreview.interactionManager.forceFree) entity3D.wasFreeMode = false;
                 game.Levels3DPreview.interactionManager.isFreeMode = false;
                 game.Levels3DPreview.interactionManager.forceFree = false;
+                return consumeIn3D(context, "freeMode");
             },
         });
 
@@ -2349,8 +2372,9 @@ export function registerConfigs() {
         game.keybindings.register("levels-3d-preview", "toggleMode", {
             name: game.i18n.localize("levels3dpreview.keybindings.toggleMode"),
             editable: [{ key: "KeyQ" }],
-            onDown: () => {
-                if (!game.Levels3DPreview._active || !game.Levels3DPreview.hasFocus) return;
+            onDown: (context) => {
+                if (!game.Levels3DPreview._active || !game.Levels3DPreview.hasFocus) return false;
+                if (canvas.activeLayer?.options?.objectClass?.embeddedName !== "Tile" || canvas.tokens?._draggedToken) return false;
                 const updates = [];
                 for (let placeable of canvas.activeLayer.controlled) {
                     const modes = ["fit", "stretch", "tile"];
@@ -2369,6 +2393,7 @@ export function registerConfigs() {
                     updates.push(update);
                 }
                 canvas.scene.updateEmbeddedDocuments(canvas.activeLayer.options.objectClass.embeddedName, updates);
+                return consumeIn3D(context, "toggleMode");
             },
             onUp: () => {},
         });
@@ -2376,11 +2401,13 @@ export function registerConfigs() {
         game.keybindings.register("levels-3d-preview", "toggleSelect", {
             name: game.i18n.localize("levels3dpreview.keybindings.toggleSelect"),
             editable: [{ key: "KeyF" }],
-            onDown: () => {
+            onDown: (context) => {
                 game.Levels3DPreview.interactionManager._groupSelect = true;
+                return consumeIn3D(context, "toggleSelect");
             },
-            onUp: () => {
+            onUp: (context) => {
                 if (!game.Levels3DPreview.interactionManager.groupSelectHandler._isSelecting) game.Levels3DPreview.interactionManager._groupSelect = false;
+                return consumeIn3D(context, "toggleSelect");
             },
         });
     });

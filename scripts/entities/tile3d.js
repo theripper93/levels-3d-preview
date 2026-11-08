@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { MersenneTwister } from "../lib/mersenneTwister.js";
 import { SimplexNoise, Perlin, FractionalBrownianMotion } from "../lib/noiseFunctions.js";
-import { Ruler3D } from "../systems/ruler3d.js";
+import * as coords3d from "../helpers/coords3d.js";
 import { factor } from "../main.js";
 import { DynaMesh } from "../helpers/dynaMesh.js";
 import { computeBoundsTree, disposeBoundsTree } from "three-mesh-bvh";
@@ -71,7 +71,7 @@ export class Tile3D {
             x: this.x + Math.abs(this.tile.document.width) / 2,
             y: this.y + Math.abs(this.tile.document.height) / 2,
         };
-        this.center = Ruler3D.posCanvasTo3d({ x: this.center2d.x, y: this.center2d.y, z: this.bottom });
+        this.center = coords3d.posCanvasTo3d({ x: this.center2d.x, y: this.center2d.y, z: this.bottom });
         this.texture = this.tile.document.texture.src;
         this.opacity = this.tile.document.alpha;
         this.width = Math.abs(this.tile.document.width / factor);
@@ -994,7 +994,6 @@ export class Tile3D {
                 this._currentClipAction = clipAction;
                 clipAction.time = 0;
 
-
                 if (!useReversed) {
                     clipAction.reset();
                     if (previousClipAction) clipAction.crossFadeFrom(previousClipAction, 0.5, false);
@@ -1854,7 +1853,7 @@ export class Tile3D {
         const x = x3d * factor + this.tile.document.width * (this.tile.document.texture.anchorX - 0.5);
         const y = z3d * factor + this.tile.document.height * (this.tile.document.texture.anchorY - 0.5);
         const z = (y3d * factor * canvas.dimensions.distance) / canvas.dimensions.size;
-        const useSnapped = Ruler3D.useSnapped() && !transform;
+        const useSnapped = coords3d.useSnapped() && !transform;
         const snapped = canvas.grid.getSnappedPoint({ x, y }, { mode: CONST.GRID_SNAPPING_MODES.TOP_LEFT_CORNER });
         const elevation = this.tile.document.elevation;
         const dest = {
@@ -2057,7 +2056,7 @@ export class Tile3D {
 
     triggerMATT(e, type) {
         if (this.tile.document.checkClick) {
-            const point = e?.position3D ? Ruler3D.pos3DToCanvas(e.position3D) : game.Levels3DPreview.interactionManager.canvas3dMousePosition;
+            const point = e?.position3D ? coords3d.pos3DToCanvas(e.position3D) : game.Levels3DPreview.interactionManager.canvas3dMousePosition;
             const t = this.tile.document.checkClick(point, type);
             if (t) this.tile.document.trigger(t.args);
         }
@@ -2648,7 +2647,6 @@ export class Tile3D {
             });
 
             lockedButton.parentNode.insertBefore(controlButton, lockedButton);
-
         });
 
         Hooks.on("controlTile", (tile, controlled) => {
@@ -2728,7 +2726,7 @@ export async function mergeTiles(tileDocuments) {
             anchorY: td.texture.anchorY,
             x: (td.x - td.width * td.texture.anchorX - minXYZ.x) / factor,
             y: (td.y - td.height * td.texture.anchorY - minXYZ.y) / factor,
-            z: Ruler3D.unitsToPixels(td.elevation - minXYZ.z),
+            z: coords3d.unitsToPixels(td.elevation - minXYZ.z),
             color: td.flags["levels-3d-preview"].color ?? "#ffffff",
             rotation: td.rotation ?? 0,
             tiltX: td.flags["levels-3d-preview"].tiltX ?? 0,

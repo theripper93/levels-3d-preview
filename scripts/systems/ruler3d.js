@@ -1,742 +1,458 @@
 import * as THREE from "three";
 import { factor } from "../main.js";
-import { Shape3D } from "../entities/shape3d.js";
-import { Region3D } from "../entities/region3d.js";
+import * as coords3d from "../helpers/coords3d.js";
+import { RULER_TOKEN_OFFSET } from "../helpers/coords3d.js";
 
-export class Ruler3D {
-    constructor(parent) {
-        this._parent = parent;
-        this._distanceOffset = 0;
-        this.isDragRouler = game.modules.get("drag-ruler")?.active;
-        this.isHoverDistance = game.modules.get("hover-distance")?.active;
-        this.useRaycastRuler = game.settings.get("levels-3d-preview", "useRaycastRuler");
-        this._enableRuler = canvas.scene.getFlag("levels-3d-preview", "enableRuler") ?? true;
-        this.color = new THREE.Color(game.user.color.css);
-        this.closedPolygonColor = new THREE.Color("#ffffff");
-        this.colorCache = {};
-        const hsl = {};
-        this.segments = [];
-        this.color.getHSL(hsl);
-        this.lineColor = new THREE.Color().setHSL(hsl.h, hsl.s, hsl.l - 0.2);
-        this.origin = new THREE.Vector3(0, 0, 0);
-        this.target = new THREE.Vector3(0, 0, 0);
-        this.lineRadius = this._parent.CONFIG.RULER.RULER_SIZE;
-        this.sphereRadius = this.lineRadius * 2;
-        this.roulerLineMaterial = new THREE.MeshBasicMaterial({
-            depthWrite: false,
-            depthTest: false,
-        });
-        this.dragRingMaterial = new THREE.MeshBasicMaterial({
-            color: 0xffffff,
-        });
-        this.init();
-    }
+export { RULER_TOKEN_OFFSET };
 
-    get allowedRulerDrag() {
-        return game.Levels3DPreview.interactionManager.allowedRulerDrag;
-    }
+const RULER_RENDER_ORDER = 1e20;
 
-    get enableRuler() {
-        return this._enableRuler || !this.isToken;
-    }
+const freeRulers = new Set();
 
-    drawShape() {
-        if (ui.controls.tool.name === "select" || ui.controls.tool.name === "tile3dPolygon" || !this.allowedRulerDrag.some((a) => a === canvas.activeLayer.options.objectClass.embeddedName)) return;
-        if (this.shape?.isPreview) return;
-        if (this.allowedRulerDrag.some((a) => a === this._object?.userData?.entity3D?.placeable?.document?.documentName)) return;
-        const color = this.shape?.color;
-        this.shape?.destroy();
-        const pos = Ruler3D.useSnapped() ? Ruler3D.snapped3DPosition(this._object.position) : this._object.position;
-        const selectedRegion = canvas.regions.controlled[0];
-        const tool = ui.controls?.tool?.name ?? "rectangle";
-        const hole = ui.controls?.tools?.hole?.active;
-        const shape = Shape3D.create({
-            shape: null,
-            hole: hole,
-            color: color,
-            type: Shape3D.getShapeFromTool(tool),
-            material: Shape3D.getMaterialFromTool(tool, hole),
-            origin: this._origin,
-            destination: pos,
-            segments: this.segments,
-            extrude: !!selectedRegion,
-            tool: tool,
-            region: selectedRegion?.document,
-            height: game.Levels3DPreview.CONFIG.UI.windows.RoomBuilder?.height,
-        });
-        if (!shape) return; 
-        shape.addToScene();
-        this.shape = shape;
-    }
-
-    get shape() {
-        return this._shape;
-    }
-
-    set shape(value) {
-        if (this._shape) {
-            this._lastShape?.destroy();
-            this._lastShape = this._shape;
-        }
-        this._shape = value;
-    }
-
-    placeShape() {
-        if (!this.shape) return;
-        const data = Region3D.fromPreview(this.shape);
-        if (this.segments.length) this.clearSegments();
-        if (this._shapePreviewData) this._shapePreviewData.resolve(data);
-        this._shapePromiseResolve = null;
-        this.shape = null;
-    }
-
-    init() {
-        this.sphere1 = new THREE.Mesh(new THREE.SphereGeometry(this.sphereRadius,
-            16, 16), this.roulerLineMaterial);
-        this.sphere1.renderOrder = 1e20 - 1;
-        this.sphere2 = this.sphere1.clone();
-        const tGeo1 = new THREE.TorusGeometry((canvas.grid.size / factor) * 0.5 * Math.SQRT2, this.lineRadius / 10, 8, 32);
-        tGeo1.rotateX(Math.PI / 2);
-        const tGeo2 = new THREE.TorusGeometry((canvas.grid.size / factor) * 0.5 * Math.SQRT2, this.lineRadius / 2, 8, 32);
-        tGeo2.rotateX(Math.PI / 2);
-        this.dragRing = new THREE.Group();
-        const ring1 = new THREE.Mesh(tGeo1, this.roulerLineMaterial);
-        ring1.renderOrder = 1e20 - 1;
-        const ring2 = new THREE.Mesh(tGeo2, this.dragRingMaterial);
-        this.dragRing.add(ring1);
-        this.dragRing.add(ring2);
-        this.textElement = document.createElement("div");
-        this.textElement.id = "levels3d-ruler-text";
-        this.textElement.classList.add("ruler");
-        this.textElement.innerHTML = `<span class="distance"></span>`;
-        this.textDistance = this.textElement.querySelector(".distance");
-        this.textElement.style.display = "none";
-        document.body.append(this.textElement);
-        if (!this.enableRuler) {
-            this.sphere1.visible = false;
-            this.sphere2.visible = false;
-            this.dragRing.visible = false;
-        }
-    }
-
-    addMarkers() {
-        this._parent.scene.add(this.sphere1);
-        this._parent.scene.add(this.sphere2);
-        this._parent.scene.add(this.dragRing);
-    }
-
-    async removeMarkers() {
-        this._parent.scene.remove(this.sphere1);
-        this._parent.scene.remove(this.sphere2);
-        this._parent.scene.remove(this.dragRing);
-    }
-
-    set object(value) {
-        this._points = null;
-        if (!value) {
-            //this.clearSegments();
-            const isToken = this.isToken;
-            this._object = null;
-            this.shape?.destroy();
-            this.textElement.style.display = "none";
-            this._parent.scene.remove(this.line);
-            this.removeMarkers(isToken);
-        } else {
-            this._enableRuler = canvas.scene.getFlag("levels-3d-preview", "enableRuler") ?? true;
-            this.clearSegments();
-            this.addMarkers();
-            const target = value.userData.isHitbox ? value.parent : value;
-            this._object = target;
-            this.origin = new THREE.Vector3(target.position.x, target.position.y, target.position.z);
-            if (this.enableRuler) this.textElement.style.display = "unset";
-            const isToken = this._object?.userData?.entity3D?.token;
-            if (isToken) {
-                this.dragRing.scale.set(0, 1, 0);
-                const animation = [
-                    {
-                        parent: this.dragRing.scale,
-                        attribute: "x",
-                        to: isToken.document.width,
-                    },
-                    {
-                        parent: this.dragRing.scale,
-                        attribute: "z",
-                        to: isToken.document.height,
-                    },
-                ];
-                foundry.canvas.animation.CanvasAnimation.animate(animation, { duration: 500, easing: "easeOutCircle", name: "dragRing" });
-            }
-        }
-
-        this.updateVisibility();
-    }
-
-    set origin(position) {
-        const pos = Ruler3D.useSnapped() ? Ruler3D.snapped3DPosition(position) : position;
-
-        this.token = game.Levels3DPreview?.interactionManager?.draggable?.userData?.entity3D?.token;
-        this._origin = this.token ? position : pos;
-        this.cacheSpeedProvider(this.token);
-        this.updateVisibility();
-        if (!this.line) return;
-        this.update();
-    }
-
-    get origin() {
-        return this._origin;
-    }
-
-    get isToken() {
-        return !!this._object?.userData?.entity3D?.token;
-    }
-
-    updateVisibility() { }
-
-    pointsArrayToSegments(points) {
-        const segments = [];
-        const empty = new THREE.Group();
-
-        const maxPoints = Math.max(2, this._curveLength ? Math.ceil(this._curveLength / 0.2) : 10);
-
-        if (points.length > maxPoints) {
-            const pointsPerSegment = Math.ceil(points.length / maxPoints);
-            const newPoints = [];
-            for (let i = 0; i < points.length; i++) {
-                if (i % pointsPerSegment === 0) {
-                    newPoints.push(points[i]);
-                }
-            }
-            points = newPoints;
-        }
-
-        points.forEach((p) => (p.y += RULER_TOKEN_OFFSET));
-        points[points.length - 1] = this.getTargetPos().clone();
-        points[0] = this._origin.clone();
-        for (let i = 0; i < points.length - 1; i++) {
-            const isLast = i === points.length - 2;
-            const segment = new RulerSegment(this, this.isToken, isLast);
-            segment.origin = points[i];
-            segment.target = points[i + 1];
-            segment._distance = parseFloat(Ruler3D.measureDistance(segment.origin, segment.target));
-            segments.push(segment);
-        }
-        return segments;
-    }
-
-    addSegment() {
-        if (!this._object) return;
-        if (this.isToken && this._points?.length) {
-            const pointSegments = this.pointsArrayToSegments(this._points);
-            this.segments.push(...pointSegments);
-            this._distanceOffset += pointSegments.reduce((a, b) => a + b._distance, 0);
-        } else {
-            const segment = new RulerSegment(this, this.isToken);
-            this.segments.push(segment);
-            this._distanceOffset += segment._distance;
-        }
-        this.origin = this.getTargetPos().clone();
-        //return segment;
-    }
-
-    removeSegment() {
-        if (!this._object) return false;
-        if (!this.segments.length) {
-            this._parent.interactionManager.cancelDrag(true);
-            return true;
-        }
-        const segment = this.segments.pop();
-        this.origin = segment.origin.clone();
-        segment.destroy();
-        this._distanceOffset -= segment._distance;
-        return true;
-    }
-
-    clearSegments() {
-        this.segments.forEach((s) => s.destroy());
-        this.segments = [];
-        this._distanceOffset = 0;
-    }
-
-    getTargetPos() {
-        const isToken = this._object?.userData?.entity3D?.token;
-        const pos = Ruler3D.useSnapped() ? Ruler3D.snapped3DPosition(this._object.position, isToken) : this._object.position.clone();
-        if (isToken) pos.y -= RULER_TOKEN_OFFSET;
-        return pos;
-    }
-
-    getCurrentDistance() {
-        return parseFloat(Ruler3D.measureDistance(this._origin, this.getTargetPos()));
-    }
-
-    update() {
-        if (!this._object || !this._origin) return;
-        const isToken = this._object?.userData?.entity3D?.token;
-        const targetPos = this.getTargetPos();
-        const hasChanged = !this._prevPosition || targetPos.distanceTo(this._prevPosition) > 0.01;
-        this._prevPosition = targetPos.clone();
-        const useRaycastPoints = this.useRaycastRuler && this._points?.length && isToken && !this._object?.userData?.entity3D?.wasFreeMode;
-        this.dragRing.visible = !!isToken;
-        if (hasChanged && isToken) this._object.userData.entity3D.drawHeightIndicatorDebounced();
-        // Rebuilding the tube geometry, measuring the token path and redrawing the shape is expensive:
-        // only do it when something that affects the result changed since the last rebuild.
-        const prevState = this._updateState;
-        // Compare against the position of the last rebuild (not the previous frame) so slow movement still converges
-        const targetMoved = !prevState || targetPos.distanceTo(prevState.target) > 0.001;
-        const needsRebuild =
-            targetMoved ||
-            !this.line?.parent ||
-            prevState.object !== this._object ||
-            prevState.originRef !== this._origin ||
-            !prevState.origin.equals(this._origin) ||
-            prevState.segments !== this.segments.length ||
-            prevState.distanceOffset !== this._distanceOffset ||
-            prevState.points !== this._points ||
-            prevState.useRaycastPoints !== useRaycastPoints ||
-            prevState.shape !== this.shape ||
-            prevState.enableRuler !== this.enableRuler;
-        this.sphere1.position.copy(this._origin);
-        this.sphere2.position.copy(targetPos);
-        this.dragRing.position.copy(targetPos);
-        if (!needsRebuild) {
-            targetPos.y += 0.05;
-            Ruler3D.centerElement(this.textElement, targetPos);
-            return;
-        }
-        this._parent.scene.remove(this.line);
-        this.lineInner?.geometry?.dispose();
-        this.lineOuter?.geometry?.dispose();
-        let totalDistance;
-        let partialDistance;
-        let overrideColor;
-        const distance = (this.getCurrentDistance() + this._distanceOffset).toFixed(1);
-        if (isToken) {
-            // Skip the worker request when the rebuild was only caused by its own result arriving
-            if (this.useRaycastRuler && (targetMoved || prevState?.points === this._points)) this._parent.workers.updateRulerPoints([this._origin, targetPos]);
-            const waypoints = [];
-            if (this.segments.length) {
-                waypoints.push(this.segments[0].origin);
-                for (const segment of this.segments) {
-                    waypoints.push(segment.target);
-                }
-            } else {
-                waypoints.push(this._origin);
-            }
-            waypoints.push(targetPos);
-            const totalTokenDistance = Ruler3D.measureTokenPath(isToken, waypoints, true);
-            const partialTokenDistance = Ruler3D.measureTokenPath(isToken, waypoints, false);
-            const cost = totalTokenDistance.cost;
-            if (Number.isFinite(cost)) {
-                totalDistance = cost.toFixed(1);
-            }
-            const partialCost = partialTokenDistance.cost;
-            if (partialCost !== cost) {
-                if (Number.isFinite(partialCost)) {
-                    partialDistance = partialCost.toFixed(1);
-                }
-            }
-            if (totalTokenDistance.color) {
-                overrideColor = totalTokenDistance.color;
-            }
-        }
-        //draw ruler
-        let curve;
-        let midcurve;
-        if (this.shape?.isPreview && !this.shape?.temporary) {
-            midcurve = this._origin.clone().lerp(targetPos, 0.8);
-            midcurve.y += 2;
-            const bezCtrlg = midcurve.clone();
-            curve = new THREE.QuadraticBezierCurve3(this._origin, bezCtrlg, targetPos);
-            midcurve = curve.getPoint(0.5);
-        } else if (!useRaycastPoints) {
-            curve = new THREE.LineCurve3(this._origin, targetPos);
-        } else {
-            const points = this._points;
-            curve = new THREE.CatmullRomCurve3(points);
-            this._curveLength = curve.getLength();
-        }
-
-        const geometry = new THREE.TubeGeometry(curve, this.shape?.isPreview || useRaycastPoints ? 64 : 1, this.lineRadius, 8);
-        const c = overrideColor ? new THREE.Color(overrideColor) : this.getColor(distance, targetPos);
-        this.roulerLineMaterial.color = c;
-        this.dragRingMaterial.color = c;
-        this.line = new THREE.Group();
-        if (!this.enableRuler) this.line.visible = false;
-        this.lineOuter = new THREE.Mesh(geometry, this.dragRingMaterial);
-        this.lineOuter.userData.ignoreHover = true;
-        this.line.add(this.lineOuter);
-        if (!this.shape?.isPreview) {
-            const geometry2 = new THREE.TubeGeometry(curve, this.shape?.isPreview || useRaycastPoints ? 64 : 1, this.lineRadius / 5, 8);
-            this.lineInner = new THREE.Mesh(geometry2, this.roulerLineMaterial);
-            this.lineInner.userData.ignoreHover = true;
-            this.lineInner.renderOrder = 1e20;
-            this.line.add(this.lineInner);
-        }
-        this._lastMeasure = { totalDistance, partialDistance, overrideColor };
-        //draw floating text
-        let text;
-        if (totalDistance) {
-            text = `${totalDistance}${canvas.scene.grid.units}.${partialDistance ? ` (+${partialDistance})` : ""}`;
-        } else {
-            text = `${distance} ${canvas.scene.grid.units}.`;
-        }
-        this.textDistance.innerHTML = text;
-        //get mid point of ruler
-        const midPoint = this.shape?.isPreview ? midcurve : new THREE.Vector3(this._origin.x + (targetPos.x - this._origin.x) / 2, this._origin.y + (targetPos.y - this._origin.y) / 2, this._origin.z + (targetPos.z - this._origin.z) / 2);
-        const textPoint = targetPos;
-        textPoint.y += 0.05;
-        Ruler3D.centerElement(this.textElement, targetPos);
-        this._parent.scene.add(this.line);
-        this.drawShape();
-        this._updateState = {
-            object: this._object,
-            target: this.getTargetPos(),
-            originRef: this._origin,
-            origin: this._origin.clone(),
-            segments: this.segments.length,
-            distanceOffset: this._distanceOffset,
-            points: this._points,
-            useRaycastPoints,
-            shape: this.shape,
-            enableRuler: this.enableRuler,
-        };
-    }
-
-    cacheSpeedProvider(token) {
-        if (!this.isDragRouler || !token) return;
-        this._speedProvider = dragRuler.getRangesFromSpeedProvider(token);
-    }
-
-    getColor(distance, currentPos) {
-        let color;
-        if (this.token && this.isDragRouler) {
-            const drColor = dragRuler?.getColorForDistanceAndToken(distance, this.token, this._speedProvider);
-            if (this.colorCache[drColor]) return this.colorCache[drColor];
-            color = new THREE.Color(drColor);
-            this.colorCache[drColor] = color;
-        }
-        let closedColor;
-        if (this.segments.length > 0) {
-            const firstPoint = this.segments[0].origin;
-            const currentPoint = currentPos;
-            const dist = firstPoint.distanceTo(currentPoint);
-            if (dist < 0.01) {
-                closedColor = this.closedPolygonColor;
-            }
-        }
-        return color ?? closedColor ?? this.color;
-    }
-
-    async createTile() {
-        const points = this.segments.map((s) => s.origin);
-        const lastSegment = this.segments[this.segments.length - 1];
-        const lastPoint = lastSegment.target;
-        points.push(lastPoint);
-        const isClosed = points[0].distanceTo(points[points.length - 1]) < 0.01;
-        const minX = Math.min(...points.map((p) => p.x));
-        const maxX = Math.max(...points.map((p) => p.x));
-        const minY = Math.min(...points.map((p) => p.z));
-        const maxY = Math.max(...points.map((p) => p.z));
-        const minElevation = Math.min(...points.map((p) => p.y));
-        const maxElevation = Math.max(...points.map((p) => p.y));
-
-        const depth = parseInt((maxElevation - minElevation) * factor);
-        const width = parseInt((maxX - minX) * factor);
-        const height = parseInt((maxY - minY) * factor);
-        const bottom = Ruler3D.pixelsToUnits(minElevation);
-        const polygonPoints = [];
-        for (const point of points) {
-            polygonPoints.push(parseInt((point.x - minX) * factor), parseInt((point.z - minY) * factor));
-        }
-        isClosed && polygonPoints.push(polygonPoints[0], polygonPoints[1]);
-        const boundWidth = Math.max(width, 10);
-        const boundHeight = Math.max(height, 10);
-        const tileData = {
-            width: boundWidth,
-            height: boundHeight,
-            x: minX * factor + boundWidth / 2,
-            y: minY * factor + boundHeight / 2,
-            elevation: bottom,
-            texture: {
-                src: "modules/levels-3d-preview/assets/blank.webp",
-            },
-            flags: {
-                "levels-3d-preview": {
-                    depth: Math.max(depth, 50),
-                    dynaMesh: isClosed ? "polygonbevel" : "polygonbevelsolidify",
-                    model3d: isClosed ? polygonPoints.join(",") : "10#" + polygonPoints.join(","),
-                    fromPolygonTool: true,
-                    autoGround: true,
-                },
-            },
-        };
-        this.clearSegments();
-        const res = await canvas.scene.createEmbeddedDocuments("Tile", [tileData]);
-        return res[0];
-    }
-
-    async executeAllMovement() {
-        const lastSegment = this.segments[this.segments.length - 1];
-        if (this.isToken) lastSegment.target.y += RULER_TOKEN_OFFSET;
-        const promises = [];
-        for (const token of canvas.tokens.controlled) {
-            promises.push(this.executeMovement(token));
-        }
-        for (const p of promises) await p;
-        //await Promise.all(promises);
-        this.clearSegments();
-    }
-
-    async executeMovement(token) {
-        const token3D = this._parent.tokens[token.id];
-        const origin = Ruler3D.pos3DToCanvas(this.segments[0].origin);
-        const startPosition = { x: token.center.x, y: token.center.y, elevation: token.document.elevation };
-        const offset = { x: origin.x - startPosition.x, y: origin.y - startPosition.y, elevation: origin.z - startPosition.elevation };
-
-        // Iterate over each measured segment
-        let priorDest = undefined;
-        for (const segment of this.segments) {
-            const isLast = segment === this.segments[this.segments.length - 1];
-            token3D.rulerOffset = isLast ? 0 : RULER_TOKEN_OFFSET;
-            const dest = Ruler3D.pos3DToCanvas(segment.target);
-            dest.x -= token.w / 2 + offset.x;
-            dest.y -= token.h / 2 + offset.y;
-            dest.x = Math.round(dest.x);
-            dest.y = Math.round(dest.y);
-
-            dest.elevation = dest.z + offset.elevation;
-            dest.elevation = parseFloat(dest.elevation.toFixed(2));
-
-            if (priorDest && (token.document.x !== priorDest.x || token.document.y !== priorDest.y)) break;
-            const canMove = token3D.testCollision(dest);
-            if (!canMove) break;
-            await this._animateSegment(token, dest);
-            segment.destroy();
-            priorDest = dest;
-        }
-    }
-
-    async _animateSegment(token, destination) {
-        const unconstrainedMovement = game.user.isGM && game.settings.get("core", "unconstrainedMovement");
-        const constrainOptions = { ignoreWalls: true, ignoreCost: unconstrainedMovement };
-        const autoRotate = game.settings.get("core", "tokenAutoRotate");
-        await token.document.move(destination, { constrainOptions, autoRotate });
-        return token.movementAnimationPromise;
-    }
-
-    static position3dtoScreen(position) {
-        const camera = game.Levels3DPreview.camera;
-        const vector = new THREE.Vector3(position.x, position.y, position.z);
-        const widthHalf = (game.Levels3DPreview.renderer.getContext().canvas.width * 0.5) / game.Levels3DPreview.resolutionMulti,
-            heightHalf = (game.Levels3DPreview.renderer.getContext().canvas.height * 0.5) / game.Levels3DPreview.resolutionMulti;
-        vector.project(camera);
-        vector.x = vector.x * widthHalf + widthHalf;
-        vector.y = -(vector.y * heightHalf) + heightHalf;
-        return vector;
-    }
-
-    static centerElement(element, position, ontop = false) {
-        if (!element) return;
-        //get distance between element and camera
-        element = element.jquery ? element[0] : element;
-        let cachedFontSize = element.dataset.cachedSize;
-        if (!cachedFontSize) {
-            cachedFontSize = parseFloat(window.getComputedStyle(element, null).getPropertyValue("font-size"));
-            element.dataset.cachedSize = cachedFontSize;
-        }
-
-        const dist = game.Levels3DPreview.camera.position.distanceTo(position) / (canvas.grid.size / 100);
-        const scale = Math.max(0.5, 1.2 / dist) / (game.Levels3DPreview.resolutionMulti);
-        if (element.id == "levels3d-ruler-text") {
-            element.style.fontSize = `${cachedFontSize * scale}px`;
-        } else {
-            element.style.transform = `scale(${scale})`;
-        }
-        const centerPosition = Ruler3D.position3dtoScreen(position);
-        const elementWidth = element.offsetWidth;
-        const elementHeight = ontop ? element.offsetHeight * 2 : element.offsetHeight;
-        element.style.left = `${centerPosition.x - elementWidth / 2}px`;
-        element.style.top = `${centerPosition.y - elementHeight / 2}px`;
-    }
-
-    static posCanvasTo3d(position) {
-        return new THREE.Vector3(position.x / factor, (position.z * canvas.scene.dimensions.size) / (canvas.scene.dimensions.distance * factor), position.y / factor);
-    }
-
-    static unitsToPixels(units) {
-        return (units * canvas.scene.dimensions.size) / (canvas.scene.dimensions.distance * factor);
-    }
-
-    static pixelsToUnits(pixels) {
-        return (pixels * canvas.scene.dimensions.distance * factor) / canvas.scene.dimensions.size;
-    }
-
-    static pos3DToCanvas(position) {
-        const vector = new THREE.Vector3(position.x * factor, position.z * factor, ((position.y * factor) / canvas.scene.dimensions.size) * canvas.scene.dimensions.distance);
-        vector.elevation = vector.z;
-        return vector;
-    }
-
-    static useSnapped() {
-        const isGrid = canvas.scene.grid.type ? true : false;
-        const isShift = game.keyboard.downKeys.has("ShiftLeft") || game.keyboard.downKeys.has("ShiftRight");
-        if (!isGrid) return false;
-        if (isGrid && !isShift) return true;
-        return false;
-    }
-
-    static roundToMultiple(number, multiple) {
-        return Math.round(number / multiple) * multiple;
-    }
-
-    static snapped3DPosition(position, isToken = false) {
-        const canvasPosition = Ruler3D.pos3DToCanvas(position);
-        let snappedCenterPos;
-        if (isToken) {
-            snappedCenterPos = canvas.grid.getSnappedPoint({ x: canvasPosition.x - isToken.w / 2, y: canvasPosition.y - isToken.h / 2 }, { mode: CONST.GRID_SNAPPING_MODES.TOP_LEFT_CORNER, token: isToken });
-            snappedCenterPos.x += isToken.w / 2;
-            snappedCenterPos.y += isToken.h / 2;
-        } else {
-            snappedCenterPos = canvas.grid.getSnappedPoint({ x: canvasPosition.x, y: canvasPosition.y }, { mode: CONST.GRID_SNAPPING_MODES.TOP_LEFT_CORNER });
-        }
-
-        const snappedPos = {
-            x: snappedCenterPos.x,
-            y: snappedCenterPos.y,
-            z: canvasPosition.z,
-        };
-        return Ruler3D.posCanvasTo3d(snappedPos);
-    }
-
-    static measureTokenPath(token, waypoints, history) {
-        waypoints = waypoints.map((w) => {
-            const pos = Ruler3D.pos3DToCanvas(w);
-            return {
-                x: Math.round(pos.x - canvas.dimensions.size * token.document.width / 2),
-                y: Math.round(pos.y - canvas.dimensions.size * token.document.height / 2),
-                elevation: pos.z + canvas.dimensions.distance * 0.1,
-            }
-        });
-        if (history) {
-            waypoints.unshift(...token.document.movementHistory);
-        }
-        
-        let path = token.createTerrainMovementPath(waypoints, { preview: true });
-        [path] = token.constrainMovementPath(path, {ignoreWalls: true, ignoreCost: false, measureOptions: {}, preview: true });
-        const tokenDistance = token.measureMovementPath(path, { preview: true, gridSpaces: true });
-
-        if (history) {
-            path.forEach(w => w.measurement = { cost: tokenDistance.cost });
-            token._plannedMovement[game.user.id] = {};
-            const wayStyle = token.ruler._getSegmentStyle({
-                ...path.at(-1),
-                actionConfig: CONFIG.Token.movement.actions[path.at(-1).action],
-            });
-            delete token._plannedMovement[game.user.id];
-            tokenDistance.color = wayStyle.color;
-        }
-
-        return tokenDistance;
-    }
-
-    static measureDistance(position1, position2) {
-        const pos1Canvas = Ruler3D.pos3DToCanvas(position1);
-        const pos2Canvas = Ruler3D.pos3DToCanvas(position2);
-        const d = canvas.grid.measurePath(
-            [
-                {
-                    x: Math.round(pos1Canvas.x),
-                    y: Math.round(pos1Canvas.y),
-                    elevation: pos1Canvas.z,
-                },
-                {
-                    x: Math.round(pos2Canvas.x),
-                    y: Math.round(pos2Canvas.y),
-                    elevation: pos2Canvas.z,
-                },
-            ],
-            { gridSpaces: true },
-        ).distance;
-        return d;
-    }
-
-    static measureMinTokenDistance(origin, target) {
-        const originLos = origin.losHeight ?? origin.elevation;
-        const targetLos = target.losHeight ?? target.elevation;
-        origin = origin.document;
-        target = target.document;
-        const scene = origin.parent;
-        const cellSize = scene.dimensions.size;
-        // Shrink the box to half a cell smaller than the actual size
-        // in order to have 1 cell distance for adjacent tokens
-        const sizeOffsetOrigin = new THREE.Vector3(
-            Math.min(origin.width * cellSize, cellSize) / 2,
-            Math.min(originLos * scene.dimensions.distancePixels, cellSize) / 2,
-            Math.min(origin.height * cellSize, cellSize) / 2
-        );
-        const sizeOffsetTarget = new THREE.Vector3(
-            Math.min(target.width * cellSize, cellSize) / 2,
-            Math.min(targetLos * scene.dimensions.distancePixels, cellSize) / 2,
-            Math.min(target.height * cellSize, cellSize) / 2
-        );
-        const originMin = new THREE.Vector3(
-            origin.x + sizeOffsetOrigin.x,
-            origin.elevation * scene.dimensions.distancePixels + sizeOffsetOrigin.y,
-            origin.y + sizeOffsetOrigin.z
-        );
-        const originMax = new THREE.Vector3(
-            origin.x + origin.width * cellSize - sizeOffsetOrigin.x,
-            originLos * scene.dimensions.distancePixels - sizeOffsetOrigin.y,
-            origin.y + origin.height * cellSize - sizeOffsetOrigin.z
-        );
-        const targetMin = new THREE.Vector3(
-            target.x + sizeOffsetTarget.x,
-            target.elevation * scene.dimensions.distancePixels + sizeOffsetTarget.y,
-            target.y + sizeOffsetTarget.z
-        );
-        const targetMax = new THREE.Vector3(
-            target.x + target.width * cellSize - sizeOffsetTarget.x,
-            targetLos * scene.dimensions.distancePixels - sizeOffsetTarget.y,
-            target.y + target.height * cellSize - sizeOffsetTarget.z
-        );
-
-        const dx = Math.max(0, Math.max(originMin.x, targetMin.x) - Math.min(originMax.x, targetMax.x));
-        const dy = Math.max(0, Math.max(originMin.y, targetMin.y) - Math.min(originMax.y, targetMax.y));
-        const dz = Math.max(0, Math.max(originMin.z, targetMin.z) - Math.min(originMax.z, targetMax.z));
-
-        return Math.sqrt(dx ** 2 + dy ** 2 + dz ** 2) / scene.dimensions.distancePixels;
-    }
+export function is3DActive() {
+    return !!game.Levels3DPreview?._active;
 }
 
-class RulerSegment {
-    constructor(ruler3d, isToken, addToScene = true) {
-        this.sphere1 = ruler3d.sphere1.clone();
-        this.sphere2 = ruler3d.sphere2.clone();
-        this.line = ruler3d.line.clone();
-        this.origin = ruler3d.origin.clone();
-        this.target = ruler3d.getTargetPos().clone();
-        this._parent = ruler3d._parent;
-        this._distance = ruler3d.getCurrentDistance();
-        if (addToScene) this.addToScene();
+export function toThreeColor(color, fallback = 0xffffff) {
+    if (color === undefined || color === null) return new THREE.Color(fallback);
+    if (color instanceof THREE.Color) return color.clone();
+    if (typeof color === "string") return new THREE.Color(color);
+    if (Array.isArray(color)) return new THREE.Color(color[0], color[1], color[2]);
+    const n = Number(color);
+    return Number.isFinite(n) ? new THREE.Color(n) : new THREE.Color(fallback);
+}
+
+export function rulerPixelScale() {
+    const size = game.Levels3DPreview?.CONFIG?.RULER?.RULER_SIZE ?? 0.002;
+    return size / 0.002 / factor;
+}
+
+export function get3DCursorElevation(event) {
+    const im = game.Levels3DPreview?.interactionManager;
+    if (!im || im.isFreeMode || im.forceFree) return undefined;
+    const z = im.canvas2dMousePosition?.z;
+    if (!Number.isFinite(z)) return undefined;
+    const precision = CONFIG.Canvas.elevationSnappingPrecision || 1;
+    const interval = event?.shiftKey ? 0.01 : canvas.dimensions.distance / precision;
+    return Math.round(z / interval) * interval;
+}
+
+export class RulerPath3D {
+    constructor(name) {
+        this.group = new THREE.Group();
+        this.group.name = name;
+        this.group.userData.ignoreHover = true;
+        this.group.userData.noIntersect = true;
+        this.signature = null;
+        this.pulseMaterials = [];
+        this._sphereGeometry = null;
     }
 
     get scene() {
-        return this._parent.scene;
+        return game.Levels3DPreview?.scene;
     }
 
-    addToScene() {
-        this.scene.add(this.sphere1);
-        this.scene.add(this.sphere2);
-        this.scene.add(this.line);
+    get visible() {
+        return this.group.visible;
+    }
+
+    set visible(value) {
+        this.group.visible = value;
+    }
+
+    attach() {
+        const scene = this.scene;
+        if (!scene) return false;
+        if (this.group.parent !== scene) scene.add(this.group);
+        return true;
+    }
+
+    clear() {
+        for (const child of this.group.children) {
+            child.geometry?.dispose();
+            child.material?.dispose();
+        }
+        this.group.clear();
+        this.pulseMaterials = [];
+        this.signature = null;
     }
 
     destroy() {
-        this.scene.remove(this.sphere1);
-        this.scene.remove(this.sphere2);
-        this.scene.remove(this.line);
-        this.line.traverse((o) => {
-            if (o.geometry) o.geometry.dispose();
+        this.clear();
+        this.group.removeFromParent();
+    }
+
+    _createMaterials(color, alpha, pulse) {
+        const c = toThreeColor(color);
+        const opaque = alpha >= 1 && !pulse;
+        const body = new THREE.MeshBasicMaterial({
+            color: c,
+            transparent: !opaque,
+            opacity: alpha,
+            depthWrite: opaque,
         });
+        const core = new THREE.MeshBasicMaterial({
+            color: c,
+            transparent: true,
+            opacity: alpha,
+            depthTest: false,
+            depthWrite: false,
+        });
+        if (pulse) {
+            body.userData.baseOpacity = core.userData.baseOpacity = alpha;
+            this.pulseMaterials.push(body, core);
+        }
+        return { body, core };
+    }
+
+    _addMesh(geometry, material, renderOrder) {
+        const mesh = new THREE.Mesh(geometry, material);
+        mesh.userData.ignoreHover = true;
+        mesh.userData.noIntersect = true;
+        mesh.raycast = () => {};
+        if (renderOrder !== undefined) mesh.renderOrder = renderOrder;
+        this.group.add(mesh);
+        return mesh;
+    }
+
+    addLine(points, { width, color = 0xffffff, alpha = 1, pulse = false } = {}) {
+        if (!(width > 0) || !(alpha > 0) || points.length < 2) return;
+        const radius = (width / 2) * rulerPixelScale();
+        let curve;
+        if (points.length === 2) {
+            curve = new THREE.LineCurve3(points[0], points[1]);
+        } else {
+            curve = new THREE.CurvePath();
+            for (let i = 1; i < points.length; i++) curve.add(new THREE.LineCurve3(points[i - 1], points[i]));
+        }
+        const tubular = Math.max(1, (points.length - 1) * 2);
+        const { body, core } = this._createMaterials(color, alpha, pulse);
+        this._addMesh(new THREE.TubeGeometry(curve, tubular, radius, 8, false), body);
+        this._addMesh(new THREE.TubeGeometry(curve, tubular, radius * 0.4, 6, false), core, RULER_RENDER_ORDER);
+    }
+
+    addSphere(point, { radius, color = 0xffffff, alpha = 1, pulse = false } = {}) {
+        if (!(radius > 0) || !(alpha > 0)) return;
+        const r = radius * rulerPixelScale();
+        const { body, core } = this._createMaterials(color, alpha, pulse);
+        const outer = this._addMesh(new THREE.SphereGeometry(r, 16, 12), body);
+        outer.position.copy(point);
+        const inner = this._addMesh(new THREE.SphereGeometry(r * 0.5, 12, 8), core, RULER_RENDER_ORDER - 1);
+        inner.position.copy(point);
+    }
+
+    tick() {
+        if (!this.pulseMaterials.length) return;
+        const t = 0.5 + 0.5 * Math.sin(performance.now() * 0.006);
+        for (const m of this.pulseMaterials) m.opacity = m.userData.baseOpacity * (0.25 + 0.75 * t);
     }
 }
 
-export const RULER_TOKEN_OFFSET = 0.05;
+export class RulerLabels3D {
+    constructor(id, classes) {
+        this.id = id;
+        this.classes = classes;
+        this._element = null;
+        this._hidden = false;
+        this._renderId = 0;
+    }
+
+    get element() {
+        if (!this._element) {
+            const el = document.getElementById(this.id) ?? document.createElement("div");
+            el.id = this.id;
+            el.classList.add(...this.classes, "levels3d");
+            el.classList.toggle("hidden", this._hidden);
+            this._element = el;
+        }
+        const measurement = document.querySelector("#hud #measurement");
+        if (measurement && this._element.parentElement !== measurement) measurement.appendChild(this._element);
+        return this._element;
+    }
+
+    get hidden() {
+        return this._hidden;
+    }
+
+    set hidden(value) {
+        this._hidden = !!value;
+        this._element?.classList.toggle("hidden", this._hidden);
+    }
+
+    async render(entries, template) {
+        const renderId = ++this._renderId;
+        if (!template || !entries.length) {
+            this._element?.replaceChildren();
+            return;
+        }
+        const labels = [];
+        for (const { context, anchor } of entries) {
+            const html = await foundry.applications.handlebars.renderTemplate(template, context);
+            if (renderId !== this._renderId) return;
+            const label = foundry.utils.parseHTML(html);
+            if (!(label instanceof HTMLElement)) continue;
+            label._anchor3d = anchor;
+            label.style.setProperty("--ui-scale", 1);
+            labels.push(label);
+        }
+        this.element.replaceChildren(...labels);
+        this.update();
+    }
+
+    update() {
+        const el = this._element;
+        if (!el || this._hidden || !el.childElementCount) return;
+        for (const label of el.children) {
+            const anchor = label._anchor3d;
+            if (!anchor) continue;
+            const p = coords3d.position3dtoScreen(anchor);
+            if (!(p.z < 1 && p.z > -1)) {
+                label.style.visibility = "hidden";
+                continue;
+            }
+            label.style.visibility = "";
+            label.style.setProperty("--position-x", `${p.x}px`);
+            label.style.setProperty("--position-y", `${p.y + 8}px`);
+        }
+    }
+
+    clear() {
+        this._renderId++;
+        this._element?.replaceChildren();
+    }
+
+    destroy() {
+        this._renderId++;
+        this._element?.remove();
+        this._element = null;
+    }
+}
+
+export function Ruler3DMixin(Base) {
+    return class Ruler3D extends Base {
+        static is3DRuler = true;
+
+        #path3d;
+
+        #labels3d;
+
+        #destroyed = false;
+
+        constructor(user) {
+            super(user);
+            this.#path3d = new RulerPath3D(`distance-ruler-3d-${this.user.id}`);
+            this.#labels3d = new RulerLabels3D(`distance-ruler-3d-${this.user.id}`, ["ruler-labels", "distance-ruler-labels"]);
+            freeRulers.add(this);
+        }
+
+        get mesh3d() {
+            return this.#path3d.group;
+        }
+
+        get labels3d() {
+            return this.#labels3d;
+        }
+
+        destroy() {
+            this.#destroyed = true;
+            this.renderFlags.clear();
+            this._destroy3D();
+            freeRulers.delete(this);
+            super.destroy();
+        }
+
+        _refresh() {
+            if (this.#destroyed) return;
+            if (!is3DActive()) {
+                this._clear3D();
+                return super._refresh();
+            }
+            if (!this.visible || !this.path.length) {
+                this._clear3D();
+                return;
+            }
+            const signature = JSON.stringify([this.path, this.hidden]);
+            if (signature === this.#path3d.signature && this.#path3d.group.parent) return;
+            const waypoints = this._get3DWaypoints();
+            const points = waypoints.map((w) => coords3d.posCanvasTo3d({ x: w.x, y: w.y, z: w.elevation }));
+            this._draw3DPath(waypoints, points);
+            this.#path3d.signature = signature;
+            this._render3DLabels(waypoints, points);
+        }
+
+        _get3DWaypoints() {
+            const waypoints = [];
+            const measurement = canvas.grid.measurePath(this.path);
+            const Ray = foundry.canvas.geometry.Ray;
+            for (let i = 0; i < this.path.length; i++) {
+                const { x, y, elevation } = this.path[i];
+                let ray = null;
+                if (waypoints.length > 0) {
+                    const { x: x0, y: y0 } = waypoints.at(-1);
+                    ray = new Ray({ x: x0, y: y0 }, { x, y });
+                }
+                waypoints.push({ x, y, elevation, index: i, ray, measurement: measurement.waypoints[i], previous: null, next: null });
+            }
+            for (let i = 0; i < waypoints.length; i++) {
+                waypoints[i].previous = i > 0 ? waypoints[i - 1] : null;
+                waypoints[i].next = i < waypoints.length - 1 ? waypoints[i + 1] : null;
+            }
+            return waypoints;
+        }
+
+        _draw3DPath(waypoints, points) {
+            const path3d = this.#path3d;
+            path3d.clear();
+            if (!path3d.attach()) return;
+            for (let i = 1; i < waypoints.length; i++) {
+                const { width, color = 0xffffff, alpha = 1 } = this._getSegmentStyle(waypoints[i]);
+                path3d.addLine([points[i - 1], points[i]], { width, color, alpha });
+            }
+            for (let i = 0; i < waypoints.length; i++) {
+                const { radius, color = 0xffffff, alpha = 1 } = this._getWaypointStyle(waypoints[i]);
+                path3d.addSphere(points[i], { radius, color, alpha });
+            }
+        }
+
+        _render3DLabels(waypoints, points) {
+            const template = this.constructor.WAYPOINT_LABEL_TEMPLATE;
+            const entries = [];
+            const state = {};
+            const lift = 6 * canvas.dimensions.uiScale * rulerPixelScale();
+            for (let i = 0; i < waypoints.length; i++) {
+                const waypoint = waypoints[i];
+                const context = this._getWaypointLabelContext(waypoint, state);
+                if (!context) continue;
+                context.waypoint = waypoint;
+                context.waypointType = "distance-ruler";
+                context.uiScale ??= canvas.dimensions.uiScale;
+                const anchor = points[i].clone();
+                anchor.y += lift;
+                entries.push({ context, anchor });
+            }
+            this.#labels3d.hidden = false;
+            this.#labels3d.render(entries, template);
+        }
+
+        _clear3D() {
+            this.#path3d.clear();
+            this.#path3d.group.removeFromParent();
+            this.#labels3d.clear();
+        }
+
+        _destroy3D() {
+            this.#path3d.destroy();
+            this.#labels3d.destroy();
+        }
+
+        updateLabels() {
+            if (!is3DActive()) return;
+            this.#labels3d.update();
+        }
+
+        _set3DElevation(elevation, count = 1) {
+            if (elevation === undefined || !this.path.length) return;
+            const path = [...this.path];
+            let changed = false;
+            for (let i = Math.max(0, path.length - count); i < path.length; i++) {
+                if (path[i].elevation === elevation) continue;
+                path[i] = { ...path[i], elevation };
+                changed = true;
+            }
+            if (changed) this.path = path;
+        }
+
+        _onDragStart(event) {
+            super._onDragStart(event);
+            if (!is3DActive()) return;
+            this._set3DElevation(get3DCursorElevation(event), this.path.length);
+        }
+
+        _onMouseMove(event) {
+            super._onMouseMove(event);
+            if (!is3DActive() || !this.active) return;
+            this._set3DElevation(get3DCursorElevation(event), 1);
+        }
+
+        _addDragWaypoint(point, options) {
+            const length = this.path.length;
+            super._addDragWaypoint(point, options);
+            if (!is3DActive() || this.path.length === length) return;
+            this._set3DElevation(get3DCursorElevation(), 2);
+        }
+
+        static updateAllLabels() {
+            for (const ruler of freeRulers) ruler.updateLabels();
+        }
+
+        static clearAll3D() {
+            for (const ruler of freeRulers) {
+                ruler._clear3D();
+                ruler.refresh();
+            }
+        }
+
+        static position3dtoScreen(position) {
+            return coords3d.position3dtoScreen(position);
+        }
+
+        static centerElement(element, position, ontop = false) {
+            return coords3d.centerElement(element, position, ontop);
+        }
+
+        static posCanvasTo3d(position) {
+            return coords3d.posCanvasTo3d(position);
+        }
+
+        static unitsToPixels(units) {
+            return coords3d.unitsToPixels(units);
+        }
+
+        static pixelsToUnits(pixels) {
+            return coords3d.pixelsToUnits(pixels);
+        }
+
+        static pos3DToCanvas(position) {
+            return coords3d.pos3DToCanvas(position);
+        }
+
+        static useSnapped() {
+            return coords3d.useSnapped();
+        }
+
+        static roundToMultiple(number, multiple) {
+            return coords3d.roundToMultiple(number, multiple);
+        }
+
+        static snapped3DPosition(position, isToken = false) {
+            return coords3d.snapped3DPosition(position, isToken);
+        }
+
+        static measureDistance(position1, position2) {
+            return coords3d.measureDistance(position1, position2);
+        }
+
+        static measureMinTokenDistance(origin, target) {
+            return coords3d.measureMinTokenDistance(origin, target);
+        }
+    };
+}
+
+export const Ruler3D = Ruler3DMixin(foundry.canvas.interaction.Ruler);
+
+export function registerRuler3D() {
+    const cls = CONFIG.Canvas.rulerClass;
+    if (!cls || cls.is3DRuler === true) return false;
+    CONFIG.Canvas.rulerClass = Ruler3DMixin(cls);
+    if (canvas?.ready) redrawRulers3D();
+    return true;
+}
+
+export async function redrawRulers3D() {
+    if (!canvas?.ready || !canvas.controls) return;
+    try {
+        await canvas.controls.drawRulers();
+    } catch (e) {
+        console.error("3D Canvas | Failed to redraw rulers", e);
+    }
+}

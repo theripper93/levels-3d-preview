@@ -1,12 +1,11 @@
 import * as THREE from "three";
 import { factor } from "../main.js";
-import { Ruler3D } from "./ruler3d.js";
+import * as coords3d from "../helpers/coords3d.js";
 
 export class RangeFinder {
     constructor(token, options = {}) {
         if (!token.visible) return;
         this.options = options;
-        this.isHoverDistance = this._parent.ruler.isHoverDistance;
         const RFMode = this._parent.rangeFinderMode;
         if (RFMode === "none") return;
         if (RFMode === "combat" && !game.combat?.started) return;
@@ -35,7 +34,7 @@ export class RangeFinder {
 
     createCurve(origin, origin3d) {
         const target = this.target;
-        const distance = Ruler3D.measureMinTokenDistance(origin3d, this.target3d);
+        const distance = coords3d.measureMinTokenDistance(origin3d, this.target3d);
 
         let midcurve = origin.clone().lerp(target, 0.5); //new THREE.Vector3(this._origin.x + (targetPos.x - this._origin.x)/2, this._origin.y + (targetPos.y - this._origin.y)/2, this._origin.z + (targetPos.z - this._origin.z)/2);
         midcurve.y += origin.distanceTo(target) / 2;
@@ -52,13 +51,9 @@ export class RangeFinder {
         label.classList.add("rangefinder");
         if (this.options.style) label.style.cssText = this.options.style;
         document.body.append(label);
-        let text = this.options.text ?? `${distance.toFixed(1)} ${canvas.scene.grid.units}.`;
-        if (this.isHoverDistance) {
-            const rangeBand = DistanceTooltip.getRangeBand(distance);
-            if (rangeBand) text = `${rangeBand} (${text})`;
-        }
+        const text = this.options.text ?? `${distance.toFixed(1)} ${canvas.scene.grid.units}.`;
         label.innerHTML = text;
-        Ruler3D.centerElement(label, midcurve);
+        coords3d.centerElement(label, midcurve);
         RFCurve.userData.label = label;
         RFCurve.userData.textPos = midcurve;
 
@@ -90,9 +85,7 @@ export class RangeFinder {
         uniform vec3 curvecolor;
          
           void main() {     
-           
           gl_FragColor = vec4(curvecolor.x, curvecolor.y, curvecolor.z , sin(vUv.x * 3.14) * sin(vUv.x * 3.14));
-          
         }
       `,
         });
@@ -112,7 +105,7 @@ export class RangeFinder {
 
     updateText() {
         this.meshes.forEach((mesh) => {
-            Ruler3D.centerElement(mesh.userData.label, mesh.userData.textPos);
+            coords3d.centerElement(mesh.userData.label, mesh.userData.textPos);
         });
     }
 

@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { factor } from "../main.js";
 import { Ruler3D } from "../systems/ruler3d.js";
+import { posCanvasTo3d } from "./coords3d.js";
 import { mergeVertices } from "three/addons/utils/BufferGeometryUtils.js";
 import { setPerformancePreset, injectPresetButtons } from "../settings/performancePresets.js";
 import { SimplifyModifier } from "three/addons/modifiers/SimplifyModifier.js";
@@ -476,7 +477,7 @@ export class Helpers {
             cameraParams.cameraLookat = targetLookat;
             cameraParams.speed = speed;
         } else {
-            const targetPosition = Ruler3D.posCanvasTo3d(target);
+            const targetPosition = posCanvasTo3d(target);
             if (isNaN(targetPosition.y)) targetPosition.y = game.Levels3DPreview.controls.target.y;
             if (topdown) {
                 cameraParams.cameraPosition = new THREE.Vector3(targetPosition.x, targetPosition.y + distance, targetPosition.z);

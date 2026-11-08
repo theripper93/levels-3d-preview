@@ -3,10 +3,9 @@ import { Shape3D } from "./entities/shape3d.js";
 import { getSetting } from "./settings/settingsConfig.js";
 import * as THREE from "three";
 import { applyShaderToRegion } from "./shaders/templateEffects.js";
-import { Ruler3D } from "./systems/ruler3d.js";
+import { pos3DToCanvas, centerElement } from "./helpers/coords3d.js";
 
 export function registerWrappers() {
-
     Object.defineProperty(foundry.canvas.placeables.Token.prototype, "object3d", {
         get: function () {
             return game.Levels3DPreview.tokens[this.id];
@@ -14,10 +13,10 @@ export function registerWrappers() {
     });
 
     Hooks.once("ready", async function () {
-
         //Register Core Wrappers
 
         libWrapper.register("levels-3d-preview", "foundry.canvas.layers.TokenLayer.prototype.moveMany", moveMany, "MIXED");
+        libWrapper.register("levels-3d-preview", "foundry.canvas.layers.TokenLayer.prototype._prepareKeyboardMovementUpdates", prepareKeyboardMovementUpdates, "WRAPPER");
         libWrapper.register("levels-3d-preview", "foundry.canvas.layers.TilesLayer.prototype.moveMany", moveManyTiles, "MIXED");
         libWrapper.register("levels-3d-preview", "foundry.canvas.groups.InterfaceCanvasGroup.prototype.createScrollingText", showBouncingText, "WRAPPER");
         libWrapper.register("levels-3d-preview", "foundry.canvas.layers.TokenLayer.prototype.cycleTokens", cycleTokens, "WRAPPER");
@@ -34,6 +33,10 @@ export function registerWrappers() {
         libWrapper.register("levels-3d-preview", "foundry.documents.TokenDocument.prototype.getVisionOrigin", getVisionOrigin, "WRAPPER");
         libWrapper.register("levels-3d-preview", "foundry.canvas.geometry.ClockwiseSweepPolygon.prototype.contains", containsWrapper, "MIXED");
         libWrapper.register("levels-3d-preview", "foundry.canvas.perception.DetectionMode._testCollision", _testCollisionWrapped, "WRAPPER");
+        libWrapper.register("levels-3d-preview", "foundry.canvas.placeables.Token.prototype._getDragWaypointPosition", getDragWaypointPosition, "WRAPPER");
+        libWrapper.register("levels-3d-preview", "foundry.canvas.placeables.Token.prototype._finalizeDragLeft", finalizeDragLeft, "WRAPPER");
+        libWrapper.register("levels-3d-preview", "foundry.canvas.placeables.Token.prototype._onDragLeftMove", onDragLeftMove, "MIXED");
+        libWrapper.register("levels-3d-preview", "foundry.canvas.placeables.Token.prototype._prepareDragLeftDropUpdates", prepareDragLeftDropUpdates, "WRAPPER");
 
         if (game[game.system.id]?.canvas?.AbilityTemplate?.prototype?.drawPreview) libWrapper.register("levels-3d-preview", `game.${game.system.id}.canvas.AbilityTemplate.prototype.drawPreview`, placeTemplate, "MIXED");
 
@@ -150,8 +153,79 @@ export function registerWrappers() {
         }
 
         function pointerPositionWrapper(wrapped, ...args) {
-            if (game.Levels3DPreview?._active) return game.canvas3D.interactionManager.canvas2dMousePosition;
+            const position = game.Levels3DPreview?._active ? game.Levels3DPreview.interactionManager?.canvas2dMousePosition : null;
+            if (!position || !Number.isFinite(position.x) || !Number.isFinite(position.y)) return wrapped(...args);
+            const out = args[1] ?? new PIXI.Point();
+            out.x = position.x;
+            out.y = position.y;
+            out.z = position.z;
+            out.elevation = position.elevation ?? position.z;
+            return out;
+        }
+
+        function getDragWaypointPosition(wrapped, current, changes, options = {}) {
+            const result = wrapped(current, changes, options);
+            const interactionManager = game.Levels3DPreview?.interactionManager;
+            const draggedToken = canvas.tokens?._draggedToken;
+            if (!game.Levels3DPreview?._active || !interactionManager?._tokenDrag || !draggedToken || !result) return result;
+            const floor = game.settings.get("levels-3d-preview", "preventNegative") ? canvas.primary.background.elevation : -Infinity;
+            if (changes?.elevation !== undefined) {
+                interactionManager.forceFree = true;
+                if (result.elevation < floor) result.elevation = floor;
+                return result;
+            }
+            if (interactionManager.isTokenDragFree(this)) return result;
+            const cursorElevation = interactionManager.canvas2dMousePosition?.z;
+            if (!Number.isFinite(cursorElevation)) return result;
+            let elevation = cursorElevation;
+            if (this !== draggedToken) elevation = this.document._source.elevation + (cursorElevation - draggedToken.document._source.elevation);
+            elevation = Math.max(elevation, floor);
+            if (options?.snap) {
+                const interval = canvas.dimensions.distance / (CONFIG.Canvas.elevationSnappingPrecision || 1);
+                elevation = elevation.toNearest(interval);
+            } else {
+                elevation = Math.round(elevation * 100) / 100;
+            }
+            result.elevation = elevation;
+            return result;
+        }
+
+        function finalizeDragLeft(wrapped, ...args) {
+            const result = wrapped(...args);
+            try {
+                game.Levels3DPreview?.interactionManager?.onCoreDragEnd?.(this);
+            } catch (e) {
+                console.error(e);
+            }
+            return result;
+        }
+
+        function onDragLeftMove(wrapped, ...args) {
+            const drag = game.Levels3DPreview?._active ? game.Levels3DPreview.interactionManager?._tokenDrag : null;
+            if (drag && !drag.dispatching) return;
             return wrapped(...args);
+        }
+
+        function prepareDragLeftDropUpdates(wrapped, ...args) {
+            const result = wrapped(...args);
+            try {
+                const interactionManager = game.Levels3DPreview?._active ? game.Levels3DPreview.interactionManager : null;
+                const [updates, options] = result ?? [];
+                if (!interactionManager?._tokenDrag || !Array.isArray(updates)) return result;
+                const free = !!(interactionManager.isFreeMode || interactionManager.forceFree);
+                for (const update of updates) {
+                    if (options?.movement?.[update._id]?.planned) continue;
+                    const document = this.layer.get(update._id)?.document;
+                    if (!document) continue;
+                    const token3d = game.Levels3DPreview.tokens[update._id];
+                    if (token3d) token3d.wasFreeMode = free;
+                    if ((document.getFlag("levels-3d-preview", "wasFreeMode") ?? false) === free) continue;
+                    foundry.utils.setProperty(update, "flags.levels-3d-preview.wasFreeMode", free);
+                }
+            } catch (e) {
+                console.error(e);
+            }
+            return result;
         }
 
         async function showBouncingText(wrapped, ...args) {
@@ -170,7 +244,7 @@ export function registerWrappers() {
             bouncingText.style.color = color;
             bouncingText.style.fontSize = textData.fontSize + "px";
 
-            game.Levels3DPreview.helpers.ruler3d.centerElement(bouncingText, token3D.head);
+            centerElement(bouncingText, token3D.head);
             bouncingText.classList.add("scrolling-text");
             bouncingText.style.transition = `opacity 0.4s ease-in-out ${duration / 1000}s, transform ${duration / 1000}s ease-out`;
 
@@ -294,8 +368,6 @@ export function registerWrappers() {
             const splitStart = computeFull ? 0 : currentSplit * splitAngle;
             const splitEnd = computeFull ? nPoints : splitStart + splitAngle;
 
-
-
             const z = this.config.source?.object?.b ?? 0;
             const perfStart = Date.now();
             for (let i = splitStart, n = this.config.hasLimitedAngle ? splitEnd + 1 : splitEnd; i < n; i++) {
@@ -384,91 +456,38 @@ export function registerWrappers() {
             } else return wrapped(...args);
         }
 
-        async function moveMany(wrapped, ...args) {
-            if (!game.Levels3DPreview?._active || args[0].rotate) return wrapped(...args);
-                let {dx, dy, dz, rotate, ids, includeLocked} = args[0];
-                if ( ![-1, 0, 1].includes(dx) ) throw new Error("Invalid argument: dx must be -1, 0, or 1");
-                if ( ![-1, 0, 1].includes(dy) ) throw new Error("Invalid argument: dy must be -1, 0, or 1");
-                if ( ![-1, 0, 1].includes(dz) ) throw new Error("Invalid argument: dz must be -1, 0, or 1");
-                if ( !dx && !dy && !dz ) return [];
-                if ( game.paused && !game.user.isGM ) {
-                ui.notifications.warn("GAME.PausedWarning", {localize: true});
-                return [];
-            }
+        function moveMany(wrapped, ...args) {
+            const options = args[0] ?? {};
+            if (!game.Levels3DPreview?._active || options.rotate || (!options.dx && !options.dy)) return wrapped(...args);
+            const { x: dx, y: dy } = handleArrowKeys({ dx: options.dx ?? 0, dy: options.dy ?? 0 });
+            return wrapped({ ...options, dx: dx || 0, dy: dy || 0 }, ...args.slice(1));
+        }
 
-            // Identify the objects requested for movement
-            const objects = this._getMovableObjects(ids, includeLocked);
-            if ( !objects.length ) return objects;
-
-            // Conceal any active HUD
-            this.hud?.close();
-            let [updateData, updateOptions={}] = this._prepareKeyboardMovementUpdates(objects, dx, dy, dz);
-            const positions = handleArrowKeys({dx,dy,dz});
-
-            if (!positions) return [];
-            if (dx || dy) {
-                dx = positions.x;
-                dy = positions.y;
-            }
-
-            if (game.Levels3DPreview?.object3dSight) {
-                for (const token of objects) {
+        function prepareKeyboardMovementUpdates(wrapped, objects, dx, dy, dz, ...rest) {
+            const result = wrapped(objects, dx, dy, dz, ...rest);
+            try {
+                const interactionManager = game.Levels3DPreview?._active ? game.Levels3DPreview.interactionManager : null;
+                if (!interactionManager || dz || (!dx && !dy)) return result;
+                const movement = result?.[1]?.movement;
+                if (!movement) return result;
+                const floor = game.settings.get("levels-3d-preview", "preventNegative") ? canvas.primary.background.elevation : -Infinity;
+                for (const token of objects ?? []) {
+                    const waypoint = movement[token.id]?.waypoints?.[0];
                     const token3d = game.Levels3DPreview.tokens[token.id];
-                    const oldPos = {
-                        x: token.center.x,
-                        y: token.center.y,
-                        z: token3d?.losHeight ?? token.document.elevation,
-                    };
-                    const newPos = {
-                        x: oldPos.x + dx * canvas.grid.size,
-                        y: oldPos.y + dy * canvas.grid.size,
-                        z: token3d?.losHeight ?? token.document.elevation,
-                    };
-                    const collision = game.Levels3DPreview.interactionManager.computeSightCollision(oldPos, newPos, "move");
-                    if (collision) {
-                        dx = 0;
-                        dy = 0;
-                    }
+                    if (!waypoint || !token3d) continue;
+                    if (token3d.wasFreeMode || interactionManager.isTokenDragFree(token)) continue;
+                    const center = token.document.getCenterPoint(waypoint);
+                    const from = { x: center.x, y: center.y, z: token3d.losHeight ?? token.document.elevation };
+                    const collision = interactionManager.computeSightCollision(from, { x: center.x, y: center.y, z: -100000 }, "move");
+                    if (!collision) continue;
+                    const elevation = pos3DToCanvas(collision).elevation;
+                    if (!Number.isFinite(elevation)) continue;
+                    waypoint.elevation = Math.max(Math.round(elevation * 100) / 100, floor);
                 }
+            } catch (e) {
+                console.error(e);
             }
-            for (const token of objects) {
-                const token3d = game.Levels3DPreview.tokens[token.id];
-                const oldPos = {
-                    x: token.center.x,
-                    y: token.center.y,
-                    z: token3d?.losHeight ?? token.document.elevation,
-                };
-                const newPos = {
-                    x: oldPos.x + dx * canvas.grid.size,
-                    y: oldPos.y + dy * canvas.grid.size,
-                    z: token3d?.losHeight ?? token.document.elevation,
-                };
-                const collisionPos = {
-                    x: newPos.x,
-                    y: newPos.y,
-                    z: -100000,
-                };
-                const collision = token.document.getFlag("levels-3d-preview", "wasFreeMode") ? null : game.Levels3DPreview.interactionManager.computeSightCollision(newPos, collisionPos, "move");
-                let targetElevation = token.document.elevation;
-                if (collision) {
-                    let point2d = game.Levels3DPreview.helpers.ruler3d.pos3DToCanvas(collision);
-                    targetElevation = point2d.z.toFixed(2);
-                }
-                const movementCollision = game.Levels3DPreview.interactionManager.computeSightCollision(oldPos, newPos, "move");
-
-                const waypoint = updateOptions.movement?.[token.id]?.waypoints?.[0];
-                if (!movementCollision && waypoint) {
-                    waypoint.x = token.document.x + dx * canvas.grid.size;
-                    waypoint.y = token.document.y + dy * canvas.grid.size;
-                    // The core waypoint elevation already includes the keyboard dz delta, keep it when dz != 0
-                    if (!dz) waypoint.elevation = parseFloat(targetElevation);
-                }else{
-                    if (updateOptions.movement) delete updateOptions.movement[token.id];
-                    updateData = updateData.filter(e => e._id !== token.id);
-                }
-            }
-            if (updateData.length) await canvas.scene.updateEmbeddedDocuments(this.constructor.documentName, updateData, updateOptions);
-            return objects;
+            return result;
         }
 
         async function moveManyTiles(wrapped, ...args) {
@@ -479,7 +498,6 @@ export function registerWrappers() {
         }
 
         function handleArrowKeys(originalDeltas) {
-
             const {dx, dy} = originalDeltas;
 
             const cPos = game.Levels3DPreview.camera.position;
@@ -648,7 +666,7 @@ export function registerWrappers() {
             const originVec = new THREE.Vector3(origin.x, origin.y, (origin.z ?? 0) * distancePixels);
             const distanceFromOrigin = (p) => originVec.distanceTo(new THREE.Vector3(p.x, p.y, (p.elevation ?? 0) * distancePixels));
             const toElevatedPoint = (point3d) => {
-                const p = Ruler3D.pos3DToCanvas(point3d);
+                const p = pos3DToCanvas(point3d);
                 return { x: p.x, y: p.y, elevation: p.elevation };
             };
             if (options.mode === "all") {
