@@ -33,7 +33,6 @@ export class GroupSelectHandler {
     }
 
     init() {
-        document.querySelector("#canvas-container")?.remove();
         this._selectionBox = new SelectionBox(this.camera, this.scene);
     }
 
@@ -47,6 +46,9 @@ export class GroupSelectHandler {
         this.controls.enabled = false;
         this._isSelecting = true;
         this._selectedIds = {};
+        // Index scene objects once so instanced hits can be resolved without a scene traversal per mouse move
+        this._objectsByUuid = new Map();
+        this.scene.traverse((o) => this._objectsByUuid.set(o.uuid, o));
         document.body.append(this.element);
         const mouseP = new THREE.Vector2(
             (event.clientX / window.innerWidth) * 2 - 1,
@@ -73,7 +75,7 @@ export class GroupSelectHandler {
         this._selected = this._selectionBox.select();
         for (const [uuid, ids] of Object.entries(this._selectionBox.instances)) { 
             if(!ids.length) continue;
-            const object = this.scene.getObjectByProperty("uuid", uuid);
+            const object = this._objectsByUuid?.get(uuid);
             if (!object || this._selected.includes(object)) continue;
             this._selected.push(object);
         }
@@ -117,6 +119,7 @@ export class GroupSelectHandler {
 
     endSelect(event) {
         this._isSelecting = false;
+        this._objectsByUuid = null;
         this.controls.enabled = true;
         this._parent.interactionManager._groupSelect = false;
         document.querySelector("#levels-3d-preview-select-box").remove();

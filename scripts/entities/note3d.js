@@ -31,6 +31,7 @@ export class Note3D {
         const geometry = new THREE.BoxGeometry(size, size, size);
         const material = new THREE.MeshBasicMaterial({ map: texture, color: this.note.document.texture?.tint });
         const mesh = new THREE.Mesh(geometry, material);
+        this._iconMesh = mesh;
         this.mesh.userData.hitbox = mesh;
         this.mesh.userData.interactive = true;
         this.mesh.userData.entity3D = this;
@@ -69,13 +70,17 @@ export class Note3D {
 
     async _drawTooltip() {
         if (this.nameplate) this.mesh.remove(this.nameplate);
+        this._disposeNameplate();
         const name = this.note._drawTooltip();
         name.visible = true;
         const container = new PIXI.Container();
         container.addChild(name);
-        const base64 = await canvas.app.renderer.extract.base64(container);
+        const cnv = await canvas.app.renderer.extract.canvas(container);
+        if (this._destroyed) return;
+        const texture = new THREE.CanvasTexture(cnv);
+        texture.colorSpace = THREE.SRGBColorSpace;
         const spriteMaterial = new THREE.SpriteMaterial({
-            map: new THREE.TextureLoader().load(base64),
+            map: texture,
             transparent: true,
         });
         const sprite = new THREE.Sprite(spriteMaterial);
@@ -86,6 +91,14 @@ export class Note3D {
         this.nameplate.scale.set(width, height, 1);
         this.nameplate.position.set(0, this.note.document.iconSize / factor / 2 + height / 2 + 0.022, 0);
         this.mesh.add(this.nameplate);
+    }
+
+    _disposeNameplate() {
+        // The nameplate texture/material are generated per note, so they are safe to dispose.
+        const material = this.nameplate?.material;
+        if (!material) return;
+        material.map?.dispose();
+        material.dispose();
     }
 
     setPosition() {
@@ -155,7 +168,13 @@ export class Note3D {
     }
 
     destroy() {
+        this._destroyed = true;
         this.scene.remove(this.mesh);
+        this._disposeNameplate();
+        // Icon box geometry/material are created per note in draw(); the texture is cached in helpers.
+        this._iconMesh?.geometry?.dispose();
+        this._iconMesh?.material?.dispose();
+        this._iconMesh = null;
         delete this._parent.notes[this.note.id];
     }
 

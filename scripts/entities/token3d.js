@@ -739,7 +739,7 @@ export class Token3D {
 
         const rotations = {
             x: 0,
-            y: -token.mesh?.rotation ?? -Math.toRadians(token.document?.rotation ?? 0),
+            y: -(token.mesh?.rotation ?? Math.toRadians(token.document?.rotation ?? 0)),
             z: 0,
         };
         mesh.rotation.set(rotations.x, rotations.y, rotations.z);
@@ -810,7 +810,7 @@ export class Token3D {
         if (!this.mixer) return;
         const currAction = this.mixer._actions.find((a) => a.isRunning());
         this.animIndex = this.document.getFlag("levels-3d-preview", "animIndex") ?? 0;
-        const newAction = this.mixer._actions.find((a) => a._clip.uuid == this.mixerAnimations[this.animIndex].uuid);
+        const newAction = this.mixer._actions.find((a) => a._clip.uuid == this.mixerAnimations[this.animIndex]?.uuid);
         for (let act of this.mixer._actions) {
             if (act != newAction && act != currAction) {
                 act.stop();
@@ -821,8 +821,10 @@ export class Token3D {
             if (!this.mixerAnimations[this.animIndex]) {
                 console.error("Animation index out of bounds", this.token);
             } else {
+                if (!newAction) return;
                 newAction.enabled = true;
-                currAction.crossFadeTo(newAction, 0.3).play(); //this.mixer.clipAction( this.mixerAnimations[this.animIndex] ).play();
+                if (!currAction) newAction.reset().play();
+                else currAction.crossFadeTo(newAction, 0.3).play(); //this.mixer.clipAction( this.mixerAnimations[this.animIndex] ).play();
             }
         }
     }
@@ -833,9 +835,12 @@ export class Token3D {
         if (!this.targetContainer) return;
         this.updateTargetTexture();
         if (this.isBase && game.settings.get("levels-3d-preview", "hideTarget")) return;
-        this.targetContainer.children.forEach((child) => {
+        while (this.targetContainer.children.length) {
+            const child = this.targetContainer.children[0];
             this.targetContainer.remove(child);
-        });
+            //per-target material is created fresh in this function; geometry is shared with the target model
+            child.children[0]?.material?.dispose();
+        }
         this.targetSize = Math.min(this.h, this.w, this.d) * 0.3;
         this.targetSize = Math.min(Math.max(this.targetSize, 0.02), 0.05);
         let positionOffset = this.targetSize;
@@ -1139,16 +1144,21 @@ export class Token3D {
         const cachedEffect = this._parent.effectsCache[effect];
         if (cachedEffect) return cachedEffect;
         const material = new THREE.MeshBasicMaterial({
-            map: new THREE.TextureLoader().load(effect),
+            map: new THREE.TextureLoader().load(effect, (texture) => {
+                texture.colorSpace = THREE.SRGBColorSpace;
+                texture.needsUpdate = true;
+            }),
         });
         this._parent.effectsCache[effect] = material;
         return material;
     }
 
     drawBorder() {
-        this.border.children.forEach((child) => {
+        while (this.border.children.length) {
+            const child = this.border.children[0];
             this.border.remove(child);
-        });
+            this._disposeBorderChild(child);
+        }
 
         if (this.disableBase) return this.setUpProne(true);
 
@@ -1156,6 +1166,7 @@ export class Token3D {
 
         this._parent.helpers.getBase().then((resp) => {
             const base = resp.model;
+            if (this._destroyed) return this._disposeBorderChild(base);
             const scaleFactor = resp.scale;
             if (this.reticule && (this.baseMode == "ringHollow" || this.baseMode == "ringSimple" || this.baseMode == "ringSimpleSmall")) {
                 this.reticule.scale.set(scaleFactor, scaleFactor, scaleFactor);
@@ -1178,7 +1189,7 @@ export class Token3D {
             base.traverse((child) => {
                 if (child.isMesh) {
                     if (child == offsetMesh) {
-                        if ((child.material.color.r = 1 && child.material.color.g == 1 && child.material.color.b == 1)) {
+                        if (child.material.color.r === 1 && child.material.color.g === 1 && child.material.color.b === 1) {
                             child.material.color = new THREE.Color(this.baseColor);
                         }
                     } else {
@@ -1205,6 +1216,19 @@ export class Token3D {
         });
 
         this.addStem();
+    }
+
+    _disposeBorderChild(object) {
+        if (!object) return;
+        const isStem = object === this.stem;
+        object.traverse((child) => {
+            if (!child.isMesh) return;
+            //base materials from helpers.getBase are per-instance clones, geometry is shared with the model cache
+            const materials = Array.isArray(child.material) ? child.material : [child.material];
+            materials.forEach((m) => m?.dispose());
+            //the stem owns its geometry
+            if (isStem) child.geometry?.dispose();
+        });
     }
 
     _setupBorderMaterials() {
@@ -1341,26 +1365,38 @@ export class Token3D {
         container.scale.set(2, 2);
         name.visible = true;
         container.addChild(name);
-        const base64 = await canvas.app.renderer.extract.base64(container);
+        if (this._destroyed || !this.mesh) return container.destroy({ children: true });
+        const cnv = await canvas.app.renderer.extract.canvas(container);
+        const width = name.width / this.factor;
+        const height = name.height / this.factor;
+        container.destroy({ children: true });
+        const texture = new THREE.CanvasTexture(cnv);
+        texture.colorSpace = THREE.SRGBColorSpace;
+        if (this._destroyed || !this.mesh) return texture.dispose();
         const spriteMaterial = new THREE.SpriteMaterial({
-            map: await new THREE.TextureLoader().loadAsync(base64),
+            map: texture,
             transparent: true,
             alphaTest: 0.1,
         });
         const sprite = new THREE.Sprite(spriteMaterial);
         sprite.center.set(0.5, 0.5);
+        this._disposeSprite(this.nameplate);
         this.mesh.remove(this.nameplate);
         this.nameplate = sprite;
         this.nameplate.userData.ignoreIntersect = true;
         this.nameplate.userData.ignoreHover = true;
-        const width = name.width / this.factor;
-        const height = name.height / this.factor;
         this.nameplate.scale.set(width, height, 1);
         this.nameplate.position.set(0, this.d + height / 2 + 0.042, 0);
         this.mesh.add(this.nameplate);
         //reset name as it was changed
         //name.width /= 2;
         //name.height /= 2;
+    }
+
+    _disposeSprite(sprite) {
+        if (!sprite?.material) return;
+        sprite.material.map?.dispose();
+        sprite.material.dispose();
     }
 
     async drawBars() {
@@ -1373,19 +1409,25 @@ export class Token3D {
         container.addChild(bar1);
         container.addChild(bar2);
         bar2.position.set(0, bar1.height + 3);
-        const base64 = await canvas.app.renderer.extract.base64(container);
+        if (this._destroyed || !this.mesh) return container.destroy({ children: true });
+        const cnv = await canvas.app.renderer.extract.canvas(container);
+        const width = container.width / this.factor;
+        const height = container.height / this.factor;
+        container.destroy({ children: true });
+        const texture = new THREE.CanvasTexture(cnv);
+        texture.colorSpace = THREE.SRGBColorSpace;
+        if (this._destroyed || !this.mesh) return texture.dispose();
         const spriteMaterial = new THREE.SpriteMaterial({
-            map: await new THREE.TextureLoader().loadAsync(base64),
+            map: texture,
             transparent: true,
         });
         const sprite = new THREE.Sprite(spriteMaterial);
         sprite.center.set(0.5, 0.5);
+        this._disposeSprite(this.bars);
         this.mesh.remove(this.bars);
         this.bars = sprite;
         this.bars.userData.ignoreIntersect = true;
         this.bars.userData.ignoreHover = true;
-        const width = container.width / this.factor;
-        const height = container.height / this.factor;
         this.bars.scale.set(width, height, 1);
         this.bars.position.set(0, this.d - height + 0.037, 0);
         this.mesh.add(this.bars);
@@ -1578,11 +1620,46 @@ export class Token3D {
     }
 
     destroy() {
+        if (this._destroyed) return;
         this.light?.destroy();
         this._parent.scene.remove(this.mesh);
         this._destroyed = true;
-        delete this._parent.tokens[this.id];
+        const id = this.document.id;
+        if (this._parent.tokens[id] === this) delete this._parent.tokens[id];
         game.Levels3DPreview.particleSystem.stop(this.particleEffectId);
+        this._disposeResources();
+    }
+
+    _disposeResources() {
+        //Only dispose resources owned by this token. Shared caches (targetMaterialsCache, coinBorderMaterialCache,
+        //heightHighlightMaterialCache, diamondGeometry, _parent.effectsCache, _parent.models, helpers.textureCache) are left alone.
+        try {
+            if (this.mixer) {
+                this.mixer.stopAllAction();
+                const root = this.mixer.getRoot();
+                if (root) this.mixer.uncacheRoot(root);
+            }
+            this._disposeSprite(this.nameplate);
+            this._disposeSprite(this.bars);
+            this.hitbox?.geometry?.dispose();
+            this.hitbox?.material?.dispose();
+            this.boundingMesh?.geometry?.dispose();
+            this.boundingMesh?.material?.dispose();
+            //reticule geometry is created per token, its material is shared (targetMaterialsCache)
+            this.reticule?.geometry?.dispose();
+            //per-target materials
+            this.targetContainer?.children.forEach((child) => child.children[0]?.material?.dispose());
+            //base materials (clones) and stem
+            this.border?.children.forEach((child) => this._disposeBorderChild(child));
+            //aura: ring geometries and material1 are shared, material2 is a per-instance clone
+            this.aura?.material2?.dispose();
+            //height indicator: column and base geometries are created per draw, materials and diamond geometry are cached
+            this.heightIndicator?.children.forEach((child) => {
+                if (child.geometry && child.geometry !== diamondGeometry) child.geometry.dispose();
+            });
+        } catch (e) {
+            console.error("3D Canvas | Error disposing token resources", e);
+        }
     }
 
     refresh() {
@@ -1710,7 +1787,7 @@ export class Token3D {
             if (animChanged) {
                 game.Levels3DPreview.tokens[token.id]?.updateAnimation();
             }
-            if ((updates?.flags && updates?.flags["levels-3d-preview"] && !wasFreeUpdated && !onlyAnim) || ("light" in updates && !isEmpty(updates.light)) || "width" in updates || "height" in updates || "texture" in updates) {
+            if ((updates?.flags && updates?.flags["levels-3d-preview"] && !wasFreeUpdated && !onlyAnim) || ("light" in updates && !foundry.utils.isEmpty(updates.light)) || "width" in updates || "height" in updates || "texture" in updates) {
                 game.Levels3DPreview.tokens[token.id]?.refresh();
             }
             const updateX = updates?.x !== undefined;
@@ -1750,11 +1827,10 @@ export class Token3D {
             if (!flag) return;
             if (isFlying(tokenDocument) && flag === "notFlying") return;
             if (!("x" in updates) && !("y" in updates) && !("elevation" in updates)) return;
-            const object = tokenDocument.object;
             const x = (updates.x ?? tokenDocument.x) + tokenDocument.width * (canvas.grid.size / 2);
             const y = (updates.y ?? tokenDocument.y) + tokenDocument.height * (canvas.grid.size / 2);
-            const token3d = game.Levels3DPreview.tokens[object.id];
-            const height = (token3d.losHeight ?? object.document.elevation) - object.document.elevation;
+            const token3d = game.Levels3DPreview.tokens[tokenDocument.id];
+            const height = token3d ? (token3d.losHeight ?? tokenDocument.elevation) - tokenDocument.elevation : 0;
             const elevation = (updates.elevation ?? tokenDocument.elevation) + height;
             const collision = game.Levels3DPreview.interactionManager.computeSightCollision({ x, y, z: elevation }, { x, y, z: -100000 });
             if (!collision) return;
@@ -1790,6 +1866,7 @@ export class Token3D {
         Hooks.on("pasteToken", (copy, data) => {
             if (game.Levels3DPreview?._active) {
                 const pos = game.Levels3DPreview.interactionManager.canvas2dMousePosition;
+                if (!pos) return;
                 data.forEach((td) => (td.elevation = pos.z));
             }
         });
@@ -1799,6 +1876,7 @@ export class Token3D {
             const token3d = game.Levels3DPreview.tokens[hud.object.id];
             const tokenAnimations = game.Levels3DPreview.CONFIG.tokenAnimations;
             const effectsElement = hud.element.querySelector(`[data-palette="effects"]`);
+            if (!token3d || !effectsElement) return;
             const height = effectsElement.offsetHeight;
 
             let taMenuHtml = `<div class="control-icon" data-action="3d-animations">

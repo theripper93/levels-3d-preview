@@ -86,7 +86,6 @@ async function shareMap({ image, author, description, scene, name, assetpacks, s
             },
             body,
         });
-        console.log(body);
         let rJson;
         try {
             rJson = await res.json();

@@ -144,6 +144,7 @@ export function registerSettings() {
         });
         const resFactor = (window.innerHeight * (game.settings.get("core", "pixelRatioResolutionScaling") ? window.devicePixelRatio : 1)) / 2160;
         document.documentElement.style.setProperty("--levels3d-ruler-font-size", `${game.settings.get("levels-3d-preview", "resolutionMultiplier") * resFactor * 6}rem`);
+        //Intentional: also scales the 2D PIXI canvas, since in shared-context mode three renders into the same canvas/resolution
         canvasConfig.resolution *= game.settings.get("levels-3d-preview", "resolutionMultiplier");
     });
 

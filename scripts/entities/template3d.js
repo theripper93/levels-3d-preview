@@ -790,25 +790,25 @@ export class Template3D {
     static setHooks() {
         Hooks.on("updateMeasuredTemplate", (template) => {
             if (game.Levels3DPreview?._active && template?.id) {
-                game.Levels3DPreview.templates[template?.id]?.destroy();
-                game.Levels3DPreview.createTemplate(template.object);
+                game.Levels3DPreview?.templates?.[template.id]?.destroy();
+                game.Levels3DPreview.createTemplate?.(template.object);
             }
         });
 
         Hooks.on("createRegion", (template) => {
-            for (const shape of template.shapes) {
-                if (game.Levels3DPreview?._active && template.object) game.Levels3DPreview.createTemplate(shape);
+            for (const shape of template.shapes ?? []) {
+                if (game.Levels3DPreview?._active && template.object) game.Levels3DPreview.createTemplate?.(shape);
             }
         });
 
         Hooks.on("updateRegion", (template) => {
-            for (const shape of template.shapes) {
-                if (game.Levels3DPreview?._active && template.object) game.Levels3DPreview.createTemplate(shape);
+            for (const shape of template.shapes ?? []) {
+                if (game.Levels3DPreview?._active && template.object) game.Levels3DPreview.createTemplate?.(shape);
             }
         });
 
         Hooks.on("deleteMeasuredTemplate", (template) => {
-            if (game.Levels3DPreview?._active) game.Levels3DPreview.templates[template.id]?.destroy();
+            if (game.Levels3DPreview?._active) game.Levels3DPreview?.templates?.[template.id]?.destroy();
         });
     }
 }

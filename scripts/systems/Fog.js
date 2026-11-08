@@ -18,7 +18,9 @@ export class Fog {
         this._overlay = null;
         this._lastBase64 = null;
         this.overlayRepeat = new THREE.Vector2(1, 1);
-        this.debouncedUpdate = this.updateTexture; // !this._sharedContext ? foundry.utils.debounce(this.updateTexture, 300) : this.updateTexture;
+        this._updateSeq = 0;
+        //The shared context path is cheap (no GPU readback), so only debounce the extract/encode/decode path
+        this.debouncedUpdate = this._sharedContext ? this.updateTexture.bind(this) : foundry.utils.debounce(this.updateTexture.bind(this), 100);
         this.extractor ??= new foundry.canvas.TextureExtractor(canvas.app.renderer, { callerName: "FogExtractorCanvas3D", controlHash: true, format: PIXI.FORMATS.RED });
         this.extractor.reset();
         this.initTexture();
@@ -66,16 +68,29 @@ export class Fog {
     }
 
     async updateTexture(force = false) {
+        if (this._destroyed) return;
         if (!this.needsUpdate && !force) return;
         this.needsUpdate = false;
-        if (this.fogTexture && !this._sharedContext) this.fogTexture.dispose();
+        const seq = ++this._updateSeq;
         const isBlank = game.user.isGM && !canvas.effects?.visionSources?.size;
         const base64 = isBlank ? this.blank : await this.generateTexture();
-        this.fogTexture = this._sharedContext || isBlank ? base64 : await new THREE.TextureLoader().loadAsync(base64);
-        if (!this.fogTexture) return;
+        if (seq !== this._updateSeq || this._destroyed) return;
+        let texture = base64;
+        if (!this._sharedContext && !isBlank) {
+            texture = await new THREE.TextureLoader().loadAsync(base64);
+            if (seq !== this._updateSeq || this._destroyed) {
+                texture?.dispose();
+                return;
+            }
+        }
+        if (!texture) return;
+        const previous = this.fogTexture;
+        this.fogTexture = texture;
         this.fogTexture.minFilter = THREE.NearestFilter;
         this.fogTexture.flipY = false;
         this.updateShaders();
+        //Dispose the previous texture only once the new one is assigned; never dispose the shared blank texture
+        if (previous && previous !== texture && previous !== this.blank && !this._sharedContext) previous.dispose();
     }
 
     updateShaders() {
@@ -132,6 +147,7 @@ export class Fog {
     }
 
     destroy() {
+        this._destroyed = true;
         this.dispose();
     }
 }
@@ -160,7 +176,10 @@ export function injectFoWShaders(THREELIB) {
         },
     });
     THREELIB.Material.prototype.customProgramCacheKey = function () {
-        return this._userOnBeforeCompile?.toString() ?? "";
+        //Closures with identical source but different captured state stringify the same, so add the material state that injected code depends on
+        const map = this.map;
+        const mapKey = map ? (map.matrixAutoUpdate === false || map.userData?.legacyUvMatrix ? "mapM" : "map") : "nomap";
+        return `${this.type}|${mapKey}|${this._userOnBeforeCompile?.toString() ?? ""}`;
     };
 
     THREELIB.ShaderChunk.common += `

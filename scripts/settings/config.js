@@ -2288,7 +2288,6 @@ export function registerConfigs() {
             },
             onUp: () => {
                 const type = pingPicker?.close() ?? null;
-                console.log(type);
                 pingPicker = null;
                 game.Levels3DPreview.helpers._ping(type);
             },

@@ -11,6 +11,47 @@ THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
 THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
 THREE.Mesh.prototype.raycast = acceleratedRaycast;
 
+const DRAG_START_THRESHOLD_PX = 6;
+const DOUBLE_CLICK_WINDOW_MS = 250;
+
+function getSenseTypes() {
+    return CONST.EDGE_SENSE_TYPES ?? CONST.WALL_SENSE_TYPES;
+}
+
+/**
+ * Drop the cached collider clones of a tile so they are rebuilt on the next collision generation.
+ */
+export function invalidateTileColliders(tile3d) {
+    if (tile3d) delete tile3d._taggedColliders;
+}
+
+/**
+ * Get (or lazily create) a detached clone of a tagged child of a tile, used for raycasting.
+ * Clones are cached per tile so collision generation does not re-clone every call; the world matrix
+ * and geometry are re-synced from the source on every lookup so moving/animated parts (doors) stay correct.
+ * The cache is rebuilt when the tile's `_collidersVersion` changes (undefined unless set elsewhere).
+ */
+function getTaggedColliderClone(tile3d, source) {
+    let cache = tile3d._taggedColliders;
+    if (!cache || cache.version !== tile3d._collidersVersion) {
+        cache = tile3d._taggedColliders = { version: tile3d._collidersVersion, clones: new Map() };
+    }
+    let clone = cache.clones.get(source);
+    if (!clone) {
+        const ud = source.userData;
+        source.userData = {};
+        clone = source.clone(false);
+        source.userData = ud;
+        clone.userData = ud;
+        cache.clones.set(source, clone);
+    } else {
+        if (source.geometry && clone.geometry !== source.geometry) clone.geometry = source.geometry;
+        clone.userData = source.userData;
+    }
+    clone.matrixWorld.copy(source.matrixWorld);
+    return clone;
+}
+
 export class InteractionManager {
     constructor(levels3dPreview) {
         this._draggable = null;
@@ -89,13 +130,11 @@ export class InteractionManager {
             if (tile.hasTags) {
                 mesh.traverse((o) => {
                     const ud = o?.userData;
-                    o.userData = {};
-                    const clone = o.clone(false);
-                    clone.userData = ud;
-                    o.userData = ud;
-                    if (o?.userData?.collision) collisionObjects.push(clone);
-                    if (o?.userData?.sight) sightObjects.push(clone);
-                    if (o?.userData?.cameraCollision) cameraObjects.push(clone);
+                    if (!ud?.collision && !ud?.sight && !ud?.cameraCollision) return;
+                    const clone = getTaggedColliderClone(tile, o);
+                    if (ud.collision) collisionObjects.push(clone);
+                    if (ud.sight) sightObjects.push(clone);
+                    if (ud.cameraCollision) cameraObjects.push(clone);
                 });
             } else {
                 if (tile.collision) collisionObjects.push(mesh);
@@ -107,8 +146,12 @@ export class InteractionManager {
             if (!wall?.placeable) continue;
             if (wall.placeable.isDoor && wall.placeable.document.ds === CONST.WALL_DOOR_STATES.OPEN) continue;
             if (!wall.mesh?.visible && wall.isDisabledVisible === true) continue;
-            if (wall.placeable.document.sight >= 10) sightObjects.push(wall.mesh);
-            if (wall.placeable.document.move > 0) collisionObjects.push(wall.mesh);
+            // NONE and LIMITED do not block. PROXIMITY/DISTANCE depend on the source distance, which a static
+            // collision list cannot express, so they are approximated as always blocking.
+            const SENSE_TYPES = getSenseTypes();
+            const sightType = wall.placeable.document.sight;
+            if (sightType === SENSE_TYPES.NORMAL || sightType === SENSE_TYPES.PROXIMITY || sightType === SENSE_TYPES.DISTANCE) sightObjects.push(wall.mesh);
+            if (wall.placeable.document.move === SENSE_TYPES.NORMAL) collisionObjects.push(wall.mesh);
         }
         if (this._parent.board) {
             sightObjects.push(this._parent.board);
@@ -277,26 +320,29 @@ export class InteractionManager {
     controlledGroupSetPosition() {
         if (!canvas?.activeLayer?.controlled?.length) return false;
         const controlledGroup = this._parent.controlledGroup;
-        let maxX,
-            maxY,
-            maxZ,
-            minX,
-            minY,
-            minZ = 0;
+        let maxX = -Infinity,
+            maxY = -Infinity,
+            maxZ = -Infinity,
+            minX = Infinity,
+            minY = Infinity,
+            minZ = Infinity;
+        let count = 0;
 
         for (let placeable of canvas.activeLayer?.controlled) {
             const tile3d = this._parent.tiles[placeable.id];
             if (!tile3d) continue;
             const pos = tile3d.mesh?.position ?? tile3d.center;
-            if (!maxX || pos.x > maxX) maxX = pos.x;
-            if (!maxY || pos.y > maxY) maxY = pos.y;
-            if (!maxZ || pos.z > maxZ) maxZ = pos.z;
-            if (!minX || pos.x < minX) minX = pos.x;
-            if (!minY || pos.y < minY) minY = pos.y;
-            if (!minZ || pos.z < minZ) minZ = pos.z;
+            if (!pos) continue;
+            count++;
+            maxX = Math.max(maxX, pos.x);
+            maxY = Math.max(maxY, pos.y);
+            maxZ = Math.max(maxZ, pos.z);
+            minX = Math.min(minX, pos.x);
+            minY = Math.min(minY, pos.y);
+            minZ = Math.min(minZ, pos.z);
         }
 
-        if (maxX === undefined || maxY === undefined || maxZ === undefined || minX === undefined || minY === undefined || minZ === undefined) return false;
+        if (!count) return false;
         const center = new THREE.Vector3((maxX + minX) / 2, (maxY + minY) / 2, (maxZ + minZ) / 2);
         controlledGroup.position.copy(center);
         return true;
@@ -378,7 +424,7 @@ export class InteractionManager {
             data.x = coord3d.x;
             data.y = coord3d.y;
             data.elevation = coord3d.z;
-            data.flags = {};
+            data.flags ??= {};
 
             const dropFunction = this._parent.CONFIG.INTERACTIONS.dropFunctions[data.type];
 
@@ -411,7 +457,8 @@ export class InteractionManager {
         const downId = foundry.utils.randomID();
         this._downId = downId;
         const currentMousePos = { x: this.mousemove.x, y: this.mousemove.y };
-        if (!event.shiftKey && !event.ctrlKey && !event.altKey && event.which === 1 && this.canDragStart) {
+        const groupSelectCandidate = !event.shiftKey && !event.ctrlKey && !event.altKey && event.which === 1 && this.canDragStart;
+        if (groupSelectCandidate) {
             setTimeout(() => {
                 const moveDelta = Math.abs(currentMousePos.x - this.mousemove.x) + Math.abs(currentMousePos.y - this.mousemove.y);
                 if (this._downId !== downId || !this._leftDown || moveDelta < 0.03) return;
@@ -423,7 +470,7 @@ export class InteractionManager {
         }
         if (event.which === 1 && canvas.tokens?.active) {
             setTimeout(() => {
-                if (this.draggable || this._downId !== downId || !this._leftDown || (this.controls.mouseButtons.LEFT && this._downCameraPosition.distanceTo(this._upCameraPosition) > 0.01)) return;
+                if (this.draggable || this._downId !== downId || !this._leftDown || (this.controls.mouseButtons.LEFT && this._upCameraPosition && this._downCameraPosition.distanceTo(this._upCameraPosition) > 0.01)) return;
                 const moveDelta = Math.abs(currentMousePos.x - this.mousemove.x) + Math.abs(currentMousePos.y - this.mousemove.y);
                 if (moveDelta > 0.1) return;
                 this._downId = null;
@@ -450,7 +497,10 @@ export class InteractionManager {
         if (this.isRulerDrag(event, intersectData)) this.toggleControls(false);
         if (!intersect || event.ctrlKey) return;
         if (intersect.userData?.entity3D?.embeddedName === this.activeLayerEntity && !(this._gizmoEnabled && this.activeLayerEntity === "Tile")) this.toggleControls(false);
+        // A previous double click whose second mouseup never reached the canvas would leave clicks stuck: start over
+        if (this.clicks >= 2 && !this.draggable) this.clicks = 0;
         this.clicks++;
+        this._clickPressId = null;
         event.entity = intersect.userData.entity3D;
         event.intersectData = intersectData;
         event.intersect = intersect;
@@ -468,13 +518,24 @@ export class InteractionManager {
             this._parent.ruler.addSegment();
         } else {
             if (this.clicks === 1) {
-                setTimeout(() => {
-                    if (event.which === 1) {
-                        this.mousedown && this.clicks === 1 ? this.startDrag(event, intersectData) : (this._triggerLeft = true);
-                    } else {
-                        this._triggerRight = true;
-                    }
-                }, 250);
+                // The single click is dispatched on mouseup; here we only decide whether this press becomes a drag.
+                // The drag starts either once the pointer moves past a small threshold (see _onMouseMove) or
+                // if the button is still held after 250ms.
+                const pressId = foundry.utils.randomID();
+                this._clickPressId = pressId;
+                this._clickButton = event.which;
+                this._pendingDrag = null;
+                if (event.which === 1) {
+                    // Group select candidates keep the timer-only behaviour so the group select timer can take over
+                    if (!groupSelectCandidate) this._pendingDrag = { id: pressId, event, intersectData, x: event.clientX, y: event.clientY };
+                    setTimeout(() => {
+                        if (this._clickPressId !== pressId || this._dragAttemptedPress === pressId) return;
+                        this._pendingDrag = null;
+                        if (!this.mousedown || this.clicks !== 1 || this.draggable) return;
+                        this._dragAttemptedPress = pressId;
+                        this.startDrag(event, intersectData);
+                    }, 250);
+                }
             } else {
                 if (this.draggable) return this.cancelDrag();
                 else event.which === 1 ? (this._triggerLeft2 = true) : (this._triggerRight2 = true);
@@ -514,19 +575,15 @@ export class InteractionManager {
         event.intersect = this.eventData?.intersect;
         event.position3D = this.eventData?.position3D;
         event.originalIntersect = this.eventData?.originalIntersect;
-        setTimeout(() => {
-            if ((this.prevEventData && this.prevEventData.entity !== this.eventData.entity) || this.hasCameraMoved) return (this.clicks = 0);
-            if (this._triggerLeft2) {
-                this._onClickLeft2(event);
-                this._onClickLeft(event);
-            } else if (this._triggerLeft) this._onClickLeft(event);
-            if (this._triggerRight2) this._onClickRight2(event);
-            else if (this._triggerRight) this._onClickRight(event);
-            if (this._triggerLeft || this._triggerRight || this._triggerLeft2 || this._triggerRight2) this.clicks = 0;
-        }, 250);
+        this._pendingDrag = null;
+        const wasDragging = !!this.draggable;
         this.mousedown = false;
+        if (!wasDragging) this._dispatchClicks(event);
         if (event.which !== 1) return;
         if (this.draggable) {
+            // A drag started on movement can be released before the render loop computed a drag target
+            if (!this.currentDragTarget) this.dragObject();
+            if (!this.currentDragTarget) this.currentDragTarget = (this.draggable.userData.isHitbox ? this.draggable.parent : this.draggable).position.clone();
             this.forceDraggablePosition(event);
             const entity3D = this.draggable?.userData?.entity3D;
             if (entity3D.token) {
@@ -550,6 +607,36 @@ export class InteractionManager {
         this.toggleControls(true, true);
     }
 
+    /**
+     * Dispatch click events on mouseup. The first click is dispatched immediately; a second mousedown within
+     * DOUBLE_CLICK_WINDOW_MS of the first mouseup is a double click, dispatched on its mouseup
+     * (like core Foundry, clickLeft fires before clickLeft2).
+     */
+    _dispatchClicks(event) {
+        if (!this.clicks) return;
+        if ((this.prevEventData && this.prevEventData.entity !== this.eventData?.entity) || this.hasCameraMoved) {
+            this.clicks = 0;
+            return;
+        }
+        if (this.clicks === 1) {
+            // Close the double click window if no second press arrives in time
+            const pressId = this._clickPressId;
+            setTimeout(() => {
+                if (this._clickPressId === pressId && this.clicks === 1) this.clicks = 0;
+            }, DOUBLE_CLICK_WINDOW_MS);
+            // Not a click press, a different button, held long enough to become a drag, or already dispatched
+            if (!pressId || event.which !== this._clickButton || this._dragAttemptedPress === pressId || this._clickDispatchedPress === pressId) return;
+            this._clickDispatchedPress = pressId;
+            if (event.which === 1) this._onClickLeft(event);
+            else if (event.which === 3) this._onClickRight(event);
+            return;
+        }
+        if (this._triggerLeft2 && event.which === 1) this._onClickLeft2(event);
+        else if (this._triggerRight2 && event.which === 3) this._onClickRight2(event);
+        else return;
+        this.clicks = 0;
+    }
+
     updateHoverObj() {
         this._hoverobj = this._parent.scene.children.filter(this._collisionFilter);
     }
@@ -565,6 +652,7 @@ export class InteractionManager {
             this.domMousePosition = { x: event.clientX, y: event.clientY };
             this.mousemove.x = (event.clientX / window.innerWidth) * 2 - 1;
             this.mousemove.y = -(event.clientY / window.innerHeight) * 2 + 1;
+            if (this._pendingDrag) this._checkPendingDrag(event);
         }
         if (this.draggable) return;
         this.updateHoverObj();
@@ -599,6 +687,22 @@ export class InteractionManager {
         }
 
         if (this._groupSelect) this.groupSelectHandler.updateSelect(event);
+    }
+
+    /**
+     * Start a pending drag as soon as the pointer has moved far enough from where the button was pressed,
+     * instead of waiting for the 250ms hold timer.
+     */
+    _checkPendingDrag(event) {
+        const pending = this._pendingDrag;
+        if (this._clickPressId !== pending.id || !this.mousedown || this.clicks !== 1 || this.draggable || this._groupSelect) {
+            this._pendingDrag = null;
+            return;
+        }
+        if (Math.hypot(event.clientX - pending.x, event.clientY - pending.y) < DRAG_START_THRESHOLD_PX) return;
+        this._pendingDrag = null;
+        this._dragAttemptedPress = pending.id;
+        this.startDrag(pending.event, pending.intersectData);
     }
 
     _clippingFilter(i) {
@@ -814,6 +918,8 @@ export class InteractionManager {
     }
 
     _onKeyUp(event) {
+        // Ignore releases of other keys while Control is still held
+        if (event.key !== "Control" && event.ctrlKey) return;
         this.isCtrl = false;
         if (!this.draggable) this.controls.enableZoom = true;
     }
@@ -857,11 +963,9 @@ export class InteractionManager {
     findCameraLookatDistance() {
         const screenCenter = new THREE.Vector2(-0.1, +0.1);
         this.raycaster.setFromCamera(screenCenter, this.camera);
-        const targets = [];
-        this.scene.traverse((c) => {
-            if (c.visible && !c.material?.transparent) targets.push(c);
-        });
-        const intersects = this.raycaster.intersectObjects(targets); //this._sightCollisions.sight, true);
+        let targets = this._sightCollisions?.sight;
+        if (!targets?.length) targets = [this._parent.board, this._parent.table].filter(Boolean);
+        const intersects = this.raycaster.intersectObjects(targets, true);
         if (intersects.length > 0) {
             return intersects[0].distance;
         } else {
@@ -919,6 +1023,7 @@ export class InteractionManager {
         this._draggable = object;
         const center = this._parent.canvasCenter;
         if (object) {
+            this.currentDragTarget = null;
             this.buildCollisionGeos();
             this.forceFree = object.userData.entity3D.wasFreeMode;
             this.dragplane.position.set(center.x, object.userData.entity3D.mesh.position.y, center.z);
@@ -990,12 +1095,7 @@ export class InteractionManager {
             if (cgIds.includes(tile.placeable.id)) continue;
             if (tile.hasTags) {
                 tile.mesh.traverse((o) => {
-                    const ud = o?.userData;
-                    o.userData = {};
-                    const clone = o.clone(false);
-                    clone.userData = ud;
-                    o.userData = ud;
-                    if (o?.userData?.collision) collisionGeometries.push(clone);
+                    if (o?.userData?.collision) collisionGeometries.push(getTaggedColliderClone(tile, o));
                 });
             } else {
                 if (!tile.collision && draggableId) continue;
@@ -1136,10 +1236,26 @@ export class InteractionManager {
         const sc = game.user.hasPermission("SHOW_CURSOR");
         if (!sc) return;
         const position = { x: pos3d?.x, y: pos3d?.y, z: pos3d?.z };
-        const positionToString = JSON.stringify(position);
         this._currentMousePosition = position;
+        // Throttle network broadcasts to one every 100ms, with a trailing call for the latest position
+        const now = Date.now();
+        const elapsed = now - (this._lastCursorBroadcast ?? 0);
+        if (elapsed >= 100) {
+            clearTimeout(this._cursorBroadcastTimeout);
+            this._cursorBroadcastTimeout = null;
+            this._emitCursorPosition(position);
+        } else if (!this._cursorBroadcastTimeout) {
+            this._cursorBroadcastTimeout = setTimeout(() => {
+                this._cursorBroadcastTimeout = null;
+                this._emitCursorPosition(this._currentMousePosition);
+            }, 100 - elapsed);
+        }
+    }
+
+    _emitCursorPosition(position) {
+        this._lastCursorBroadcast = Date.now();
         game.user.broadcastActivity({
-            cursor: { x: positionToString, y: 0 },
+            cursor: { x: JSON.stringify(position ?? {}), y: 0 },
         });
     }
 

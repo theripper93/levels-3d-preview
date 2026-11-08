@@ -161,11 +161,30 @@ export class Helpers {
 
     async getModel(modelPath) {
         const filePath = modelPath;
-        while (this._loading[filePath] || Object.keys(this._loading).length > 0) {
-            await this.wait(100);
+        const inFlight = this._loading[filePath];
+        if (inFlight) {
+            const result = await inFlight;
+            if (this.modelCache[modelPath]) return this.getClone(modelPath);
+            //Skinned models are never cached (cloning loses the skeleton binding), so load our own copy
+            if (result?.isSkinned) return this.getModel(modelPath);
+            return null;
         }
         if (this.modelCache[modelPath]) return this.getClone(modelPath);
-        this._loading[filePath] = true;
+        const promise = this._loadModel(modelPath);
+        this._loading[filePath] = promise;
+        promise
+            .finally(() => {
+                if (this._loading[filePath] === promise) delete this._loading[filePath];
+            })
+            .catch(() => {});
+        const result = await promise;
+        if (result?.isSkinned) return result.output;
+        if (!result?.output) return null;
+        return this.getClone(modelPath);
+    }
+
+    async _loadModel(modelPath) {
+        const filePath = modelPath;
         const extension = filePath.split(".").pop().toLowerCase();
         let output;
         try {
@@ -194,8 +213,7 @@ export class Helpers {
         }
         if (!output) {
             this.modelCache[modelPath] = null;
-            delete this._loading[filePath];
-            return null;
+            return { output: null, isSkinned: false };
         }
         let isSkinned = false;
         output.model.traverse((child) => {
@@ -213,15 +231,11 @@ export class Helpers {
         });
         if (extension.startsWith("[heroforge]") || modelPath.includes("heroforge")) this.convertMaterials(output.model);
         this.simplifyGeometry(output.model);
-        if (isSkinned) {
-            delete this._loading[filePath];
-            return output;
-        }
+        if (isSkinned) return { output, isSkinned: true };
         if (!output?.object?.animations?.length) this.applyTransforms(output.model);
         this.modelCache[modelPath] = output;
         THREE.Cache.remove(filePath);
-        delete this._loading[filePath];
-        return this.getClone(modelPath);
+        return { output, isSkinned: false };
     }
 
     simplifyGeometry(model, tol = 1e-4) {

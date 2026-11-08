@@ -197,9 +197,10 @@ export class Sound3D {
         Hooks.on("pasteAmbientSound", (copy, data) => {
             if (game.Levels3DPreview?._active) {
                 const pos = game.Levels3DPreview.interactionManager.canvas2dMousePosition;
+                if (!pos) return;
                 data.forEach((ld) => {
                     ld.elevation = pos.z;
-                    ld.flags.levels.rangeTop = pos.z;
+                    foundry.utils.setProperty(ld, "flags.levels.rangeTop", pos.z);
                 });
             }
         });

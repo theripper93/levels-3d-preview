@@ -135,10 +135,26 @@ export class Light3D {
     }
 
     refresh() {
-        game.Levels3DPreview.particleSystem.stop(this.particleEffectId);
         const light = this.light.hasPreview ? this.light._preview : this.light;
         const tilt = Math.toRadians(light.document.getFlag("levels-3d-preview", "tilt") ?? 0);
         this.particleData = this.getParticleData();
+        // refreshAmbientLight fires on hover/control as well; only restart the particle effect when
+        // something that affects it actually changed.
+        const enableParticle = !!light.document.getFlag("levels-3d-preview", "enableParticle");
+        const particleSignature = JSON.stringify([
+            this.particleData,
+            enableParticle,
+            light.document.hidden,
+            light.document.getFlag("levels-3d-preview", "enableParticleHidden") ?? false,
+            light.document.x,
+            light.document.y,
+            light.document.elevation,
+            this.dim,
+            this.bright,
+        ]);
+        const particleChanged = particleSignature !== this._particleSignature;
+        this._particleSignature = particleSignature;
+        if (particleChanged) game.Levels3DPreview.particleSystem.stop(this.particleEffectId);
         this.animColors = {
             color1: new THREE.Color(this.particleData.color),
             color2: new THREE.Color(this.particleData.color2),
@@ -146,10 +162,10 @@ export class Light3D {
         if (this.dragHandle) {
             this.dragHandle.position.set(0, 0, 0);
         }
-        if (light.document.getFlag("levels-3d-preview", "castShadow") && game.settings.get("levels-3d-preview", "shadowQuality") > 0) {
-            this.light3d.shadow.autoUpdate = true;
-            this.light3d.castShadow = true;
-        }
+        // Set explicitly: light3d instances are pooled, so a reused light must not keep a previous shadow.
+        const castShadow = !!light.document.getFlag("levels-3d-preview", "castShadow") && game.settings.get("levels-3d-preview", "shadowQuality") > 0;
+        if (castShadow) this.light3d.shadow.autoUpdate = true;
+        this.light3d.castShadow = castShadow;
         let top = light.document.flags.levels?.rangeTop ?? 1;
         let bottom = light.document.elevation;
         const z = ((top + bottom) * canvas.scene.dimensions.size) / canvas.scene.dimensions.distance / 2;
@@ -215,7 +231,7 @@ export class Light3D {
                 o.userData.interactive = false;
             });
         }
-        if (light.document.getFlag("levels-3d-preview", "enableParticle")) this.initParticle();
+        if (particleChanged && enableParticle) this.initParticle();
     }
 
     update(delta) {
@@ -229,6 +245,15 @@ export class Light3D {
         this._parent.scene.remove(this.mesh);
         if (this.particleEffectId) Particle3D.stop(this.particleEffectId);
         this.lightHelper?.dispose();
+        // Drag handle geometry/materials are created per light in createHandle(); the sprite map
+        // is a shared texture (this._parent.textures) and must not be disposed.
+        if (this.dragHandle) {
+            const { sphere, sprite } = this.dragHandle.userData;
+            sphere?.geometry?.dispose();
+            sphere?.material?.dispose();
+            sprite?.material?.dispose();
+            this.dragHandle = null;
+        }
         const cache = this._parent.lights.lightCache;
         const isSpotLight = this.angle != 360;
         if (isSpotLight) cache.spot.push(this.light3d);
@@ -395,9 +420,10 @@ export class Light3D {
         Hooks.on("pasteAmbientLight", (copy, data) => {
             if (game.Levels3DPreview?._active) {
                 const pos = game.Levels3DPreview.interactionManager.canvas2dMousePosition;
+                if (!pos) return;
                 data.forEach((ld) => {
                     ld.elevation = pos.z;
-                    ld.flags.levels.rangeTop = pos.z;
+                    foundry.utils.setProperty(ld, "flags.levels.rangeTop", pos.z);
                 });
             }
         });

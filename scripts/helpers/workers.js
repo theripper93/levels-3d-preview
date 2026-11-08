@@ -96,7 +96,6 @@ export class WorkerHandler {
 
     refresh() {
         if (!this.enabled) return;
-        console.log("Refreshing");
         canvas.perception.update(
             {
                 initializeLighting: true,

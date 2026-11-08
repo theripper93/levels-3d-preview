@@ -112,7 +112,7 @@ export async function populateScene() {
     await processDir(root);
 
     async function processDir(directory) {
-        const files = await FilePicker.browse("user", directory);
+        const files = await foundry.applications.apps.FilePicker.implementation.browse("user", directory);
         for (let file of files.files) {
             models.push(file);
         }
@@ -154,6 +154,4 @@ export async function populateScene() {
     }
 
     canvas.scene.createEmbeddedDocuments("Token", tokenDatas);
-
-    console.log(models);
 }

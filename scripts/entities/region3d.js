@@ -72,6 +72,14 @@ export class Region3D extends THREE.Object3D {
 
     destroy() {
         game.Levels3DPreview.scene.remove(this);
+        // Geometries and materials are created per region (see drawShapes/drawExtrude/getShaderMaterial),
+        // so they are safe to dispose. Material maps (e.g. the shared BLANK texture) are not disposed.
+        this.traverse((child) => {
+            child.geometry?.dispose?.();
+            if (Array.isArray(child.material)) child.material.forEach((m) => m?.dispose?.());
+            else child.material?.dispose?.();
+            child.customDepthMaterial?.dispose?.();
+        });
     }
 
     updateVisibility() {
@@ -146,9 +154,33 @@ export class Region3D extends THREE.Object3D {
     static handle(region, hidden) {
         if (region.document) region = region.document
         if (this.regions.has(region)) {
+            // refreshRegion fires on hover/control too; skip the (expensive) rebuild when nothing
+            // that affects the 3D representation has changed.
+            const existing = this.regions.get(region);
+            if (existing._signature === this.getSignature(region, hidden)) return existing;
             return this.update(region, hidden);
         }
         return this.create(region, hidden);
+    }
+
+    static getSignature(region, hidden) {
+        try {
+            return JSON.stringify([
+                (region.shapes ?? []).map((s) => s?.toObject?.() ?? s),
+                region.elevation?.top,
+                region.elevation?.bottom,
+                region.color?.css ?? String(region.color),
+                region.getFlag("levels-3d-preview", "shaders") ?? null,
+                region.behaviors?.map((b) => [b.id, b.type, b.disabled]) ?? [],
+                region.restriction?.enabled ?? false,
+                region.object?.isVisible !== false,
+                !!hidden,
+                game.settings.get("levels-3d-preview", "regionsAlwaysFlat"),
+            ]);
+        } catch (e) {
+            // If anything can't be serialized, force a rebuild.
+            return Symbol("unserializable");
+        }
     }
 
     static update(region, hidden) {
@@ -158,6 +190,7 @@ export class Region3D extends THREE.Object3D {
 
     static create(region, hidden) {
         const region3d = new Region3D(region, hidden);
+        region3d._signature = this.getSignature(region, hidden);
         this.regions.set(region, region3d);
         return region3d;
     }

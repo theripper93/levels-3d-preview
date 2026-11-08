@@ -26,7 +26,9 @@ export class Ping {
         this.ping.add(this.ring);
         if (specialPing) {
             this.core.children[1].visible = false;
-            this.ping.add(SPECIAL_PINGS[specialPing].sprite);
+            //clone the cached sprite so concurrent pings of the same type don't share one Object3D
+            const sprite = SPECIAL_PINGS[specialPing].sprite?.clone();
+            if (sprite) this.ping.add(sprite);
         } else {
             this.core.children[1].visible = true;
         }
@@ -204,7 +206,7 @@ async function getSpecialPingSprite(ping) {
         map: texture,
         transparent: true,
         opacity: specialPing.sticker ? 1 : 0.8,
-        alphaClip: 0.01,
+        alphaTest: 0.01,
         side: THREE.DoubleSide,
         color: specialPing.sticker ? null : specialPing.color,
     });

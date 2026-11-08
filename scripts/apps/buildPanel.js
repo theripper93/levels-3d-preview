@@ -206,7 +206,10 @@ export class BuildPanel extends HandlebarsApplication {
             }
             await wait(100);
         
+            //Poll for up to ~3s; give up if the field never appears or the config was closed
+            let attempts = 0;
             while (!html.querySelectorAll(`[name="flags.levels-3d-preview.model3d"]`).length) {
+                if (++attempts > 30 || app.rendered === false || !html.isConnected) return;
                 await wait(100);
             }
             const filepicker = html.querySelector(`[name="flags.levels-3d-preview.model3d"]`)?.closest(".form-group");
@@ -219,7 +222,10 @@ export class BuildPanel extends HandlebarsApplication {
             }
             await wait(100);
         
+            //Poll for up to ~3s; give up if the field never appears or the config was closed
+            let attempts = 0;
             while (!html.querySelector(`[name="flags.levels-3d-preview.model3d"]`)) {
+                if (++attempts > 30 || app.rendered === false || !html.isConnected) return;
                 await wait(100);
             }
             const filepicker = html.querySelector(`[name="flags.levels-3d-preview.model3d"]`).closest(".form-group");
@@ -228,24 +234,7 @@ export class BuildPanel extends HandlebarsApplication {
     }
 
     initClipNavigation() {
-        const clippingPlane = new game.Levels3DPreview.THREE.Plane(new game.Levels3DPreview.THREE.Vector3(0, -1, 0), 10000);
         this._clipHeight = 10000;
-        Object.values(game.Levels3DPreview.tiles).forEach((t) => {
-            if (t?.mesh)
-                t.mesh.traverse((c) => {
-                    if (c.isMesh) {
-                        c.material.clippingPlanes = [clippingPlane];
-                    }
-                });
-        });
-        Object.values(game.Levels3DPreview.walls).forEach((t) => {
-            if (t?.mesh)
-                t.mesh.traverse((c) => {
-                    if (c.isMesh) {
-                        c.material.clippingPlanes = [clippingPlane];
-                    }
-                });
-        });
         game.Levels3DPreview.scene.traverse((c) => {
             if (c.isMesh) {
                 c.material.clippingPlanes = null;

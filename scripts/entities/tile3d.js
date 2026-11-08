@@ -34,6 +34,25 @@ class TileUpdateQueue {
 
 const tileUpdateQueue = new TileUpdateQueue();
 
+// Aggregates tile load errors so a scene with many missing assets shows a single notification
+// instead of one toast per tile. Per-tile details are still logged with console.error.
+const tileLoadErrors = new Set();
+const flushTileLoadErrors = foundry.utils.debounce(() => {
+    if (!tileLoadErrors.size) return;
+    const messages = Array.from(tileLoadErrors);
+    tileLoadErrors.clear();
+    const MAX_SHOWN = 5;
+    let text = messages.slice(0, MAX_SHOWN).join(" | ");
+    if (messages.length > MAX_SHOWN) text += ` | ...and ${messages.length - MAX_SHOWN} more (see console for details).`;
+    const header = messages.length > 1 ? `3D Canvas: ${messages.length} tile errors: ` : "";
+    ui.notifications.error(header + text);
+}, 1000);
+
+function notifyTileLoadError(message) {
+    tileLoadErrors.add(message);
+    flushTileLoadErrors();
+}
+
 export class Tile3D {
     constructor(tile, parent, fromUpdate = false, displacementCanvas = null) {
         this.tile = tile;
@@ -136,7 +155,7 @@ export class Tile3D {
             return this;
         } catch (e) {
             const errText = `Failed to load 3D Tile ${this.document.id}. You can manually delete this tile with the console command 'canvas.tiles.get("${this.document.id}").document.delete()'`;
-            ui.notifications.error(errText);
+            notifyTileLoadError(errText);
             console.error(errText, e);
             this._loaded = true;
             return this;
@@ -1497,7 +1516,7 @@ export class Tile3D {
             game.i18n.localize("levels3dpreview.errors.nomapgencells") + " Tile: " + this.tile.id :
             game.i18n.localize("levels3dpreview.errors.filenotsupported") + "(" + extension + "): " + filePath + " Tile: " + this.tile.id;
         console.error(errText);
-        ui.notifications.error(errText);
+        notifyTileLoadError(errText);
         const obj = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshStandardMaterial({ color: 0xff0000 }));
         obj.geometry.computeBoundingBox();
         return { scene: obj, model: obj, object: obj };
@@ -2489,6 +2508,18 @@ export class Tile3D {
                 return;
             }
 
+            // Cheap path: updates that only touch `locked` and/or `sort` don't affect the 3D geometry,
+            // materials or worker data, so skip the full destroy + reload. `hidden` is intentionally
+            // left on the reload path: setHidden() only dims (mutating material opacity) and hidden also
+            // affects particles and the worker visibility data, so a reload is the safe way to restore it.
+            if (isNonGeometryUpdate(updates)) {
+                const tile3d = game.Levels3DPreview.tiles[tile.id];
+                if (tile3d) {
+                    if ("locked" in updates) tile3d.updateControls();
+                    return;
+                }
+            }
+
             const hasGravity = (tile.getFlag("levels-3d-preview", "enableGravity") ?? "none") !== "none";
             const hadGravity = game.Levels3DPreview.tiles[tile.id]?.isGravity;
             if (hasGravity && hadGravity) return recomputeGravityDebounced();
@@ -2504,6 +2535,13 @@ export class Tile3D {
             function hasFlag(updates) {
                 if (updates?.elevation !== undefined) return true;
                 if (updates?.flags?.levels?.rangeTop !== undefined) return true;
+            }
+
+            function isNonGeometryUpdate(updates) {
+                const FAST_KEYS = new Set(["locked", "sort"]);
+                const keys = Object.keys(updates).filter((k) => k !== "_id" && k !== "_stats");
+                if (!keys.length) return false;
+                return keys.every((k) => FAST_KEYS.has(k));
             }
 
             function isDoorUpdate(updates) {

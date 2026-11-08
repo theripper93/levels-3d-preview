@@ -317,8 +317,15 @@ export class ShaderHandler {
             }
         };
         mesh.material.onBeforeCompile = _onBeforeCompile;
+        //Disambiguate everything _onBeforeCompile branches on that three does not already include in its own program key
+        const getStateKey = () => {
+            const map = mesh.material.map;
+            const mapKey = map ? (map.matrixAutoUpdate === false || map.userData?.legacyUvMatrix ? "mapM" : "map") : "nomap";
+            const bevelKey = mesh.material?.userData?.bevelSize !== undefined ? "bevel" : "nobevel";
+            return `${mapKey}|pt${!!entity3D.pathTraced}|inst${!!mesh.isInstancedMesh}|${bevelKey}`;
+        };
         mesh.material.customProgramCacheKey = () => {
-            return `${mesh.material.type}${shaderKey}`;
+            return `${mesh.material.type}${shaderKey}|${getStateKey()}`;
         };
 
         mesh.customDepthMaterial = new THREE.MeshDepthMaterial({
@@ -327,7 +334,7 @@ export class ShaderHandler {
             map: mesh.material.alphaTest ? mesh.material.map : null,
             onBeforeCompile: _onBeforeCompile,
             customProgramCacheKey: () => {
-                return `${mesh.material.type}${shaderKey}_depth`;
+                return `${mesh.material.type}${shaderKey}_depth|${getStateKey()}`;
             },
         });
     }

@@ -87,6 +87,9 @@ export class Wall3D {
         }
         const materials = await this._getMaterials(texture, sidesTexture);
         const wallMesh = new THREE.Mesh(geometry, materials);
+        // Shadow flags must be on the Mesh; three.js ignores them on Groups and materials.
+        wallMesh.castShadow = true;
+        wallMesh.receiveShadow = true;
         this.wallMesh = wallMesh;
         this.mesh.add(wallMesh);
         if (this.wall.isDoor && !(!game.user.isGM && this.wall.document.door === CONST.WALL_DOOR_TYPES.SECRET)) {
@@ -104,8 +107,6 @@ export class Wall3D {
             icon.visible = false;
         }
         this.mesh.userData.entity3D = this;
-        this.mesh.castShadow = true;
-        this.mesh.receiveShadow = true;
         this.mesh.position.set(this.center.x, this.center.y, this.center.z);
         this.mesh.rotation.set(0, this.angle, 0);
         this.mesh.visible = this.isDisabledVisible;
@@ -168,8 +169,6 @@ export class Wall3D {
             });
             this._parent.helpers.materialCache[materialId] = material;
         }
-        material.castShadow = true;
-        material.receiveShadow = true;
         return material;
     }
 
@@ -241,6 +240,10 @@ export class Wall3D {
 
     destroy() {
         this._parent.scene.remove(this.mesh);
+        // Geometries are created per wall; materials are cached (helpers.materialCache /
+        // doorIconMaterialCache) and shared, so they are intentionally not disposed.
+        this.wallMesh?.geometry?.dispose();
+        this.controlIcon?.geometry?.dispose();
         delete this._parent.walls[this.wall.id];
         delete this._parent.doors[this.wall.id];
     }

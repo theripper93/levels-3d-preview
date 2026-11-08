@@ -114,7 +114,10 @@ export class GameCamera {
             maxAzimuthAngle: isInfinity ? Infinity : (maxAzimuthSett / 180) * Math.PI,
             clipping: game.settings.get("levels-3d-preview", "gameCameraClipping"),
         };
-        if (!this.CONFIG.clipping) this.camera.near = 0.1;
+        if (!this.CONFIG.clipping && this.camera.near !== 0.1) {
+            this.camera.near = 0.1;
+            this.camera.updateProjectionMatrix();
+        }
         this.autoReLock = game.settings.get("levels-3d-preview", "gameCameraAutoLock");
         this.controls.minPolarAngle = this.CONFIG.minPolarAngle;
         this.controls.maxPolarAngle = this.CONFIG.maxPolarAngle;
@@ -151,12 +154,17 @@ export class GameCamera {
             this.setHeight();
             this.keepInBounds();
         }
-        canvas.perception.update(
-            {
-                refreshSounds: true,
-            },
-            true,
-        );
+        // Controls emit "change" every frame while damping: refresh sounds at most every 250ms
+        const now = performance.now();
+        if (now - (this._lastSoundRefresh ?? 0) >= 250) {
+            this._lastSoundRefresh = now;
+            canvas.perception.update(
+                {
+                    refreshSounds: true,
+                },
+                true,
+            );
+        }
     }
 
     onChangeFreeCamera() {
@@ -213,7 +221,7 @@ export class GameCamera {
 
         if (this.areValClose(this.controls.maxDistance, this.maxDistTarget, 0.1)) this.maxDistTarget = null;
         if (this.areValClose(this.camera.position.y, this.yTarget, 0.1)) this.yTarget = null;
-        if (this.areValClose(this.controls.target.y, this.tYTarget?.y, 0.1)) this.yTarget = null;
+        if (this.areValClose(this.controls.target.y, this.tYTarget?.y, 0.1)) this.tYTarget = null;
 
         if (this.maxDistTarget) {
             this.controls.maxDistance = this.lerp(this.controls.maxDistance, this.maxDistTarget, 0.5);
@@ -230,6 +238,7 @@ export class GameCamera {
             if (Math.abs(this.camera.near - this._nearTarget) < 0.01) {
                 this.camera.near = this._nearTarget;
             }
+            this.camera.updateProjectionMatrix();
         }
     }
 
@@ -275,7 +284,7 @@ export class GameCamera {
     setClipping() {
         if (!this.CONFIG.clipping || !this.enabled) return (this._nearTarget = 0.01);
 
-        if (!this.cameraLockTarget || this.cameraLockTarget.head.distanceTo(this.camera.lookAt) > this.CONSTS.MINGROUND) {
+        if (!this.cameraLockTarget || this.cameraLockTarget.head.distanceTo(this.controls.target) > this.CONSTS.MINGROUND) {
             this._nearTarget = 0.01;
             return;
         }
@@ -311,7 +320,9 @@ export class GameCamera {
     }
 
     moveCameraToCursor() {
-        const hoverPosition = new THREE.Vector3(...Object.values(game.Levels3DPreview.interactionManager._currentMousePosition));
+        const mousePosition = game.Levels3DPreview.interactionManager._currentMousePosition;
+        if (!mousePosition || !Number.isFinite(mousePosition.x) || !Number.isFinite(mousePosition.y) || !Number.isFinite(mousePosition.z)) return;
+        const hoverPosition = new THREE.Vector3(mousePosition.x, mousePosition.y, mousePosition.z);
         const cameraPosition = this.camera.position.clone();
         const cameraLookAt = this.controls.target.clone();
 

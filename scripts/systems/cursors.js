@@ -35,14 +35,28 @@ export class Cursors3D {
     }
 
     updateCursorPosition(uId, cursor) {
-        const target = JSON.parse(cursor.target.x);
-        if (!target.x && !target.z) {
+        const mesh = this._cursors[uId];
+        const raw = cursor.target?.x;
+        // A plain 2D cursor (user not in 3D) has a numeric x: there is no 3D position to show
+        if (typeof raw !== "string") {
+            mesh.visible = false;
+            mesh.userData.lastRaw = undefined;
+            mesh.userData.hasTarget = false;
             return;
-        } else {
-            this._cursors[uId].userData.lastPosition = new THREE.Vector3(target.x, target.y, target.z);
         }
-        this._cursors[uId].visible = true;
-        this._cursors[uId].position.lerp(this._cursors[uId].userData.lastPosition, 0.1);
+        // Only parse when the broadcast payload changed
+        if (raw !== mesh.userData.lastRaw) {
+            mesh.userData.lastRaw = raw;
+            let target = null;
+            try {
+                target = JSON.parse(raw);
+            } catch (e) {}
+            mesh.userData.hasTarget = !!(target && (target.x || target.z));
+            if (mesh.userData.hasTarget) mesh.userData.lastPosition = new THREE.Vector3(target.x, target.y, target.z);
+        }
+        if (!mesh.userData.hasTarget) return;
+        mesh.visible = true;
+        mesh.position.lerp(mesh.userData.lastPosition, 0.1);
     }
 
     clear() {

@@ -98,9 +98,10 @@ export class WeatherSystem {
     destroy() {
         //if(!this.particleSystem) return;
         this.effects.forEach((e) => {
-            this._parent.scene.remove(e.object);
-            e.object.children[0].geometry.dispose();
-            e.object.children[0].material.dispose();
+            //Textures come from the shared helpers.loadTexture cache, so they are intentionally not disposed
+            if (e.object) this._parent.scene.remove(e.object);
+            e.object?.children[0]?.geometry?.dispose();
+            e.object?.children[0]?.material?.dispose();
         });
     }
 
@@ -182,8 +183,6 @@ class BasicDirectionalEffect {
         this.boundsCounter2 = -1;
         this.frameCounter = 0;
         this.frameThrottle = 8;
-        console.log(`%c3D Canvas\nInitializing Weather System\nParticle Count (${Math.round(this.options.density * 500)})`, "color: #f5a742; font-size: 1.8em;");
-        console.table(this.options);
         this.BPG = new BasicParticleGeometry(500 * this.options.density, this.options.randomRotation, this.options.randomScale, this.options.direction, this.options.texture, this.options.color, this.options.velocity);
         this.init();
     }

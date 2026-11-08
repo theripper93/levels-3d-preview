@@ -276,6 +276,32 @@ export class Ruler3D {
         this._prevPosition = targetPos.clone();
         const useRaycastPoints = this.useRaycastRuler && this._points?.length && isToken && !this._object?.userData?.entity3D?.wasFreeMode;
         this.dragRing.visible = !!isToken;
+        if (hasChanged && isToken) this._object.userData.entity3D.drawHeightIndicatorDebounced();
+        // Rebuilding the tube geometry, measuring the token path and redrawing the shape is expensive:
+        // only do it when something that affects the result changed since the last rebuild.
+        const prevState = this._updateState;
+        // Compare against the position of the last rebuild (not the previous frame) so slow movement still converges
+        const targetMoved = !prevState || targetPos.distanceTo(prevState.target) > 0.001;
+        const needsRebuild =
+            targetMoved ||
+            !this.line?.parent ||
+            prevState.object !== this._object ||
+            prevState.originRef !== this._origin ||
+            !prevState.origin.equals(this._origin) ||
+            prevState.segments !== this.segments.length ||
+            prevState.distanceOffset !== this._distanceOffset ||
+            prevState.points !== this._points ||
+            prevState.useRaycastPoints !== useRaycastPoints ||
+            prevState.shape !== this.shape ||
+            prevState.enableRuler !== this.enableRuler;
+        this.sphere1.position.copy(this._origin);
+        this.sphere2.position.copy(targetPos);
+        this.dragRing.position.copy(targetPos);
+        if (!needsRebuild) {
+            targetPos.y += 0.05;
+            Ruler3D.centerElement(this.textElement, targetPos);
+            return;
+        }
         this._parent.scene.remove(this.line);
         this.lineInner?.geometry?.dispose();
         this.lineOuter?.geometry?.dispose();
@@ -284,8 +310,8 @@ export class Ruler3D {
         let overrideColor;
         const distance = (this.getCurrentDistance() + this._distanceOffset).toFixed(1);
         if (isToken) {
-            if (hasChanged) this._object.userData.entity3D.drawHeightIndicatorDebounced();
-            if (this.useRaycastRuler) this._parent.workers.updateRulerPoints([this._origin, targetPos]);
+            // Skip the worker request when the rebuild was only caused by its own result arriving
+            if (this.useRaycastRuler && (targetMoved || prevState?.points === this._points)) this._parent.workers.updateRulerPoints([this._origin, targetPos]);
             const waypoints = [];
             if (this.segments.length) {
                 waypoints.push(this.segments[0].origin);
@@ -345,9 +371,7 @@ export class Ruler3D {
             this.lineInner.renderOrder = 1e20;
             this.line.add(this.lineInner);
         }
-        this.sphere1.position.copy(this._origin);
-        this.sphere2.position.copy(targetPos);
-        this.dragRing.position.copy(targetPos);
+        this._lastMeasure = { totalDistance, partialDistance, overrideColor };
         //draw floating text
         let text;
         if (totalDistance) {
@@ -363,6 +387,18 @@ export class Ruler3D {
         Ruler3D.centerElement(this.textElement, targetPos);
         this._parent.scene.add(this.line);
         this.drawShape();
+        this._updateState = {
+            object: this._object,
+            target: this.getTargetPos(),
+            originRef: this._origin,
+            origin: this._origin.clone(),
+            segments: this.segments.length,
+            distanceOffset: this._distanceOffset,
+            points: this._points,
+            useRaycastPoints,
+            shape: this.shape,
+            enableRuler: this.enableRuler,
+        };
     }
 
     cacheSpeedProvider(token) {

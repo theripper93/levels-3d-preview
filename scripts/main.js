@@ -201,9 +201,11 @@ Hooks.on("renderDialogV2", (dialog, html, data) => {
     `;
 
     const lastFormGroup = dialog.element.querySelector(".form-group:last-child");
+    const okButton = dialog.element.querySelector("button[data-action='ok']");
+    if (!lastFormGroup || !okButton) return;
     lastFormGroup.insertAdjacentElement('afterend', checkbox);
 
-    dialog.element.querySelector("button[data-action='ok']").addEventListener("click", () => {
+    okButton.addEventListener("click", () => {
         const isChecked = dialog.element.querySelector("input[name=scene3d]").checked;
         if (!isChecked) return;
         
@@ -608,7 +610,7 @@ class Levels3DPreview {
         this.renderer.setPixelRatio(this.resolutionMulti);
         this.renderer.alpha = false;
         this.renderer.setClearColor(0x999999, 1);
-        this.renderer.shadowMap.type = game.settings.get("levels-3d-preview", "softShadows") ? THREE.PCFSoftShadowMap : THREE.PCFShadowMap;
+        this.renderer.shadowMap.type = game.settings.get("levels-3d-preview", "softShadows") ? THREE.VSMShadowMap : THREE.PCFShadowMap;
 
         this.renderer.debug.checkShaderErrors = true;
 
@@ -866,6 +868,7 @@ class Levels3DPreview {
         } else {
             this.camera.far = 100;
         }
+        this.camera.updateProjectionMatrix();
         //add raycasting plane
 
         const dragplane = new THREE.Mesh(new THREE.PlaneGeometry(size, size), new THREE.MeshBasicMaterial({ color: 0xffffff, visible: false }));
@@ -899,10 +902,11 @@ class Levels3DPreview {
             this.scene.fog = new THREE.Fog(fogColor, 1, fogDistance);
             this.camera.far = fogDistance;
         } else {
-            this.scene.background = this._sceneBackground;
+            this.scene.background = this._sceneBackground || new THREE.Color(canvas.level.background.color ?? 0xffffff);
             this.scene.fog = null;
             this.camera.far = 100;
         }
+        this.camera.updateProjectionMatrix();
     }
 
     initAA() {
@@ -1161,6 +1165,8 @@ class Levels3DPreview {
             this.scene.background?.dispose?.();
             this.scene.environment?.dispose?.();
             this.scene.userData.envRt?.dispose?.();
+            this.scene.userData.envRt = null;
+            this._sceneBackground = null;
             this.scene.background = enableFog ? this.scene.fog.color : new THREE.Color(canvas.level.background.color ?? 0xffffff);
             this.scene.environment = null;
             this.isEXR = false;
@@ -1184,15 +1190,8 @@ class Levels3DPreview {
                 }
             }
             let textureArray = [];
-            let materialArray = [];
             for (let suffix of imagesSuffix) {
                 textureArray.push(rootImage.replace(currSuffix, suffix));
-                materialArray.push(
-                    new THREE.MeshBasicMaterial({
-                        map: new THREE.TextureLoader().load(rootImage.replace(currSuffix, suffix)),
-                        side: THREE.BackSide,
-                    }),
-                );
             }
             const loader = new THREE.CubeTextureLoader();
             const textureCube = loader.load(textureArray);
@@ -1220,8 +1219,12 @@ class Levels3DPreview {
         }
 
         function onLoaded(texture) {
+            const shared = _this._sharedContext;
+            if (shared) _this.renderer.resetState();
             try {
                 let exrCubeRenderTarget = _this.pmremGenerator.fromEquirectangular(texture);
+                if (_this.scene.userData.pmremRt && _this.scene.userData.pmremRt !== exrCubeRenderTarget) _this.scene.userData.pmremRt.dispose?.();
+                _this.scene.userData.pmremRt = exrCubeRenderTarget;
                 let newEnvMap = exrCubeRenderTarget ? exrCubeRenderTarget.texture : null;
                 _this.scene.environment = newEnvMap;
                 let background;
@@ -1237,6 +1240,8 @@ class Levels3DPreview {
             } catch (error) {
                 ui.notifications.error(`Error loading Skybox ${rootImage}`);
                 _this._envReady = true;
+            } finally {
+                if (shared) canvas.app.renderer.reset();
             }
         }
     }
@@ -1269,6 +1274,9 @@ class Levels3DPreview {
         this.scene.background?.dispose?.();
         this.scene.environment?.dispose?.();
         this.scene.userData.envRt?.dispose?.();
+        this.scene.userData.pmremRt?.dispose?.();
+        this.scene.userData.envRt = null;
+        this.scene.userData.pmremRt = null;
         Object.values(this.tiles).forEach((tile) => {
             tile?.destroy();
         });
@@ -1335,13 +1343,17 @@ class Levels3DPreview {
         const bubbles = document.querySelectorAll(".chat-bubble");
         bubbles.forEach((bubble) => {
             const token3D = this.tokens[bubble.dataset.tokenId];
+            if (!token3D?.mesh) return;
             const center = token3D.head;
             center.y += 0.03;
             //center.y += token3D.hitbox.geometry.boundingBox.max.y * 2;
-            bubble.classList.add("themed")
-            bubble.classList.add("theme-light");
-            document.body.append(bubble);
-            bubble.style.transformOrigin = "bottom center";
+            if (bubble.dataset.l3dAligned !== "1") {
+                bubble.classList.add("themed");
+                bubble.classList.add("theme-light");
+                document.body.append(bubble);
+                bubble.style.transformOrigin = "bottom center";
+                bubble.dataset.l3dAligned = "1";
+            }
             Ruler3D.centerElement(bubble, center, true);
         });
     }
@@ -1366,6 +1378,7 @@ class Levels3DPreview {
         }
         this.firstPersonMode = !this.firstPersonMode;
         this.camera.near = this.firstPersonMode ? 0.05 : 0.01;
+        this.camera.updateProjectionMatrix();
         if (this.GameCamera.enabled && this.firstPersonMode) this.GameCamera.toggle();
     }
 
@@ -1399,15 +1412,18 @@ class Levels3DPreview {
             const length = Math.max(tokensArray.length, 100);
             const cToken = this.tokens[canvas?.tokens?.controlled[0]?.id];
             const ctPos = cToken?.mesh?.position;
-            const tokenPositionsArray = [new THREE.Vector4(ctPos?.x ?? 0, (ctPos?.y ?? 0) - (cToken?.hasClone ? RULER_TOKEN_OFFSET : 0), ctPos?.z ?? 0, tokensArray.length)];
-            const emptyVec = new THREE.Vector4();
+            if (!this._tokenPositionsArray) this._tokenPositionsArray = [];
+            const tokenPositionsArray = this._tokenPositionsArray;
+            while (tokenPositionsArray.length < length) tokenPositionsArray.push(new THREE.Vector4());
+            tokenPositionsArray.length = length;
+            tokenPositionsArray[0].set(ctPos?.x ?? 0, (ctPos?.y ?? 0) - (cToken?.hasClone ? RULER_TOKEN_OFFSET : 0), ctPos?.z ?? 0, tokensArray.length);
             for (let i = 1; i < length; i++) {
                 const pos = tokensArray[i - 1]?.mesh?.position;
                 if (!pos) {
-                    tokenPositionsArray[i] = emptyVec;
+                    tokenPositionsArray[i].set(0, 0, 0, 0);
                     continue;
                 }
-                tokenPositionsArray[i] = new THREE.Vector4(pos.x, pos.y, pos.z, tokensArray[i - 1]._shaderSize);
+                tokenPositionsArray[i].set(pos.x, pos.y, pos.z, tokensArray[i - 1]._shaderSize);
             }
             this.shaderHandler.updateShaders(time, tokenPositionsArray, obstructing);
             this.interactionManager._canMouseMove = true;
@@ -1453,10 +1469,13 @@ class Levels3DPreview {
             this.checkInFog();
             this.animateCamera(delta);
             this.centerHUD();
-            document.querySelectorAll("#levels3d-ruler-text.scrolling-text").forEach((e) => {
-                const t3d = this.tokens[e.dataset.tokenid];
-                if (t3d) this.helpers.ruler3d.centerElement(e, t3d.head);
-            });
+            if (!this._scrollingTextCollection) this._scrollingTextCollection = document.getElementsByClassName("scrolling-text");
+            if (this._scrollingTextCollection.length) {
+                document.querySelectorAll("#levels3d-ruler-text.scrolling-text").forEach((e) => {
+                    const t3d = this.tokens[e.dataset.tokenid];
+                    if (t3d) this.helpers.ruler3d.centerElement(e, t3d.head);
+                });
+            }
             this.alignChatBubbles();
             this.lights?.globalIllumination?.update(delta);
             this.weather?.update(delta);
@@ -1485,10 +1504,12 @@ class Levels3DPreview {
             }
             this.recoverCamera();
             //this.fogExploration?.update();
-            const visibilityCache = {};
+            if (!this._visibilityCache) this._visibilityCache = new Map();
+            const visibilityCache = this._visibilityCache;
+            visibilityCache.clear();
             if (this.outline._enabled)
                 this.scene.traverse((o) => {
-                    visibilityCache[o.uuid] = o.visible;
+                    visibilityCache.set(o.uuid, o.visible);
                 });
             this.composer.render(time);
             if (this._firstFrame) {
@@ -1501,24 +1522,10 @@ class Levels3DPreview {
                 Object.values(this.tiles).forEach((t) => t.sendToWorker());
                 this.resizeCanvasToDisplaySize();
                 recomputeGravity();
-                Object.values(this.tokens).forEach((token) => {
-                    token.forceDrawBars();
-                    token.drawName();
-                });
-                setTimeout(() => {
-                    Object.values(this.tokens).forEach((token) => {
-                        token.forceDrawBars();
-                        token.drawName();
-                    });
-                }, 100);
-            }
-            if (this._sharedContext) {
-                canvas.app.renderer.reset();
-                //this.renderer.resetState();
             }
             if (this.outline._enabled)
                 this.scene.traverse((o) => {
-                    o.visible = visibilityCache[o.uuid];
+                    o.visible = visibilityCache.get(o.uuid);
                 });
         } catch (error) {
             this._errCount++;
@@ -1528,6 +1535,9 @@ class Levels3DPreview {
                 ui.notifications.error(game.i18n.localize("levels3dpreview.errors.critical"));
                 this.reload();
             }
+        } finally {
+            // Always hand the GL state back to PIXI, even when the frame threw (shared context only)
+            if (this._sharedContext) canvas.app.renderer.reset();
         }
     }
 
@@ -1724,12 +1734,6 @@ class Levels3DPreview {
                         token.forceDrawBars();
                         token.drawName();
                     });
-                }, 10);
-                setTimeout(() => {
-                    Object.values(this.tokens).forEach((token) => {
-                        token.forceDrawBars();
-                        token.drawName();
-                    });
                 }, 200);
             }
         }
@@ -1837,7 +1841,6 @@ class Levels3DPreview {
         if (this._sharedContext) {
             canvas.stage.renderable = false;
         } else {
-            document.body.appendChild(this.renderer.domElement);
             if (game.settings.get("levels-3d-preview", "miniCanvas")) new MiniCanvas().render(true);
             else {
                 document.querySelector("#board").style.display = "none";
@@ -1875,7 +1878,7 @@ class Levels3DPreview {
     }
 
     open3DFilePicker() {
-        const fp = new FilePicker({
+        const fp = new foundry.applications.apps.FilePicker.implementation({
             type: "any",
             tileSize: true,
         });
@@ -1908,8 +1911,9 @@ class Levels3DPreview {
             if (!GMConnected) return ui.notifications.warn("levels3dpreview.errors.gmNotConnected", { localize: true });
             return;
         };
+        if (game.user !== game.users.activeGM) return;
         const user = game.users.get(userId);
-        if (!user.can("WALL_DOORS")) return;
+        if (!user?.can("WALL_DOORS")) return;
         if (game.paused && !game.user.isGM) return ui.notifications.warn("GAME.PausedWarning", { localize: true });
         const scene = game.scenes.get(sceneId);
         if (!scene) return;
@@ -1936,14 +1940,14 @@ class Levels3DPreview {
             const isLocked = ds == 2;
 
             if (isLocked) return _playDoorSound("lock");
-            tile.setFlag("levels-3d-preview", `modelDoors.${subDoorId}.ds`, ds == 0 ? "1" : "0");
+            tile.setFlag("levels-3d-preview", `modelDoors.${subDoorId}.ds`, ds == 0 ? 1 : 0);
             _playDoorSound(ds == 0 ? "open" : "close");
         } else {
             const ds = tile.getFlag("levels-3d-preview", "doorState") ?? 0;
             const isLocked = ds == 2;
 
             if (isLocked) return _playDoorSound("lock");
-            tile.setFlag("levels-3d-preview", "doorState", ds == 0 ? "1" : "0");
+            tile.setFlag("levels-3d-preview", "doorState", ds == 0 ? 1 : 0);
             _playDoorSound(ds == 0 ? "open" : "close");
         }
     }
@@ -1963,21 +1967,19 @@ Hooks.on("canvasReady", async () => {
     document.querySelector("#board").style.opacity = 1;
     do {
         await sleep(100);
-        if (!game.Levels3DPreview || !game.Levels3DPreview?._init) continue;
-        if (game.threeportrait && !game.threeportrait._dataReady) continue;
-        game.Levels3DPreview._cameraSet = false;
-        game.Levels3DPreview.close();
-        game.Levels3DPreview.controls.reset();
-        const enablePlayers = canvas.scene.getFlag("levels-3d-preview", "enablePlayers");
-        const isGM = game.user.isGM;
-        if (canvas.scene.getFlag("levels-3d-preview", "auto3d") && (enablePlayers || isGM)) {
-            game.Levels3DPreview.open();
-        }
-    } while (!game.Levels3DPreview || !game.Levels3DPreview?._init);
+    } while (!game.Levels3DPreview?._init || (game.threeportrait && !game.threeportrait._dataReady));
+    game.Levels3DPreview._cameraSet = false;
+    game.Levels3DPreview.close();
+    game.Levels3DPreview.controls.reset();
+    const enablePlayers = canvas.scene.getFlag("levels-3d-preview", "enablePlayers");
+    const isGM = game.user.isGM;
+    if (canvas.scene.getFlag("levels-3d-preview", "auto3d") && (enablePlayers || isGM)) {
+        game.Levels3DPreview.open();
+    }
 });
 
 Hooks.on("canvasTearDown", () => {
-    game.Levels3DPreview._pauseRendering = true;
+    if (game.Levels3DPreview) game.Levels3DPreview._pauseRendering = true;
 });
 
 Hooks.on("sightRefresh", () => {
@@ -1988,7 +1990,8 @@ Hooks.on("sightRefresh", () => {
 
 Hooks.on("updateScene", (scene, updates) => {
     if (!game.Levels3DPreview?._active || scene.id !== canvas.scene.id) return;
-    if ("img" in updates) game.Levels3DPreview.createBoard();
+    const backgroundChanged = updates.background?.src !== undefined || foundry.utils.hasProperty(updates, "background.src");
+    if (backgroundChanged) game.Levels3DPreview.createBoard();
     if (updates.fog !== undefined || "tokenVision" in updates) {
         game.Levels3DPreview.reload();
         return;
@@ -2028,7 +2031,7 @@ Hooks.on("updateScene", (scene, updates) => {
     }
     game.Levels3DPreview.setBloom();
     if ("exposure" in flags) game.Levels3DPreview.setExposure();
-    if ("renderBackground" in flags && !("img" in updates)) game.Levels3DPreview.createBoard();
+    if ("renderBackground" in flags && !backgroundChanged) game.Levels3DPreview.createBoard();
     if ("renderTable" in flags || "tableTex" in flags || "tableColor" in flags) game.Levels3DPreview.createTable();
     if ("dynamicSky" in flags) game.Levels3DPreview.lights.globalIllumination.updateDynamicSky();
     if ("ambientLightIntensity" in flags || "ambientLightColor" in flags) game.Levels3DPreview.lights.globalIllumination.updateAmbientLight();
@@ -2126,7 +2129,11 @@ function updateTokenRotationCamera(token) {
     const cTar = game.Levels3DPreview.controls.target;
 
     const angle = Math.atan2(cTar.z - cPos.z, cTar.x - cPos.x);
-    token.document.update({ rotation: Math.toDegrees(angle - 90) });
+    const rotation = ((Math.toDegrees(angle - 90) % 360) + 360) % 360;
+    const current = (((token.document.rotation ?? 0) % 360) + 360) % 360;
+    const diff = Math.abs(rotation - current);
+    if (Math.min(diff, 360 - diff) < 0.5) return;
+    token.document.update({ rotation });
 }
 
 const updateTokenRotationCameraThrottle = throttle(updateTokenRotationCamera, 500);

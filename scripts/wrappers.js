@@ -3,6 +3,7 @@ import { Shape3D } from "./entities/shape3d.js";
 import { getSetting } from "./settings/settingsConfig.js";
 import * as THREE from "three";
 import { applyShaderToRegion } from "./shaders/templateEffects.js";
+import { Ruler3D } from "./systems/ruler3d.js";
 
 export function registerWrappers() {
 
@@ -24,15 +25,15 @@ export function registerWrappers() {
         libWrapper.register("levels-3d-preview", "foundry.canvas.perception.FogManager.prototype.save", updateFog, "WRAPPER");
         libWrapper.register("levels-3d-preview", "foundry.canvas.layers.PlaceablesLayer.prototype.pasteObjects", pasteObjects, "WRAPPER");
         libWrapper.register("levels-3d-preview", "foundry.canvas.geometry.ClockwiseSweepPolygon.prototype._compute", computePolygonDispatch, "MIXED");
-        libWrapper.register("levels-3d-preview", "foundry.documents.collections.Scenes.prototype.preload", preload3D, "OVERRIDE");
+        libWrapper.register("levels-3d-preview", "foundry.documents.collections.Scenes.prototype.preload", preload3D, "WRAPPER");
         libWrapper.register("levels-3d-preview", "canvas.app.renderer.events.pointer.getLocalPosition", pointerPositionWrapper, "MIXED");
         libWrapper.register("levels-3d-preview", "foundry.canvas.layers.ControlsLayer.prototype.handlePing", HandlePing, "WRAPPER");
         libWrapper.register("levels-3d-preview", "canvas.regions.placeRegion", placeRegion, "MIXED");
-        libWrapper.register("levels-3d-preview", "Scene.prototype.testSurfaceCollision", sceneTestSurfaceCollision, "MIXED");
+        libWrapper.register("levels-3d-preview", "foundry.documents.Scene.prototype.testSurfaceCollision", sceneTestSurfaceCollision, "MIXED");
         libWrapper.register("levels-3d-preview", "foundry.documents.TokenDocument.prototype.getVisibilityTestPoints", getVisibilityTestPoints, "MIXED");
         libWrapper.register("levels-3d-preview", "foundry.documents.TokenDocument.prototype.getVisionOrigin", getVisionOrigin, "WRAPPER");
         libWrapper.register("levels-3d-preview", "foundry.canvas.geometry.ClockwiseSweepPolygon.prototype.contains", containsWrapper, "MIXED");
-        libWrapper.register("levels-3d-preview", "DetectionMode._testCollision", _testCollisionWrapped, "WRAPPER");
+        libWrapper.register("levels-3d-preview", "foundry.canvas.perception.DetectionMode._testCollision", _testCollisionWrapped, "WRAPPER");
 
         if (game[game.system.id]?.canvas?.AbilityTemplate?.prototype?.drawPreview) libWrapper.register("levels-3d-preview", `game.${game.system.id}.canvas.AbilityTemplate.prototype.drawPreview`, placeTemplate, "MIXED");
 
@@ -110,7 +111,7 @@ export function registerWrappers() {
                     testPoints.push({
                         x: origin.x + w * gridSize,
                         y: origin.y + h * gridSize,
-                        elevation: tokenHeight,
+                        elevation: elevation + tokenHeight,
                     });
                 }
             }
@@ -135,7 +136,9 @@ export function registerWrappers() {
             if (!token) return wrapped(...args);
             const color = user.color.css;
             const size = Math.max(token.document.width, token.document.height);
-            const pos3d = game.Levels3DPreview.tokens[token.id].mesh.position.clone();
+            const mesh = game.Levels3DPreview.tokens[token.id]?.mesh;
+            if (!mesh) return wrapped(...args);
+            const pos3d = mesh.position.clone();
             if (options.pull && game.user == user) {
                 if (game.Levels3DPreview.interactionManager.isCameraLocked) return;
                 const cameraPosition = game.Levels3DPreview.camera.position.clone();
@@ -163,7 +166,7 @@ export function registerWrappers() {
             document.body.appendChild(bouncingText);
             const textData = args[2];
             const duration = Math.max(600, textData.duration ?? 2000);
-            const color = textData?.fill ? PIXI.utils.hex2string(textData.fill) : "white";
+            const color = textData?.fill ? foundry.utils.Color.from(textData.fill).css : "white";
             bouncingText.style.color = color;
             bouncingText.style.fontSize = textData.fontSize + "px";
 
@@ -225,7 +228,7 @@ export function registerWrappers() {
                 }
                 return;
             }
-            if (!game.Levels3DPreview?.object3dSight || !game.Levels3DPreview?.fogExploration || !this.config?.source?.object || this.config.source.object instanceof Scene || this.config.type === "universal") return;
+            if (!game.Levels3DPreview?.object3dSight || !game.Levels3DPreview?.fogExploration || !this.config?.source?.object || this.config.source.object instanceof foundry.documents.Scene || this.config.type === "universal") return;
             const id = this.config.type + "." + this.config.source.object.id;
             const worker = game.Levels3DPreview.workers;
             this.points = [0, -1, 1, -1, 1, 1, 0, 1];
@@ -275,7 +278,7 @@ export function registerWrappers() {
                 }
                 return;
             }
-            if (!game.Levels3DPreview?.object3dSight || !game.Levels3DPreview?.fogExploration || this.config.source.object instanceof Scene || this.config.type === "universal") return;
+            if (!game.Levels3DPreview?.object3dSight || !game.Levels3DPreview?.fogExploration || this.config.source.object instanceof foundry.documents.Scene || this.config.type === "universal") return;
             const splits = 8;
             const timeoutLimit = splits * 64;
             const polygonPoints = [];
@@ -340,27 +343,18 @@ export function registerWrappers() {
             //console.log(`compute polygon ${Date.now() - perfStart}ms`, nPoints);
         }
 
-        async function preload3D(sceneId, push = false) {
-            if (push) return game.socket.emit("preloadScene", sceneId, () => this.preload(sceneId));
-            let scene = this.get(sceneId);
-            const promises = [];
-
-            // Preload sounds
-            if (scene.playlistSound?.document.path) promises.push(foundry.audio.AudioHelper.preloadSound(scene.playlistSound.document.path));
-            else if (scene.playlist?.playbackOrder.length) {
-                const first = scene.playlist.sounds.get(scene.playlist.playbackOrder[0]);
-                if (first) promises.push(foundry.audio.AudioHelper.preloadSound(first.document.path));
-            }
-
-            // Preload textures without expiring current ones
-            promises.push(TextureLoader.loadSceneTextures(scene, { expireCache: false }));
+        async function preload3D(wrapped, ...args) {
+            const coreResult = wrapped(...args);
+            const scene = this.get(args[0]);
+            const helpers = game.Levels3DPreview?.helpers;
+            if (!scene || !helpers?.preloadModel) return coreResult;
             const models3D = scene.tokens.map((t) => t.getFlag("levels-3d-preview", "model3d")).filter((m) => m);
             const tiles3D = scene.tiles.map((t) => t.getFlag("levels-3d-preview", "model3d")).filter((m) => m);
-
+            const modelPromises = [];
             for (let model of models3D.concat(tiles3D)) {
-                promises.push(game.Levels3DPreview.helpers.preloadModel(model));
+                modelPromises.push(helpers.preloadModel(model).catch((e) => console.warn("3D Canvas: Failed to preload model", model, e)));
             }
-            return Promise.all(promises);
+            return Promise.all([coreResult, ...modelPromises]);
         }
 
         async function pasteObjects(wrapped, ...args) {
@@ -411,9 +405,11 @@ export function registerWrappers() {
             let [updateData, updateOptions={}] = this._prepareKeyboardMovementUpdates(objects, dx, dy, dz);
             const positions = handleArrowKeys({dx,dy,dz});
 
-            if (!positions) return;
-            dx = positions.x;
-            dy = positions.y;
+            if (!positions) return [];
+            if (dx || dy) {
+                dx = positions.x;
+                dy = positions.y;
+            }
 
             if (game.Levels3DPreview?.object3dSight) {
                 for (const token of objects) {
@@ -421,12 +417,12 @@ export function registerWrappers() {
                     const oldPos = {
                         x: token.center.x,
                         y: token.center.y,
-                        z: token3d.losHeight ?? token.document.elevation,
+                        z: token3d?.losHeight ?? token.document.elevation,
                     };
                     const newPos = {
                         x: oldPos.x + dx * canvas.grid.size,
                         y: oldPos.y + dy * canvas.grid.size,
-                        z: token3d.losHeight ?? token.document.elevation,
+                        z: token3d?.losHeight ?? token.document.elevation,
                     };
                     const collision = game.Levels3DPreview.interactionManager.computeSightCollision(oldPos, newPos, "move");
                     if (collision) {
@@ -440,12 +436,12 @@ export function registerWrappers() {
                 const oldPos = {
                     x: token.center.x,
                     y: token.center.y,
-                    z: token3d.losHeight ?? token.document.elevation,
+                    z: token3d?.losHeight ?? token.document.elevation,
                 };
                 const newPos = {
                     x: oldPos.x + dx * canvas.grid.size,
                     y: oldPos.y + dy * canvas.grid.size,
-                    z: token3d.losHeight ?? token.document.elevation,
+                    z: token3d?.losHeight ?? token.document.elevation,
                 };
                 const collisionPos = {
                     x: newPos.x,
@@ -460,18 +456,18 @@ export function registerWrappers() {
                 }
                 const movementCollision = game.Levels3DPreview.interactionManager.computeSightCollision(oldPos, newPos, "move");
 
-                if (!movementCollision){
-                    const waypoint = updateOptions.movement[token.id].waypoints[0];
+                const waypoint = updateOptions.movement?.[token.id]?.waypoints?.[0];
+                if (!movementCollision && waypoint) {
                     waypoint.x = token.document.x + dx * canvas.grid.size;
                     waypoint.y = token.document.y + dy * canvas.grid.size;
-                    waypoint.elevation = parseFloat(targetElevation);
+                    // The core waypoint elevation already includes the keyboard dz delta, keep it when dz != 0
+                    if (!dz) waypoint.elevation = parseFloat(targetElevation);
                 }else{
-                    delete updateOptions.movement[token.id];
+                    if (updateOptions.movement) delete updateOptions.movement[token.id];
                     updateData = updateData.filter(e => e._id !== token.id);
                 }
-            
-                await canvas.scene.updateEmbeddedDocuments(this.constructor.documentName, updateData, updateOptions);
             }
+            if (updateData.length) await canvas.scene.updateEmbeddedDocuments(this.constructor.documentName, updateData, updateOptions);
             return objects;
         }
 
@@ -521,9 +517,9 @@ export function registerWrappers() {
                 const dest = args[0].dest;
                 const token = canvas.tokens.placeables.find((t) => t.center?.x == x && t.center?.y == y);
                 const tile = canvas.tiles.placeables.find((t) => t.center?.x == x && t.center?.y == y);
-                if (token || dest instanceof TokenDocument) {
+                if (token || dest instanceof foundry.documents.TokenDocument) {
                     game.Levels3DPreview.setCameraToControlled(token ?? dest);
-                } else if (tile || dest instanceof TileDocument) {
+                } else if (tile || dest instanceof foundry.documents.TileDocument) {
                     game.Levels3DPreview.helpers.animateCamera(tile ?? dest);
                 } else {
                     game.Levels3DPreview.helpers.animateCamera({ x: x, y: y });
@@ -585,7 +581,7 @@ export function registerWrappers() {
         async function placeRegion(wrapped, ...args) {
             if (!game.Levels3DPreview?._active) return wrapped(...args);
             const originalOn = canvas.stage.on;
-            const toRemove = {};
+            const toRemove = [];
             let appliedShader = false;
             canvas.stage.on = (eventName, handler) => {
                 let height = undefined;
@@ -611,18 +607,19 @@ export function registerWrappers() {
                     }
                 }
                 game.Levels3DPreview.renderer.domElement.addEventListener(eventName, listener);
-                toRemove[eventName] = listener;
+                toRemove.push([eventName, listener]);
             }
-            const result = await wrapped(...args);
-            for (const [key, value] of Object.entries(toRemove)) {
-                game.Levels3DPreview.renderer.domElement.removeEventListener(key, value);
-            }
-            if (_templateContext.onFinish) {
-                _templateContext.onFinish({});
+            try {
+                return await wrapped(...args);
+            } finally {
+                canvas.stage.on = originalOn;
+                for (const [key, value] of toRemove) {
+                    game.Levels3DPreview?.renderer?.domElement?.removeEventListener(key, value);
+                }
+                const onFinish = _templateContext.onFinish;
                 _templateContext.onFinish = null;
+                if (onFinish) onFinish({});
             }
-            canvas.stage.on = originalOn;
-            return result;
         }
 
         function sceneTestSurfaceCollision(wrapped, ...args) {
@@ -646,23 +643,33 @@ export function registerWrappers() {
                 const collision3d = !!game.Levels3DPreview.interactionManager.computeSightCollision(origin, destination, type);
                 return collisionCore || collision3d;
             }
+            // Distance in canvas pixel space between the origin and an ElevatedPoint-like {x, y, elevation}
+            const distancePixels = canvas.dimensions.distancePixels ?? (canvas.dimensions.size / canvas.dimensions.distance);
+            const originVec = new THREE.Vector3(origin.x, origin.y, (origin.z ?? 0) * distancePixels);
+            const distanceFromOrigin = (p) => originVec.distanceTo(new THREE.Vector3(p.x, p.y, (p.elevation ?? 0) * distancePixels));
+            const toElevatedPoint = (point3d) => {
+                const p = Ruler3D.pos3DToCanvas(point3d);
+                return { x: p.x, y: p.y, elevation: p.elevation };
+            };
             if (options.mode === "all") {
-                const collisions = [];
-                collisions.push(...game.Levels3DPreview.interactionManager.computeSightCollision(origin, destination, type, false, true, false, true));
-                collisions.push(...wrapped(...args));
-                collisions.sort()
+                const collisionCore = wrapped(...args);
+                const hits3d = game.Levels3DPreview.interactionManager.computeSightCollision(origin, destination, type, false, true, false, true) || [];
+                if (!Array.isArray(collisionCore) || !hits3d.length) return collisionCore;
+                const collisions = [...collisionCore];
+                for (const hit of hits3d) {
+                    if (hit?.point) collisions.push(toElevatedPoint(hit.point));
+                }
+                collisions.sort((a, b) => distanceFromOrigin(a) - distanceFromOrigin(b));
                 return collisions;
             }
             if (options.mode === "closest") {
                 const collisionCore = wrapped(...args);
                 const collision3d = game.Levels3DPreview.interactionManager.computeSightCollision(origin, destination, type, false, true, false, false);
-                if (!collision3d && !collisionCore) return false;
                 if (!collision3d) return collisionCore;
-                if (!collisionCore) return collision3d;
-                const destinationCore = new THREE.Vector3(collisionCore.point.x, collisionCore.point.y, collisionCore.point.z);
-                const destination3d = new THREE.Vector3(collision3d.x, collision3d.y, collision3d.z);
-                if (origin.distanceTo(destinationCore) < origin.distanceTo(destination3d)) return collisionCore;
-                return collision3d;
+                const point3d = toElevatedPoint(collision3d);
+                if (!collisionCore) return point3d;
+                if (distanceFromOrigin(collisionCore) <= distanceFromOrigin(point3d)) return collisionCore;
+                return point3d;
             }
             return wrapped(...args);
         }

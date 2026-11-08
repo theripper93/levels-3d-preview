@@ -52,6 +52,7 @@
             "attachmentNotFound": "3D Canvas: Attachment not found. Token: %token% | Attachment: %attachment%",
             "gamecameradisabled": "3D Canvas: Disabling Game Camera - Game Camera is enabled but 'Use 3D Geometry for sight calculations' is disabled.",
             "filenotsupported": "File format not supported or missing",
+            "nogm": "3D Canvas: A GM must be connected to perform this action.",
             "nomapgencells": "No cells or no valid material found in the generated map for the map generator Dynamic Mesh",
             "toofarfromdoor": "Your Token is too far to open the door",
             "tokenNotGrounded": "The attempted movement is not allowed, the token is not grounded.",
