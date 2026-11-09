@@ -476,7 +476,7 @@ export class InteractionManager {
         }
         if (event.which === 1 && canvas.tokens?.active) {
             setTimeout(() => {
-                if (this.draggable || this._downId !== downId || !this._leftDown || (this.controls.mouseButtons.LEFT && this._upCameraPosition && this._downCameraPosition.distanceTo(this._upCameraPosition) > 0.01)) return;
+                if (this.draggable || this._downId !== downId || !this._leftDown || this._downCameraPosition.distanceTo(this._parent.camera.position) > 0.01) return;
                 const moveDelta = Math.abs(currentMousePos.x - this.mousemove.x) + Math.abs(currentMousePos.y - this.mousemove.y);
                 if (moveDelta > 0.1) return;
                 this._downId = null;
@@ -1099,6 +1099,7 @@ export class InteractionManager {
     toggleControls(toggle, reset = false) {
         this.controls.enableRotate = !this.isCameraLocked && toggle;
         this.controls.enableZoom = toggle;
+        this.controls.enablePan = toggle || !this._leftDown;
         if (reset) this.draggable = undefined;
     }
 
