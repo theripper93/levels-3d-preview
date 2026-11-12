@@ -10,7 +10,8 @@
             "miniCanvas": "Popout/Restore Canvas",
             "tile3dPolygon": "Draw Shape to Extrude",
             "tips": {
-                "templatePlacement": "3D Template Placement: Mouse Wheel to Rotate. Control + Mouse Wheel to change elevation. Alt + Mouse Wheel to Tilt."
+                "templatePlacement": "3D Template Placement: Mouse Wheel to Rotate. Control + Mouse Wheel to change elevation. Alt + Mouse Wheel to Tilt.",
+                "regionPlacement": "3D Region Placement: Mouse Wheel to Rotate. Control + Mouse Wheel to raise or lower (hold Shift for finer steps)."
             },
             "loading": {
                 "load": "Loading 3D Canvas...",

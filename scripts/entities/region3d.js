@@ -348,7 +348,7 @@ Hooks.once('init', () => {
     Object.assign(CONFIG.RegionBehavior.dataModels, { [behaviorKey]: ObscureVisionRegionBehaviorType });
     Object.assign(CONFIG.RegionBehavior.typeIcons, { [behaviorKey]: "fas fa-eye-slash" });
     foundry.applications.apps.DocumentSheetConfig.registerSheet(RegionBehavior, "levels-3d-preview", ObscureVisionConfig, {
-        types: ["obscureVision"],
+        types: [behaviorKey],
         label: "Obscure Vision",
     });
 });

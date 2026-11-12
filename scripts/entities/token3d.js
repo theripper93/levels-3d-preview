@@ -65,7 +65,8 @@ export class Token3D {
     getFlags() {
         this.gtflPath = this.document.getFlag("levels-3d-preview", "model3d") ?? "";
         this.solidBaseMode = this.document.getFlag("levels-3d-preview", "solidBaseMode");
-        this.baseColor = this.document.getFlag("levels-3d-preview", "baseColor") || game.settings.get("levels-3d-preview", "solidBaseColor");
+        const flagBaseColor = this.document.getFlag("levels-3d-preview", "baseColor");
+        this.baseColor = /^#[0-9a-f]{6}$/i.test(flagBaseColor) ? flagBaseColor : game.settings.get("levels-3d-preview", "solidBaseColor");
         if (!this.solidBaseMode || this.solidBaseMode === "default") this.solidBaseMode = game.settings.get("levels-3d-preview", "solidBaseMode");
         this.disableBase = this.document.getFlag("levels-3d-preview", "disableBase");
         this.autoCenter = this.document.getFlag("levels-3d-preview", "autoCenter") ?? false;

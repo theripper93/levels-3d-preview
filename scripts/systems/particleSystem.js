@@ -629,11 +629,11 @@ class BaseParticleEffect {
         let autosizeTarget;
         if (!hasSource) {
             const target = this.to;
-            if (!(target instanceof Token)) return;
+            if (!(target instanceof foundry.canvas.placeables.Token)) return;
             autosizeTarget = target;
         } else {
             const source = this.from;
-            if (!(source instanceof Token)) return;
+            if (!(source instanceof foundry.canvas.placeables.Token)) return;
             autosizeTarget = source;
         }
         const scale = (Math.max(autosizeTarget.document.width, autosizeTarget.document.height) * canvas.grid.size) / factor;
@@ -736,7 +736,7 @@ class BaseParticleEffect {
 
     setMeshSurface() {
         if (!this.params.meshSurface) return;
-        if (!(this.to instanceof Tile) && !(this.to instanceof Token)) return;
+        if (!(this.to instanceof foundry.canvas.placeables.Tile) && !(this.to instanceof foundry.canvas.placeables.Token)) return;
         const object3d = game.Levels3DPreview.tiles[this.to.id] ?? game.Levels3DPreview.tokens[this.to.id];
 
         const mergedGeometry = object3d.getMergedGeometry();
@@ -816,7 +816,7 @@ class BaseParticleEffect {
         if (object.x !== undefined && object.y !== undefined && object.z !== undefined) {
             return coords3d.posCanvasTo3d(object);
         }
-        if (object instanceof Token) {
+        if (object instanceof foundry.canvas.placeables.Token) {
             if (isTarget) {
                 this._targetBottom = game.Levels3DPreview.tokens[object.id].mesh.position.clone();
             } else {
@@ -877,7 +877,7 @@ class BaseParticleEffect {
 
     setTargetData(object) {
         if (!this._origin || !object) return;
-        if (object instanceof Token) {
+        if (object instanceof foundry.canvas.placeables.Token) {
             const token3d = game.Levels3DPreview.tokens[object.id];
             token3d.lastParticleOrigin = this._origin.clone();
         }
@@ -901,7 +901,7 @@ class BaseParticleEffect {
             e.dispose();
         });
         this._persistObjects.forEach((o) => {
-            if (this.to instanceof Token) {
+            if (this.to instanceof foundry.canvas.placeables.Token) {
                 if (this.params.miss) {
                     if (!this._missNoCollision) game.Levels3DPreview.scene.attach(o);
                 } else {
@@ -935,7 +935,7 @@ class BaseParticleEffect {
 
     animate(delta) {
         if (this._attachTarget) {
-            if (this.to instanceof Token) this.emitter.rotation.copy(this._attachTarget.rotation);
+            if (this.to instanceof foundry.canvas.placeables.Token) this.emitter.rotation.copy(this._attachTarget.rotation);
             this.emitter.position.copy(this._attachTarget.position);
         }
         if (this._light) this.animateLight(delta);
@@ -2020,7 +2020,7 @@ class RunicShot extends ProjectileParticle {
     }
 
     get tokenRadius() {
-        if (!this.from instanceof Token) return 0;
+        if (!(this.from instanceof foundry.canvas.placeables.Token)) return 0;
         return ((Math.max(this.from.document.width, this.from.document.height) / 2) * canvas.grid.size) / factor;
     }
 
@@ -2839,7 +2839,7 @@ class Lightning extends ExplosionParticle {
 class SlashParticle extends ExplosionParticle {
     autoSize() {
         const from = this.from;
-        if (!(from instanceof Token)) return;
+        if (!(from instanceof foundry.canvas.placeables.Token)) return;
         const size = Math.max(from.document.width, from.document.height) * (canvas.grid.size / factor);
         this.params.emitterSize = 0.7 * size;
         if (!this.params.autoSize) return;
@@ -3608,7 +3608,7 @@ class RunicRay extends RayParticle {
     }
 
     get tokenRadius() {
-        if (!this.from instanceof Token) return 0;
+        if (!(this.from instanceof foundry.canvas.placeables.Token)) return 0;
         return ((Math.max(this.from.document.width, this.from.document.height) / 2) * canvas.grid.size) / factor;
     }
 

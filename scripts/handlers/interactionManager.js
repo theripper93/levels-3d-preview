@@ -785,6 +785,13 @@ export class InteractionManager {
             }
         }
         if (canvas.regions._placementContext) {
+            const placement = this._regionPlacement;
+            if (event.ctrlKey && placement) {
+                const step = event.shiftKey ? canvas.scene.dimensions.distance / 5 : canvas.scene.dimensions.distance;
+                placement.offset -= Math.sign(event.deltaY) * step;
+                placement.sync();
+                return;
+            }
             event.delta = event.deltaY;
             canvas.regions._onMouseWheel(event);
             return;

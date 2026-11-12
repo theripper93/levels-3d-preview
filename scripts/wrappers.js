@@ -28,6 +28,7 @@ export function registerWrappers() {
         libWrapper.register("levels-3d-preview", "canvas.app.renderer.events.pointer.getLocalPosition", pointerPositionWrapper, "MIXED");
         libWrapper.register("levels-3d-preview", "foundry.canvas.layers.ControlsLayer.prototype.handlePing", HandlePing, "WRAPPER");
         libWrapper.register("levels-3d-preview", "canvas.regions.placeRegion", placeRegion, "MIXED");
+        Hooks.on("preCreateRegion", applyPlacedRegionElevation);
         libWrapper.register("levels-3d-preview", "foundry.documents.Scene.prototype.testSurfaceCollision", sceneTestSurfaceCollision, "MIXED");
         libWrapper.register("levels-3d-preview", "foundry.documents.TokenDocument.prototype.getVisibilityTestPoints", getVisibilityTestPoints, "MIXED");
         libWrapper.register("levels-3d-preview", "foundry.documents.TokenDocument.prototype.getVisionOrigin", getVisionOrigin, "WRAPPER");
@@ -552,7 +553,14 @@ export function registerWrappers() {
             const template = this.document;
             const region = foundry.documents.BaseRegion._migrateMeasuredTemplateData(template);
             region.elevation.bottom /= canvas.scene.dimensions.distancePixels;
-            const shape = region.shapes[0];
+            const height = getRegionShapeHeight(region.shapes[0]);
+            if (!region.elevation.top) region.elevation.top = region.elevation.bottom + height;
+            wrapped(...args);
+            _templateContext.onFinish = this._finishPlacement.bind(this);
+            canvas.regions.placeRegion(region, {});
+        }
+
+        function getRegionShapeHeight(shape) {
             let height;
             switch (shape.type) {
                 case "rectangle":
@@ -589,36 +597,78 @@ export function registerWrappers() {
                     }
                     break;
             }
-            height /= canvas.scene.dimensions.distancePixels;
-            if (!region.elevation.top) region.elevation.top = region.elevation.bottom + height;
-            wrapped(...args);
-            _templateContext.onFinish = this._finishPlacement.bind(this);
-            canvas.regions.placeRegion(region, {});
+            return height / canvas.scene.dimensions.distancePixels;
+        }
+
+        const _placedRegionElevations = [];
+        const matchesPlacedShape = (shape, placed) => shape.type === placed.type && shape.x === placed.x && shape.y === placed.y;
+
+        function recordPlacedRegionElevation({ document }) {
+            const { bottom, top } = document._source.elevation;
+            if (!Number.isFinite(bottom) || !Number.isFinite(top)) return;
+            const { type, x, y } = document._source.shapes.at(-1);
+            _placedRegionElevations.push({ type, x, y, bottom, top });
+            if (_placedRegionElevations.length > 20) _placedRegionElevations.shift();
+        }
+
+        function applyPlacedRegionElevation(document, data, options, userId) {
+            if (userId !== game.user.id || !_placedRegionElevations.length) return;
+            const matches = _placedRegionElevations.filter((placed) => document._source.shapes.some((shape) => matchesPlacedShape(shape, placed)));
+            if (!matches.length) return;
+            for (const match of matches) _placedRegionElevations.splice(_placedRegionElevations.indexOf(match), 1);
+            const { bottom, top } = document._source.elevation;
+            if (bottom !== null || top !== null) return;
+            document.updateSource({ elevation: { bottom: Math.min(...matches.map((m) => m.bottom)), top: Math.max(...matches.map((m) => m.top)) } });
         }
 
         async function placeRegion(wrapped, ...args) {
             if (!game.Levels3DPreview?._active) return wrapped(...args);
+            const options = args[1] ?? {};
+            const preConfirm = options.preConfirm;
+            args[1] = {
+                ...options,
+                preConfirm: (context) => {
+                    recordPlacedRegionElevation(context);
+                    return preConfirm?.(context);
+                },
+            };
             const originalOn = canvas.stage.on;
             const toRemove = [];
             let appliedShader = false;
+            let height = undefined;
+            const placement = {
+                offset: 0,
+                surface: undefined,
+                sync() {
+                    const document = canvas.regions._placementContext?.preview?.document;
+                    if (!document || placement.surface === undefined) return;
+                    const elevation = document.elevation;
+                    height ??= elevation.top - elevation.bottom;
+                    if (!Number.isFinite(height)) height = getRegionShapeHeight(document.shapes[0]);
+                    if (!Number.isFinite(height)) return;
+                    let bottom = placement.surface + placement.offset;
+                    const isNotCube = document.shapes[0].type !== "rectangle";
+                    if (isNotCube) bottom -= height / 2;
+                    if (bottom != elevation.bottom) {
+                        document.updateSource({ elevation: { bottom, top: bottom + height } });
+                        canvas.regions._placementContext.preview.renderFlags?.set({ refreshShapes: true });
+                    }
+                },
+            };
+            const interactionManager = game.Levels3DPreview.interactionManager;
+            interactionManager._regionPlacement = placement;
+            ui.notifications.info("levels3dpreview.controls.tips.regionPlacement", { localize: true });
             canvas.stage.on = (eventName, handler) => {
-                let height = undefined;
                 function listener(event) {
                     event.getLocalPosition = (obj) => canvas.app.renderer.events.pointer.getLocalPosition(obj) ?? {x: 0, y: 0, z: 0};
                     event.data = {};
                     event.data.getLocalPosition = (obj) => canvas.app.renderer.events.pointer.getLocalPosition(obj) ?? {x: 0, y: 0, z: 0};
                     handler(event);
                     if (!canvas.regions._placementContext?.preview?.document) return;
-                    const document = canvas.regions._placementContext.preview.document;
-                    const elevation = document.elevation;
-                    height ??= elevation.top - elevation.bottom;
-                    let bottom = canvas.app.renderer.events.pointer.getLocalPosition()?.z;
-                    if (bottom === undefined) return;
-                    const isNotCube = document.shapes[0].shape !== "rectangle";
-                    if (isNotCube) bottom -= height / 2;
-                    if (bottom != elevation.bottom) {
-                        canvas.regions._placementContext.preview?.document?.updateSource({ elevation: { bottom, top: bottom + height } });
-                    }
+                    const surface = canvas.app.renderer.events.pointer.getLocalPosition()?.z;
+                    if (surface === undefined) return;
+                    placement.surface = surface;
+                    placement.sync();
                     if (!appliedShader) {
                         applyShaderToRegion(canvas.regions._placementContext.preview?.document);
                         appliedShader = true;
@@ -630,6 +680,7 @@ export function registerWrappers() {
             try {
                 return await wrapped(...args);
             } finally {
+                if (interactionManager._regionPlacement === placement) interactionManager._regionPlacement = null;
                 canvas.stage.on = originalOn;
                 for (const [key, value] of toRemove) {
                     game.Levels3DPreview?.renderer?.domElement?.removeEventListener(key, value);

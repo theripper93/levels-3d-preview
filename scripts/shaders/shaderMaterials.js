@@ -11,9 +11,6 @@ export const heightHighlightShaderMaterial = new THREE.ShaderMaterial({
             value: 0.1,
         },
     },
-    varying: {
-        vPosition: { value: new THREE.Vector3() },
-    },
     vertexShader: `
 
 varying vec2 vUv; 
@@ -59,9 +56,6 @@ export const radialGradientShaderMaterial = new THREE.ShaderMaterial({
         glow: {
             value: false,
         },
-    },
-    varying: {
-        vPosition: { value: new THREE.Vector3() },
     },
     vertexShader: `
 
@@ -117,9 +111,6 @@ export const radialRingGradientShaderMaterial = new THREE.ShaderMaterial({
         opacity: {
             value: 1.0,
         },
-    },
-    varying: {
-        vPosition: { value: new THREE.Vector3() },
     },
     vertexShader: `
 
@@ -182,9 +173,6 @@ export const coneFadeGradientShaderMaterial = new THREE.ShaderMaterial({
             value: 1.0,
         },
     },
-    varying: {
-        vPosition: { value: new THREE.Vector3() },
-    },
     vertexShader: `
 
 varying vec2 vUv; 
@@ -229,9 +217,6 @@ export const rulerUVTubeMaterial = new THREE.ShaderMaterial({
             value: 0.1,
         },
     },
-    varying: {
-        vPosition: { value: new THREE.Vector3() },
-    },
     vertexShader: `
 
 varying vec2 vUv; 
@@ -268,9 +253,6 @@ export const radialDomeFadeShaderMaterial = new THREE.ShaderMaterial({
         map: {
             value: new THREE.Texture(),
         },
-    },
-    varying: {
-        vPosition: { value: new THREE.Vector3() },
     },
     vertexShader: `
 

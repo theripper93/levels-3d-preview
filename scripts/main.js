@@ -570,7 +570,7 @@ class Levels3DPreview {
             Template3D: Template3D,
         };
         this.animationMixers = [];
-        this.clock = new THREE.Clock();
+        this.timer = new THREE.Timer();
         this.loader = new this.CONFIG.LOADERS.GLTFLoader();
         this.FBXLoader = new FBXLoader();
         this._active = false;
@@ -607,6 +607,11 @@ class Levels3DPreview {
         this.scene = new THREE.Scene();
         this.material = new THREE.MeshNormalMaterial();
 
+        if (this._sharedContext) {
+            const gl = canvas.app.renderer.context.gl;
+            gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
+            gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
+        }
         this.renderer = this._sharedContext ? new THREE.WebGLRenderer({ context: canvas.app.renderer.context.gl }) : new THREE.WebGLRenderer();
         this.renderer.setSize(window.innerWidth, window.innerHeight);
         this.lightWarmup = new LightWarmup(this);
@@ -964,8 +969,8 @@ class Levels3DPreview {
         const plane = new THREE.Mesh(geometry, material);
         plane.receiveShadow = true;
         plane.castShadow = true;
-        const offsetX = -canvas.scene.background.offsetX / this.factor;
-        const offsetY = -canvas.scene.background.offsetY / this.factor;
+        const offsetX = -canvas.scene.shiftX / this.factor;
+        const offsetY = -canvas.scene.shiftY / this.factor;
         plane.position.set(center.x + offsetX, center.y - depth / 2 - 0.00001 + unitsToPixels(canvas.primary.background.elevation), center.z + offsetY);
         //plane.rotation.x = -Math.PI / 2;
         this.board = plane;
@@ -1229,7 +1234,7 @@ class Levels3DPreview {
                 ui.notifications.error(`Error loading Skybox ${rootImage}`);
                 _this._envReady = true;
             } finally {
-                if (shared) canvas.app.renderer.reset();
+                if (shared) _this.resetPixiState();
             }
         }
     }
@@ -1387,7 +1392,8 @@ class Levels3DPreview {
                 const dist = this.interactionManager.findCameraLookatDistance();
                 this.bokeh.uniforms.focus.value = dist;
             }
-            const delta = this.clock.getDelta();
+            this.timer.update();
+            const delta = this.timer.getDelta();
             this.grid?.updateGrid();
             let calculateObstructing = false;
             Object.values(this.tiles).forEach((tile) => {
@@ -1532,8 +1538,13 @@ class Levels3DPreview {
             }
         } finally {
             // Always hand the GL state back to PIXI, even when the frame threw (shared context only)
-            if (this._sharedContext) canvas.app.renderer.reset();
+            if (this._sharedContext) this.resetPixiState();
         }
+    }
+
+    resetPixiState() {
+        canvas.app.renderer.shader.reset();
+        canvas.app.renderer.reset();
     }
 
     recoverCamera() {
@@ -1864,7 +1875,7 @@ class Levels3DPreview {
         if (wasActive) this.refreshRulers();
         if (this._sharedContext) {
             this.renderer.resetState();
-            canvas.app.renderer.reset();
+            this.resetPixiState();
         }
     }
 

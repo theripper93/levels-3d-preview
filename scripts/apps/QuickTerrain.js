@@ -23,9 +23,10 @@ export class QuickTerrain extends BuildPanelApp {
     }
 
     get terrainTile() {
-        const tt = this._terrainTile ?? canvas.tiles.controlled[0];
-        if (!this._terrainTile && tt) this._terrainTile = tt;
-        return tt;
+        const controlled = canvas.tiles.controlled[0];
+        if (controlled) this._terrainTile = controlled;
+        if (this._terrainTile && (this._terrainTile.destroyed || !canvas.scene?.tiles.has(this._terrainTile.document.id))) this._terrainTile = null;
+        return this._terrainTile ?? null;
     }
 
     set terrainTile(tile) {
@@ -129,10 +130,10 @@ export class QuickTerrain extends BuildPanelApp {
     async applyTheme() {
         const tile = this.terrainTile;
         if (!tile) return ui.notifications.error("Please select a tile to apply the theme to.");
-        const form = this.element;
+        const form = this.element.querySelector("form");
         const data = new foundry.applications.ux.FormDataExtended(form).object;
         const theme = data.theme == "random" ? themes[Object.keys(themes)[Math.floor(Math.random() * Object.keys(themes).length)]] : themes[data.theme];
-        tile.document.update({ flags: { "levels-3d-preview": { shaders: theme.data } } });
+        await tile.document.update({ flags: { "levels-3d-preview": { shaders: theme.data } } });
     }
 
     async generateTerrain() {
