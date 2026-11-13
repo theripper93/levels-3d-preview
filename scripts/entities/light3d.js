@@ -1,7 +1,9 @@
 import * as THREE from "three";
 import { factor } from "../main.js";
 import * as coords3d from "../helpers/coords3d.js";
-import { SimplexNoise } from "../lib/noiseFunctions.js";
+import { flameSeed, flameTime, setLightFlicker } from "../vfx/light/noise.js";
+import { getLightAnimation, sampleColor, sampleIntensity, sampleRadius, sampleRevolve } from "../vfx/light/animations.js";
+import { LightEffects } from "../vfx/light/lightEffects.js";
 
 export class Light3D {
     constructor(light, parent, isToken) {
@@ -9,9 +11,9 @@ export class Light3D {
         this._parent = parent;
         this.isToken = isToken;
         this._useHelper = game.user.isGM && game.settings.get("levels-3d-preview", "lightHelpers");
-        this.animationFn = () => {};
+        this.animation = null;
+        this.flicker = 1;
         this.refreshDebounced = foundry.utils.debounce(this.refresh.bind(this), 100);
-        //this.refresh = foundry.utils.debounce(this.refresh.bind(this), 100);
         if (!this.isToken) {
             this.embeddedName = this.light.document.documentName;
             this.draggable = true;
@@ -21,7 +23,7 @@ export class Light3D {
     }
 
     init() {
-        this.noise = new SimplexNoise();
+        this.lightFx = this.isToken ? null : new LightEffects(this);
         this.light3d = this.angle != 360 ? new THREE.SpotLight(0xffffff, 0.0001, 0.0001, 1, 1, 2) : new THREE.PointLight();
         this._parent.lightWarmup.add(this.light3d);
         this.isPointLight = this.angle == 360;
@@ -125,8 +127,6 @@ export class Light3D {
         const light = this.light.hasPreview ? this.light._preview : this.light;
         const tilt = Math.toRadians(light.document.getFlag("levels-3d-preview", "tilt") ?? 0);
         this.particleData = this.getParticleData();
-        // refreshAmbientLight fires on hover/control as well; only restart the particle effect when
-        // something that affects it actually changed.
         const enableParticle = !!light.document.getFlag("levels-3d-preview", "enableParticle");
         const particleSignature = JSON.stringify([
             this.particleData,
@@ -145,6 +145,7 @@ export class Light3D {
         this.animColors = {
             color1: new THREE.Color(this.particleData.color),
             color2: new THREE.Color(this.particleData.color2),
+            legacy: this.particleData.color !== this.particleData.color2,
         };
         if (this.dragHandle) {
             this.dragHandle.position.set(0, 0, 0);
@@ -196,14 +197,12 @@ export class Light3D {
             this.light3d.target.position.copy(sphere.getWorldPosition(new THREE.Vector3()));
             this.light3d.target.position.add(new THREE.Vector3(position.x, position.y, position.z));
             this.light3d.target.updateMatrixWorld();
+            this.spotOffset = (this.spotOffset ?? new THREE.Vector3()).copy(this.light3d.target.position).sub(this.mesh.position);
         }
-        //this.light3d.visible = !this.light.document.hidden && radius != 0;
-        /*if (this.light.document.hidden || radius == 0) {
-            this.light3d.distance = 0;
-            this.light3d.decay = 9999999;
-            this.light3d.intensity = 0;
-        }*/
-        this.animationFn = (lightAnimations[this.animationType] ?? lightAnimations.none).bind(this);
+        this.animation = getLightAnimation(this.animationType);
+        this.flameSeed = flameSeed(this.particleEffectId);
+        (this.baseColor ??= new THREE.Color()).set(color);
+        this.lightFx?.refresh(light.document);
         if (this.useHelper) {
             this.mesh.remove(this.lightHelper);
             this.lightHelper?.dispose();
@@ -240,11 +239,25 @@ export class Light3D {
         return (this.light.emitsLight && !this.light.document.hidden) || !!this.light.document.flags?.["levels-3d-preview"]?.visibleWhenDisabled;
     }
 
-    update(delta) {
-        this.light3d.intensity = this.initialLightParams.intensity;
-        this.animationFn(delta);
+    update() {
+        const base = this.initialLightParams;
+        const animation = this.animation;
+        this.flicker = 1;
+        if (animation) {
+            const time = flameTime();
+            const speed = this.lightData.animation.reverse ? -this.animationSpeed : this.animationSpeed;
+            this.flicker = sampleIntensity(animation, this.flameSeed, time, speed, this.animationIntensity);
+            this.light3d.distance = base.radius * sampleRadius(animation, this.flicker);
+            if (animation.legacyChroma && this.animColors.legacy) this.animateLegacyChroma(time, speed);
+            else if (animation.hue || animation.hueSwing) sampleColor(animation, this.light3d.color, this.baseColor, this.flameSeed, time, speed);
+            if (animation.revolve && !this.isPointLight && !this.isToken) this.revolve(sampleRevolve(animation, time, speed));
+        }
+        this.light3d.intensity = base.intensity * this.flicker;
+        if (!this.isToken) setLightFlicker(this.particleEffectId, this.flicker);
+        const emitting = this.isEmitting;
+        this.lightFx?.update(this.flicker, emitting);
         const shadow = this.light3d.shadow;
-        if (this.isEmitting) {
+        if (emitting) {
             if (this.light3d.castShadow) shadow.autoUpdate = true;
             return;
         }
@@ -253,15 +266,28 @@ export class Light3D {
         shadow.needsUpdate = false;
     }
 
+    animateLegacyChroma(time, speed) {
+        const { color1, color2 } = this.animColors;
+        const t = (Math.sin(time * 2 * speed) + 1) / 2;
+        if (this.animationIntensity > 1) this.light3d.color.copy(color1).lerpHSL(color2, t);
+        else this.light3d.color.copy(color1).lerp(color2, t);
+    }
+
+    revolve(angle) {
+        const target = this.light3d.target;
+        target.position.copy(this.spotOffset).applyAxisAngle(THREE.Object3D.DEFAULT_UP, angle).add(this.mesh.position);
+        target.updateMatrixWorld();
+    }
+
     destroy() {
+        this.lightFx?.dispose();
+        if (!this.isToken) setLightFlicker(this.particleEffectId, null);
         this._parent.lightWarmup.remove(this.light3d);
         this.light3d.removeFromParent();
         this.light3d.dispose();
         this._parent.scene.remove(this.mesh);
         if (this.particleEffectId) Particle3D.stop(this.particleEffectId);
         this.lightHelper?.dispose();
-        // Drag handle geometry/materials are created per light in createHandle(); the sprite map
-        // is a shared texture (this._parent.textures) and must not be disposed.
         if (this.dragHandle) {
             const { sphere, sprite } = this.dragHandle.userData;
             sphere?.geometry?.dispose();
@@ -279,6 +305,8 @@ export class Light3D {
         if (!game.settings.get("levels-3d-preview", "enableEffects")) return;
         if (this.light.document.hidden && !this.light.document.getFlag("levels-3d-preview", "enableParticleHidden")) return;
         const particleData = this.particleData;
+        const L = game.Levels3DPreview;
+        if (!L.CONFIG.PARTICLE_SYSTEMS.getParticleClass(particleData.type) && !L.particleSystem.isVFX(particleData.type)) return;
         this.particleEffect = new Particle3D(particleData.type);
         this.particleEffect
             .name(this.particleEffectId)
@@ -442,28 +470,3 @@ export class Light3D {
         });
     }
 }
-
-const lightAnimations = {
-    none: () => {},
-    torch: function torch(time) {
-        const f = 0.0015;
-        const random = 0.5 + (this.noise.noise(f * time * this.animationSpeed, 0) + this.animationIntensity) * 0.25;
-        this.light3d.distance = this.initialLightParams.radius * random;
-        this.light3d.intensity = this.initialLightParams.intensity * random;
-    },
-    pulse: function pulse(time) {
-        const modulation = 1 + Math.sin((time / 500) * this.animationSpeed) * 0.5;
-        const modIntensity = modulation * this.animationIntensity + (1 - this.animationIntensity) / 2;
-        this.light3d.distance = this.initialLightParams.radius * modIntensity;
-    },
-    chroma: function chroma(time) {
-        const baseColor = this.animColors.color1.clone();
-        if (this.animationIntensity > 1) {
-            baseColor.lerpHSL(this.animColors.color2, (Math.sin((time / 500) * this.animationSpeed) + 1) / 2);
-        } else {
-            baseColor.lerp(this.animColors.color2, (Math.sin((time / 500) * this.animationSpeed) + 1) / 2);
-        }
-
-        this.light3d.color = baseColor;
-    },
-};

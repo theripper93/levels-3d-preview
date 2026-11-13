@@ -36,7 +36,7 @@ export function injectPresetButtons(html) {
         buttons += `<button ${c ? `style="border: 2px solid var(--color-shadow-primary);"` : ""} class="performance-preset" data-tooltip="${game.i18n.localize(`levels3dpreview.performance.buttonTooltip.${k}`)}" data-preset="${k}"><i class="${v.icon}"></i> ${game.i18n.localize(`levels3dpreview.performance.${k}`)}</button>`;
     }
     const prestHtml = document.createElement("div");
-    prestHtml.innerHTML = `<h3 class="divider">${game.i18n.localize(`levels3dpreview.performance.settings.header`)}</h3><div class="form-group">${buttons}</div><p class="hint">${game.i18n.localize(`levels3dpreview.performance.settings.presetHint`)}</p><p class="hint">${game.i18n.localize(`levels3dpreview.performance.settings.resolution`).replace("{resolution}", `<strong data-tooltip="${game.i18n.localize(`levels3dpreview.performance.settings.resolutionTooltip`)}" style="cursor: help; color: ${resColor}">${window.innerWidth * dpr * resMulti}x${window.innerHeight * dpr * resMulti}</strong>`)}</p><hr>`;
+    prestHtml.innerHTML = `<h3 class="divider">${game.i18n.localize(`levels3dpreview.performance.settings.header`)}</h3><div class="form-group">${buttons}</div><p class="hint">${game.i18n.localize(`levels3dpreview.performance.settings.presetHint`)}</p><p class="hint">${game.i18n.localize(`levels3dpreview.performance.settings.resolution`).replace("{resolution}", `<strong data-tooltip="${game.i18n.localize(`levels3dpreview.performance.settings.resolutionTooltip`)}" style="cursor: help; color: ${resColor}">${Math.round(window.innerWidth * dpr * resMulti)}x${Math.round(window.innerHeight * dpr * resMulti)}</strong>`)}</p><hr>`;
 
     prestHtml.addEventListener("click", (event) => {
         const target = event.target.closest(".performance-preset");
@@ -87,7 +87,7 @@ const performancePresets = {
         antialiasing: "none",
         fowQuality: 0.1,
         enableShaders: false,
-        enableEffects: false,
+        effectsQuality: "off",
     },
     "low": {
         icon: "fas fa-frown",
@@ -96,7 +96,7 @@ const performancePresets = {
         antialiasing: "none",
         fowQuality: 0.25,
         enableShaders: true,
-        enableEffects: true,
+        effectsQuality: "low",
     },
     "medium": {
         icon: "fas fa-meh",
@@ -105,7 +105,7 @@ const performancePresets = {
         antialiasing: "fxaa",
         fowQuality: 0.5,
         enableShaders: true,
-        enableEffects: true,
+        effectsQuality: "medium",
     },
     "high": {
         icon: "fas fa-smile",
@@ -114,7 +114,7 @@ const performancePresets = {
         antialiasing: "smaa",
         fowQuality: 0.75,
         enableShaders: true,
-        enableEffects: true,
+        effectsQuality: "high",
     },
     "veryhigh": {
         icon: "fas fa-grin-stars",
@@ -123,6 +123,6 @@ const performancePresets = {
         antialiasing: "smaa",
         fowQuality: 1,
         enableShaders: true,
-        enableEffects: true,
+        effectsQuality: "ultra",
     }
 }

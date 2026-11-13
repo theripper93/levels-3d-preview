@@ -5,6 +5,8 @@ import { MapGen } from "../apps/mapGen.js";
 import { getTimeSyncDefault } from "../systems/globalIllumination.js";
 import { GradientPicker } from "../helpers/GradientPicker.js";
 import { injectConfig } from "../lib/injectConfig.js";
+import { weatherConfigFields, activateWeatherConfig } from "../vfx/weather/config.js";
+import { lightFxConfigFields, activateLightFxConfig } from "../vfx/light/config.js";
 import { TacticalPingPicker, loadUserEmotes } from "../entities/effects/ping.js";
 
 export function registerConfigs() {
@@ -320,6 +322,12 @@ export function registerConfigs() {
                     max: 1,
                     step: 0.01,
                 },
+                sunShadows: {
+                    type: "checkbox",
+                    label: game.i18n.localize("levels3dpreview.flags.sunShadows.label"),
+                    notes: game.i18n.localize("levels3dpreview.flags.sunShadows.notes"),
+                    default: true,
+                },
                 ambientLightIntensity: {
                     type: "range",
                     label: game.i18n.localize("levels3dpreview.flags.ambientLightIntensity.label"),
@@ -338,49 +346,7 @@ export function registerConfigs() {
                 tabLabel: game.i18n.localize("levels3dpreview.settings.headers.particles.title"),
                 tabNotes: game.i18n.localize("levels3dpreview.settings.headers.particles.notes"),
                 tabIcon: "fas fa-cloud-showers-heavy",
-                particlePreset2: {
-                    type: "select",
-                    label: game.i18n.localize("levels3dpreview.flags.particlePreset.label1"),
-                    default: "none",
-                    options: {
-                        none: game.i18n.localize("levels3dpreview.flags.particlePreset.options.none"),
-                        rain: game.i18n.localize("levels3dpreview.flags.particlePreset.options.rain"),
-                        heavyrain: game.i18n.localize("levels3dpreview.flags.particlePreset.options.heavyrain"),
-                        snow: game.i18n.localize("levels3dpreview.flags.particlePreset.options.snow"),
-                        hail: game.i18n.localize("levels3dpreview.flags.particlePreset.options.hail"),
-                        sand: game.i18n.localize("levels3dpreview.flags.particlePreset.options.sand"),
-                        leaves: game.i18n.localize("levels3dpreview.flags.particlePreset.options.leaves"),
-                        embers: game.i18n.localize("levels3dpreview.flags.particlePreset.options.embers"),
-                        mysteriouslights: game.i18n.localize("levels3dpreview.flags.particlePreset.options.mysteriouslights"),
-                        stars: game.i18n.localize("levels3dpreview.flags.particlePreset.options.stars"),
-                        starfall: game.i18n.localize("levels3dpreview.flags.particlePreset.options.starfall"),
-                        dust: game.i18n.localize("levels3dpreview.flags.particlePreset.options.dust"),
-                        smoke: game.i18n.localize("levels3dpreview.flags.particlePreset.options.smoke"),
-                        toxic: game.i18n.localize("levels3dpreview.flags.particlePreset.options.toxic"),
-                    },
-                },
-                particlePreset: {
-                    type: "select",
-                    label: game.i18n.localize("levels3dpreview.flags.particlePreset.label2"),
-                    default: "none",
-                    options: {
-                        none: game.i18n.localize("levels3dpreview.flags.particlePreset.options.none"),
-                        rain: game.i18n.localize("levels3dpreview.flags.particlePreset.options.rain"),
-                        heavyrain: game.i18n.localize("levels3dpreview.flags.particlePreset.options.heavyrain"),
-                        snow: game.i18n.localize("levels3dpreview.flags.particlePreset.options.snow"),
-                        hail: game.i18n.localize("levels3dpreview.flags.particlePreset.options.hail"),
-                        sand: game.i18n.localize("levels3dpreview.flags.particlePreset.options.sand"),
-                        leaves: game.i18n.localize("levels3dpreview.flags.particlePreset.options.leaves"),
-                        embers: game.i18n.localize("levels3dpreview.flags.particlePreset.options.embers"),
-                        mysteriouslights: game.i18n.localize("levels3dpreview.flags.particlePreset.options.mysteriouslights"),
-                        stars: game.i18n.localize("levels3dpreview.flags.particlePreset.options.stars"),
-                        starfall: game.i18n.localize("levels3dpreview.flags.particlePreset.options.starfall"),
-                        dust: game.i18n.localize("levels3dpreview.flags.particlePreset.options.dust"),
-                        smoke: game.i18n.localize("levels3dpreview.flags.particlePreset.options.smoke"),
-                        toxic: game.i18n.localize("levels3dpreview.flags.particlePreset.options.toxic"),
-                        custom: game.i18n.localize("levels3dpreview.flags.particlePreset.options.custom"),
-                    },
-                },
+                ...weatherConfigFields(app.document),
                 partGroupStart: {
                     type: "custom",
                     html: `<div id="part-group">`,
@@ -607,12 +573,7 @@ export function registerConfigs() {
             },
         };
         const injected = injectConfig.inject(app, html, data);
-        html.querySelector(`[name="flags.levels-3d-preview.particlePreset"]`).addEventListener("change", (e) => {
-            const value = e.target.value;
-            html.querySelector(`#part-group`).classList.toggle("hidden", value !== "custom");
-            injectConfig._trySetPosition(app, { height: "auto" });
-        });
-        html.querySelector(`[name="flags.levels-3d-preview.particlePreset"]`).dispatchEvent(new Event("change"));
+        activateWeatherConfig(app, html, () => injectConfig._trySetPosition(app, { height: "auto" }));
 
         const ppInputs = Array.from(html.querySelectorAll("[name^='flags.levels-3d-preview.']")).filter((input) => input.name.includes("pp."));
 
@@ -1854,16 +1815,6 @@ export function registerConfigs() {
         ShaderConfig.injectButton(app, html, html.querySelector(`input[name="flags.levels-3d-preview.isFog"]`).closest(".form-group"));
     });
 
-    Hooks.on("renderRegionConfig", (app, html) => {
-        if (html.querySelector(`#regionShaderButton`)) return;
-
-        html.querySelector(`.tab[data-tab="appearance"]`).insertAdjacentHTML("beforeend", `<fieldset id='regionShaderButton'>
-            <legend>3D Canvas</legend>
-        </fieldset>`);
-
-        ShaderConfig.injectButton(app, html, html.querySelector(`#regionShaderButton legend`));
-    });
-
     Hooks.on("renderNoteConfig", (app, html) => {
         if (html.querySelector(`[name="flags.levels-3d-preview.rotation"]`)) return;
 
@@ -1930,6 +1881,7 @@ export function registerConfigs() {
                 default: false,
                 notes: game.i18n.localize("levels3dpreview.flags.visibleWhenDisabled.notes"),
             },
+            ...lightFxConfigFields(),
             partHeader: {
                 type: "custom",
                 html: `<h3 class="form-header"><i class="fas fa-fire"></i> ${game.i18n.localize("levels3dpreview.flags.lightParticleEffect.header.title")}</h3><p class="hint">${game.i18n.localize("levels3dpreview.flags.lightParticleEffect.header.notes")}</p><div class="standard-form">`,
@@ -2104,6 +2056,7 @@ export function registerConfigs() {
         const color2 = html.querySelector("[name='flags.levels-3d-preview.ParticleColor2'] input");
         const gradientPickerEl = GradientPicker.create(color1, color2);
         html.querySelector("[name='flags.levels-3d-preview.ParticleColor2']").closest(".form-group").after(gradientPickerEl);
+        activateLightFxConfig(app, html);
 
         injectConfig._trySetPosition(app, { height: "auto" });
     });

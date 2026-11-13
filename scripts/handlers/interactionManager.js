@@ -1010,6 +1010,7 @@ export class InteractionManager {
             if (this.activeLayerEntity !== child.userData?.entity3D?.embeddedName && child.userData?.entity3D?.embeddedName !== "Wall" && child.userData?.entity3D?.embeddedName !== "Tile" && child.userData?.entity3D?.embeddedName !== "Note") continue;
             if (!child.visible) continue;
             if (this.activeLayerEntity !== "Tile" && child.userData?.entity3D?.embeddedName === "Tile" && !child.userData?.entity3D?.collision && !child.userData?.entity3D?.isDoor) continue;
+            if (child.userData?.entity3D?.embeddedName === "Region" && ui.controls.tool?.name !== "select") continue;
             if (child.userData?.hitbox && child.userData.interactive) intersectTargets.push(child.userData.hitbox);
         }
 

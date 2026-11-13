@@ -6,6 +6,7 @@ import {
 	Mesh,
 	ShaderMaterial,
 	UniformsUtils,
+    Vector2,
     Vector3,
     Color
 } from "three";
@@ -315,6 +316,9 @@ Sky.CloudsShader = {
         cloudsTint: {value: new Color(0xffffff)},
         cloudsAlpha: {value: 1.0},
         cloudsScale: {value: 1.0},
+        cloudsCover: {value: 0.2},
+        cloudsDrift: {value: new Vector2()},
+        cloudsDarkness: {value: 0.0},
     },
 
     vertexShader: /* glsl */ `
@@ -331,7 +335,6 @@ Sky.CloudsShader = {
 
     const float clouddark = 0.5;
     const float cloudlight = 0.3;
-    const float cloudcover = 0.2;
     const float cloudalpha = 4.0;
     const float skytint = 0.5;
 
@@ -342,6 +345,9 @@ Sky.CloudsShader = {
     uniform float cloudsSpeed;
     uniform float cloudsAlpha;
     uniform float cloudsScale;
+    uniform float cloudsCover;
+    uniform vec2 cloudsDrift;
+    uniform float cloudsDarkness;
 
     varying vec2 vUv;
     
@@ -380,8 +386,8 @@ Sky.CloudsShader = {
     void main() {
             float speed = 0.0002 * cloudsSpeed;
             float cloudscale = 10.1 * cloudsScale;
-            vec2 p = vUv;
-            vec2 uv = vUv;
+            vec2 p = vUv + cloudsDrift;
+            vec2 uv = p;
             vec2 iResolution = vec2(1.0);
             float time = iTime * speed;
             float q = fbm(uv * cloudscale * 0.5);
@@ -441,13 +447,15 @@ Sky.CloudsShader = {
             
             vec3 cloudcolour = vec3(1.1, 1.1, 0.9) * clamp((clouddark + cloudlight*c), 0.0, 1.0);
         
-            f = cloudcover + cloudalpha*f*r;
+            f = cloudsCover + cloudalpha*f*r;
             
             vec3 result = mix(vec3(0.0), clamp(cloudcolour, 0.0, 1.0), clamp(f + c, 0.0, 1.0));
 
             result *= cloudsTint;
         
             float resultAlpha = result.r;
+
+            result *= 1.0 - cloudsDarkness;
 
             result *= timeAlpha;
 

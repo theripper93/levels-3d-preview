@@ -25,7 +25,6 @@ import { Helpers } from "./helpers/helpers.js";
 import { WeatherSystem } from "./systems/weatherSystem.js";
 import { EXRLoader } from "three/addons/loaders/EXRLoader.js";
 import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
-import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "./three/LegacyUnrealBloomPass.js";
 import { Fog, injectFoWShaders } from "./systems/Fog.js";
 import { disposeScene } from "./helpers/disposeScene.js";
@@ -33,6 +32,7 @@ import { Exporter } from "./helpers/exporter.js";
 import { turnStartMarker } from "./systems/turnStartMarker.js";
 import { ParticleEngine } from "./systems/particleSystem.js";
 import { LightWarmup } from "./systems/lightWarmup.js";
+import { ShadowBatcher } from "./systems/shadowBatcher.js";
 import { Particle3D } from "./systems/particleSystem.js";
 import { defaultTokenAnimations } from "./handlers/tokenAnimationHandler.js";
 import { presetMaterials, PresetMaterialHandler, populateScene } from "./helpers/presetMaterials.js";
@@ -56,6 +56,8 @@ import { ImprovedNoise } from "three/addons/math/ImprovedNoise.js";
 import { registerWrappers } from "./wrappers.js";
 import { ProceduralVines } from "./helpers/ProceduralVines.js";
 import { PARTICLE_SYSTEMS } from "./systems/particleSystem.js";
+import { cameraShake } from "./vfx/cameraShake.js";
+import * as vfx from "./vfx/index.js";
 import { registerConfigs } from "./settings/config.js";
 import { registerSettings } from "./settings/settingsConfig.js";
 import { WaveFunctionSolver } from "./generators/WaveFunctionCollapse.js";
@@ -578,6 +580,7 @@ class Levels3DPreview {
         this.tokenAnimationQueue = [];
         this._cameraSet = false;
         this.helpers = new Helpers();
+        this.vfx = vfx;
         OutlineHandler.setHooks();
         Socket.register("socketCamera", this.helpers.socketCamera);
         Socket.register("playTokenAnimationSocket", this.helpers.playTokenAnimationSocket);
@@ -627,6 +630,7 @@ class Levels3DPreview {
         this.renderer.alpha = false;
         this.renderer.setClearColor(0x999999, 1);
         this.renderer.shadowMap.type = game.settings.get("levels-3d-preview", "softShadows") ? THREE.VSMShadowMap : THREE.PCFShadowMap;
+        this.shadowBatcher = new ShadowBatcher(this);
 
         this.renderer.debug.checkShaderErrors = true;
 
@@ -719,7 +723,7 @@ class Levels3DPreview {
         this.composer.removePass(this.pixelPass);
         this.composer.removePass(this.uberPass);
         this.bokeh = null;
-        this.renderPass = new RenderPass(this.scene, this.camera);
+        this.renderPass = new vfx.render.EffectsPass(this);
         this.composer.addPass(this.renderPass);
         this.outline?.destroy();
         this.outline = new OutlineHandler(this);
@@ -1263,6 +1267,7 @@ class Levels3DPreview {
 
     clear3Dscene() {
         this.lightWarmup.clear();
+        this.shadowBatcher.clear();
         Ruler3D.clearAll3D();
         TokenRuler3D.clearAll3D();
         this.workers.clearMeshes();
@@ -1512,7 +1517,10 @@ class Levels3DPreview {
                 this.scene.traverse((o) => {
                     visibilityCache.set(o.uuid, o.visible);
                 });
+            this.shadowBatcher.update();
+            cameraShake.apply(this.camera, delta, this.controls.target);
             this.composer.render(time);
+            cameraShake.restore(this.camera);
             if (this._firstFrame) {
                 setTimeout(() => {
                     document.querySelector("#board").style.opacity = 1;

@@ -3,6 +3,7 @@ import { factor } from "../main.js";
 import { DiagonalStripesMaterial } from "../shaders/regionMaterial.js";
 import { Shape3D } from "./shape3d.js";
 import { ObscureVisionConfig, ObscureVisionRegionBehaviorType } from "../apps/obscureVisionRegionBehavior.js";
+import { RegionEffect, hitboxMaterial, resolveRegionFx } from "../vfx/region/index.js";
 
 export class Region3D extends THREE.Object3D {
     constructor(region, hidden = false) {
@@ -19,6 +20,7 @@ export class Region3D extends THREE.Object3D {
         // this.material.side = this.height < 0.01 ? THREE.FrontSide : THREE.DoubleSide;
         this.shaders = this.region?.getFlag("levels-3d-preview", "shaders") ?? {};
         this.hasShaders = Object.values(this.shaders).some((v) => v.enabled);
+        this.fx = this.hasShaders ? null : resolveRegionFx(region, this.isFog);
         if (extrudeRegion) {
             this.drawExtrude(this.hasShaders);
         } else {
@@ -33,6 +35,7 @@ export class Region3D extends THREE.Object3D {
             depth: box.y,
         };
         game.Levels3DPreview.shaderHandler.applyShader(this, this, this.shaders);
+        if (this.fx) this.effect = new RegionEffect(this, this.fx, { cast: Region3D.fresh.delete(region.id), preview: !!region.object?.isPreview });
         this.addToScene();
     }
     #bottom = 0;
@@ -68,16 +71,19 @@ export class Region3D extends THREE.Object3D {
 
     addToScene() {
         game.Levels3DPreview.scene.add(this);
+        this.effect?.addToScene();
     }
 
-    destroy() {
+    destroy(dissolve = false) {
         game.Levels3DPreview.scene.remove(this);
+        if (dissolve) this.effect?.dissolve();
+        else this.effect?.dispose();
         // Geometries and materials are created per region (see drawShapes/drawExtrude/getShaderMaterial),
         // so they are safe to dispose. Material maps (e.g. the shared BLANK texture) are not disposed.
         this.traverse((child) => {
             child.geometry?.dispose?.();
             if (Array.isArray(child.material)) child.material.forEach((m) => m?.dispose?.());
-            else child.material?.dispose?.();
+            else if (!child.material?.userData?.persistent) child.material?.dispose?.();
             child.customDepthMaterial?.dispose?.();
         });
     }
@@ -96,8 +102,8 @@ export class Region3D extends THREE.Object3D {
     }
 
     applyHitbox() {
-        for (const shape of this.children) {
-            for (const shapeMesh of shape.children) {
+        for (const child of this.children) {
+            for (const shapeMesh of child.isMesh ? [child] : child.children) {
                 shapeMesh.userData.entity3D = this;
                 shapeMesh.userData.noIntersect = false;
             }
@@ -115,18 +121,29 @@ export class Region3D extends THREE.Object3D {
     drawShapes(useStandardMaterial) {
         for (const shape of this.region.shapes) {
             const shape3d = Shape3D.create({ shape, region: this.region, material: useStandardMaterial ? this.getShaderMaterial() : null });
+            if (this.fx && !useStandardMaterial) this.useHitboxMaterial(shape3d);
             this.add(shape3d);
         }
         this.applyHitbox();
     }
 
+    useHitboxMaterial(shape3d) {
+        shape3d.traverse((child) => {
+            if (!child.isMesh || child.material?.userData?.hitbox) return;
+            child.material.dispose();
+            child.material = hitboxMaterial(THREE.DoubleSide);
+        });
+    }
+
     drawExtrude(useStandardMaterial) {
         const geometry = Shape3D.extrudeGeometry(this.region.polygonTree, { depth: this.height });
         geometry.translate(0, this.bottom, 0);
-        const material = useStandardMaterial ? this.getShaderMaterial() : new DiagonalStripesMaterial({ color: this.region.color.css, scale: 30 });
-        if (!useStandardMaterial) material.side = this.height <= 0.01 ? THREE.FrontSide : THREE.BackSide;
+        const side = this.height <= 0.01 ? THREE.FrontSide : THREE.BackSide;
+        const material = useStandardMaterial ? this.getShaderMaterial() : this.fx ? hitboxMaterial(THREE.DoubleSide) : new DiagonalStripesMaterial({ color: this.region.color.css, scale: 30 });
+        if (!useStandardMaterial && !this.fx) material.side = side;
         const mesh = new THREE.Mesh(geometry, material);
         this.add(mesh);
+        this.applyHitbox();
     }
 
     _onClickLeft(e) {
@@ -146,6 +163,8 @@ export class Region3D extends THREE.Object3D {
     }
 
     static #regions = new Map();
+
+    static fresh = new Set();
     
     static get regions() {
         return Region3D.#regions;
@@ -171,6 +190,9 @@ export class Region3D extends THREE.Object3D {
                 region.elevation?.bottom,
                 region.color?.css ?? String(region.color),
                 region.getFlag("levels-3d-preview", "shaders") ?? null,
+                region.getFlag("levels-3d-preview", "regionFx") ?? null,
+                region.name,
+                !!region.object?.isPreview,
                 region.behaviors?.map((b) => [b.id, b.type, b.disabled]) ?? [],
                 region.restriction?.enabled ?? false,
                 region.object?.isVisible !== false,
@@ -197,7 +219,7 @@ export class Region3D extends THREE.Object3D {
 
     static destroy(region) {
         if (this.regions.has(region)) {
-            this.regions.get(region).destroy();
+            this.regions.get(region).destroy(!region.parent?.regions?.has(region.id));
             this.regions.delete(region);
         }
     }
@@ -214,7 +236,7 @@ export class Region3D extends THREE.Object3D {
 
     static checkInFog(point) {
         for (const [key, region] of Array.from(this.regions)) {
-            if (!region.isFog) continue;
+            if (!region.isFog || region.effect?.fog) continue;
             if (region.testPoint(point)) return true;
         }
         return false;
@@ -326,6 +348,10 @@ export class Region3D extends THREE.Object3D {
     }
 
     static setHooks() {
+        Hooks.on("createRegion", (region) => {
+            if (game.Levels3DPreview?._active) Region3D.fresh.add(region.id);
+        });
+
         Hooks.on("drawRegion", (region) => {
             if (!game.Levels3DPreview?._active || !region.object) return;
             Region3D.handle(region);

@@ -131,10 +131,14 @@ export class GlobalIllumination {
         this.updateAmbientLight();
     }
 
+    get sunShadows() {
+        return canvas.scene.getFlag("levels-3d-preview", "sunShadows") ?? true;
+    }
+
     _setShadowQuality() {
         const sunlight = this.global.sunlight;
         sunlight.shadow.bias = -0.000018;
-        sunlight.castShadow = game.settings.get("levels-3d-preview", "shadowQuality") > 0;
+        sunlight.castShadow = game.settings.get("levels-3d-preview", "shadowQuality") > 0 && this.sunShadows;
         sunlight.shadow.radius = 1;
         sunlight.shadow.camera.fov = 90;
         sunlight.shadow.camera.far = 100;
@@ -175,7 +179,7 @@ export class GlobalIllumination {
         sunlight.color = color;
         sunlight.position.y = distance;
         sunlight.intensity = distance !== 0 ? intensity : 0;
-        sunlight.castShadow = distance !== 0;
+        sunlight.castShadow = distance !== 0 && this.sunShadows && game.settings.get("levels-3d-preview", "shadowQuality") > 0;
         this.global.debugSphere.color = color;
         this.global.debugSphere.position.y = distance;
         this.global.lightingGroup.rotation.setFromQuaternion(angle);

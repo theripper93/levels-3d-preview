@@ -1,5 +1,6 @@
 import { HandlebarsApplication, mergeClone } from "../lib/utils.js";
 import { MapBrowser } from "../apps/sharing.js";
+import { registerQualitySettings } from "../vfx/quality.js";
 
 const settingCache = {};
 
@@ -611,15 +612,7 @@ export function registerSettings() {
             onChange: () => game.Levels3DPreview.UTILS.debouncedReload(),
         });
 
-        game.settings.register("levels-3d-preview", "enableEffects", {
-            name: game.i18n.localize("levels3dpreview.settings.enableEffects.name"),
-            hint: game.i18n.localize("levels3dpreview.settings.enableEffects.hint"),
-            scope: "client",
-            config: true,
-            type: Boolean,
-            default: true,
-            onChange: () => game.Levels3DPreview.UTILS.debouncedReload(),
-        });
+        registerQualitySettings();
 
         game.settings.register("levels-3d-preview", "softShadows", {
             name: game.i18n.localize("levels3dpreview.settings.softShadows.name"),
@@ -629,7 +622,7 @@ export function registerSettings() {
             type: Boolean,
             default: true,
             onChange: (value) => {
-                game.Levels3DPreview.renderer.shadowMap.type = value ? game.Levels3DPreview.THREE.PCFSoftShadowMap : game.Levels3DPreview.THREE.PCFShadowMap;
+                game.Levels3DPreview.renderer.shadowMap.type = value ? game.Levels3DPreview.THREE.VSMShadowMap : game.Levels3DPreview.THREE.PCFShadowMap;
             },
         });
 

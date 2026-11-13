@@ -481,6 +481,10 @@
             "sunTilt": {
                 "label": "Sun Tilt"
             },
+            "sunShadows": {
+                "label": "Sun Shadows",
+                "notes": "Let the sun cast shadows in this scene. Turning it off removes the sun shadow pass, which can save a lot of draw calls on large scenes."
+            },
             "sunIntensity": {
                 "label": "Sun Intensity"
             },
@@ -1577,6 +1581,20 @@
             "mist": "Mist",
             "mist2": "Mist 2",
             "gravitywell": "Gravity Well",
+            "candle": "Candle",
+            "lantern": "Lantern",
+            "brazier": "Brazier",
+            "campfire": "Campfire",
+            "forge": "Forge",
+            "steam": "Steam",
+            "waterfallmist": "Waterfall Mist",
+            "fireflies": "Fireflies",
+            "portal": "Portal",
+            "auraflame": "Aura: Flame",
+            "aurafrost": "Aura: Frost",
+            "auraholy": "Aura: Holy",
+            "aurashadow": "Aura: Shadow",
+            "aurashield": "Aura: Shield Bubble",
             "optgroup": "Directional (Requires Emission Angle)",
             "directionalfire": "Flamethrower",
             "directionalshock": "Electric Burst",
@@ -1610,7 +1628,93 @@
             "thrustswing": "Swing/Thrust (3D Object)",
             "starburst": "Starburst",
             "lightning": "Lightning",
-            "castingsign": "Ritual"
+            "castingsign": "Ritual",
+            "contactspark": "Contact Spark",
+            "frostray": "Frost Ray",
+            "disintegrate": "Disintegrate",
+            "tether": "Tether",
+            "chainlightning": "Chain Lightning",
+            "skypillar": "Sky Pillar",
+            "icenova": "Ice Nova",
+            "thunderwave": "Thunderwave",
+            "healburst": "Heal Burst",
+            "smite": "Smite",
+            "teleport": "Teleport",
+            "summon": "Summon",
+            "shatter": "Shatter",
+            "dagger": "Thrown Dagger",
+            "flask": "Flask",
+            "boulder": "Boulder",
+            "fireball": "Fireball",
+            "icelance": "Ice Lance",
+            "acidglob": "Acid Glob",
+            "missilevolley": "Missile Volley",
+            "meteor": "Meteor",
+            "hitpuff": "Hit Puff",
+            "iceshatter": "Ice Shatter",
+            "splash": "Splash",
+            "flaskshatter": "Flask Shatter",
+            "rockimpact": "Rock Impact",
+            "meteorimpact": "Meteor Impact"
+        },
+        "vfx": {
+            "settings": {
+                "effectsQuality": {
+                    "name": "Effects Quality",
+                    "hint": "Quality of particle, weather and light effects. Higher tiers add more particles, soft particles and distortion. Off disables effects entirely.",
+                    "choices": {
+                        "off": "Off",
+                        "low": "Low",
+                        "medium": "Medium",
+                        "high": "High",
+                        "ultra": "Ultra"
+                    }
+                },
+                "reduceMotion": {
+                    "name": "Reduce Flashing and Shake",
+                    "hint": "Disable camera shake and tone down screen flashes caused by effects."
+                }
+            }
+        },
+        "weather": {
+            "preset": "Weather",
+            "presetNotes": "Precipitation, wind, fog, clouds and lightning. Changes blend in over a few seconds. Custom uses the particle settings below.",
+            "layer2": "Additional Weather",
+            "intensity": "Intensity",
+            "windDirection": "Wind Direction",
+            "windSpeed": "Wind Strength",
+            "gustiness": "Gustiness",
+            "fog": "Fog",
+            "lightning": "Lightning",
+            "linkSky": "Link Sky and Light",
+            "linkSkyNotes": "Clouds cover the dynamic sky and dim the sun and exposure.",
+            "presets": {
+                "none": "None",
+                "overcast": "Overcast",
+                "drizzle": "Drizzle",
+                "rain": "Rain",
+                "heavyrain": "Heavy Rain",
+                "thunderstorm": "Thunderstorm",
+                "snow": "Snow",
+                "blizzard": "Blizzard",
+                "hail": "Hail",
+                "fog": "Fog",
+                "mist": "Mist",
+                "sand": "Blowing Sand",
+                "sandstorm": "Sandstorm",
+                "ashfall": "Ashfall",
+                "leaves": "Leaves",
+                "petals": "Petals",
+                "embers": "Embers",
+                "fireflies": "Fireflies",
+                "mysteriouslights": "Mysterious Lights",
+                "stars": "Stars",
+                "starfall": "Starfall",
+                "dust": "Dust",
+                "smoke": "Smoke",
+                "toxic": "Toxic Fumes",
+                "custom": "Custom"
+            }
         },
         "macrodialog": {
             "title": "Export Particle Effect",
@@ -1656,7 +1760,54 @@
                 "resolution": "With current settings, 3D Canvas will run at a {resolution} resolution.",
                 "resolutionTooltip": "Using 3D Canvas at a high resolution can be very demanding on lower end hardware, especially when running above 2K resolution. If you experience performance issues, try lowering the resolution."
             },
-            "notification": "3D Canvas: Performance Mode set to {performancemode}."
+            "notification": "3D Canvas: Performance Mode set to {performancemode}.",
+            "report": {
+                "title": "3D Canvas | Scene Report",
+                "grade": "Performance Grade | {grade}",
+                "realBad": "Real Bad",
+                "property": "Property",
+                "value": "Value",
+                "copy": "Copy to Clipboard",
+                "close": "Close",
+                "estimateHint": "CPU and GPU columns are estimated shares of the scene's total cost, computed from draw calls, render passes, triangles, textures and materials. They are not measured frame times.",
+                "summary": "Summary",
+                "offenders": "Offenders",
+                "worstOffenders": "Worst Offenders",
+                "byAsset": "By Asset",
+                "object": "Object",
+                "asset": "Asset",
+                "count": "Count",
+                "notes": "Notes",
+                "reasons": "Reasons",
+                "cpuReasons": "CPU Reasons",
+                "gpuReasons": "GPU Reasons",
+                "jump": "Select and focus the camera",
+                "jumpGroup": "Select and focus the camera (click again for the next copy)",
+                "other": "Unattributed: {name}",
+                "sunShadow": "Sun shadow",
+                "lightShadow": "Light shadow",
+                "notInstanced": "{count} copies, not instanced",
+                "cpu": {
+                    "drawCalls": "{count} draw calls",
+                    "passes": "×{count} passes (shadows)",
+                    "materials": "{count} materials",
+                    "animated": "animated",
+                    "skinned": "{count} skinned meshes ({bones} bones)",
+                    "objects": "{count} objects",
+                    "transparent": "{count} transparent (sorted)",
+                    "shadowLight": "{faces} shadow faces × {draws} draw calls"
+                },
+                "gpu": {
+                    "triangles": "{count} triangles",
+                    "trianglePasses": "{count} triangles incl. shadow passes",
+                    "textures": "{mb} MB textures",
+                    "coverage": "covers ~{percent}% of the scene",
+                    "physical": "physical material",
+                    "transmission": "transmission material",
+                    "overdraw": "large transparent surface (overdraw)",
+                    "lights": "lit by {count} lights"
+                }
+            }
         },
         "tileEditor": {
             "controlsReference": {
@@ -2460,6 +2611,86 @@
                     "title": "Painting: Freehand",
                     "content": "While the 'Select' tool is enabled, Hold Shift, then click and drag to place assets on the scene."
                 }
+            }
+        },
+        "lightFx": {
+            "header": {
+                "title": "3D Light Effects",
+                "notes": "Glow, light shafts and one-click presets. A preset sets the light color, radius, animation and the attached particle effect together."
+            },
+            "presets": {
+                "label": "Presets",
+                "candle": "Candle",
+                "torch": "Torch",
+                "campfire": "Campfire",
+                "brazier": "Brazier",
+                "lantern": "Lantern",
+                "crystal": "Crystal"
+            },
+            "lightHalo": {
+                "label": "Glow Halo",
+                "notes": "Draws a soft glow at the light source. It is hidden when something blocks the view of the source."
+            },
+            "lightHaloScale": {
+                "label": "Halo Size"
+            },
+            "lightShaft": {
+                "label": "Light Shaft",
+                "notes": "Spotlights only (angle below 360). Draws a visible beam of light with floating dust, useful for windows and lamps."
+            },
+            "lightShaftIntensity": {
+                "label": "Shaft Intensity"
+            },
+            "lightShaftMotes": {
+                "label": "Dust Motes"
+            }
+        },
+        "regionFx": {
+            "shaders": "Shaders",
+            "legend": "3D Region Effect",
+            "theme": {
+                "label": "Effect Theme",
+                "hint": "How the region looks in 3D. Automatic picks a theme from the spell or ability that created the region, then from the region name, and falls back to a plain marker in the region color.",
+                "auto": "Automatic"
+            },
+            "themes": {
+                "plain": "Plain",
+                "fire": "Fire",
+                "cold": "Cold",
+                "acid": "Acid",
+                "lightning": "Lightning",
+                "thunder": "Thunder",
+                "poison": "Poison",
+                "necrotic": "Necrotic",
+                "radiant": "Radiant",
+                "force": "Force",
+                "psychic": "Psychic",
+                "healing": "Healing",
+                "physical": "Physical",
+                "fog": "Fog",
+                "darkness": "Darkness",
+                "smoke": "Smoke",
+                "water": "Water",
+                "web": "Web",
+                "vines": "Vines",
+                "wind": "Wind",
+                "arcane": "Arcane"
+            },
+            "color": {
+                "label": "Effect Color",
+                "hint": "Overrides the theme color. Leave empty to use the theme color."
+            },
+            "intensity": {
+                "label": "Intensity"
+            },
+            "particles": {
+                "label": "Particles"
+            },
+            "weatherZone": {
+                "label": "Weather Zone",
+                "hint": "Shelter: no precipitation or splashes inside this region.",
+                "none": "None",
+                "shelter": "Shelter"
             }
         },
         "mergeTiles": {

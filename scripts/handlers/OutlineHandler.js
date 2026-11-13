@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { OutlinePass } from "three/addons/postprocessing/OutlinePass.js";
+import { VFX_LAYER } from "../vfx/constants.js";
 
 export class OutlineHandler {
     constructor(_parent) {
@@ -34,6 +35,22 @@ export class OutlineHandler {
         this.composer.addPass(this.controlledOutline);
         this.hoveredOutline = new OutlinePass(this.renderer.getSize(new THREE.Vector2()), this.scene, this.camera);
         this.composer.addPass(this.hoveredOutline);
+        for (const pass of [this.controlledOutline, this.hoveredOutline]) this.excludeEffects(pass);
+    }
+
+    excludeEffects(pass) {
+        const render = pass.render;
+        pass.render = (...args) => {
+            if (!pass.selectedObjects.length) return render.apply(pass, args);
+            const layers = pass.renderCamera.layers;
+            const mask = layers.mask;
+            layers.disable(VFX_LAYER);
+            try {
+                render.apply(pass, args);
+            } finally {
+                layers.mask = mask;
+            }
+        };
     }
 
     toggleControlled(object, controlled) {

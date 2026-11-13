@@ -726,19 +726,17 @@ export class Ray3D extends Shape3D {
     }
 
     containsPoint(point) {
-        if (Math.abs(point.y - this.origin.y) > this.height / 2) return false;
+        if (point.y < this.elevationBottom || point.y > this.elevationBottom + this.height) return false;
 
         const p2d = new THREE.Vector3(point.x, 0, point.z);
-        const start2d = new THREE.Vector3(this.origin.x, 0, this.origin.z);
-        const end2d = new THREE.Vector3(this.destination.x, 0, this.destination.z);
+        const start2d = new THREE.Vector3(this.shape.x / factor, 0, this.shape.y / factor);
+        const end2d = new THREE.Vector3(2 * this.origin.x - start2d.x, 0, 2 * this.origin.z - start2d.z);
 
         const line = new THREE.Line3(start2d, end2d);
-        const closestPoint = new THREE.Vector3();
+        const t = line.closestPointToPointParameter(p2d, false);
+        if (t < 0 || t > 1) return false;
 
-        line.closestPointToPoint(p2d, true, closestPoint);
-        const distance = p2d.distanceTo(closestPoint);
-
-        return distance <= this.width / 2;
+        return p2d.distanceTo(line.at(t, new THREE.Vector3())) <= this.width / 2;
     }
 }
 

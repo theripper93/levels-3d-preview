@@ -243,3 +243,46 @@
         display: inline-block;
     }
 }
+
+.levels-3d-preview-scene-report {
+    .window-content {
+        overflow: hidden;
+    }
+
+    .dialog-form {
+        height: 100%;
+        min-height: 0;
+    }
+
+    .dialog-content {
+        flex: 1;
+        min-width: 0;
+        min-height: 0;
+        overflow-y: auto;
+    }
+
+    .form-footer {
+        flex: none;
+    }
+
+    table {
+        table-layout: fixed;
+        width: 100%;
+        overflow-wrap: anywhere;
+    }
+
+    .tab:not(.active) {
+        display: none;
+    }
+
+    [data-tab="offenders"] table th:nth-child(n + 2):not(:nth-last-child(-n + 2)),
+    [data-tab="offenders"] table td:nth-child(n + 2):not(:nth-last-child(-n + 2)) {
+        width: 5em;
+        white-space: nowrap;
+    }
+
+    [data-tab="offenders"] table th:last-child,
+    [data-tab="offenders"] table td:last-child {
+        width: 4em;
+    }
+}
