@@ -1527,6 +1527,10 @@
                 "name": "Soft Shadows",
                 "hint": "Enable soft shadows at a minor cost in performance. Requires refresh."
             },
+            "mergeModelMeshes": {
+                "name": "Merge Model Meshes (Experimental)",
+                "hint": "Combine model parts that share a material to reduce draw calls. Requires refresh."
+            },
             "resolution": {
                 "name": "Resolution",
                 "hint": "The resolution of the 3D canvas, this will affect performance.",

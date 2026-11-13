@@ -1253,7 +1253,7 @@ export class Tile3D {
         this.instancedBBSize = new THREE.Vector3(avgWidth, avgDepth, avgHeight);
 
         for (const obj of objectsToInstanciate) {
-            obj.geometry.computeBoundingBox();
+            if (!obj.geometry.boundingBox) obj.geometry.computeBoundingBox();
             const objBB = obj.geometry.boundingBox;
             const geoSizeY = objBB.max.y - objBB.min.y;
             const instancedMesh = new THREE.InstancedMesh(obj.geometry, obj.material, maxInstances);
@@ -1386,7 +1386,7 @@ export class Tile3D {
         this.instancedBBSize = new THREE.Vector3(avgWidth, avgDepth, avgHeight);
 
         for (const obj of objectsToInstanciate) {
-            obj.geometry.computeBoundingBox();
+            if (!obj.geometry.boundingBox) obj.geometry.computeBoundingBox();
             const objBB = obj.geometry.boundingBox;
             const geoSizeY = objBB.max.y - objBB.min.y;
             const instancedMesh = new THREE.InstancedMesh(obj.geometry, obj.material, count);

@@ -2,7 +2,7 @@ import * as THREE from "three";
 import { factor } from "../main.js";
 import { Ruler3D } from "../systems/ruler3d.js";
 import { posCanvasTo3d } from "./coords3d.js";
-import { mergeVertices } from "three/addons/utils/BufferGeometryUtils.js";
+import { mergeVertices, mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { setPerformancePreset, injectPresetButtons } from "../settings/performancePresets.js";
 import { SimplifyModifier } from "three/addons/modifiers/SimplifyModifier.js";
 import { showSceneReport, showPerformanceDialog } from "../settings/performanceReport.js";
@@ -10,6 +10,9 @@ import { Ping } from "../entities/effects/ping.js";
 import {Socket} from "../lib/socket.js";
 
 const simplify = new SimplifyModifier();
+
+const MERGE_PROTECTED = new Set(["base", "eyeL", "eyeR", "portrait-target", "sightMesh"]);
+const MATERIAL_MAPS = ["map", "normalMap", "roughnessMap", "metalnessMap", "aoMap", "emissiveMap", "alphaMap", "bumpMap", "displacementMap", "lightMap", "specularMap", "envMap", "clearcoatMap", "clearcoatNormalMap", "clearcoatRoughnessMap", "sheenColorMap", "sheenRoughnessMap", "transmissionMap", "thicknessMap", "specularIntensityMap", "specularColorMap", "iridescenceMap", "anisotropyMap", "matcap", "gradientMap"];
 
 const sightMeshMaterial = new THREE.MeshBasicMaterial({
     color: 0xffffff,
@@ -233,7 +236,10 @@ export class Helpers {
         if (extension.startsWith("[heroforge]") || modelPath.includes("heroforge")) this.convertMaterials(output.model);
         this.simplifyGeometry(output.model);
         if (isSkinned) return { output, isSkinned: true };
-        if (!output?.object?.animations?.length) this.applyTransforms(output.model);
+        if (!output?.object?.animations?.length) {
+            this.applyTransforms(output.model);
+            if (game.settings.get("levels-3d-preview", "mergeModelMeshes")) this.mergeMeshes(output.model);
+        }
         this.modelCache[modelPath] = output;
         THREE.Cache.remove(filePath);
         return { output, isSkinned: false };
@@ -280,6 +286,77 @@ export class Helpers {
             child.updateMatrix(true);
             child.updateMatrixWorld(true);
         }
+    }
+
+    mergeMeshes(model) {
+        const groups = new Map();
+        let meshCount = 0;
+        model.updateMatrixWorld(true);
+        const toRoot = new THREE.Matrix4().copy(model.matrixWorld).invert();
+        model.traverse((child) => {
+            if (!child.isMesh) return;
+            meshCount++;
+            if (!this.isMergeable(child)) return;
+            const matrix = new THREE.Matrix4().multiplyMatrices(toRoot, child.matrixWorld);
+            if (matrix.determinant() <= 0) return;
+            const key = `${this.materialKey(child.material)}|${this.attributeKey(child.geometry)}|${child.castShadow}|${child.receiveShadow}`;
+            if (!groups.has(key)) groups.set(key, []);
+            groups.get(key).push({ mesh: child, matrix });
+        });
+        let merged = 0;
+        for (const entries of groups.values()) {
+            if (entries.length < 2) continue;
+            const looseBox = new THREE.Box3();
+            const geometries = entries.map(({ mesh, matrix }) => {
+                if (!mesh.geometry.boundingBox) mesh.geometry.computeBoundingBox();
+                looseBox.union(mesh.geometry.boundingBox.clone().applyMatrix4(matrix));
+                const geometry = mesh.geometry.clone().applyMatrix4(matrix);
+                if (!geometry.index) geometry.setIndex([...Array(geometry.attributes.position.count).keys()]);
+                geometry.clearGroups();
+                return geometry;
+            });
+            const geometry = mergeGeometries(geometries);
+            geometries.forEach((g) => g.dispose());
+            if (!geometry) continue;
+            geometry.boundingBox = looseBox;
+            const source = entries[0].mesh;
+            const mesh = new THREE.Mesh(geometry, source.material);
+            mesh.name = source.name;
+            mesh.castShadow = source.castShadow;
+            mesh.receiveShadow = source.receiveShadow;
+            mesh.customDepthMaterial = source.customDepthMaterial;
+            for (const { mesh: original } of entries) original.removeFromParent();
+            model.add(mesh);
+            merged += entries.length - 1;
+        }
+        if (merged) console.log(`3D Canvas | Merged Meshes: ${meshCount} -> ${meshCount - merged}`);
+    }
+
+    isMergeable(mesh) {
+        const { material, geometry } = mesh;
+        if (!material || Array.isArray(material) || mesh.isSkinnedMesh || mesh.isInstancedMesh || mesh.isBatchedMesh) return false;
+        if (material.transparent || material.name === "effect" || MERGE_PROTECTED.has(mesh.name)) return false;
+        if (Object.keys(geometry.morphAttributes).length || geometry.groups.length > 1) return false;
+        if (Object.values(geometry.attributes).some((attribute) => attribute.isInterleavedBufferAttribute)) return false;
+        return !!geometry.attributes.position;
+    }
+
+    materialKey(material) {
+        const texture = (t) => (t ? `${t.source?.uuid ?? t.uuid}:${t.offset.x},${t.offset.y}:${t.repeat.x},${t.repeat.y}:${t.rotation}:${t.channel}:${t.wrapS}:${t.wrapT}:${t.flipY}:${t.colorSpace}` : "");
+        const values = [material.type, material.side, material.alphaTest, material.opacity, material.vertexColors, material.flatShading, material.wireframe, material.depthWrite, material.depthTest, material.blending];
+        for (const key of ["color", "emissive", "specularColor", "sheenColor", "attenuationColor"]) values.push(material[key]?.getHexString?.() ?? "");
+        for (const key of ["roughness", "metalness", "emissiveIntensity", "aoMapIntensity", "envMapIntensity", "bumpScale", "displacementScale", "clearcoat", "transmission", "ior", "sheen", "specularIntensity"]) values.push(material[key] ?? "");
+        values.push(material.normalScale ? `${material.normalScale.x},${material.normalScale.y}` : "");
+        for (const key of MATERIAL_MAPS) values.push(texture(material[key]));
+        if (material.isShaderMaterial || material.onBeforeCompile?.toString() !== THREE.Material.prototype.onBeforeCompile.toString()) values.push(material.uuid);
+        return values.join("|");
+    }
+
+    attributeKey(geometry) {
+        return Object.entries(geometry.attributes)
+            .map(([name, attribute]) => `${name}:${attribute.itemSize}:${attribute.normalized}:${attribute.array.constructor.name}:${!!attribute.isInterleavedBufferAttribute}`)
+            .sort()
+            .join(",");
     }
 
     getSightMesh(mesh, complexity = 1) {

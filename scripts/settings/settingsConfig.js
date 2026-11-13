@@ -626,6 +626,16 @@ export function registerSettings() {
             },
         });
 
+        game.settings.register("levels-3d-preview", "mergeModelMeshes", {
+            name: game.i18n.localize("levels3dpreview.settings.mergeModelMeshes.name"),
+            hint: game.i18n.localize("levels3dpreview.settings.mergeModelMeshes.hint"),
+            scope: "world",
+            config: true,
+            type: Boolean,
+            default: false,
+            requiresReload: true,
+        });
+
         game.settings.register("levels-3d-preview", "shadowQuality", {
             name: game.i18n.localize("levels3dpreview.settings.shadowQuality.name"),
             hint: game.i18n.localize("levels3dpreview.settings.shadowQuality.hint"),
