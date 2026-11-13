@@ -8,6 +8,13 @@ const FLASH_SUN = 6;
 const BASE_CLOUD_COVER = 0.2;
 const INERT_FOG_NEAR = 1e7;
 const INERT_FOG_FAR = 1e8;
+const INERT_FOG = "levels3dInertFog";
+
+export function createInertFog() {
+    const fog = new THREE.Fog(0xffffff, INERT_FOG_NEAR, INERT_FOG_FAR);
+    fog.name = INERT_FOG;
+    return fog;
+}
 const MAX_INTERVAL = 30;
 const MIN_INTERVAL = 3;
 const BOLT_CHANCE = 0.6;
@@ -78,7 +85,7 @@ export class Atmosphere {
         this.weather = weather;
         this._parent = weather._parent;
         this.scene = weather.scene;
-        this.fog = new THREE.Fog(0xffffff, INERT_FOG_NEAR, INERT_FOG_FAR);
+        this.fog = this.scene.fog?.name === INERT_FOG ? this.scene.fog : createInertFog();
         if (!this.scene.fog) this.scene.fog = this.fog;
         this.fogColor = new THREE.Color();
         this.light = new THREE.Color();
@@ -252,7 +259,10 @@ export class Atmosphere {
         this.restoreHooks();
         this.horizon.geometry.dispose();
         this.horizon.material.dispose();
-        if (this.scene.fog === this.fog) this.scene.fog = null;
+        if (this.scene.fog === this.fog) {
+            this.fog.near = INERT_FOG_NEAR;
+            this.fog.far = INERT_FOG_FAR;
+        }
         const uniforms = this.sky?.clouds?.material?.uniforms;
         if (uniforms?.cloudsCover) {
             uniforms.cloudsCover.value = BASE_CLOUD_COVER;

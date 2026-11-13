@@ -863,6 +863,7 @@ class Levels3DPreview {
             this.scene.fog = new THREE.Fog(fogColor, 1, fogDistance);
             this.camera.far = fogDistance;
         } else {
+            this.scene.fog = vfx.weather.createInertFog();
             this.camera.far = 100;
         }
         this.camera.updateProjectionMatrix();
@@ -890,6 +891,22 @@ class Levels3DPreview {
         // Scene Levels are not supported yet.", { permanent: true });
     }
 
+    uploadTextures() {
+        const textures = new Set();
+        this.scene.traverse((object) => {
+            const materials = Array.isArray(object.material) ? object.material : [object.material];
+            for (const material of materials) {
+                if (!material) continue;
+                for (const value of Object.values(material)) if (value?.isTexture) textures.add(value);
+                for (const uniform of Object.values(material.uniforms ?? {})) if (uniform?.value?.isTexture) textures.add(uniform.value);
+            }
+        });
+        for (const texture of textures) {
+            if (!texture.image || texture.isRenderTargetTexture) continue;
+            this.renderer.initTexture(texture);
+        }
+    }
+
     setFog() {
         const enableFog = canvas.scene.getFlag("levels-3d-preview", "enableFog") ?? false;
         const fogColor = canvas.scene.getFlag("levels-3d-preview", "fogColor") ?? "#000000";
@@ -900,7 +917,7 @@ class Levels3DPreview {
             this.camera.far = fogDistance;
         } else {
             this.scene.background = this._sceneBackground || new THREE.Color(canvas.level.background.color ?? 0xffffff);
-            this.scene.fog = null;
+            this.scene.fog = this.weather?.atmosphere?.fog ?? vfx.weather.createInertFog();
             this.camera.far = 100;
         }
         this.camera.updateProjectionMatrix();
@@ -1738,6 +1755,7 @@ class Levels3DPreview {
                 this.interactionManager.forceSightCollisions();
                 this._progressText = game.i18n.localize("levels3dpreview.controls.loading.shaders");
                 this.renderer.compile(this.scene, this.camera);
+                this.uploadTextures();
                 this._ready = true;
                 this._firstFrame = true;
                 this.loadingTokens = {};
