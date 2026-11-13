@@ -51,6 +51,8 @@ export class BaseDirectionalEffect extends BaseParticleEffect {
         }
         if (object instanceof foundry.canvas.placeables.AmbientLight) {
             const light3d = game.Levels3DPreview.lights.sceneLights[object.id];
+            this._target = light3d.mesh.getWorldPosition(new THREE.Vector3());
+            this._emitterRadius = this.params.emitterSize;
             this._coneEmitterAngle = light3d.light3d.angle ?? Math.PI / 3;
             this._objectRadius = light3d.light3d.distance;
             return light3d.light3d.target?.position.clone() ?? null;

@@ -114,6 +114,7 @@ export class EarthExplosion extends StagedBurst {
                 startColor: new QUARKS.ConstantColor(new THREE.Vector4(1, 1, 1, 1)),
                 startRotation: new QUARKS.EulerGenerator(new QUARKS.IntervalValue(-Math.PI, Math.PI), new QUARKS.IntervalValue(0, Math.PI * 2), new QUARKS.ConstantValue(0)),
                 worldSpace: true,
+                emissionOverTime: new QUARKS.ConstantValue(0),
                 emissionBursts: [{ time: 0, count, cycle: 1, interval: 0.01, probability: 1 }],
                 shape: new QUARKS.ConeEmitter({ radius: s * 0.3, angle: Math.PI / 5 }),
                 material: mesh.material,
@@ -252,7 +253,7 @@ export class SlashParticle extends StagedBurst {
         await this.add(
             flash(this, { sprite: "star_07", size: s * 2.4, life: 0.2, delay: 0.08, position: hit }),
             flash(this, { sprite: "emberssmall", size: s * 3, life: 0.3, delay: 0.08, position: hit, color: ["glow", "start", 0.6, 0] }),
-            sparks(this, { burst: this.params.rate.particles * 2, delay: 0.08, direction: tangent.lerp(UP, 0.25), position: hit, size: [s * 0.04, s * 0.09], speed: [s * 3, s * 8], life: [0.25, 0.55], shape: { type: "cone", radius: s * 0.05, angle: Math.PI / 4 } }),
+            sparks(this, { burst: Math.min(this.params.rate.particles, 6), delay: 0.08, direction: tangent.lerp(UP, 0.25), position: hit, size: [s * 0.04, s * 0.09], speed: [s * 3, s * 8], life: [0.25, 0.55], shape: { type: "cone", radius: s * 0.05, angle: Math.PI / 4 } }),
         );
         this.shake(0.2, 0.2);
     }
@@ -336,7 +337,7 @@ export class CastingSign extends StagedBurst {
         this.total = this._duration;
         const rate = this.params.rate.particles;
         await this.add(
-            createLayer(this, { sprite: "emberssmall", rate: rate * 2, life: [0.5, 1], size: [s * 0.02, s * 0.05], speed: [s * 0.2, s * 0.6], shape: { type: "circle", radius: s * 0.45 }, aim: "up", force: [0, s * 0.6, 0], color: [[0, "spark", 0], [0.2, "spark", 1], [1, "glow", 0]], sizeOverLife: "shrink", order: ORDER.sparks }),
+            createLayer(this, { sprite: "emberssmall", rate: Math.min(rate, 10) * 0.5, life: [0.5, 1], size: [s * 0.02, s * 0.05], speed: [s * 0.2, s * 0.6], shape: { type: "circle", radius: s * 0.45 }, aim: "up", force: [0, s * 0.6, 0], color: [[0, "spark", 0], [0.2, "spark", 1], [1, "glow", 0]], sizeOverLife: "shrink", order: ORDER.sparks }),
             groundRing(this, { sprite: "circle_02", size: s * 1.2, life: 0.45, position: [0, s * 0.04, 0], sizeOverLife: [0.6, 1, 1, 1.05], color: ["white", "glow", 0.8, 0] }),
         );
         groundGlow(this, { position: new THREE.Vector3(0, s * 0.02, 0), size: s * 1.5, depth: s * 1.2, color: this.palette.glow, opacity: 0.8, life: this._duration, fadeIn: Math.min(0.2, this._duration * 0.3), fadeOut: Math.min(0.3, this._duration * 0.4) });
@@ -382,6 +383,7 @@ export class JB2AExplosion extends StagedBurst {
                 startColor: new QUARKS.ConstantColor(new THREE.Vector4(1, 1, 1, 1)),
                 startRotation: new QUARKS.IntervalValue(0, Math.PI * 2),
                 worldSpace: false,
+                emissionOverTime: new QUARKS.ConstantValue(0),
                 emissionBursts: [{ time: 0.01, count: 1, cycle: 1, interval: 0, probability: 1 }],
                 shape: new QUARKS.PointEmitter(),
                 material,

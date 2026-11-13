@@ -3,7 +3,7 @@ import { factor } from "../main.js";
 import { DiagonalStripesMaterial } from "../shaders/regionMaterial.js";
 import { Shape3D } from "./shape3d.js";
 import { ObscureVisionConfig, ObscureVisionRegionBehaviorType } from "../apps/obscureVisionRegionBehavior.js";
-import { RegionEffect, hitboxMaterial, resolveRegionFx } from "../vfx/region/index.js";
+import { RegionEffect, THEMES, hitboxMaterial, resolveRegionFx } from "../vfx/region/index.js";
 
 export class Region3D extends THREE.Object3D {
     constructor(region, hidden = false) {
@@ -26,7 +26,7 @@ export class Region3D extends THREE.Object3D {
         } else {
             this.drawShapes(this.hasShaders);
         }
-        if (this.region?.object?.isVisible === false) return;
+        if (!Region3D.isVisible(region)) return;
         if (hidden) return;
         const box = new THREE.Box3().setFromObject(this).getSize(new THREE.Vector3());
         this.bb = {
@@ -195,7 +195,7 @@ export class Region3D extends THREE.Object3D {
                 !!region.object?.isPreview,
                 region.behaviors?.map((b) => [b.id, b.type, b.disabled]) ?? [],
                 region.restriction?.enabled ?? false,
-                region.object?.isVisible !== false,
+                Region3D.isVisible(region),
                 !!hidden,
                 game.settings.get("levels-3d-preview", "regionsAlwaysFlat"),
             ]);
@@ -203,6 +203,16 @@ export class Region3D extends THREE.Object3D {
             // If anything can't be serialized, force a rebuild.
             return Symbol("unserializable");
         }
+    }
+
+    static isVisible(region) {
+        const object = region.object;
+        if (!object || object.isVisible) return true;
+        const theme = region.getFlag("levels-3d-preview", "regionFx")?.theme;
+        if (!THEMES[theme] || theme === "plain" || object.hasPreview || object.isFilteredOut) return false;
+        if (region.hidden && !game.user.isGM) return false;
+        const V = CONST.REGION_VISIBILITY;
+        return region.visibility === V.LAYER || region.visibility === V.LAYER_UNLOCKED;
     }
 
     static update(region, hidden) {

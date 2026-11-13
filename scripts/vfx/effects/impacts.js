@@ -18,6 +18,7 @@ class ImpactEffect extends BurstEffect {
 
 export class ContactSpark extends ImpactEffect {
     async build() {
+        if (this.params.subtle) return this.buildSubtle();
         const s = this.params.scale.start;
         this._duration = Math.max(this._duration, 0.4);
         await this.add(
@@ -37,17 +38,29 @@ export class ContactSpark extends ImpactEffect {
         );
         this.emitLight({ intensity: effectLightIntensity(1), distance: s * 5, duration: 0.18, curve: "flash" });
     }
+
+    async buildSubtle() {
+        const s = this.params.scale.start;
+        this._duration = Math.max(this._duration, 0.3);
+        await this.add(
+            flash(this, { sprite: "star_06", size: s * 1.1, life: 0.12, color: [[0, "white", 0.6, 1.2], [0.4, "core", 0.5], [1, "glow", 0]] }),
+            glow(this, { sprite: "emberssmall", size: s * 1.2, life: 0.2, rate: 0, burst: 1, sizeOverLife: "pop", color: ["glow", "end", 0.45, 0] }),
+            sparks(this, { direction: this.bounce, burst: 4, size: [s * 0.05, s * 0.09], speed: [s * 1, s * 2.5], life: [0.15, 0.3], stretch: 0.04, shape: { type: "cone", radius: s * 0.05, angle: Math.PI / 4 }, color: [[0, "spark", 0.8], [0.6, "end", 0.5], [1, "edge", 0]] }),
+        );
+        this.emitLight({ intensity: effectLightIntensity(0.4), distance: s * 3, duration: 0.12, curve: "flash" });
+    }
 }
 
 export class HitPuff extends ImpactEffect {
     async build() {
         const s = this.params.scale.start;
+        const subtle = this.params.subtle;
         this._duration = Math.max(this._duration, 0.4);
         await this.add(
-            flash(this, { sprite: "star_08", size: s * 1.1, life: 0.1, color: ["white", "spark", 0.7, 0] }),
-            smokePuff(this, { direction: this.bounce, rate: 0, burst: 4, life: [0.5, 0.9], size: [s * 0.25, s * 0.45], speed: [s * 0.4, s * 0.9], speedOverLife: [1, 0.3, 0.1, 0], force: [0, s * 0.2, 0], shape: { type: "cone", radius: s * 0.05, angle: Math.PI / 4 }, color: [[0, "ash", 0], [0.15, "ash", 0.45], [1, "ash", 0]] }),
-            debris(this, { direction: this.bounce, aim: undefined, burst: 6, size: [s * 0.04, s * 0.08], speed: [s * 1, s * 2.5], life: [0.4, 0.7], gravity: s * 12, color: [[0, "ash", 1], [0.7, "ash", 1], [1, "ash", 0]] }),
-            sparks(this, { direction: this.bounce, burst: 5, size: [s * 0.05, s * 0.1], speed: [s * 1.5, s * 3], life: [0.15, 0.3] }),
+            flash(this, { sprite: "star_08", size: s * (subtle ? 0.7 : 1.1), life: 0.1, color: ["white", "spark", subtle ? 0.4 : 0.7, 0] }),
+            smokePuff(this, { direction: this.bounce, rate: 0, burst: subtle ? 3 : 4, life: [0.5, 0.9], size: [s * 0.25, s * 0.45], speed: [s * 0.4, s * 0.9], speedOverLife: [1, 0.3, 0.1, 0], force: [0, s * 0.2, 0], shape: { type: "cone", radius: s * 0.05, angle: Math.PI / 4 }, color: [[0, "ash", 0], [0.15, "ash", 0.45], [1, "ash", 0]] }),
+            debris(this, { direction: this.bounce, aim: undefined, burst: subtle ? 3 : 6, size: [s * 0.04, s * 0.08], speed: [s * 1, s * 2.5], life: [0.4, 0.7], gravity: s * 12, color: [[0, "ash", 1], [0.7, "ash", 1], [1, "ash", 0]] }),
+            subtle ? null : sparks(this, { direction: this.bounce, burst: 5, size: [s * 0.05, s * 0.1], speed: [s * 1.5, s * 3], life: [0.15, 0.3] }),
         );
     }
 }

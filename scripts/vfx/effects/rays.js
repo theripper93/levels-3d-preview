@@ -70,7 +70,7 @@ export class EnergyRay extends RayParticle {
             life,
             size: [s * 0.08, s * 0.16],
             speed: [this.length / life, (this.length / life) * 1.1],
-            rate: this.params.rate.particles * 2,
+            rate: Math.min(this.params.rate.particles * 2, 40),
             direction: this.direction,
             shape: { type: "cone", radius: s * 0.12, angle: 0.01 },
             color: [
@@ -87,7 +87,7 @@ export class EnergyRay extends RayParticle {
 
     async build() {
         const s = this.params.scale.start;
-        const { start: alpha } = this.params.alpha;
+        const alpha = (this.params.alpha.start + this.params.alpha.end) / 2;
         const p = this.palette;
         this.addBeam({ core: p.core, glow: p.glow, width: s * 0.35, coreWidth: 0.4, glowPower: 1.5, noise: 0.35, scroll: 4, opacity: alpha, intensity: 1.1 });
         this.addBeam({ core: p.glow, glow: p.start, width: s * 1.1, coreWidth: 0.15, glowPower: 2.2, noise: 0.75, scroll: 2.5, opacity: 0.8 * alpha, wobble: s * 0.03 });
@@ -114,7 +114,7 @@ export class EnergyRay extends RayParticle {
         return [
             glow(this, { sprite: "emberssmall", size: s * 1.8, rate: 30, life: 0.2, color: ["glow", "start", 0.7, 0], delay: this.arrival }),
             glow(this, { sprite: "star_06", size: s * 1.6, rate: 14, life: 0.12, rotation: true, color: ["white", "core", 0.6, 0], delay: this.arrival }),
-            sparks(this, { burst: undefined, rate: this.params.rate.particles * 2, direction: back, size: [s * 0.05, s * 0.1], speed: [s * 2, s * 5], force: this.userForce, delay: this.arrival }),
+            sparks(this, { burst: undefined, rate: Math.min(this.params.rate.particles, 15) * 0.6, direction: back, size: [s * 0.05, s * 0.1], speed: [s * 2, s * 5], force: this.userForce, delay: this.arrival }),
         ];
     }
 

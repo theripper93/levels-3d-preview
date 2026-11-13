@@ -136,8 +136,12 @@ export class Light3D {
             light.document.x,
             light.document.y,
             light.document.elevation,
+            light.document.flags.levels?.rangeTop,
             this.dim,
             this.bright,
+            this.angle,
+            this.rotation,
+            tilt,
         ]);
         const particleChanged = particleSignature !== this._particleSignature;
         this._particleSignature = particleSignature;

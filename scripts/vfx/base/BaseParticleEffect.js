@@ -14,12 +14,31 @@ import { EffectLight } from "./effectLight.js";
 const raycaster = new THREE.Raycaster();
 const worldPosition = new THREE.Vector3();
 
+function isMissing(value) {
+    return value === undefined || value === null || Number.isNaN(value);
+}
+
+function withDefaults(defaults, params) {
+    const result = { ...defaults };
+    for (const [key, value] of Object.entries(params)) {
+        if (isMissing(value)) continue;
+        const fallback = defaults[key];
+        if (fallback?.constructor === Object && value?.constructor === Object) {
+            result[key] = { ...fallback };
+            for (const [subKey, subValue] of Object.entries(value)) if (!isMissing(subValue)) result[key][subKey] = subValue;
+        } else {
+            result[key] = value;
+        }
+    }
+    return result;
+}
+
 export class BaseParticleEffect {
     constructor(from, to, params) {
         this.from = from;
         this.to = to;
         this._missScale = 1;
-        this.params = { ...this.defaultSettings, ...params };
+        this.params = withDefaults(this.defaultSettings, params);
         this.setMeshSurface();
         this.autoSize();
         this.params.color.start = this.params.color.start.map((c) => new THREE.Color(c));
@@ -266,7 +285,7 @@ export class BaseParticleEffect {
         if (!type || !point) return;
         const scale = this.params.scale.start * this.constructor.IMPACT_SCALE;
         const direction = this._origin ? point.clone().sub(this._origin).normalize() : null;
-        const params = { type, id: this.params.id, scene: this.params.scene, color: { start: [...this.params.color.start], end: [...this.params.color.end] }, scale: { start: scale, end: 0 }, direction };
+        const params = { type, id: this.params.id, scene: this.params.scene, color: { start: [...this.params.color.start], end: [...this.params.color.end] }, scale: { start: scale, end: 0 }, direction, subtle: typeof impact !== "string" };
         if (duration) params.duration = duration;
         game.Levels3DPreview.particleSystem.effect(null, point.clone(), params);
     }
@@ -397,6 +416,7 @@ export class BaseParticleEffect {
             onCenter: false,
             coneAngle: 0,
             attach: false,
+            subtle: false,
         };
     }
 

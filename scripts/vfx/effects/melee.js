@@ -26,7 +26,7 @@ class MeleeStrike extends ProjectileParticle {
     constructor(...args) {
         super(...args);
         this.params.rotateTowards = true;
-        this._total = Math.max(this.params.duration, 0.8);
+        this._total = Math.clamp(1 / this._speed / this.constructor.HIT, 0.4, 1.5);
     }
 
     static get IMPACT_SCALE() {
@@ -108,7 +108,7 @@ class MeleeStrike extends ProjectileParticle {
 
     tipLayers(s) {
         return [
-            createLayer(this, { sprite: "emberssmall", rate: this.params.rate.particles * 2, life: [0.2, 0.45], size: [s * 0.03, s * 0.06], speed: [s * 0.2, s * 0.6], shape: { type: "sphere", radius: s * 0.04 }, gravity: s * 2, sizeOverLife: "shrink", color: [[0, "white", 1, 1.4], [0.4, "spark", 0.9], [1, "end", 0]], order: 8 }),
+            createLayer(this, { sprite: "emberssmall", rate: Math.min(this.params.rate.particles, 15) * 0.6, life: [0.2, 0.45], size: [s * 0.03, s * 0.06], speed: [s * 0.2, s * 0.6], shape: { type: "sphere", radius: s * 0.04 }, gravity: s * 2, sizeOverLife: "shrink", color: [[0, "white", 1, 1.4], [0.4, "spark", 0.9], [1, "end", 0]], order: 8 }),
         ];
     }
 
@@ -223,7 +223,7 @@ export class ObjectParticle extends Object3DParticle {
         inner.up.set(0, 1, 0);
         this.emitter.add(inner);
         this.emitter.position.copy(this._origin);
-        if (this.params.rotateTowards) return;
+        if (this.params.rotateTowards || this.isModel) return;
         const s = this.params.scale.start || this.params.scale.end;
         await this.add(ribbon(this, { size: s * 0.3, life: [0.15, 0.3], perDistance: this.params.rate.particles * 5, color: [[0, "white", 0.35], [0.3, "start", 0.25], [1, "end", 0]] }));
     }

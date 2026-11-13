@@ -2042,6 +2042,8 @@ export function registerConfigs() {
                 
                 scaleInput.value = defaultValues.scale;
                 emitSizeInput.value = defaultValues.emitterSize;
+                const enableInput = html.querySelector(`[name='flags.levels-3d-preview.enableParticle']`);
+                if (enableInput) enableInput.checked = true;
             } else {
                 firstChange = false;
             }
@@ -2051,7 +2053,7 @@ export function registerConfigs() {
 
         // const particleType = html.querySelector("select[name='flags.levels-3d-preview.ParticleType']");
         // particleType.dispatchEvent(new Event("change"));
-        html.querySelector("select[name='flags.levels-3d-preview.ParticleType']").dispatchEvent(new Event("change"));
+        html.querySelector("select[name='flags.levels-3d-preview.ParticleType']").dispatchEvent(new Event("change", { bubbles: true }));
         const color1 = html.querySelector("[name='flags.levels-3d-preview.ParticleColor'] input");
         const color2 = html.querySelector("[name='flags.levels-3d-preview.ParticleColor2'] input");
         const gradientPickerEl = GradientPicker.create(color1, color2);

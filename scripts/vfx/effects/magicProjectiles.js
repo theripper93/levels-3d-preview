@@ -6,7 +6,7 @@ import { registerEffects } from "../registry.js";
 import { ATLASES } from "../atlas.js";
 import { getTextureMaterial } from "../materials.js";
 import { ProjectileParticle } from "../base/ProjectileParticle.js";
-import { createLayer, flash, glow, ribbon, embers, sparks, smokePuff } from "../layers/index.js";
+import { createLayer, flash, glow, ribbon, embers, sparks, smokePuff, ORDER } from "../layers/index.js";
 import { SOOT, effectLightIntensity, groundMark, launchGroup, ballisticPath, useColorsIfDefault, loadRock, rockLayer, stopEmitting } from "./kit.js";
 
 const UP = new THREE.Vector3(0, 1, 0);
@@ -47,7 +47,7 @@ export class MagicProjectileBase extends ProjectileParticle {
         return [
             flash(this, { sprite: "star_06", size: s * 1.6, life: 0.14, color: [[0, "white", 0.9, 1.4], [0.4, "core", 0.7], [1, "glow", 0]] }),
             glow(this, { sprite: "emberssmall", size: s * 1.4, life: 0.25, rate: 0, burst: 1, sizeOverLife: "pop", color: ["glow", "end", 0.5, 0] }),
-            sparks(this, { burst: 8, size: [s * 0.04, s * 0.08], speed: [s * 1, s * 3], life: [0.2, 0.4], gravity: s * 2, shape: { type: "cone", radius: s * 0.05, angle: Math.PI / 4 } }),
+            sparks(this, { burst: 4, size: [s * 0.04, s * 0.08], speed: [s * 1, s * 3], life: [0.2, 0.4], gravity: s * 2, shape: { type: "cone", radius: s * 0.05, angle: Math.PI / 4 } }),
         ];
     }
 
@@ -57,15 +57,21 @@ export class MagicProjectileBase extends ProjectileParticle {
 }
 
 export class MagicProjectile extends MagicProjectileBase {
+    launchLayers(s) {
+        return super.launchLayers(s).slice(0, 2);
+    }
+
     bodyLayers(s) {
-        const density = this.params.rate.particles / 15;
         const { min, max } = this.params.life;
+        const { start: alpha, end: alphaEnd } = this.params.alpha;
+        const per = this.params.rate.particles;
+        const sprite = this.params.sprite;
         const force = this.userForce;
+        const radius = Math.max(0.0001, this.params.emitterSize);
+        const color = ["start", "end", alpha, alphaEnd];
         return [
-            glow(this, { sprite: this.params.sprite, size: s * 0.45, life: 0.08, rate: 40 * density, color: ["core", "glow", this.params.alpha.start, 0] }),
-            glow(this, { sprite: "emberssmall", size: s * 1.1, life: 0.1, rate: 20, color: ["glow", "end", 0.35 * this.params.alpha.start, 0] }),
-            ribbon(this, { sprite: this.params.sprite, size: s * 0.3, life: [min, max], perDistance: this.params.rate.particles * 5, force, color: ["glow", "end", this.params.alpha.start, this.params.alpha.end * 0.2] }),
-            embers(this, { rate: 0, perDistance: this.params.rate.particles * 6, life: [min * 2, max * 3], size: [s * 0.05, s * 0.1], speed: [s * 0.1, s * 0.4], shape: { type: "sphere", radius: s * 0.15 }, aim: 0, force, turbulence: { scale: s, strength: s * 0.5, speed: 1 } }),
+            ribbon(this, { sprite, size: s * 0.25, life: [min, max], perDistance: per * 5, force, color, sizeOverLife: "shrink" }),
+            createLayer(this, { sprite, life: [min * 3, max * 3], size: s * 0.12, speed: s * 0.35, perDistance: per * 50, force, shape: { type: "cone", radius, angle: Math.PI / 2 }, color, sizeOverLife: "shrink", order: ORDER.sparks }),
         ];
     }
 }
@@ -87,8 +93,6 @@ export class BlackDart extends MagicProjectileBase {
         const alpha = this.params.alpha.start;
         const force = this.userForce;
         return [
-            glow(this, { sprite: "emberssmall", size: s * 0.9, life: 0.1, rate: 24, color: ["glow", "end", 0.6 * alpha, 0] }),
-            glow(this, { sprite: "emberssmall", blend: "normal", lit: false, size: s * 0.35, life: 0.1, rate: 30, color: ["black", "black", 0.95, 0], order: 7 }),
             ribbon(this, { size: s * 0.3, life: [min, max], perDistance: this.params.rate.particles * 5, force, color: [[0, "glow", alpha], [0.5, "end", 0.6 * alpha], [1, "edge", 0]] }),
             ribbon(this, { blend: "normal", lit: false, size: s * 0.14, life: [min * 0.8, max * 0.8], perDistance: this.params.rate.particles * 5, force, color: [[0, "black", 0.9], [1, "black", 0]], order: 7 }),
             createLayer(this, { sprite: "smoke", blend: "normal", lit: false, perDistance: this.params.rate.particles * 2, life: [max, max * 2], size: [s * 0.15, s * 0.3], speed: [s * 0.05, s * 0.2], rotation: true, spin: [-1, 1], shape: { type: "sphere", radius: s * 0.08 }, sizeOverLife: "grow", force, color: [[0, "black", 0], [0.2, "black", 0.55], [1, "smoke", 0]] }),
@@ -126,7 +130,6 @@ export class MagicArrow extends MagicProjectileBase {
         const { min, max } = this.params.life;
         const alpha = this.params.alpha.start;
         return [
-            glow(this, { sprite: "emberssmall", size: s * 0.7, life: 0.1, rate: 20, color: ["glow", "end", 0.45 * alpha, 0] }),
             ribbon(this, { size: s * 0.12, life: [min, max], perDistance: this.params.rate.particles * 5, color: [[0, "core", alpha], [0.4, "glow", 0.7 * alpha], [1, "end", 0]] }),
             ribbon(this, { size: s * 0.3, life: [min * 0.6, max * 0.6], perDistance: this.params.rate.particles * 4, color: [[0, "glow", 0.35 * alpha], [1, "end", 0]] }),
             createLayer(this, { sprite: "star_04", perDistance: this.params.rate.particles * 4, life: [max, max * 2], size: [s * 0.08, s * 0.16], speed: [s * 0.05, s * 0.2], rotation: true, shape: { type: "sphere", radius: s * 0.08 }, sizeOverLife: "shrink", color: [[0, "white", 1, 1.4], [0.3, "spark", 0.9], [1, "end", 0]], order: 8 }),
@@ -187,8 +190,8 @@ export class RunicShot extends MagicProjectileBase {
         const delay = this._charge;
         return [
             flash(this, { sprite: "star_06", delay, size: s * 2, life: 0.16, color: [[0, "white", 1, 1.5], [0.4, "core", 0.8], [1, "glow", 0]] }),
-            sparks(this, { delay, burst: 12, size: [s * 0.05, s * 0.1], speed: [s * 1.5, s * 4], shape: { type: "cone", radius: s * 0.3, angle: Math.PI / 5 } }),
-            createLayer(this, { sprite: "emberssmall", world: false, rate: 40, life: 0.35, size: [s * 0.04, s * 0.08], speed: [-s * 2.4, -s * 1.6], shape: { type: "circle", radius: s * 0.65 }, color: [[0, "spark", 0], [0.3, "spark", 1, 1.4], [1, "core", 0.6]], sizeOverLife: "shrink", order: 8 }),
+            sparks(this, { delay, burst: 4, size: [s * 0.05, s * 0.1], speed: [s * 1.5, s * 4], shape: { type: "cone", radius: s * 0.3, angle: Math.PI / 5 } }),
+            createLayer(this, { sprite: "emberssmall", world: false, rate: 15, life: 0.35, size: [s * 0.04, s * 0.08], speed: [-s * 2.4, -s * 1.6], shape: { type: "circle", radius: s * 0.65 }, color: [[0, "spark", 0], [0.3, "spark", 1, 1.4], [1, "core", 0.6]], sizeOverLife: "shrink", order: 8 }),
             glow(this, { sprite: "emberssmall", size: s * 0.9, life: 0.2, rate: 12, color: ["core", "glow", 0.5, 0] }),
         ];
     }
@@ -202,9 +205,7 @@ export class RunicShot extends MagicProjectileBase {
         const alpha = this.params.alpha.start;
         const force = this.userForce;
         return [
-            glow(this, { sprite: "emberssmall", size: s * 0.5, life: 0.08, rate: 40, color: ["core", "glow", alpha, 0] }),
-            glow(this, { sprite: "emberssmall", size: s * 1.2, life: 0.1, rate: 20, color: ["glow", "end", 0.35 * alpha, 0] }),
-            ribbon(this, { sprite: "emberssmall", size: s * 0.35, life: [min, max], perDistance: this.params.rate.particles * 5, force, color: [[0, "core", alpha], [0.4, "glow", 0.8 * alpha], [1, "end", 0]] }),
+            ribbon(this, { sprite: "emberssmall", size: s * 0.25, life: [min, max], perDistance: this.params.rate.particles * 5, force, color: [[0, "core", alpha], [0.4, "glow", 0.8 * alpha], [1, "end", 0]] }),
             createLayer(this, { sprite: "spiral", perDistance: this.params.rate.particles * 0.6, life: [max * 0.8, max * 1.4], size: [s * 0.3, s * 0.5], rotation: true, spin: [-3, 3], sizeOverLife: "shrink", color: [[0, "core", 0.8 * alpha], [1, "end", 0]] }),
             embers(this, { rate: 0, perDistance: this.params.rate.particles * 5, life: [min * 2, max * 3], size: [s * 0.04, s * 0.08], speed: [s * 0.1, s * 0.4], shape: { type: "sphere", radius: s * 0.15 }, aim: 0, force }),
         ];

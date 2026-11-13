@@ -147,6 +147,7 @@ export class VortexParticle extends BasePresetEffect {
         const R = Math.max(this.params.emitterSize, s * 2);
         const I = this.intensity;
         const rate = Math.clamp(R * 120, 10, 60) * I;
+        const puff = Math.min(R, s * 10);
         this.applyLightOffset(0.1);
         const swirl = (spec) => ({
             world: false,
@@ -218,7 +219,7 @@ export class VortexParticle extends BasePresetEffect {
                 blend: "normal",
                 world: false,
                 life: [1, 1.6],
-                size: [R * 0.4, R * 0.7],
+                size: [puff * 0.4, puff * 0.7],
                 speed: R * 0.1,
                 rotation: true,
                 spin: [-2, 2],
@@ -468,14 +469,14 @@ export class FairyParticle extends BasePresetEffect {
         const R = Math.max(this.params.emitterSize, 0.03);
         const I = this.intensity;
         const rate = Math.clamp(R * 25, 2, 12) * I;
-        const flight = () => ({ world: false, life: [2.5, 3.5], speed: R * 0.15, shape: surfaceOr(this, { type: "sphere", radius: R }), turbulence: { scale: R * 2, strength: R * 2, speed: 1.5 }, behaviors: [orbit([0.8, 1.6])] });
+        const flight = () => ({ world: false, life: [3, 4.5], shape: surfaceOr(this, { type: "sphere", radius: R }), noise: [[0.1, 0.1, 0.1], [0.1, 0.03, 0.1]], behaviors: [orbit([0.8, 1.2])] });
         await this.add(
             sustained(this, {
                 ...flight(),
                 sprite: "emberssmall",
                 mode: "trail",
-                length: 25,
-                size: s * 1.4,
+                length: 20,
+                size: s,
                 rate,
                 color: [
                     [0, "core", 0],
@@ -488,7 +489,7 @@ export class FairyParticle extends BasePresetEffect {
             sustained(this, {
                 ...flight(),
                 sprite: "stars",
-                size: [s * 2, s * 3.5],
+                size: [s * 1.2, s * 2],
                 rotation: true,
                 spin: [-2, 2],
                 rate,
@@ -505,10 +506,10 @@ export class FairyParticle extends BasePresetEffect {
                 sprite: "emberssmall",
                 life: [0.8, 1.4],
                 size: [s * 0.5, s],
-                speed: R * 0.05,
+                speed: s,
                 rate: rate * 1.5,
                 shape: surfaceOr(this, { type: "sphere", radius: R }),
-                gravity: R * 0.6,
+                gravity: s * 3,
                 color: [
                     [0, "spark", 0],
                     [0.2, "spark", 1],
@@ -649,6 +650,7 @@ export class SunburstParticle extends BasePresetEffect {
     async build() {
         const s = this.params.scale.start;
         const R = Math.max(this.params.emitterSize, s * 3);
+        const core = Math.min(R, s * 10);
         const I = this.intensity;
         await this.add(
             sustained(this, {
@@ -692,7 +694,7 @@ export class SunburstParticle extends BasePresetEffect {
                 world: false,
                 life: 0.8,
                 rate: 4,
-                size: [R * 0.5, R * 0.6],
+                size: [core * 0.5, core * 0.6],
                 rotation: true,
                 color: [
                     [0, "core", 0],

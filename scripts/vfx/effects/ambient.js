@@ -1,8 +1,10 @@
 import * as THREE from "three";
+import * as QUARKS from "three.quarks";
+import { toCurve } from "../base/quarks.js";
 import { registerEffects } from "../registry.js";
 import { ORDER, flame } from "../layers/index.js";
 import { BasePresetEffect } from "../base/BasePresetEffect.js";
-import { sustained, Disc } from "./sustain.js";
+import { sustained, Disc, PullToAxis } from "./sustain.js";
 import { flameRig, animateFlame, orbit, ringGlow, groundGlow } from "./rigs.js";
 import { surfaceOr } from "./presets.js";
 
@@ -259,39 +261,31 @@ export class FirefliesParticle extends BasePresetEffect {
         const s = Math.clamp(this.params.scale.start, 0.004, 0.012);
         const R = Math.max(this.params.emitterSize, s * 4);
         const rate = Math.clamp(R * 12, 1, 10) * this.intensity;
-        const flight = () => ({ life: [4, 7], speed: s * 0.2, shape: surfaceOr(this, new Disc({ radius: R, height: Math.max(R * 0.4, s * 4) })), turbulence: { scale: R, strength: s * 1.5, speed: 0.3 }, fade: 1 });
+        const blink = (color, peak, low) => [
+            [0, color, 0],
+            [0.08, color, peak],
+            [0.22, color, low],
+            [0.38, color, peak],
+            [0.52, color, low],
+            [0.72, color, peak],
+            [1, color, 0],
+        ];
         await this.add(
             sustained(this, {
-                ...flight(),
                 sprite: "emberssmall",
-                size: [s, s * 1.5],
+                mode: "trail",
+                length: 45,
+                world: false,
+                life: [4, 7],
+                speed: [s * 5, s * 9],
+                shape: surfaceOr(this, new Disc({ radius: R, height: Math.max(R * 0.4, s * 4) })),
+                turbulence: { scale: Math.max(R * 0.3, s * 8), strength: s * 14, speed: 0.4 },
+                behaviors: [orbit([-0.6, 0.6]), new PullToAxis(0.2), new QUARKS.WidthOverLength(toCurve([s * 1.5, s, s * 0.4, 0]))],
+                size: s * 1.5,
                 rate,
-                color: [
-                    [0, "spark", 0],
-                    [0.1, "spark", 1],
-                    [0.25, "spark", 0.1],
-                    [0.4, "spark", 1],
-                    [0.55, "spark", 0.15],
-                    [0.75, "spark", 1],
-                    [1, "spark", 0],
-                ],
-                order: ORDER.sparks,
-            }),
-            sustained(this, {
-                ...flight(),
-                sprite: "emberssmall",
-                size: [s * 2.5, s * 3.5],
-                rate: rate * 0.6,
-                color: [
-                    [0, "glow", 0],
-                    [0.15, "glow", 0.35],
-                    [0.3, "glow", 0.05],
-                    [0.5, "glow", 0.35],
-                    [0.7, "glow", 0.05],
-                    [0.85, "glow", 0.3],
-                    [1, "glow", 0],
-                ],
+                color: blink("start", 1, 0.15),
                 order: ORDER.glow,
+                fade: 1,
             }),
         );
     }

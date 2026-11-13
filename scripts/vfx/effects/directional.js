@@ -9,6 +9,19 @@ import { sustained, ConeVolume, Footprint, Disc, groundBelow } from "./sustain.j
 
 const UP = new THREE.Vector3(0, 1, 0);
 const point = new THREE.Vector3();
+const FLAME_RAMP = [
+    [0, "start", 0],
+    [0.2314, "start", 0.3],
+    [0.522, "end", 1],
+    [1, "black", 0],
+];
+const POISON_RAMP = [
+    [0, "start", 0],
+    [0.314, "start", 0],
+    [0.522, "start", 1],
+    [0.71, "end", 1],
+    [1, "black", 0],
+];
 
 export class ConeEffect extends BaseDirectionalEffect {
     static get DEFAULT_EMITTER_SIZE() {
@@ -85,6 +98,21 @@ export class ConeEffect extends BaseDirectionalEffect {
         const narrow = this.cone.end < Math.max(this.cone.radius * 1.5, this.L * 0.06);
         if (narrow && Array.isArray(rest.sizeOverLife)) rest.sizeOverLife = rest.sizeOverLife.map((v) => 0.6 + v * 0.4);
         return sustained(this, { speed: this.speed, life: [this.travel * 0.85, this.travel * 1.1], shape: new ConeVolume({ length: this.L, angle: this.cone.angle, radius: this.cone.radius, from, to, flatten }), fade: this.travel, ...rest });
+    }
+
+    get span() {
+        return this.L * (this.params.cone ? 1.4 : 2.5);
+    }
+
+    jet({ angle = this.cone.angle, ...spec }) {
+        let from = 0;
+        if (spec.mode === "stretched") {
+            const tail = Math.max(spec.speed, 0.001) * spec.stretch * Math.max(spec.size, 0.001);
+            const limit = this.L * 0.35;
+            if (tail > limit) spec.stretch *= limit / tail;
+            from = Math.min(tail, limit) / this.L;
+        }
+        return sustained(this, { shape: new ConeVolume({ length: this.L, angle: Math.min(angle, 1.3), radius: this.cone.radius, from, to: from }), lit: false, fade: 0.4, ...spec });
     }
 
     onGround(spec) {
@@ -168,126 +196,33 @@ export class DirectionalBreathParticle extends ConeEffect {
         return 2;
     }
 
-    get travel() {
-        return Math.clamp(this.cone.length * 1.2, 0.45, 0.9);
-    }
-
     async build() {
-        const { D, k, s } = this;
+        const s = this.params.scale.start;
+        const speed = 2;
+        const life = this.span / speed;
+        const tongue = {
+            sprite: "flame_01",
+            speed,
+            life: 0.75 * life,
+            size: s * 0.8,
+            rotation: true,
+            rate: 8 * this.intensity,
+            color: FLAME_RAMP,
+            sizeOverLife: [0.5, 0.55, 0.95, 1],
+        };
         await this.add(
-            this.flow({
-                sprite: "smoke",
-                frames: "animate",
+            this.jet({ ...tongue, blend: "normal", order: ORDER.smoke }),
+            this.jet({ ...tongue, order: ORDER.body }),
+            this.jet({
+                sprite: "flame2x2",
                 mode: "stretched",
-                stretch: 0.5 / this.speed,
-                lengthFactor: 0.8,
-                life: [this.travel * 0.8, this.travel * 1.05],
-                size: [D * 0.6 * s, D * 0.85 * s],
-                rate: 45 * k,
-                force: [0, D * 0.6, 0],
-                color: [
-                    [0, "white", 0],
-                    [0.06, "end", 0.9],
-                    [0.35, "start", 0.75],
-                    [0.75, "start", 0.3],
-                    [1, "start", 0],
-                ],
-                sizeOverLife: [0.15, 0.5, 0.85, 1],
-                order: ORDER.body,
-            }),
-            this.flow({
-                sprite: "smoke",
-                frames: "animate",
-                blend: "normal",
-                lit: false,
-                mode: "stretched",
-                stretch: 0.5 / this.speed,
-                lengthFactor: 0.8,
-                life: [this.travel * 0.8, this.travel * 1.05],
-                size: [D * 0.7 * s, D * 1 * s],
-                rate: 18 * k,
-                force: [0, D * 0.6, 0],
-                color: [
-                    [0, "start", 0],
-                    [0.2, "start", 0.3],
-                    [0.7, "start", 0.15],
-                    [1, "start", 0],
-                ],
-                sizeOverLife: [0.15, 0.5, 0.85, 1.05],
-                order: ORDER.smoke + 1,
-            }),
-            this.flow({
-                sprite: "fire",
-                life: [this.travel * 0.6, this.travel * 0.8],
-                size: [D * 0.4 * s, D * 0.55 * s],
-                rotation: true,
-                spin: [-3, 3],
-                rate: 30 * k,
-                to: 0.05,
-                color: [
-                    [0, "core", 0],
-                    [0.1, "core", 0.6],
-                    [0.5, "start", 0.45],
-                    [1, "start", 0],
-                ],
-                sizeOverLife: [0.1, 0.4, 0.8, 1],
+                stretch: 1.5,
+                speed,
+                life: 0.5 * life,
+                size: s * 0.35,
+                rate: Math.max(18 * this.intensity - Math.min(7, life * 4), 0),
+                color: FLAME_RAMP,
                 order: ORDER.glow,
-            }),
-            this.flow({
-                sprite: "smoke9x9",
-                blend: "normal",
-                life: [this.travel * 1.4, this.travel * 2],
-                size: [D * 0.8 * s, D * 1.2 * s],
-                rotation: true,
-                spin: [-0.6, 0.6],
-                rate: 6 * k,
-                from: 0.4,
-                to: 0.8,
-                speed: this.speed * 0.4,
-                force: [0, D * 0.8, 0],
-                color: [
-                    [0, "black", 0],
-                    [0.3, "black", 0.3],
-                    [1, "smoke", 0],
-                ],
-                sizeOverLife: [0.6, 0.9, 1.2, 1.5],
-                order: ORDER.smoke,
-            }),
-            this.flow({
-                sprite: "emberssmall",
-                mode: "stretched",
-                stretch: 0.05,
-                life: [this.travel * 0.9, this.travel * 1.6],
-                size: [D * 0.04 * s, D * 0.08 * s],
-                speed: [this.speed * 0.9, this.speed * 1.4],
-                rate: 18 * k,
-                force: [0, D * 0.8, 0],
-                turbulence: { scale: D, strength: D * 2, speed: 1 },
-                color: [
-                    [0, "white", 1],
-                    [0.2, "spark", 1],
-                    [0.7, "end", 0.8],
-                    [1, "edge", 0],
-                ],
-                order: ORDER.sparks,
-            }),
-        );
-        await this.groundLayers(
-            ...flame(this, { size: D * 0.3 * s, lift: D * 0.25, rate: 0.8 * k, core: 0, make: (effect, spec) => this.onGround(spec) }),
-            this.onGround({
-                sprite: "emberssmall",
-                life: [0.8, 1.6],
-                size: [D * 0.02 * s, D * 0.045 * s],
-                speed: D * 0.5,
-                rate: 12 * k,
-                turbulence: { scale: D, strength: D, speed: 1 },
-                color: [
-                    [0, "spark", 0],
-                    [0.2, "spark", 1],
-                    [1, "edge", 0],
-                ],
-                sizeOverLife: "shrink",
-                order: ORDER.sparks,
             }),
         );
         this.groundGlow(this.palette.light, 0.55);
@@ -308,100 +243,25 @@ export class DirectionalFrostParticle extends ConeEffect {
         return 3;
     }
 
-    get travel() {
-        return Math.clamp(this.cone.length * 1.5, 0.55, 1.1);
-    }
-
     async build() {
-        const { D, k, s } = this;
+        const s = this.params.scale.start;
+        const speed = 1;
+        const life = (this.span * 0.7) / speed;
+        const body = { speed, life: 0.75 * life, size: s * 0.8, rotation: true, rate: 8 * this.intensity, color: FLAME_RAMP };
         await this.add(
-            this.flow({
-                sprite: "smoke9x9",
-                life: [this.travel * 0.9, this.travel * 1.2],
-                size: [D * 0.8 * s, D * 1.15 * s],
-                rotation: true,
-                spin: [-1, 1],
-                rate: 45 * k,
-                color: [
-                    [0, "white", 0],
-                    [0.08, "white", 0.75],
-                    [0.4, "core", 0.5],
-                    [1, "start", 0],
-                ],
-                sizeOverLife: [0.15, 0.5, 0.9, 1.1],
-                order: ORDER.body,
-            }),
-            this.flow({
-                sprite: "emberssmall",
-                mode: "stretched",
-                stretch: 0.12,
-                life: [this.travel * 0.7, this.travel],
-                size: [D * 0.04 * s, D * 0.07 * s],
-                speed: [this.speed * 1, this.speed * 1.4],
-                rate: 30 * k,
-                color: [
-                    [0, "white", 0],
-                    [0.1, "white", 1],
-                    [0.6, "core", 0.8],
-                    [1, "start", 0],
-                ],
-                order: ORDER.sparks,
-            }),
-            this.flow({
-                sprite: "star_04",
-                life: [this.travel * 0.9, this.travel * 1.3],
-                size: [D * 0.05 * s, D * 0.11 * s],
-                rotation: true,
-                spin: [-4, 4],
-                rate: 20 * k,
-                speed: this.speed * 0.8,
-                color: [
-                    [0, "white", 0],
-                    [0.15, "white", 1],
-                    [0.7, "core", 0.8],
-                    [1, "start", 0],
-                ],
-                sizeOverLife: "pulse",
-                order: ORDER.sparks,
-            }),
-        );
-        await this.groundLayers(
-            this.onGround({
-                sprite: "smoke9x9",
-                mode: "horizontal",
+            this.jet({ ...body, sprite: "flame_01", blend: "normal", sizeOverLife: [0.5, 0.55, 0.95, 1], order: ORDER.smoke }),
+            this.jet({ ...body, sprite: "scorch_02", sizeOverLife: [0, 1, 1, 1], order: ORDER.body }),
+            this.jet({
+                sprite: "trace_01_rotated",
                 blend: "normal",
-                life: [1.6, 2.4],
-                size: [D * 0.5 * s, D * 0.8 * s],
-                speed: 0.002,
-                rotation: true,
-                spin: [-0.3, 0.3],
-                rate: 6 * k,
-                position: [0, 0.005, 0],
-                color: [
-                    [0, "core", 0],
-                    [0.3, "core", 0.3],
-                    [1, "start", 0],
-                ],
-                sizeOverLife: "grow",
-                lit: true,
-                soft: false,
-                order: ORDER.ground,
-            }),
-            this.onGround({
-                sprite: "star_06",
-                mode: "horizontal",
-                life: [1.2, 2.2],
-                size: [D * 0.08 * s, D * 0.16 * s],
-                speed: 0.001,
-                rotation: true,
-                rate: 10 * k,
-                color: [
-                    [0, "white", 0],
-                    [0.1, "white", 0.9],
-                    [1, "core", 0],
-                ],
-                soft: false,
-                order: ORDER.ground,
+                mode: "stretched",
+                stretch: 1.5,
+                speed,
+                life: 0.5 * life,
+                size: s * 0.14,
+                rate: Math.max(18 * this.intensity - Math.min(7, life * 4), 0),
+                color: FLAME_RAMP,
+                order: ORDER.glow,
             }),
         );
         this.groundGlow(this.palette.core, 0.4);
@@ -421,82 +281,25 @@ export class DirectionalPoisonParticle extends ConeEffect {
         return Math.PI / 7;
     }
 
-    get travel() {
-        return Math.clamp(this.cone.length * 2.5, 0.9, 1.8);
-    }
-
     async build() {
-        const { D, k, s } = this;
+        const s = this.params.scale.start;
+        const speed = 1;
+        const life = this.span / speed;
+        const cloud = { sprite: "smoke9x9", blend: "normal", speed, life: 0.75 * life, size: s * 0.8, rotation: true, rate: 8 * this.intensity, color: FLAME_RAMP };
         await this.add(
-            this.flow({
+            this.jet({ ...cloud, sizeOverLife: [0.5, 0.55, 0.95, 1], order: ORDER.smoke }),
+            this.jet({ ...cloud, sizeOverLife: [0, 0.55, 0.95, 1], order: ORDER.body }),
+            this.jet({
                 sprite: "smoke9x9",
                 blend: "normal",
-                life: [this.travel * 0.9, this.travel * 1.2],
-                size: [D * 0.8 * s, D * 1.2 * s],
+                angle: this.cone.angle * 2,
+                speed,
+                life: 0.5 * life,
+                size: s * 0.21,
                 rotation: true,
-                spin: [-0.8, 0.8],
-                rate: 22 * k,
-                force: [0, -D * 0.1, 0],
-                turbulence: { scale: D, strength: D * 0.5, speed: 0.5 },
-                color: [
-                    [0, "start", 0],
-                    [0.12, "start", 0.55],
-                    [0.6, "end", 0.4],
-                    [1, "end", 0],
-                ],
-                sizeOverLife: [0.2, 0.6, 1, 1.25],
-                order: ORDER.smoke,
-            }),
-            this.flow({
-                sprite: "smoke9x9",
-                life: [this.travel * 0.7, this.travel],
-                size: [D * 0.6 * s, D * 0.9 * s],
-                rotation: true,
-                spin: [-1, 1],
-                rate: 12 * k,
-                color: [
-                    [0, "glow", 0],
-                    [0.2, "glow", 0.22],
-                    [1, "end", 0],
-                ],
-                sizeOverLife: [0.2, 0.6, 1, 1.2],
-                order: ORDER.body,
-            }),
-            this.flow({
-                sprite: "emberssmall",
-                life: [this.travel * 0.8, this.travel * 1.3],
-                size: [D * 0.03 * s, D * 0.07 * s],
-                speed: this.speed * 0.8,
-                rate: 16 * k,
-                turbulence: { scale: D, strength: D * 1.5, speed: 1 },
-                color: [
-                    [0, "spark", 0],
-                    [0.2, "spark", 1],
-                    [1, "glow", 0],
-                ],
-                sizeOverLife: "pulse",
-                order: ORDER.sparks,
-            }),
-        );
-        await this.groundLayers(
-            this.onGround({
-                sprite: "smoke9x9",
-                blend: "normal",
-                life: [2, 3],
-                size: [D * 0.5 * s, D * 0.8 * s],
-                speed: D * 0.05,
-                rotation: true,
-                spin: [-0.3, 0.3],
-                rate: 7 * k,
-                position: [0, 0.01, 0],
-                color: [
-                    [0, "end", 0],
-                    [0.3, "end", 0.4],
-                    [1, "start", 0],
-                ],
-                sizeOverLife: "grow",
-                order: ORDER.smoke,
-                fade: 1.2,
+                rate: Math.max(18 * this.intensity - Math.min(7, life * 4), 0),
+                color: POISON_RAMP,
+                order: ORDER.glow,
             }),
         );
         this.groundGlow(this.palette.glow, 0.3);
