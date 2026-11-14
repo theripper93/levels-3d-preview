@@ -198,6 +198,7 @@ export class Region3D extends THREE.Object3D {
                 Region3D.isVisible(region),
                 !!hidden,
                 game.settings.get("levels-3d-preview", "regionsAlwaysFlat"),
+                game.settings.get("levels-3d-preview", "regionShells"),
             ]);
         } catch (e) {
             // If anything can't be serialized, force a rebuild.
@@ -369,6 +370,11 @@ export class Region3D extends THREE.Object3D {
 
         Hooks.on("refreshRegion", (region) => {
             if (!game.Levels3DPreview?._active) return;
+            Region3D.handle(region);
+        });
+
+        Hooks.on("updateRegion", (region, changes) => {
+            if (!game.Levels3DPreview?._active || !region.object || !foundry.utils.hasProperty(changes, "flags.levels-3d-preview")) return;
             Region3D.handle(region);
         });
 

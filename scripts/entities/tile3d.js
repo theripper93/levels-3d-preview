@@ -9,6 +9,7 @@ import { acceleratedRaycast } from "../three/acceleratedRaycast.js";
 import { getMergedMeshFromInstanced, meshesToSingleMesh } from "../helpers/geometryUtils.js";
 import { Socket } from "../lib/socket.js";
 import { applyLegacyUv, applyLegacyUvMatrix } from "../three/legacyUv.js";
+import { injectTileBakeButton } from "../helpers/modelBaker.js";
 THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
 THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
 THREE.Mesh.prototype.raycast = acceleratedRaycast;
@@ -2523,6 +2524,7 @@ export class Tile3D {
             const hadGravity = game.Levels3DPreview.tiles[tile.id]?.isGravity;
             if (hasGravity && hadGravity) return recomputeGravityDebounced();
             game.Levels3DPreview.tiles[tile.id]?.destroy(true);
+            if (!tile.object) return void delete game.Levels3DPreview.tiles[tile.id];
             const newTile = new Tile3D(tile.object, game.Levels3DPreview, true);
             game.Levels3DPreview.tiles[tile.id] = newTile;
             newTile.load().then(() => {
@@ -2623,6 +2625,7 @@ export class Tile3D {
                 attachTileToToken(hud.object, _token);
             });
             lockedButton.parentNode.insertBefore(attachButton, lockedButton);
+            injectTileBakeButton(lockedButton);
 
             if (!tile3d?.isAnimated) return;
 

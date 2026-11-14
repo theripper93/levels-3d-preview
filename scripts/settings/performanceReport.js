@@ -1,5 +1,7 @@
 import * as THREE from "three";
 import { analyzeOffenders, jumpToEntity } from "./sceneOffenders.js";
+import { autoBakePlan, bakeLimits, bakeRecommendations, entityName, openModelBaker, runAutoBake } from "../helpers/modelBaker.js";
+import { getQuality } from "../vfx/quality.js";
 
 const TOP_DIALOG = 20;
 const TOP_CLIPBOARD = 10;
@@ -9,6 +11,50 @@ const pct = (v) => `${(v * 100).toFixed(1)}%`;
 const byWorst = (list, n) => [...list].sort((a, b) => Math.max(b.cpuShare, b.gpuShare) - Math.max(a.cpuShare, a.gpuShare)).slice(0, n);
 
 export function showSceneReport() {
+    const { result, grade, color } = sceneScore();
+    const analysis = analyzeOffenders();
+    console.log(`%c${L("title")}`, "color: #f5a742; font-size: 1.8em;");
+    console.log(`%c${L("grade", { grade })}`, `color: #${color}; font-size: 1.8em;`);
+    console.table(result);
+    console.table(byWorst(analysis.offenders, TOP_DIALOG).map((r) => ({ [L("object")]: r.label, CPU: pct(r.cpuShare), GPU: pct(r.gpuShare), [L("cpuReasons")]: r.cpuReasons.join(" · "), [L("gpuReasons")]: r.gpuReasons.join(" · ") })));
+    console.table(byWorst(analysis.groups, TOP_DIALOG).map((g) => ({ [L("asset")]: g.asset, [L("count")]: g.count, CPU: pct(g.cpuShare), GPU: pct(g.gpuShare), [L("notes")]: g.notes })));
+    result.grade = L("grade", { grade });
+    result.color = `#${color}`;
+    Object.defineProperty(result, "analysis", { value: analysis, enumerable: false });
+    return result;
+}
+
+const ALERT_SCORE = 15;
+const ALERT_BUTTON = '[data-action="clip-navigation-performancereport"]';
+let alertActive = false;
+
+function applyPerformanceAlert() {
+    const button = document.querySelector(ALERT_BUTTON);
+    if (!button) return;
+    const name = game.i18n.localize("levels3dpreview.clipNavigator.performancereport");
+    button.classList.toggle("levels3d-performance-alert", alertActive);
+    button.classList.toggle("levels3d-reduce-motion", !!getQuality().reduceMotion);
+    button.dataset.tooltip = alertActive ? `${name}<br>${L("alert")}` : name;
+}
+
+export async function updatePerformanceAlert() {
+    if (!game.user.isGM || !game.Levels3DPreview?._active || !canvas.scene) return;
+    let active = false;
+    if (sceneScore().score < ALERT_SCORE) {
+        const recommendations = await bakeRecommendations(canvas.scene);
+        const plan = autoBakePlan(canvas.scene, recommendations);
+        active = !!(recommendations.length || plan.merges.length || plan.singles.length);
+    }
+    alertActive = active;
+    applyPerformanceAlert();
+}
+
+const scheduleAlert = foundry.utils.debounce(() => updatePerformanceAlert().catch(console.error), 3000);
+Hooks.on("3DCanvasSceneReady", scheduleAlert);
+Hooks.on("3DCanvasBakeComplete", scheduleAlert);
+Hooks.on("renderBuildPanel", applyPerformanceAlert);
+
+function sceneScore() {
     const scene = game.Levels3DPreview.scene;
     const infos = game.Levels3DPreview.renderer.info;
     let totalVertices = 0;
@@ -65,16 +111,7 @@ export function showSceneReport() {
     grade = grade ?? L("realBad");
     if (score / 3 > Math.floor(score / 3)) grade += "+";
     else if (score / 3 < Math.floor(score / 3)) grade += "-";
-    const analysis = analyzeOffenders();
-    console.log(`%c${L("title")}`, "color: #f5a742; font-size: 1.8em;");
-    console.log(`%c${L("grade", { grade })}`, `color: #${color}; font-size: 1.8em;`);
-    console.table(result);
-    console.table(byWorst(analysis.offenders, TOP_DIALOG).map((r) => ({ [L("object")]: r.label, CPU: pct(r.cpuShare), GPU: pct(r.gpuShare), [L("cpuReasons")]: r.cpuReasons.join(" · "), [L("gpuReasons")]: r.gpuReasons.join(" · ") })));
-    console.table(byWorst(analysis.groups, TOP_DIALOG).map((g) => ({ [L("asset")]: g.asset, [L("count")]: g.count, CPU: pct(g.cpuShare), GPU: pct(g.gpuShare), [L("notes")]: g.notes })));
-    result.grade = L("grade", { grade });
-    result.color = `#${color}`;
-    Object.defineProperty(result, "analysis", { value: analysis, enumerable: false });
-    return result;
+    return { result, score, grade, color };
 }
 
 function offendersTable(offenders) {
@@ -86,7 +123,7 @@ function offendersTable(offenders) {
                 }</td></tr>`,
         )
         .join("");
-    return `<h3>${L("worstOffenders")}</h3><table><thead><tr><th>${L("object")}</th><th><a data-action="sort" data-sort="cpu">CPU</a></th><th><a data-action="sort" data-sort="gpu">GPU</a></th><th>${L("reasons")}</th><th></th></tr></thead><tbody>${rows}</tbody></table>`;
+    return `<fieldset><legend>${L("worstOffenders")}</legend><table><thead><tr><th>${L("object")}</th><th><a data-action="sort" data-sort="cpu">CPU</a></th><th><a data-action="sort" data-sort="gpu">GPU</a></th><th>${L("reasons")}</th><th></th></tr></thead><tbody>${rows}</tbody></table></fieldset>`;
 }
 
 function groupsTable(groups) {
@@ -96,7 +133,52 @@ function groupsTable(groups) {
                 `<tr data-cpu="${g.cpu}" data-gpu="${g.gpu}"><td>${foundry.utils.escapeHTML(g.asset)}</td><td>${g.count}</td><td>${pct(g.cpuShare)}</td><td>${pct(g.gpuShare)}</td><td>${g.notes}</td><td><button type="button" class="icon fa-solid fa-crosshairs" data-action="jumpGroup" data-index="${i}" data-tooltip="${L("jumpGroup")}"></button></td></tr>`,
         )
         .join("");
-    return `<h3>${L("byAsset")}</h3><table><thead><tr><th>${L("asset")}</th><th>${L("count")}</th><th><a data-action="sort" data-sort="cpu">CPU</a></th><th><a data-action="sort" data-sort="gpu">GPU</a></th><th>${L("notes")}</th><th></th></tr></thead><tbody>${rows}</tbody></table>`;
+    return `<fieldset><legend>${L("byAsset")}</legend><table><thead><tr><th>${L("asset")}</th><th>${L("count")}</th><th><a data-action="sort" data-sort="cpu">CPU</a></th><th><a data-action="sort" data-sort="gpu">GPU</a></th><th>${L("notes")}</th><th></th></tr></thead><tbody>${rows}</tbody></table></fieldset>`;
+}
+
+function bakeTable(recommendations) {
+    if (!recommendations.length) return `<fieldset><legend>${L("bakeTab")}</legend><p class="hint">${L("bakeHint")}</p><p class="hint">${L("bakeNone")}</p></fieldset>`;
+    const rows = recommendations
+        .map(
+            (r, i) =>
+                `<tr><td>${foundry.utils.escapeHTML(decodeURIComponent(r.path.split("/").pop()))}</td><td>${r.documents.length}</td><td>${r.stats.drawCalls}</td><td>${r.stats.textures}</td><td>${r.savedCalls}</td><td>${r.size}</td><td><div style="display: flex; gap: var(--spacing, 4px); white-space: nowrap;"><button type="button" class="icon fa-solid fa-crosshairs" data-action="jumpBake" data-index="${i}" data-tooltip="${L("jumpGroup")}"></button><button type="button" class="icon fa-solid fa-fire" data-action="bake" data-index="${i}" data-tooltip="${L("bake")}"></button></div></td></tr>`,
+        )
+        .join("");
+    return `<fieldset><legend>${L("bakeTab")}</legend><p class="hint">${L("bakeHint")}</p><div style="max-height: 40vh; overflow-y: auto;"><table><thead><tr><th>${L("asset")}</th><th>${L("count")}</th><th>${L("drawCalls")}</th><th>${L("textures")}</th><th>${L("savedCalls")}</th><th>${L("bakeSize")}</th><th></th></tr></thead><tbody>${rows}</tbody></table></div></fieldset>`;
+}
+
+function autoBakeSection(plan) {
+    const { warn, limit } = bakeLimits();
+    const perLevel = new Set(plan.merges.map((m) => m.level)).size > 1;
+    const level = (cell) => (perLevel ? cell : "");
+    const merges = plan.merges.length
+        ? `<table><thead><tr>${level(`<th>${L("level")}</th>`)}<th>${L("tiles")}</th><th>${L("triangles")}</th><th>${L("drawCalls")}</th><th>${L("savedCalls")}</th><th>${L("bakeSize")}</th><th>${L("notes")}</th><th></th></tr></thead><tbody>${plan.merges
+              .map(
+                  (m, i) =>
+                      `<tr>${level(`<td>${foundry.utils.escapeHTML(m.level)}</td>`)}<td>${m.entities.length}</td><td>${L("trianglesValue", { triangles: m.triangles, unwrap: m.unwrap })}</td><td>${m.drawCalls}</td><td>${m.drawCalls - m.after}</td><td>${m.size}</td><td>${m.unwrap > limit ? L("tooLarge", { limit }) : m.unwrap > warn ? L("largeWarn") : ""}</td><td><button type="button" class="icon fa-solid fa-crosshairs" data-action="jumpMerge" data-index="${i}" data-tooltip="${L("jumpGroup")}"></button></td></tr>`,
+              )
+              .join("")}</tbody></table>`
+        : `<p class="hint">${L("autoBakeNoMerge")}</p>`;
+    const singles = plan.singles.length
+        ? `<table><thead><tr><th>${L("asset")}</th><th>${L("count")}</th><th>${L("savedCalls")}</th><th>${L("bakeSize")}</th></tr></thead><tbody>${plan.singles
+              .map((r) => `<tr><td>${foundry.utils.escapeHTML(decodeURIComponent(r.path.split("/").pop()))}</td><td>${r.documents.length}</td><td>${(r.stats.drawCalls - 1) * r.documents.length}</td><td>${r.size}</td></tr>`)
+              .join("")}</tbody></table>`
+        : `<p class="hint">${L("autoBakeNoSingle")}</p>`;
+    const excluded = plan.excluded
+        .map(
+            ({ entity, reason, singleBaked }, i) =>
+                `<tr><td>${foundry.utils.escapeHTML(entityName(entity))}</td><td>${game.i18n.localize(`levels3dpreview.modelBaker.reasons.${reason}`)}</td><td>${singleBaked ? L("modelBaked") : ""}</td><td><button type="button" class="icon fa-solid fa-crosshairs" data-action="jumpExcluded" data-index="${i}" data-tooltip="${L("jump")}"></button></td></tr>`,
+        )
+        .join("");
+    const disabled = plan.merges.some((m) => m.unwrap <= limit) || plan.singles.length ? "" : "disabled";
+    return `<fieldset><legend>${L("autoBake")}</legend><p class="hint">${L("autoBakeHint")}</p>${plan.unloaded ? `<p class="hint">${L("autoBakeUnloaded", { count: plan.unloaded })}</p>` : ""}<button type="button" data-action="autoBake" ${disabled}><i class="fas fa-fire"></i> ${L("autoBakeRun")}</button><fieldset><legend>${L(perLevel ? "autoBakeMerges" : "autoBakeMerge")}</legend>${merges}</fieldset><fieldset><legend>${L("autoBakeSingles")}</legend>${singles}</fieldset><details><summary>${L("autoBakeExcluded", { count: plan.excluded.length })}</summary><table><thead><tr><th>${L("object")}</th><th>${L("reasons")}</th><th></th><th></th></tr></thead><tbody>${excluded}</tbody></table></details></fieldset>`;
+}
+
+const SYSTEM_KEYS = ["3D Canvas Engine", "Mapmaking Pack", "FVTT CORE", "GPU", "Resolution", "Shared Context"];
+
+function summaryFieldset(legend, keys, data) {
+    const rows = keys.map((key) => `<tr><td>${key}</td><td>${data[key] ?? "-"}</td></tr>`).join("");
+    return `<fieldset><legend>${legend}</legend><table><thead><tr><th>${L("property")}</th><th>${L("value")}</th></tr></thead><tbody>${rows}</tbody></table></fieldset>`;
 }
 
 function switchTab(event, target) {
@@ -111,14 +193,17 @@ function sortTable(event, target) {
     tbody.append(...rows);
 }
 
-export function showPerformanceDialog() {
+export async function showPerformanceDialog() {
     const report = showSceneReport();
     const { analysis } = report;
     const offenders = byWorst(analysis.offenders, TOP_DIALOG);
     const groups = byWorst(analysis.groups, TOP_DIALOG);
+    const recommendations = game.user.isGM ? await bakeRecommendations(canvas.scene) : [];
+    const plan = game.user.isGM ? autoBakePlan(canvas.scene, recommendations) : null;
+    const support = await foundry.applications.sidebar.apps.SupportDetails.generateSupportReport();
     const dpr = game.settings.get("core", "pixelRatioResolutionScaling") ? window.devicePixelRatio : 1;
     const resMulti = game.settings.get("levels-3d-preview", "resolutionMultiplier");
-    const dialogData = { "3D Canvas Engine": game.modules.get("levels-3d-preview").version, "Mapmaking Pack": game.modules.get("canvas3dcompendium")?.version, "FVTT CORE": foundry.applications.sidebar.apps.SupportDetails.generateSupportReport().coreVersion, GPU: foundry.applications.sidebar.apps.SupportDetails.generateSupportReport().gpu, Resolution: `${Math.round(window.innerWidth * dpr * resMulti)}x${Math.round(window.innerHeight * dpr * resMulti)}`, ...report };
+    const dialogData = { "3D Canvas Engine": game.modules.get("levels-3d-preview").version, "Mapmaking Pack": game.modules.get("canvas3dcompendium")?.version, "FVTT CORE": support.coreVersion, GPU: support.gpu, Resolution: `${Math.round(window.innerWidth * dpr * resMulti)}x${Math.round(window.innerHeight * dpr * resMulti)}`, ...report };
     dialogData["Shared Context"] = game.settings.get("levels-3d-preview", "sharedContext") ? game.i18n.localize("Yes") : game.i18n.localize("No");
     delete dialogData.color;
     delete dialogData.grade;
@@ -131,6 +216,14 @@ export function showPerformanceDialog() {
             sort: sortTable,
             tab: switchTab,
             jump: (event, target) => jumpToEntity(offenders[target.dataset.index].entity),
+            jumpBake: (event, target) => jumpToEntity(recommendations[target.dataset.index].entity),
+            bake: (event, target) => openModelBaker(recommendations[target.dataset.index].document),
+            jumpMerge: (event, target) => jumpToEntity(plan.merges[target.dataset.index].entities[0]),
+            jumpExcluded: (event, target) => jumpToEntity(plan.excluded[target.dataset.index].entity),
+            autoBake: () => {
+                dialog.close();
+                runAutoBake(canvas.scene, plan);
+            },
             jumpGroup: (event, target) => {
                 const group = groups[target.dataset.index];
                 const cursor = cursors.get(group) ?? 0;
@@ -138,9 +231,7 @@ export function showPerformanceDialog() {
                 jumpToEntity(group.records[cursor].entity);
             },
         },
-        content: `<nav class="tabs"><a class="active" data-action="tab" data-group="report" data-tab="summary">${L("summary")}</a><a data-action="tab" data-group="report" data-tab="offenders">${L("offenders")}</a></nav><section class="tab active" data-group="report" data-tab="summary"><div style="color: ${report.color}; font-size: 1.8em;">${report.grade}</div><table><thead><tr><th>${L("property")}</th><th>${L("value")}</th></tr></thead><tbody>${Object.entries(dialogData)
-            .map(([k, v]) => `<tr><td>${k}</td><td>${v}</td></tr>`)
-            .join("")}</tbody></table></section><section class="tab" data-group="report" data-tab="offenders"><p class="hint">${L("estimateHint")}</p>${offendersTable(offenders)}${groupsTable(groups)}</section>`,
+        content: `<nav class="tabs"><a class="active" data-action="tab" data-group="report" data-tab="summary">${L("summary")}</a><a data-action="tab" data-group="report" data-tab="offenders">${L("offenders")}</a>${game.user.isGM ? `<a data-action="tab" data-group="report" data-tab="bake">${L("bakeTab")}</a>` : ""}</nav><section class="tab active" data-group="report" data-tab="summary"><fieldset><legend>${L("gradeLabel")}</legend><div style="color: ${report.color}; font-size: 1.8em;">${report.grade}</div></fieldset>${summaryFieldset(L("system"), SYSTEM_KEYS, dialogData)}${summaryFieldset(L("sceneStats"), Object.keys(dialogData).filter((key) => !SYSTEM_KEYS.includes(key)), dialogData)}</section><section class="tab" data-group="report" data-tab="offenders"><p class="hint">${L("estimateHint")}</p>${offendersTable(offenders)}${groupsTable(groups)}</section><section class="tab" data-group="report" data-tab="bake">${bakeTable(recommendations)}${plan ? autoBakeSection(plan) : ""}</section>`,
         buttons: [
             {
                 label: L("copy"),

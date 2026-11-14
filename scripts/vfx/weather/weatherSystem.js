@@ -210,8 +210,8 @@ Hooks.on("updateScene", (scene, changes) => {
     if (scene === canvas.scene && needsReload(changes)) WeatherSystem.current?.reload();
 });
 
-for (const hook of ["createTile", "updateTile", "deleteTile", "createRegion", "updateRegion", "deleteRegion"]) {
+for (const hook of ["createTile", "updateTile", "deleteTile", "createRegion", "updateRegion", "deleteRegion", "createRegionBehavior", "updateRegionBehavior", "deleteRegionBehavior"]) {
     Hooks.on(hook, (document) => {
-        if (document.parent === canvas.scene) WeatherSystem.current?.shelter?.invalidate();
+        if ((document.parent?.parent ?? document.parent) === canvas.scene) WeatherSystem.current?.shelter?.invalidate();
     });
 }

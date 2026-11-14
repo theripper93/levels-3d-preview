@@ -4,6 +4,7 @@ import { getSetting } from "./settings/settingsConfig.js";
 import * as THREE from "three";
 import { applyShaderToRegion } from "./shaders/templateEffects.js";
 import { pos3DToCanvas, centerElement } from "./helpers/coords3d.js";
+import { registerFrameRateDisplay } from "./helpers/frameRate.js";
 
 export function registerWrappers() {
     Object.defineProperty(foundry.canvas.placeables.Token.prototype, "object3d", {
@@ -14,6 +15,7 @@ export function registerWrappers() {
 
     Hooks.once("ready", async function () {
         //Register Core Wrappers
+        registerFrameRateDisplay();
 
         libWrapper.register("levels-3d-preview", "foundry.canvas.layers.TokenLayer.prototype.moveMany", moveMany, "MIXED");
         libWrapper.register("levels-3d-preview", "foundry.canvas.layers.TokenLayer.prototype._prepareKeyboardMovementUpdates", prepareKeyboardMovementUpdates, "WRAPPER");

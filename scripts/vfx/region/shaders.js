@@ -1,18 +1,4 @@
-export const regionPars = `
-uniform sampler2D uField;
-uniform vec4 uFieldRect;
-uniform vec3 uColorA;
-uniform vec3 uColorB;
-uniform float uStyle;
-uniform vec4 uState;
-uniform vec3 uOrigin;
-uniform vec4 uParams;
-uniform vec4 uShape;
-uniform vec4 uFog;
-uniform float uGlow;
-uniform float uGain;
-uniform float uTime;
-
+export const noisePars = `
 float rfHash(vec2 p) {
     p = fract(p * vec2(123.34, 456.21));
     p += dot(p, p + 45.32);
@@ -36,7 +22,23 @@ float rfFbm(vec2 p) {
     }
     return value;
 }
+`;
 
+export const regionPars = `
+uniform sampler2D uField;
+uniform vec4 uFieldRect;
+uniform vec3 uColorA;
+uniform vec3 uColorB;
+uniform float uStyle;
+uniform vec4 uState;
+uniform vec3 uOrigin;
+uniform vec4 uParams;
+uniform vec4 uShape;
+uniform vec4 uFog;
+uniform float uGlow;
+uniform float uGain;
+uniform float uTime;
+${noisePars}
 vec2 rfVoronoi(vec2 p, float motion) {
     vec2 i = floor(p);
     vec2 f = fract(p);
@@ -239,12 +241,55 @@ void main() {
 }
 `;
 
+export const edgeVertex = `
+attribute vec3 aDirection;
+attribute float aSide;
+attribute float aExtend;
+uniform float uEdgeWidth;
+varying vec3 vRegionWorld;
+varying float vAcross;
+void main() {
+    vec3 world = position + normalize(aDirection) * aExtend * uEdgeWidth * 0.2;
+    vec3 side = cross(normalize(aDirection), normalize(cameraPosition - world));
+    float sideLength = length(side);
+    side = sideLength > 1e-5 ? side / sideLength : vec3(0.0, 1.0, 0.0);
+    world += side * aSide * uEdgeWidth;
+    vAcross = aSide;
+    vRegionWorld = world;
+    gl_Position = projectionMatrix * viewMatrix * vec4(world, 1.0);
+}
+`;
+
+export const edgeFragment = `
+#include <common>
+#include <vfx_scene_pars_fragment>
+#include <vfx_fog_of_war_pars_fragment>
+${regionPars}
+uniform vec3 uShell;
+varying vec3 vRegionWorld;
+varying float vAcross;
+void main() {
+    float core = 1.0 - abs(vAcross);
+    float glow = pow(core, 4.0) * 1.6 + core * core * 0.4;
+    float shimmer = rfNoise(vec2(dot(vRegionWorld, vec3(9.0, 7.0, 11.0)) - uTime * uParams.w * 1.5, uTime * 0.3));
+    glow *= 0.85 + 0.3 * shimmer;
+    float flash = 0.0;
+    float life = regionLifecycle(vRegionWorld.xz, flash);
+    glow = (glow * uShell.x * life + flash * core) * uState.w * mix(1.0, 0.6, uState.z) * vfxFogOfWar(vRegionWorld);
+    vec3 color = mix(uColorA, vec3(1.0), pow(core, 6.0) * 0.6);
+    gl_FragColor = vec4(color * glow * (0.7 + uGlow) * uGain, clamp(glow * 0.5, 0.0, 1.0));
+    #include <tonemapping_fragment>
+    #include <colorspace_fragment>
+}
+`;
+
 export const shellFragment = `
 #include <common>
 #include <vfx_scene_pars_fragment>
 #include <vfx_fog_of_war_pars_fragment>
 ${regionPars}
 uniform vec3 uShell;
+uniform vec2 uBounds;
 varying vec3 vRegionWorld;
 varying vec3 vViewNormal;
 varying vec3 vViewPosition;
@@ -252,9 +297,14 @@ varying float vWorldNormalY;
 void main() {
     vec3 viewDir = normalize(-vViewPosition);
     float facing = abs(dot(normalize(vViewNormal), viewDir));
-    float side = gl_FrontFacing ? 1.0 : 0.35;
-    float rim = pow(1.0 - facing, 6.0) * side;
-    float sheen = pow(1.0 - facing, 3.0) * side;
+    float cap = smoothstep(0.7, 0.95, abs(vWorldNormalY));
+    float wallEdge = min(abs(vRegionWorld.y - uBounds.x), abs(uBounds.y - vRegionWorld.y));
+    float edge = 1.0 - smoothstep(0.0, 0.02, mix(wallEdge, abs(regionDistance(vRegionWorld.xz)), cap));
+    float curved = smoothstep(0.0005, 0.004, length(fwidth(vViewNormal)));
+    float side = gl_FrontFacing ? curved : mix(0.8, 0.35, curved);
+    float outline = 1.0 + edge * (1.0 - curved);
+    float rim = mix(0.2 + 0.8 * pow(1.0 - facing, 2.5), pow(1.0 - facing, 6.0), curved) * side * outline;
+    float sheen = pow(1.0 - facing, mix(1.5, 3.0, curved)) * side * outline;
     float gap = vfxSceneDistance(vfxScreenUv()) - vfxFragmentDistance();
     float contact = exp(-max(gap, 0.0) / 0.008) * step(-0.003, gap) * (1.0 - smoothstep(0.7, 0.95, abs(vWorldNormalY)));
     float soft = mix(0.5, clamp(gap / 0.03, 0.0, 1.0), uShell.z);

@@ -99,7 +99,7 @@
             "controls": "Show Controls",
             "lockon": "Toggle Lock-On",
             "performance": "Set Performance Mode",
-            "performancereport": "Performance Report",
+            "performancereport": "Performance & Optimization",
             "wireframe": "Toggle Colliders",
             "fog": "Toggle Distance Fog"
         },
@@ -1527,9 +1527,9 @@
                 "name": "Soft Shadows",
                 "hint": "Enable soft shadows at a minor cost in performance. Requires refresh."
             },
-            "mergeModelMeshes": {
-                "name": "Merge Model Meshes (Experimental)",
-                "hint": "Combine model parts that share a material to reduce draw calls. Requires refresh."
+            "regionShells": {
+                "name": "Region Effect Outlines",
+                "hint": "Show the glowing volume outline around regions with a 3D effect."
             },
             "resolution": {
                 "name": "Resolution",
@@ -1547,6 +1547,96 @@
             "debugMode": {
                 "name": "Debug Mode",
                 "hint": "Show helpful debug info for troubleshooting."
+            }
+        },
+        "modelBaker": {
+            "title": "Bake Model",
+            "tilesTitle": "Bake Selected Tiles",
+            "tilesHint": "Combines {count} tiles on {level} into one tile that looks the same but is lighter for players' computers. The original tiles are deleted once you confirm.",
+            "triangles": "Model detail: {triangles} polygons",
+            "trianglesWarn": "Foundry may freeze for a while during the bake, please wait for it to finish.",
+            "excluded": "Tiles Left Out ({count})",
+            "doneTiles": "Done! {count} tiles were combined into one.",
+            "allLevels": "All Levels",
+            "destination": "Save To",
+            "changeFolder": "Choose a different folder",
+            "backup": {
+                "title": "Replace Original Tiles",
+                "content": "The {count} original tiles will be deleted and replaced by the baked tile. Make a backup copy of this scene first, just in case? The copy is hidden from the navigation bar.",
+                "backup": "Backup & Continue",
+                "continue": "Continue Without Backup",
+                "cancel": "Cancel",
+                "name": "{name} (Backup)"
+            },
+            "auto": {
+                "title": "Auto Bake",
+                "confirm": "Continue?",
+                "confirmSingles": "{singles} model(s) used by {placeables} tile(s) or token(s) will be optimized.",
+                "confirmMerges": "{tiles} tile(s) will be combined into {merges} tile(s).",
+                "backup": "Combined tiles are deleted and other tiles and tokens switch to the optimized models. Make a backup copy of this scene first, just in case? The copy is hidden from the navigation bar.",
+                "progress": "Auto Bake: {current} / {total}",
+                "done": "Auto Bake finished: {count} step(s) done.",
+                "failed": "Auto Bake finished: {count} step(s) done, {failed} failed. Press F12 and check the console for details.",
+                "nothing": "There is nothing in this scene that Auto Bake can improve.",
+                "files": "{count} new model file(s) will be saved:"
+            },
+            "reasons": {
+                "notLoaded": "Not loaded yet",
+                "shader": "Has shader effects",
+                "terrain": "Terrain",
+                "heroForge": "HeroForge model",
+                "animated": "Moves or is animated",
+                "tags": "Model has its own collision, vision or door settings",
+                "script": "Has an animation script",
+                "plane": "Flat image, not a 3D model",
+                "instanced": "Copies already drawn together, already efficient",
+                "door": "Door",
+                "particles": "Has particle effects",
+                "material": "Glass-like see-through material",
+                "dynamic": "Interactive or changes during play",
+                "hidden": "Hidden",
+                "single": "Nothing else on this level to combine it with",
+                "tiling": "Repeating texture, kept separate to stay sharp",
+                "complex": "Large or detailed, optimized on its own instead"
+            },
+            "textureSize": "Quality",
+            "repointAll": "Update All Using This Model",
+            "repointAllHint": "Switch every tile or token in this scene that uses this model to the optimized version.",
+            "bake": "Bake",
+            "save": "Confirm & Save",
+            "discard": "Discard",
+            "recommended": "{size} (Recommended)",
+            "previewReady": "Bake finished. Check the preview, then save it or discard it.",
+            "done": "Model optimized and saved. Updated {count} tile(s) or token(s).",
+            "stats": {
+                "before": "Before",
+                "after": "After",
+                "meshes": "Pieces",
+                "materials": "Materials",
+                "textures": "Images",
+                "drawCalls": "Render Cost",
+                "fileSize": "File Size"
+            },
+            "progress": {
+                "load": "Loading...",
+                "unwrap": "Preparing the model...",
+                "bake": "Painting the textures...",
+                "export": "Building the file...",
+                "save": "Saving file..."
+            },
+            "errors": {
+                "noModel": "Set a model file before baking.",
+                "load": "This model could not be loaded, or there is nothing in it to bake.",
+                "animated": "Animated models cannot be baked.",
+                "atlas": "The model is too detailed for this quality setting. Try a higher quality.",
+                "upload": "The baked model could not be saved.",
+                "heroForge": "HeroForge models cannot be baked.",
+                "notEnough": "Select at least two tiles that can be baked. Press F12 to see in the console why tiles were left out.",
+                "levels": "All tiles must be on the same level.",
+                "behaviour": "All tiles must have the same collision, vision and shadow settings.",
+                "triangles": "This selection is too detailed to bake in one go. Select fewer tiles.",
+                "changed": "Some tiles changed after the bake. Please bake again.",
+                "packageFolder": "Please pick a folder in your own data. Files inside modules or systems are deleted when they update."
             }
         },
         "exporter": {
@@ -1585,6 +1675,9 @@
             "mist": "Mist",
             "mist2": "Mist 2",
             "gravitywell": "Gravity Well",
+            "fogvolume": "Fog Volume",
+            "darknessvolume": "Darkness Volume",
+            "smokevolume": "Smoke Volume",
             "candle": "Candle",
             "lantern": "Lantern",
             "brazier": "Brazier",
@@ -1766,17 +1859,46 @@
             },
             "notification": "3D Canvas: Performance Mode set to {performancemode}.",
             "report": {
-                "title": "3D Canvas | Scene Report",
+                "title": "3D Canvas | Performance & Optimization",
                 "grade": "Performance Grade | {grade}",
                 "realBad": "Real Bad",
                 "property": "Property",
                 "value": "Value",
                 "copy": "Copy to Clipboard",
                 "close": "Close",
-                "estimateHint": "CPU and GPU columns are estimated shares of the scene's total cost, computed from draw calls, render passes, triangles, textures and materials. They are not measured frame times.",
+                "bakeTab": "Bake Recommendations",
+                "autoBake": "Auto Bake",
+                "autoBakeHint": "Makes the scene run smoother in one click: models that are drawn in many pieces get optimized, and the remaining still decorations are combined into a single tile. Terrain, water, shader effects, doors and anything that moves stay untouched.",
+                "autoBakeMerges": "Combined per Level",
+                "autoBakeMerge": "Combined Tiles",
+                "autoBakeUnloaded": "{count} tile(s) on other levels are skipped. Switch to their level to auto bake them.",
+                "autoBakeSingles": "Optimized Models",
+                "autoBakeNoMerge": "There are not enough still decorations to combine.",
+                "autoBakeNoSingle": "No other models need optimizing.",
+                "autoBakeExcluded": "Left Untouched ({count})",
+                "autoBakeRun": "Run Auto Bake",
+                "alert": "This scene could run smoother. Open to see optimization options.",
+                "modelBaked": "Model optimized",
+                "level": "Level",
+                "tiles": "Tiles",
+                "triangles": "Detail",
+                "trianglesValue": "{triangles} polygons",
+                "tooLarge": "Too detailed to bake in one go, skipped",
+                "largeWarn": "Foundry may freeze for a while",
+                "bakeHint": "These models are drawn in many separate pieces, which slows the scene down. Baking turns each one into a single optimized piece that looks the same.",
+                "bakeNone": "Nothing here needs baking. Nice!",
+                "drawCalls": "Render Cost",
+                "textures": "Textures",
+                "savedCalls": "Cost Saved",
+                "bakeSize": "Suggested Quality",
+                "bake": "Bake",
+                "estimateHint": "Shows which objects slow your scene down the most. The CPU and GPU numbers are estimates of each object's share of the work, not exact timings.",
                 "summary": "Summary",
-                "offenders": "Offenders",
-                "worstOffenders": "Worst Offenders",
+                "gradeLabel": "Grade",
+                "system": "System",
+                "sceneStats": "Scene",
+                "offenders": "Cost Breakdown",
+                "worstOffenders": "Most Expensive Objects",
                 "byAsset": "By Asset",
                 "object": "Object",
                 "asset": "Asset",
@@ -2687,14 +2809,12 @@
             "intensity": {
                 "label": "Intensity"
             },
+            "projection": {
+                "label": "Ground Projection",
+                "hint": "Show the effect painted on the ground. Disable to use volumes and particles as scene dressing."
+            },
             "particles": {
                 "label": "Particles"
-            },
-            "weatherZone": {
-                "label": "Weather Zone",
-                "hint": "Shelter: no precipitation or splashes inside this region.",
-                "none": "None",
-                "shelter": "Shelter"
             }
         },
         "mergeTiles": {

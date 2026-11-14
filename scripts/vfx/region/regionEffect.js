@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { toCreasedNormals } from "three/addons/utils/BufferGeometryUtils.js";
 import { factor } from "../../main.js";
 import { VFX_LAYER } from "../constants.js";
 import { capabilities, createProjectionMaterial, createProjectionVolume, sceneUniforms, warm } from "../render/index.js";
@@ -6,7 +7,7 @@ import { getQuality } from "../quality.js";
 import { sampleGlobalLight, additiveGain } from "../probe.js";
 import { buildDistanceField } from "./distanceField.js";
 import { STYLES, THEMES } from "./themes.js";
-import { groundFragment, flatVertex, flatFragment, shellVertex, shellFragment, fogVertex, fogFragment } from "./shaders.js";
+import { groundFragment, flatVertex, flatFragment, shellVertex, shellFragment, edgeVertex, edgeFragment, fogVertex, fogFragment } from "./shaders.js";
 import { RegionEmitter } from "./emitter.js";
 import { autoTheme } from "../../shaders/templateEffects.js";
 import { playDirectional } from "../effects/directional.js";
@@ -17,6 +18,11 @@ const SUSTAIN_SETTLE = 2.5;
 const DISSOLVE_DURATION = 0.8;
 const DIRECTIONAL_DURATION = 3000;
 const FLAT_BAND = [0.05, 0.25];
+const EDGE_ANGLE = 30;
+const EDGE_WIDTH = 0.004;
+const EDGE_MITER = 0.5;
+const SHELL_CREASE = Math.PI / 6;
+const SHOW_EDGES = false;
 const LIGHT_REFRESH = 500;
 const regionTime = { value: 0 };
 const boxGeometry = new THREE.BoxGeometry(1, 1, 1);
@@ -49,7 +55,7 @@ export function resolveRegionFx(region, isFog = false) {
     const theme = THEMES[id];
     const base = flags.color || (theme.colors ? null : region.color?.css) || null;
     const colors = base ? [base, new THREE.Color(base).multiplyScalar(0.4).getStyle()] : theme.colors;
-    return { id, theme, colors, intensity: Number.isFinite(Number(flags.intensity)) && flags.intensity !== "" && flags.intensity !== null && flags.intensity !== undefined ? Number(flags.intensity) : 1, particles: flags.particles !== false };
+    return { id, theme, colors, intensity: Number.isFinite(Number(flags.intensity)) && flags.intensity !== "" && flags.intensity !== null && flags.intensity !== undefined ? Number(flags.intensity) : 1, particles: flags.particles !== false, projection: flags.projection !== false };
 }
 
 function regionOrigin(region, bounds) {
@@ -74,7 +80,7 @@ export class RegionEffect extends THREE.Group {
         this.computeExtents();
         this.uniforms = this.createUniforms();
         this.createGround();
-        if (this.region3d.height > 0.02 && !fx.theme.fog) this.createShells();
+        if (this.region3d.height > 0.02 && !fx.theme.fog && game.settings.get("levels-3d-preview", "regionShells")) this.createShells();
         if (fx.theme.fog) this.createFog();
         if (fx.particles && fx.theme.particles && !preview) this.emitter = new RegionEmitter(this);
     }
@@ -150,7 +156,7 @@ export class RegionEffect extends THREE.Group {
 
     createShells() {
         const material = this.premultiply(new THREE.ShaderMaterial({
-            uniforms: { ...sceneUniforms, ...this.uniforms },
+            uniforms: { ...sceneUniforms, ...this.uniforms, uBounds: { value: new THREE.Vector2(this.region3d.bottom, this.region3d.bottom + this.region3d.height) } },
             vertexShader: shellVertex,
             fragmentShader: shellFragment,
             transparent: true,
@@ -161,12 +167,80 @@ export class RegionEffect extends THREE.Group {
         this.region3d.updateMatrixWorld(true);
         this.region3d.traverse((child) => {
             if (!child.isMesh || !child.material?.userData?.hitbox) return;
-            const shell = new THREE.Mesh(child.geometry, material);
+            const shell = new THREE.Mesh(toCreasedNormals(child.geometry, SHELL_CREASE), material);
+            shell.userData.ownsGeometry = true;
             shell.matrixAutoUpdate = false;
             shell.matrix.copy(child.matrixWorld);
             shell.layers.set(VFX_LAYER);
             this.add(shell);
+            if (SHOW_EDGES) this.createEdges(child);
         });
+    }
+
+    createEdges(child) {
+        const edges = new THREE.EdgesGeometry(child.geometry, EDGE_ANGLE);
+        const source = edges.attributes.position;
+        const count = source.count / 2;
+        edges.dispose();
+        if (!count) return;
+        const position = new Float32Array(count * 12);
+        const direction = new Float32Array(count * 12);
+        const side = new Float32Array(count * 4);
+        const index = [];
+        const segments = [];
+        const joints = new Map();
+        const key = (p) => `${Math.round(p.x * 1e4)},${Math.round(p.y * 1e4)},${Math.round(p.z * 1e4)}`;
+        for (let i = 0; i < count; i++) {
+            const a = new THREE.Vector3().fromBufferAttribute(source, i * 2).applyMatrix4(child.matrixWorld);
+            const b = new THREE.Vector3().fromBufferAttribute(source, i * 2 + 1).applyMatrix4(child.matrixWorld);
+            const d = b.clone().sub(a).normalize();
+            segments.push({ a, b, d });
+            for (const point of [a, b]) {
+                const k = key(point);
+                if (!joints.has(k)) joints.set(k, []);
+                joints.get(k).push(d);
+            }
+        }
+        const extend = new Float32Array(count * 4);
+        const miter = (point, d) => {
+            const shared = joints.get(key(point));
+            if (shared.length !== 2) return null;
+            const other = shared[0] === d ? shared[1] : shared[0];
+            const aligned = other.dot(d) < 0 ? other.clone().negate() : other;
+            return aligned.dot(d) > EDGE_MITER ? d.clone().add(aligned).normalize() : null;
+        };
+        for (let i = 0; i < count; i++) {
+            const { a, b, d } = segments[i];
+            const corners = [[a, -1, -1], [a, 1, -1], [b, -1, 1], [b, 1, 1]];
+            corners.forEach(([point, s, end], j) => {
+                const joined = miter(point, d);
+                point.toArray(position, (i * 4 + j) * 3);
+                (joined ?? d).toArray(direction, (i * 4 + j) * 3);
+                side[i * 4 + j] = s;
+                extend[i * 4 + j] = joined ? 0 : end;
+            });
+            const v = i * 4;
+            index.push(v, v + 1, v + 2, v + 2, v + 1, v + 3);
+        }
+        const geometry = new THREE.BufferGeometry();
+        geometry.setAttribute("position", new THREE.BufferAttribute(position, 3));
+        geometry.setAttribute("aDirection", new THREE.BufferAttribute(direction, 3));
+        geometry.setAttribute("aSide", new THREE.BufferAttribute(side, 1));
+        geometry.setAttribute("aExtend", new THREE.BufferAttribute(extend, 1));
+        geometry.setIndex(index);
+        this.edgeMaterial ??= this.premultiply(new THREE.ShaderMaterial({
+            uniforms: { ...sceneUniforms, ...this.uniforms, uEdgeWidth: { value: EDGE_WIDTH } },
+            vertexShader: edgeVertex,
+            fragmentShader: edgeFragment,
+            transparent: true,
+            depthWrite: false,
+            side: THREE.DoubleSide,
+        }));
+        const mesh = new THREE.Mesh(geometry, this.edgeMaterial);
+        mesh.frustumCulled = false;
+        mesh.userData.ownsGeometry = true;
+        mesh.layers.set(VFX_LAYER);
+        this.add(mesh);
     }
 
     createFog() {
@@ -192,8 +266,8 @@ export class RegionEffect extends THREE.Group {
 
     updateMode() {
         const projected = capabilities.decals;
-        this.ground.visible = projected;
-        this.flat.visible = !projected;
+        this.ground.visible = projected && this.fx.projection;
+        this.flat.visible = !projected && this.fx.projection;
         this.uniforms.uShell.value.z = this.uniforms.uFog.value.w = capabilities.active ? 1 : 0;
         if (this.fogMesh) this.fogMesh.material.depthTest = !capabilities.active;
     }
@@ -270,7 +344,7 @@ export class RegionEffect extends THREE.Group {
         this.field?.texture.dispose();
         this.traverse((child) => {
             if (child === this.fogMesh) return child.material.dispose();
-            if (child === this.flat) child.geometry.dispose();
+            if (child === this.flat || child.userData.ownsGeometry) child.geometry.dispose();
             child.material?.dispose();
         });
         this.uniforms = null;
@@ -284,7 +358,8 @@ export class RegionEffect extends THREE.Group {
         const uniforms = { uField: { value: null }, uTime: regionTime };
         warm(
             createProjectionMaterial({ fragment: groundFragment, uniforms, blending: "normal" }),
-            new THREE.ShaderMaterial({ uniforms: { ...sceneUniforms, ...uniforms }, vertexShader: shellVertex, fragmentShader: shellFragment, transparent: true }),
+            new THREE.ShaderMaterial({ uniforms: { ...sceneUniforms, ...uniforms, uBounds: { value: new THREE.Vector2() } }, vertexShader: shellVertex, fragmentShader: shellFragment, transparent: true }),
+            new THREE.ShaderMaterial({ uniforms: { ...sceneUniforms, ...uniforms, uEdgeWidth: { value: EDGE_WIDTH } }, vertexShader: edgeVertex, fragmentShader: edgeFragment, transparent: true }),
             new THREE.ShaderMaterial({ uniforms: { ...sceneUniforms, ...uniforms }, vertexShader: fogVertex, fragmentShader: fogFragment, transparent: true }),
             new THREE.ShaderMaterial({ uniforms, vertexShader: flatVertex, fragmentShader: flatFragment, transparent: true }),
         );

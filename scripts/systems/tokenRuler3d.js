@@ -330,8 +330,15 @@ export function registerTokenRuler3D() {
     return true;
 }
 
-export async function recreateTokenRulers3D() {
-    if (!canvas?.ready || !canvas.tokens) return;
+let rulerRecreate = Promise.resolve();
+
+export function recreateTokenRulers3D() {
+    rulerRecreate = rulerRecreate.then(recreateTokenRulers);
+    return rulerRecreate;
+}
+
+async function recreateTokenRulers() {
+    if (!canvas?.ready || canvas.loading || !canvas.tokens) return;
     const promises = [];
     for (const token of canvas.tokens.placeables) {
         if (token.destroyed || token.ruler === undefined) continue;

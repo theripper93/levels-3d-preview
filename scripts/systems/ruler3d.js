@@ -448,11 +448,16 @@ export function registerRuler3D() {
     return true;
 }
 
-export async function redrawRulers3D() {
-    if (!canvas?.ready || !canvas.controls) return;
-    try {
-        await canvas.controls.drawRulers();
-    } catch (e) {
-        console.error("3D Canvas | Failed to redraw rulers", e);
-    }
+let rulerRedraw = Promise.resolve();
+
+export function redrawRulers3D() {
+    rulerRedraw = rulerRedraw.then(async () => {
+        if (!canvas?.ready || canvas.loading || !canvas.controls) return;
+        try {
+            await canvas.controls.drawRulers();
+        } catch (e) {
+            console.error("3D Canvas | Failed to redraw rulers", e);
+        }
+    });
+    return rulerRedraw;
 }

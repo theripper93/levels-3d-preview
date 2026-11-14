@@ -7,3 +7,4 @@ import "./presets.js";
 import "./ambient.js";
 import "./directional.js";
 import "./impacts.js";
+import "./volumes.js";

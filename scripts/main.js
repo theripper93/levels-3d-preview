@@ -79,6 +79,7 @@ import { QuickTerrain } from "./apps/QuickTerrain.js";
 import { Shape3D } from "./entities/shape3d.js";
 import { Region3D } from "./entities/region3d.js";
 import { check3DToggleConflicts } from "./helpers/conflict-manager.js";
+import { acceptFrame } from "./helpers/frameRate.js";
 
 // import "../scss/module.scss";
 
@@ -618,7 +619,8 @@ class Levels3DPreview {
         this.renderer = this._sharedContext ? new THREE.WebGLRenderer({ context: canvas.app.renderer.context.gl }) : new THREE.WebGLRenderer();
         this.renderer.setSize(window.innerWidth, window.innerHeight);
         this.lightWarmup = new LightWarmup(this);
-        this.renderer.setAnimationLoop(this.animation.bind(this));
+        if (this._sharedContext) canvas.app.ticker.add(() => this.animation(performance.now()), null, PIXI.UPDATE_PRIORITY.UTILITY);
+        else this.renderer.setAnimationLoop(this.animation.bind(this));
         this.renderer.shadowMap.enabled = true;
         this.renderer.outputColorSpace = THREE.SRGBColorSpace;
 
@@ -1405,6 +1407,7 @@ class Levels3DPreview {
         try {
             if (!this._active) return;
             if (!this._ready) return this._onProgress();
+            if (!acceptFrame(time)) return;
             if (this._sharedContext) {
                 //canvas.app.renderer.reset();
                 this.renderer.resetState();

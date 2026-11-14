@@ -90,6 +90,27 @@
     color: var(--color-warm-2);
 }
 
+.build-panel-button.levels3d-performance-alert{
+    color: var(--color-level-error);
+    animation: levels3d-performance-pulse 2s ease-in-out infinite;
+}
+
+.build-panel-button.levels3d-performance-alert.levels3d-reduce-motion{
+    animation: none;
+}
+
+@media (prefers-reduced-motion: reduce){
+    .build-panel-button.levels3d-performance-alert{
+        animation: none;
+    }
+}
+
+@keyframes levels3d-performance-pulse{
+    50%{
+        opacity: 0.5;
+    }
+}
+
 #levels-3d-preview-select-box{
     position: absolute;
     z-index: 100;

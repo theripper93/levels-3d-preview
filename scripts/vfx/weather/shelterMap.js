@@ -82,7 +82,7 @@ export class ShelterMap {
         const factor = this._parent.factor;
         const scene = new THREE.Scene();
         for (const region of canvas.scene.regions) {
-            if (region.getFlag(MODULE_ID, ZONE_FLAG) !== "shelter") continue;
+            if (!region.behaviors.some((behavior) => behavior.type === "suppressWeather" && !behavior.disabled) && region.getFlag(MODULE_ID, ZONE_FLAG) !== "shelter") continue;
             for (const polygon of region.polygons ?? []) {
                 const points = [];
                 for (let i = 0; i < polygon.points.length; i += 2) points.push(new THREE.Vector2(polygon.points[i] / factor, polygon.points[i + 1] / factor));

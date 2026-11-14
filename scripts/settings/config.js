@@ -8,6 +8,7 @@ import { injectConfig } from "../lib/injectConfig.js";
 import { weatherConfigFields, activateWeatherConfig } from "../vfx/weather/config.js";
 import { lightFxConfigFields, activateLightFxConfig } from "../vfx/light/config.js";
 import { TacticalPingPicker, loadUserEmotes } from "../entities/effects/ping.js";
+import { injectBakeButton } from "../helpers/modelBaker.js";
 
 export function registerConfigs() {
     const documentsToWiden = ["Scene", "Token", "Tile", "AmbientLight"];
@@ -1016,6 +1017,7 @@ export function registerConfigs() {
         });
 
         html.querySelector("select[name='flags.levels-3d-preview.ParticleType']").dispatchEvent(new Event("change"));
+        injectBakeButton(app, html);
     }
 
     Hooks.on("renderPrototypeTokenConfig", renderTokenConfig)
@@ -1661,6 +1663,8 @@ export function registerConfigs() {
 
         ShaderConfig.injectButton(app, html, html.querySelector(`#shader-config`));
 
+        injectBakeButton(app, html);
+
         const mapGenBtn = document.createElement("button");
         mapGenBtn.type = "button";
         mapGenBtn.title = "Configure Map Generator";
@@ -1688,18 +1692,18 @@ export function registerConfigs() {
             const hideAll = event.target.value === "none";
             particleFlags.forEach((flag) => {
                 const input = html.querySelector(`[name='flags.levels-3d-preview.${flag}']`);
-                input.closest(".form-group").classList.toggle("hidden", !hideAll);
+                input.closest(".form-group").classList.toggle("hidden", hideAll);
             });
 
-            gradientPickerEl.classList.toggle("hidden", !hideAll);
+            gradientPickerEl.classList.toggle("hidden", hideAll);
 
             const sprite = html.querySelector(`[name='flags.levels-3d-preview.ParticleSprite']`);
-            sprite.closest(".form-group").classList.toggle("hidden", !hideAll && showSprite.includes(event.target.value));
+            sprite.closest(".form-group").classList.toggle("hidden", hideAll || !showSprite.includes(event.target.value));
             if (!firstChange) {
                 const defaultValues = PS.getDefaultLightData(event.target.value);
                 const scaleInput = html.querySelector(`[name='flags.levels-3d-preview.ParticleScale']`);
                 // const emitSizeInput = html.querySelector(`[name='flags.levels-3d-preview.ParticleEmitterSizeMultiplier']`);
-                scaleInput.value = defaultValues.scale;
+                if (defaultValues) scaleInput.value = defaultValues.scale;
                 // emitSizeInput.value = defaultValues.emitterSize;
             } else {
                 firstChange = false;
@@ -1884,7 +1888,7 @@ export function registerConfigs() {
             ...lightFxConfigFields(),
             partHeader: {
                 type: "custom",
-                html: `<h3 class="form-header"><i class="fas fa-fire"></i> ${game.i18n.localize("levels3dpreview.flags.lightParticleEffect.header.title")}</h3><p class="hint">${game.i18n.localize("levels3dpreview.flags.lightParticleEffect.header.notes")}</p><div class="standard-form">`,
+                html: `<fieldset><legend><i class="fas fa-fire"></i> ${game.i18n.localize("levels3dpreview.flags.lightParticleEffect.header.title")}</legend><p class="hint">${game.i18n.localize("levels3dpreview.flags.lightParticleEffect.header.notes")}</p>`,
             },
             enableParticle: {
                 type: "checkbox",
@@ -2010,6 +2014,10 @@ export function registerConfigs() {
                 type: "color",
                 label: game.i18n.localize("levels3dpreview.flags.lightParticleEffect.ParticleColor2.label"),
                 default: "#ffffff",
+            },
+            partEnd: {
+                type: "custom",
+                html: "</fieldset>",
             },
         });
         let firstChange = true;

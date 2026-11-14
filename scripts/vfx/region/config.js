@@ -21,20 +21,12 @@ function fieldset(region) {
     const color = elements.HTMLColorPickerElement.create({ name: `${PREFIX}.regionFx.color`, value: fx.color ?? "" });
     const intensity = elements.HTMLRangePickerElement.create({ name: `${PREFIX}.regionFx.intensity`, value: Number(fx.intensity ?? 1), min: 0.2, max: 2, step: 0.1 });
     const particles = fields.createCheckboxInput({ name: `${PREFIX}.regionFx.particles`, value: fx.particles !== false });
-    const weatherZone = fields.createSelectInput({
-        name: `${PREFIX}.weatherZone`,
-        value: region.getFlag(MODULE_ID, "weatherZone") ?? "",
-        options: [
-            { value: "", label: "levels3dpreview.regionFx.weatherZone.none" },
-            { value: "shelter", label: "levels3dpreview.regionFx.weatherZone.shelter" },
-        ],
-        localize: true,
-    });
+    const projection = fields.createCheckboxInput({ name: `${PREFIX}.regionFx.projection`, value: fx.projection !== false });
     const groups = [
         { label: "levels3dpreview.regionFx.theme.label", hint: "levels3dpreview.regionFx.theme.hint", input: theme },
-        { label: "levels3dpreview.regionFx.weatherZone.label", hint: "levels3dpreview.regionFx.weatherZone.hint", input: weatherZone },
         { label: "levels3dpreview.regionFx.color.label", hint: "levels3dpreview.regionFx.color.hint", input: color },
         { label: "levels3dpreview.regionFx.intensity.label", input: intensity },
+        { label: "levels3dpreview.regionFx.projection.label", hint: "levels3dpreview.regionFx.projection.hint", input: projection },
         { label: "levels3dpreview.regionFx.particles.label", input: particles },
     ];
     for (const group of groups) container.append(fields.createFormGroup({ ...group, localize: true }));

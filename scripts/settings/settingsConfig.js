@@ -626,14 +626,17 @@ export function registerSettings() {
             },
         });
 
-        game.settings.register("levels-3d-preview", "mergeModelMeshes", {
-            name: game.i18n.localize("levels3dpreview.settings.mergeModelMeshes.name"),
-            hint: game.i18n.localize("levels3dpreview.settings.mergeModelMeshes.hint"),
+        game.settings.register("levels-3d-preview", "regionShells", {
+            name: game.i18n.localize("levels3dpreview.settings.regionShells.name"),
+            hint: game.i18n.localize("levels3dpreview.settings.regionShells.hint"),
             scope: "world",
             config: true,
             type: Boolean,
-            default: false,
-            requiresReload: true,
+            default: true,
+            onChange: () => {
+                if (!game.Levels3DPreview?._active) return;
+                canvas.scene?.regions.forEach((region) => game.Levels3DPreview.CONFIG.entityClass.Region3D?.handle(region));
+            },
         });
 
         game.settings.register("levels-3d-preview", "shadowQuality", {

@@ -19,11 +19,13 @@
     "create": "node createApp.js",
     "watch": "npx webpack --config webpack.config.js --watch",
     "ignore-compendiums": "node skip-worktree.js packs/ ignore",
-    "update-compendiums": "node skip-worktree.js packs/ update"
+    "update-compendiums": "node skip-worktree.js packs/ update",
+    "vendor": "node -e \"['index.mjs','xatlas.wasm'].forEach(f=>require('fs').copyFileSync('node_modules/xatlas-wasm/dist/'+f,'scripts/lib/xatlas/'+f))\""
   },
   "dependencies": {
     "three": "^0.187.0",
     "three-mesh-bvh": "^0.9.1",
-    "three.quarks": "^0.17.1"
+    "three.quarks": "^0.17.1",
+    "xatlas-wasm": "0.2.0"
   }
 }
