@@ -81,8 +81,25 @@ export class Shape3D extends THREE.Object3D {
     }
     
     getDefaultMaterial(forceDoubleSide = false) {
+        const side = forceDoubleSide ? THREE.DoubleSide : this.height <= 0.01 ? THREE.FrontSide : THREE.BackSide;
+        if (this.isDrawPreview) return Shape3D.getPreviewMaterial(side, this.color, this.uvScale ?? 50);
         const material = new DiagonalStripesMaterial({ color: this.color, scale: this.uvScale ?? 50 });
-        material.side = forceDoubleSide ? THREE.DoubleSide : this.height <= 0.01 ? THREE.FrontSide : THREE.BackSide;
+        material.side = side;
+        return material;
+    }
+
+    static #previewMaterials = new Map();
+
+    static getPreviewMaterial(side, color, scale) {
+        let material = Shape3D.#previewMaterials.get(side);
+        if (!material) {
+            material = new DiagonalStripesMaterial();
+            material.side = side;
+            material.userData.persistent = true;
+            Shape3D.#previewMaterials.set(side, material);
+        }
+        material.uniforms.uColor.value.set(color);
+        material.uniforms.uScale.value = scale;
         return material;
     }
 
@@ -180,6 +197,7 @@ export class Shape3D extends THREE.Object3D {
         shape3d.region = region;
         shape3d.extrude = extrude;
         shape3d.material = material;
+        shape3d.isDrawPreview = !shape;
         shape3d.tool = tool;
         shape3d.color = hole ? "grey" : color ?? region?.color?.css ?? defaults.color?.css ?? Shape3D.getRandomColor();
         if (shape3d.extrude) shape3d.drawExtrude();

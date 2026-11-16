@@ -1840,7 +1840,9 @@ class Levels3DPreview {
     }
 
     setFilters(set) {
-        const filter = canvas.scene.getFlag("levels-3d-preview", "filter") ?? "none";
+        const filter = canvas.scene?.getFlag("levels-3d-preview", "filter") ?? "none";
+        const board = canvas.app?.view ?? document.querySelector("#board");
+        const levels3d = this.renderer?.domElement ?? document.querySelector("#levels3d");
         if (set && filter != "none") {
             let filterStrength = canvas.scene.getFlag("levels-3d-preview", "filterStrength");
             const filterCustom = canvas.scene.getFlag("levels-3d-preview", "filterCustom");
@@ -1851,14 +1853,9 @@ class Levels3DPreview {
                 if (filter == "hue-rotate") filterStrength = `${filterStrength * 180}deg`;
                 filterValue = `${filter}(${filterStrength})`;
             }
-            if (this._sharedContext) {
-                document.querySelector("#board").style.filter = filterValue;
-            } else {
-                document.querySelector("#levels3d").style.filter = filterValue;
-            }
+            const target = this._sharedContext ? board : levels3d;
+            if (target) target.style.filter = filterValue;
         } else {
-            const board = document.querySelector("#board");
-            const levels3d = document.querySelector("#levels3d");
             if (board) board.style.filter = "";
             if (levels3d) levels3d.style.filter = "";
         }
