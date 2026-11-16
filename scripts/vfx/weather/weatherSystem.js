@@ -6,6 +6,8 @@ import { ShelterMap } from "./shelterMap.js";
 import { Atmosphere } from "./atmosphere.js";
 import { getQuality } from "../quality.js";
 import { sampleGlobalLight } from "../probe.js";
+import { SurfaceSystem } from "../surface/surfaceSystem.js";
+import { surfaceMacroData, isInteriorScene } from "../surface/state.js";
 
 const MODULE_ID = "levels-3d-preview";
 const TRANSITION = 4;
@@ -47,6 +49,7 @@ export class WeatherSystem {
         };
         this.setupVolume();
         this.atmosphere = new Atmosphere(this);
+        this.surface = new SurfaceSystem(this);
         this.state = emptyState();
         this.reload(false);
     }
@@ -161,12 +164,25 @@ export class WeatherSystem {
         this.time += delta;
         wind.time = this.time;
         this.shared.uTime.value = this.time;
-        this.shelter?.update();
+        if (this.surface.active && !this.shelter) this.shelter = new ShelterMap(this._parent, this.shared);
+        this.surface.update(delta, !!this.shelter?.update());
         this.updateVolume(delta);
         this.atmosphere.update(delta, { light: this.updateLight(), wind });
-        if (!this.layers.size) return;
+        if (this.updateInterior() || !this.layers.size) return;
         const context = { wind, gust: wind.gustAt(this.time), squareSize: this.squareSize, wrap: this.wrap };
         for (const layer of this.layers.values()) layer.update(delta, context);
+    }
+
+    updateInterior() {
+        const interior = isInteriorScene();
+        if (interior) {
+            for (const layer of this.layers.values()) {
+                layer.mesh.visible = false;
+                if (layer.impact) layer.impact.visible = false;
+            }
+        } else if (this.interior) this.applyState(this.state);
+        this.interior = interior;
+        return interior;
     }
 
     async toMacro() {
@@ -177,7 +193,7 @@ export class WeatherSystem {
         });
         if (!name) return null;
         const weather = canvas.scene.getFlag(MODULE_ID, "weather") ?? this.flag;
-        return Macro.create({ name, type: "script", img: "icons/magic/air/weather-clouds-rainbow.webp", command: `await game.Levels3DPreview.vfx.weather.setWeather(${JSON.stringify(weather)});` });
+        return Macro.create({ name, type: "script", img: "icons/magic/air/weather-clouds-rainbow.webp", command: `await game.Levels3DPreview.vfx.surface.setSurface(${JSON.stringify(surfaceMacroData())});\nawait game.Levels3DPreview.vfx.weather.setWeather(${JSON.stringify(weather)});` });
     }
 
     setWeather(weather) {
@@ -189,6 +205,7 @@ export class WeatherSystem {
         this.layers.clear();
         this.shelter?.dispose();
         this.shelter = null;
+        this.surface.destroy();
         this.atmosphere.dispose();
         this.group.removeFromParent();
         wind.set(0, 0, 0);

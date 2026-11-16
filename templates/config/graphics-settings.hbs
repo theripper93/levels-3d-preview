@@ -1,0 +1,23 @@
+<div>
+    <fieldset>
+        <legend>{{localize "levels3dpreview.performance.settings.presets"}}</legend>
+        <div class="form-group">
+            <label>{{localize "levels3dpreview.performance.settings.preset"}}</label>
+            <div class="form-fields">
+                <select name="preset">
+                    {{selectOptions presetOptions selected=preset localize=true}}
+                </select>
+            </div>
+            <p class="hint preset-description">{{localize presetDescription}}</p>
+        </div>
+        <p class="hint">{{localize "levels3dpreview.performance.settings.presetHint"}}</p>
+    </fieldset>
+
+    <fieldset>
+        <legend>{{localize "levels3dpreview.performance.settings.header"}}</legend>
+        {{#each settings}}
+        {{formGroup field value=value localize=true}}
+        {{/each}}
+        <p class="hint resolution-hint">{{{resolutionHint}}}</p>
+    </fieldset>
+</div>

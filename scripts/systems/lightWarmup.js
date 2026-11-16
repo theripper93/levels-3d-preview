@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { compileForComposer } from "../render/pipeline.js";
 
 export const WARMUP_LAYER = 31;
 const MAX_WAIT = 10000;
@@ -10,6 +11,7 @@ export class LightWarmup {
         this._parent = parent;
         this.camera = new THREE.PerspectiveCamera();
         this.pending = new Set();
+        this.changes = [];
         this.batch = null;
         this.effectLights = new Set();
         this.effectPool = [];
@@ -65,7 +67,13 @@ export class LightWarmup {
         this.batch?.lights.delete(light);
     }
 
+    warmChange(change) {
+        if (!this._parent._ready) return finishChange(change);
+        this.changes.push(change);
+    }
+
     clear() {
+        [...(this.batch?.changes ?? []), ...this.changes.splice(0)].forEach(finishChange);
         this.pending.clear();
         this.batch = null;
         this.effectLights.clear();
@@ -79,15 +87,15 @@ export class LightWarmup {
 
     update() {
         if (this.batch) return this.batch.index < this.batch.objects.length ? this.compileStep() : this.checkBatch();
-        if (!this.pending.size) return;
+        if (!this.pending.size && !this.changes.length) return;
         const lights = new Set([...this.pending].filter((light) => this.isInScene(light)));
-        if (!lights.size) return;
+        if (!lights.size && !this.changes.length) return;
         lights.forEach((light) => this.pending.delete(light));
         const objects = [];
         this._parent.scene.traverse((object) => {
             if (object.material) objects.push(object);
         });
-        this.batch = { lights, objects, index: 0, programs: [], start: performance.now() };
+        this.batch = { lights, changes: this.changes.splice(0), objects, index: 0, programs: [], start: performance.now() };
         this.compileStep();
     }
 
@@ -108,20 +116,29 @@ export class LightWarmup {
         this.camera.layers.enable(WARMUP_LAYER);
         const waiting = [...this.pending];
         waiting.forEach((light) => light.layers.disable(WARMUP_LAYER));
-        const materials = renderer.compile(target, this.camera, this._parent.scene);
+        batch.changes.forEach((change) => change.apply());
+        const materials = compileForComposer(this._parent, target, this.camera, this._parent.scene);
+        batch.changes.toReversed().forEach((change) => change.revert());
         waiting.forEach((light) => light.layers.enable(WARMUP_LAYER));
         materials.forEach((material) => {
             const program = renderer.properties.get(material).currentProgram;
             if (program) batch.programs.push({ material, program });
+            if (batch.changes.length) material.needsUpdate = true;
         });
     }
 
     checkBatch() {
-        const { lights, start } = this.batch;
+        const { lights, changes, start } = this.batch;
         const properties = this._parent.renderer.properties;
         this.batch.programs = this.batch.programs.filter(({ material, program }) => properties.get(material).currentProgram !== undefined && program.usedTimes > 0 && !program.isReady());
         if (this.batch.programs.length && performance.now() - start < MAX_WAIT) return;
         this.batch = null;
         lights.forEach((light) => light.layers.enable(0));
+        changes.forEach(finishChange);
     }
+}
+
+function finishChange(change) {
+    change.apply();
+    change.done?.();
 }

@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { factor } from "../main.js";
 import { rawTexture } from "../three/rawTexture.js";
+import { injectSurface } from "../vfx/surface/receivers.js";
 
 export const fogUniforms = {
     fogTexture: { value: null },
@@ -45,6 +46,13 @@ export class Fog {
         const fogTexResolution = canvas.visibility.textureConfiguration.resolution * fowQuality;
         this.pixiRenderTexture = PIXI.RenderTexture.create({ width: canvas.dimensions.width, height: canvas.dimensions.height, resolution: this._sharedContext ? fogTexResolution : 0.1 });
         this.pixiRenderTexture.baseTexture.alphaMode = PIXI.ALPHA_MODES.NO_PREMULTIPLIED_ALPHA;
+    }
+
+    refreshQuality() {
+        if (!this._sharedContext) return;
+        this.pixiRenderTexture?.destroy(true);
+        this.initPixiRT();
+        this.updateTexture(true);
     }
 
     async initOverlay(src = canvas.fog.overlay) {
@@ -162,6 +170,7 @@ function injectParticleFoW(shader) {
 function injectFogUniforms(shader, renderer) {
     this._userOnBeforeCompile?.call(this, shader, renderer);
     Object.assign(shader.uniforms, fogUniforms);
+    injectSurface(shader);
     if (shader.vertexShader.includes(PARTICLE_OFFSET_ATTRIBUTE)) injectParticleFoW(shader);
 }
 

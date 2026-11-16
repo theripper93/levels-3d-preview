@@ -488,10 +488,7 @@ export class ShaderHandler {
             return true;
         });
         const sky = game.Levels3DPreview.lights.globalIllumination.sky;
-        if (sky) {
-            sky.material.uniforms.time.value = delta / 100;
-            if (sky.clouds) sky.clouds.material.uniforms.iTime.value = delta / 100;
-        }
+        if (sky) sky.material.uniforms.time.value = delta / 1000;
         this._sceneUniformsNeedUpdate = false;
     }
 
@@ -1202,7 +1199,7 @@ export const shaders = {
                         p = abs(hex.xy);
                         float eDist = gridType > 3.0 ? max(dot(p, s*0.5), p.y) : max(dot(p, s*0.5), p.x);
                     
-                        gl_FragColor.rgb = mix(gl_FragColor.rgb, gridColor , smoothstep(0.0, 0.0, eDist - 0.5 + 0.01) * gridAlpha);     
+                        gl_FragColor.rgb = mix(gl_FragColor.rgb, gridColor , step(0.0, eDist - 0.5 + 0.01) * gridAlpha);     
                     }
                 }
                 `,

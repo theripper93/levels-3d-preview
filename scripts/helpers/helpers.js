@@ -3,7 +3,7 @@ import { factor } from "../main.js";
 import { Ruler3D } from "../systems/ruler3d.js";
 import { posCanvasTo3d } from "./coords3d.js";
 import { mergeVertices } from "three/addons/utils/BufferGeometryUtils.js";
-import { setPerformancePreset, injectPresetButtons } from "../settings/performancePresets.js";
+import { setPerformancePreset } from "../settings/performancePresets.js";
 import { SimplifyModifier } from "three/addons/modifiers/SimplifyModifier.js";
 import { showSceneReport, showPerformanceDialog } from "../settings/performanceReport.js";
 import { Ping } from "../entities/effects/ping.js";
@@ -26,9 +26,7 @@ export class Helpers {
         this.envCache = {};
         this._loading = {};
         this.ruler3d = Ruler3D;
-        this.setPerformancePreset = setPerformancePreset;
-        this.injectPresetButtons = injectPresetButtons;
-        this.showPerformanceDialog = showPerformanceDialog;
+        this.setPerformancePreset = setPerformancePreset;        this.showPerformanceDialog = showPerformanceDialog;
     }
 
     async loadTexture(texturePath, options = {}) {

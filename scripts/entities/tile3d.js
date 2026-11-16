@@ -10,6 +10,7 @@ import { getMergedMeshFromInstanced, meshesToSingleMesh } from "../helpers/geome
 import { Socket } from "../lib/socket.js";
 import { applyLegacyUv, applyLegacyUvMatrix } from "../three/legacyUv.js";
 import { injectTileBakeButton } from "../helpers/modelBaker.js";
+import { markReceivers } from "../vfx/surface/receivers.js";
 THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
 THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
 THREE.Mesh.prototype.raycast = acceleratedRaycast;
@@ -136,6 +137,7 @@ export class Tile3D {
             this.setMRT();
             this.setVertexColors();
             this.setPathTraced();
+            markReceivers(this.mesh, this);
             this._loaded = true;
             this.elevation3d = this.mesh.position.y;
             this.setHidden();

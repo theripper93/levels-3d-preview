@@ -5,7 +5,7 @@ const SUN_DIM = 0.65;
 const EXPOSURE_DIM = 0.3;
 const FLASH_EXPOSURE = 1.4;
 const FLASH_SUN = 6;
-const BASE_CLOUD_COVER = 0.2;
+const CLOUD_DARKNESS = 0.55;
 const INERT_FOG_NEAR = 1e7;
 const INERT_FOG_FAR = 1e8;
 const INERT_FOG = "levels3dInertFog";
@@ -21,9 +21,6 @@ const BOLT_CHANCE = 0.6;
 const drift = new THREE.Vector2();
 const weatherColor = new THREE.Color();
 const savedFogColor = new THREE.Color();
-const savedSkyTint = new THREE.Color();
-const OVERCAST = new THREE.Color(0x59626b);
-const SKY_GREY = 0.85;
 const BOLT_COLOR = "#dfe8ff";
 const HORIZON_RADIUS = 0.95;
 const SCENE_FOG_HORIZON = 0.85;
@@ -90,6 +87,7 @@ export class Atmosphere {
         this.fogColor = new THREE.Color();
         this.light = new THREE.Color();
         this.clouds = 0;
+        this.drift = new THREE.Vector2();
         this.fogAmount = 0;
         this.flash = 0;
         this.flashTime = Infinity;
@@ -128,8 +126,9 @@ export class Atmosphere {
         return this._parent.lights?.globalIllumination?.global?.sunlight;
     }
 
-    get sky() {
-        return this._parent.lights?.globalIllumination?.sky;
+    get atmosphereState() {
+        const state = this._parent.lights?.globalIllumination?.atmosphere;
+        return state?.enabled ? state : null;
     }
 
     setState(state) {
@@ -138,7 +137,7 @@ export class Atmosphere {
         this.fogColor.copy(state.fogColor);
         this.lightning = state.lightning;
         if (!this.scene.fog) this.scene.fog = this.fog;
-        if (state.fog <= 0.001) {
+        if (state.fog <= 0.001 && !this.atmosphereState) {
             this.fog.near = INERT_FOG_NEAR;
             this.fog.far = INERT_FOG_FAR;
         }
@@ -155,11 +154,16 @@ export class Atmosphere {
     }
 
     updateSky(delta, wind) {
-        const uniforms = this.sky?.clouds?.material?.uniforms;
-        if (!uniforms?.cloudsCover) return;
-        uniforms.cloudsCover.value = BASE_CLOUD_COVER + this.clouds * 0.9;
-        uniforms.cloudsDarkness.value = this.clouds * this.clouds * 0.55 - this.flash * 0.4;
-        uniforms.cloudsDrift.value.addScaledVector(drift.set(wind.vector.x, wind.vector.z), -delta * 0.002);
+        this.drift.addScaledVector(drift.set(wind.vector.x, wind.vector.z), -delta * 0.002);
+        this.atmosphereState?.setWeather({
+            cover: this.clouds,
+            darkness: this.clouds * this.clouds * CLOUD_DARKNESS,
+            drift: this.drift,
+            flash: this.flash * (this.lightning ?? 0),
+            overcast: this.clouds,
+            fogAmount: this.fogAmount,
+            fogColor: this.fogColor,
+        });
     }
 
     updateLightning(delta) {
@@ -194,17 +198,19 @@ export class Atmosphere {
     }
 
     beforeRender() {
+        if (this.atmosphereState) {
+            this.saved = null;
+            this.horizon.visible = false;
+            return;
+        }
         const sunlight = this.sunlight;
         const renderer = this._parent.renderer;
         const fog = this.scene.fog;
-        const skyTint = this.sky?.material?.uniforms?.skyTint?.value;
         this.saved = {
-            skyTint: skyTint ? savedSkyTint.copy(skyTint) : null,
             sun: sunlight?.intensity,
             exposure: renderer.toneMappingExposure,
             fog: fog ? { near: fog.near, far: fog.far, color: savedFogColor.copy(fog.color) } : null,
         };
-        if (skyTint) skyTint.lerp(OVERCAST, this.clouds * SKY_GREY);
         const dim = 1 - this.clouds * SUN_DIM;
         if (sunlight) sunlight.intensity = sunlight.intensity * dim + this.flash * FLASH_SUN * this.lightning;
         renderer.toneMappingExposure = renderer.toneMappingExposure * (1 - this.clouds * EXPOSURE_DIM) * (1 + this.flash * FLASH_EXPOSURE * this.lightning);
@@ -245,7 +251,6 @@ export class Atmosphere {
         const sunlight = this.sunlight;
         if (sunlight && saved.sun !== undefined) sunlight.intensity = saved.sun;
         this._parent.renderer.toneMappingExposure = saved.exposure;
-        if (saved.skyTint) this.sky?.material?.uniforms?.skyTint?.value.copy(saved.skyTint);
         const fog = this.scene.fog;
         if (fog && saved.fog) {
             fog.near = saved.fog.near;
@@ -263,10 +268,6 @@ export class Atmosphere {
             this.fog.near = INERT_FOG_NEAR;
             this.fog.far = INERT_FOG_FAR;
         }
-        const uniforms = this.sky?.clouds?.material?.uniforms;
-        if (uniforms?.cloudsCover) {
-            uniforms.cloudsCover.value = BASE_CLOUD_COVER;
-            uniforms.cloudsDarkness.value = 0;
-        }
+        this._parent.lights?.globalIllumination?.atmosphere?.clearWeather();
     }
 }

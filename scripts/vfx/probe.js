@@ -7,6 +7,9 @@ const LIGHT_LIST_LIFETIME = 2000;
 const WARMUP_LAYER_MASK = (1 << 31) >>> 0;
 const DAY_GAIN = 0.45;
 const DAY_LEVEL = [0.7, 1.3];
+const HEMISPHERE_GROUND = 0.3;
+const SKY_HORIZON = 0.4;
+const SKY_GROUND = 0.2;
 
 const sunDirection = new THREE.Vector3();
 const sunTarget = new THREE.Vector3();
@@ -52,7 +55,13 @@ function addGlobalLight(target) {
     }
     const ambient = globalIllumination?.ambientLight;
     if (ambient?.parent && ambient.intensity > 0) target.add(scratch.copy(ambient.color).multiplyScalar(ambient.intensity));
-    if (L.scene.environment) target.addScalar(ENVIRONMENT_LIGHT * (L.scene.environmentIntensity ?? 1));
+    const hemisphere = globalIllumination?.hemisphereLight;
+    if (hemisphere?.intensity > 0) target.add(scratch.copy(hemisphere.color).lerp(hemisphere.groundColor, HEMISPHERE_GROUND).multiplyScalar(hemisphere.intensity));
+    const atmosphere = globalIllumination?.atmosphere;
+    if (atmosphere?.enabled && L.scene.environment) {
+        scratch.copy(atmosphere.skyZenith).lerp(atmosphere.skyHorizon, SKY_HORIZON).lerp(atmosphere.skyGround, SKY_GROUND);
+        target.add(scratch.multiplyScalar(L.scene.environmentIntensity ?? 1));
+    } else if (L.scene.environment) target.addScalar(ENVIRONMENT_LIGHT * (L.scene.environmentIntensity ?? 1));
     return target;
 }
 

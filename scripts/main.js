@@ -18,14 +18,15 @@ import { RangeFinder } from "./systems/rangeFinder.js";
 import { Template3D } from "./entities/template3d.js";
 import { Cursors3D } from "./systems/cursors.js";
 import { FBXLoader } from "three/addons/loaders/FBXLoader.js";
-import { GlobalIllumination } from "./systems/globalIllumination.js";
+import { GlobalIllumination, isDynamicSkyEnabled } from "./systems/globalIllumination.js";
 import { InteractionManager, dropFunctions } from "./handlers/interactionManager.js";
 import initTemplateEffects from "./shaders/templateEffects.js";
 import { Helpers } from "./helpers/helpers.js";
 import { WeatherSystem } from "./systems/weatherSystem.js";
 import { EXRLoader } from "three/addons/loaders/EXRLoader.js";
-import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
-import { UnrealBloomPass } from "./three/LegacyUnrealBloomPass.js";
+import { compileForComposer, createComposer, createHdrPasses } from "./render/pipeline.js";
+import { HDRBloomPass, bloomThreshold, BLOOM_RADIUS } from "./render/bloomPass.js";
+import { OutputPass } from "./render/outputPass.js";
 import { Fog, injectFoWShaders } from "./systems/Fog.js";
 import { disposeScene } from "./helpers/disposeScene.js";
 import { Exporter } from "./helpers/exporter.js";
@@ -68,8 +69,6 @@ import { TokenBrowser, setHudHook } from "./apps/tokenBrowser.js";
 import { setLevelsHooks } from "./systems/sceneLevels.js";
 
 import { createTargetGeometry } from "./entities/effects/target.js";
-import { UberPass } from "./lib/UberPass.js";
-import { LegacyOutputRenderTarget } from "./three/LegacyOutputRenderTarget.js";
 import { injectLegacyLights } from "./three/legacyLights.js";
 
 import { Socket } from "./lib/socket.js";
@@ -88,6 +87,7 @@ export const factor = 1000;
 export const MODULE_ID = "levels-3d-preview";
 
 injectFoWShaders(THREE);
+vfx.surface.installSurfaceChunks(THREE);
 injectThreeModifications(THREE);
 injectLegacyLights();
 
@@ -636,13 +636,7 @@ class Levels3DPreview {
 
         this.renderer.debug.checkShaderErrors = true;
 
-        //composer
-
-        const target = new LegacyOutputRenderTarget(window.innerWidth, window.innerHeight, { samples: 8 });
-
-        this.composer = new EffectComposer(this.renderer, target);
-        this.composer.setPixelRatio(this.resolutionMulti);
-        this.composer.setSize(window.innerWidth, window.innerHeight);
+        this.composer = createComposer(this.renderer, this.resolutionMulti);
         //set dom element id
         this.renderer.domElement.id = "levels3d";
         this.controls = new OrbitControls(this.camera, this.renderer.domElement);
@@ -719,62 +713,13 @@ class Levels3DPreview {
         this.scene = new THREE.Scene();
         this.scene.background = new THREE.Color(canvas.level.background.color ?? 0xffffff);
         this.rangeFinderMode = game.settings.get("levels-3d-preview", "rangeFinder");
-        this.composer.removePass(this.renderPass);
-        this.composer.removePass(this.bloomPass);
-        this.composer.removePass(this.bokeh);
-        this.composer.removePass(this.pixelPass);
-        this.composer.removePass(this.uberPass);
-        this.bokeh = null;
-        this.renderPass = new vfx.render.EffectsPass(this);
-        this.composer.addPass(this.renderPass);
-        this.outline?.destroy();
-        this.outline = new OutlineHandler(this);
-        this.initAA();
-
-        if (canvas.scene.getFlag("levels-3d-preview", "pixel")) {
-            this.pixelPass = new RenderPixelatedPass(6, this.scene, this.camera);
-            this.pixelPass.depthEdgeStrength = 1;
-            this.pixelPass.normalEdgeStrength = 0;
-            this.composer.addPass(this.pixelPass);
-        }
-
-        if (canvas.scene.getFlag("levels-3d-preview", "bloom")) {
-            this.bloomPass = this.bloomPass ?? new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
-            this.bloomPass.threshold = canvas.scene.getFlag("levels-3d-preview", "bloomThreshold") ?? 0;
-            this.bloomPass.strength = canvas.scene.getFlag("levels-3d-preview", "bloomStrength") ?? 0.4;
-            this.bloomPass.radius = canvas.scene.getFlag("levels-3d-preview", "bloomRadius") ?? 0.4;
-            this.composer.addPass(this.bloomPass);
-        }
-
-        if (true) {
-            this.uberPass = this.uberPass ?? new ShaderPass(UberPass);
-            this.uberPass.setupUniforms = (uniforms) => {
-                for (const [key, value] of Object.entries(uniforms ?? canvas.scene.getFlag("levels-3d-preview", "pp") ?? {})) {
-                    if (key == "enabled") {
-                        this.uberPass.enabled = value;
-                        continue;
-                    }
-                    const finalValue = typeof value === "string" ? new THREE.Color(value) : value;
-                    this.uberPass.uniforms[key].value = finalValue;
-                }
-            };
-            this.uberPass.setupUniforms();
-            this.composer.addPass(this.uberPass);
-        }
+        this.buildComposerPasses();
 
         if (this.fogExploration) {
             this.fogExploration.destroy();
             this.fogExploration = null;
         }
         if (canvas.scene.tokenVision && (canvas.scene.getFlag("levels-3d-preview", "enableFogOfWar") ?? true)) this.fogExploration = new Fog(this);
-        try {
-            //this.composer.render();
-        } catch {}
-        const dofblur = this.CONFIG.bokeh[game.settings.get("levels-3d-preview", "dofblur")];
-        if (dofblur) {
-            this.bokeh = new BokehPass(this.scene, this.camera, dofblur);
-            this.composer.addPass(this.bokeh);
-        }
         this._active = true;
         ui.controls.render({force:true, reset: true});
         this.particleSystem?.destroy();
@@ -925,6 +870,48 @@ class Levels3DPreview {
         this.camera.updateProjectionMatrix();
     }
 
+    get uberPass() {
+        return this.outputPass;
+    }
+
+    buildComposerPasses() {
+        for (const pass of [...this.composer.passes]) this.composer.removePass(pass);
+        for (const pass of [this.pixelPass, this.bokeh, ...(this.hdrPasses ?? [])]) pass?.dispose?.();
+        this.pixelPass = null;
+        this.bokeh = null;
+        if (this.renderPass?.scene !== this.scene) this.renderPass = new vfx.render.EffectsPass(this);
+        this.composer.addPass(this.renderPass);
+        this.hdrPasses = createHdrPasses(this);
+        for (const pass of this.hdrPasses) this.composer.addPass(pass);
+
+        if (canvas.scene.getFlag("levels-3d-preview", "pixel")) {
+            this.pixelPass = new RenderPixelatedPass(6, this.scene, this.camera);
+            this.pixelPass.depthEdgeStrength = 1;
+            this.pixelPass.normalEdgeStrength = 0;
+            this.composer.addPass(this.pixelPass);
+        }
+
+        if (canvas.scene.getFlag("levels-3d-preview", "bloom")) {
+            this.bloomPass ??= new HDRBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.4, 0.4, bloomThreshold(0));
+            this.setBloom();
+            this.composer.addPass(this.bloomPass);
+        }
+
+        const dofblur = this.CONFIG.bokeh[game.settings.get("levels-3d-preview", "dofblur")];
+        if (dofblur) {
+            this.bokeh = new BokehPass(this.scene, this.camera, dofblur);
+            this.composer.addPass(this.bokeh);
+        }
+
+        this.outputPass ??= new OutputPass();
+        this.outputPass.setupUniforms(canvas.scene.getFlag("levels-3d-preview", "pp"));
+        this.composer.addPass(this.outputPass);
+
+        this.outline?.destroy();
+        this.outline = new OutlineHandler(this);
+        this.initAA();
+    }
+
     initAA() {
         this.aaType = game.settings.get("levels-3d-preview", "antialiasing");
 
@@ -944,16 +931,18 @@ class Levels3DPreview {
         };
 
         this.composer.removePass(this.aaShader);
+        this.aaShader?.dispose();
+        this.aaShader = null;
         if (this.aaType == "none") return;
         this.aaShader = antialiasing[this.aaType]();
         this.composer.addPass(this.aaShader);
     }
 
     setBloom() {
-        if (!canvas.scene.getFlag("levels-3d-preview", "bloom")) return;
-        this.bloomPass.threshold = canvas.scene.getFlag("levels-3d-preview", "bloomThreshold") ?? 0;
+        if (!this.bloomPass || !canvas.scene.getFlag("levels-3d-preview", "bloom")) return;
+        this.bloomPass.threshold = bloomThreshold(canvas.scene.getFlag("levels-3d-preview", "bloomThreshold"));
         this.bloomPass.strength = canvas.scene.getFlag("levels-3d-preview", "bloomStrength") ?? 0.4;
-        this.bloomPass.radius = canvas.scene.getFlag("levels-3d-preview", "bloomRadius") ?? 0.4;
+        this.bloomPass.radius = canvas.scene.getFlag("levels-3d-preview", "bloomRadius") ?? BLOOM_RADIUS;
     }
 
     addToken(token) {
@@ -997,6 +986,7 @@ class Levels3DPreview {
         plane.position.set(center.x + offsetX, center.y - depth / 2 - 0.00001 + unitsToPixels(canvas.primary.background.elevation), center.z + offsetY);
         //plane.rotation.x = -Math.PI / 2;
         this.board = plane;
+        vfx.surface.markReceivers(plane);
         plane.userData.isBackground = true;
         if (canvas.scene.grid.type > 0)
             this.shaderHandler.applyShader(
@@ -1058,6 +1048,7 @@ class Levels3DPreview {
         plane.receiveShadow = true;
         plane.position.set(center.x, center.y - (depth / 2 + 0.011) + unitsToPixels(canvas.primary.background.elevation), center.z);
         this.table = plane;
+        vfx.surface.markReceivers(plane);
         this.table.renderOrder = -1e20;
         this.table.material.polygonOffset = true;
         this.table.material.polygonOffsetFactor = 10;
@@ -1112,9 +1103,10 @@ class Levels3DPreview {
     createTile(tile) {
         if (this.debugMode || canvas.scene.getFlag("levels-3d-preview", "showSceneFloors") === false) return;
         if (!this._ready) {
-            this.loadingTiles[tile.id] = new Tile3D(tile, this);
-            this.loadingTiles[tile.id].load().then((tile3d) => {
-                this.tiles[tile.id] = this.loadingTiles[tile.id];
+            const tile3d = new Tile3D(tile, this);
+            this.loadingTiles[tile.id] = tile3d;
+            tile3d.load().then(() => {
+                if (this.loadingTiles[tile.id] === tile3d) this.tiles[tile.id] = tile3d;
             });
         } else {
             this.tiles[tile.id] = new Tile3D(tile, this);
@@ -1168,6 +1160,8 @@ class Levels3DPreview {
     }
 
     setExposure() {
+        const globalIllumination = this.lights?.globalIllumination;
+        if (globalIllumination?.sky) return globalIllumination.setTarget();
         const timeSync = canvas.scene.getFlag("levels-3d-preview", "timeSync") ?? "off";
         if (timeSync == "off" || timeSync == "time") {
             const exposure = canvas.scene.getFlag("levels-3d-preview", "exposure") ?? 1;
@@ -1178,8 +1172,11 @@ class Levels3DPreview {
     makeSkybox(enableFog) {
         this.setExposure();
         try {
+            const globalIllumination = this.lights.globalIllumination;
+            const skyEnvironment = globalIllumination?.disposed === false ? globalIllumination.skyEnvironment : null;
+            const dynamicSky = skyEnvironment ? globalIllumination.skyEnabled : isDynamicSkyEnabled();
             this.scene.background?.dispose?.();
-            this.scene.environment?.dispose?.();
+            if (this.scene.environment !== skyEnvironment?.texture) this.scene.environment?.dispose?.();
             this.scene.userData.envRt?.dispose?.();
             this.scene.userData.envRt = null;
             this._sceneBackground = null;
@@ -1190,6 +1187,13 @@ class Levels3DPreview {
             const sceneSize = Math.max(canvas.scene.dimensions.width, canvas.scene.dimensions.height) / 100;
             const size = sceneSize < 80 ? 80 : sceneSize;
             this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            if (dynamicSky) {
+                this.scene.userData.pmremRt?.dispose?.();
+                this.scene.userData.pmremRt = null;
+                this.scene.environment = skyEnvironment?.texture ?? null;
+                this._envReady = true;
+                return;
+            }
             const rootImage = canvas.scene.getFlag("levels-3d-preview", "skybox");
             const exr = canvas.scene.getFlag("levels-3d-preview", "exr") ?? this.CONFIG.skybox.exr;
             if (exr) this.loadEXR(exr, enableFog);
@@ -1228,13 +1232,20 @@ class Levels3DPreview {
         this.isEXR = true;
         const _this = this;
         if (rootImage.toLowerCase().endsWith(".exr")) {
-            new EXRLoader().setDataType(THREE.FloatType).load(rootImage, onLoaded);
+            new EXRLoader().setDataType(THREE.FloatType).load(rootImage, (texture) => {
+                onLoaded(texture);
+                texture.dispose();
+            });
         } else {
             this.helpers.loadTexture(rootImage).then(onLoaded);
             //new THREE.TextureLoader().load(rootImage, onLoaded);
         }
 
         function onLoaded(texture) {
+            if (_this.scene.environment && _this.scene.environment === _this.lights.globalIllumination?.skyEnvironment?.texture) {
+                _this._envReady = true;
+                return;
+            }
             const shared = _this._sharedContext;
             if (shared) _this.renderer.resetState();
             try {
@@ -1290,6 +1301,7 @@ class Levels3DPreview {
         Ruler3D.clearAll3D();
         TokenRuler3D.clearAll3D();
         this.workers.clearMeshes();
+        this.lights.globalIllumination?.dispose();
         disposeScene(this.scene);
         this.scene.background?.dispose?.();
         this.scene.environment?.dispose?.();
@@ -1548,7 +1560,7 @@ class Levels3DPreview {
                 }, 100);
                 this._firstFrame = false;
                 this.workers._waitingForInit = true;
-                Object.values(this.tiles).forEach((t) => t.sendToWorker());
+                Object.values(this.tiles).forEach((t) => t?.sendToWorker());
                 this.resizeCanvasToDisplaySize();
                 recomputeGravity();
             }
@@ -1757,7 +1769,7 @@ class Levels3DPreview {
                 this._progressText = game.i18n.localize("levels3dpreview.controls.loading.gravity");
                 this.interactionManager.forceSightCollisions();
                 this._progressText = game.i18n.localize("levels3dpreview.controls.loading.shaders");
-                this.renderer.compile(this.scene, this.camera);
+                compileForComposer(this, this.scene, this.camera);
                 this.uploadTextures();
                 this._ready = true;
                 this._firstFrame = true;
@@ -1901,6 +1913,8 @@ class Levels3DPreview {
         document.querySelector("#board").style.display = "unset";
         canvas.stage.renderable = true;
         this.clear3Dscene();
+        this.weather?.destroy();
+        this.weather = null;
         if (wasActive) this.refreshRulers();
         if (this._sharedContext) {
             this.renderer.resetState();
@@ -2065,7 +2079,7 @@ Hooks.on("updateScene", (scene, updates) => {
     }
     for (let key of Object.keys(flags)) {
         if (key.includes("particle")) {
-            game.Levels3DPreview.weather.reload();
+            game.Levels3DPreview.weather?.reload();
             break;
         }
     }

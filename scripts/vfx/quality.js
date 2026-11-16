@@ -1,12 +1,16 @@
+import { queueGraphicsChange } from "../settings/liveGraphics.js";
+
 const MODULE_ID = "levels-3d-preview";
 
 export const QUALITY_TIERS = {
-    off: { enabled: false, particleScale: 0, softParticles: false, distortion: false, decals: false, maxEffectLights: 0 },
-    low: { enabled: true, particleScale: 0.5, softParticles: false, distortion: false, decals: false, maxEffectLights: 2 },
-    medium: { enabled: true, particleScale: 1, softParticles: true, distortion: false, decals: true, maxEffectLights: 4 },
-    high: { enabled: true, particleScale: 1, softParticles: true, distortion: true, decals: true, maxEffectLights: 4 },
-    ultra: { enabled: true, particleScale: 1.5, softParticles: true, distortion: true, decals: true, maxEffectLights: 4 },
+    off: { enabled: false, particleScale: 0, softParticles: false, distortion: false, decals: false, maxEffectLights: 0, surface: 0 },
+    low: { enabled: true, particleScale: 0.5, softParticles: false, distortion: false, decals: false, maxEffectLights: 2, surface: 1 },
+    medium: { enabled: true, particleScale: 1, softParticles: true, distortion: false, decals: true, maxEffectLights: 4, surface: 2 },
+    high: { enabled: true, particleScale: 1, softParticles: true, distortion: true, decals: true, maxEffectLights: 4, surface: 3 },
+    ultra: { enabled: true, particleScale: 1.5, softParticles: true, distortion: true, decals: true, maxEffectLights: 4, surface: 3 },
 };
+
+const AO_SAMPLES = { off: 0, low: 6, medium: 10, high: 16 };
 
 let cached = null;
 
@@ -23,7 +27,7 @@ function readTier() {
 export function getQuality() {
     if (cached) return cached;
     const tier = readTier();
-    cached = { tier, ...QUALITY_TIERS[tier], reduceMotion: !!readSetting("reduceMotion", false) };
+    cached = { tier, ...QUALITY_TIERS[tier], reduceMotion: !!readSetting("reduceMotion", false), ao: AO_SAMPLES[readSetting("ambientOcclusion", "medium")] ?? 0 };
     return cached;
 }
 
@@ -42,13 +46,14 @@ export function registerQualitySettings() {
         name: "levels3dpreview.vfx.settings.effectsQuality.name",
         hint: "levels3dpreview.vfx.settings.effectsQuality.hint",
         scope: "client",
-        config: true,
+        config: false,
         type: String,
         choices: Object.fromEntries(Object.keys(QUALITY_TIERS).map((tier) => [tier, `levels3dpreview.vfx.settings.effectsQuality.choices.${tier}`])),
         default: "medium",
         onChange: () => {
+            const wasEnabled = game.settings.get(MODULE_ID, "enableEffects");
             syncLegacySetting();
-            game.Levels3DPreview?.UTILS?.debouncedReload();
+            queueGraphicsChange(wasEnabled === getQuality().enabled ? "effectsQuality" : "effectsToggle");
         },
     });
 
@@ -56,10 +61,24 @@ export function registerQualitySettings() {
         name: "levels3dpreview.vfx.settings.reduceMotion.name",
         hint: "levels3dpreview.vfx.settings.reduceMotion.hint",
         scope: "client",
-        config: true,
+        config: false,
         type: Boolean,
         default: false,
         onChange: () => refreshQuality(),
+    });
+
+    game.settings.register(MODULE_ID, "ambientOcclusion", {
+        name: "levels3dpreview.settings.ambientOcclusion.name",
+        hint: "levels3dpreview.settings.ambientOcclusion.hint",
+        scope: "client",
+        config: false,
+        type: String,
+        choices: Object.fromEntries(Object.keys(AO_SAMPLES).map((level) => [level, `levels3dpreview.settings.ambientOcclusion.choices.${level}`])),
+        default: "medium",
+        onChange: () => {
+            refreshQuality();
+            queueGraphicsChange("ambientOcclusion");
+        },
     });
 
     game.settings.register(MODULE_ID, "enableEffects", {

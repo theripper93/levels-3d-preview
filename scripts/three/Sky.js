@@ -1,470 +1,347 @@
-import {
-    MultiplyBlending,
-    BackSide,
-    BoxGeometry,
-    PlaneGeometry,
-	Mesh,
-	ShaderMaterial,
-	UniformsUtils,
-    Vector2,
-    Vector3,
-    Color
-} from "three";
+import { BackSide, BoxGeometry, Color, Mesh, ShaderMaterial, UniformsUtils, Vector2, Vector3 } from "three";
 
-import * as THREE from "three";
+const STATE_COLORS = ["skyZenith", "skyHorizon", "skyGround", "sunColor", "moonColor", "fogColor"];
 
-/**
- * Based on "A Practical Analytic Model for Daylight"
- * aka The Preetham Model, the de facto standard analytic skydome model
- * https://www.researchgate.net/publication/220720443_A_Practical_Analytic_Model_for_Daylight
- *
- * First implemented by Simon Wallner
- * http://simonwallner.at/project/atmospheric-scattering/
- *
- * Improved by Martin Upitis
- * http://blenderartists.org/forum/showthread.php?245954-preethams-sky-impementation-HDR
- *
- * Three.js integration by zz85 http://twitter.com/blurspline
-*/
+const STATE_SCALARS = ["daylight", "twilight", "night", "starVisibility", "moonPhase", "sunDiscSize", "sunGlow", "haze", "fogDensity", "flash"];
+
+const CLOUD_SCALARS = {
+    cover: "cloudCover",
+    density: "cloudDensity",
+    darkness: "cloudDarkness",
+    speed: "cloudSpeed",
+    scale: "cloudScale",
+    alpha: "cloudAlpha",
+};
 
 class Sky extends Mesh {
-
-	constructor() {
-
-		const shader = Sky.SkyShader;
-
-		const material = new ShaderMaterial( {
-			name: 'SkyShader',
-			fragmentShader: shader.fragmentShader,
-			vertexShader: shader.vertexShader,
-			uniforms: UniformsUtils.clone( shader.uniforms ),
-			side: BackSide,
-			depthWrite: false
-		} );
-
-        super(new BoxGeometry(1, 1, 1), material);
-        
-        this.initClouds();
-
-    }
-    
-    initClouds() {
-            
-        const shader = Sky.CloudsShader;
-        
+    constructor() {
+        const shader = Sky.SkyShader;
         const material = new ShaderMaterial({
-            name: 'CloudsShader',
+            name: "SkyShader",
             fragmentShader: shader.fragmentShader,
             vertexShader: shader.vertexShader,
-            uniforms: UniformsUtils.clone( shader.uniforms ),
+            uniforms: UniformsUtils.clone(shader.uniforms),
             side: BackSide,
             depthWrite: false,
-            transparent: true,
         });
-
-        this.clouds = new Mesh(new PlaneGeometry(2, 2, 2, 2), material);
-        
-        //move the vertices not on the edge of the plane by 0.1 on the z axis
-        const positionAttribute = this.clouds.geometry.getAttribute("position");
-        for (let i = 0; i < positionAttribute.count; i++){
-            const x = positionAttribute.getX(i);
-            const y = positionAttribute.getY(i);
-
-            if (x > -1 && x < 1 && y > -1 && y < 1){
-                positionAttribute.setZ(i, 0.1);
-            } else {
-                positionAttribute.setZ(i, -0.1);
-            }
-        }
-
-        //this.clouds.position.y = 0.01;
-        this.clouds.rotation.x = - Math.PI / 2;
-
-        this.add(this.clouds);
+        super(new BoxGeometry(1, 1, 1), material);
     }
 
+    applyState(state) {
+        if (!state) return;
+        const uniforms = this.material.uniforms;
+        if (state.sunDirection) uniforms.sunDirection.value.copy(state.sunDirection);
+        if (state.moonDirection) uniforms.moonDirection.value.copy(state.moonDirection);
+        for (const key of STATE_COLORS) {
+            if (state[key]) uniforms[key].value.copy(state[key]);
+        }
+        for (const key of STATE_SCALARS) {
+            if (Number.isFinite(state[key])) uniforms[key].value = state[key];
+        }
+        const clouds = state.clouds;
+        if (!clouds) return;
+        for (const [key, uniform] of Object.entries(CLOUD_SCALARS)) {
+            if (Number.isFinite(clouds[key])) uniforms[uniform].value = clouds[key];
+        }
+        if (clouds.tint) uniforms.cloudTint.value.copy(clouds.tint);
+        if (clouds.drift) uniforms.cloudDrift.value.copy(clouds.drift);
+        uniforms.cloudsEnabled.value = clouds.enabled === false ? 0 : 1;
+    }
+
+    dispose() {
+        this.geometry.dispose();
+        this.material.dispose();
+    }
 }
 
 Sky.prototype.isSky = true;
 
 Sky.SkyShader = {
     uniforms: {
-        turbidity: { value: 2 },
-        rayleigh: { value: 1 },
-        mieCoefficient: { value: 0.005 },
-        mieDirectionalG: { value: 0.8 },
-        sunPosition: { value: new Vector3() },
-        up: { value: new Vector3(0, 1, 0) },
-        skyTint: {value: new Color(0xffffff)},
-        starAlpha: {value: 0.0},
-        starDensity: {value: 1.0},
-        time: {value: 0.0},
-        cloudDensity: {value: 1.0},
+        time: { value: 0 },
+        environmentMode: { value: 0 },
+        environmentClamp: { value: 4 },
+        sunDirection: { value: new Vector3(0.3, 0.8, 0.5).normalize() },
+        moonDirection: { value: new Vector3(-0.3, -0.8, -0.5).normalize() },
+        skyZenith: { value: new Color(0.12, 0.3, 0.75) },
+        skyHorizon: { value: new Color(0.55, 0.72, 0.9) },
+        skyGround: { value: new Color(0.25, 0.27, 0.3) },
+        sunColor: { value: new Color(1, 0.95, 0.85) },
+        moonColor: { value: new Color(0.6, 0.7, 1) },
+        daylight: { value: 1 },
+        twilight: { value: 0 },
+        night: { value: 0 },
+        starVisibility: { value: 0 },
+        moonPhase: { value: 0.5 },
+        sunDiscSize: { value: 1 },
+        sunGlow: { value: 1 },
+        haze: { value: 0.3 },
+        fogColor: { value: new Color(0.6, 0.7, 0.8) },
+        fogDensity: { value: 0 },
+        flash: { value: 0 },
+        cloudsEnabled: { value: 1 },
+        cloudCover: { value: 0.35 },
+        cloudDensity: { value: 0.6 },
+        cloudDarkness: { value: 0 },
+        cloudTint: { value: new Color(1, 1, 1) },
+        cloudSpeed: { value: 1 },
+        cloudScale: { value: 1 },
+        cloudAlpha: { value: 0.9 },
+        cloudDrift: { value: new Vector2() },
     },
 
     vertexShader: /* glsl */ `
-		uniform vec3 sunPosition;
-		uniform float rayleigh;
-		uniform float turbidity;
-		uniform float mieCoefficient;
-		uniform vec3 up;
-        uniform vec3 skyTint;
-
-		varying vec3 vWorldPosition;
-		varying vec3 vSunDirection;
-		varying float vSunfade;
-		varying vec3 vBetaR;
-		varying vec3 vBetaM;
-		varying float vSunE;
-
-		// constants for atmospheric scattering
-		const float e = 2.71828182845904523536028747135266249775724709369995957;
-		const float pi = 3.141592653589793238462643383279502884197169;
-
-		// wavelength of used primaries, according to preetham
-		const vec3 lambda = vec3( 680E-9, 550E-9, 450E-9 );
-		// this pre-calcuation replaces older TotalRayleigh(vec3 lambda) function:
-		// (8.0 * pow(pi, 3.0) * pow(pow(n, 2.0) - 1.0, 2.0) * (6.0 + 3.0 * pn)) / (3.0 * N * pow(lambda, vec3(4.0)) * (6.0 - 7.0 * pn))
-		const vec3 totalRayleigh = vec3( 5.804542996261093E-6, 1.3562911419845635E-5, 3.0265902468824876E-5 );
-
-		// mie stuff
-		// K coefficient for the primaries
-		const float v = 4.0;
-		const vec3 K = vec3( 0.686, 0.678, 0.666 );
-		// MieConst = pi * pow( ( 2.0 * pi ) / lambda, vec3( v - 2.0 ) ) * K
-		const vec3 MieConst = vec3( 1.8399918514433978E14, 2.7798023919660528E14, 4.0790479543861094E14 );
-
-		// earth shadow hack
-		// cutoffAngle = pi / 1.95;
-		const float cutoffAngle = 1.6110731556870734;
-		const float steepness = 1.5;
-		const float EE = 1000.0;
-
-		float sunIntensity( float zenithAngleCos ) {
-			zenithAngleCos = clamp( zenithAngleCos, -1.0, 1.0 );
-			return EE * max( 0.0, 1.0 - pow( e, -( ( cutoffAngle - acos( zenithAngleCos ) ) / steepness ) ) );
-		}
-
-		vec3 totalMie( float T ) {
-			float c = ( 0.2 * T ) * 10E-18;
-			return 0.434 * c * MieConst;
-		}
-
-		void main() {
-
-			vec4 worldPosition = modelMatrix * vec4( position, 1.0 );
-			vWorldPosition = worldPosition.xyz;
-
-			gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
-			gl_Position.z = gl_Position.w; // set z to camera.far
-
-			vSunDirection = normalize( sunPosition );
-
-			vSunE = sunIntensity( dot( vSunDirection, up ) );
-
-			vSunfade = 1.0 - clamp( 1.0 - exp( ( sunPosition.y / 450000.0 ) ), 0.0, 1.0 );
-
-			float rayleighCoefficient = rayleigh - ( 1.0 * ( 1.0 - vSunfade ) );
-
-			// extinction (absorbtion + out scattering)
-			// rayleigh coefficients
-			vBetaR = totalRayleigh * rayleighCoefficient;
-
-			// mie coefficients
-			vBetaM = totalMie( turbidity ) * mieCoefficient;
-
-		}`,
-
-    fragmentShader: /* glsl */ `
-		varying vec3 vWorldPosition;
-		varying vec3 vSunDirection;
-		varying float vSunfade;
-		varying vec3 vBetaR;
-		varying vec3 vBetaM;
-		varying float vSunE;
-
-		uniform float mieDirectionalG;
-		uniform vec3 up;
-        uniform vec3 skyTint;
-        uniform float starAlpha;
-        uniform float starDensity;
-        uniform float time;
-
-
-		const vec3 cameraPos = vec3( 0.0, 0.0, 0.0 );
-
-		// constants for atmospheric scattering
-		const float pi = 3.141592653589793238462643383279502884197169;
-
-		const float n = 1.0003; // refractive index of air
-		const float N = 2.545E25; // number of molecules per unit volume for air at 288.15K and 1013mb (sea level -45 celsius)
-
-		// optical length at zenith for molecules
-		const float rayleighZenithLength = 8.4E3;
-		const float mieZenithLength = 1.25E3;
-		// 66 arc seconds -> degrees, and the cosine of that
-		const float sunAngularDiameterCos = 0.999956676946448443553574619906976478926848692873900859324;
-
-		// 3.0 / ( 16.0 * pi )
-		const float THREE_OVER_SIXTEENPI = 0.05968310365946075;
-		// 1.0 / ( 4.0 * pi )
-		const float ONE_OVER_FOURPI = 0.07957747154594767;
-
-		float rayleighPhase( float cosTheta ) {
-			return THREE_OVER_SIXTEENPI * ( 1.0 + pow( cosTheta, 2.0 ) );
-		}
-
-		float hgPhase( float cosTheta, float g ) {
-			float g2 = pow( g, 2.0 );
-			float inverse = 1.0 / pow( 1.0 - 2.0 * g * cosTheta + g2, 1.5 );
-			return ONE_OVER_FOURPI * ( ( 1.0 - g2 ) * inverse );
-		}
-
-                // 3D Gradient noise from: https://www.shadertoy.com/view/Xsl3Dl
-        vec3 hash( vec3 p ) // replace this by something better
-        {
-            p = vec3( dot(p,vec3(127.1,311.7, 74.7)),
-                    dot(p,vec3(269.5,183.3,246.1)),
-                    dot(p,vec3(113.5,271.9,124.6)));
-
-            return -1.0 + 2.0*fract(sin(p)*43758.5453123);
-        }
-        float noise( in vec3 p )
-        {
-            vec3 i = floor( p );
-            vec3 f = fract( p );
-            
-            vec3 u = f*f*(3.0-2.0*f);
-
-            return mix( mix( mix( dot( hash( i + vec3(0.0,0.0,0.0) ), f - vec3(0.0,0.0,0.0) ),
-                                dot( hash( i + vec3(1.0,0.0,0.0) ), f - vec3(1.0,0.0,0.0) ), u.x),
-                            mix( dot( hash( i + vec3(0.0,1.0,0.0) ), f - vec3(0.0,1.0,0.0) ),
-                                dot( hash( i + vec3(1.0,1.0,0.0) ), f - vec3(1.0,1.0,0.0) ), u.x), u.y),
-                        mix( mix( dot( hash( i + vec3(0.0,0.0,1.0) ), f - vec3(0.0,0.0,1.0) ),
-                                dot( hash( i + vec3(1.0,0.0,1.0) ), f - vec3(1.0,0.0,1.0) ), u.x),
-                            mix( dot( hash( i + vec3(0.0,1.0,1.0) ), f - vec3(0.0,1.0,1.0) ),
-                                dot( hash( i + vec3(1.0,1.0,1.0) ), f - vec3(1.0,1.0,1.0) ), u.x), u.y), u.z );
-        }
-
-		void main() {
-
-			vec3 direction = normalize( vWorldPosition - cameraPos );
-
-			// optical length
-			// cutoff angle at 90 to avoid singularity in next formula.
-			float zenithAngle = acos( max( 0.0, dot( up, direction ) ) );
-			float inverse = 1.0 / ( cos( zenithAngle ) + 0.15 * pow( 93.885 - ( ( zenithAngle * 180.0 ) / pi ), -1.253 ) );
-			float sR = rayleighZenithLength * inverse;
-			float sM = mieZenithLength * inverse;
-
-			// combined extinction factor
-			vec3 Fex = exp( -( vBetaR * sR + vBetaM * sM ) );
-
-			// in scattering
-			float cosTheta = dot( direction, vSunDirection );
-
-			float rPhase = rayleighPhase( cosTheta * 0.5 + 0.5 );
-			vec3 betaRTheta = vBetaR * rPhase;
-
-			float mPhase = hgPhase( cosTheta, mieDirectionalG );
-			vec3 betaMTheta = vBetaM * mPhase;
-
-			vec3 Lin = pow( vSunE * ( ( betaRTheta + betaMTheta ) / ( vBetaR + vBetaM ) ) * ( 1.0 - Fex ), vec3( 1.5 ) );
-			Lin *= mix( vec3( 1.0 ), pow( vSunE * ( ( betaRTheta + betaMTheta ) / ( vBetaR + vBetaM ) ) * Fex, vec3( 1.0 / 2.0 ) ), clamp( pow( 1.0 - dot( up, vSunDirection ), 5.0 ), 0.0, 1.0 ) );
-
-			// nightsky
-			float theta = acos( direction.y ); // elevation --> y-axis, [-pi/2, pi/2]
-			float phi = atan( direction.z, direction.x ); // azimuth --> x-axis [-pi/2, pi/2]
-			vec2 uv = vec2( phi, theta ) / vec2( 2.0 * pi, pi ) + vec2( 0.5, 0.0 );
-			vec3 L0 = vec3( 0.1 ) * Fex;
-
-			// composition + solar disc
-			float sundisk = smoothstep( sunAngularDiameterCos, sunAngularDiameterCos + 0.00002, cosTheta );
-			L0 += ( vSunE * 19000.0 * Fex ) * sundisk;
-
-			vec3 texColor = ( Lin + L0 ) * 0.04 + vec3( 0.0, 0.0003, 0.00075 );
-
-			vec3 retColor = pow( texColor, vec3( 1.0 / ( 1.2 + ( 1.2 * vSunfade ) ) ) );
-
-            retColor *= skyTint;
-
-            // Stars computation:
-            if(starAlpha > 0.1){
-
-                vec3 stars_direction = 10.0 * normalize(vec3(uv * 2.0f - 1.0f, 1.0f)); // could be view vector for example
-                float stars_threshold = 12.0 * starDensity; // modifies the number of stars that are visible
-                float stars_exposure = 200.0; // modifies the overall strength of the stars
-                float stars = pow(clamp(noise(stars_direction * 200.0f), 0.0f, 1.0f), stars_threshold) * stars_exposure;
-
-                retColor += vec3(stars * starAlpha);
-
-            }
-
-			gl_FragColor = vec4( retColor, 1.0 );
-
-			#include <tonemapping_fragment>
-			#include <colorspace_fragment>
-
-		}`,
-};
-
-Sky.CloudsShader = {
-    uniforms: {
-        iTime: {value: 0.0},
-        timeAlpha: {value: 1.0},
-        cloudsSpeed: {value: 1},
-        cloudsTint: {value: new Color(0xffffff)},
-        cloudsAlpha: {value: 1.0},
-        cloudsScale: {value: 1.0},
-        cloudsCover: {value: 0.2},
-        cloudsDrift: {value: new Vector2()},
-        cloudsDarkness: {value: 0.0},
-    },
-
-    vertexShader: /* glsl */ `
-    varying vec2 vUv;
-    varying vec3 vPosition;
+        varying vec3 vDirection;
         void main() {
-        vUv = uv;
-        vPosition = position;
-        gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
-        gl_Position.z = gl_Position.w;
-        }`, 
-    
+            vDirection = mat3(modelMatrix) * position;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+            gl_Position.z = gl_Position.w;
+        }`,
+
     fragmentShader: /* glsl */ `
+        uniform float time;
+        uniform float environmentMode;
+        uniform float environmentClamp;
+        uniform vec3 sunDirection;
+        uniform vec3 moonDirection;
+        uniform vec3 skyZenith;
+        uniform vec3 skyHorizon;
+        uniform vec3 skyGround;
+        uniform vec3 sunColor;
+        uniform vec3 moonColor;
+        uniform float daylight;
+        uniform float twilight;
+        uniform float night;
+        uniform float starVisibility;
+        uniform float moonPhase;
+        uniform float sunDiscSize;
+        uniform float sunGlow;
+        uniform float haze;
+        uniform vec3 fogColor;
+        uniform float fogDensity;
+        uniform float flash;
+        uniform float cloudsEnabled;
+        uniform float cloudCover;
+        uniform float cloudDensity;
+        uniform float cloudDarkness;
+        uniform vec3 cloudTint;
+        uniform float cloudSpeed;
+        uniform float cloudScale;
+        uniform float cloudAlpha;
+        uniform vec2 cloudDrift;
 
-    const float clouddark = 0.5;
-    const float cloudlight = 0.3;
-    const float cloudalpha = 4.0;
-    const float skytint = 0.5;
+        varying vec3 vDirection;
 
-    uniform float iTime;
-    uniform float timeAlpha;
-    uniform float cloudDensity;
-    uniform vec3 cloudsTint;
-    uniform float cloudsSpeed;
-    uniform float cloudsAlpha;
-    uniform float cloudsScale;
-    uniform float cloudsCover;
-    uniform vec2 cloudsDrift;
-    uniform float cloudsDarkness;
+        const float PI2 = 6.28318530718;
+        const float SUN_RADIUS = 0.024;
+        const float MOON_RADIUS = 0.04;
+        const float CLOUD_PLANET = 8.0;
+        const float CLOUD_FREQUENCY = 14.0;
+        const mat2 OCTAVE = mat2(1.6, 1.2, -1.2, 1.6);
 
-    varying vec2 vUv;
-    
-    const mat2 m = mat2( 1.6,  1.2, -1.2,  1.6 );
-    
-    vec2 hash( vec2 p ) {
-        p = vec2(dot(p,vec2(127.1,311.7)), dot(p,vec2(269.5,183.3)));
-        return -1.0 + 2.0*fract(sin(p)*43758.5453123);
-    }
-    
-    float noise( in vec2 p ) {
-        const float K1 = 0.366025404; // (sqrt(3)-1)/2;
-        const float K2 = 0.211324865; // (3-sqrt(3))/6;
-        vec2 i = floor(p + (p.x+p.y)*K1);
-        vec2 a = p - i + (i.x+i.y)*K2;
-        vec2 o = (a.x>a.y) ? vec2(1.0,0.0) : vec2(0.0,1.0); //vec2 of = 0.5 + 0.5*vec2(sign(a.x-a.y), sign(a.y-a.x));
-        vec2 b = a - o + K2;
-        vec2 c = a - 1.0 + 2.0*K2;
-        vec3 h = max(0.5-vec3(dot(a,a), dot(b,b), dot(c,c) ), 0.0 );
-        vec3 n = h*h*h*h*vec3( dot(a,hash(i+0.0)), dot(b,hash(i+o)), dot(c,hash(i+1.0)));
-        return dot(n, vec3(70.0));
-    }
-    
-    float fbm(vec2 n) {
-        float total = 0.0, amplitude = 0.1;
-        for (int i = 0; i < 7; i++) {
-            total += noise(n) * amplitude;
-            n = m * n;
-            amplitude *= 0.4;
+        float hash12(vec2 p) {
+            vec3 p3 = fract(vec3(p.xyx) * 0.1031);
+            p3 += dot(p3, p3.yzx + 33.33);
+            return fract((p3.x + p3.y) * p3.z);
         }
-        return total;
-    }
-    
-    // -----------------------------------------------
-    
-    void main() {
-            float speed = 0.0002 * cloudsSpeed;
-            float cloudscale = 10.1 * cloudsScale;
-            vec2 p = vUv + cloudsDrift;
-            vec2 uv = p;
-            vec2 iResolution = vec2(1.0);
-            float time = iTime * speed;
-            float q = fbm(uv * cloudscale * 0.5);
-            
-            //ridged noise shape
-            float r = 0.0;
-            uv *= cloudscale;
-            uv -= q - time;
-            float weight = 0.8;
-            for (int i=0; i<8; i++){
-                r += abs(weight*noise( uv ));
-                uv = m*uv + time;
-                weight *= 0.7;
+
+        float valueNoise(vec2 p) {
+            vec2 i = floor(p);
+            vec2 f = fract(p);
+            vec2 u = f * f * (3.0 - 2.0 * f);
+            return mix(mix(hash12(i), hash12(i + vec2(1.0, 0.0)), u.x), mix(hash12(i + vec2(0.0, 1.0)), hash12(i + vec2(1.0, 1.0)), u.x), u.y);
+        }
+
+        float fbm2(vec2 p) {
+            return 0.66 * valueNoise(p) + 0.34 * valueNoise(OCTAVE * p + 5.3);
+        }
+
+        float fbm3(vec2 p) {
+            float sum = 0.0;
+            float amplitude = 0.5;
+            for (int i = 0; i < 3; i++) {
+                sum += amplitude * valueNoise(p);
+                p = OCTAVE * p + vec2(3.1, 1.7);
+                amplitude *= 0.5;
             }
-            
-            //noise shape
-            float f = 0.0;
-            uv = p*vec2(iResolution.x/iResolution.y,1.0);
-            uv *= cloudscale;
-            uv -= q - time;
-            weight = 0.7;
-            for (int i=0; i<8; i++){
-                f += weight*noise( uv );
-                uv = m*uv + time;
-                weight *= 0.6;
+            return sum / 0.875;
+        }
+
+        float cloudShape(vec2 p, out float coarse) {
+            float sum = 0.0;
+            float amplitude = 0.5;
+            coarse = 0.0;
+            for (int i = 0; i < 5; i++) {
+                sum += amplitude * valueNoise(p);
+                if (i == 2) coarse = sum / 0.875;
+                p = OCTAVE * p + vec2(3.1, 1.7);
+                amplitude *= 0.5;
             }
-            
-            f *= r + f;
-            
-            //noise colour
-            float c = 0.0;
-            time = iTime * speed * 2.0;
-            uv = p*vec2(iResolution.x/iResolution.y,1.0);
-            uv *= cloudscale*2.0;
-            uv -= q - time;
-            weight = 0.4;
-            for (int i=0; i<7; i++){
-                c += weight*noise( uv );
-                uv = m*uv + time;
-                weight *= 0.6;
+            return sum / 0.96875;
+        }
+
+        vec3 tintOf(vec3 color) {
+            return color / max(max(color.r, max(color.g, color.b)), 1e-4);
+        }
+
+        float starLayer(vec3 dir, float cells, float chance, float seed) {
+            vec3 a = abs(dir);
+            vec2 uv;
+            float face;
+            if (a.x > a.y && a.x > a.z) {
+                uv = dir.yz / a.x;
+                face = 1.0 + sign(dir.x);
+            } else if (a.y > a.z) {
+                uv = dir.xz / a.y;
+                face = 4.0 + sign(dir.y);
+            } else {
+                uv = dir.xy / a.z;
+                face = 7.0 + sign(dir.z);
             }
-            
-            //noise ridge colour
-            float c1 = 0.0;
-            time = iTime * speed * 3.0;
-            uv = p*vec2(iResolution.x/iResolution.y,1.0);
-            uv *= cloudscale*3.0;
-            uv -= q - time;
-            weight = 0.4;
-            for (int i=0; i<7; i++){
-                c1 += abs(weight*noise( uv ));
-                uv = m*uv + time;
-                weight *= 0.6;
+            vec2 grid = uv * cells;
+            vec2 id = floor(grid) + face * 157.0 + seed;
+            float pick = hash12(id);
+            if (pick > chance) return 0.0;
+            vec2 center = 0.2 + 0.6 * vec2(hash12(id + 3.7), hash12(id + 9.1));
+            float dist = length(fract(grid) - center);
+            float footprint = min(max(fwidth(grid.x), fwidth(grid.y)), 0.25);
+            float radius = max(0.04, footprint * 0.9);
+            float energy = (0.04 * 0.04) / (radius * radius);
+            float magnitude = pow(hash12(id + 21.3), 6.0) * 4.0 + 0.25;
+            float twinkle = 0.75 + 0.25 * sin(time * (1.3 + 3.0 * pick / chance) + pick * 91.0);
+            return smoothstep(radius, radius * 0.25, dist) * energy * magnitude * twinkle;
+        }
+
+        void main() {
+            vec3 dir = normalize(vDirection);
+            float y = dir.y;
+            float up = max(y, 0.0);
+            float env = environmentMode;
+
+            vec3 sunDir = normalize(sunDirection);
+            vec3 moonDir = normalize(moonDirection);
+            vec3 sunTint = tintOf(sunColor);
+            vec3 moonTint = tintOf(moonColor);
+            float sunUp = smoothstep(-0.12, 0.04, sunDir.y);
+            float sunPower = sunUp * clamp(max(daylight, twilight), 0.0, 1.0);
+            float moonUp = smoothstep(-0.05, 0.05, moonDir.y);
+            float moonPower = moonUp * mix(0.35, 1.0, clamp(night, 0.0, 1.0));
+            float lit = clamp(0.5 - 0.5 * cos(moonPhase * PI2), 0.0, 1.0);
+
+            float horizonBand = pow(1.0 - up, mix(10.0, 2.5, haze));
+            vec3 color = mix(skyZenith, skyHorizon, horizonBand);
+            color = mix(color, skyGround, smoothstep(0.0, 0.1, -y));
+
+            float mu = dot(dir, sunDir);
+            float muPos = max(mu, 0.0);
+            float towardSun = pow(mu * 0.5 + 0.5, 4.0);
+            float afterglow = smoothstep(-0.3, 0.02, sunDir.y);
+            color = mix(color, color * sunTint * 1.5, twilight * afterglow * horizonBand * towardSun);
+            vec3 sunHalo = sunTint * sunGlow * sunPower * ((0.15 * pow(muPos, 6.0) * (0.3 + twilight) + 0.45 * pow(muPos, mix(64.0, 24.0, twilight))) * (1.0 - 0.5 * env) + 2.0 * pow(muPos, 900.0) * (1.0 - env));
+            color += sunHalo;
+
+            float moonMu = max(dot(dir, moonDir), 0.0);
+            color += moonTint * moonPower * night * (0.04 * pow(moonMu, 12.0) + 0.25 * pow(moonMu, 300.0)) * (0.05 + lit);
+
+            float horizonMask = smoothstep(-0.01, 0.02, y);
+            vec3 sky = color;
+
+            if (env < 0.5) {
+                float sunAngle = sqrt(max(2.0 * (1.0 - mu), 0.0));
+                float sunRadius = SUN_RADIUS * sunDiscSize;
+                float sunDisc = 1.0 - smoothstep(sunRadius * 0.85, sunRadius, sunAngle);
+                sky += sunTint * sunDisc * sunPower * horizonMask * 24.0;
+
+                vec3 helper = abs(moonDir.y) < 0.99 ? vec3(0.0, 1.0, 0.0) : vec3(1.0, 0.0, 0.0);
+                vec3 moonRight = normalize(cross(helper, moonDir));
+                vec3 moonUpAxis = cross(moonDir, moonRight);
+                vec2 local = vec2(dot(dir, moonRight), dot(dir, moonUpAxis)) / MOON_RADIUS;
+                float r2 = dot(local, local);
+                if (r2 < 1.0 && dot(dir, moonDir) > 0.0) {
+                    vec3 normal = vec3(local, sqrt(1.0 - r2));
+                    float angle = moonPhase * PI2;
+                    vec3 light = vec3(sin(angle), 0.0, -cos(angle));
+                    float shade = smoothstep(-0.06, 0.12, dot(normal, light));
+                    float albedo = 0.72 + 0.28 * valueNoise(local * 2.6 + 11.0) - 0.12 * valueNoise(local * 6.0 + 3.0);
+                    float edge = 1.0 - smoothstep(0.92, 1.0, sqrt(r2));
+                    vec3 moonDisc = moonTint * (shade * albedo * 3.0 + 0.04);
+                    sky = mix(sky, moonDisc + sky * 0.8 * (1.0 - shade), edge * moonPower * horizonMask);
+                }
+
+                if (starVisibility > 0.001) {
+                    float stars = starLayer(dir, 220.0, 0.22, 0.0) + starLayer(dir, 70.0, 0.12, 41.0) * 1.6;
+                    float starMask = starVisibility * smoothstep(0.0, 0.2, y) * (1.0 - clamp(fogDensity, 0.0, 1.0));
+                    vec3 starColor = mix(vec3(0.75, 0.85, 1.0), vec3(1.0, 0.9, 0.75), hash12(floor(dir.xz * 300.0)));
+                    sky += starColor * stars * starMask;
+                }
             }
-            
-            c += c1;
-            
-            vec3 cloudcolour = vec3(1.1, 1.1, 0.9) * clamp((clouddark + cloudlight*c), 0.0, 1.0);
-        
-            f = cloudsCover + cloudalpha*f*r;
-            
-            vec3 result = mix(vec3(0.0), clamp(cloudcolour, 0.0, 1.0), clamp(f + c, 0.0, 1.0));
 
-            result *= cloudsTint;
-        
-            float resultAlpha = result.r;
+            if (cloudsEnabled > 0.5 && cloudAlpha > 0.001 && y > -0.05) {
+                float t = sqrt(CLOUD_PLANET * CLOUD_PLANET * y * y + 2.0 * CLOUD_PLANET + 1.0) - CLOUD_PLANET * y;
+                vec2 layer = dir.xz * t * 0.125;
+                float motion = time * cloudSpeed;
+                vec2 p = (layer + cloudDrift + vec2(0.004, 0.0015) * motion) * CLOUD_FREQUENCY * cloudScale;
+                vec2 warp = vec2(fbm2(p * 0.45 + vec2(0.0, 0.03 * motion)), fbm2(p * 0.45 + vec2(5.2, 1.3) - 0.02 * motion));
+                p += (warp - 0.5) * 0.7;
 
-            result *= 1.0 - cloudsDarkness;
+                float coarse;
+                float shape = cloudShape(p, coarse);
+                float threshold = mix(0.78, 0.18, clamp(cloudCover, 0.0, 1.0));
+                float overcast = clamp(cloudCover, 0.0, 1.0);
+                overcast *= overcast;
+                float softness = mix(0.3, 0.12, clamp(cloudDensity, 0.0, 1.0)) + 0.2 * overcast;
+                float density = smoothstep(threshold, threshold + softness, shape);
 
-            result *= timeAlpha;
+                if (density > 0.001) {
+                    float lightUp = sunUp;
+                    vec3 lightDir = normalize(mix(moonDir, sunDir, lightUp));
+                    vec3 lightColor = sunTint * sunPower + moonTint * moonPower * night * 0.07 * (0.3 + lit) * (1.0 - lightUp);
+                    vec2 toward = lightDir.xz;
+                    float towardLength = length(toward);
+                    toward = towardLength > 1e-4 ? toward / towardLength : vec2(0.0);
+                    float slant = 0.25 + 0.5 * (1.0 - clamp(lightDir.y, 0.0, 1.0));
+                    float coarseLight = fbm3(p + toward * slant);
+                    float shadow = smoothstep(-0.04, 0.1, coarseLight - coarse) * (1.0 - 0.7 * overcast);
+                    float thickness = smoothstep(threshold, threshold + softness * 2.5, shape);
+                    lightColor *= 1.0 - 0.65 * overcast;
+                    float darkness = clamp(cloudDarkness, 0.0, 1.0);
 
-            gl_FragColor = vec4( result, resultAlpha * cloudsAlpha );
+                    vec3 ambient = mix(skyHorizon, skyZenith, 0.55);
+                    float lowSun = clamp(twilight, 0.0, 1.0) * afterglow;
+                    float direct = (1.0 - shadow) * (1.0 - 0.45 * thickness);
+                    vec3 cloud = ambient * mix(0.85, 0.5, thickness) * (1.0 - 0.25 * shadow) * (1.0 - 0.5 * lowSun);
+                    cloud += lightColor * mix(vec3(1.0), sunTint, lightUp) * direct * mix(0.85, 0.5, lowSun);
+                    cloud += sunTint * sunTint * lowSun * (0.28 - 0.18 * shadow) * (0.35 + 0.65 * towardSun);
+                    cloud *= mix(vec3(1.0), vec3(0.56, 0.63, 0.75), 0.35 * thickness * daylight * (1.0 - lowSun));
+                    cloud = mix(cloud, cloud * vec3(1.3, 0.75, 0.6), lowSun * thickness * 0.5);
+                    float edge = clamp(density * (1.0 - thickness) * 3.0, 0.0, 1.0);
+                    float forward = pow(max(dot(dir, lightDir), 0.0), 5.0);
+                    cloud += lightColor * edge * (0.25 + 2.5 * forward) * (1.0 - darkness) * (1.0 - overcast);
+                    vec3 deck = mix(skyHorizon, skyZenith, 0.3) * (1.15 - 0.45 * thickness - 0.3 * shadow + 0.25 * (coarse - 0.5)) * (0.7 + 0.6 * fbm2(p * 0.22 + 0.02 * motion));
+                    cloud = mix(cloud, deck, overcast * 0.85);
+                    cloud *= mix(1.0, 0.3, darkness * mix(0.5, 1.0, thickness)) * cloudTint;
+                    cloud += vec3(0.75, 0.82, 1.0) * flash * (1.0 + 2.0 * thickness) * (0.4 + coarse);
+                    cloud = mix(cloud, skyHorizon, (1.0 - smoothstep(0.0, 0.25, y)) * mix(0.2, 0.45, haze));
 
-			#include <tonemapping_fragment>
-			#include <colorspace_fragment>
+                    float alpha = density * mix(0.65, 1.0, clamp(cloudDensity, 0.0, 1.0)) * clamp(cloudAlpha, 0.0, 1.0) * smoothstep(-0.02, 0.06, y);
+                    sky = mix(sky, cloud, alpha);
+                }
+            }
 
-		}`,
+            sky += vec3(0.55, 0.6, 0.75) * flash * 0.35 * horizonMask;
+            sky = mix(sky, skyHorizon, haze * pow(1.0 - up, 10.0) * 0.6);
+            float fogAmount = clamp(fogDensity, 0.0, 1.0);
+            float fogBand = 1.0 - smoothstep(-0.02, mix(0.06, 0.3, fogAmount), y);
+            sky = mix(sky, fogColor, fogAmount * fogBand);
+            sky *= 1.0 - 0.3 * (1.0 - env) * smoothstep(0.0, 0.3, -y);
+
+            if (env > 0.5) sky = min(sky, vec3(environmentClamp));
+
+            gl_FragColor = vec4(max(sky, vec3(0.0)), 1.0);
+
+            #include <tonemapping_fragment>
+            #include <colorspace_fragment>
+        }`,
 };
 
 export { Sky };

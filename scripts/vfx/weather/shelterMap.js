@@ -63,7 +63,7 @@ export class ShelterMap {
     }
 
     get tilesLoaded() {
-        return Object.values(this._parent.tiles ?? {}).every((tile) => tile?.mesh);
+        return Object.values(this._parent.tiles ?? {}).every((tile) => tile?.mesh || tile?._loaded);
     }
 
     heightRange(roots) {
@@ -72,7 +72,7 @@ export class ShelterMap {
         for (const root of roots) {
             if (root === this._parent.table) continue;
             bounds.setFromObject(root);
-            if (!bounds.isEmpty()) box.union(bounds);
+            if (!bounds.isEmpty() && Number.isFinite(bounds.min.y + bounds.max.y)) box.union(bounds);
         }
         if (box.isEmpty()) return { min: -MARGIN, max: 1 };
         return { min: box.min.y - MARGIN, max: Math.max(box.max.y, box.min.y + 0.1) + MARGIN };
@@ -97,6 +97,7 @@ export class ShelterMap {
         if (!this.dirty || !this.tilesLoaded) return;
         this.dirty = false;
         this.render();
+        return true;
     }
 
     render() {

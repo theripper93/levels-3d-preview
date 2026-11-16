@@ -20,37 +20,34 @@ function perceptual(value) {
     return Math.pow(Math.max(value, 0), 1 / 2.2);
 }
 
-function fitError(legacyDecay, cutoff, decay, scale) {
-    let error = 0;
+const SCALE_MIN = perceptual(1e-3);
+const SCALE_MAX = perceptual(10);
+
+function fitScale(legacy, cutoff, decay) {
+    let pp = 0;
+    let pl = 0;
+    let ll = 0;
+    let i = 0;
     for (const radius of FIT_RADII) {
-        for (let i = 0; i < FIT_SAMPLES; i++) {
-            const x = ((i + 0.5) / FIT_SAMPLES) * FIT_RANGE;
-            error += (perceptual(scale * physicalFalloff(x, radius, cutoff, decay)) - perceptual(legacyFalloff(x, legacyDecay))) ** 2;
+        for (let s = 0; s < FIT_SAMPLES; s++, i++) {
+            const p = perceptual(physicalFalloff(((s + 0.5) / FIT_SAMPLES) * FIT_RANGE, radius, cutoff, decay));
+            pp += p * p;
+            pl += p * legacy[i];
+            ll += legacy[i] * legacy[i];
         }
     }
-    return error;
-}
-
-function fitScale(legacyDecay, cutoff, decay) {
-    let lo = -3;
-    let hi = 1;
-    for (let i = 0; i < 30; i++) {
-        const a = lo + (hi - lo) / 3;
-        const b = hi - (hi - lo) / 3;
-        if (fitError(legacyDecay, cutoff, decay, 10 ** a) < fitError(legacyDecay, cutoff, decay, 10 ** b)) hi = b;
-        else lo = a;
-    }
-    const scale = 10 ** ((lo + hi) / 2);
-    return { scale, error: fitError(legacyDecay, cutoff, decay, scale) };
+    const k = Math.min(Math.max(pp > 0 ? pl / pp : SCALE_MAX, SCALE_MIN), SCALE_MAX);
+    return { scale: k ** 2.2, error: k * k * pp - 2 * k * pl + ll };
 }
 
 function fitFalloff(legacyDecay) {
     const key = Math.round(legacyDecay * 20) / 20;
     if (falloffFits.has(key)) return falloffFits.get(key);
+    const legacy = FIT_RADII.flatMap(() => Array.from({ length: FIT_SAMPLES }, (_, s) => perceptual(legacyFalloff(((s + 0.5) / FIT_SAMPLES) * FIT_RANGE, key))));
     let best = { cutoff: 1, decay: 0, scale: 1, error: Infinity };
     for (let decay = 0; decay <= 1; decay += 0.25) {
         for (let cutoff = 0.4; cutoff <= 2; cutoff += 0.02) {
-            const { scale, error } = fitScale(key, cutoff, decay);
+            const { scale, error } = fitScale(legacy, cutoff, decay);
             if (error < best.error) best = { cutoff, decay, scale, error };
         }
     }

@@ -1,5 +1,7 @@
 import { BufferGeometry, DepthTexture, Float32BufferAttribute, Group, Mesh, ShaderMaterial } from "three";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
+import { frame } from "../../render/frame.js";
+import { displayBackground, displayTextureBackground } from "../../render/outputPass.js";
 import { VFX_LAYER } from "../constants.js";
 import { getQuality } from "../quality.js";
 import { attachDecals } from "./decal.js";
@@ -39,7 +41,10 @@ export class EffectsPass extends RenderPass {
         this.capture = new Mesh(captureGeometry, captureMaterial);
         this.capture.frustumCulled = false;
         this.capture.renderOrder = Number.MIN_SAFE_INTEGER;
-        this.capture.onBeforeRender = (renderer) => this.captureDepth(renderer);
+        this.capture.onBeforeRender = (renderer) => {
+            frame.exposure = renderer.toneMappingExposure;
+            this.captureDepth(renderer);
+        };
         this.scene.add(this.capture);
         attachDecals(parent.scene);
         this.distortion = attachDistortion();
@@ -57,7 +62,7 @@ export class EffectsPass extends RenderPass {
 
     refresh() {
         const quality = getQuality();
-        const active = capabilities.enabled && !capabilities.failed && !this.blocked && (quality.softParticles || quality.distortion || quality.decals);
+        const active = capabilities.enabled && !capabilities.failed && !this.blocked && (quality.softParticles || quality.distortion || quality.decals || frame.needsDepth);
         if (active !== capabilities.active) this.activate(active);
         capabilities.softParticles = active && quality.softParticles;
         capabilities.distortion = active && quality.distortion;
@@ -92,17 +97,26 @@ export class EffectsPass extends RenderPass {
         sceneUniforms.uSceneTime.value += delta;
         if (warming.children.length) this.scene.add(warming);
         for (const pool of pools) pool.sync(this.scene, delta, capabilities[pool.capability]);
-        if (active) {
-            this.updateUniforms();
-            const composer = this.parent.composer;
-            if (composer.readBuffer !== this.target) composer.swapBuffers();
-            this.renderToScreen = false;
+        const composer = this.parent.composer;
+        if (composer.readBuffer !== this.target) composer.swapBuffers();
+        frame.depthTexture = active ? sceneDepth : null;
+        if (active) this.updateUniforms();
+        const background = this.scene.background;
+        if (background?.isColor) this.scene.background = displayBackground.wrap(background, renderer);
+        const restoreIntensity = displayTextureBackground(this.scene, renderer);
+        this.renderToScreen = false;
+        try {
             super.render(renderer, composer.writeBuffer, this.target, deltaTime, maskActive);
+        } finally {
+            restoreIntensity?.();
+            this.scene.background = background;
             this.renderToScreen = toScreen;
+        }
+        if (active) {
             if (this.distortion.count) this.renderDistortion(renderer);
             if (!this.validated) this.validate(renderer);
-            if (toScreen) this.present(renderer);
-        } else super.render(renderer, writeBuffer, readBuffer, deltaTime, maskActive);
+        }
+        if (toScreen) this.present(renderer);
         if (warming.parent) {
             warming.clear();
             warming.removeFromParent();

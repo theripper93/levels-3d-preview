@@ -383,6 +383,7 @@ export class Token3D {
         this.border = new THREE.Group();
         this.mesh.add(this.border);
         await this.loadAttachments(this.model);
+        if (this.token.destroyed) return this;
         //this.setUpProne();
         this.drawBorder();
         this.drawName();
@@ -1804,18 +1805,17 @@ export class Token3D {
         Hooks.on("updateToken", (tokenDocument, updates) => {
             if (!game.Levels3DPreview._active) return;
             game.Levels3DPreview.tokens[tokenDocument.id]?.drawEffects();
-            const token = tokenDocument.object;
             const wasFreeUpdated = updates?.flags && updates?.flags["levels-3d-preview"] && updates?.flags["levels-3d-preview"].wasFreeMode !== undefined;
             if (wasFreeUpdated && game.Levels3DPreview.tokens[tokenDocument.id]) game.Levels3DPreview.tokens[tokenDocument.id].wasFreeMode = !!updates.flags["levels-3d-preview"].wasFreeMode;
             const animChanged = updates?.flags && updates?.flags["levels-3d-preview"] && updates?.flags["levels-3d-preview"].animIndex !== undefined;
             const onlyAnim = animChanged === true && Object.values(updates?.flags["levels-3d-preview"]).length === 1;
             if (animChanged) {
-                game.Levels3DPreview.tokens[token.id]?.updateAnimation();
+                game.Levels3DPreview.tokens[tokenDocument.id]?.updateAnimation();
             }
             if ((updates?.flags && updates?.flags["levels-3d-preview"] && !wasFreeUpdated && !onlyAnim) || "width" in updates || "height" in updates || "texture" in updates) {
-                game.Levels3DPreview.tokens[token.id]?.refresh();
+                game.Levels3DPreview.tokens[tokenDocument.id]?.refresh();
             } else if ("light" in updates && !foundry.utils.isEmpty(updates.light)) {
-                game.Levels3DPreview.tokens[token.id]?.refreshLight();
+                game.Levels3DPreview.tokens[tokenDocument.id]?.refreshLight();
             }
         });
 

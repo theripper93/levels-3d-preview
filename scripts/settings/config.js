@@ -2,10 +2,12 @@ import { hideParams } from "../helpers/helpers.js";
 import { ShaderConfig } from "../shaders/ShaderLib.js";
 import { RegisterTours } from "../tours/tours.js";
 import { MapGen } from "../apps/mapGen.js";
-import { getTimeSyncDefault } from "../systems/globalIllumination.js";
+import { getTimeSyncDefault, isDynamicSkyEnabled } from "../systems/globalIllumination.js";
+import { DynamicSkyConfig } from "./dynamicSkyConfig.js";
 import { GradientPicker } from "../helpers/GradientPicker.js";
 import { injectConfig } from "../lib/injectConfig.js";
 import { weatherConfigFields, activateWeatherConfig } from "../vfx/weather/config.js";
+import { surfaceConfigFields } from "../vfx/surface/config.js";
 import { lightFxConfigFields, activateLightFxConfig } from "../vfx/light/config.js";
 import { TacticalPingPicker, loadUserEmotes } from "../entities/effects/ping.js";
 import { injectBakeButton } from "../helpers/modelBaker.js";
@@ -164,6 +166,18 @@ export function registerConfigs() {
                 tabLabel: game.i18n.localize("levels3dpreview.settings.headers.environment.title"),
                 tabNotes: game.i18n.localize("levels3dpreview.settings.headers.environment.notes"),
                 tabIcon: "fas fa-cloud-sun",
+                atmosphere: {
+                    type: "custom",
+                    html: `
+                <div class="form-group">
+                    <label>${game.i18n.localize("levels3dpreview.dynamicSkyConfig.sceneConfig.label")}</label>
+                    <div class="form-fields">
+                        <button type="button" data-key="sky-config"><i class="fas fa-cloud-sun"></i> ${game.i18n.localize("levels3dpreview.dynamicSkyConfig.sceneConfig.button")}</button>
+                    </div>
+                    <p class="hint">${game.i18n.localize(isDynamicSkyEnabled(app.document) ? "levels3dpreview.dynamicSkyConfig.sceneConfig.notesEnabled" : "levels3dpreview.dynamicSkyConfig.sceneConfig.notes")}</p>
+                </div>
+                `,
+                },
                 exr: {
                     type: "filepicker.any",
                     fpTypes: [".exr", ".jpeg", ".jpg", ".png", ".webp"],
@@ -269,10 +283,6 @@ export function registerConfigs() {
                     label: game.i18n.localize("levels3dpreview.flags.fogDistance.label"),
                     default: 3000,
                 },
-                header1: {
-                    type: "custom",
-                    html: `<div id="dynamic-sky-config-button"><div>`,
-                },
             },
             "lighting-3d": {
                 tabLabel: game.i18n.localize("levels3dpreview.settings.headers.lighting.title"),
@@ -348,6 +358,7 @@ export function registerConfigs() {
                 tabNotes: game.i18n.localize("levels3dpreview.settings.headers.particles.notes"),
                 tabIcon: "fas fa-cloud-showers-heavy",
                 ...weatherConfigFields(app.document),
+                ...surfaceConfigFields(),
                 partGroupStart: {
                     type: "custom",
                     html: `<div id="part-group">`,
@@ -569,7 +580,7 @@ export function registerConfigs() {
                     min: 0,
                     max: 1,
                     step: 0.01,
-                    default: 0.4,
+                    default: 0.6,
                 },
             },
         };
@@ -595,6 +606,18 @@ export function registerConfigs() {
         hideParams(app, html, `[name="flags.levels-3d-preview.filter"]`, filterFlags, "none");
         hideParams(app, html, `[name="flags.levels-3d-preview.renderTable"]`, customTableFlags, ["table", "matcustom"], true);
         hideParams(app, html, `[name="flags.levels-3d-preview.enableFog"]`, fogFlags, false);
+
+        if (isDynamicSkyEnabled(app.document)) {
+            ["exr", "fogColor"].forEach((flag) => {
+                const group = html.querySelector(`[name="flags.levels-3d-preview.${flag}"]`)?.closest(".form-group");
+                if (group) group.style.display = "none";
+            });
+        }
+        html.querySelector("button[data-key='sky-config']")?.addEventListener("click", (e) => {
+            e.preventDefault();
+            new DynamicSkyConfig(app.document).render(true);
+        });
+        if (app._activeTab) html.querySelector(`nav[data-group="levels-3d-preview"] .item[data-tab="${app._activeTab}"]`)?.click();
 
         if (canvas.scene.id !== app.document.id) return;
         html.querySelectorAll("[name^='flags.levels-3d-preview.']").forEach(el => el.addEventListener("change", (e) => {
@@ -639,21 +662,6 @@ export function registerConfigs() {
             );
             ui.notifications.notify(game.i18n.localize("levels3dpreview.notifications.initialviewcaptured"));
         });
-
-        // html.querySelector("#dynamic-sky-config-button").insertAdjacentHTML("afterend", `
-        //     <div class="form-group submenu">
-        //         <label>${game.i18n.localize("levels3dpreview.dynamicSkyConfig.sceneConfig.label")}</label>
-        //         <button type="button" data-key="sky-config">
-        //         <i class="fa-solid fa-clouds-sun"></i>
-        //             <label>${game.i18n.localize("levels3dpreview.dynamicSkyConfig.sceneConfig.button")}</label>
-        //         </button>
-        //         <p class="hint">${game.i18n.localize("levels3dpreview.dynamicSkyConfig.sceneConfig.notes")}</p>
-        //     </div>`
-        // );
-        // html.querySelector("button[data-key='sky-config']")?.addEventListener("click", (e) => {
-        //     e.preventDefault();
-        //     new game.Levels3DPreview.lights.globalIllumination.DynamicSkyConfig(app.document).render(true);
-        // });
     });
 
     const renderTokenConfig = (app, html) => {

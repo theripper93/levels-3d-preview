@@ -5,6 +5,8 @@ import { flameSeed, flameTime, setLightFlicker } from "../vfx/light/noise.js";
 import { getLightAnimation, sampleColor, sampleIntensity, sampleRadius, sampleRevolve } from "../vfx/light/animations.js";
 import { LightEffects } from "../vfx/light/lightEffects.js";
 
+const LIGHT_SHADOW_RADIUS = 3;
+
 export class Light3D {
     constructor(light, parent, isToken) {
         this.light = light;
@@ -30,6 +32,7 @@ export class Light3D {
         this.mesh = new THREE.Group();
         const shadowRes = game.settings.get("levels-3d-preview", "shadowQuality");
         this.light3d.shadow.bias = -0.035;
+        this.light3d.shadow.radius = LIGHT_SHADOW_RADIUS;
         this.light3d.shadow.camera.near = 0.001;
         this.light3d.shadow.mapSize.width = 256 * shadowRes;
         this.light3d.shadow.mapSize.height = 256 * shadowRes;

@@ -477,6 +477,7 @@ export class BaseParticleEffect {
             this._bottomTarget.y -= game.Levels3DPreview.tokens[object.id].d;
             return tokenPos;
         }
+        if (!object.document) return null;
         const z = object.document.elevation;
         return coords3d.posCanvasTo3d({
             x: object.center.x,

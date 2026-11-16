@@ -1140,6 +1140,16 @@
             }
         },
         "settings": {
+            "ambientOcclusion": {
+                "name": "Ambient Occlusion",
+                "hint": "Soft contact shadows in creases and under objects. Higher levels use more samples for smoother results.",
+                "choices": {
+                    "off": "Off",
+                    "low": "Low",
+                    "medium": "Medium",
+                    "high": "High"
+                }
+            },
             "exactTokenVisibility": {
                 "name": "Exact Token Visibility",
                 "hint": "When enabled, tokens visibility will be tested for different points along the height of the token."
@@ -1785,6 +1795,25 @@
             "lightning": "Lightning",
             "linkSky": "Link Sky and Light",
             "linkSkyNotes": "Clouds cover the dynamic sky and dim the sun and exposure.",
+            "surface": {
+                "enabled": "Surface Accumulation",
+                "enabledNotes": "Snow, hail, ash, sand and dust build up on exposed surfaces and rain makes them wet. Sheltered areas stay clear.",
+                "buildTime": "Build-up Time (minutes)",
+                "buildTimeNotes": "Real-time minutes for falling weather to reach full cover.",
+                "meltTime": "Melt / Dry Time (minutes)",
+                "meltTimeNotes": "Real-time minutes for snow to melt and wet surfaces to dry once the weather stops. Rain melts snow faster.",
+                "startKind": "Starting Cover",
+                "startCover": "Starting Cover Amount",
+                "startWet": "Starting Wetness",
+                "startNotes": "Changing the starting values resets the current accumulation to them.",
+                "kinds": {
+                    "snow": "Snow",
+                    "hail": "Hail",
+                    "ash": "Ash",
+                    "sand": "Sand",
+                    "dust": "Dust"
+                }
+            },
             "presets": {
                 "none": "None",
                 "overcast": "Overcast",
@@ -1840,20 +1869,23 @@
             "high": "High",
             "veryhigh": "Very High",
             "custom": "Custom",
-            "dialog": {
-                "title": "3D Canvas: Performance Settings",
-                "content": "Choose your preferred Graphic Quality (the page will be refreshed):"
-            },
-            "buttonTooltip": {
-                "verylow": "Recommended for Older Integrated GPUs",
-                "low": "Recommended for Older Dedicated GPUs or Modern Integrated GPUs",
-                "medium": "Recommended for Modern Dedicated GPUs",
-                "high": "Recommended for High-End Dedicated GPUs",
-                "veryhigh": "Recommended for High-End Dedicated GPUs"
+            "description": {
+                "verylow": "No shadows, shaders or effects, and low resolution fog of war. Recommended for older integrated GPUs.",
+                "low": "No shadows or anti-aliasing, with reduced effects. Recommended for older dedicated GPUs or modern integrated GPUs.",
+                "medium": "Low resolution hard shadows, FXAA and standard effects. Recommended for modern dedicated GPUs.",
+                "high": "Soft shadows, SMAA and high quality effects. Recommended for high-end dedicated GPUs.",
+                "veryhigh": "High resolution soft shadows, SMAA, full resolution fog of war and ultra effects. Recommended for high-end dedicated GPUs.",
+                "custom": "Settings have been adjusted individually and do not match a preset."
             },
             "settings": {
                 "header": "Graphics Settings",
-                "presetHint": "Choose a visual quality preset to automatically set the settings below. You can always change them individually afterwards. Hover buttons for hardware recommendations.",
+                "title": "3D Canvas: Graphics Settings",
+                "name": "Graphics Settings",
+                "label": "Configure Graphics",
+                "hint": "Graphics quality presets and settings for this device only.",
+                "presets": "Quality Presets",
+                "preset": "Quality Preset",
+                "presetHint": "Choosing a preset fills in the settings below. You can still change them individually before saving.",
                 "resolution": "With current settings, 3D Canvas will run at a {resolution} resolution.",
                 "resolutionTooltip": "Using 3D Canvas at a high resolution can be very demanding on lower end hardware, especially when running above 2K resolution. If you experience performance issues, try lowering the resolution."
             },
@@ -2827,40 +2859,79 @@
             "content": "This process will attempt to transform the walls in the scene into tiles. Are you sure you want to continue?"
         },
         "dynamicSkyConfig": {
-            "title": "Dynamic Sky Configuration",
+            "title": "Atmosphere",
             "sceneConfig": {
-                "label": "Dynamic Sky Configuration",
-                "button": "Open Configuration",
-                "notes": "Dynamic Sky makes the sky look more realistic and moving, but the actual colors and reflections in the scene still come from the still image in the \"Sky\" section above."
+                "label": "Atmosphere",
+                "button": "Configure Atmosphere",
+                "notes": "Turn on the dynamic sky to light the scene with a living sky: time of day, sun, moon, stars, clouds and fog in one place.",
+                "notesEnabled": "The dynamic sky lights this scene. The environment map and the fog color are not used while it is on; the fog color follows the sky."
             },
             "enabled": {
-                "label": "Enabled"
+                "label": "Dynamic Sky",
+                "notes": "Light the scene from the sky, the sun and the moon. Darkness and time of day change the mood without dimming your light sources."
             },
-            "turbidity": {
-                "label": "Turbidity",
-                "notes": "Turbidity is the measure of the amount of particles in the air. A high turbidity will result in a more hazy sky."
+            "setting": {
+                "label": "Setting",
+                "notes": "Interior and Underground hide the sky, sun and moon and leave your light sources to carry the scene. Interior still follows the time of day a little, as if daylight came through windows. Underground ignores the time of day; darkness only dims it."
             },
-            "rayleigh": {
-                "label": "Rayleigh",
-                "notes": "Rayleigh scattering is the scattering of light by particles much smaller than the wavelength of the light. It is responsible for the blue color of the sky during the day."
+            "settings": {
+                "outdoor": "Outdoor",
+                "interior": "Interior",
+                "underground": "Underground"
             },
-            "mieCoefficient": {
-                "label": "Mie Coefficient",
-                "notes": "Mie scattering is the scattering of light by particles larger than the wavelength of the light. It is responsible for the red and orange colors of the sky during sunrise and sunset."
+            "backgroundColor": {
+                "label": "Background Color",
+                "notes": "Color of the fog and of the void around the map. Leave empty to match the setting."
             },
-            "mieDirectionalG": {
-                "label": "Mie Directional G"
+            "preset": {
+                "label": "Preset",
+                "notes": "A starting mood for the whole scene. Choose Custom to tint the sky yourself."
+            },
+            "presets": {
+                "clear": "Clear",
+                "golden": "Golden Hour",
+                "overcast": "Overcast",
+                "storm": "Storm",
+                "moonlit": "Moonlit",
+                "eerie": "Eerie",
+                "custom": "Custom"
+            },
+            "time": {
+                "label": "Time of Day",
+                "notes": "Hour of the day (0-24). Drag to preview, release to save. Time sync from the Lighting tab can change it."
+            },
+            "sky": "Sky",
+            "clouds": "Clouds",
+            "haze": {
+                "label": "Haze"
+            },
+            "sunGlow": {
+                "label": "Sun Glow"
+            },
+            "moonPhase": {
+                "label": "Moon Phase",
+                "auto": "Follow World Time",
+                "new": "New Moon",
+                "waxingCrescent": "Waxing Crescent",
+                "firstQuarter": "First Quarter",
+                "waxingGibbous": "Waxing Gibbous",
+                "full": "Full Moon",
+                "waningGibbous": "Waning Gibbous",
+                "lastQuarter": "Last Quarter",
+                "waningCrescent": "Waning Crescent"
             },
             "starDensity": {
-                "label": "Star Density",
-                "notes": "The amount of stars visible in the sky."
+                "label": "Star Density"
             },
             "color": {
-                "label": "Color",
-                "notes": "The color of the sky."
+                "label": "Sky Tint",
+                "notes": "Tints the sky and its light."
             },
             "enableClouds": {
                 "label": "Enable Clouds"
+            },
+            "cloudsCover": {
+                "label": "Cloud Cover"
             },
             "cloudsSpeed": {
                 "label": "Clouds Speed"
