@@ -281,10 +281,13 @@ export function registerWrappers() {
 
         function computePolygonDispatch(wrapped, ...args) {
             const useMultithreading = game.Levels3DPreview?.CONFIG?.useMultithreading;
+            const stashWalls = () => {
+                if (this.config?.type === "light") this._l3dWallPoints = this.points.slice();
+            };
             if (useMultithreading) {
-                _computePolygonMultithreaded.bind(this)(wrapped, ...args);
+                _computePolygonMultithreaded.bind(this)(() => (wrapped(...args), stashWalls()), ...args);
             } else {
-                _computePolygon.bind(this)(wrapped, ...args);
+                _computePolygon.bind(this)(() => (wrapped(...args), stashWalls()), ...args);
             }
         }
 

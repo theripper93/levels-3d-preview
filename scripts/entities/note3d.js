@@ -147,13 +147,10 @@ export class Note3D {
                 _id: placeable.id,
                 x: placeable.document.x + deltas.x,
                 y: placeable.document.y + deltas.y,
-                elevation: placeableElevation,
+                elevation: Math.round((placeableElevation + deltas.elevation) * 1000) / 1000,
                 flags: {
                     "levels-3d-preview": {
                         wasFreeMode: this.wasFreeMode,
-                    },
-                    levels: {
-                        rangeTop: Math.round((placeableElevation + deltas.elevation) * 1000) / 1000,
                     },
                 },
             });

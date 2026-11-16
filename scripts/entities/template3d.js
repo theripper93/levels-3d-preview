@@ -189,11 +189,6 @@ export class Template3D {
                 x: origin2d.x,
                 y: origin2d.y,
                 elevation: parseFloat((origin2d.z + 0.1).toFixed(2)),
-                flags: {
-                    levels: {
-                        rangeTop: parseFloat((origin2d.z + 0.1).toFixed(2)),
-                    },
-                },
             };
             canvas.scene.createEmbeddedDocuments("AmbientLight", [lightData]);
             return this.destroy();
@@ -205,11 +200,6 @@ export class Template3D {
                 x: origin2d.x,
                 y: origin2d.y,
                 elevation: parseFloat((origin2d.z + 0.1).toFixed(2)),
-                flags: {
-                    levels: {
-                        rangeTop: parseFloat((origin2d.z + 0.1).toFixed(2)),
-                    },
-                },
             };
             const sounds = await canvas.scene.createEmbeddedDocuments("AmbientSound", [soundData]);
             sounds[0].sheet.render(true);
@@ -241,9 +231,6 @@ export class Template3D {
                         dynaMesh: "box",
                         autoGround: true,
                         depth: Math.abs(depth),
-                    },
-                    levels: {
-                        rangeTop: elevation,
                     },
                 },
             };

@@ -33,6 +33,8 @@ import { Exporter } from "./helpers/exporter.js";
 import { turnStartMarker } from "./systems/turnStartMarker.js";
 import { ParticleEngine } from "./systems/particleSystem.js";
 import { LightWarmup } from "./systems/lightWarmup.js";
+import { ClusterManager } from "./lighting/cluster/clusterManager.js";
+import { installClusterChunks } from "./lighting/cluster/clusterChunks.js";
 import { ShadowBatcher } from "./systems/shadowBatcher.js";
 import { Particle3D } from "./systems/particleSystem.js";
 import { defaultTokenAnimations } from "./handlers/tokenAnimationHandler.js";
@@ -69,9 +71,7 @@ import { TokenBrowser, setHudHook } from "./apps/tokenBrowser.js";
 import { setLevelsHooks } from "./systems/sceneLevels.js";
 
 import { createTargetGeometry } from "./entities/effects/target.js";
-import { injectLegacyLights } from "./three/legacyLights.js";
-
-import { Socket } from "./lib/socket.js";
+import { injectLegacyLights } from "./three/legacyLights.js";import { Socket } from "./lib/socket.js";
 import { renderSceneToImage } from "./helpers/export2d.js";
 import { BuildPanelApp } from "./apps/BuildPanelApp.js";
 import { QuickTerrain } from "./apps/QuickTerrain.js";
@@ -87,6 +87,7 @@ export const factor = 1000;
 export const MODULE_ID = "levels-3d-preview";
 
 injectFoWShaders(THREE);
+installClusterChunks(THREE);
 vfx.surface.installSurfaceChunks(THREE);
 injectThreeModifications(THREE);
 injectLegacyLights();
@@ -619,6 +620,7 @@ class Levels3DPreview {
         this.renderer = this._sharedContext ? new THREE.WebGLRenderer({ context: canvas.app.renderer.context.gl }) : new THREE.WebGLRenderer();
         this.renderer.setSize(window.innerWidth, window.innerHeight);
         this.lightWarmup = new LightWarmup(this);
+        this.clusterManager = new ClusterManager(this);
         if (this._sharedContext) canvas.app.ticker.add(() => this.animation(performance.now()), null, PIXI.UPDATE_PRIORITY.UTILITY);
         else this.renderer.setAnimationLoop(this.animation.bind(this));
         this.renderer.shadowMap.enabled = true;
@@ -1297,6 +1299,7 @@ class Levels3DPreview {
 
     clear3Dscene() {
         this.lightWarmup.clear();
+        this.clusterManager.clear();
         this.shadowBatcher.clear();
         Ruler3D.clearAll3D();
         TokenRuler3D.clearAll3D();
@@ -1425,6 +1428,7 @@ class Levels3DPreview {
                 this.renderer.resetState();
             }
             this.lightWarmup.update();
+            this.clusterManager.update();
             if (this.bokeh) {
                 const dist = this.interactionManager.findCameraLookatDistance();
                 this.bokeh.uniforms.focus.value = dist;

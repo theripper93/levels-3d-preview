@@ -118,7 +118,7 @@ function lightType(light) {
 
 function inRange(light, sphere) {
     if (light.isDirectionalLight) return true;
-    const far = light.shadow.camera.far || light.distance || Infinity;
+    const far = (!light.isClusterLight && light.shadow.camera.far) || light.distance || Infinity;
     return light.getWorldPosition(new THREE.Vector3()).distanceTo(sphere.center) <= far + sphere.radius;
 }
 

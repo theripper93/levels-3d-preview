@@ -553,6 +553,11 @@ export class Token3D {
             if (this.document.light.bright !== 0 || this.document.light.dim) this.loadLight();
             return;
         }
+        if (!this.document.light.bright && !this.document.light.dim) {
+            this.light.destroy();
+            this.light = null;
+            return;
+        }
         if (this.light.isPointLight !== (this.document.light.angle == 360)) {
             this.light.destroy();
             this.loadLight();
@@ -689,7 +694,7 @@ export class Token3D {
         }
         const lights = [];
         ghost.traverse((child) => {
-            if (child.isLight) lights.push(child);
+            if (child.isLight || child.isClusterLight) lights.push(child);
             child.userData.ignoreHover = true;
             child.userData.noIntersect = true;
         });

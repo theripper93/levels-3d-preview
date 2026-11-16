@@ -4,6 +4,8 @@ import * as coords3d from "../helpers/coords3d.js";
 import { flameSeed, flameTime, setLightFlicker } from "../vfx/light/noise.js";
 import { getLightAnimation, sampleColor, sampleIntensity, sampleRadius, sampleRevolve } from "../vfx/light/animations.js";
 import { LightEffects } from "../vfx/light/lightEffects.js";
+import { ClusterLight } from "../lighting/cluster/clusterLight.js";
+import { useClusteredLights } from "../vfx/quality.js";
 
 const LIGHT_SHADOW_RADIUS = 3;
 
@@ -26,23 +28,71 @@ export class Light3D {
 
     init() {
         this.lightFx = this.isToken ? null : new LightEffects(this);
-        this.light3d = this.angle != 360 ? new THREE.SpotLight(0xffffff, 0.0001, 0.0001, 1, 1, 2) : new THREE.PointLight();
-        this._parent.lightWarmup.add(this.light3d);
+        this.clustered = useClusteredLights();
         this.isPointLight = this.angle == 360;
+        this.light3d = this.createLight3D(this.wantsShadow(this.light));
         this.mesh = new THREE.Group();
-        const shadowRes = game.settings.get("levels-3d-preview", "shadowQuality");
-        this.light3d.shadow.bias = -0.035;
-        this.light3d.shadow.radius = LIGHT_SHADOW_RADIUS;
-        this.light3d.shadow.camera.near = 0.001;
-        this.light3d.shadow.mapSize.width = 256 * shadowRes;
-        this.light3d.shadow.mapSize.height = 256 * shadowRes;
-        this.light3d.penumbra = 1;
         this.refresh();
         if (!this.isToken) {
             this.mesh.add(this.light3d);
             this._parent.scene.add(this.mesh);
             if (game.user.isGM) this.createHandle();
         }
+    }
+
+    wantsShadow(light) {
+        return !!light.document.getFlag("levels-3d-preview", "castShadow") && game.settings.get("levels-3d-preview", "shadowQuality") > 0;
+    }
+
+    createLight3D(castShadow) {
+        const isSpot = this.angle != 360;
+        const real = castShadow || !this.clustered;
+        let light3d;
+        if (real) light3d = isSpot ? new THREE.SpotLight(0xffffff, 0.0001, 0.0001, 1, 1, 2) : new THREE.PointLight();
+        else light3d = new ClusterLight({ type: isSpot ? "spot" : "point" });
+        const shadowRes = game.settings.get("levels-3d-preview", "shadowQuality");
+        light3d.source = this.light;
+        light3d.shadow.bias = -0.035;
+        light3d.shadow.radius = LIGHT_SHADOW_RADIUS;
+        light3d.shadow.camera.near = 0.001;
+        light3d.shadow.mapSize.width = 256 * shadowRes;
+        light3d.shadow.mapSize.height = 256 * shadowRes;
+        light3d.penumbra = 1;
+        light3d.castShadow = castShadow;
+        if (real) this._parent.lightWarmup.add(light3d);
+        return light3d;
+    }
+
+    swapLight3D(castShadow) {
+        const previous = this.light3d;
+        const parent = previous.parent;
+        const light3d = this.createLight3D(castShadow);
+        light3d.position.copy(previous.position);
+        parent?.add(light3d);
+        this.light3d = light3d;
+        const lightWarmup = this._parent.lightWarmup;
+        lightWarmup.remove(previous);
+        if (previous.isClusterLight) {
+            previous.removeFromParent();
+            return previous.dispose();
+        }
+        light3d.visible = false;
+        lightWarmup.warmChange({
+            apply: () => {
+                previous.removeFromParent();
+                light3d.visible = true;
+            },
+            revert: () => {
+                parent?.add(previous);
+                light3d.visible = false;
+            },
+            done: () => previous.dispose(),
+        });
+    }
+
+    get needsSwap() {
+        const light3d = this.light3d;
+        return light3d.isClusterLight ? light3d.castShadow : !light3d.castShadow && this.clustered;
     }
 
     get useHelper() {
@@ -115,9 +165,6 @@ export class Light3D {
                     "levels-3d-preview": {
                         wasFreeMode: this.wasFreeMode,
                     },
-                    levels: {
-                        rangeTop: Math.round((lightElevation + deltas.elevation) * 1000) / 1000,
-                    },
                 },
             });
         }
@@ -139,7 +186,6 @@ export class Light3D {
             light.document.x,
             light.document.y,
             light.document.elevation,
-            light.document.flags.levels?.rangeTop,
             this.dim,
             this.bright,
             this.angle,
@@ -157,7 +203,8 @@ export class Light3D {
         if (this.dragHandle) {
             this.dragHandle.position.set(0, 0, 0);
         }
-        const castShadow = !!light.document.getFlag("levels-3d-preview", "castShadow") && game.settings.get("levels-3d-preview", "shadowQuality") > 0;
+        const castShadow = this.wantsShadow(light);
+        if (this.light3d.isClusterLight ? castShadow : !castShadow && this.clustered) this.swapLight3D(castShadow);
         if (castShadow && this.isEmitting) this.light3d.shadow.autoUpdate = true;
         if (castShadow !== this.light3d.castShadow) {
             this.light3d.castShadow = castShadow;
@@ -167,7 +214,6 @@ export class Light3D {
             x: light.document.x,
             y: light.document.y,
             elevation: light.document.elevation,
-            rangeTop: light.document.flags.levels?.rangeTop ?? 1,
             dim: this.dim,
             bright: this.bright,
             alpha: this.alpha,
@@ -182,6 +228,7 @@ export class Light3D {
         this.light3d.position.set(0, 0, 0);
         this.light3d.color.set(color);
         this.light3d.distance = radius;
+        this.light3d.baseDistance = radius;
         this.light3d.decay = decay;
         this.light3d.intensity = alpha;
         this.light3d.shadow.camera.far = radius;
@@ -229,11 +276,11 @@ export class Light3D {
         if (particleChanged && enableParticle) this.initParticle();
     }
 
-    static computeParams({ x, y, elevation, rangeTop, dim, bright, alpha, color }) {
+    static computeParams({ x, y, elevation, dim, bright, alpha, color }) {
         const { size, distance } = canvas.scene.dimensions;
-        const z = ((rangeTop + elevation) * size) / distance / 2;
+        const z = (elevation * size) / distance;
         return {
-            z: (rangeTop + elevation) / 2,
+            z: elevation,
             color: color || "#ffffff",
             radius: (Math.max(dim, bright) * (size / distance)) / factor,
             intensity: alpha * 9,
@@ -247,6 +294,10 @@ export class Light3D {
     }
 
     update() {
+        if (this.needsSwap) {
+            this.refresh();
+            if (this.light3d.isClusterLight) this.light3d.castShadow = false;
+        }
         const base = this.initialLightParams;
         const animation = this.animation;
         this.flicker = 1;
@@ -469,10 +520,7 @@ export class Light3D {
             if (game.Levels3DPreview?._active) {
                 const pos = game.Levels3DPreview.interactionManager.canvas2dMousePosition;
                 if (!pos) return;
-                data.forEach((ld) => {
-                    ld.elevation = pos.z;
-                    foundry.utils.setProperty(ld, "flags.levels.rangeTop", pos.z);
-                });
+                data.forEach((ld) => (ld.elevation = pos.z));
             }
         });
     }

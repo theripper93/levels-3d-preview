@@ -9,6 +9,8 @@ export class WorkerHandler {
         this._lastKnownValid = {};
         this._visionReady = false;
         this._waitingForInit = false;
+        this.lightMaskCallbacks = {};
+        this.meshesChangedListeners = new Set();
         this.deleteDebounced = foundry.utils.debounce(this.deleteDebounced.bind(this), 10);
         this.initRaycastWorker();
     }
@@ -41,6 +43,16 @@ export class WorkerHandler {
                 if (e.data.type == "refresh") {
                     if (this._waitingForInit) this._visionReady = true;
                     this.refresh();
+                }
+                if (e.data.type == "lightMaskResult") {
+                    const request = this.lightMaskCallbacks[e.data.callbackId];
+                    if (request) {
+                        if (--request.remaining <= 0) delete this.lightMaskCallbacks[e.data.callbackId];
+                        request.callback(e.data);
+                    }
+                }
+                if (e.data.type == "meshesChanged") {
+                    this.meshesChangedListeners.forEach((listener) => listener(e.data.bbox));
                 }
                 if (e.data.type == "rulerPoints") {
                     return;
@@ -117,6 +129,14 @@ export class WorkerHandler {
         this.callbacks[data.callbackId] = callback;
     }
 
+    requestLightMasks(lights, callback) {
+        if (!this.raycastWorker || !lights.length) return false;
+        const callbackId = foundry.utils.randomID(20);
+        this.lightMaskCallbacks[callbackId] = { callback, remaining: lights.length };
+        this.raycastWorker.port.postMessage({ type: "lightMasks", lights, callbackId });
+        return true;
+    }
+
     updateRulerPoints(points) {
         if (!this.enabled) return;
         this.raycastWorker.port.postMessage({ type: "ruler", points });
@@ -153,6 +173,7 @@ export class WorkerHandler {
         this._visionReady = false;
         this._waitingForInit = false;
         this.callbacks = {};
+        this.lightMaskCallbacks = {};
         this._lastResults = {};
         this._lastKnownValid = {};
         if (this._blobUrl) {

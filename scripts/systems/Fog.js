@@ -2,6 +2,8 @@ import * as THREE from "three";
 import { factor } from "../main.js";
 import { rawTexture } from "../three/rawTexture.js";
 import { injectSurface } from "../vfx/surface/receivers.js";
+import { clusterUniforms } from "../lighting/cluster/clusterManager.js";
+import { declareExtraSamplers } from "../lighting/cluster/clusterChunks.js";
 
 export const fogUniforms = {
     fogTexture: { value: null },
@@ -10,6 +12,7 @@ export const fogUniforms = {
     overlayRepeat: { value: new THREE.Vector2(1, 1) },
     sceneDimensions: { value: new THREE.Vector2() },
     sceneOrigin: { value: new THREE.Vector2() },
+    ...clusterUniforms,
 };
 
 export class Fog {
@@ -163,12 +166,14 @@ export class Fog {
 const PARTICLE_OFFSET_ATTRIBUTE = "attribute vec3 offset;";
 
 function injectParticleFoW(shader) {
-    shader.vertexShader = "#define FOW_FROM_OFFSET\n" + shader.vertexShader.replace("void main() {", "void main() {\n\tvWorldPositionFoW = ( modelMatrix * vec4( offset, 1.0 ) ).xyz;\n\tvWorldPositionFoW.y = 9999.0;");
+    shader.fragmentShader = "#define L3D_NO_CLUSTER\n" + shader.fragmentShader;
+    shader.vertexShader = "#define FOW_FROM_OFFSET\n" +shader.vertexShader.replace("void main() {", "void main() {\n\tvWorldPositionFoW = ( modelMatrix * vec4( offset, 1.0 ) ).xyz;\n\tvWorldPositionFoW.y = 9999.0;");
     if (!shader.fragmentShader.includes("#include <fog_fragment>")) shader.fragmentShader = shader.fragmentShader.replace("#include <tonemapping_fragment>", "#include <fog_fragment>\n#include <tonemapping_fragment>");
 }
 
 function injectFogUniforms(shader, renderer) {
     this._userOnBeforeCompile?.call(this, shader, renderer);
+    declareExtraSamplers(shader);
     Object.assign(shader.uniforms, fogUniforms);
     injectSurface(shader);
     if (shader.vertexShader.includes(PARTICLE_OFFSET_ATTRIBUTE)) injectParticleFoW(shader);

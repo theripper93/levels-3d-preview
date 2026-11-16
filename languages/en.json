@@ -1537,6 +1537,10 @@
                 "name": "Soft Shadows",
                 "hint": "Enable soft shadows at a minor cost in performance. Requires refresh."
             },
+            "clusteredLights": {
+                "name": "Clustered Lights",
+                "hint": "Render lights that do not cast shadows through a single clustered pass, so scenes with many lights stay fast and adding, removing or animating lights never stalls. Disable only to troubleshoot lighting issues. Requires refresh."
+            },
             "regionShells": {
                 "name": "Region Effect Outlines",
                 "hint": "Show the glowing volume outline around regions with a 3D effect."

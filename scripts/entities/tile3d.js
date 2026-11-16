@@ -2537,7 +2537,6 @@ export class Tile3D {
 
             function hasFlag(updates) {
                 if (updates?.elevation !== undefined) return true;
-                if (updates?.flags?.levels?.rangeTop !== undefined) return true;
             }
 
             function isNonGeometryUpdate(updates) {

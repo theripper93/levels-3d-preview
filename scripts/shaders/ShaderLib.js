@@ -296,9 +296,9 @@ export class ShaderHandler {
     }
 
     buildShader(mesh, shaderParams, commonParams, entity3D) {
-        const shaderKey = Object.keys(shaderParams)
+        const shaderKey = `${Object.keys(shaderParams)
             .filter((k) => shaderParams[k].enabled)
-            .join("_");
+            .join("_")}|${this.blankTextureKey(shaderParams)}`;
         const _onBeforeCompile = (shader) => {
             shader.entity3D = entity3D;
             this.injectShaders(shader, commonParams, shaderParams);
@@ -392,6 +392,11 @@ export class ShaderHandler {
                 shader.uniforms[shaderId == "defaults" ? name : shaderId + "_" + name] = { value: shaderId == "defaults" ? commonParams[name] ?? (typeof value.value == "function" ? value.value() : value.value) : value.default };
             }
             for (const [name, value] of Object.entries(uniforms)) {
+                if (this.isBlankTexture(shaderParams, shaderId, name)) {
+                    uniformsVarying += `#define ${shaderId}_${name} shaderLib_blankTexture\n`;
+                    shader.uniforms.shaderLib_blankTexture = { value: null };
+                    continue;
+                }
                 uniformsVarying += `uniform ${value.type} ${shaderId == "defaults" ? name : shaderId + "_" + name};\n`;
                 shader.uniforms[shaderId == "defaults" ? name : shaderId + "_" + name] = { value: shaderId == "defaults" ? commonParams[name] ?? (typeof value.value == "function" ? value.value() : value.value) : value.default };
             }
@@ -404,7 +409,28 @@ export class ShaderHandler {
             shader.vertexShader = uniformsVarying + shader.vertexShader;
             shader.fragmentShader = uniformsVarying + shader.fragmentShader;
         }
+        if (shader.uniforms.shaderLib_blankTexture) {
+            shader.vertexShader = "uniform sampler2D shaderLib_blankTexture;\n" + shader.vertexShader;
+            shader.fragmentShader = "uniform sampler2D shaderLib_blankTexture;\n" + shader.fragmentShader;
+        }
         applyLegacyUv(shader);
+    }
+
+    isBlankTexture(shaderParams, shaderId, name) {
+        if (shaderId === "defaults" || this.shaderLib[shaderId]?.uniforms[name]?.type !== "sampler2D") return false;
+        const path = shaderParams[shaderId]?.[name];
+        if (typeof path === "string" ? path.trim() : path) return false;
+        const painterInput = game.Levels3DPreview._heightmapPainter?.input?.name;
+        return !(painterInput?.includes(shaderId) && painterInput.includes(name));
+    }
+
+    blankTextureKey(shaderParams) {
+        const blanks = [];
+        for (const [shaderId, shaderConfig] of Object.entries(this.shaderLib)) {
+            if (!shaderParams[shaderId]?.enabled) continue;
+            for (const name of Object.keys(shaderConfig.uniforms)) if (this.isBlankTexture(shaderParams, shaderId, name)) blanks.push(`${shaderId}.${name}`);
+        }
+        return blanks.join(",");
     }
 
     injectString(inject, shader, shaderId) {

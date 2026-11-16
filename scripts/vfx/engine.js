@@ -1,7 +1,9 @@
 import * as THREE from "three";
 import * as QUARKS from "three.quarks";
 import { PARTICLE_SYSTEMS } from "./registry.js";
-import { getQuality } from "./quality.js";
+import { getQuality, useClusteredLights } from "./quality.js";
+import { ClusterLight } from "../lighting/cluster/clusterLight.js";
+import { EFFECT_POOL_SIZE } from "../systems/lightWarmup.js";
 import { preloadMaterials } from "./materials.js";
 import { ParticleSystem } from "./base/quarks.js";
 
@@ -225,7 +227,14 @@ export class ParticleEngine {
     }
 
     static createLight() {
-        if (activeLights.size >= getQuality().maxEffectLights) return null;
+        const clustered = useClusteredLights();
+        const limit = clustered ? getQuality().maxEffectLights : Math.min(getQuality().maxEffectLights, EFFECT_POOL_SIZE);
+        if (activeLights.size >= limit) return null;
+        if (clustered) {
+            const light = new ClusterLight({ unbinned: true });
+            activeLights.add(light);
+            return light;
+        }
         const lightWarmup = game.Levels3DPreview.lightWarmup;
         let light = lightWarmup.acquireEffectLight();
         if (!light) {
@@ -249,7 +258,7 @@ export class ParticleEngine {
         if (!object3d) return;
         const lights = [];
         object3d.traverse((child) => {
-            if (child.isPointLight) {
+            if (child.isPointLight || child.isClusterLight) {
                 lights.push(child);
             }
         });

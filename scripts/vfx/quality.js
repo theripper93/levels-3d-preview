@@ -3,11 +3,11 @@ import { queueGraphicsChange } from "../settings/liveGraphics.js";
 const MODULE_ID = "levels-3d-preview";
 
 export const QUALITY_TIERS = {
-    off: { enabled: false, particleScale: 0, softParticles: false, distortion: false, decals: false, maxEffectLights: 0, surface: 0 },
-    low: { enabled: true, particleScale: 0.5, softParticles: false, distortion: false, decals: false, maxEffectLights: 2, surface: 1 },
-    medium: { enabled: true, particleScale: 1, softParticles: true, distortion: false, decals: true, maxEffectLights: 4, surface: 2 },
-    high: { enabled: true, particleScale: 1, softParticles: true, distortion: true, decals: true, maxEffectLights: 4, surface: 3 },
-    ultra: { enabled: true, particleScale: 1.5, softParticles: true, distortion: true, decals: true, maxEffectLights: 4, surface: 3 },
+    off: { enabled: false, particleScale: 0, softParticles: false, distortion: false, decals: false, maxEffectLights: 0, maxLightsPerCell: 16, surface: 0 },
+    low: { enabled: true, particleScale: 0.5, softParticles: false, distortion: false, decals: false, maxEffectLights: 4, maxLightsPerCell: 16, surface: 1 },
+    medium: { enabled: true, particleScale: 1, softParticles: true, distortion: false, decals: true, maxEffectLights: 8, maxLightsPerCell: 32, surface: 2 },
+    high: { enabled: true, particleScale: 1, softParticles: true, distortion: true, decals: true, maxEffectLights: 16, maxLightsPerCell: 32, surface: 3 },
+    ultra: { enabled: true, particleScale: 1.5, softParticles: true, distortion: true, decals: true, maxEffectLights: 16, maxLightsPerCell: 32, surface: 3 },
 };
 
 const AO_SAMPLES = { off: 0, low: 6, medium: 10, high: 16 };
@@ -31,9 +31,16 @@ export function getQuality() {
     return cached;
 }
 
+export function useClusteredLights() {
+    return readSetting("clusteredLights", true);
+}
+
 export function refreshQuality() {
     cached = null;
-    return getQuality();
+    const quality = getQuality();
+    const clusterManager = game.Levels3DPreview?.clusterManager;
+    if (clusterManager) clusterManager.maxPerCell = quality.maxLightsPerCell;
+    return quality;
 }
 
 function syncLegacySetting() {
@@ -79,6 +86,16 @@ export function registerQualitySettings() {
             refreshQuality();
             queueGraphicsChange("ambientOcclusion");
         },
+    });
+
+    game.settings.register(MODULE_ID, "clusteredLights", {
+        name: "levels3dpreview.settings.clusteredLights.name",
+        hint: "levels3dpreview.settings.clusteredLights.hint",
+        scope: "client",
+        config: false,
+        type: Boolean,
+        default: true,
+        requiresReload: true,
     });
 
     game.settings.register(MODULE_ID, "enableEffects", {

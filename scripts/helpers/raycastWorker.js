@@ -4,6 +4,7 @@ import { computeBoundsTree, disposeBoundsTree } from "three-mesh-bvh";
 import { acceleratedRaycast } from "../three/acceleratedRaycast.js";
 import { mergeGeometries, toTrianglesDrawMode } from "three/addons/utils/BufferGeometryUtils.js";
 import { isMath } from "./utils.js";
+import { buildOccluder, createMaskJob, traceMaskRay } from "../lighting/cluster/masks/selfOcclusion.js";
 //import * as Math from "https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.5.0/math.js";
 THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
 THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
@@ -90,12 +91,22 @@ self.onconnect = function (e) {
                     }
                 });
                 mesh.updateMatrixWorld();
+                mesh.userData.maskOccluder = buildMaskOccluder(mesh, !!message.isDoor);
+                expandChangedBox(mesh);
                 _port.postMessage({ type: "added", data: {type: mesh.type, scene: scene.children.length} });
                 if (!hasDoor) createMergedGeometryDebounced();
-                else _port.postMessage({ type: "refresh" });
+                else {
+                    postMeshesChanged();
+                    _port.postMessage({ type: "refresh" });
+                }
             }
 
-            if (message.type == "remove") { 
+            if (message.type == "lightMasks") {
+                for (const light of message.lights) lightMaskQueue.push({ ...light, callbackId: message.callbackId });
+                scheduleLightMasks();
+            }
+
+            if (message.type == "remove") {
                 removeMeshFromScene(message.id);
                 createMergedGeometryDebounced();
             }
@@ -162,6 +173,7 @@ self.onconnect = function (e) {
 function removeMeshFromScene(id) {
     const mesh = scene.tiles[id];
     if (!mesh) return;
+    expandChangedBox(mesh);
     mesh.traverse((child) => {
         if (child.isMesh) {
             child.geometry.disposeBoundsTree();
@@ -175,6 +187,64 @@ function removeMeshFromScene(id) {
 }
 
 
+
+const LIGHT_MASK_SLICE_MS = 8;
+const lightMaskQueue = [];
+let lightMaskScheduled = false;
+const maskRaycaster = new THREE.Raycaster();
+maskRaycaster.firstHitOnly = true;
+const changedBox = new THREE.Box3();
+const _box = new THREE.Box3();
+
+function expandChangedBox(object) {
+    _box.setFromObject(object);
+    if (!_box.isEmpty()) changedBox.union(_box);
+}
+
+function postMeshesChanged() {
+    if (changedBox.isEmpty()) return;
+    _port.postMessage({ type: "meshesChanged", bbox: { minX: changedBox.min.x, minZ: changedBox.min.z, maxX: changedBox.max.x, maxZ: changedBox.max.z } });
+    changedBox.makeEmpty();
+}
+
+function scheduleLightMasks() {
+    if (lightMaskScheduled || !lightMaskQueue.length) return;
+    lightMaskScheduled = true;
+    setTimeout(processLightMask, 0);
+}
+
+function processLightMask() {
+    lightMaskScheduled = false;
+    const sliceStart = performance.now();
+    while (lightMaskQueue.length && performance.now() - sliceStart < LIGHT_MASK_SLICE_MS) {
+        const job = lightMaskQueue.shift();
+        const perf = performance.now();
+        let points = null;
+        try {
+            points = computeLightMask(job);
+        } catch (error) {
+            _port.postMessage({ type: "error", error: error });
+        }
+        _port.postMessage({ type: "lightMaskResult", id: job.id, callbackId: job.callbackId, points, rays: job.rays, time: performance.now() - perf }, points ? [points.buffer] : []);
+    }
+    scheduleLightMasks();
+}
+
+function buildMaskOccluder(mesh, door) {
+    const meshes = [];
+    mesh.traverse((child) => {
+        if (child.isMesh && child.userData.sight) meshes.push(child);
+    });
+    return buildOccluder(meshes, door);
+}
+
+function computeLightMask(params) {
+    const occluders = Object.values(scene.tiles).map((mesh) => mesh.userData.maskOccluder);
+    const job = createMaskJob(maskRaycaster, occluders, params);
+    if (!job.active) return null;
+    for (let i = 0; i < params.rays; i++) traceMaskRay(maskRaycaster, job, i);
+    return job.hits ? job.points : null;
+}
 
 function computeSightCollision(v1, v2, radius) {
     const factor = 1000;
@@ -201,6 +271,7 @@ function createMergedGeometry() {
         if (!scene.children.length) {
             mergedMesh.geometry?.dispose();
             mergedMesh.geometry = new THREE.BufferGeometry();
+            postMeshesChanged();
             _port.postMessage({ type: "refresh" });
             return;
         }
@@ -220,6 +291,7 @@ function createMergedGeometry() {
         mergedMesh.geometry = mergedGeometry;
         mergedMesh.updateMatrixWorld();
         mergedMesh.updateMatrix();
+        postMeshesChanged();
         _port.postMessage({type: "refresh"});
         //_port.postMessage({ type: "mergedGeometry", data: { g: (new THREE.Mesh(mergedGeometry)).toJSON() } });
         return mergedGeometry;

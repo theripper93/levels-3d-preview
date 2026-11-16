@@ -2,7 +2,7 @@ import { HandlebarsApplication, mergeClone } from "../lib/utils.js";
 
 const MODULE_ID = "levels-3d-preview";
 
-export const GRAPHICS_SETTINGS = ["resolutionMultiplier", "effectsQuality", "ambientOcclusion", "shadowQuality", "softShadows", "antialiasing", "fowQuality", "dofblur", "enableShaders", "reduceMotion"];
+export const GRAPHICS_SETTINGS = ["resolutionMultiplier", "effectsQuality", "ambientOcclusion", "shadowQuality", "softShadows", "antialiasing", "fowQuality", "dofblur", "enableShaders", "reduceMotion", "clusteredLights"];
 
 const performancePresets = {
     verylow: {

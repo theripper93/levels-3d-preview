@@ -15,7 +15,7 @@ function disposeMaterial(material) {
 
 export function disposeScene(scene) {
     scene.traverse((object) => {
-        if (object.isLight) object.dispose();
+        if (object.isLight || object.isClusterLight) object.dispose();
         object.geometry?.dispose();
         [object.material].flat().forEach(disposeMaterial);
     });

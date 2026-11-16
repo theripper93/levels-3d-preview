@@ -29,9 +29,24 @@ function sceneLights() {
     lightList.time = now;
     lightList.lights = [];
     scene.traverse((object) => {
-        if (object.isPointLight || object.isSpotLight) lightList.lights.push(object);
+        if (object.isLight && (object.isPointLight || object.isSpotLight)) lightList.lights.push(object);
     });
     return lightList.lights;
+}
+
+function addLight(light, position, target) {
+    if (!light.visible || light.intensity <= 0 || light.layers.mask === WARMUP_LAYER_MASK) return;
+    light.getWorldPosition(lightPosition);
+    const distance = lightPosition.distanceTo(position);
+    if (light.distance > 0 && distance >= light.distance) return;
+    let falloff = light.distance > 0 ? Math.pow(1 - distance / light.distance, light.decay || 1) : 1;
+    if (light.isSpotLight) {
+        lightAxis.copy(light.target.getWorldPosition(sunTarget)).sub(lightPosition).normalize();
+        toSample.copy(position).sub(lightPosition).normalize();
+        const cone = Math.cos(light.angle);
+        falloff *= THREE.MathUtils.smoothstep(lightAxis.dot(toSample), cone, cone + (1 - cone) * Math.max(light.penumbra, 0.05));
+    }
+    if (falloff > 0) target.add(scratch.copy(light.color).multiplyScalar(light.intensity * falloff));
 }
 
 function toPerceptual(color) {
@@ -66,20 +81,8 @@ function addGlobalLight(target) {
 }
 
 function addLocalLights(position, target) {
-    for (const light of sceneLights()) {
-        if (!light.visible || light.intensity <= 0 || light.layers.mask === WARMUP_LAYER_MASK) continue;
-        light.getWorldPosition(lightPosition);
-        const distance = lightPosition.distanceTo(position);
-        if (light.distance > 0 && distance >= light.distance) continue;
-        let falloff = light.distance > 0 ? Math.pow(1 - distance / light.distance, light.decay || 1) : 1;
-        if (light.isSpotLight) {
-            lightAxis.copy(light.target.getWorldPosition(sunTarget)).sub(lightPosition).normalize();
-            toSample.copy(position).sub(lightPosition).normalize();
-            const cone = Math.cos(light.angle);
-            falloff *= THREE.MathUtils.smoothstep(lightAxis.dot(toSample), cone, cone + (1 - cone) * Math.max(light.penumbra, 0.05));
-        }
-        if (falloff > 0) target.add(scratch.copy(light.color).multiplyScalar(light.intensity * falloff));
-    }
+    for (const light of sceneLights()) addLight(light, position, target);
+    for (const light of game.Levels3DPreview.clusterManager?.lights ?? []) addLight(light, position, target);
     return target;
 }
 

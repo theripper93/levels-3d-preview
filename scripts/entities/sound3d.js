@@ -90,9 +90,6 @@ export class Sound3D {
                     "levels-3d-preview": {
                         wasFreeMode: this.wasFreeMode,
                     },
-                    levels: {
-                        rangeTop: Math.round((soundElevation + deltas.elevation) * 1000) / 1000,
-                    },
                 },
             });
         }
@@ -106,10 +103,9 @@ export class Sound3D {
         if (this.dragHandle) {
             this.dragHandle.position.set(0, 0, 0);
         }
-        let top = sound.document.flags.levels?.rangeTop ?? 1;
-        let bottom = sound.document.elevation;
-        const z = ((top + bottom) * canvas.scene.dimensions.size) / canvas.scene.dimensions.distance / 2;
-        this.z = (top + bottom) / 2;
+        const elevation = sound.document.elevation;
+        const z = (elevation * canvas.scene.dimensions.size) / canvas.scene.dimensions.distance;
+        this.z = elevation;
         const position = {
             x: this.sound.document.x / factor,
             y: z / factor,
@@ -198,10 +194,7 @@ export class Sound3D {
             if (game.Levels3DPreview?._active) {
                 const pos = game.Levels3DPreview.interactionManager.canvas2dMousePosition;
                 if (!pos) return;
-                data.forEach((ld) => {
-                    ld.elevation = pos.z;
-                    foundry.utils.setProperty(ld, "flags.levels.rangeTop", pos.z);
-                });
+                data.forEach((ld) => (ld.elevation = pos.z));
             }
         });
     }
