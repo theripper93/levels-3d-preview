@@ -8,6 +8,9 @@ import { GradientPicker } from "../helpers/GradientPicker.js";
 import { injectConfig } from "../lib/injectConfig.js";
 import { weatherConfigFields, activateWeatherConfig } from "../vfx/weather/config.js";
 import { surfaceConfigFields } from "../vfx/surface/config.js";
+import { SURFACE_FLAG } from "../vfx/surface/state.js";
+import { section, statusSection, activateStatusSection } from "./sceneConfigLayout.js";
+import { lookPresetField, activateLookPreset } from "./sceneLook.js";
 import { lightFxConfigFields, activateLightFxConfig } from "../vfx/light/config.js";
 import { TacticalPingPicker, loadUserEmotes } from "../entities/effects/ping.js";
 import { injectBakeButton } from "../helpers/modelBaker.js";
@@ -52,12 +55,21 @@ export function registerConfigs() {
         };
     });
 
+    Hooks.on("closeSceneConfig", (app) => {
+        if (app.document === canvas.scene) game.Levels3DPreview?.outputPass?.setupUniforms(canvas.scene.getFlag("levels-3d-preview", "pp"));
+    });
+
     Hooks.on("renderSceneConfig", (app, html) => {
         html.querySelectorAll(`[data-tab="levels-3d-preview"]`).forEach(el => el.remove());
 
-        const importantSettingsEnabled = app.document.getFlag("levels-3d-preview", "enablePlayers") &&
-            app.document.getFlag("levels-3d-preview", "auto3d") &&
-            app.document.getFlag("levels-3d-preview", "object3dSight");
+        const flag = (key) => game.i18n.localize(`levels3dpreview.flags.${key}`);
+        const pp = (key) => game.i18n.localize(`levels3dpreview.flags.postprocessing.${key}.label`);
+        const tab = (key, icon) => ({
+            tabLabel: game.i18n.localize(`levels3dpreview.sceneConfig.tabs.${key}`),
+            tabIcon: icon,
+        });
+        const weather = weatherConfigFields(app.document);
+        const ppRange = (key, max, defaultValue, min = 0) => ({ type: "range", label: pp(key), min, max, step: 0.01, default: defaultValue });
 
         const data = {
             moduleId: "levels-3d-preview",
@@ -67,85 +79,43 @@ export function registerConfigs() {
                 icon: "fas fa-cube",
                 subTabs: true,
             },
-            "basic-3d": {
-                tabLabel: game.i18n.localize("levels3dpreview.flags.basic.header"),
-                tabNotes: game.i18n.localize("levels3dpreview.settings.headers.basics.notes"),
-                tabIcon: "fas fa-cube",
-                importantSettingsStart: {
-                    type: "custom",
-                    html: `
-                        <fieldset>
-                            <legend>${game.i18n.localize("levels3dpreview.settings.highlighted.important.legend")}</legend>
-                            <p class="hint notification ${importantSettingsEnabled ? "info" : "warning"}">
-                                ${game.i18n.localize("levels3dpreview.settings.highlighted.important.hint")}
-                            </p>`,
-                },
-                enablePlayers: {
-                    type: "checkbox",
-                    label: game.i18n.localize("levels3dpreview.flags.enablePlayers.label"),
-                    default: false,
-                    notes: game.i18n.localize("levels3dpreview.flags.enablePlayers.notes"),
-                },
-                auto3d: {
-                    type: "checkbox",
-                    label: game.i18n.localize("levels3dpreview.flags.auto3d.label"),
-                    default: false,
-                },
-                object3dSight: {
-                    type: "checkbox",
-                    label: game.i18n.localize("levels3dpreview.flags.object3dSight.label"),
-                    notes: game.i18n.localize("levels3dpreview.flags.object3dSight.notes"),
-                    default: false,
-                },
-                importantSettingsEnd: {
-                    type: "custom",
-                    html: `</fieldset>`,
-                },
-                enableGameCamera: {
-                    type: "checkbox",
-                    label: game.i18n.localize("levels3dpreview.flags.enableGameCamera.label"),
-                    notes: game.i18n.localize("levels3dpreview.flags.enableGameCamera.notes"),
-                    default: true,
-                },
-                enableFogOfWar: {
-                    type: "checkbox",
-                    label: game.i18n.localize("levels3dpreview.flags.enableFogOfWar.label"),
-                    //notes: game.i18n.localize("levels3dpreview.flags.enableFogOfWar.notes"),
-                    default: true,
-                },
-                grounding: {
-                    type: "select",
-                    label: game.i18n.localize("levels3dpreview.flags.grounding.label"),
-                    notes: game.i18n.localize("levels3dpreview.flags.grounding.notes"),
-                    default: "",
-                    options: {
-                        "": game.i18n.localize("levels3dpreview.flags.grounding.options.none"),
-                        notFlying: game.i18n.localize("levels3dpreview.flags.grounding.options.notFlying"),
-                        always: game.i18n.localize("levels3dpreview.flags.grounding.options.always"),
+            "essentials-3d": {
+                ...tab("essentials", "fas fa-cube"),
+                ...statusSection(),
+                ...section("essentials", "basics", {
+                    atmosphere: {
+                        type: "custom",
+                        html: `
+                <div class="form-group">
+                    <label>${game.i18n.localize("levels3dpreview.dynamicSkyConfig.sceneConfig.label")}</label>
+                    <div class="form-fields">
+                        <button type="button" data-key="sky-config"><i class="fas fa-cloud-sun"></i> ${game.i18n.localize("levels3dpreview.dynamicSkyConfig.sceneConfig.button")}</button>
+                    </div>
+                    <p class="hint">${game.i18n.localize(isDynamicSkyEnabled(app.document) ? "levels3dpreview.dynamicSkyConfig.sceneConfig.notesEnabled" : "levels3dpreview.dynamicSkyConfig.sceneConfig.notes")}</p>
+                </div>
+                `,
                     },
-                },
-                maxElevation: {
-                    type: "number",
-                    label: game.i18n.localize("levels3dpreview.flags.maxElevation.label"),
-                    notes: game.i18n.localize("levels3dpreview.flags.maxElevation.notes"),
-                    default: 100000,
-                },
-                enableRuler: {
-                    type: "checkbox",
-                    label: game.i18n.localize("levels3dpreview.flags.enableRuler.label"),
-                    notes: game.i18n.localize("levels3dpreview.flags.enableRuler.notes"),
-                    default: true,
-                },
-                enableAnimationScripts: {
-                    type: "checkbox",
-                    label: game.i18n.localize("levels3dpreview.flags.enableAnimationScripts.label"),
-                    notes: game.i18n.localize("levels3dpreview.flags.enableAnimationScripts.notes"),
-                    default: true,
-                },
-                initialposition: {
-                    type: "custom",
-                    html: `
-                
+                    exr: {
+                        type: "filepicker.any",
+                        fpTypes: [".exr", ".jpeg", ".jpg", ".png", ".webp"],
+                        label: flag("exr.label"),
+                        placeholder: flag("exr.placeholder"),
+                        notes: flag("exr.notes"),
+                        default: game.modules.get("canvas3dcompendium") ? "modules/canvas3dcompendium/assets/Beautiful-Sky/2K/Sky_LowPoly_01_Day_a.webp" : "modules/levels-3d-preview/assets/skybox/venice_sunrise_1k.exr",
+                    },
+                    sunPosition: {
+                        type: "range",
+                        label: flag("sunPosition.label"),
+                        default: 9,
+                        min: 0,
+                        max: 24,
+                    },
+                    "weather.preset": weather["weather.preset"],
+                    "weather.intensity": weather["weather.intensity"],
+                    "pp.preset": lookPresetField(app.document),
+                    initialposition: {
+                        type: "custom",
+                        html: `
                 <div class="form-group">
                     <label>${game.i18n.localize("levels3dpreview.flags.initialview.label")}</label>
                     <div class="form-fields">
@@ -158,452 +128,419 @@ export function registerConfigs() {
                     </div>
                     <p class="hint">${game.i18n.localize("levels3dpreview.flags.initialview.notes")}</p>
                 </div>
-                
                 `,
-                },
-            },
-            "environment-3d": {
-                tabLabel: game.i18n.localize("levels3dpreview.settings.headers.environment.title"),
-                tabNotes: game.i18n.localize("levels3dpreview.settings.headers.environment.notes"),
-                tabIcon: "fas fa-cloud-sun",
-                atmosphere: {
-                    type: "custom",
-                    html: `
-                <div class="form-group">
-                    <label>${game.i18n.localize("levels3dpreview.dynamicSkyConfig.sceneConfig.label")}</label>
-                    <div class="form-fields">
-                        <button type="button" data-key="sky-config"><i class="fas fa-cloud-sun"></i> ${game.i18n.localize("levels3dpreview.dynamicSkyConfig.sceneConfig.button")}</button>
-                    </div>
-                    <p class="hint">${game.i18n.localize(isDynamicSkyEnabled(app.document) ? "levels3dpreview.dynamicSkyConfig.sceneConfig.notesEnabled" : "levels3dpreview.dynamicSkyConfig.sceneConfig.notes")}</p>
-                </div>
-                `,
-                },
-                exr: {
-                    type: "filepicker.any",
-                    fpTypes: [".exr", ".jpeg", ".jpg", ".png", ".webp"],
-                    label: game.i18n.localize("levels3dpreview.flags.exr.label"),
-                    placeholder: game.i18n.localize("levels3dpreview.flags.exr.placeholder"),
-                    notes: game.i18n.localize("levels3dpreview.flags.exr.notes"),
-                    default: game.modules.get("canvas3dcompendium") ? "modules/canvas3dcompendium/assets/Beautiful-Sky/2K/Sky_LowPoly_01_Day_a.webp" : "modules/levels-3d-preview/assets/skybox/venice_sunrise_1k.exr",
-                },
-                /*skybox: {
-                    type: "filepicker",
-                    label: game.i18n.localize("levels3dpreview.flags.skybox.label"),
-                    placeholder: game.i18n.localize("levels3dpreview.flags.skybox.placeholder"),
-                    notes: game.i18n.localize("levels3dpreview.flags.skybox.notes"),
-                    default: game.modules.get("canvas3dcompendium") ? "" : "modules/levels-3d-preview/assets/skybox/humble/humble_bk.jpg",
-                },*/
-                renderBackground: {
-                    type: "checkbox",
-                    label: game.i18n.localize("levels3dpreview.flags.renderBackground.label"),
-                    default: true,
-                    notes: game.i18n.localize("levels3dpreview.flags.renderBackground.notes"),
-                },
-                filter: {
-                    type: "select",
-                    label: game.i18n.localize("levels3dpreview.flags.filter.label"),
-                    default: "none",
-                    options: {
-                        none: game.i18n.localize("levels3dpreview.flags.filter.options.none"),
-                        grayscale: game.i18n.localize("levels3dpreview.flags.filter.options.grayscale"),
-                        sepia: game.i18n.localize("levels3dpreview.flags.filter.options.sepia"),
-                        invert: game.i18n.localize("levels3dpreview.flags.filter.options.invert"),
-                        contrast: game.i18n.localize("levels3dpreview.flags.filter.options.contrast"),
-                        brightness: game.i18n.localize("levels3dpreview.flags.filter.options.brightness"),
-                        "hue-rotate": game.i18n.localize("levels3dpreview.flags.filter.options.hue"),
-                        saturate: game.i18n.localize("levels3dpreview.flags.filter.options.saturate"),
-                        custom: game.i18n.localize("levels3dpreview.flags.filter.options.custom"),
                     },
-                },
-                filterStrength: {
-                    type: "range",
-                    label: game.i18n.localize("levels3dpreview.flags.filterStrength.label"),
-                    min: 0,
-                    max: 2,
-                    step: 0.01,
-                    default: 1,
-                },
-                filterCustom: {
-                    type: "text",
-                    label: game.i18n.localize("levels3dpreview.flags.filterCustom.label"),
-                    placeholder: game.i18n.localize("levels3dpreview.flags.filterCustom.placeholder"),
-                    default: "",
-                },
-                renderTable: {
-                    type: "select",
-                    label: game.i18n.localize("levels3dpreview.flags.renderTable.label"),
-                    default: game.settings.get("levels-3d-preview", "paddingAppearance"),
-                    options: {
-                        none: game.i18n.localize("levels3dpreview.flags.renderTable.options.none"),
-                        table: game.i18n.localize("levels3dpreview.flags.renderTable.options.table"),
-                        matpaper: game.i18n.localize("levels3dpreview.flags.renderTable.options.matpaper"),
-                        matwood: game.i18n.localize("levels3dpreview.flags.renderTable.options.matwood"),
-                        matcloth: game.i18n.localize("levels3dpreview.flags.renderTable.options.matcloth"),
-                        matblueprint: game.i18n.localize("levels3dpreview.flags.renderTable.options.matblueprint"),
-                        matcustom: game.i18n.localize("levels3dpreview.flags.renderTable.options.matcustom"),
-                    },
-                },
-                tableTex: {
-                    type: "filepicker",
-                    label: game.i18n.localize("levels3dpreview.flags.tableTex.label"),
-                    placeholder: game.i18n.localize("levels3dpreview.flags.tableTex.placeholder"),
-                    default: "",
-                },
-                tableHeightmap: {
-                    type: "filepicker",
-                    label: game.i18n.localize("levels3dpreview.flags.tableHeightmap.label"),
-                    placeholder: game.i18n.localize("levels3dpreview.flags.tableHeightmap.placeholder"),
-                    default: "",
-                },
-                tableHeightmapScale: {
-                    type: "range",
-                    label: game.i18n.localize("levels3dpreview.flags.tableHeightmapScale.label"),
-                    default: 1,
-                    min: 0.01,
-                    max: 10,
-                    step: 0.01,
-                },
-                tableColor: {
-                    type: "color",
-                    label: game.i18n.localize("levels3dpreview.flags.tableColor.label"),
-                    default: "#341f0f",
-                },
-                enableFog: {
-                    type: "checkbox",
-                    label: game.i18n.localize("levels3dpreview.flags.enableFog.label"),
-                    default: false,
-                },
-                fogColor: {
-                    type: "color",
-                    label: game.i18n.localize("levels3dpreview.flags.fogColor.label"),
-                    default: "#000000",
-                },
-                fogDistance: {
-                    type: "number",
-                    label: game.i18n.localize("levels3dpreview.flags.fogDistance.label"),
-                    default: 3000,
-                },
+                }),
             },
-            "lighting-3d": {
-                tabLabel: game.i18n.localize("levels3dpreview.settings.headers.lighting.title"),
-                tabNotes: game.i18n.localize("levels3dpreview.settings.headers.lighting.notes"),
-                tabIcon: "fas fa-lightbulb",
-                sceneTint: {
-                    type: "color",
-                    label: game.i18n.localize("levels3dpreview.flags.sceneTint.label"),
-                    default: "#ffffff",
-                },
-                timeSync: {
-                    type: "select",
-                    label: game.i18n.localize("levels3dpreview.flags.timeSync.label"),
-                    default: getTimeSyncDefault(app.document),
-                    options: {
-                        off: game.i18n.localize("levels3dpreview.flags.timeSync.options.off"),
-                        time: game.i18n.localize("levels3dpreview.flags.timeSync.options.time"),
-                        darkness: game.i18n.localize("levels3dpreview.flags.timeSync.options.darkness"),
-                        both: game.i18n.localize("levels3dpreview.flags.timeSync.options.both"),
+            "sky-light-3d": {
+                ...tab("skyLight", "fas fa-cloud-sun"),
+                ...section("skyLight", "basics", {
+                    timeSync: {
+                        type: "select",
+                        label: flag("timeSync.label"),
+                        default: getTimeSyncDefault(app.document),
+                        options: {
+                            off: flag("timeSync.options.off"),
+                            time: flag("timeSync.options.time"),
+                            darkness: flag("timeSync.options.darkness"),
+                            both: flag("timeSync.options.both"),
+                        },
                     },
-                },
-                sunPosition: {
-                    type: "range",
-                    label: game.i18n.localize("levels3dpreview.flags.sunPosition.label"),
-                    default: 9,
-                    min: 0,
-                    max: 24,
-                },
-                exposure: {
-                    type: "range",
-                    label: game.i18n.localize("levels3dpreview.flags.exposure.label"),
-                    //notes: game.i18n.localize("levels3dpreview.flags.exposure.notes"),
-                    default: 1,
-                    min: 0.01,
-                    max: 2,
-                    step: 0.01,
-                },
-                sunDistance: {
-                    type: "number",
-                    label: game.i18n.localize("levels3dpreview.flags.sunDistance.label"),
-                    default: 10,
-                },
-                sunTilt: {
-                    type: "range",
-                    label: game.i18n.localize("levels3dpreview.flags.sunTilt.label"),
-                    default: 0,
-                    min: -1,
-                    max: 1,
-                    step: 0.01,
-                },
-                sunShadows: {
-                    type: "checkbox",
-                    label: game.i18n.localize("levels3dpreview.flags.sunShadows.label"),
-                    notes: game.i18n.localize("levels3dpreview.flags.sunShadows.notes"),
-                    default: true,
-                },
-                ambientLightIntensity: {
-                    type: "range",
-                    label: game.i18n.localize("levels3dpreview.flags.ambientLightIntensity.label"),
-                    default: 0,
-                    min: 0,
-                    max: 1,
-                    step: 0.01,
-                },
-                ambientLightColor: {
-                    type: "color",
-                    label: game.i18n.localize("levels3dpreview.flags.ambientLightColor.label"),
-                    default: "#ffffff",
-                },
+                    exposure: {
+                        type: "range",
+                        label: flag("exposure.label"),
+                        default: 1,
+                        min: 0.01,
+                        max: 2,
+                        step: 0.01,
+                    },
+                    sunShadows: {
+                        type: "checkbox",
+                        label: flag("sunShadows.label"),
+                        notes: flag("sunShadows.notes"),
+                        default: true,
+                    },
+                }),
+                ...section("sun", "sun", {
+                    sunDistance: {
+                        type: "number",
+                        label: flag("sunDistance.label"),
+                        default: 10,
+                    },
+                    sunTilt: {
+                        type: "range",
+                        label: flag("sunTilt.label"),
+                        default: 0,
+                        min: -1,
+                        max: 1,
+                        step: 0.01,
+                    },
+                }),
+                ...section("ambient", "ambient", {
+                    sceneTint: {
+                        type: "color",
+                        label: flag("sceneTint.label"),
+                        default: "#ffffff",
+                    },
+                    ambientLightIntensity: {
+                        type: "range",
+                        label: flag("ambientLightIntensity.label"),
+                        default: 0,
+                        min: 0,
+                        max: 1,
+                        step: 0.01,
+                    },
+                    ambientLightColor: {
+                        type: "color",
+                        label: flag("ambientLightColor.label"),
+                        default: "#ffffff",
+                    },
+                }),
+                ...section("background", "background", {
+                    renderBackground: {
+                        type: "checkbox",
+                        label: flag("renderBackground.label"),
+                        default: true,
+                        notes: flag("renderBackground.notes"),
+                    },
+                    enableFog: {
+                        type: "checkbox",
+                        label: flag("enableFog.label"),
+                        notes: flag("enableFog.notes"),
+                        default: false,
+                    },
+                    fogColor: {
+                        type: "color",
+                        label: flag("fogColor.label"),
+                        default: "#000000",
+                    },
+                    fogDistance: {
+                        type: "number",
+                        label: flag("fogDistance.label"),
+                        default: 3000,
+                    },
+                }),
             },
-            "particles-3d": {
-                tabLabel: game.i18n.localize("levels3dpreview.settings.headers.particles.title"),
-                tabNotes: game.i18n.localize("levels3dpreview.settings.headers.particles.notes"),
-                tabIcon: "fas fa-cloud-showers-heavy",
-                ...weatherConfigFields(app.document),
-                ...surfaceConfigFields(),
+            "weather-3d": {
+                ...tab("weather", "fas fa-cloud-showers-heavy"),
+                ...section("weather", "basics", {
+                    "weather.layer2": weather["weather.layer2"],
+                    "weather.linkSky": weather["weather.linkSky"],
+                }),
+                ...section("wind", "wind", {
+                    "weather.wind.direction": weather["weather.wind.direction"],
+                    "weather.wind.speed": weather["weather.wind.speed"],
+                    "weather.wind.gustiness": weather["weather.wind.gustiness"],
+                    "weather.fog": weather["weather.fog"],
+                    "weather.lightning": weather["weather.lightning"],
+                }),
+                ...section("surface", "surface", surfaceConfigFields()),
                 partGroupStart: {
                     type: "custom",
                     html: `<div id="part-group">`,
                 },
-                particleTexture: {
-                    type: "filepicker",
-                    label: game.i18n.localize("levels3dpreview.flags.particleTexture.label"),
-                    default: "",
-                },
-                particleDensity: {
-                    type: "range",
-                    label: game.i18n.localize("levels3dpreview.flags.particleDensity.label"),
-                    default: 100,
-                    min: 1,
-                    max: 1000,
-                    step: 1,
-                },
-                particleDirection: {
-                    type: "range",
-                    label: game.i18n.localize("levels3dpreview.flags.particleDirection.label"),
-                    default: 90,
-                    min: 0,
-                    max: 360,
-                    step: 1,
-                },
-                particleSize: {
-                    type: "range",
-                    label: game.i18n.localize("levels3dpreview.flags.particleSize.label"),
-                    default: 20,
-                    min: 1,
-                    max: 10000,
-                    step: 1,
-                },
-                particleColor: {
-                    type: "color",
-                    label: game.i18n.localize("levels3dpreview.flags.particleColor.label"),
-                    default: "#ffc494",
-                },
-                particleOpacity: {
-                    type: "range",
-                    label: game.i18n.localize("levels3dpreview.flags.particleOpacity.label"),
-                    default: 0.5,
-                    min: 0,
-                    max: 1,
-                    step: 0.01,
-                },
-                particleSpeed: {
-                    type: "range",
-                    label: game.i18n.localize("levels3dpreview.flags.particleSpeed.label"),
-                    default: 5,
-                    min: 0,
-                    max: 10,
-                    step: 0.1,
-                },
-                particleRotationspeed: {
-                    type: "range",
-                    label: game.i18n.localize("levels3dpreview.flags.particleRotationspeed.label"),
-                    default: 0,
-                    min: -10,
-                    max: 10,
-                    step: 0.1,
-                },
-                particleVelocity: {
-                    type: "range",
-                    label: game.i18n.localize("levels3dpreview.flags.particleVelocity.label"),
-                    default: 1,
-                    min: 0,
-                    max: 10,
-                    step: 0.1,
-                },
-                particleRandomRotation: {
-                    type: "checkbox",
-                    label: game.i18n.localize("levels3dpreview.flags.particleRandomRotation.label"),
-                    default: false,
-                },
-                particleRandomScale: {
-                    type: "checkbox",
-                    label: game.i18n.localize("levels3dpreview.flags.particleRandomScale.label"),
-                    default: true,
-                },
-                particleBlend: {
-                    type: "checkbox",
-                    label: game.i18n.localize("levels3dpreview.flags.particleBlend.label"),
-                    default: false,
-                },
-                particleGroundOffset: {
-                    type: "number",
-                    label: game.i18n.localize("levels3dpreview.flags.particleGroundOffset.label"),
-                    default: 0,
-                },
+                ...section("particles", "particles", {
+                    particleTexture: {
+                        type: "filepicker",
+                        label: flag("particleTexture.label"),
+                        default: "",
+                    },
+                    particleDensity: {
+                        type: "range",
+                        label: flag("particleDensity.label"),
+                        default: 100,
+                        min: 1,
+                        max: 1000,
+                        step: 1,
+                    },
+                    particleDirection: {
+                        type: "range",
+                        label: flag("particleDirection.label"),
+                        default: 90,
+                        min: 0,
+                        max: 360,
+                        step: 1,
+                    },
+                    particleSize: {
+                        type: "range",
+                        label: flag("particleSize.label"),
+                        default: 20,
+                        min: 1,
+                        max: 10000,
+                        step: 1,
+                    },
+                    particleColor: {
+                        type: "color",
+                        label: flag("particleColor.label"),
+                        default: "#ffc494",
+                    },
+                    particleOpacity: {
+                        type: "range",
+                        label: flag("particleOpacity.label"),
+                        default: 0.5,
+                        min: 0,
+                        max: 1,
+                        step: 0.01,
+                    },
+                    particleSpeed: {
+                        type: "range",
+                        label: flag("particleSpeed.label"),
+                        default: 5,
+                        min: 0,
+                        max: 10,
+                        step: 0.1,
+                    },
+                    particleRotationspeed: {
+                        type: "range",
+                        label: flag("particleRotationspeed.label"),
+                        default: 0,
+                        min: -10,
+                        max: 10,
+                        step: 0.1,
+                    },
+                    particleVelocity: {
+                        type: "range",
+                        label: flag("particleVelocity.label"),
+                        default: 1,
+                        min: 0,
+                        max: 10,
+                        step: 0.1,
+                    },
+                    particleRandomRotation: {
+                        type: "checkbox",
+                        label: flag("particleRandomRotation.label"),
+                        default: false,
+                    },
+                    particleRandomScale: {
+                        type: "checkbox",
+                        label: flag("particleRandomScale.label"),
+                        default: true,
+                    },
+                    particleBlend: {
+                        type: "checkbox",
+                        label: flag("particleBlend.label"),
+                        default: false,
+                    },
+                    particleGroundOffset: {
+                        type: "number",
+                        label: flag("particleGroundOffset.label"),
+                        default: 0,
+                    },
+                }),
                 partGroupEnd: {
                     type: "custom",
                     html: `</div>`,
                 },
             },
-            "visibility-3d": {
-                tabLabel: game.i18n.localize("levels3dpreview.settings.headers.visibility.title"),
-                tabNotes: game.i18n.localize("levels3dpreview.settings.headers.visibility.notes"),
-                tabIcon: "fas fa-eye",
-                showSceneWalls: {
-                    type: "checkbox",
-                    label: game.i18n.localize("levels3dpreview.flags.showSceneWalls.label"),
-                    default: true,
-                },
-                showSceneDoors: {
-                    type: "checkbox",
-                    label: game.i18n.localize("levels3dpreview.flags.showSceneDoors.label"),
-                    default: true,
-                },
-                showSceneFloors: {
-                    type: "checkbox",
-                    label: game.i18n.localize("levels3dpreview.flags.showSceneFloors.label"),
-                    default: true,
-                },
-                renderSceneLights: {
-                    type: "checkbox",
-                    label: game.i18n.localize("levels3dpreview.flags.renderSceneLights.label"),
-                    default: true,
-                },
-                mirrorLevels: {
-                    type: "checkbox",
-                    label: game.i18n.localize("levels3dpreview.flags.mirrorLevels.label"),
-                    default: true,
-                },
+            "visuals-3d": {
+                ...tab("visuals", "fas fa-adjust"),
+                ...section("look", "basics", {
+                    "pp.enabled": {
+                        type: "checkbox",
+                        label: pp("enabled"),
+                        default: false,
+                    },
+                    "pp.tint": {
+                        type: "color",
+                        label: pp("tint"),
+                        default: "#ffffff",
+                    },
+                    "pp.contrast": ppRange("contrast", 2, 1),
+                    "pp.brightness": ppRange("brightness", 2, 1),
+                    "pp.saturation": ppRange("saturation", 2, 1),
+                }),
+                ...section("effects", "effects", {
+                    "pp.sepia": ppRange("sepia", 1, 0),
+                    "pp.hue": { type: "range", label: pp("hue"), min: -180, max: 180, step: 1, default: 0 },
+                    "pp.vignette": ppRange("vignette", 1, 0),
+                    "pp.chromaticAberration": ppRange("chromaticAberration", 1, 0),
+                    "pp.grain": ppRange("grain", 1, 0),
+                    pixel: {
+                        type: "checkbox",
+                        label: flag("pixel.label"),
+                        default: false,
+                    },
+                }),
+                ...section("bloom", "bloom", {
+                    bloom: {
+                        type: "checkbox",
+                        label: flag("bloom.label"),
+                        default: false,
+                    },
+                    bloomThreshold: {
+                        type: "range",
+                        label: flag("bloomThreshold.label"),
+                        min: 0,
+                        max: 1,
+                        step: 0.01,
+                        default: 0,
+                    },
+                    bloomStrength: {
+                        type: "range",
+                        label: flag("bloomStrength.label"),
+                        min: 0,
+                        max: 1,
+                        step: 0.01,
+                        default: 0.4,
+                    },
+                    bloomRadius: {
+                        type: "range",
+                        label: flag("bloomRadius.label"),
+                        min: 0,
+                        max: 1,
+                        step: 0.01,
+                        default: 0.6,
+                    },
+                }),
+                ...section("padding", "padding", {
+                    renderTable: {
+                        type: "select",
+                        label: flag("renderTable.label"),
+                        default: game.settings.get("levels-3d-preview", "paddingAppearance"),
+                        options: {
+                            none: flag("renderTable.options.none"),
+                            table: flag("renderTable.options.table"),
+                            matpaper: flag("renderTable.options.matpaper"),
+                            matwood: flag("renderTable.options.matwood"),
+                            matcloth: flag("renderTable.options.matcloth"),
+                            matblueprint: flag("renderTable.options.matblueprint"),
+                            matcustom: flag("renderTable.options.matcustom"),
+                        },
+                    },
+                    tableTex: {
+                        type: "filepicker",
+                        label: flag("tableTex.label"),
+                        placeholder: flag("tableTex.placeholder"),
+                        default: "",
+                    },
+                    tableHeightmap: {
+                        type: "filepicker",
+                        label: flag("tableHeightmap.label"),
+                        placeholder: flag("tableHeightmap.placeholder"),
+                        default: "",
+                    },
+                    tableHeightmapScale: {
+                        type: "range",
+                        label: flag("tableHeightmapScale.label"),
+                        default: 1,
+                        min: 0.01,
+                        max: 10,
+                        step: 0.01,
+                    },
+                    tableColor: {
+                        type: "color",
+                        label: flag("tableColor.label"),
+                        default: "#341f0f",
+                    },
+                }),
             },
-            "postprocessing": {
-                tabLabel: game.i18n.localize("levels3dpreview.flags.postprocessing.header"),
-                tabNotes: game.i18n.localize("levels3dpreview.flags.postprocessing.notes"),
-                tabIcon: "fas fa-adjust",
-                "pp.enabled": {
-                    type: "checkbox",
-                    label: game.i18n.localize("levels3dpreview.flags.postprocessing.enabled.label"),
-                    default: false,
-                },
-                "pp.vignette": {
-                    type: "range",
-                    label: game.i18n.localize("levels3dpreview.flags.postprocessing.vignette.label"),
-                    min: 0,
-                    max: 1,
-                    step: 0.01,
-                    default: 0,
-                },
-                "pp.chromaticAberration": {
-                    type: "range",
-                    label: game.i18n.localize("levels3dpreview.flags.postprocessing.chromaticAberration.label"),
-                    min: 0,
-                    max: 1,
-                    step: 0.01,
-                    default: 0,
-                },
-                "pp.grain": {
-                    type: "range",
-                    label: game.i18n.localize("levels3dpreview.flags.postprocessing.grain.label"),
-                    min: 0,
-                    max: 1,
-                    step: 0.01,
-                    default: 0,
-                },
-                "pp.tint": {
-                    type: "color",
-                    label: game.i18n.localize("levels3dpreview.flags.postprocessing.tint.label"),
-                    default: "#ffffff",
-                },
-                "pp.contrast": {
-                    type: "range",
-                    label: game.i18n.localize("levels3dpreview.flags.postprocessing.contrast.label"),
-                    min: 0,
-                    max: 2,
-                    step: 0.01,
-                    default: 1,
-                },
-                "pp.brightness": {
-                    type: "range",
-                    label: game.i18n.localize("levels3dpreview.flags.postprocessing.brightness.label"),
-                    min: 0,
-                    max: 2,
-                    step: 0.01,
-                    default: 1,
-                },
-                "pp.saturation": {
-                    type: "range",
-                    label: game.i18n.localize("levels3dpreview.flags.postprocessing.saturation.label"),
-                    min: 0,
-                    max: 2,
-                    step: 0.01,
-                    default: 1,
-                },
-
-                pixel: {
-                    type: "checkbox",
-                    label: game.i18n.localize("levels3dpreview.flags.pixel.label"),
-                    default: false,
-                },
-                
-                bloom: {
-                    type: "checkbox",
-                    label: game.i18n.localize("levels3dpreview.flags.bloom.label"),
-                    default: false,
-                },
-                bloomThreshold: {
-                    type: "range",
-                    label: game.i18n.localize("levels3dpreview.flags.bloomThreshold.label"),
-                    min: 0,
-                    max: 1,
-                    step: 0.01,
-                    default: 0,
-                },
-                bloomStrength: {
-                    type: "range",
-                    label: game.i18n.localize("levels3dpreview.flags.bloomStrength.label"),
-                    min: 0,
-                    max: 1,
-                    step: 0.01,
-                    default: 0.4,
-                },
-                bloomRadius: {
-                    type: "range",
-                    label: game.i18n.localize("levels3dpreview.flags.bloomRadius.label"),
-                    min: 0,
-                    max: 1,
-                    step: 0.01,
-                    default: 0.6,
-                },
+            "misc-3d": {
+                tabLabel: game.i18n.localize("SCENE.TABS.SHEET.misc"),
+                tabIcon: "fa-solid fa-shapes",
+                ...section("misc", "basics", {
+                    enablePlayers: {
+                        type: "checkbox",
+                        label: flag("enablePlayers.label"),
+                        default: false,
+                        notes: flag("enablePlayers.notes"),
+                    },
+                    auto3d: {
+                        type: "checkbox",
+                        label: flag("auto3d.label"),
+                        default: false,
+                    },
+                    object3dSight: {
+                        type: "checkbox",
+                        label: flag("object3dSight.label"),
+                        notes: flag("object3dSight.notes"),
+                        default: false,
+                    },
+                    enableGameCamera: {
+                        type: "checkbox",
+                        label: flag("enableGameCamera.label"),
+                        notes: flag("enableGameCamera.notes"),
+                        default: true,
+                    },
+                    enableFogOfWar: {
+                        type: "checkbox",
+                        label: flag("enableFogOfWar.label"),
+                        default: true,
+                    },
+                    grounding: {
+                        type: "select",
+                        label: flag("grounding.label"),
+                        notes: flag("grounding.notes"),
+                        default: "",
+                        options: {
+                            "": flag("grounding.options.none"),
+                            notFlying: flag("grounding.options.notFlying"),
+                            always: flag("grounding.options.always"),
+                        },
+                    },
+                    enableAnimationScripts: {
+                        type: "checkbox",
+                        label: flag("enableAnimationScripts.label"),
+                        notes: flag("enableAnimationScripts.notes"),
+                        default: true,
+                    },
+                }),
+                ...section("objects", "objects", {
+                    showSceneWalls: {
+                        type: "checkbox",
+                        label: flag("showSceneWalls.label"),
+                        default: true,
+                    },
+                    showSceneDoors: {
+                        type: "checkbox",
+                        label: flag("showSceneDoors.label"),
+                        default: true,
+                    },
+                    showSceneFloors: {
+                        type: "checkbox",
+                        label: flag("showSceneFloors.label"),
+                        default: true,
+                    },
+                    renderSceneLights: {
+                        type: "checkbox",
+                        label: flag("renderSceneLights.label"),
+                        default: true,
+                    },
+                    mirrorLevels: {
+                        type: "checkbox",
+                        label: flag("mirrorLevels.label"),
+                        default: true,
+                    },
+                }),
+                ...section("advanced", "advanced", {
+                    maxElevation: {
+                        type: "number",
+                        label: flag("maxElevation.label"),
+                        notes: flag("maxElevation.notes"),
+                        default: 100000,
+                    },
+                }),
             },
         };
         const injected = injectConfig.inject(app, html, data);
         activateWeatherConfig(app, html, () => injectConfig._trySetPosition(app, { height: "auto" }));
+        activateStatusSection(app, html);
+        activateLookPreset(html);
 
-        const ppInputs = Array.from(html.querySelectorAll("[name^='flags.levels-3d-preview.']")).filter((input) => input.name.includes("pp."));
-
+        const ppInputs = Array.from(html.querySelectorAll("[name^='flags.levels-3d-preview.pp.']"));
+        const ppValue = (input) => (input.type === "checkbox" ? input.checked : input.type === "color" || input.tagName === "COLOR-PICKER" || input.tagName === "SELECT" ? input.value : Number(input.value));
         ppInputs.forEach((input) => {
-            input.addEventListener("change", (e) => {
-                const data = new FormDataExtended(html.querySelectorAll("form")[0]);
-                const toObject = foundry.utils.expandObject(data.object);
-                const ppData = foundry.utils.getProperty(toObject, `flags.levels-3d-preview.pp`);
-                game.Levels3DPreview.uberPass.setupUniforms(ppData);
-            })
-        } );
+            input.addEventListener("change", () => {
+                const ppData = Object.fromEntries(ppInputs.map((ppInput) => [ppInput.name.split(".").pop(), ppValue(ppInput)]));
+                game.Levels3DPreview.uberPass?.setupUniforms(ppData);
+            });
+        });
 
         const bloomFlags = ["bloomThreshold", "bloomStrength", "bloomRadius"];
-        const filterFlags = ["filterStrength", "filterCustom"];
-        const customTableFlags = ["tableTex", "tableColor"];
+        const customTableFlags = ["tableTex", "tableHeightmap", "tableHeightmapScale", "tableColor"];
         const fogFlags = ["fogColor", "fogDistance"];
+        const surfaceFlags = Object.keys(surfaceConfigFields()).filter((key) => key !== `${SURFACE_FLAG}.enabled`);
         hideParams(app, html, `[name="flags.levels-3d-preview.bloom"]`, bloomFlags, false);
-        hideParams(app, html, `[name="flags.levels-3d-preview.filter"]`, filterFlags, "none");
+        hideParams(app, html, `[name="flags.levels-3d-preview.${SURFACE_FLAG}.enabled"]`, surfaceFlags, false);
         hideParams(app, html, `[name="flags.levels-3d-preview.renderTable"]`, customTableFlags, ["table", "matcustom"], true);
         hideParams(app, html, `[name="flags.levels-3d-preview.enableFog"]`, fogFlags, false);
 

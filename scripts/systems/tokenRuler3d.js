@@ -38,7 +38,7 @@ export function TokenRuler3DMixin(Base) {
         }
 
         get isVisible() {
-            if (is3DActive() && canvas.scene?.getFlag("levels-3d-preview", "enableRuler") === false) return false;
+            if (is3DActive() && !game.settings.get("levels-3d-preview", "enableDragRuler")) return false;
             return super.isVisible;
         }
 

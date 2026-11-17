@@ -63,6 +63,7 @@ import { cameraShake } from "./vfx/cameraShake.js";
 import * as vfx from "./vfx/index.js";
 import { registerConfigs } from "./settings/config.js";
 import { registerSettings } from "./settings/settingsConfig.js";
+import { filterMigration, migrateSceneFilters } from "./settings/sceneLook.js";
 import { WaveFunctionSolver } from "./generators/WaveFunctionCollapse.js";
 import { applyHeightmap } from "./helpers/applyHeightmap.js";
 import { BuildPanel } from "./apps/buildPanel.js";
@@ -122,6 +123,8 @@ Hooks.on("canvasInit", () => {
     registerRuler3D();
     registerTokenRuler3D();
 });
+
+Hooks.once("ready", migrateSceneFilters);
 
 Hooks.once("ready", () => {
     if (!game.scenes.active) {
@@ -1831,34 +1834,13 @@ class Levels3DPreview {
 
         this._refreshPerception();
         
-        this.setFilters(true);
+        const filterUpdate = game.user.isGM && filterMigration(canvas.scene);
+        if (filterUpdate) canvas.scene.update(filterUpdate);
         setTimeout(() => {
             this._refreshPerception();
             this.helpers.showSceneReport();
         }, 1000);
         Hooks.callAll("3DCanvasSceneReady", game.Levels3DPreview);
-    }
-
-    setFilters(set) {
-        const filter = canvas.scene?.getFlag("levels-3d-preview", "filter") ?? "none";
-        const board = canvas.app?.view ?? document.querySelector("#board");
-        const levels3d = this.renderer?.domElement ?? document.querySelector("#levels3d");
-        if (set && filter != "none") {
-            let filterStrength = canvas.scene.getFlag("levels-3d-preview", "filterStrength");
-            const filterCustom = canvas.scene.getFlag("levels-3d-preview", "filterCustom");
-            let filterValue = "";
-            if (filter == "custom" && filterCustom) {
-                filterValue = filterCustom;
-            } else {
-                if (filter == "hue-rotate") filterStrength = `${filterStrength * 180}deg`;
-                filterValue = `${filter}(${filterStrength})`;
-            }
-            const target = this._sharedContext ? board : levels3d;
-            if (target) target.style.filter = filterValue;
-        } else {
-            if (board) board.style.filter = "";
-            if (levels3d) levels3d.style.filter = "";
-        }
     }
 
     toggle(force) {
@@ -1878,7 +1860,6 @@ class Levels3DPreview {
         this._pauseRendering = false;
         if (this._active) return;
         if (check3DToggleConflicts()) return;
-        this.setFilters(true);
         if (this._sharedContext) {
             //canvas.app.renderer.reset();
             this.renderer.resetState();
@@ -1901,7 +1882,6 @@ class Levels3DPreview {
     close() {
         document.querySelector(".levels-3d-preview-loading-screen").classList.add("hidden");
         const wasActive = this._active;
-        this.setFilters(false);
         this._active = false;
         ui.controls.render({force:true, reset: true});
         this.BuildPanel?.close();
@@ -2085,9 +2065,7 @@ Hooks.on("updateScene", (scene, updates) => {
         }
     }
     if ("exr" in flags || "skybox" in flags) game.Levels3DPreview.makeSkybox(canvas.scene.getFlag("levels-3d-preview", "enableFog") ?? false);
-    if ("filter" in flags || "filterStrength" in flags || "filterCustom" in flags) {
-        game.Levels3DPreview.setFilters(true);
-    }
+    if ("pp" in flags) game.Levels3DPreview.outputPass?.setupUniforms(canvas.scene.getFlag("levels-3d-preview", "pp"));
     game.Levels3DPreview.setBloom();
     if ("exposure" in flags) game.Levels3DPreview.setExposure();
     if ("renderBackground" in flags && !backgroundChanged) game.Levels3DPreview.createBoard();

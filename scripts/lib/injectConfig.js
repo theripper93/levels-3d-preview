@@ -131,7 +131,7 @@ export const injectConfig = {
         if (data.tab?.subTabs) {
             const container = document.createElement("div");
             const subTabNav = document.createElement("nav");
-            subTabNav.classList.add("tabs", "sheet-tabs", "secondary-tabs");
+            subTabNav.classList.add("tabs", "sheet-tabs");
             subTabNav.dataset.group = data.tab.name;
             container.append(subTabNav);
             for (const [k, v] of Object.entries(data)) {

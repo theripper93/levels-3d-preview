@@ -254,11 +254,11 @@
             "meshStats": "Vertices: %v% | Triangles: %t% | Meshes: %m% | Instances: %i%",
             "maxElevation": {
                 "label": "Max Elevation",
-                "notes": "Maximum allowed elevation for tokens on this scene."
+                "notes": "The highest elevation tokens can reach in this scene."
             },
             "grounding": {
                 "label": "Grounding",
-                "notes": "Prevents player tokens from ending movement in the air.",
+                "notes": "Stops player tokens from ending their movement in mid-air.",
                 "options": {
                     "none": "None",
                     "notFlying": "Only if not Flying",
@@ -338,7 +338,7 @@
             },
             "enablePlayers": {
                 "label": "Enable for Players",
-                "notes": "Allow players to open the 3D view for this scene, if the fog of war is not enabled, the map will be fully visible."
+                "notes": "Lets players open this scene in 3D. Without fog of war they can see the whole map."
             },
             "auto3d": {
                 "label": "Enable 3D on Load"
@@ -358,27 +358,6 @@
             "bloomRadius": {
                 "label": "Bloom Radius"
             },
-            "filter": {
-                "label": "Filter",
-                "options": {
-                    "none": "None",
-                    "grayscale": "Grayscale",
-                    "sepia": "Sepia",
-                    "invert": "Invert",
-                    "brightness": "Brightness",
-                    "contrast": "Contrast",
-                    "saturate": "Saturation",
-                    "hue": "Hue",
-                    "custom": "Custom"
-                }
-            },
-            "filterStrength": {
-                "label": "Filter Strength"
-            },
-            "filterCustom": {
-                "label": "Custom Filter",
-                "placeholder": "eg. brightness(0.5) contrast(1.5) saturate(0.5)"
-            },
             "skybox": {
                 "label": "Skybox Image",
                 "placeholder": "Skybox Image",
@@ -387,7 +366,7 @@
             "exr": {
                 "label": "Skybox",
                 "placeholder": "EXR File or 360° Panorama Image",
-                "notes": "Supports .EXR files or images in a 360° panorama format. HDRI will be used as the background and to light the scene."
+                "notes": "An .exr file or a 360° panorama image. It is shown as the sky and also lights the scene."
             },
             "exposure": {
                 "label": "Exposure",
@@ -422,29 +401,26 @@
             },
             "renderBackground": {
                 "label": "Display Background",
-                "notes": "Display the background image of the scene as a board."
+                "notes": "Shows the scene's background image as the ground under your 3D models."
             },
             "enableGrid": {
                 "label": "Enable Grid"
             },
-            "enableRuler": {
-                "label": "Enable Token Drag Ruler",
-                "notes": "When disabled, the token movement ruler (path and distance labels) is hidden in 3D for this scene. The Ruler tool is not affected."
-            },
             "enableAnimationScripts": {
                 "label": "Enable Animation Scripts",
-                "notes": "WARNING: Make sure you trust the source of the scene, this can be potentially used to run malicious code. Enable the execution of animation scripts for tiles."
+                "notes": "Lets tiles in this scene run animation scripts. Scripts can run any code, so only turn this on for scenes from sources you trust."
             },
             "enableFogOfWar": {
-                "label": "Enable Fog of War (Performance Heavy)",
-                "notes": "Performance Heavy. This option will enable Fog of War in 3D, if 'Use 3D Geometry for Sight calculations' is enabled, Fog of War will be calculated based on 3D Geometry (it will still be two dimensional)."
+                "label": "Enable Fog of War",
+                "notes": "This option will enable Fog of War in 3D, if 'Use 3D Geometry for Sight calculations' is enabled, Fog of War will be calculated based on 3D Geometry (it will still be two dimensional)."
             },
             "bakeLights": {
                 "label": "Pre-Bake Lights",
                 "notes": "Pre-Bake the shadow casting of lights on scene load, they won't be dinamyc but they will not go through walls."
             },
             "enableFog": {
-                "label": "Enable Fog"
+                "label": "View-distance Fog",
+                "notes": "Fades the scene into the fog color with distance and hides anything beyond the fog distance. Not the same as weather haze."
             },
             "fogColor": {
                 "label": "Fog Color"
@@ -483,7 +459,7 @@
             },
             "sunShadows": {
                 "label": "Sun Shadows",
-                "notes": "Let the sun cast shadows in this scene. Turning it off removes the sun shadow pass, which can save a lot of draw calls on large scenes."
+                "notes": "Lets the sun cast shadows. Turning it off makes large scenes run faster."
             },
             "sunIntensity": {
                 "label": "Sun Intensity"
@@ -506,7 +482,7 @@
             },
             "initialview": {
                 "label": "Initial View Position",
-                "notes": "Default camera position when the scene is loaded - before capturing the camera view set the target by using a ping.",
+                "notes": "The camera view the scene opens with. Ping the spot the camera should look at, then capture the view.",
                 "button": "Capture Camera View",
                 "buttondel": "Clear Stored Camera View"
             },
@@ -525,11 +501,11 @@
             },
             "object3dSight": {
                 "label": "Use 3D Geometry for sight calculations",
-                "notes": "Use Tiles instead of Walls for sight and collisions."
+                "notes": "3D tiles block sight and movement instead of the scene's walls."
             },
             "enableGameCamera": {
                 "label": "Enable Game Camera",
-                "notes": "Enable the game camera for this Scene. The Game Camera Must be Enabled globally in the 3D Canvas Settings for this to work."
+                "notes": "Uses the game camera in this scene. The game camera must also be turned on in the 3D Canvas settings."
             },
             "model3d": {
                 "label": "3D Model"
@@ -993,6 +969,12 @@
                 },
                 "saturation": {
                     "label": "Saturation"
+                },
+                "sepia": {
+                    "label": "Sepia"
+                },
+                "hue": {
+                    "label": "Hue Shift"
                 }
             },
             "particlePreset": {
@@ -1158,12 +1140,6 @@
                 "name": "Dynamic Big Token Visibility",
                 "hint": "When enabled, larger tokens visibility will be tested for more points than smaller tokens. WARNING: this feature can be computationally expensive."
             },
-            "highlighted": {
-                "important": {
-                    "legend": "3D Core Settings",
-                    "hint": "These settings should be enabled when using a scene as 3D Scene only."
-                }
-            },
             "regionsAlwaysFlat": {
                 "name": "Always Flat Regions",
                 "hint": "When enabled, all placed Regions will be flat."
@@ -1202,6 +1178,10 @@
                     "always": "Always"
                 }
             },
+            "enableDragRuler": {
+                "name": "Token Drag Ruler",
+                "hint": "Shows the movement path and distance while dragging tokens in 3D. Doesn't affect the Ruler tool."
+            },
             "useRaycastRuler": {
                 "name": "Terrain-Following Token Ruler",
                 "hint": "When enabled, the token ruler follows the 3D terrain between waypoints instead of drawing straight lines (not for flying, burrowing or teleporting movement). Display only: measured distances are not changed."
@@ -1236,28 +1216,6 @@
                     "none": "Nobody",
                     "players": "Players Only",
                     "all": "Players and GMs"
-                }
-            },
-            "headers": {
-                "basics": {
-                    "title": "Basics",
-                    "notes": "Configure basic settings for this 3D Scene."
-                },
-                "environment": {
-                    "title": "Environment",
-                    "notes": "Settings for the 3D environment and effects."
-                },
-                "lighting": {
-                    "title": "Lighting",
-                    "notes": "Configure the global Lighting of the scene."
-                },
-                "particles": {
-                    "title": "Particles",
-                    "notes": "Configure Particle Effects."
-                },
-                "visibility": {
-                    "title": "Visibility",
-                    "notes": "Configure the visibility of 3D Objects."
                 }
             },
             "canping": {
@@ -1787,29 +1745,71 @@
                 }
             }
         },
+        "sceneConfig": {
+            "tabs": {
+                "essentials": "Essentials",
+                "skyLight": "Sky & Light",
+                "weather": "Weather",
+                "visuals": "Visuals"
+            },
+            "sections": {
+                "status": "3D Status",
+                "basics": "Basics",
+                "sun": "Sun",
+                "ambient": "Ambient Light",
+                "background": "Background",
+                "wind": "Wind & Atmosphere",
+                "surface": "Surface Accumulation",
+                "particles": "Custom Particles",
+                "effects": "Effects",
+                "bloom": "Bloom",
+                "padding": "Padding Area",
+                "objects": "Scene Objects",
+                "advanced": "Advanced"
+            },
+            "status": {
+                "ready": "This scene is ready: players will see it in 3D.",
+                "missing": "This scene is not fully set up for 3D. Turn on {settings} in the {tab} tab, or use the button below.",
+                "recommended": "Enable Recommended"
+            },
+            "look": {
+                "label": "Visual Style",
+                "notes": "A quick starting point for the colors. Changing any value in the Visuals tab switches this to Custom.",
+                "presets": {
+                    "none": "None",
+                    "warm": "Warm",
+                    "cold": "Cold",
+                    "dramatic": "Dramatic",
+                    "noir": "Noir",
+                    "vintage": "Vintage",
+                    "dreamy": "Dreamy",
+                    "custom": "Custom"
+                }
+            }
+        },
         "weather": {
             "preset": "Weather",
-            "presetNotes": "Precipitation, wind, fog, clouds and lightning. Changes blend in over a few seconds. Custom uses the particle settings below.",
+            "presetNotes": "Rain, snow, wind, clouds and more. Changes fade in over a few seconds. Choose Custom to set up your own particles in the Weather tab.",
             "layer2": "Additional Weather",
             "intensity": "Intensity",
             "windDirection": "Wind Direction",
             "windSpeed": "Wind Strength",
             "gustiness": "Gustiness",
-            "fog": "Fog",
+            "fog": "Haze",
             "lightning": "Lightning",
             "linkSky": "Link Sky and Light",
-            "linkSkyNotes": "Clouds cover the dynamic sky and dim the sun and exposure.",
+            "linkSkyNotes": "Clouds cover the sky and dim the sunlight.",
             "surface": {
                 "enabled": "Surface Accumulation",
-                "enabledNotes": "Snow, hail, ash, sand and dust build up on exposed surfaces and rain makes them wet. Sheltered areas stay clear.",
+                "enabledNotes": "Snow, hail, ash, sand and dust build up on open ground and rain makes surfaces wet. Covered areas stay clear.",
                 "buildTime": "Build-up Time (minutes)",
-                "buildTimeNotes": "Real-time minutes for falling weather to reach full cover.",
+                "buildTimeNotes": "How many real minutes the weather takes to fully cover surfaces.",
                 "meltTime": "Melt / Dry Time (minutes)",
-                "meltTimeNotes": "Real-time minutes for snow to melt and wet surfaces to dry once the weather stops. Rain melts snow faster.",
+                "meltTimeNotes": "How many real minutes snow takes to melt, and wet surfaces to dry, after the weather stops. Rain melts snow faster.",
                 "startKind": "Starting Cover",
                 "startCover": "Starting Cover Amount",
                 "startWet": "Starting Wetness",
-                "startNotes": "Changing the starting values resets the current accumulation to them.",
+                "startNotes": "Changing these resets the current build-up to the starting values.",
                 "kinds": {
                     "snow": "Snow",
                     "hail": "Hail",
@@ -2867,8 +2867,8 @@
             "sceneConfig": {
                 "label": "Atmosphere",
                 "button": "Configure Atmosphere",
-                "notes": "Turn on the dynamic sky to light the scene with a living sky: time of day, sun, moon, stars, clouds and fog in one place.",
-                "notesEnabled": "The dynamic sky lights this scene. The environment map and the fog color are not used while it is on; the fog color follows the sky."
+                "notes": "Lights the scene with a living sky: time of day, sun, moon, stars, clouds and fog.",
+                "notesEnabled": "The dynamic sky is lighting this scene, so the skybox and fog color settings are not used."
             },
             "enabled": {
                 "label": "Dynamic Sky",

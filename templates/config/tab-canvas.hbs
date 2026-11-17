@@ -66,6 +66,12 @@
     </div>
 
     <div class="form-group">
+    <label>{{localize "levels3dpreview.settings.enableDragRuler.name"}}</label>
+    <input type="checkbox" name="enableDragRuler" data-dtype="Boolean" {{checked enableDragRuler}} />
+    <p class="hint">{{localize "levels3dpreview.settings.enableDragRuler.hint"}}</p>
+    </div>
+
+    <div class="form-group">
     <label>{{localize "levels3dpreview.settings.rangeFinder.name"}}</label>
     <select name="rangeFinder" data-dtype="String">
         <option {{#if (eq rangeFinder "none")}}selected{{/if}} value="none">{{localize "levels3dpreview.settings.rangeFinder.options.none"}}</option>

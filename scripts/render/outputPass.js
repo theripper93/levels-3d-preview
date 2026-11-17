@@ -66,7 +66,7 @@ export function displayTextureBackground(scene, renderer) {
     return () => Object.defineProperty(scene, "backgroundIntensity", { configurable: true, enumerable: true, writable: true, value: intensity });
 }
 
-const GRADING_DEFAULTS = { enabled: true, chromaticAberration: 0, tint: "#ffffff", contrast: 1, brightness: 1, saturation: 1, vignette: 0, grain: 0 };
+const GRADING_DEFAULTS = { enabled: true, chromaticAberration: 0, tint: "#ffffff", contrast: 1, brightness: 1, saturation: 1, sepia: 0, hue: 0, vignette: 0, grain: 0 };
 
 const vertexShader = `
 varying vec2 vUv;
@@ -89,6 +89,8 @@ uniform vec3 tint;
 uniform float contrast;
 uniform float brightness;
 uniform float saturation;
+uniform float sepia;
+uniform float hue;
 uniform float vignette;
 uniform float grain;
 uniform vec4 atmosphereGrade;
@@ -122,6 +124,12 @@ void main() {
         if (contrast != 1.0) color = mix(vec3(1.0), color, contrast);
         vec3 bright = color * brightness;
         color = mix(vec3(0.5), mix(vec3(dot(bright, vec3(0.2125, 0.7154, 0.0721))), bright, saturation), contrast);
+        if (sepia > 0.0) color = mix(color, clamp(mat3(0.393, 0.349, 0.272, 0.769, 0.686, 0.534, 0.189, 0.168, 0.131) * color, 0.0, 1.0), sepia);
+        if (hue != 0.0) {
+            float angle = radians(hue);
+            vec3 axis = vec3(0.57735);
+            color = clamp(color * cos(angle) + cross(axis, color) * sin(angle) + axis * dot(axis, color) * (1.0 - cos(angle)), 0.0, 1.0);
+        }
         if (vignette > 0.0) {
             vec2 edge = vUv * (1.0 - vUv);
             color *= pow(edge.x * edge.y * 10.0 / (vignette + 0.15), 0.25);
@@ -145,6 +153,8 @@ export class OutputPass extends Pass {
             contrast: { value: 1 },
             brightness: { value: 1 },
             saturation: { value: 1 },
+            sepia: { value: 0 },
+            hue: { value: 0 },
             vignette: { value: 0 },
             grain: { value: 0 },
             atmosphereGrade: { value: new Vector4(1, 1, 1, 0) },
