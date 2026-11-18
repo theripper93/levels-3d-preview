@@ -10,6 +10,7 @@ import { FontLoader } from "three/addons/loaders/FontLoader.js";
 import {fbm3d} from "../lib/noiseFunctions.js";
 import {VineGeometry} from "./ProceduralVines.js";
 import { imageTo3d } from "./imageTo3D.js";
+import { buildMapMakerMesh } from "./mapMakerMesh.js";
 THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
 THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
 THREE.Mesh.prototype.raycast = acceleratedRaycast;
@@ -18,8 +19,9 @@ const defaultFont = "modules/levels-3d-preview/assets/helvetiker.json";
 
 const fonts = {};
 export class DynaMesh {
-    constructor(type, { width = 1, height = 1, depth = 1, resolution = 1, text = "", decalData = {}, image = null, font = "modules/levels-3d-preview/assets/helvetiker.json" }) {
+    constructor(type, { width = 1, height = 1, depth = 1, resolution = 1, text = "", decalData = {}, image = null, font = "modules/levels-3d-preview/assets/helvetiker.json", data = null }) {
         this.type = type;
+        this.data = data;
         this.width = width;
         this.height = height;
         this.depth = depth;
@@ -31,6 +33,13 @@ export class DynaMesh {
     }
 
     async create() {
+        if (this.type === "mapMaker") {
+            const mesh = await buildMapMakerMesh(this.data);
+            mesh.traverse((child) => {
+                if (child.isMesh) child.geometry.computeBoundsTree();
+            });
+            return mesh;
+        }
         const geometry = await this._constructGeometry();
         const mesh = new THREE.Mesh(geometry, this._material);
         mesh.traverse((child) => {

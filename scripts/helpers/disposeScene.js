@@ -14,9 +14,11 @@ function disposeMaterial(material) {
 }
 
 export function disposeScene(scene) {
-    scene.traverse((object) => {
+    const objects = [];
+    scene.traverse((object) => objects.push(object));
+    for (const object of objects) {
         if (object.isLight || object.isClusterLight) object.dispose();
         object.geometry?.dispose();
         [object.material].flat().forEach(disposeMaterial);
-    });
+    }
 }

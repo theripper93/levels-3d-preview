@@ -88,7 +88,7 @@ class canvas3dConfig extends HandlebarsApplication {
 
     async _prepareContext(options) {
         const data = {};
-        const settingsKeys = ["useRaycastRuler", "enableDragRuler", "paddingAppearance", "pingsound", "lightHelpers", "templateEffects", "templateAuto3D", "enableReticule", "fullTransparency", "outline", "gameCameraWarnings", "gameCameraAutoLock", "gameCameraDefaultGm", "gameCameraClipping", "gameCameraMaxZoom", "gameCameraMinAzimuth", "gameCameraMaxAzimuth", "gameCameraMinAngle", "gameCameraMaxAngle", "enableGameCamera", "rangeFinder", "sharedContext", "rotateIndicator", "navigatorAuto", "showAdvanced", "canpingpan", "canping", "baseStyle", "solidBaseMode", "solidBaseColor", "highlightCombat", "startMarker", "hideTarget", "hideEffects", "templateSyle", "autoPan", "flatTokenStyle", "preventNegative", "miniCanvas", "debugMode", "cameralockzero", "allTokens", "autoAssignToken", "assetBrowserCustomPath", "autoApply", "autoClose", "regionsAlwaysFlat", "exactTokenVisibility", "dynamicTokenVisibility"];
+        const settingsKeys = ["useRaycastRuler", "enableDragRuler", "paddingAppearance", "pingsound", "lightHelpers", "templateEffects", "templateAuto3D", "enableReticule", "fullTransparency", "outline", "gameCameraWarnings", "gameCameraAutoLock", "gameCameraDefaultGm", "gameCameraClipping", "gameCameraMaxZoom", "gameCameraMinAzimuth", "gameCameraMaxAzimuth", "gameCameraMinAngle", "gameCameraMaxAngle", "enableGameCamera", "rangeFinder", "sharedContext", "rotateIndicator", "navigatorAuto", "showAdvanced", "canpingpan", "canping", "baseStyle", "solidBaseMode", "solidBaseColor", "highlightCombat", "startMarker", "hideTarget", "hideEffects", "autoPan", "flatTokenStyle", "preventNegative", "miniCanvas", "debugMode", "cameralockzero", "allTokens", "autoAssignToken", "assetBrowserCustomPath", "autoApply", "autoClose", "regionsAlwaysFlat", "exactTokenVisibility", "dynamicTokenVisibility"];
         for (let key of settingsKeys) {
             data[key] = game.settings.get("levels-3d-preview", key);
         }
@@ -435,19 +435,6 @@ export function registerSettings() {
             default: true,
         });
 
-        game.settings.register("levels-3d-preview", "templateSyle", {
-            name: game.i18n.localize("levels3dpreview.settings.templateSyle.name"),
-            hint: game.i18n.localize("levels3dpreview.settings.templateSyle.hint"),
-            scope: "world",
-            config: false,
-            type: String,
-            choices: {
-                wireframe: game.i18n.localize("levels3dpreview.settings.templateSyle.options.wireframe"),
-                solid: game.i18n.localize("levels3dpreview.settings.templateSyle.options.solid"),
-            },
-            default: "wireframe",
-        });
-
         game.settings.register("levels-3d-preview", "autoPan", {
             name: game.i18n.localize("levels3dpreview.settings.autoPan.name"),
             hint: game.i18n.localize("levels3dpreview.settings.autoPan.hint"),
@@ -627,6 +614,46 @@ export function registerSettings() {
             type: Boolean,
             default: true,
             onChange: () => queueGraphicsChange("enableShaders"),
+        });
+
+        game.settings.register("levels-3d-preview", "waterQuality", {
+            name: game.i18n.localize("levels3dpreview.settings.waterQuality.name"),
+            hint: game.i18n.localize("levels3dpreview.settings.waterQuality.hint"),
+            scope: "client",
+            config: false,
+            type: String,
+            choices: {
+                low: game.i18n.localize("levels3dpreview.settings.waterQuality.choices.low"),
+                high: game.i18n.localize("levels3dpreview.settings.waterQuality.choices.high"),
+            },
+            default: "high",
+            onChange: () => queueGraphicsChange("enableShaders"),
+        });
+
+        game.settings.register("levels-3d-preview", "scatterQuality", {
+            name: game.i18n.localize("levels3dpreview.settings.scatterQuality.name"),
+            hint: game.i18n.localize("levels3dpreview.settings.scatterQuality.hint"),
+            scope: "client",
+            config: false,
+            type: String,
+            choices: {
+                low: game.i18n.localize("levels3dpreview.settings.scatterQuality.choices.low"),
+                medium: game.i18n.localize("levels3dpreview.settings.scatterQuality.choices.medium"),
+                high: game.i18n.localize("levels3dpreview.settings.scatterQuality.choices.high"),
+            },
+            default: "high",
+            onChange: () => game.Levels3DPreview?.scatter?.refreshAll(),
+        });
+
+        game.settings.register("levels-3d-preview", "groundCover", {
+            name: game.i18n.localize("levels3dpreview.settings.groundCover.name"),
+            hint: game.i18n.localize("levels3dpreview.settings.groundCover.hint"),
+            scope: "client",
+            config: false,
+            type: String,
+            choices: Object.fromEntries(["off", "low", "medium", "high"].map((k) => [k, game.i18n.localize(`levels3dpreview.settings.groundCover.choices.${k}`)])),
+            default: "medium",
+            onChange: () => game.Levels3DPreview?.scene?.traverse((o) => o.mapMakerTerrain?.rebuildCover()),
         });
 
         registerQualitySettings();

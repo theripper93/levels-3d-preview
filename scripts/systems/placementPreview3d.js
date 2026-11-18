@@ -174,6 +174,14 @@ export class PlacementPreview3D {
         if (this._object) this.update(true);
     }
 
+    shiftOrigin(dy) {
+        if (!dy || !this._object || !this._origin || this.segments.length) return;
+        const type = Shape3D.getShapeFromTool(ui.controls?.tool?.name);
+        if (!["circle", "cone", "line", "ring", "emanation"].includes(type)) return;
+        this._origin.y += dy;
+        this.update(true);
+    }
+
     getTargetPos() {
         if (!this._object) return null;
         return useSnapped() ? snapped3DPosition(this._object.position) : this._object.position.clone();

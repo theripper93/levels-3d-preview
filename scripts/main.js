@@ -7,6 +7,8 @@ import { Token3D } from "./entities/token3d.js";
 import { Ruler3D, registerRuler3D, redrawRulers3D } from "./systems/ruler3d.js";
 import { TokenRuler3D, registerTokenRuler3D, recreateTokenRulers3D } from "./systems/tokenRuler3d.js";
 import { unitsToPixels, centerElement } from "./helpers/coords3d.js";
+import { buildMapEdge, getMapEdge, terrainLoaded } from "./atmosphere/mapEdge.js";
+import { elevationFloor } from "./helpers/elevationFloor.js";
 import { Light3D } from "./entities/light3d.js";
 import { Sound3D } from "./entities/sound3d.js";
 import { Wall3D } from "./entities/wall3d.js";
@@ -66,6 +68,12 @@ import { registerSettings } from "./settings/settingsConfig.js";
 import { filterMigration, migrateSceneFilters } from "./settings/sceneLook.js";
 import { WaveFunctionSolver } from "./generators/WaveFunctionCollapse.js";
 import { applyHeightmap } from "./helpers/applyHeightmap.js";
+import { computeMapMakerBounds, computeMapMakerBoundsAsync, buildMapMakerGeometry, modelBounds } from "./helpers/mapMakerMesh.js";
+import { TerrainState, MAX_TERRAIN_LAYERS } from "./helpers/mapMakerTerrain.js";
+import { ROAD_STYLES, roadSpline } from "./helpers/terrainRoads.js";
+import { WATER_TYPES, waterDims } from "./helpers/terrainWater.js";
+import { scatterApi } from "./scatter/api.js";
+import { registerScatterHooks } from "./scatter/scatterField.js";
 import { BuildPanel } from "./apps/buildPanel.js";
 import { AssetBrowser } from "./apps/assetBrowser.js";
 import { TokenBrowser, setHudHook } from "./apps/tokenBrowser.js";
@@ -76,6 +84,7 @@ import { injectLegacyLights } from "./three/legacyLights.js";import { Socket } f
 import { renderSceneToImage } from "./helpers/export2d.js";
 import { BuildPanelApp } from "./apps/BuildPanelApp.js";
 import { QuickTerrain } from "./apps/QuickTerrain.js";
+import { essentialsFields, essentialsUpdate } from "./settings/sceneEssentials.js";
 import { Shape3D } from "./entities/shape3d.js";
 import { Region3D } from "./entities/region3d.js";
 import { check3DToggleConflicts } from "./helpers/conflict-manager.js";
@@ -102,6 +111,7 @@ Note3D.setHooks();
 Token3D.setHooks();
 Wall3D.setHooks();
 Tile3D.setHooks();
+registerScatterHooks();
 // Template3D.setHooks();
 Region3D.setHooks();
 RangeFinder.setHooks();
@@ -211,10 +221,11 @@ Hooks.once("ready", () => {
 Hooks.on("renderDialogV2", (dialog, html, data) => {
     if (dialog.title !== game.i18n.format("DOCUMENT.Create", {type: game.i18n.localize("DOCUMENT.Scene")})) return;
     
+    const mapMaker = game.modules.get("canvas3d-premium")?.active ? game.modules.get("canvas3d-premium").API?.MapMaker : null;
     const checkbox = document.createElement('div');
     checkbox.className = 'form-group';
     checkbox.innerHTML = `
-            <label>Quick 3D Scene</label>
+            <label>${game.i18n.localize(mapMaker?.quickStart ? "levels3dpreview.quickScene.mapMaker" : "levels3dpreview.quickScene.label")}</label>
             <div class="form-fields">
                 <input type="checkbox" name="scene3d">
             </div>
@@ -228,7 +239,21 @@ Hooks.on("renderDialogV2", (dialog, html, data) => {
     okButton.addEventListener("click", () => {
         const isChecked = dialog.element.querySelector("input[name=scene3d]").checked;
         if (!isChecked) return;
-        
+
+        Hooks.once("renderSceneConfig", (dialog) => {
+            setTimeout(() => dialog.close(true), 1000);
+        });
+
+        if (mapMaker?.quickStart) {
+            Hooks.once("createScene", (scene) => {
+                Hooks.once("canvasReady", () => {
+                    if (canvas.scene?.id === scene.id) mapMaker.quickStart();
+                });
+                scene.view();
+            });
+            return;
+        }
+
         Hooks.once("preCreateScene", (scene, data) => {
             scene.updateSource({
                 flags: {
@@ -244,15 +269,9 @@ Hooks.on("renderDialogV2", (dialog, html, data) => {
             });
         })
 
-        Hooks.once("createScene", (scene, data) => { 
+        Hooks.once("createScene", (scene, data) => {
             scene.view();
         })
-
-        Hooks.once("renderSceneConfig", (dialog, html, data) => {
-            setTimeout(() => {
-                dialog.close(true);
-            }, 1000);
-        });
 
         Hooks.once("3DCanvasSceneReady", () => {
             setTimeout(() => {
@@ -273,6 +292,9 @@ class Levels3DPreview {
         this._errCount = 0;
         this.raycasterCache = {};
         this._heightmapCache = {};
+        this.scatter = scatterApi;
+        this.sceneEssentials = { fields: essentialsFields, update: essentialsUpdate };
+        this.mapMaker = { computeBounds: computeMapMakerBounds, computeBoundsAsync: computeMapMakerBoundsAsync, buildGeometry: buildMapMakerGeometry, modelBounds, TerrainState, MAX_TERRAIN_LAYERS, ROAD_STYLES, roadSpline, WATER_TYPES, waterDims };
         this._fullTransparency = game.settings.get("levels-3d-preview", "fullTransparency");
         this.socket = Socket;
         Socket.register("Particle3D", this.particleSocket);
@@ -1007,6 +1029,13 @@ class Levels3DPreview {
 
     async createTable() {
         this.scene.remove(this.table);
+        this.table = null;
+        const edge = getMapEdge();
+        await terrainLoaded();
+        this._tableFloor = elevationFloor();
+        const groundY = this.canvasCenter.y + unitsToPixels(this._tableFloor);
+        if (edge !== "legacy") return buildMapEdge(this, edge, groundY);
+        buildMapEdge(this, edge, groundY);
         const tableOption = canvas.scene.getFlag("levels-3d-preview", "renderTable") ?? game.settings.get("levels-3d-preview", "paddingAppearance");
         const tableTex = canvas.scene.getFlag("levels-3d-preview", "tableTex") ?? "";
         const tableHeightmap = canvas.scene.getFlag("levels-3d-preview", "tableHeightmap") ?? "";
@@ -1051,7 +1080,7 @@ class Levels3DPreview {
         material.color = new THREE.Color(color);
         const plane = new THREE.Mesh(geometry, material);
         plane.receiveShadow = true;
-        plane.position.set(center.x, center.y - (depth / 2 + 0.011) + unitsToPixels(canvas.primary.background.elevation), center.z);
+        plane.position.set(center.x, groundY - (depth / 2 + 0.011), center.z);
         this.table = plane;
         vfx.surface.markReceivers(plane);
         this.table.renderOrder = -1e20;
@@ -1318,11 +1347,9 @@ class Levels3DPreview {
         Object.values(this.tiles).forEach((tile) => {
             tile?.destroy();
         });
-        this.scene.traverse((child) => {
-            if (child.isMesh) {
-                child.dispose?.();
-            }
-        });
+        const meshes = [];
+        this.scene.traverse((child) => child.isMesh && meshes.push(child));
+        meshes.forEach((child) => child.dispose?.());
         while (this.scene.children.length > 0) {
             this.scene.children[0].dispose?.();
             this.scene.remove(this.scene.children[0]);
@@ -2069,7 +2096,7 @@ Hooks.on("updateScene", (scene, updates) => {
     game.Levels3DPreview.setBloom();
     if ("exposure" in flags) game.Levels3DPreview.setExposure();
     if ("renderBackground" in flags && !backgroundChanged) game.Levels3DPreview.createBoard();
-    if ("renderTable" in flags || "tableTex" in flags || "tableColor" in flags) game.Levels3DPreview.createTable();
+    if (["renderTable", "tableTex", "tableColor", "mapEdge", "edgeTexture", "edgeColor", "horizonBackdrop"].some((k) => k in flags)) game.Levels3DPreview.createTable();
     if ("dynamicSky" in flags) game.Levels3DPreview.lights.globalIllumination.updateDynamicSky();
     if ("ambientLightIntensity" in flags || "ambientLightColor" in flags) game.Levels3DPreview.lights.globalIllumination.updateAmbientLight();
 });

@@ -8,6 +8,7 @@ import { TileCreationQueue } from "./TileCreationQueue.js";
 import { computeBoundsTree, disposeBoundsTree } from "three-mesh-bvh";
 import { acceleratedRaycast } from "../three/acceleratedRaycast.js";
 import { Note3D } from "../entities/note3d.js";
+import { movementFloor } from "../helpers/elevationFloor.js";
 THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
 THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
 THREE.Mesh.prototype.raycast = acceleratedRaycast;
@@ -772,16 +773,17 @@ export class InteractionManager {
                 if (event.shiftKey) elevationDiff = canvas.scene.dimensions.distance / 5;
                 if (event.ctrlKey && !isTemplate) elevationDiff = canvas.scene.dimensions.distance / 50;
                 entity3D.elevation3d += -delta * this.elevationTick * elevationDiff;
-                if (game.settings.get("levels-3d-preview", "preventNegative") && entity3D.elevation3d < unitsToPixels(canvas.primary.background.elevation)) {
-                    entity3D.elevation3d = unitsToPixels(canvas.primary.background.elevation);
-                }
+                const floor = movementFloor();
+                if (entity3D.elevation3d < unitsToPixels(floor)) entity3D.elevation3d = unitsToPixels(floor);
             };
             if (isTemplate) {
                 if (event.altKey) entity3D.onTilt(delta);
                 else if (event.ctrlKey) changeElevation();
                 else entity3D.onRotate(delta);
             } else {
+                const before = entity3D.elevation3d;
                 changeElevation();
+                this.placementPreview?.shiftOrigin(entity3D.elevation3d - before);
             }
         }
         if (canvas.regions._placementContext) {

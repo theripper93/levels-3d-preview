@@ -1,6 +1,10 @@
 {
     "TYPES.RegionBehavior.levels-3d-preview.obscureVision": "Obscure 3D Vision",
     "levels3dpreview": {
+        "quickScene": {
+            "label": "Quick 3D Scene",
+            "mapMaker": "Start in Map Maker"
+        },
         "ERROR": {
             "TokenCollide": "The attempted movement collides with at least one object."
         },
@@ -83,7 +87,7 @@
             },
             "critical": "3D Canvas: A Fatal Error was encountered in the Rendering Loop. Attempting to recover...",
             "notarget": "3D Canvas: No target found for drag and drop. Please ensure you have at least one 3D Object or the Background Enabled.",
-            "gmNotConnected": "A GM must be connected to use this feature" 
+            "gmNotConnected": "A GM must be connected to use this feature"
         },
         "notifications": {
             "initialviewcleared": "Initial View Position Cleared",
@@ -372,6 +376,33 @@
                 "label": "Exposure",
                 "notes": "Exposure for the HDRI. 1 is the default, 2 is the brightest, and 0 is the darkest."
             },
+            "mapEdge": {
+                "label": "Edge Style",
+                "notes": "How the world looks beyond the scene border.",
+                "options": {
+                    "none": "None (floating)",
+                    "fade": "Fade into horizon",
+                    "island": "Island in a sea",
+                    "diorama": "Diorama",
+                    "blueprint": "Blueprint",
+                    "legacy": "Legacy padding"
+                }
+            },
+            "edgeTexture": {
+                "label": "Ground Texture",
+                "placeholder": "Ground Texture"
+            },
+            "edgeColor": {
+                "label": "Ground Tint"
+            },
+            "horizonBackdrop": {
+                "label": "Horizon Backdrop",
+                "options": {
+                    "none": "None",
+                    "hills": "Hills",
+                    "mountains": "Mountains"
+                }
+            },
             "renderTable": {
                 "label": "Padding Area",
                 "notes": "How to show the padding area when in the 3D view.",
@@ -553,7 +584,8 @@
                     "polygonchain": "Polygon (Chain)",
                     "counter": "Counter",
                     "counterradial": "Counter - Pie",
-                    "mapGen": "Map Generator"
+                    "mapGen": "Map Generator",
+                    "mapMaker": "Map Maker (generated)"
                 }
             },
             "dynaMeshResolution": {
@@ -1347,14 +1379,6 @@
                 "name": "Enable Light Helpers",
                 "hint": "Enable the light helpers. This will show the light source and the area of effect of the light when in the lighting layer."
             },
-            "templateSyle": {
-                "name": "Template Style",
-                "hint": "The style to use for the measured templates.",
-                "options": {
-                    "wireframe": "Wireframe",
-                    "solid": "Solid"
-                }
-            },
             "paddingAppearance": {
                 "name": "Padding Appearance",
                 "hint": "The default appearance of the padding. This can be customized per scene as well."
@@ -1519,6 +1543,76 @@
             "debugMode": {
                 "name": "Debug Mode",
                 "hint": "Show helpful debug info for troubleshooting."
+            },
+            "waterQuality": {
+                "name": "Water Quality",
+                "hint": "Detail of the Liquid shader: foam detail, shoreline depth map resolution and refraction distortion.",
+                "choices": {
+                    "low": "Low",
+                    "high": "High"
+                }
+            },
+            "scatterQuality": {
+                "name": "Scatter Quality",
+                "hint": "Density of small scattered assets (grass, flowers, bushes) and which scattered assets cast shadows. Trees and boulders that block sight are always kept.",
+                "choices": {
+                    "low": "Low",
+                    "medium": "Medium",
+                    "high": "High"
+                }
+            },
+            "groundCover": {
+                "name": "Ground Cover",
+                "hint": "Procedural grass tufts and pebbles drawn on Map Maker terrain around the camera. Purely visual; higher settings draw more of it further out.",
+                "choices": {
+                    "off": "Off",
+                    "low": "Low",
+                    "medium": "Medium",
+                    "high": "High"
+                }
+            }
+        },
+        "scatter": {
+            "tab": "Scatter",
+            "tabNotes": "Fill this tile's area with instanced assets from a curated set. The assets sit on whatever surface is below the tile.",
+            "set": "Scatter Set",
+            "none": "None",
+            "seed": "Seed",
+            "base": "Base Density",
+            "baseNotes": "Density where nothing is painted. 0 means only painted areas are filled.",
+            "density": "Density Multiplier",
+            "scale": "Scale Multiplier",
+            "avoidBuildings": "Avoid Buildings",
+            "avoidPaths": "Avoid Paths",
+            "avoidWater": "Avoid Water",
+            "convert": "Convert to Tiles",
+            "convertConfirm": "Detach all {count} scattered assets of this tile into individual tiles? The scatter area will be emptied.",
+            "converted": "Created {count} tiles.",
+            "sets": {
+                "meadow": "Meadow",
+                "forest": "Forest",
+                "forestFloor": "Forest Floor",
+                "autumnForest": "Autumn Forest",
+                "rocks": "Rocks",
+                "crags": "Crags & Boulders",
+                "deadWood": "Dead Wood",
+                "desertScrub": "Desert Scrub",
+                "snowyPines": "Snowy Pines",
+                "swamp": "Swamp & Reeds",
+                "mushrooms": "Mushroom Glade",
+                "wildflowers": "Wildflowers",
+                "stylizedForest": "Stylized Forest",
+                "blossomGrove": "Blossom Grove",
+                "cave": "Cave Rubble",
+                "tavern": "Tavern",
+                "bedroom": "Bedroom",
+                "library": "Library",
+                "storage": "Storage",
+                "kitchen": "Kitchen",
+                "smithy": "Smithy",
+                "alchemy": "Alchemy Lab",
+                "shop": "Shop & Market",
+                "armory": "Armory"
             }
         },
         "modelBaker": {
@@ -1763,7 +1857,7 @@
                 "particles": "Custom Particles",
                 "effects": "Effects",
                 "bloom": "Bloom",
-                "padding": "Padding Area",
+                "mapEdge": "Map Edge",
                 "objects": "Scene Objects",
                 "advanced": "Advanced"
             },
@@ -2047,7 +2141,9 @@
                     "created": "Macro '%s' created successfully!",
                     "enabled": "Export enabled only",
                     "players": "Allow Players"
-                }
+                },
+                "preset": "Preset",
+                "presetPlaceholder": "Choose a preset…"
             },
             "clipping": {
                 "name": "Clipping",
@@ -2059,8 +2155,20 @@
                 "useCamera": "Use Camera",
                 "useCameraAdvanced": "Use Advanced Camera Calculations"
             },
-            "wind": {
+            "windSway": {
                 "name": "Wind",
+                "description": "Vegetation sway driven by the scene's weather wind: direction, strength and gusts come from the Weather settings, with a gentle idle sway when there is no wind. Gust waves roll across the scene, and leaves flutter at the tips.",
+                "response": "Response",
+                "anchor": "Anchor",
+                "flutter": "Leaf Flutter",
+                "hints": {
+                    "response": "How strongly this object reacts to the wind. Lower for stiff trees, higher for grass.",
+                    "anchor": "Fraction of the height, from the bottom, that stays still.",
+                    "flutter": "Fast, small motion on the upper parts, like leaves."
+                }
+            },
+            "wind": {
+                "name": "Wind (Legacy)",
                 "description": "Wind like effect to add some movement to your vegetation.",
                 "speed": "Speed",
                 "direction": "Direction",
@@ -2309,6 +2417,55 @@
                 "chroma": "Chroma",
                 "flat_bottom": "Flat Bottom",
                 "croma_offset_angle": "Chroma Offset"
+            },
+            "realisticWater": {
+                "name": "Liquid",
+                "description": "Water, lava and other liquids with depth-aware shorelines. Works on any tile; the liquid fades and foams where the ground beneath gets shallow and disappears where the ground rises above the surface. Use a box or plane tile with some resolution for rolling waves.",
+                "style": "Style",
+                "styles": {
+                    "realistic": "Realistic",
+                    "stylized": "Stylized"
+                },
+                "presets": {
+                    "water": "Water",
+                    "ocean": "Ocean",
+                    "river": "River",
+                    "swamp": "Swamp",
+                    "acid": "Acid",
+                    "lava": "Lava"
+                },
+                "shallow_color": "Shallow Color",
+                "deep_color": "Deep Color",
+                "foam_color": "Foam Color",
+                "opacity": "Opacity",
+                "clarity": "Visible Depth",
+                "flow_direction": "Flow Direction",
+                "flow_speed": "Flow Speed",
+                "wave_strength": "Wave Height",
+                "wave_scale": "Wave Length",
+                "ripple_size": "Ripple Size",
+                "foam": "Foam",
+                "bubbles": "Bubbles",
+                "scum": "Scum",
+                "reflectivity": "Reflectivity",
+                "glow_color": "Glow Color",
+                "glow": "Glow",
+                "crust": "Lava Crust",
+                "contained": "Center Fill Only",
+                "hints": {
+                    "preset": "A preset overwrites the colors and sliders, but not the Style.",
+                    "contained": "Fills only the pool under the tile's center. Turn off if one tile covers several separate pools.",
+                    "clarity": "How deep you can see into the liquid, in grid cells.",
+                    "flow_direction": "In degrees; 0 is east.",
+                    "ripple_size": "In grid cells."
+                },
+                "groups": {
+                    "basics": "Basics",
+                    "colour": "Color",
+                    "motion": "Motion",
+                    "surface": "Surface",
+                    "glow": "Glow & Lava"
+                }
             }
         },
         "tours": {

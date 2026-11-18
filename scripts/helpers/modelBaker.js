@@ -838,7 +838,7 @@ export function bakeExclusion(entity) {
     if (!entity?.mesh || !entity._loaded || entity._destroyed) return "notLoaded";
     const flag = (key) => document.getFlag("levels-3d-preview", key);
     if (Object.values(flag("shaders") ?? {}).some((shader) => shader?.enabled)) return "shader";
-    if (flag("displacementMap") || (flag("noiseType") ?? "none") !== "none" || entity.dynaMesh === "mapGen" || flag("mapMakerMesh")?.kind === "terrain") return "terrain";
+    if (flag("displacementMap") || (flag("noiseType") ?? "none") !== "none" || entity.dynaMesh === "mapGen" || flag("mapMakerMesh")?.k === "terrain") return "terrain";
     if (isHeroForge(entity.gtflPath)) return "heroForge";
     if (entity._animationModelReference?.object?.animations?.some((clip) => clip.tracks.length)) return "animated";
     if (entity.hasTags) return "tags";

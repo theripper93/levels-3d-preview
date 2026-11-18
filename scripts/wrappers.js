@@ -5,6 +5,7 @@ import * as THREE from "three";
 import { applyShaderToRegion } from "./shaders/templateEffects.js";
 import { pos3DToCanvas, centerElement } from "./helpers/coords3d.js";
 import { registerFrameRateDisplay } from "./helpers/frameRate.js";
+import { movementFloor } from "./helpers/elevationFloor.js";
 
 export function registerWrappers() {
     Object.defineProperty(foundry.canvas.placeables.Token.prototype, "object3d", {
@@ -171,7 +172,7 @@ export function registerWrappers() {
             const interactionManager = game.Levels3DPreview?.interactionManager;
             const draggedToken = canvas.tokens?._draggedToken;
             if (!game.Levels3DPreview?._active || !interactionManager?._tokenDrag || !draggedToken || !result) return result;
-            const floor = game.settings.get("levels-3d-preview", "preventNegative") ? canvas.primary.background.elevation : -Infinity;
+            const floor = movementFloor();
             if (changes?.elevation !== undefined) {
                 interactionManager.forceFree = true;
                 if (result.elevation < floor) result.elevation = floor;
@@ -476,7 +477,7 @@ export function registerWrappers() {
                 if (!interactionManager || dz || (!dx && !dy)) return result;
                 const movement = result?.[1]?.movement;
                 if (!movement) return result;
-                const floor = game.settings.get("levels-3d-preview", "preventNegative") ? canvas.primary.background.elevation : -Infinity;
+                const floor = movementFloor();
                 for (const token of objects ?? []) {
                     const waypoint = movement[token.id]?.waypoints?.[0];
                     const token3d = game.Levels3DPreview.tokens[token.id];

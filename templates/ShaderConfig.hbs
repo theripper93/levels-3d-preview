@@ -1,4 +1,37 @@
 <div class="flexcol scrollable" autocomplete="off">
+    {{#*inline "shaderField"}}
+        <div class="form-group" data-tooltip-direction="RIGHT" {{#if this.isTexture}}{{#if this.value}}data-tooltip="<img width=200 height=200 src='{{this.value}}'>"{{/if}}{{/if}}>
+            <label>{{this.title}}</label>
+            <div class="form-fields">
+                {{#if this.presets}}
+                    <select data-preset="{{this.shader}}">
+                        <option value="">{{localize "levels3dpreview.shaders.config.presetPlaceholder"}}</option>
+                        {{selectOptions this.presets}}
+                    </select>
+                {{/if}}
+                {{#if this.isNumber}}
+                    <input type="number" name="{{this.name}}" step="any" data-dtype="Number" value="{{this.value}}"/>
+                {{/if}}
+                {{#if this.isSlider}}
+                    <range-picker name="{{this.name}}" value="{{this.value}}" min="{{this.min}}" max="{{this.max}}" step="{{this.step}}"></range-picker>
+                {{/if}}
+                {{#if this.isBoolean}}
+                    <input type="checkbox" name="{{this.name}}" data-dtype="Boolean" {{checked this.value}}/>
+                {{/if}}
+                {{#if this.isTexture}}
+                <file-picker name="{{this.name}}" type="image" value="{{this.value}}">
+                </file-picker>
+                {{/if}}
+                {{#if this.choices}}
+                    <select name="{{this.name}}" data-dtype="Number">{{selectOptions this.choices selected=this.value}}</select>
+                {{/if}}
+                {{#if this.isColor}}
+                    <color-picker name="{{this.name}}" value="{{this.value}}"></color-picker>
+                {{/if}}
+            </div>
+            {{#if this.hint}}<p class="hint">{{this.hint}}</p>{{/if}}
+        </div>
+    {{/inline}}
     <nav class="sheet-tabs tabs" data-group="sections">
         {{#each shaders}}
             <a class="item {{#if this.isEnabled}}shader-tab-enabled{{/if}}" data-tab="{{@key}}">{{{this.icon}}} {{this.title}}</a>
@@ -10,31 +43,18 @@
         {{#each shaders}}
             <div class="tab" data-tab="{{@key}}" data-group="sections">
                 <p class="hint">{{#if this.isSlow}}<i id="levels-3d-preview-slow-shader" data-tooltip="{{localize "levels3dpreview.shaders.config.slow"}}" class="fas fa-exclamation-triangle"></i> {{/if}}{{this.description}}</p>
-                {{#each this}}
-                    {{#if this.isField}}
-                        <div class="form-group" data-tooltip-direction="RIGHT" {{#if this.isTexture}}{{#if this.value}}data-tooltip="<img width=200 height=200 src='{{this.value}}'>"{{/if}}{{/if}}>
-                            <label>{{this.title}}</label>
-                            <div class="form-fields">
-                                {{#if this.isNumber}}
-                                    <input type="number" name="{{@../key}}.{{@key}}" step="any" data-dtype="Number" value="{{this.value}}"/>
-                                {{/if}}
-                                {{#if this.isSlider}}
-                                    <range-picker name="{{@../key}}.{{@key}}" value="{{this.value}}" min="{{this.min}}" max="{{this.max}}" step="{{this.step}}"></range-picker>
-                                {{/if}}
-                                {{#if this.isBoolean}}
-                                    <input type="checkbox" name="{{@../key}}.{{@key}}" data-dtype="Boolean" {{checked this.value}}/>
-                                {{/if}}
-                                {{#if this.isTexture}}
-                                <file-picker name="{{@../key}}.{{@key}}" type="image" value="{{this.value}}">
-                                </file-picker>
-                                {{/if}}
-                                {{#if this.isColor}}
-                                    <color-picker name="{{@../key}}.{{@key}}" value="{{this.value}}"></color-picker>
-                                {{/if}}
-                            </div>
-                        </div>
-                    {{/if}}
-                {{/each}}
+                {{#if this.sections}}
+                    {{#each this.sections}}
+                        <fieldset>
+                            <legend>{{this.legend}}</legend>
+                            {{#each this.fields}}{{> shaderField}}{{/each}}
+                        </fieldset>
+                    {{/each}}
+                {{else}}
+                    {{#each this}}
+                        {{#if this.isField}}{{> shaderField}}{{/if}}
+                    {{/each}}
+                {{/if}}
             </div>
         {{/each}}
 

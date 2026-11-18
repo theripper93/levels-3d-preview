@@ -13,6 +13,8 @@ const SETTING_NEAR = 0.7;
 export const atmosphereFogUniforms = {
     atmoFogMode: { value: 0 },
     atmoFogHeight: { value: 1 },
+    atmoEdgeRect: { value: new THREE.Vector4() },
+    atmoEdgeFade: { value: 0 },
 };
 
 let installed = false;
@@ -25,6 +27,8 @@ export function installAtmosphereFog() {
     #ifdef USE_FOG
         uniform float atmoFogMode;
         uniform float atmoFogHeight;
+        uniform vec4 atmoEdgeRect;
+        uniform float atmoEdgeFade;
     #endif
     `;
     THREE.ShaderChunk.fog_fragment = THREE.ShaderChunk.fog_fragment.replace(
@@ -35,6 +39,10 @@ export function installAtmosphereFog() {
             #ifndef FOW_FROM_OFFSET
                 fogFactor *= mix( ${HEIGHT_FLOOR.toFixed(2)}, 1.0, exp( -max( vWorldPositionFoW.y, 0.0 ) / max( atmoFogHeight, 1e-4 ) ) );
             #endif
+        }
+        if ( atmoEdgeFade > 0.0 ) {
+            vec2 edgeOut = max( max( atmoEdgeRect.xy - vWorldPositionFoW.xz, vWorldPositionFoW.xz - atmoEdgeRect.zw ), 0.0 );
+            fogFactor = max( fogFactor, smoothstep( 0.0, atmoEdgeFade, length( edgeOut ) ) );
         }`,
     );
 }

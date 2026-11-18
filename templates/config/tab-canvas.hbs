@@ -33,15 +33,6 @@
     </div>
 
     <div class="form-group">
-    <label>{{localize "levels3dpreview.settings.templateSyle.name"}}</label>
-    <select name="templateSyle" data-dtype="String">
-        <option {{#if (eq templateSyle "wireframe")}}selected{{/if}} value="wireframe">{{localize "levels3dpreview.settings.templateSyle.options.wireframe"}}</option>
-        <option {{#if (eq templateSyle "solid")}}selected{{/if}} value="solid">{{localize "levels3dpreview.settings.templateSyle.options.solid"}}</option>
-    </select>
-    <p class="hint">{{localize "levels3dpreview.settings.templateSyle.hint"}}</p>
-    </div>
-
-    <div class="form-group">
     <label>{{localize "levels3dpreview.settings.templateEffects.name"}}</label>
     <input type="checkbox" name="templateEffects" data-dtype="Boolean" {{checked templateEffects}} />
     <p class="hint">{{localize "levels3dpreview.settings.templateEffects.hint"}}</p>

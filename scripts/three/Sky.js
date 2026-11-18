@@ -78,6 +78,7 @@ Sky.SkyShader = {
         haze: { value: 0.3 },
         fogColor: { value: new Color(0.6, 0.7, 0.8) },
         fogDensity: { value: 0 },
+        edgeBlend: { value: 0 },
         flash: { value: 0 },
         cloudsEnabled: { value: 1 },
         cloudCover: { value: 0.35 },
@@ -119,6 +120,7 @@ Sky.SkyShader = {
         uniform float haze;
         uniform vec3 fogColor;
         uniform float fogDensity;
+        uniform float edgeBlend;
         uniform float flash;
         uniform float cloudsEnabled;
         uniform float cloudCover;
@@ -334,6 +336,7 @@ Sky.SkyShader = {
             float fogBand = 1.0 - smoothstep(-0.02, mix(0.06, 0.3, fogAmount), y);
             sky = mix(sky, fogColor, fogAmount * fogBand);
             sky *= 1.0 - 0.3 * (1.0 - env) * smoothstep(0.0, 0.3, -y);
+            sky = mix(sky, fogColor, edgeBlend * (1.0 - smoothstep(-0.01, 0.05, y)));
 
             if (env > 0.5) sky = min(sky, vec3(environmentClamp));
 

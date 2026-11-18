@@ -1,3 +1,4 @@
+import { scatterConfigTab, activateScatterConfig } from "../scatter/config.js";
 import { hideParams } from "../helpers/helpers.js";
 import { ShaderConfig } from "../shaders/ShaderLib.js";
 import { RegisterTours } from "../tours/tours.js";
@@ -10,6 +11,7 @@ import { weatherConfigFields, activateWeatherConfig } from "../vfx/weather/confi
 import { surfaceConfigFields } from "../vfx/surface/config.js";
 import { SURFACE_FLAG } from "../vfx/surface/state.js";
 import { section, statusSection, activateStatusSection } from "./sceneConfigLayout.js";
+import { EDGE_OPTIONS, BACKDROPS } from "../atmosphere/mapEdge.js";
 import { lookPresetField, activateLookPreset } from "./sceneLook.js";
 import { lightFxConfigFields, activateLightFxConfig } from "../vfx/light/config.js";
 import { TacticalPingPicker, loadUserEmotes } from "../entities/effects/ping.js";
@@ -392,7 +394,31 @@ export function registerConfigs() {
                         default: 0.6,
                     },
                 }),
-                ...section("padding", "padding", {
+                ...section("mapEdge", "mapEdge", {
+                    mapEdge: {
+                        type: "select",
+                        label: flag("mapEdge.label"),
+                        notes: flag("mapEdge.notes"),
+                        default: "legacy",
+                        options: Object.fromEntries(EDGE_OPTIONS.map((o) => [o, flag(`mapEdge.options.${o}`)])),
+                    },
+                    edgeTexture: {
+                        type: "filepicker",
+                        label: flag("edgeTexture.label"),
+                        placeholder: flag("edgeTexture.placeholder"),
+                        default: "",
+                    },
+                    edgeColor: {
+                        type: "color",
+                        label: flag("edgeColor.label"),
+                        default: "#59633f",
+                    },
+                    horizonBackdrop: {
+                        type: "select",
+                        label: flag("horizonBackdrop.label"),
+                        default: "none",
+                        options: Object.fromEntries(BACKDROPS.map((o) => [o, flag(`horizonBackdrop.options.${o}`)])),
+                    },
                     renderTable: {
                         type: "select",
                         label: flag("renderTable.label"),
@@ -542,6 +568,19 @@ export function registerConfigs() {
         hideParams(app, html, `[name="flags.levels-3d-preview.bloom"]`, bloomFlags, false);
         hideParams(app, html, `[name="flags.levels-3d-preview.${SURFACE_FLAG}.enabled"]`, surfaceFlags, false);
         hideParams(app, html, `[name="flags.levels-3d-preview.renderTable"]`, customTableFlags, ["table", "matcustom"], true);
+        const edgeSelect = html.querySelector(`[name="flags.levels-3d-preview.mapEdge"]`);
+        const tableSelect = html.querySelector(`[name="flags.levels-3d-preview.renderTable"]`);
+        const toggleGroup = (name, show) => html.querySelector(`[name="flags.levels-3d-preview.${name}"]`)?.closest(".form-group")?.classList.toggle("hidden", !show);
+        edgeSelect?.addEventListener("change", () => {
+            const edge = edgeSelect.value;
+            toggleGroup("edgeTexture", edge === "fade");
+            toggleGroup("edgeColor", edge === "fade");
+            toggleGroup("renderTable", edge === "legacy");
+            if (edge === "legacy") tableSelect?.dispatchEvent(new Event("change"));
+            else customTableFlags.forEach((f) => toggleGroup(f, false));
+            app.setPosition({ height: "auto" });
+        });
+        edgeSelect?.dispatchEvent(new Event("change"));
         hideParams(app, html, `[name="flags.levels-3d-preview.enableFog"]`, fogFlags, false);
 
         if (isDynamicSkyEnabled(app.document)) {
@@ -1056,6 +1095,7 @@ export function registerConfigs() {
                             },
                         },
                         mapGen: game.i18n.localize("levels3dpreview.flags.dynaMesh.options.mapGen"),
+                        mapMaker: game.i18n.localize("levels3dpreview.flags.dynaMesh.options.mapMaker"),
                         optadvanced: {
                             optgroup: {
                                 start: true,
@@ -1581,7 +1621,10 @@ export function registerConfigs() {
                     max: 10,
                 },
             },
+            ...scatterConfigTab(app.document),
         });
+
+        activateScatterConfig(app, html);
 
         if (meshStats?.merged) {
             const fillTypeSelect = html.querySelector(`select[name="flags.levels-3d-preview.fillType"]`);

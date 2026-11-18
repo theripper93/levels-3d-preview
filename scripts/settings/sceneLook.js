@@ -35,6 +35,11 @@ export function lookPresetField(scene) {
     };
 }
 
+export function lookPresetValues(id) {
+    const preset = LOOK_PRESETS[id];
+    return preset ? { ...NEUTRAL, ...preset } : null;
+}
+
 function setInput(input, value) {
     if (input.type === "checkbox") input.checked = value;
     else input.value = value;

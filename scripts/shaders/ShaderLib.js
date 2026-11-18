@@ -3,6 +3,8 @@ import { factor } from "../main.js";
 import { noiseShaders } from "./noise.js";
 import { applyLegacyUv } from "../three/legacyUv.js";
 import { rawTexture } from "../three/rawTexture.js";
+import { realisticWater } from "./water/realisticWater.js";
+import { windSway, updateWindSway } from "./wind/windSway.js";
 
 export class ShaderConfig extends foundry.applications.api.HandlebarsApplicationMixin(foundry.applications.api.ApplicationV2) {
     constructor(document) {
@@ -64,23 +66,42 @@ export class ShaderConfig extends foundry.applications.api.HandlebarsApplication
                 value: shaderData[k].enabled ?? false,
                 title: game.i18n.localize("levels3dpreview.shaders.config.enabled"),
                 isField: true,
+                name: `${k}.enabled`,
             };
+            if (v.presets) {
+                finalData[k].preset = {
+                    isField: true,
+                    shader: k,
+                    presets: Object.fromEntries(Object.keys(v.presets).map((p) => [p, game.i18n.localize(`levels3dpreview.shaders.${k}.presets.${p}`)])),
+                    title: game.i18n.localize("levels3dpreview.shaders.config.preset"),
+                    hint: game.i18n.has(`levels3dpreview.shaders.${k}.hints.preset`) ? game.i18n.localize(`levels3dpreview.shaders.${k}.hints.preset`) : "",
+                };
+            }
             for (const [k2, v2] of Object.entries(uniforms)) {
                 const uniData = {
                     isField: true,
                     type: v2.type,
-                    isNumber: v2.type == "float" && (v2.min == undefined || v2.max == undefined),
+                    isNumber: v2.type == "float" && (v2.min == undefined || v2.max == undefined) && !v2.choices,
                     isColor: v2.type == "vec3",
                     isTexture: v2.type == "sampler2D",
                     isBoolean: v2.type == "bool",
-                    isSlider: v2.type == "float" && v2.min != undefined && v2.max != undefined,
+                    isSlider: v2.type == "float" && v2.min != undefined && v2.max != undefined && !v2.choices,
+                    choices: v2.choices && Object.fromEntries(Object.entries(v2.choices).map(([c, label]) => [c, game.i18n.localize(label)])),
                     min: v2.min,
                     max: v2.max,
                     step: v2.step ?? Math.min(((v2.min ?? 0) + (v2.max ?? 0)) / 100, 1),
                     value: shaderData[k][k2] ?? v2.default,
                     title: game.i18n.localize(`levels3dpreview.shaders.${k}.${k2}`),
+                    hint: game.i18n.has(`levels3dpreview.shaders.${k}.hints.${k2}`) ? game.i18n.localize(`levels3dpreview.shaders.${k}.hints.${k2}`) : "",
+                    name: `${k}.${k2}`,
                 };
                 finalData[k][k2] = uniData;
+            }
+            if (v.groups) {
+                finalData[k].sections = Object.entries(v.groups).map(([group, keys]) => ({
+                    legend: game.i18n.localize(`levels3dpreview.shaders.${k}.groups.${group}`),
+                    fields: keys.map((key) => finalData[k][key]).filter(Boolean),
+                }));
             }
         }
         return {
@@ -121,6 +142,8 @@ export class ShaderConfig extends foundry.applications.api.HandlebarsApplication
             this._onSubmit(e, { preventClose: true, preventRender: true });
         });
 
+        this.element.querySelectorAll("select[data-preset]").forEach((select) => select.addEventListener("change", () => this.#applyPreset(select.dataset.preset, select.value)));
+
         this.element.addEventListener("change", (e) => {
             if (this.autoSave) this.debouncedSubmit(e, { preventClose: true, preventRender: true });
         });
@@ -134,6 +157,17 @@ export class ShaderConfig extends foundry.applications.api.HandlebarsApplication
                 this.setTab(tabId);
             });
         })
+    }
+
+    #applyPreset(shaderId, presetId) {
+        const preset = game.Levels3DPreview.CONFIG.shaders.shaders[shaderId]?.presets?.[presetId];
+        if (!preset) return;
+        for (const [key, value] of Object.entries(preset)) {
+            const input = this.element.querySelector(`[name="${shaderId}.${key}"]`);
+            if (!input) continue;
+            if (input.type === "checkbox") input.checked = value;
+            else input.value = value;
+        }
     }
 
     setTab(tabId) {
@@ -247,6 +281,8 @@ export class ShaderConfig extends foundry.applications.api.HandlebarsApplication
     }
 }
 
+const baseCompiles = new WeakMap();
+
 export class ShaderHandler {
     constructor() {
         this.shaderLib = game.Levels3DPreview.CONFIG.shaders.shaders;
@@ -299,6 +335,17 @@ export class ShaderHandler {
         const shaderKey = `${Object.keys(shaderParams)
             .filter((k) => shaderParams[k].enabled)
             .join("_")}|${this.blankTextureKey(shaderParams)}`;
+        const material = mesh.material;
+        const current = material._userOnBeforeCompile;
+        if (current && !current.fromShaderHandler && !baseCompiles.has(material)) {
+            baseCompiles.set(material, { compile: current, key: Object.hasOwn(material, "customProgramCacheKey") ? material.customProgramCacheKey : null });
+        }
+        const base = baseCompiles.get(material);
+        const _onMaterialCompile = (shader, renderer) => {
+            base?.compile.call(material, shader, renderer);
+            _onBeforeCompile(shader);
+        };
+        _onMaterialCompile.fromShaderHandler = true;
         const _onBeforeCompile = (shader) => {
             shader.entity3D = entity3D;
             this.injectShaders(shader, commonParams, shaderParams);
@@ -310,22 +357,25 @@ export class ShaderHandler {
             shader.uniforms.localSize = { value: commonParams.localSize };
 
             this.setUniforms(shader, shaderParams);
+            this.forEnabled(shaderParams, (config, params) => config.onCompile?.(shader, { mesh, entity3D, params }));
             this.shaders.push(shader);
             if (entity3D.pathTraced) {
                 const customBlendMap = "#ifdef USE_MAP\n\tvec4 texelColor = texture2D( map, vMapUv );\n\tdiffuseColor.rgb = mix(diffuseColor.rgb, texelColor.rgb, texelColor.a);\n#endif";
                 shader.fragmentShader = shader.fragmentShader.replace("#include <map_fragment>", customBlendMap);
             }
         };
-        mesh.material.onBeforeCompile = _onBeforeCompile;
+        this.forEnabled(shaderParams, (config, params) => config.onApply?.(mesh, entity3D, params));
+        mesh.material.onBeforeCompile = _onMaterialCompile;
         //Disambiguate everything _onBeforeCompile branches on that three does not already include in its own program key
         const getStateKey = () => {
             const map = mesh.material.map;
             const mapKey = map ? (map.matrixAutoUpdate === false || map.userData?.legacyUvMatrix ? "mapM" : "map") : "nomap";
             const bevelKey = mesh.material?.userData?.bevelSize !== undefined ? "bevel" : "nobevel";
-            return `${mapKey}|pt${!!entity3D.pathTraced}|inst${!!mesh.isInstancedMesh}|${bevelKey}`;
+            const extraKey = Object.keys(shaderParams).map((id) => (shaderParams[id]?.enabled && this.shaderLib[id]?.cacheKey?.()) || "").join("");
+            return `${mapKey}|pt${!!entity3D.pathTraced}|inst${!!mesh.isInstancedMesh}|${bevelKey}|${extraKey}`;
         };
         mesh.material.customProgramCacheKey = () => {
-            return `${mesh.material.type}${shaderKey}|${getStateKey()}`;
+            return `${mesh.material.type}${shaderKey}|${getStateKey()}|${base?.key?.call(material) ?? ""}`;
         };
 
         mesh.customDepthMaterial = new THREE.MeshDepthMaterial({
@@ -337,6 +387,10 @@ export class ShaderHandler {
                 return `${mesh.material.type}${shaderKey}_depth|${getStateKey()}`;
             },
         });
+    }
+
+    forEnabled(shaderParams, fn) {
+        for (const [id, params] of Object.entries(shaderParams)) if (params?.enabled && this.shaderLib[id]) fn(this.shaderLib[id], params);
     }
 
     injectShaders(shader, commonParams, shaderParams) {
@@ -496,10 +550,12 @@ export class ShaderHandler {
 
     updateShaders(delta, tokens, obstructing) {
         const v4 = new THREE.Vector4();
+        updateWindSway();
         this.shaders = this.shaders.filter((shader) => {
             if (shader.entity3D._destroyed) return false;
             shader.uniforms.time.value = delta / 100;
             shader.uniforms.yPos.value = getYpos(shader.entity3D);
+            shader.uniforms.windSway_origin?.value.copy(yPosV3);
             shader.uniforms.tokens.value = tokens;
             shader.uniforms.obstructing.value = obstructing ? obstructing.get(shader.entity3D) ?? v4 : v4;
             if (this._sceneUniformsNeedUpdate) {
@@ -675,6 +731,7 @@ export const shaders = {
         ],
         fragmentShader: [],
     },
+    windSway,
     wind: {
         icon: `<i class="fas fa-wind"></i>`,
         uniforms: {
@@ -1177,7 +1234,9 @@ export const shaders = {
                 mode: SHADERS_CONSTS.PREPEND,
                 injectionPoint: "#include <fog_fragment>",
                 shaderCode: `
-                if(grid_height_percent <= grid_heightCulling && abs(shader_vNormal.y) > grid_normalCulling){
+                vec2 gridScenePos = vWorldPositionFoW.xz - sceneSize.zw;
+                bool gridInScene = all(greaterThanEqual(gridScenePos, vec2(0.0))) && all(lessThanEqual(gridScenePos, sceneSize.xy));
+                if(gridInScene && gridType > 0.5 && gridAlpha > 0.0 && grid_height_percent <= grid_heightCulling && abs(shader_vNormal.y) > grid_normalCulling){
                     if(grid_showBounds){
                        float thickness = 0.01 * 0.5;
                         vec4 paddingRectOuter = vec4(0.0 - thickness, 0.0 - thickness, sceneSize.x + sceneSize.z * 2.0 + thickness, sceneSize.y + sceneSize.a * 2.0 + thickness);
@@ -1195,9 +1254,10 @@ export const shaders = {
                         }
                     }
                     if(gridType == 1.0){
-                        if( (mod(vWorldPositionFoW.x, gridSize) < 0.0015 || mod(vWorldPositionFoW.z, gridSize) < 0.0015)){
-                            gl_FragColor.rgb = mix(gl_FragColor.rgb, gridColor, gridAlpha);
-                        }
+                        vec2 gridCell = vWorldPositionFoW.xz / gridSize;
+                        vec2 gridDist = abs(fract(gridCell - 0.5) - 0.5) / max(fwidth(gridCell), vec2(1e-5));
+                        float gridLine = 1.0 - clamp(min(gridDist.x, gridDist.y) - 0.5, 0.0, 1.0);
+                        gl_FragColor.rgb = mix(gl_FragColor.rgb, gridColor, gridLine * gridAlpha);
                     }else{
                         vec2 s = gridType > 3.0 ? vec2(1.7320508, 1) : vec2(1, 1.7320508);
                         
@@ -2379,6 +2439,7 @@ export const shaders = {
             },
         ],
     },
+    realisticWater,
 };
 
 function getSizesForShader(entity3D) {

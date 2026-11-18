@@ -23,11 +23,13 @@ export class BuildPanel extends HandlebarsApplication {
         for (let button of BUILD_PANEL_BUTTONS_PREMIUM) {
             const baseButton = this.BUILD_PANEL_BUTTONS.find((b) => b.id === button.id);
             if (!baseButton) {
-                this.BUILD_PANEL_BUTTONS.push(button);
+                if (button.prepend) this.BUILD_PANEL_BUTTONS.unshift(button);
+                else this.BUILD_PANEL_BUTTONS.push(button);
                 continue;
             }
             baseButton.disabled = false;
             baseButton.callback = button.callback;
+            if (button.visible) baseButton.visible = button.visible;
             delete baseButton.tooltip;
         }
     }

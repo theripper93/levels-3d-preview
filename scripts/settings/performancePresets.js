@@ -2,7 +2,7 @@ import { HandlebarsApplication, mergeClone } from "../lib/utils.js";
 
 const MODULE_ID = "levels-3d-preview";
 
-export const GRAPHICS_SETTINGS = ["resolutionMultiplier", "effectsQuality", "ambientOcclusion", "shadowQuality", "softShadows", "antialiasing", "fowQuality", "dofblur", "enableShaders", "reduceMotion", "clusteredLights"];
+export const GRAPHICS_SETTINGS = ["resolutionMultiplier", "effectsQuality", "ambientOcclusion", "shadowQuality", "softShadows", "antialiasing", "fowQuality", "dofblur", "enableShaders", "waterQuality", "scatterQuality", "groundCover", "reduceMotion", "clusteredLights"];
 
 const performancePresets = {
     verylow: {
@@ -13,6 +13,9 @@ const performancePresets = {
         fowQuality: 0.1,
         enableShaders: false,
         effectsQuality: "off",
+        waterQuality: "low",
+        scatterQuality: "low",
+        groundCover: "off",
     },
     low: {
         ambientOcclusion: "off",
@@ -22,6 +25,9 @@ const performancePresets = {
         fowQuality: 0.25,
         enableShaders: true,
         effectsQuality: "low",
+        waterQuality: "low",
+        scatterQuality: "low",
+        groundCover: "low",
     },
     medium: {
         ambientOcclusion: "low",
@@ -31,6 +37,9 @@ const performancePresets = {
         fowQuality: 0.5,
         enableShaders: true,
         effectsQuality: "medium",
+        waterQuality: "high",
+        scatterQuality: "medium",
+        groundCover: "medium",
     },
     high: {
         ambientOcclusion: "medium",
@@ -40,6 +49,9 @@ const performancePresets = {
         fowQuality: 0.75,
         enableShaders: true,
         effectsQuality: "high",
+        waterQuality: "high",
+        scatterQuality: "high",
+        groundCover: "high",
     },
     veryhigh: {
         ambientOcclusion: "high",
@@ -49,6 +61,9 @@ const performancePresets = {
         fowQuality: 1,
         enableShaders: true,
         effectsQuality: "ultra",
+        waterQuality: "high",
+        scatterQuality: "high",
+        groundCover: "high",
     },
 };
 

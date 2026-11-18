@@ -4,6 +4,7 @@ import { Sky } from "../three/Sky.js";
 import {DynamicSkyConfig} from "../settings/dynamicSkyConfig.js";
 import { AtmosphereState } from "../atmosphere/state.js";
 import { installAtmosphereFog, applyAtmosphereFog, resetAtmosphereFog } from "../atmosphere/fog.js";
+import { updateMapEdge } from "../atmosphere/mapEdge.js";
 import { SkyEnvironment } from "../atmosphere/environment.js";
 import { toneMappedBackground } from "../atmosphere/background.js";
 
@@ -326,6 +327,8 @@ export class GlobalIllumination {
             cameraDistance: parent.controls ? parent.camera.position.distanceTo(parent.controls.target) : 1,
         });
 
+        updateMapEdge(state, this.sky);
+
         const outdoor = state.setting === "outdoor";
         this.sky.visible = outdoor;
         if (!outdoor) parent.scene.background = toneMappedBackground(state.fogColor, settingBackground);
@@ -339,7 +342,7 @@ export class GlobalIllumination {
 
         Hooks.on("preCreateScene", (scene, data) => {
             if (data.flags?.[MODULE_ID]) return;
-            scene.updateSource({ flags: { [MODULE_ID]: { dynamicSky: { enabled: true, preset: "clear" } } } });
+            scene.updateSource({ flags: { [MODULE_ID]: { dynamicSky: { enabled: true, preset: "clear" }, mapEdge: "fade" } } });
         });
 
         Hooks.on("updateScene", (scene, updates) => {

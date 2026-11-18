@@ -551,7 +551,7 @@ export class Template3D {
     }
 
     get templateStyle() {
-        return this.template?.document?.texture || this.hasShaders ? "solid" : game.settings.get("levels-3d-preview", "templateSyle");
+        return "solid";
     }
 
     _getMaterial() {
