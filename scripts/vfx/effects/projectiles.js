@@ -5,7 +5,7 @@ import { createLayer, flash, glow, ribbon, sparks, smokePuff } from "../layers/i
 import { effectLightIntensity, launchGroup, ballisticPath, useColorsIfDefault, loadRock } from "./kit.js";
 
 const MODELS = "modules/levels-3d-preview/assets/particles/models";
-const ROCK = "modules/canvas3dcompendium/assets/Tiles/Stylized%20Trees/Rock_4.glb";
+const ROCK = "modules/canvas3dcompendium/assets/Tiles/Stylized%20Nature%20MegaKit/Rock_Medium_1.glb";
 const tipStart = new THREE.Vector3();
 const tipNow = new THREE.Vector3();
 const wobbleAxis = new THREE.Vector3(1, 0, 0);
@@ -412,7 +412,7 @@ export class Boulder extends ThrownObject {
         if (rock) {
             rock.material.color.copy(this.palette.light);
             const mesh = new THREE.Mesh(rock.geometry, rock.material);
-            mesh.scale.setScalar(s * 0.35);
+            mesh.scale.setScalar(s * 0.133);
             this._rock = mesh;
             this._body.add(mesh);
         } else {

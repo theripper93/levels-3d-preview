@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { factor } from "../../main.js";
 import { collectSurfaces, renderTopDown, topDownCamera } from "../../helpers/topDownRender.js";
+import { clearLavaLights, syncLavaLights } from "./lavaLights.js";
 
 const DEEP = 50;
 const MAX_SHORE = 20;
@@ -50,7 +51,8 @@ function gridUnit() {
 function initHooks() {
     if (hooksReady) return;
     hooksReady = true;
-    for (const hook of ["createTile", "updateTile", "deleteTile", "3DCanvasSceneReady"]) Hooks.on(hook, () => refreshWaterBeds());
+    for (const hook of ["createTile", "updateTile", "deleteTile"]) Hooks.on(hook, () => refreshWaterBeds());
+    Hooks.on("3DCanvasSceneReady", (L, options) => !options?.levelSwitch && refreshWaterBeds());
 }
 
 export const refreshWaterBeds = foundry.utils.debounce(renderAll, 500);
@@ -61,6 +63,7 @@ function renderAll() {
     for (const [entity, state] of states) {
         if (entity._destroyed) {
             state.uniforms.bed.value.dispose();
+            clearLavaLights(state);
             states.delete(entity);
         }
     }
@@ -183,6 +186,7 @@ function finishBed(bed, all) {
     for (let i = 0; i < shore.length; i++) if (depth[i] > 0 && !hidden[i] && shore[i] > sdMax) sdMax = shore[i];
     const flow = flowField(depth, shore, rw, rh, ax, ay, Number(state.params.flow_direction ?? 0));
     if (bed.local) slopeFlow(flow, bed.local, depth, rw, rh, w / rw, h / rh);
+    syncLavaLights(state, bed, shore, hidden, waterQualityHigh());
     for (let i = 0; i < shore.length; i++) if (hidden[i]) shore[i] += HIDDEN;
     upload(state, depth, shore, flow, rw, rh);
     state.uniforms.sdMax.value = sdMax || MAX_SHORE;
@@ -300,6 +304,32 @@ function alignSigns(depth, fx, fz, w, h, dx, dz) {
     for (let i = 0; i < n; i++) if (depth[i] > 0 && !seen[i]) flood(i);
 }
 
+function curvature(fx, fz, depth, w, h, ax, ay) {
+    const n = w * h;
+    const ux = new Float32Array(n);
+    const uz = new Float32Array(n);
+    for (let i = 0; i < n; i++) {
+        const len = Math.hypot(fx[i], fz[i]);
+        if (len > 1e-6) {
+            ux[i] = fx[i] / len;
+            uz[i] = fz[i] / len;
+        }
+    }
+    const out = new Float32Array(n);
+    for (let y = 0; y < h; y++) {
+        for (let x = 0; x < w; x++) {
+            const i = y * w + x;
+            if (depth[i] <= 0) continue;
+            const l = x > 0 ? i - 1 : i, r = x < w - 1 ? i + 1 : i, u = y > 0 ? i - w : i, d = y < h - 1 ? i + w : i;
+            const sx = 1 / ((r - l) * ax || 1), sz = -w / ((d - u) * ay || 1);
+            const cx = ux[i] * (ux[r] - ux[l]) * sx + uz[i] * (ux[d] - ux[u]) * sz;
+            const cz = ux[i] * (uz[r] - uz[l]) * sx + uz[i] * (uz[d] - uz[u]) * sz;
+            out[i] = Math.hypot(cx, cz);
+        }
+    }
+    return out;
+}
+
 function flowField(depth, shore, w, h, ax, ay, degrees) {
     const dx = Math.cos(THREE.MathUtils.degToRad(degrees));
     const dz = Math.sin(THREE.MathUtils.degToRad(degrees));
@@ -321,10 +351,13 @@ function flowField(depth, shore, w, h, ax, ay, degrees) {
         fz = boxBlur(boxBlur(fz, w, h, r, true), w, h, r, false);
     }
     const hw = maxFilter(maxFilter(shore, w, h, Math.round(1.5 / ax), true), w, h, Math.round(1.5 / ay), false);
+    let bend = curvature(fx, fz, depth, w, h, ax, ay);
+    for (let i = 0; i < w * h; i++) bend[i] *= hw[i];
+    bend = boxBlur(boxBlur(bend, w, h, r, true), w, h, r, false);
     const flow = new Float32Array(w * h * 2);
     for (let i = 0; i < w * h; i++) {
         const len = Math.hypot(fx[i], fz[i]);
-        const g = depth[i] > 0 && len > 1e-3 ? 1 - THREE.MathUtils.smoothstep(hw[i], 0.8, 1.5) : 0;
+        const g = depth[i] > 0 && len > 1e-3 ? (1 - THREE.MathUtils.smoothstep(hw[i], 0.8, 1.5)) * (1 - THREE.MathUtils.smoothstep(bend[i], 0.45, 0.85)) : 0;
         let vx = (len > 1e-3 ? fx[i] / len : 0) * g + dx * (1 - g);
         let vz = (len > 1e-3 ? fz[i] / len : 0) * g + dz * (1 - g);
         const vl = Math.hypot(vx, vz);

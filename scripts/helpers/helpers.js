@@ -9,6 +9,7 @@ import { showSceneReport, showPerformanceDialog } from "../settings/performanceR
 import { Ping } from "../entities/effects/ping.js";
 import {Socket} from "../lib/socket.js";
 import { mergeMeshes } from "./modelBaker.js";
+import { markFoliage } from "../shaders/wind/windSway.js";
 
 const simplify = new SimplifyModifier();
 
@@ -219,6 +220,7 @@ export class Helpers {
         output.model.traverse((child) => {
             if (child instanceof THREE.SkinnedMesh) isSkinned = true;
             if (child.isMesh && child.material) {
+                [child.material].flat().forEach(markFoliage);
                 const material = child.material;
                 if ((material.alphaTest || material.transparent) && (material.map || material.alphaMap)) {
                     child.customDepthMaterial = new THREE.MeshDepthMaterial({
@@ -286,15 +288,8 @@ export class Helpers {
 
     getSightMesh(mesh, complexity = 1) {
         try {
-            const sightMesh = this.deepCloneRecursive(mesh);
-            if (complexity == 1) {
-                sightMesh.traverse((child) => {
-                    if (child.isMesh) {
-                        child.material = sightMeshMaterial;
-                    }
-                });
-                return sightMesh;
-            }
+            const sightMesh = this.sightCloneRecursive(mesh);
+            if (complexity == 1) return sightMesh;
             let originalVerts = 0;
             let finalVerts = 0;
             sightMesh.traverse((child) => {
@@ -324,6 +319,13 @@ export class Helpers {
             model: clonedModel,
             isGltf: cached.isGltf,
         };
+    }
+
+    sightCloneRecursive(object3d) {
+        const clone = object3d.clone(false);
+        if (clone.isMesh) clone.material = sightMeshMaterial;
+        object3d.children.forEach((child) => child.userData?.noSight || clone.add(this.sightCloneRecursive(child)));
+        return clone;
     }
 
     deepCloneRecursive(object3d) {
@@ -380,18 +382,19 @@ export class Helpers {
         const tPaths = tTypes.map((t) => {
             return path + t + "." + extension;
         });
+        const load = (i, linear = false) => (!options.maps || options.maps.includes(tTypes[i]) ? this.loadTexture(tPaths[i], linear ? { ...options, linear } : options) : null);
         const textures = {
-            map: await this.loadTexture(tPaths[0], options),
-            roughnessMap: await this.loadTexture(tPaths[1], { ...options, linear: true }),
-            metalnessMap: await this.loadTexture(tPaths[2], { ...options, linear: true }),
-            aoMap: await this.loadTexture(tPaths[3], { ...options, linear: true }),
-            normalMap: await this.loadTexture(tPaths[4], { ...options, linear: true }),
-            emissiveMap: await this.loadTexture(tPaths[5], options),
+            map: await load(0),
+            roughnessMap: await load(1, true),
+            metalnessMap: await load(2, true),
+            aoMap: await load(3, true),
+            normalMap: await load(4, true),
+            emissiveMap: await load(5),
             side: options.doubleSided ? THREE.DoubleSide : THREE.FrontSide,
         };
         for (let [k, v] of Object.entries(textures)) {
-            if (!v.image) delete textures[k];
-            if (v.image) {
+            if (!v?.image) delete textures[k];
+            else {
                 v.wrapS = THREE.RepeatWrapping;
                 v.wrapT = THREE.RepeatWrapping;
             }

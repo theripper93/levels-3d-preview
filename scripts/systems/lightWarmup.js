@@ -16,6 +16,7 @@ export class LightWarmup {
         this.batch = null;
         this.effectLights = new Set();
         this.effectPool = [];
+        this.objects = [];
     }
 
     createEffectPool() {
@@ -78,6 +79,7 @@ export class LightWarmup {
         [...(this.batch?.changes ?? []), ...this.changes.splice(0)].forEach(finishChange);
         this.pending.clear();
         this.batch = null;
+        this.objects = [];
         this.effectLights.clear();
         this.effectPool = [];
     }
@@ -87,7 +89,33 @@ export class LightWarmup {
         return object === this._parent.scene;
     }
 
+    warmObject(object) {
+        if (!this._parent._ready || !object || !this.isInScene(object)) return;
+        const renderer = this._parent.renderer;
+        this.camera.copy(this._parent.camera);
+        this.camera.layers.enableAll();
+        const materials = compileForComposer(this._parent, object, this.camera, this._parent.scene);
+        const programs = [...materials].map((material) => renderer.properties.get(material).currentProgram).filter((program) => program?.usedTimes > 0 && !program.isReady());
+        if (!programs.length) return;
+        const layers = new Map();
+        object.traverse((child) => {
+            layers.set(child, child.layers.mask);
+            child.layers.set(WARMUP_LAYER);
+        });
+        this.objects.push({ layers, programs, start: performance.now() });
+    }
+
+    updateObjects() {
+        this.objects = this.objects.filter((entry) => {
+            entry.programs = entry.programs.filter((program) => program.usedTimes > 0 && !program.isReady());
+            if (entry.programs.length && performance.now() - entry.start < MAX_WAIT) return true;
+            for (const [child, mask] of entry.layers) child.layers.mask = mask;
+            return false;
+        });
+    }
+
     update() {
+        if (this.objects.length) this.updateObjects();
         if (this.batch) return this.batch.index < this.batch.objects.length ? this.compileStep() : this.checkBatch();
         if (!this.pending.size && !this.changes.length) return;
         const lights = new Set([...this.pending].filter((light) => this.isInScene(light)));

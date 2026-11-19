@@ -9,7 +9,7 @@ import { Beam, Bolt, ShockRing, Strip, addPrimitive, updatePrimitives, groundGlo
 import { useColorsIfDefault } from "./kit.js";
 
 const UP = new THREE.Vector3(0, 1, 0);
-const ROCKS = ["modules/canvas3dcompendium/assets/Tiles/Stylized%20Trees/Rock_4.glb", "modules/canvas3dcompendium/assets/Tiles/Stylized%20Trees/Rock_3.glb"];
+const ROCKS = ["modules/canvas3dcompendium/assets/Tiles/Stylized%20Nature%20MegaKit/Rock_Medium_2.glb", "modules/canvas3dcompendium/assets/Tiles/Stylized%20Nature%20MegaKit/Rock_Medium_1.glb"];
 const DEFAULT_SIGN = "modules/levels-3d-preview/assets/particles/magiccircles/magic_circle_01.webp";
 const SUMMON_CIRCLE = "modules/levels-3d-preview/assets/particles/magiccircles/magic_circle_07.webp";
 
@@ -110,7 +110,7 @@ export class EarthExplosion extends StagedBurst {
                 instancingGeometry: mesh.geometry,
                 startLife: new QUARKS.IntervalValue(this.params.life.min * 2 + 0.6, this.params.life.max * 2 + 0.9),
                 startSpeed: new QUARKS.IntervalValue(s * 2, s * 5),
-                startSize: new QUARKS.IntervalValue(s * 0.08, s * 0.25),
+                startSize: new QUARKS.IntervalValue(s * 0.03, s * 0.095),
                 startColor: new QUARKS.ConstantColor(new THREE.Vector4(1, 1, 1, 1)),
                 startRotation: new QUARKS.EulerGenerator(new QUARKS.IntervalValue(-Math.PI, Math.PI), new QUARKS.IntervalValue(0, Math.PI * 2), new QUARKS.ConstantValue(0)),
                 worldSpace: true,

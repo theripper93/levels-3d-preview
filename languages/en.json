@@ -21,6 +21,7 @@
                 "load": "Loading 3D Canvas...",
                 "env": "Creating 3D Environment...",
                 "gravity": "Computing Gravity...",
+                "scatter": "Placing Scatter and Furniture...",
                 "shaders": "Compiling Shaders..."
             },
             "loadingScreen": {
@@ -331,6 +332,10 @@
             },
             "doorSlidePercent": {
                 "label": "Door Slide Percentage"
+            },
+            "doorDouble": {
+                "label": "Double Door",
+                "notes": "Splits the tile into two mirrored leaves, hinged at the outer edges, that open and close together. Animation angle and slide direction apply to the left leaf and are mirrored for the right one."
             },
             "doorGrabTokens": {
                 "label": "Capture Tokens",
@@ -1589,6 +1594,7 @@
             "convertConfirm": "Detach all {count} scattered assets of this tile into individual tiles? The scatter area will be emptied.",
             "converted": "Created {count} tiles.",
             "sets": {
+                "grass": "Grass",
                 "meadow": "Meadow",
                 "forest": "Forest",
                 "forestFloor": "Forest Floor",
@@ -1597,6 +1603,7 @@
                 "crags": "Crags & Boulders",
                 "deadWood": "Dead Wood",
                 "desertScrub": "Desert Scrub",
+                "cactusGrove": "Cactus Grove",
                 "snowyPines": "Snowy Pines",
                 "swamp": "Swamp & Reeds",
                 "mushrooms": "Mushroom Glade",
@@ -1604,6 +1611,10 @@
                 "stylizedForest": "Stylized Forest",
                 "blossomGrove": "Blossom Grove",
                 "cave": "Cave Rubble",
+                "iceCave": "Ice Cave Rubble",
+                "lavaCave": "Lava Cave Rubble",
+                "mine": "Mine Clutter",
+                "market": "Market Goods",
                 "tavern": "Tavern",
                 "bedroom": "Bedroom",
                 "library": "Library",
@@ -1612,7 +1623,30 @@
                 "smithy": "Smithy",
                 "alchemy": "Alchemy Lab",
                 "shop": "Shop & Market",
-                "armory": "Armory"
+                "armory": "Armory",
+                "dining": "Dining Room",
+                "greatHall": "Great Hall",
+                "corridor": "Corridor",
+                "sfCorridor": "Corridor",
+                "sfBridge": "Bridge",
+                "sfEngineering": "Engineering",
+                "sfLab": "Xeno Lab",
+                "sfCargo": "Cargo Hold",
+                "sfTeleporter": "Teleporter Room",
+                "sfQuarters": "Crew Quarters",
+                "sfMess": "Mess Hall",
+                "sfMedBay": "Med Bay",
+                "sfArmory": "Armory",
+                "dgGuardRoom": "Guard Room",
+                "dgPrison": "Prison Cell",
+                "dgCrypt": "Crypt",
+                "dgShrine": "Shrine",
+                "dgVault": "Treasure Vault",
+                "dgStoreroom": "Storeroom",
+                "ruRubbleHall": "Rubble Hall",
+                "ruStorage": "Collapsed Storage",
+                "ruShrine": "Overgrown Shrine",
+                "ruCamp": "Abandoned Camp"
             }
         },
         "modelBaker": {
@@ -2432,7 +2466,8 @@
                     "river": "River",
                     "swamp": "Swamp",
                     "acid": "Acid",
-                    "lava": "Lava"
+                    "lava": "Lava",
+                    "magicalFire": "Magical Fire"
                 },
                 "shallow_color": "Shallow Color",
                 "deep_color": "Deep Color",
@@ -2457,7 +2492,8 @@
                     "contained": "Fills only the pool under the tile's center. Turn off if one tile covers several separate pools.",
                     "clarity": "How deep you can see into the liquid, in grid cells.",
                     "flow_direction": "In degrees; 0 is east.",
-                    "ripple_size": "In grid cells."
+                    "ripple_size": "In grid cells.",
+                    "crust": "Above 0 the liquid becomes lava that lights its surroundings. Deep Color tints the floating crust, Glow Color the cooler edges, Shallow Color the flow and Foam Color the hottest core."
                 },
                 "groups": {
                     "basics": "Basics",

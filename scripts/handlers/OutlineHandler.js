@@ -9,6 +9,10 @@ export class OutlineHandler {
         if (this._enabled) this.init();
     }
 
+    get active() {
+        return this._enabled && !!(this.controlledOutline.selectedObjects.length || this.hoveredOutline.selectedObjects.length);
+    }
+
     get renderer() {
         return this.parent.renderer;
     }

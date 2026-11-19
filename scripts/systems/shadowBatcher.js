@@ -282,7 +282,7 @@ export class ShadowBatcher {
     }
 }
 
-function isDynamicTile(tile3d) {
+export function isDynamicTile(tile3d) {
     return !!(tile3d.mixer || tile3d.isAnimated || tile3d.onAnimation || tile3d.isDoor || tile3d.maxInstances || Object.values(tile3d.shaders ?? {}).some((shader) => shader?.enabled));
 }
 
@@ -298,7 +298,7 @@ function hasCustomShader(material) {
     return !!material && (material.isShaderMaterial || material.onBeforeCompile !== THREE.Material.prototype.onBeforeCompile);
 }
 
-function isInScene(object, scene) {
+export function isInScene(object, scene) {
     for (let current = object; current; current = current.parent) {
         if (!current.visible) return false;
         if (current === scene) return true;
@@ -306,7 +306,7 @@ function isInScene(object, scene) {
     return false;
 }
 
-function sameMatrix(stored, elements) {
+export function sameMatrix(stored, elements) {
     for (let i = 0; i < 16; i++) {
         const a = stored[i];
         const b = elements[i];
@@ -315,7 +315,7 @@ function sameMatrix(stored, elements) {
     return true;
 }
 
-function textureKey(texture) {
+export function textureKey(texture) {
     if (!texture) return "";
     if (texture.matrixAutoUpdate) texture.updateMatrix();
     return [texture.source.uuid, texture.channel, texture.wrapS, texture.wrapT, ...texture.matrix.elements].join();

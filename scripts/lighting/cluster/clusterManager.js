@@ -4,10 +4,8 @@ import { ClusterMasks } from "./clusterMasks.js";
 import { ClusterLight } from "./clusterLight.js";
 import { setClusterSamplerLimit } from "./clusterChunks.js";
 import { factor } from "../../main.js";
-import { getQuality } from "../../vfx/quality.js";
 
 export const EFFECT_SLOTS = 16;
-export const MAX_PER_CELL = 32;
 export const DATA_WIDTH = 1024;
 export const RECORD_TEXELS = 5;
 const RECORD_FLOATS = RECORD_TEXELS * 4;
@@ -15,7 +13,7 @@ const ROW_FLOATS = DATA_WIDTH * 4;
 const MIN_CAPACITY = 256;
 const MAX_CAPACITY = 4096;
 const MAX_GRID = 128;
-const CELL_SQUARES = 2;
+const CELL_SQUARES = 1;
 const SHRINK_RATIO = 0.5;
 const BIN_MARGIN = 1.1;
 
@@ -40,6 +38,11 @@ function recordRows(capacity) {
 }
 
 const whiteTexture = createWhiteTexture();
+
+function primeUnpackState(renderer) {
+    const gl = renderer.getContext();
+    for (const name of [gl.UNPACK_ROW_LENGTH, gl.UNPACK_SKIP_PIXELS, gl.UNPACK_SKIP_ROWS]) renderer.state.pixelStorei(name, 0);
+}
 
 export const clusterUniforms = {
     uClusterLights: { value: createDataTexture(recordRows(MIN_CAPACITY) + 1) },
@@ -72,7 +75,6 @@ export class ClusterManager {
         this._gridDirty = false;
         this._warned = new Set();
         this._enabled = true;
-        this._maxPerCell = getQuality().maxLightsPerCell ?? MAX_PER_CELL;
         this.stats = { gridRebuilds: 0, recordUploads: 0, lastUpdateMs: 0 };
         this.masks = new ClusterMasks(this);
         setClusterSamplerLimit(parent.renderer?.capabilities.maxTextures);
@@ -92,17 +94,6 @@ export class ClusterManager {
         } else this.updateEffectCount();
     }
 
-    get maxPerCell() {
-        return this._maxPerCell;
-    }
-
-    set maxPerCell(value) {
-        const maxPerCell = Math.max(1, Math.min(MAX_PER_CELL, Math.floor(value) || MAX_PER_CELL));
-        if (maxPerCell === this._maxPerCell) return;
-        this._maxPerCell = maxPerCell;
-        this._gridDirty = true;
-    }
-
     register(light) {
         if (this.states.has(light)) return;
         const binned = !light.unbinned || !this.freeEffectSlots.length;
@@ -110,7 +101,7 @@ export class ClusterManager {
         const slot = binned ? this.allocateSlot() : this.freeEffectSlots.pop();
         if (slot === undefined) return this.warnOnce("capacity", `3D Canvas | Clustered light capacity (${MAX_CAPACITY}) exceeded`);
         this.lights.add(light);
-        this.states.set(light, { slot, binned, x: 0, z: 0, radius: 0, peakRadius: 0, binX: 0, binZ: 0, binRadius: -1, brightness: 0 });
+        this.states.set(light, { slot, binned, x: 0, z: 0, radius: 0, peakRadius: 0, binX: 0, binZ: 0, binRadius: -1 });
         this.clearSlot(slot);
         if (binned) {
             this._gridDirty = true;
@@ -180,10 +171,14 @@ export class ClusterManager {
 
     uploadRows(firstRow, endRow) {
         const texture = clusterUniforms.uClusterLights.value;
-        const properties = this._parent.renderer?.properties;
+        const renderer = this._parent.renderer;
+        const properties = renderer?.properties;
         const uploaded = properties?.has(texture) && properties.get(texture).__version === texture.version;
         if (!uploaded) texture.clearUpdateRanges();
-        else for (let row = firstRow; row < endRow; row++) texture.addUpdateRange(row * ROW_FLOATS, ROW_FLOATS);
+        else {
+            for (let row = firstRow; row < endRow; row++) texture.addUpdateRange(row * ROW_FLOATS, ROW_FLOATS);
+            primeUnpackState(renderer);
+        }
         texture.needsUpdate = true;
     }
 
@@ -273,7 +268,6 @@ export class ClusterManager {
         state.radius = radius;
         const baseRadius = light.baseDistance > light.distance && light.distance > 0 ? (radius * light.baseDistance) / light.distance : radius;
         state.peakRadius = baseRadius < state.peakRadius * SHRINK_RATIO ? baseRadius : Math.max(state.peakRadius, baseRadius);
-        state.brightness = light.intensity * Math.min(state.peakRadius, 1e6);
         if (state.binned && !this._gridDirty) {
             const contained = Math.hypot(x - state.binX, z - state.binZ) + radius <= state.binRadius;
             if (!contained || state.peakRadius < state.binRadius * SHRINK_RATIO) this._gridDirty = true;
@@ -348,16 +342,8 @@ export class ClusterManager {
             state.binRadius = state.peakRadius * BIN_MARGIN;
             binned.push(state);
         }
-        binned.sort((a, b) => b.brightness - a.brightness);
         counts.fill(0);
-        let overflow = false;
-        for (const state of binned) {
-            this.forEachCell(state, (index) => {
-                if (counts[index] < this._maxPerCell) counts[index]++;
-                else overflow = true;
-            });
-        }
-        if (overflow) this.warnOnce("overflow", `3D Canvas | More than ${this._maxPerCell} lights overlap a cluster cell, the dimmest are skipped`);
+        for (const state of binned) this.forEachCell(state, (index) => counts[index]++);
         let total = 0;
         for (let i = 0; i < counts.length; i++) total += counts[i];
         const listBase = this.gridBase + Math.ceil(counts.length / 2);

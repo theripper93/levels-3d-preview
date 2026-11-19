@@ -9,7 +9,7 @@ export function essentialsFields(scene) {
     const flag = (key) => game.i18n.localize(`levels3dpreview.flags.${key}`);
     const weather = weatherConfigFields(scene);
     const look = lookPresetField(scene);
-    const select = (key, field, value) => ({ key, type: "select", label: field.label, notes: field.notes, value, options: Object.entries(field.options).map(([id, label]) => ({ id, label, selected: id === value })) });
+    const select = (key, field, value) => ({ key, type: "select", label: field.label, value, options: Object.entries(field.options).map(([id, label]) => ({ id, label, selected: id === value })) });
     return [
         { key: "sunPosition", type: "range", label: flag("sunPosition.label"), value: flags.sunPosition ?? 9, min: 0, max: 24, step: 0.5 },
         select("weather.preset", weather["weather.preset"], weather["weather.preset"].default),

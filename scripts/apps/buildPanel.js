@@ -171,7 +171,9 @@ export class BuildPanel extends HandlebarsApplication {
     }
 
     insertMinimizeButton(remove = false){
-        if(remove) return document.querySelectorAll("#build-panel-minimize").forEach(b => b.closest("li").remove());
+        document.querySelectorAll("#build-panel-minimize").forEach((b) => (b.closest("li") ?? b).remove());
+        const anchor = document.querySelector(`#sidebar-tabs button[data-tab="settings"]`)?.closest("li");
+        if (remove || !anchor || !this.element) return;
 
         const button = document.createElement("button")
         button.id = "build-panel-minimize";
@@ -179,7 +181,7 @@ export class BuildPanel extends HandlebarsApplication {
         const li = document.createElement("li");
         li.setAttribute("data-tooltip", game.i18n.localize("levels3dpreview.controls.3dtools"));
         li.appendChild(button)
-        document.querySelector(`button[data-tab="settings"]`).closest("li").after(li)
+        anchor.after(li)
         button.addEventListener("click", () => this.element.classList.toggle("minimized"));
     }
 
@@ -239,7 +241,7 @@ export class BuildPanel extends HandlebarsApplication {
         this._clipHeight = 10000;
         game.Levels3DPreview.scene.traverse((c) => {
             if (c.isMesh) {
-                c.material.clippingPlanes = null;
+                c.material.clippingPlanes = c.material.doorClip ?? null;
             }
         });
     }
@@ -262,7 +264,7 @@ export class BuildPanel extends HandlebarsApplication {
         if (disabled) {
             game.Levels3DPreview.scene.traverse((c) => {
                 if (c.isMesh) {
-                    c.material.clippingPlanes = null;
+                    c.material.clippingPlanes = c.material.doorClip ?? null;
                 }
             });
             return;
@@ -275,7 +277,7 @@ export class BuildPanel extends HandlebarsApplication {
         Object.values(game.Levels3DPreview.tiles).forEach((t) => {
             t.mesh.traverse((c) => {
                 if (c.isMesh) {
-                    c.material.clippingPlanes = [clippingPlane];
+                    c.material.clippingPlanes = [clippingPlane, ...(c.material.doorClip ?? [])];
                 }
             });
         });

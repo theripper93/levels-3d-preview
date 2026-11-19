@@ -29,6 +29,7 @@ export const injectConfig = {
         const elemData = v;
         v.name = "flags." + moduleId + "." + (k || "");
         v.value = object?.getFlag(moduleId, k) ?? elemData.default ?? getDefaultFlag(k);
+        if (v.type === "select" && typeof v.value === "number") v.value = String(v.value);
         v.label = v.units ? v.label + `<span class="units"> (${v.units})</span>` : v.label;
         if (v.type.includes("filepicker")) {
             const split = v.type.split(".");

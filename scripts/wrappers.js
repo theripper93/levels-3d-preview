@@ -28,6 +28,7 @@ export function registerWrappers() {
         libWrapper.register("levels-3d-preview", "foundry.canvas.layers.PlaceablesLayer.prototype.pasteObjects", pasteObjects, "WRAPPER");
         libWrapper.register("levels-3d-preview", "foundry.canvas.geometry.ClockwiseSweepPolygon.prototype._compute", computePolygonDispatch, "MIXED");
         libWrapper.register("levels-3d-preview", "foundry.documents.collections.Scenes.prototype.preload", preload3D, "WRAPPER");
+        libWrapper.register("levels-3d-preview", "foundry.canvas.sources.PointLightSource.prototype._updateGeometry", lightGeometry, "MIXED");
         libWrapper.register("levels-3d-preview", "canvas.app.renderer.events.pointer.getLocalPosition", pointerPositionWrapper, "MIXED");
         libWrapper.register("levels-3d-preview", "foundry.canvas.layers.ControlsLayer.prototype.handlePing", HandlePing, "WRAPPER");
         libWrapper.register("levels-3d-preview", "canvas.regions.placeRegion", placeRegion, "MIXED");
@@ -420,6 +421,17 @@ export function registerWrappers() {
             }
             this.points = this.config.source._polygon3DCache.points;
             //console.log(`compute polygon ${Date.now() - perfStart}ms`, nPoints);
+        }
+
+        function lightGeometry(wrapped) {
+            if (!game.Levels3DPreview?._active || canvas.stage.renderable) return wrapped();
+            const { x, y } = this.shape.origin;
+            const r = Math.max(this.shape.config.radius ?? 0, 1);
+            const square = new PIXI.Polygon([x - r, y - r, x + r, y - r, x + r, y + r, x - r, y + r]);
+            this._geometry = new foundry.canvas.geometry.PolygonMesher(square, { x, y, radius: r, normalize: true }).triangulate(this._geometry);
+            const bounds = new PIXI.Rectangle(-1, -1, 2, 2);
+            if (this._geometry.bounds) this._geometry.bounds.copyFrom(bounds);
+            else this._geometry.bounds = bounds;
         }
 
         async function preload3D(wrapped, ...args) {

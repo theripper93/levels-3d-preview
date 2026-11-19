@@ -1,4 +1,5 @@
 import { getWaterState, refreshWaterBeds, waterQualityHigh } from "./bedDepth.js";
+import { HIGHLIGHT_APPLY, HIGHLIGHT_GLSL, highlightUniforms, waterHighlight } from "./waterHighlight.js";
 
 const GLOBALS = `
 uniform sampler2D realisticWater_bed;
@@ -59,23 +60,26 @@ vec3 rw_ripple(vec2 q, float drift, float styl) {
     vec3 b = rw_noised(mat2(0.8, -0.6, 0.6, 0.8) * q * 1.9 - vec2(-0.4, 0.8) * drift * 1.3);
     return vec3(a.x, a.yz + 0.95 * b.yz * (1.0 - styl));
 }
-vec3 rw_voronoi(vec2 cp, float t) {
+float rw_cells(vec2 cp) {
     vec2 ci = floor(cp);
     vec2 cf = fract(cp);
     float f1 = 8.0;
     float f2 = 8.0;
-    vec2 v1 = vec2(0.0);
     for (int j = -1; j <= 1; j++) {
         for (int i = -1; i <= 1; i++) {
             vec2 o = vec2(float(i), float(j));
-            vec2 hh = vec2(rw_hash(ci + o), rw_hash(ci + o + 19.19));
-            hh = 0.5 + 0.4 * sin(t * 0.15 + 6.2831 * hh);
-            vec2 d = cf - o - hh;
-            float cd = length(d);
-            if (cd < f1) { f2 = f1; f1 = cd; v1 = d; } else if (cd < f2) { f2 = cd; }
+            float cd = length(cf - o - 0.1 - 0.8 * vec2(rw_hash(ci + o), rw_hash(ci + o + 19.19)));
+            if (cd < f1) { f2 = f1; f1 = cd; } else if (cd < f2) { f2 = cd; }
         }
     }
-    return vec3(f2 - f1, v1);
+    return f2 - f1;
+}
+vec4 rw_lavaLayer(vec2 q) {
+    q += 0.5 * (vec2(rw_noised(q * 0.6).x, rw_noised(q * 0.6 + 5.2).x) - 0.5);
+    vec3 a = rw_noised(q * 0.5);
+    vec3 b = rw_noised(q * 1.3 + 3.1);
+    vec3 c = rw_noised(q * 3.7 + 7.7);
+    return vec4(0.55 * a.x + 0.3 * b.x + 0.15 * c.x, rw_cells(q * 1.4 + 0.3 * c.x), 0.275 * a.yz + 0.39 * b.yz + 0.555 * c.yz);
 }
 `;
 
@@ -131,30 +135,47 @@ vec2 rw_fv = rw_fd * realisticWater_flow_speed;
 vec2 rw_a0 = rw_p - rw_fv * rw_ph0;
 vec2 rw_a1 = rw_p - rw_fv * rw_ph1 + vec2(0.37, 0.61) * rw_rs * 3.0;
 float rw_lod = 1.0 - smoothstep(0.15, 0.7, rw_fw / rw_rs);
-float rw_ra = min(0.05 + 0.12 * realisticWater_wave_strength, 0.14) * mix(1.0, 0.7, rw_styl);
+float rw_ra = min(0.05 + 0.12 * realisticWater_wave_strength, 0.14) * mix(1.0, 0.7, rw_styl) * mix(1.0, 0.25, rw_lava);
 vec3 rw_rip = mix(rw_ripple(rw_a1 / rw_rs, rw_drift, rw_styl), rw_ripple(rw_a0 / rw_rs, rw_drift, rw_styl), rw_w0);
 rw_grad += rw_rip.yz * rw_ra * rw_lod;
 float rw_crack = 1.0;
-float rw_heat = 0.0;
 vec3 rw_lavaCol = vec3(0.0);
+vec3 rw_lavaEm = vec3(0.0);
 if (rw_lava > 0.0) {
-    float rw_cs = min(max(rw_rs * 1.3, 0.2), 0.5 * rw_sm);
-    vec2 rw_lp = (rw_p - rw_dir * realisticWater_flow_speed * rw_t * 0.5) / rw_cs;
-    rw_lp += 0.22 * (vec2(rw_noised(rw_lp * 1.7).x, rw_noised(rw_lp * 1.7 + 7.3).x) - 0.5);
-    vec3 rw_v1 = rw_voronoi(rw_lp, rw_t);
-    vec3 rw_v2 = rw_voronoi(rw_lp * 2.7 + 13.1, rw_t * 1.3);
-    float rw_cw = mix(0.02 + 0.05 * rw_noised(rw_lp * 3.0 + rw_t * 0.1).x, 0.05, rw_styl) * mix(8.0, 1.0, realisticWater_crust);
-    rw_cw *= mix(0.3, 1.7, rw_noised(rw_lp * 0.45 + 3.7).x) * mix(0.35, 1.0, smoothstep(0.0, min(1.0, 0.5 * rw_sm), rw_sd));
-    float rw_u = min(rw_v1.x / rw_cw, rw_v2.x / (rw_cw * 0.45) + 0.6 + 3.0 * smoothstep(0.4, 0.6, rw_noised(rw_lp * 0.8 + 9.1).x));
-    float rw_uaa = fwidth(rw_u) + 1e-3;
-    rw_crack = 1.0 - smoothstep(1.0 - rw_uaa, 1.0 + rw_uaa, rw_u);
-    float rw_soft = mix(0.8, 0.1, rw_styl) + rw_uaa;
-    rw_heat = 1.0 - smoothstep(0.0, 1.0 + rw_soft, rw_u);
-    rw_lavaCol = mix(vec3(1.0, 0.788, 0.302), realisticWater_shallow_color, smoothstep(0.0, 0.35, rw_u));
-    rw_lavaCol = mix(rw_lavaCol, realisticWater_shallow_color * vec3(0.63, 0.23, 0.2), smoothstep(0.6, 1.0, rw_u));
-    float rw_plate = smoothstep(1.0, 1.0 + rw_soft, rw_u);
-    rw_lavaCol = mix(rw_lavaCol, realisticWater_deep_color * (0.75 + 0.5 * rw_noised(rw_lp * 4.0).x), rw_plate);
-    rw_grad += -0.3 * rw_v1.yz * rw_plate * rw_lod;
+    float rw_cen = smoothstep(0.0, 1.0, rw_sd / clamp(rw_hw, 0.3, 3.0));
+    float rw_cs = clamp(rw_rs * 1.2, 0.2, 0.5 * rw_sm);
+    float rw_lt = time * 0.004;
+    float rw_q0 = fract(rw_lt);
+    float rw_q1 = fract(rw_lt + 0.5);
+    float rw_tw = 1.0 - abs(1.0 - 2.0 * rw_q0);
+    float rw_qw = smoothstep(0.2, 0.8, rw_tw);
+    vec2 rw_lv = rw_fd * realisticWater_flow_speed * 5.5;
+    vec2 rw_m0 = (rw_p - rw_lv * rw_q0) / rw_cs;
+    vec2 rw_m1 = (rw_p - rw_lv * rw_q1) / rw_cs;
+    vec4 rw_k0 = rw_lavaLayer(rw_m0);
+    vec4 rw_k1 = rw_lavaLayer(rw_m1 + vec2(17.3, 9.1));
+    vec4 rw_k = mix(rw_k1, rw_k0, rw_qw);
+    float rw_c = rw_k.x - 0.78 + 0.5 * realisticWater_crust * mix(0.95, 0.3, rw_cen);
+    rw_c = max(rw_c, (0.05 + 0.15 * rw_k.x - rw_sd) * realisticWater_crust - 1.0 + smoothstep(0.0, 0.2, realisticWater_crust));
+    float rw_ce = mix(0.03, 0.004, rw_styl) + fwidth(rw_c);
+    float rw_cm = smoothstep(-rw_ce, rw_ce, rw_c);
+    rw_crack = 1.0 - rw_cm;
+    vec3 rw_gr = mix(rw_noised(rw_m1 * 9.0 + 1.3), rw_noised(rw_m0 * 9.0 + 1.3), rw_qw);
+    float rw_swd = (0.015 + 0.05 * rw_gr.x) * smoothstep(0.3, 0.6, rw_k.x + 0.4 * rw_gr.x - 0.2);
+    float rw_seam = smoothstep(0.0, 0.4, realisticWater_crust) * mix(1.0 - smoothstep(rw_swd - fwidth(rw_k1.y), rw_swd + fwidth(rw_k1.y), rw_k1.y), 1.0 - smoothstep(rw_swd - fwidth(rw_k0.y), rw_swd + fwidth(rw_k0.y), rw_k0.y), rw_qw);
+    float rw_mn = mix(rw_noised(rw_m1 * 2.2).x + 0.5 * rw_noised(rw_m1 * 5.3 + 2.7).x, rw_noised(rw_m0 * 2.2).x + 0.5 * rw_noised(rw_m0 * 5.3 + 2.7).x, rw_tw) / 1.5;
+    float rw_mT = 0.5 + 0.42 * rw_cen + 0.3 * (rw_mn - 0.5) + 0.15 * (rw_k.x - 0.5) + 0.12 * (rw_gr.x - 0.5) - 0.3 * smoothstep(0.55, 0.8, rw_mn) - 0.45 * smoothstep(-0.12, 0.0, rw_c);
+    float rw_cT = 0.04 * rw_k.x + rw_seam * (0.75 - 0.5 * smoothstep(0.03, 0.2, rw_c)) + 0.55 * (1.0 - smoothstep(0.0, 0.04, rw_c));
+    float rw_T = clamp(mix(rw_mT, rw_cT, rw_cm), 0.0, 1.1);
+    float rw_tq = rw_T * 4.0;
+    float rw_taq = fwidth(rw_tq) + 1e-3;
+    rw_T = mix(rw_T, (floor(rw_tq) + smoothstep(0.5 - rw_taq, 0.5 + rw_taq, fract(rw_tq))) / 4.0, rw_styl);
+    vec3 rw_hc = mix(realisticWater_glow_color, realisticWater_shallow_color, smoothstep(0.25, 0.6, rw_T));
+    rw_hc = mix(rw_hc, realisticWater_foam_color, smoothstep(0.6, 0.88, rw_T));
+    rw_hc = mix(rw_hc, vec3(1.0, 0.93, 0.78), smoothstep(0.92, 1.1, rw_T));
+    rw_lavaEm = rw_hc * smoothstep(0.08, 0.4, rw_T) * (0.3 + 2.0 * rw_T * rw_T);
+    rw_lavaCol = mix(rw_hc * 0.25, realisticWater_deep_color * (0.35 + 0.7 * rw_k.x + 0.6 * rw_gr.x * rw_gr.x), rw_cm);
+    rw_grad += (rw_k.zw * mix(0.03, 0.3, rw_cm) + rw_gr.yz * 9.0 * mix(0.004, 0.025, rw_cm)) / rw_cs * rw_lod;
 }
 float rw_pop = 0.0;
 if (realisticWater_bubbles > 0.0) {
@@ -163,7 +184,7 @@ if (realisticWater_bubbles > 0.0) {
     vec2 rw_bi = floor(rw_bp);
     float rw_h0 = rw_hash(rw_bi);
     if (rw_h0 < realisticWater_bubbles) {
-        float rw_ph = fract(rw_t * (0.35 + 0.4 * rw_hash(rw_bi + 7.1)) + rw_h0 * 13.7);
+        float rw_ph = fract(rw_t * mix(1.0, 0.4, rw_lava) * (0.35 + 0.4 * rw_hash(rw_bi + 7.1)) + rw_h0 * 13.7);
         vec2 rw_dv = rw_bp - (rw_bi + 0.5 + (vec2(rw_hash(rw_bi + 3.3), rw_hash(rw_bi + 5.9)) - 0.5) * 0.4);
         float rw_dist = length(rw_dv) + 1e-4;
         float rw_bw = 0.035 + 0.02 * rw_ph;
@@ -225,14 +246,14 @@ float rw_ph = fract(rw_t * 0.25);
 float rw_l1 = min(max(min(rw_fwid * 0.45, 0.15 * rw_hw), 1.2 * rw_tx), 0.12 * rw_sm);
 float rw_line1 = 1.0 - smoothstep(rw_l1 - rw_aa, rw_l1 + rw_aa, rw_sdw);
 float rw_lw = rw_fwid * 0.12 * (1.0 - rw_ph);
-float rw_line2 = (1.0 - smoothstep(rw_lw - rw_aa, rw_lw + rw_aa, abs(rw_sdw - min(rw_fwid * (0.6 + 1.2 * rw_ph), 0.6 * min(rw_sm, rw_hw))))) * step(0.35, rw_fn) * step(3.5 * rw_fwid, rw_hw);
-float rw_foam = mix(rw_foamR, max(rw_line1, rw_line2) * (1.0 - rw_lava), rw_styl) * step(0.001, realisticWater_foam);
+float rw_line2 = (1.0 - smoothstep(rw_lw - rw_aa, rw_lw + rw_aa, abs(rw_sdw - min(rw_fwid * (0.6 + 1.2 * rw_ph), 0.6 * min(rw_sm, rw_hw))))) * smoothstep(0.0, 0.2, rw_ph) * (1.0 - smoothstep(0.75, 1.0, rw_ph)) * step(0.35, rw_fn) * step(3.5 * rw_fwid, rw_hw);
+float rw_foam = mix(rw_foamR, max(rw_line1, rw_line2), rw_styl) * step(0.001, realisticWater_foam) * (1.0 - rw_lava);
 float rw_cx = dot(rw_p, vec2(-rw_fd.y, rw_fd.x));
 float rw_sx = mix(rw_sd + 0.3 * (rw_noised(rw_p * 0.8).x - 0.5), rw_cx, smoothstep(0.8, 1.5, rw_hw)) * 3.0 / rw_rs;
-float rw_st = mix(rw_noised(vec2(rw_sx, 0.0) + rw_a1 * 0.25 / rw_rs).x, rw_noised(vec2(rw_sx, 0.0) + rw_a0 * 0.25 / rw_rs).x, rw_w0);
 float rw_sw0 = mix(0.08, 0.02, rw_styl);
+float rw_st = mix(smoothstep(0.85 - rw_sw0, 0.85 + rw_sw0, rw_noised(vec2(rw_sx, 0.0) + rw_a1 * 0.25 / rw_rs).x), smoothstep(0.85 - rw_sw0, 0.85 + rw_sw0, rw_noised(vec2(rw_sx, 0.0) + rw_a0 * 0.25 / rw_rs).x), smoothstep(0.0, 1.0, rw_w0));
 float rw_bank = smoothstep(rw_fwid * 0.5, rw_fwid * 0.5 + min(0.15, 0.3 * rw_hw), rw_sd) * (1.0 - smoothstep(0.55, 0.85, rw_sd / rw_hw)) * smoothstep(0.45, 0.6, rw_noised(rw_a0 * 1.2 / rw_rs).x) * mix(1.0, 0.5, rw_styl * smoothstep(0.8, 1.5, rw_hw));
-rw_foam = max(rw_foam, smoothstep(0.85 - rw_sw0, 0.85 + rw_sw0, rw_st) * clamp(realisticWater_flow_speed * 1.6, 0.0, 1.0) * realisticWater_foam * rw_lod * rw_bank * (1.0 - rw_lava));
+rw_foam = max(rw_foam, rw_st * clamp(realisticWater_flow_speed * 1.6, 0.0, 1.0) * realisticWater_foam * rw_lod * rw_bank * (1.0 - rw_lava));
 rw_foam = max(rw_foam, realisticWater_foam * mix(rw_crest * smoothstep(0.4, 0.7, rw_fn), step(0.6, rw_crest * (0.5 + rw_fn)), rw_styl) * (1.0 - rw_lava));
 float rw_sk = rw_noised(vec2(dot(rw_p, vec2(0.8, 0.6)) * 1.5, dot(rw_p, vec2(-0.6, 0.8)) * 9.0) / min(rw_rs, 0.3) + vec2(rw_drift, 0.0)).x;
 float rw_spk = smoothstep(0.95, 0.95 + fwidth(rw_sk) + 1e-3, rw_sk) * smoothstep(0.4, 1.2, rw_sm) * step(0.34, rw_tc) * rw_styl * (1.0 - rw_lava) * rw_lod * (1.0 - rw_scum);
@@ -250,7 +271,7 @@ rw_col = mix(rw_col, mix(mix(realisticWater_foam_color, realisticWater_shallow_c
 rw_alpha = max(rw_alpha, rw_foam * mix(0.8, 0.95, rw_styl)) * rw_edge * opacity;
 diffuseColor = vec4(rw_col, clamp(rw_alpha, 0.0, 1.0));
 float rw_gl = pow(rw_em, 3.0) * 0.5 + 0.12 * (0.6 + 0.4 * sin(rw_t * 2.0 + rw_fn * 6.28)) + rw_pop * step(0.001, realisticWater_bubbles);
-vec3 rw_emis = realisticWater_glow * mix(realisticWater_glow_color * rw_gl * mix(1.0, 0.5, rw_styl), mix(rw_lavaCol, realisticWater_glow_color, 0.3) * (rw_heat + 0.03 * rw_fn + rw_pop), rw_lava);
+vec3 rw_emis = realisticWater_glow * mix(realisticWater_glow_color * rw_gl * mix(1.0, 0.5, rw_styl), rw_lavaEm + realisticWater_foam_color * rw_pop, rw_lava);
 float rw_rough = mix(mix(0.35, 0.04, realisticWater_reflectivity), 0.6, rw_styl);
 rw_rough = max(mix(rw_rough, 0.85, max(rw_foam, rw_lava * (1.0 - rw_crack))), 0.9 * rw_scum);
 `;
@@ -261,7 +282,8 @@ const PRESETS = {
     river: { shallow_color: "#368371", deep_color: "#1b5560", foam_color: "#ffffff", glow_color: "#ffffff", opacity: 0.9, clarity: 0.5, flow_speed: 0.6, wave_strength: 0.3, wave_scale: 0.6, ripple_size: 0.3, foam: 0.7, bubbles: 0, scum: 0, reflectivity: 0.75, glow: 0, crust: 0 },
     swamp: { shallow_color: "#6b7a2e", deep_color: "#2c3516", foam_color: "#4f6b1f", glow_color: "#ffffff", opacity: 0.98, clarity: 0.25, flow_speed: 0.02, wave_strength: 0.1, wave_scale: 0.5, ripple_size: 0.4, foam: 0.3, bubbles: 0.15, scum: 0.5, reflectivity: 0.35, glow: 0, crust: 0 },
     acid: { shallow_color: "#c8f03a", deep_color: "#2f7a0a", foam_color: "#ecffb8", glow_color: "#7dff1a", opacity: 0.92, clarity: 0.25, flow_speed: 0.05, wave_strength: 0.3, wave_scale: 0.6, ripple_size: 0.3, foam: 0.6, bubbles: 0.5, scum: 0, reflectivity: 0.3, glow: 0.6, crust: 0 },
-    lava: { shallow_color: "#ff7a1a", deep_color: "#1a0d0a", foam_color: "#ffd27a", glow_color: "#ff5500", opacity: 1, clarity: 0.05, flow_speed: 0.05, wave_strength: 0.15, wave_scale: 0.5, ripple_size: 0.6, foam: 0.4, bubbles: 0.3, scum: 0, reflectivity: 0.15, glow: 1.4, crust: 0.8 },
+    lava: { shallow_color: "#ff7a10", deep_color: "#2b2927", foam_color: "#ffc828", glow_color: "#d2300a", opacity: 1, clarity: 0.05, flow_speed: 0.3, wave_strength: 0.15, wave_scale: 0.5, ripple_size: 0.6, foam: 0, bubbles: 0.3, scum: 0, reflectivity: 0.15, glow: 1.4, crust: 0.01 },
+    magicalFire: { shallow_color: "#b45cff", deep_color: "#1d1430", foam_color: "#f0c8ff", glow_color: "#7a1fff", opacity: 1, clarity: 0.05, flow_speed: 0.35, wave_strength: 0.15, wave_scale: 0.5, ripple_size: 0.6, foam: 0, bubbles: 0.35, scum: 0, reflectivity: 0.15, glow: 1.6, crust: 0.01 },
 };
 
 const slider = (def, min, max, step) => ({ type: "float", default: def, min, max, step });
@@ -269,6 +291,7 @@ const slider = (def, min, max, step) => ({ type: "float", default: def, min, max
 export const realisticWater = {
     icon: `<i class="fas fa-water-ladder"></i>`,
     presets: PRESETS,
+    highlight: waterHighlight,
     groups: {
         basics: ["enabled", "preset", "style", "contained"],
         colour: ["shallow_color", "deep_color", "opacity", "clarity"],
@@ -308,7 +331,7 @@ export const realisticWater = {
         { mode: "append", injectionPoint: "#include <begin_vertex>", noConditional: true, shaderCode: VERTEX },
     ],
     fragmentShader: [
-        { mode: "append", injectionPoint: "#include <common>", noConditional: true, shaderCode: GLOBALS },
+        { mode: "append", injectionPoint: "#include <common>", noConditional: true, shaderCode: GLOBALS + HIGHLIGHT_GLSL },
         { mode: "append", injectionPoint: "#include <color_fragment>", noConditional: true, shaderCode: FRAGMENT },
         { mode: "append", injectionPoint: "#include <roughnessmap_fragment>", noConditional: true, shaderCode: "roughnessFactor = rw_rough;" },
         { mode: "append", injectionPoint: "#include <metalnessmap_fragment>", noConditional: true, shaderCode: "metalnessFactor = 0.0;" },
@@ -321,7 +344,8 @@ export const realisticWater = {
             shaderCode: `
             float rw_nv = clamp(dot(normal, normalize(vViewPosition)), 0.0, 1.0);
             float rw_fr = 0.05 + 0.95 * pow(1.0 - rw_nv, 3.0);
-            diffuseColor.a = mix(diffuseColor.a, 1.0, rw_fr * realisticWater_reflectivity * rw_edge * mix(1.0, 0.3, rw_styl) * (1.0 - rw_lava) * (1.0 - rw_scum));`,
+            diffuseColor.a = mix(diffuseColor.a, 1.0, rw_fr * realisticWater_reflectivity * rw_edge * mix(1.0, 0.3, rw_styl) * (1.0 - rw_lava) * (1.0 - rw_scum));
+            ${HIGHLIGHT_APPLY}`,
         },
     ],
     onApply(mesh, entity3D, params) {
@@ -342,6 +366,7 @@ export const realisticWater = {
         shader.uniforms.realisticWater_size = state.uniforms.size;
         shader.uniforms.realisticWater_sdMax = state.uniforms.sdMax;
         shader.uniforms.realisticWater_displace = { value: geometry.attributes.position.count > 64 ? 1 : 0 };
+        Object.assign(shader.uniforms, highlightUniforms);
         if (waterQualityHigh()) shader.fragmentShader = "#define RW_HQ\n" + shader.fragmentShader;
     },
 };

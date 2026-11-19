@@ -26,6 +26,9 @@ const overrideAngle = new THREE.Quaternion();
 const sunEuler = new THREE.Euler();
 const overrideTint = new THREE.Color();
 const settingBackground = new THREE.Color();
+const WORK_SKY = new THREE.Color(0xffffff);
+const WORK_GROUND = new THREE.Color(0x6e6a66);
+const workScratch = new THREE.Color();
 
 
 export class GlobalIllumination {
@@ -44,6 +47,7 @@ export class GlobalIllumination {
         this._time = 12;
         this._distance = -10;
         this._sceneTint = new THREE.Color(1, 1, 1);
+        this.workLight = 0;
         this.generateTimeSpline();
         this.init();
 
@@ -117,6 +121,7 @@ export class GlobalIllumination {
     disableAtmosphere() {
         this.atmosphere.disable();
         this.hemisphereLight.intensity = 0;
+        this._mixWorkLight();
         this._parent.scene.environmentIntensity = 1;
         this.global.sunlight.shadow.autoUpdate = true;
         this.global.sunlight.shadow.intensity = 1;
@@ -335,6 +340,28 @@ export class GlobalIllumination {
 
         this.sky.applyState(state);
         this.skyEnvironment.update(state, hemisphere);
+        this._mixWorkLight();
+    }
+
+    setWorkLight(intensity = 0) {
+        this.workLight = Math.max(0, Number(intensity) || 0);
+        if (!this.sky) this._mixWorkLight();
+    }
+
+    _mixWorkLight() {
+        const hemisphere = this.hemisphereLight;
+        const work = this.workLight;
+        if (!this.sky) {
+            hemisphere.color.copy(WORK_SKY);
+            hemisphere.groundColor.copy(WORK_GROUND);
+            hemisphere.intensity = work;
+            return;
+        }
+        if (!work) return;
+        const base = hemisphere.intensity;
+        hemisphere.color.multiplyScalar(base).add(workScratch.copy(WORK_SKY).multiplyScalar(work));
+        hemisphere.groundColor.multiplyScalar(base).add(workScratch.copy(WORK_GROUND).multiplyScalar(work));
+        hemisphere.intensity = 1;
     }
 
     static setHooks() {

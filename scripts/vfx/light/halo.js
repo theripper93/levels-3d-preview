@@ -3,17 +3,23 @@ import { VFX_LAYER } from "../constants.js";
 import { sceneUniforms } from "../render/sceneBuffer.js";
 
 const vertexShader = `
+#include <common>
+#include <vfx_fog_of_war_pars_fragment>
 uniform float uSize;
+uniform float uFogReach;
 varying vec2 vUv;
 flat varying vec3 vCenter;
+flat varying float vFogVisible;
 
 void main() {
     vUv = uv;
+    vec3 world = (modelMatrix * vec4(0.0, 0.0, 0.0, 1.0)).xyz;
+    vFogVisible = max(vfxFogVisible(world), max(max(vfxFogVisible(world + vec3(uFogReach, 0.0, 0.0)), vfxFogVisible(world - vec3(uFogReach, 0.0, 0.0))), max(vfxFogVisible(world + vec3(0.0, 0.0, uFogReach)), vfxFogVisible(world - vec3(0.0, 0.0, uFogReach)))));
     vec4 center = modelViewMatrix * vec4(0.0, 0.0, 0.0, 1.0);
     vec4 clipCenter = projectionMatrix * center;
     vCenter = clipCenter.xyz / max(clipCenter.w, 0.0001);
     center.xy += position.xy * uSize;
-    gl_Position = projectionMatrix * center;
+    gl_Position = vFogVisible > 0.0 ? projectionMatrix * center : vec4(2.0, 2.0, 2.0, 1.0);
 }
 `;
 
@@ -25,6 +31,7 @@ uniform float uIntensity;
 uniform float uBias;
 varying vec2 vUv;
 flat varying vec3 vCenter;
+flat varying float vFogVisible;
 
 float haloVisible(vec2 uv, float distance) {
     return step(distance - uBias, vfxSceneDistance(clamp(uv, vec2(0.001), vec2(0.999))));
@@ -37,7 +44,7 @@ void main() {
     float visible = (haloVisible(uv, distance) * 2.0 + haloVisible(uv + vec2(tap.x, 0.0), distance) + haloVisible(uv - vec2(tap.x, 0.0), distance) + haloVisible(uv + vec2(0.0, tap.y), distance) + haloVisible(uv - vec2(0.0, tap.y), distance)) / 6.0;
     float radius = length(vUv - 0.5) * 2.0;
     float glow = pow(max(0.0, 1.0 - radius), 2.5) * 0.6 + exp(-radius * radius * 40.0) * 0.8;
-    gl_FragColor = vec4(uColor * glow * uIntensity * visible, 1.0);
+    gl_FragColor = vec4(uColor * glow * uIntensity * visible * vFogVisible, 1.0);
     #include <tonemapping_fragment>
     #include <colorspace_fragment>
 }
@@ -47,7 +54,7 @@ const geometry = new PlaneGeometry(1, 1);
 
 export function createHaloMaterial() {
     return new ShaderMaterial({
-        uniforms: { ...sceneUniforms, uColor: { value: new Color() }, uIntensity: { value: 1 }, uSize: { value: 0.1 }, uBias: { value: 0.02 } },
+        uniforms: { ...sceneUniforms, uColor: { value: new Color() }, uIntensity: { value: 1 }, uSize: { value: 0.1 }, uBias: { value: 0.02 }, uFogReach: { value: 0 } },
         vertexShader,
         fragmentShader,
         transparent: true,
@@ -72,6 +79,7 @@ export class LightHalo extends Mesh {
         uniforms.uColor.value.set(color);
         uniforms.uSize.value = size;
         uniforms.uBias.value = size * 0.35;
+        uniforms.uFogReach.value = size * 0.15;
         this.baseIntensity = intensity;
     }
 

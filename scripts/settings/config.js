@@ -1398,6 +1398,12 @@ export function registerConfigs() {
                         5: game.i18n.localize("levels3dpreview.flags.doorStyle.options.linkWithAnimationReversed")
                     },
                 },
+                doorDouble: {
+                    type: "checkbox",
+                    label: game.i18n.localize("levels3dpreview.flags.doorDouble.label"),
+                    notes: game.i18n.localize("levels3dpreview.flags.doorDouble.notes"),
+                    default: false,
+                },
                 doorAnimationDuration: {
                     type: "number",
                     label: game.i18n.localize("levels3dpreview.flags.doorAnimationDuration.label"),
@@ -1636,7 +1642,7 @@ export function registerConfigs() {
         html.querySelector(`input[name="flags.levels-3d-preview.randomSeed"]`).maxLength = 7;
         const tilingFlags = ["tileScale", "yScale", "gap", "randomRotation", "randomScale", "randomDepth", "randomPosition", "randomColor", "enableGravity"];
         const terrainFlags = ["noiseScale", "noiseHeight", "noisePersistence", "noiseOctaves", "noiseLacunarity", "noiseExponent", "noiseFlattening"];
-        const doorFlags = ["doorSound", "doorState", "doorStyle", "doorAnimationDuration", "doorAnimateAngle", "doorGrabTokens", "doorSlidePercent"];
+        const doorFlags = ["doorSound", "doorState", "doorStyle", "doorAnimationDuration", "doorAnimateAngle", "doorGrabTokens", "doorSlidePercent", "doorDouble"];
         const heightmapFlags = ["invertDisplacementMap", "displacementIntensity", "displacementMatrix"];
         const animationFlags = ["enableAnim", "animIndex", "animSpeed", "paused"];
         if (!tile3d?.hasAnimations) animationFlags.forEach((flag) => html.querySelector(`[name="flags.levels-3d-preview.${flag}"]`).closest(".form-group").style.display = "none");

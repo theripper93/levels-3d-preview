@@ -26,6 +26,7 @@ void main() {
 const shaftFragment = `
 #include <common>
 #include <vfx_scene_pars_fragment>
+#include <vfx_fog_of_war_pars_fragment>
 uniform vec3 uColor;
 uniform float uIntensity;
 varying vec3 vLocal;
@@ -51,7 +52,7 @@ void main() {
     float fade = smoothstep(0.0, 0.12, along) * pow(1.0 - along, 1.4);
     vec2 flow = vec2(atan(vLocal.z, vLocal.x) * 3.0, along * 4.0 - uSceneTime * 0.15);
     float streaks = 0.55 + 0.45 * shaftNoise(flow) * shaftNoise(vWorld.xz * 14.0 + uSceneTime * 0.1);
-    float alpha = uIntensity * body * fade * streaks * vfxSoftFade(vfxScreenUv(), 0.05);
+    float alpha = uIntensity * body * fade * streaks * vfxSoftFade(vfxScreenUv(), 0.05) * vfxFogVisible(vWorld);
     gl_FragColor = vec4(uColor * alpha, 1.0);
     #include <tonemapping_fragment>
     #include <colorspace_fragment>
@@ -59,6 +60,8 @@ void main() {
 `;
 
 const moteVertex = `
+#include <common>
+#include <vfx_fog_of_war_pars_fragment>
 attribute vec3 aSeed;
 uniform float uSceneTime;
 uniform vec2 uSceneResolution;
@@ -72,7 +75,7 @@ void main() {
     vec3 local = vec3(cos(angle) * radius, -along, sin(angle) * radius);
     vec4 mvPosition = modelViewMatrix * vec4(local, 1.0);
     float twinkle = 0.5 + 0.5 * sin(uSceneTime * (0.7 + aSeed.z * 1.6) + aSeed.x * 40.0);
-    vMote = smoothstep(0.0, 0.15, along) * (1.0 - along) * twinkle;
+    vMote = smoothstep(0.0, 0.15, along) * (1.0 - along) * twinkle * vfxFogVisible((modelMatrix * vec4(local, 1.0)).xyz);
     gl_PointSize = uMoteSize * uSceneResolution.y / max(-mvPosition.z, 0.001);
     gl_Position = projectionMatrix * mvPosition;
 }

@@ -3,7 +3,7 @@ import { factor } from "../main.js";
 import { decodeGrid, encodeGridChanges, patchGrid } from "./chunkCodec.js";
 import { GroundCover } from "./groundCover.js";
 import { buildRoadMask, applyRoad, linkRoads, paintRoads } from "./terrainRoads.js";
-import { TerrainWater } from "./terrainWater.js";
+import { TerrainWater, waterDims } from "./terrainWater.js";
 
 const CHUNK = 64;
 export const MAX_TERRAIN_LAYERS = 16;
@@ -11,14 +11,16 @@ const LAYER_SIZE = 1024;
 const layerArrayCache = new Map();
 
 export function flatLevel(data) {
-    return -data.min / (data.max - data.min);
+    return ((data.base ?? 0) - data.min) / (data.max - data.min);
 }
 
 const STRUCTURE = ["w", "h", "nx", "ny", "min", "max", "chunk", "wn"];
-const signature = (data, keys) => JSON.stringify(keys.map((k) => data?.[k] ?? null));
+const signature = (data, keys) => JSON.stringify(keys.map((k) => (k === "wn" && data ? waterDims(data) : data?.[k] ?? null)));
 const stampKey = (data) => JSON.stringify([data?.stamps ?? [], data?.roads ?? []]);
 
-const CAVE = { shift: 0.1, jag: 0.6, band: 0.6, rim: 0.6, outer: 1.8, floor: 0.07, top: 0.35, mouth: 0.5, ramp: 2 };
+const CAVE_BASE = { shift: 0.1, jag: 0.6, fine: 0.2, band: 0.6, rim: 0.6, outer: 1.8, floor: 0.07, top: 0.35, mouth: 0.5, ramp: 2 };
+const CAVE_STYLES = { mine: { ...CAVE_BASE,shift: 0.05, jag: 0.12, fine: 0.05, band: 0.3, floor: 0.025, top: 0.12 } };
+const POOL = { depth: 0.45, sigma: 0.65, radius: 0.75, wobble: 0.4, bank: 0.6 };
 export const smooth = (t) => (t <= 0 ? 0 : t >= 1 ? 1 : t * t * (3 - 2 * t));
 
 function hashNoise(x, y, seed) {
@@ -76,10 +78,23 @@ function refAt(ref, x, y) {
     return (v[k] * (1 - tx) + v[k + 1] * tx) * (1 - ty) + (v[k + ref.cols] * (1 - tx) + v[k + ref.cols + 1] * tx) * ty;
 }
 
+function poolDrop(pools, x, y, cell, seed) {
+    let f = 0;
+    for (let q = 0; q < pools.length; q += 2) {
+        const r2 = ((x - pools[q]) ** 2 + (y - pools[q + 1]) ** 2) / (cell * cell);
+        if (r2 < 9) f += Math.exp(-r2 / (POOL.sigma * POOL.sigma));
+    }
+    if (f < 1e-3) return 0;
+    const d = POOL.sigma * Math.sqrt(Math.max(0, -Math.log(f))) - POOL.radius + POOL.wobble * (2 * fbm(x / (1.1 * cell), y / (1.1 * cell), seed + 23) - 1);
+    return POOL.depth * cell * smooth(-d / POOL.bank);
+}
+
 function buildCaveMask(stamp, data, nx, ny, layers) {
     const { w, h, min, max } = data;
+    const CAVE = CAVE_STYLES[stamp.variant] ?? CAVE_BASE;
     const cell = stamp.cell || 100;
     const seed = stamp.seed ?? 1;
+    const pools = (stamp.pools ?? []).map((v, q, p) => v + (hashNoise(p[q - (q % 2)], p[q - (q % 2) + 1], seed + 5 + (q % 2)) - 0.5) * 0.4 * cell);
     const norm = (v) => Math.max(0, Math.min(1, (v - min) / (max - min)));
     const reach = (CAVE.shift + CAVE.jag + CAVE.band + CAVE.rim + CAVE.outer) * cell;
     const segs = [];
@@ -123,6 +138,8 @@ function buildCaveMask(stamp, data, nx, ny, layers) {
     const size = cw * ch;
     const m = { kind: "cave", i0, j0, cw, ch, F: new Float32Array(size), T: new Float32Array(size), a: new Float32Array(size), b: new Float32Array(size), c: new Float32Array(size), R: stamp.ref?.v?.length ? new Float32Array(size) : null, o: new Float32Array(size), p: new Float32Array(size), skip: new Uint8Array(size) };
     m.paint = stamp.paint ? layers.findIndex((l) => l.id === stamp.paint) : -1;
+    m.wallPaint = stamp.wallPaint ? layers.findIndex((l) => l.id === stamp.wallPaint) : -1;
+    if (m.wallPaint > 0) m.pw = new Float32Array(size);
     const crossings = [];
     for (let j = 0; j < ch; j++) {
         const y = ((j0 + j) / (ny - 1)) * h;
@@ -157,15 +174,16 @@ function buildCaveMask(stamp, data, nx, ny, layers) {
                 continue;
             }
             const sd = inside ? -d : d;
-            const u = sd - (CAVE.shift + CAVE.jag * smooth((fbm(x / (2.2 * cell), y / (2.2 * cell), seed) - 0.3) / 0.4) + 0.2 * fbm(x / (0.6 * cell), y / (0.6 * cell), seed + 11)) * cell;
+            const u = sd - (CAVE.shift + CAVE.jag * smooth((fbm(x / (2.2 * cell), y / (2.2 * cell), seed) - 0.3) / 0.4) + CAVE.fine * fbm(x / (0.6 * cell), y / (0.6 * cell), seed + 11)) * cell;
             m.a[q] = smooth(u / (CAVE.band * cell));
             m.b[q] = smooth((u - (CAVE.band + CAVE.rim) * cell) / (CAVE.outer * cell));
             m.c[q] = smooth(sd / (CAVE.ramp * cell));
             m.o[q] = o;
             if (m.R) m.R[q] = norm(refAt(stamp.ref, x, y));
-            m.F[q] = norm(stamp.z + (fbm(x / (1.7 * cell), y / (1.7 * cell), seed + 3) - 0.5) * 2 * CAVE.floor * cell);
+            m.F[q] = norm(stamp.z + (fbm(x / (1.7 * cell), y / (1.7 * cell), seed + 3) - 0.5) * 2 * CAVE.floor * cell - (inside && pools.length ? poolDrop(pools, x, y, cell, seed) : 0));
             m.T[q] = norm(stamp.z + stamp.wall * (1 - CAVE.top / 2 + CAVE.top * fbm(x / (2.2 * cell), y / (2.2 * cell), seed + 7)));
             m.p[q] = (1 - m.a[q]) * (1 - o) + (1 - m.c[q]) * o;
+            if (m.pw) m.pw[q] = smooth(u / (0.3 * cell) + 1) * (1 - m.b[q]);
         }
     }
     return m;
@@ -227,7 +245,7 @@ function buildStampMasks(data, nx, ny, layers = []) {
                 weights[j * cw + i] = inside ? 0 : t < 1 ? t * t * (3 - 2 * t) : 1;
             }
         }
-        masks.push({ i0, j0, cw, ch, target: (stamp.z - min) / (max - min), weights });
+        masks.push({ i0, j0, cw, ch, target: (stamp.z - min) / (max - min), weights, ...(stamp.cover ? { kind: "cover" } : {}) });
     }
     return masks;
 }
@@ -243,6 +261,7 @@ function applyStamps(raw, masks, nx, ny, data) {
             applyCave(out, mask, nx);
             continue;
         }
+        if (mask.kind === "cover") continue;
         const { i0, j0, cw, ch, target, weights } = mask;
         for (let j = 0; j < ch; j++) {
             for (let i = 0; i < cw; i++) {
@@ -447,8 +466,9 @@ export class TerrainState {
             if (stampsChanged) this.stampMasks = buildStampMasks(data, nx, ny, this.layers);
             if (splatChanged || stampsChanged) this.refreshSplat();
         }
+        if (stampsChanged) this.refreshHoles();
         if (heightsChanged || stampsChanged) this.refreshHeights();
-        if (waterChanged || lookChanged) this.water.build();
+        if (waterChanged || lookChanged || stampsChanged) this.water.build();
         this.remember(data);
     }
 
@@ -468,7 +488,7 @@ export class TerrainState {
     }
 
     composeSplat() {
-        const masks = this.stampMasks.filter((m) => m.paint > 0 || m.paints?.length);
+        const masks = this.stampMasks.filter((m) => m.paint > 0 || m.wallPaint > 0 || m.paints?.length);
         if (!masks.length) return (this.splat = this.weights);
         const { weights } = this;
         const n = this.nx * this.ny;
@@ -479,13 +499,16 @@ export class TerrainState {
         paintRoads(splat, masks.filter((m) => m.kind === "road"), this.nx, n, slices);
         for (const m of masks) {
             if (m.kind === "road") continue;
-            const target = (m.paint - 1) * n;
-            for (let q = 0; q < m.p.length; q++) {
-                if (m.skip[q] || !m.p[q]) continue;
-                const k = (m.j0 + ((q / m.cw) | 0)) * this.nx + m.i0 + (q % m.cw);
-                let other = 0;
-                for (let s = 0; s < slices; s++) if (s * n !== target) other = Math.max(other, weights[s * n + k]);
-                splat[target + k] = Math.max(splat[target + k], Math.round(255 * m.p[q] * (1 - other / 255)));
+            for (const [index, p] of [[m.paint, m.p], [m.wallPaint, m.pw]]) {
+                if (!(index > 0) || !p) continue;
+                const target = (index - 1) * n;
+                for (let q = 0; q < p.length; q++) {
+                    if (m.skip[q] || !p[q]) continue;
+                    const k = (m.j0 + ((q / m.cw) | 0)) * this.nx + m.i0 + (q % m.cw);
+                    let other = 0;
+                    for (let s = 0; s < slices; s++) if (s * n !== target) other = Math.max(other, weights[s * n + k]);
+                    splat[target + k] = Math.max(splat[target + k], Math.round(255 * p[q] * (1 - other / 255)));
+                }
             }
         }
         return splat;
@@ -602,17 +625,10 @@ export class TerrainState {
                 uvs[k * 2 + 1] = j / (ny - 1);
             }
         }
-        const index = [];
-        for (let j = 0; j < ny - 1; j++) {
-            for (let i = 0; i < nx - 1; i++) {
-                const a = j * nx + i, b = a + 1, c = a + nx, d = c + 1;
-                index.push(a, c, b, b, c, d);
-            }
-        }
         const surface = new THREE.BufferGeometry();
         surface.setAttribute("position", new THREE.BufferAttribute(positions, 3));
         surface.setAttribute("uv", new THREE.BufferAttribute(uvs, 2));
-        surface.setIndex(index);
+        surface.setIndex(this.surfaceIndex());
         this.updateNormals(surface, positions);
         surface.computeBoundingBox();
 
@@ -626,9 +642,37 @@ export class TerrainState {
         this.surfaceMesh = new THREE.Mesh(surface);
         this.skirtMesh = new THREE.Mesh(skirt);
         this.markerMesh = new THREE.Mesh(marker, new THREE.MeshBasicMaterial({ visible: false }));
+        this.surfaceMesh.renderOrder = this.skirtMesh.renderOrder = 1;
         this.markerMesh.userData.noShaders = true;
+        this.markerMesh.userData.noSight = true;
+        this.markerMesh.raycast = () => {};
         this.group.add(this.surfaceMesh, this.skirtMesh, this.markerMesh);
         surface.computeBoundsTree?.();
+    }
+
+    surfaceIndex() {
+        const { nx, ny } = this;
+        const { w, h } = this.data;
+        const holes = (this.data.stamps ?? []).flatMap((s) => s.holes ?? []);
+        this.holeKey = JSON.stringify(holes);
+        const index = [];
+        for (let j = 0; j < ny - 1; j++) {
+            for (let i = 0; i < nx - 1; i++) {
+                const x = ((i + 0.5) / (nx - 1)) * w, y = ((j + 0.5) / (ny - 1)) * h;
+                if (holes.some((p) => pointInPoly(x, y, p))) continue;
+                const a = j * nx + i, b = a + 1, c = a + nx, d = c + 1;
+                index.push(a, c, b, b, c, d);
+            }
+        }
+        return index;
+    }
+
+    refreshHoles() {
+        const geometry = this.surfaceMesh?.geometry;
+        if (!geometry || JSON.stringify((this.data.stamps ?? []).flatMap((s) => s.holes ?? [])) === this.holeKey) return;
+        geometry.setIndex(this.surfaceIndex());
+        geometry.boundsTree = null;
+        geometry.computeBoundsTree?.();
     }
 
     refreshHeights() {
@@ -698,6 +742,7 @@ export class TerrainState {
         if (!this.weightTexture) return;
         this.weightTexture.image.data = packWeights(this.splat, this.nx * this.ny, Math.max(0, this.layers.length - 1));
         this.weightTexture.needsUpdate = true;
+        this.cover?.invalidate();
     }
 
     heightAt(x, y, raw = false) {
@@ -755,6 +800,7 @@ export class TerrainState {
             mmScales: { value: layers.map((l) => factor / (l?.s || 200)) },
             mmTints: { value: layers.map((l) => new THREE.Color(l?.tint ?? "#ffffff")) },
             mmSlopeLayer: { value: slopeIndex },
+            mmWalls: { value: layers.map((l) => (l?.wall ? 1 : 0)) },
             mmSlope: { value: new THREE.Vector2(slope.start ?? 0.55, slope.end ?? 0.75) },
         };
         material.userData.mmUniforms = uniforms;
@@ -779,6 +825,7 @@ export class TerrainState {
                     uniform float mmScales[MM_COUNT];
                     uniform vec3 mmTints[MM_COUNT];
                     uniform int mmSlopeLayer;
+                    uniform float mmWalls[MM_COUNT];
                     uniform vec2 mmSlope;
                     float mmHash(vec2 p) {
                         return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
@@ -823,6 +870,8 @@ export class TerrainState {
                     vec2 mmUv = (vMmUv * (mmSz - 1.0) + 0.5 + mmWarp * 1.6) / mmSz;
                     vec4 mmWs[MM_GROUPS];
                     float mmAcc = 1.0;
+                    float mmWallW = 0.0;
+                    int mmWallI = -1;
                     vec2 mmTx = 1.0 / mmSz;
                     for (int g = 0; g < MM_GROUPS; g++) {
                         float mmG = float(g);
@@ -842,7 +891,9 @@ export class TerrainState {
                             float mmEdge = 1.0 - abs(mmW * 2.0 - 1.0);
                             float mmMid = mmNoise(mmP * 18.0 + float(i) * 3.71) * 0.65 + mmNoise(mmP * 41.0 + float(i) * 1.37) * 0.35;
                             mmW = clamp(mmW + ((mmMid - 0.5) * 1.2 + (mmFine - 0.5) * 0.4) * mmEdge, 0.0, 1.0);
-                            if (mmW > 0.0) {
+                            mmWallW = mix(mmWallW, mmWalls[i], mmW);
+                            if (mmWalls[i] > 0.5 && mmW > 0.25) mmWallI = i;
+                            if (mmW > 0.0 && mmWalls[i] < 0.5) {
                                 float s = mmScales[i];
                                 vec4 d = textureGrad(mmDetail, vec3(mmP * s, float(i)), mmDx * s, mmDy * s);
                                 float t = mmBlend(mmH, d.b, mmW);
@@ -857,14 +908,15 @@ export class TerrainState {
                     }
                     vec3 mmGeo = normalize(vMmNormal);
                     vec3 mmObjN = normalize(mmGeo + vec3(mmTn.x, 0.0, -mmTn.y));
-                    if (mmSlopeLayer >= 0) {
+                    int mmSL = mmWallW > 0.25 && mmWallI >= 0 ? mmWallI : mmSlopeLayer;
+                    if (mmSL >= 0) {
                         float mmSteep = 1.0 - clamp(mmGeo.y, 0.0, 1.0);
                         float mmT = smoothstep(mmSlope.x, mmSlope.y, mmSteep * 2.0 + (mmMacro - 0.5) * 0.35 + (mmFine - 0.5) * 0.25);
                         vec2 mmGx = dFdx(vMmPos.zy), mmGy = dFdy(vMmPos.zy);
                         vec2 mmZx = dFdx(vMmPos.xy), mmZy = dFdy(vMmPos.xy);
                         if (mmT > 0.0) {
-                            float s = mmScales[mmSlopeLayer];
-                            float li = float(mmSlopeLayer);
+                            float s = mmScales[mmSL];
+                            float li = float(mmSL);
                             vec3 mmB = pow(abs(mmGeo), vec3(4.0));
                             mmB /= (mmB.x + mmB.y + mmB.z);
                             vec4 dX = textureGrad(mmDetail, vec3(vMmPos.zy * s, li), mmGx * s, mmGy * s);
@@ -877,7 +929,7 @@ export class TerrainState {
                                 vec3 rockN = vec3(0.0, 1.0 - dX.g * 2.0, dX.r * 2.0 - 1.0) * mmB.x + vec3(dY.r * 2.0 - 1.0, 0.0, 1.0 - dY.g * 2.0) * mmB.y + vec3(dZ.r * 2.0 - 1.0, 1.0 - dZ.g * 2.0, 0.0) * mmB.z;
                                 vec3 rockFacet = normalize(mmGeo + rockN * 1.4);
                                 float moss = smoothstep(0.5, 0.82, rockFacet.y + (mmFine - 0.5) * 0.35 + (mmMacro - 0.5) * 0.2);
-                                rock = mix(rock * mmTints[mmSlopeLayer], mmCol * 0.78, moss);
+                                rock = mix(rock * mmTints[mmSL], mmCol * 0.78, moss);
                                 mmCol = mix(mmCol, rock, t);
                                 mmObjN = normalize(mix(mmObjN, normalize(mmGeo + rockN * (1.0 - moss * 0.6)), t));
                                 mmH = mix(mmH, rockH, t);
@@ -902,6 +954,7 @@ export class TerrainState {
         this.material = material;
         this._coverArgs = { colors, detail, slopeIndex, slope: uniforms.mmSlope.value, factor };
         this.rebuildCover();
+        game.Levels3DPreview.lightWarmup?.warmObject(this.surfaceMesh.parent);
         this.disposeMaterials = () => {
             this.cover?.dispose();
             this.weightTexture.dispose();

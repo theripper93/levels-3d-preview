@@ -2,9 +2,30 @@ import * as THREE from "three";
 import { factor } from "../main.js";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { buildTerrainMesh } from "./mapMakerTerrain.js";
+import { windUniforms } from "../shaders/wind/windSway.js";
 
 
 const UP = new THREE.Vector3(0, 1, 0);
+const GLOW_INTENSITY = 0.6;
+const GLOW_LUMA = 0.33;
+const CRYSTAL_FRAGMENT = `
+vec3 crystalView = normalize(vViewPosition);
+float crystalFacing = clamp(abs(dot(normal, crystalView)), 0.0, 1.0);
+float crystalRim = pow(1.0 - crystalFacing, 2.0);
+float crystalCore = pow(crystalFacing, 4.0);
+float crystalPulse = 0.88 + 0.12 * sin(fwTime * 1.4 + dot(vWorldPositionFoW.xz, vec2(3.1, 4.7)));
+vec3 crystalHue = emissive / max(max(emissive.r, max(emissive.g, emissive.b)), 0.001);
+vec3 crystalFilm = 0.5 + 0.5 * cos(6.2832 * (crystalRim * 1.4 + dot(normal, vec3(0.35, 0.55, 0.25)) + vec3(0.0, 0.33, 0.67)));
+totalEmissiveRadiance *= crystalPulse * (0.35 + 1.4 * crystalCore);
+totalEmissiveRadiance += crystalHue * crystalHue * crystalRim * 0.55 + crystalFilm * crystalHue * crystalRim * 0.18;
+diffuseColor.rgb *= 0.6;
+diffuseColor.a = mix(0.5, 0.95, crystalRim);
+`;
+
+function crystalShader(shader) {
+    shader.uniforms.fwTime = windUniforms.fwTime;
+    shader.fragmentShader = shader.fragmentShader.replace("void main() {", "uniform float fwTime;\nvoid main() {").replace("#include <emissivemap_fragment>", `#include <emissivemap_fragment>\n${CRYSTAL_FRAGMENT}`);
+}
 
 export async function buildMapMakerMesh(data) {
     if (data?.k === "kit") return buildKitMesh(data, 1 / factor);
@@ -30,9 +51,18 @@ export function computeMapMakerBounds(data) {
 export async function computeMapMakerBoundsAsync(data) {
     if (data?.k === "terrain") return { minX: 0, maxX: data.w, minY: 0, maxY: data.h, minZ: data.min, maxZ: data.max };
     if (data?.k !== "kit") return computeMapMakerBounds(data);
-    const group = await buildKitMesh(data, 1, { shareMaterials: true });
-    const b = new THREE.Box3().setFromObject(group);
-    group.traverse((c) => c.geometry?.dispose());
+    const b = new THREE.Box3();
+    const matrix = new THREE.Matrix4();
+    const part = new THREE.Matrix4();
+    for (const p of data.parts ?? []) {
+        part.fromArray(p.m);
+        for (const piece of await loadKitPieces(p.src, p.node)) {
+            if (!piece.geometry.boundingBox) piece.geometry.computeBoundingBox();
+            const pb = piece.geometry.boundingBox.clone().applyMatrix4(matrix.multiplyMatrices(part, piece.matrix));
+            if (p.clip) pb.intersect(new THREE.Box3(new THREE.Vector3(p.clip[0], p.clip[1], p.clip[2]), new THREE.Vector3(p.clip[3], p.clip[4], p.clip[5])));
+            if (!pb.isEmpty()) b.union(pb);
+        }
+    }
     if (b.isEmpty()) return { minX: 0, maxX: 1, minY: 0, maxY: 1, minZ: 0, maxZ: 1 };
     return { minX: b.min.x, maxX: b.max.x, minY: b.min.z, maxY: b.max.z, minZ: b.min.y, maxZ: b.max.y };
 }
@@ -61,7 +91,7 @@ function loadKitPieces(src, node = null) {
                 const pieces = [];
                 root.traverse((child) => {
                     if (!child.isMesh || child.isSkinnedMesh) return;
-                    const material = Array.isArray(child.material) ? child.material[0] : child.material;
+                    const material = sharedKitMaterial(Array.isArray(child.material) ? child.material[0] : child.material);
                     pieces.push({ geometry: child.geometry, material, matrix: child.matrixWorld.clone() });
                 });
                 return pieces;
@@ -69,6 +99,39 @@ function loadKitPieces(src, node = null) {
         );
     }
     return kitPieceCache.get(cacheKey);
+}
+
+const kitMaterials = new Map();
+const textureHashes = new WeakMap();
+const TEXTURE_SLOTS = ["map", "normalMap", "roughnessMap", "metalnessMap", "aoMap", "emissiveMap", "alphaMap", "bumpMap"];
+
+function sharedKitMaterial(material) {
+    if (!material) return material;
+    const textures = TEXTURE_SLOTS.map((slot) => {
+        const t = material[slot];
+        return t ? [textureHash(t), t.colorSpace, t.flipY, t.wrapS, t.wrapT, t.channel, t.offset.x, t.offset.y, t.repeat.x, t.repeat.y, t.rotation].join(":") : "";
+    });
+    const key = [material.type, material.name, material.color?.getHexString(), material.emissive?.getHexString(), material.emissiveIntensity, material.roughness, material.metalness, material.opacity, material.transparent, material.alphaTest, material.side, material.vertexColors, material.normalScale?.x, material.normalScale?.y, ...textures].join("|");
+    if (!kitMaterials.has(key)) kitMaterials.set(key, material);
+    return kitMaterials.get(key);
+}
+
+function textureHash(texture) {
+    let hash = textureHashes.get(texture);
+    if (hash !== undefined) return hash;
+    hash = texture.uuid;
+    const image = texture.image;
+    if (image?.width && image?.height) {
+        try {
+            const context = new OffscreenCanvas(16, 16).getContext("2d", { willReadFrequently: true });
+            context.drawImage(image, 0, 0, 16, 16);
+            let h = 2166136261;
+            for (const v of context.getImageData(0, 0, 16, 16).data) h = Math.imul(h ^ v, 16777619);
+            hash = `${image.width}x${image.height}:${h >>> 0}`;
+        } catch {}
+    }
+    textureHashes.set(texture, hash);
+    return hash;
 }
 
 export async function modelBounds(src, node = null) {
@@ -101,20 +164,25 @@ async function buildKitMesh(data, unitScale, { shareMaterials = false } = {}) {
             }
             geo.morphAttributes = {};
             if (geo.index) geo = geo.toNonIndexed();
+            const uvt = part.uv?.[piece.material.name];
+            if (uvt && geo.attributes.uv) {
+                const uv = geo.attributes.uv;
+                for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * uvt[0] + uvt[1], uv.getY(i) * uvt[2] + uvt[3]);
+            }
             geo.applyMatrix4(full);
             if (flip) flipWinding(geo);
             if (part.clip) {
                 geo = clipToBox(geo, part.clip.map((v) => v * unitScale));
                 if (!geo) continue;
             }
-            const key = `${piece.material.uuid}|${part.c ?? ""}|${Object.keys(geo.attributes).sort().join(",")}`;
+            const key = `${piece.material.uuid}|${part.c ?? ""}|${part.g ?? ""}|${Object.keys(geo.attributes).sort().join(",")}`;
             let bucket = buckets.get(key);
-            if (!bucket) buckets.set(key, (bucket = { material: piece.material, tint: part.c, geos: [] }));
+            if (!bucket) buckets.set(key, (bucket = { material: piece.material, tint: part.c, glow: part.g, geos: [] }));
             bucket.geos.push(geo);
         }
     }
     const group = new THREE.Group();
-    for (const { material, tint, geos } of buckets.values()) {
+    for (const { material, tint, glow, geos } of buckets.values()) {
         const merged = geos.length === 1 ? geos[0] : mergeGeometries(geos, false);
         if (geos.length > 1) geos.forEach((g) => g.dispose());
         if (!merged) continue;
@@ -122,10 +190,47 @@ async function buildKitMesh(data, unitScale, { shareMaterials = false } = {}) {
         const override = !shareMaterials && data.mo?.[material.name];
         const mat = shareMaterials ? material : Object.assign(material.clone(), override || {});
         if (!shareMaterials && tint && mat.color) mat.color = mat.color.clone().multiply(new THREE.Color(tint));
+        if (!shareMaterials && glow && mat.emissive) {
+            const emissive = new THREE.Color(glow);
+            const luma = 0.2126 * emissive.r + 0.7152 * emissive.g + 0.0722 * emissive.b;
+            Object.assign(mat, { color: emissive.clone().multiplyScalar(0.15), emissive, emissiveIntensity: GLOW_INTENSITY * Math.min(1, GLOW_LUMA / Math.max(luma, 0.01)), roughness: 0.12, metalness: 0, envMapIntensity: 1.6, transparent: true, depthWrite: true });
+            mat.userData.batchShader = true;
+            mat.onBeforeCompile = crystalShader;
+        }
         group.add(new THREE.Mesh(merged, mat));
     }
+    const proxy = solidProxy(parts, loaded, partKey, unitScale);
+    if (proxy) group.add(proxy);
     group.userData.mapMaker = "kit";
     return group;
+}
+
+const proxyMaterial = new THREE.MeshBasicMaterial({ visible: false });
+
+function solidProxy(parts, loaded, partKey, unitScale) {
+    const boxes = [];
+    const scale = new THREE.Matrix4().makeScale(unitScale, unitScale, unitScale);
+    const matrix = new THREE.Matrix4();
+    for (const part of parts) {
+        if (!part.s) continue;
+        matrix.multiplyMatrices(scale, new THREE.Matrix4().fromArray(part.m));
+        for (const piece of loaded.get(partKey(part)) ?? []) {
+            if (!piece.geometry.boundingBox) piece.geometry.computeBoundingBox();
+            const box = piece.geometry.boundingBox.clone().applyMatrix4(new THREE.Matrix4().multiplyMatrices(matrix, piece.matrix));
+            if (part.clip) box.intersect(new THREE.Box3().setFromArray(part.clip.map((v) => v * unitScale)));
+            if (box.isEmpty()) continue;
+            box.expandByScalar(unitScale);
+            const size = box.getSize(new THREE.Vector3());
+            const center = box.getCenter(new THREE.Vector3());
+            boxes.push(new THREE.BoxGeometry(size.x, size.y, size.z).translate(center.x, center.y, center.z));
+        }
+    }
+    if (!boxes.length) return null;
+    const geometry = mergeGeometries(boxes, false);
+    boxes.forEach((b) => b.dispose());
+    const mesh = new THREE.Mesh(geometry, proxyMaterial);
+    mesh.userData.kitProxy = true;
+    return mesh;
 }
 
 function clipToBox(geo, box) {
@@ -440,6 +545,26 @@ function bucketsToGeometry(buckets, data) {
 }
 
 
+const mapTextures = new Map();
+
+function loadMapTexture(src, linear) {
+    const key = `${src}|${linear}`;
+    if (!mapTextures.has(key)) {
+        mapTextures.set(
+            key,
+            game.Levels3DPreview.helpers.loadTexture(src, { linear }).then((texture) => {
+                if (!texture?.image) {
+                    mapTextures.delete(key);
+                    return null;
+                }
+                texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+                return texture;
+            }),
+        );
+    }
+    return mapTextures.get(key);
+}
+
 async function getMapMakerMaterial(def) {
     const helpers = game.Levels3DPreview.helpers;
     let material;
@@ -452,10 +577,8 @@ async function getMapMakerMaterial(def) {
                 material = new THREE.MeshStandardMaterial();
                 await Promise.all(
                     def.maps.map(async (type) => {
-                        const texture = await helpers.loadTexture(`${base}_${type}.${ext}`, { linear: type !== "Color" });
-                        if (!texture?.image) return;
-                        texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
-                        material[slots[type]] = texture;
+                        const texture = await loadMapTexture(`${base}_${type}.${ext}`, type !== "Color");
+                        if (texture) material[slots[type]] = texture;
                     }),
                 );
             } else if (helpers.isPBR(def.src)) {

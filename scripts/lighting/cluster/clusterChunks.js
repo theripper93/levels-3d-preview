@@ -1,5 +1,5 @@
 import { ShaderChunk } from "three";
-import { EFFECT_SLOTS, MAX_PER_CELL, DATA_WIDTH, RECORD_TEXELS } from "./clusterManager.js";
+import { EFFECT_SLOTS, DATA_WIDTH, RECORD_TEXELS } from "./clusterManager.js";
 
 const MULTI_SCATTERING_GUARD = "#if ( NUM_SUN_LIGHTS > 0 || NUM_DIR_LIGHTS > 0 || NUM_POINT_LIGHTS > 0 || NUM_SPOT_LIGHTS > 0 )";
 const SAMPLER_LIMIT_PATTERN = /#define L3D_MAX_SAMPLERS \d+/;
@@ -121,8 +121,7 @@ const clusterFragmentChunk = () => /* glsl */ `
         vec2 l3dHeader = ( l3dCellIndex % 2 ) == 0 ? l3dHeaders.xy : l3dHeaders.zw;
         int l3dOffset = int( l3dHeader.x );
         int l3dCount = int( l3dHeader.y );
-        for ( int l3dK = 0; l3dK < ${MAX_PER_CELL}; l3dK ++ ) {
-            if ( l3dK >= l3dCount ) break;
+        for ( int l3dK = 0; l3dK < l3dCount; l3dK ++ ) {
             int l3dIndex = l3dOffset + l3dK;
             ${accumulateLight("int( dot( L3D_CLUSTER_TEXEL( uClusterLayout.y + l3dIndex / 4 ), vec4( equal( ivec4( l3dIndex % 4 ), ivec4( 0, 1, 2, 3 ) ) ) ) )")}
         }

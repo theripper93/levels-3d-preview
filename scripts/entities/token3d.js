@@ -15,6 +15,7 @@ THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
 THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
 THREE.Mesh.prototype.raycast = acceleratedRaycast;
 
+const BASE_LIFT_UNITS = 0.2;
 const heightHighlightMaterialCache = {};
 const diamondGeometry = new THREE.OctahedronGeometry(0.01, 0);
 
@@ -1212,7 +1213,7 @@ export class Token3D {
             const maxComputed = (Math.max(this.baseDocumentWidth, this.baseDocumentHeight) * canvas.grid.size) / factor;
             const scale = (maxComputed * Math.SQRT2) / maxDimension;
             base.scale.multiplyScalar(scale * scaleFactor);
-            base.position.set(0, 0, 0);
+            base.position.set(0, (BASE_LIFT_UNITS * canvas.scene.dimensions.distancePixels) / factor, 0);
             const offsetMesh = base.children.find((child) => child.name == "base");
             base.traverse((child) => {
                 if (child.isMesh) {
@@ -1796,7 +1797,7 @@ export class Token3D {
             if (!game.Levels3DPreview?._active) return;
             if (token.isPreview) return;
             const token3d = game.Levels3DPreview.tokens[token.id];
-            if (!token3d || token3d.isCaptured) return;
+            if (!token3d || token3d.isCaptured || token3d.token !== token) return;
             if (renderFlags.refreshNameplate) token3d.drawName();
             if (renderFlags.refreshBars) token3d.drawBars();
             if (renderFlags.redrawEffects || renderFlags.refreshEffects) token3d.drawEffects();
@@ -1809,6 +1810,14 @@ export class Token3D {
 
         Hooks.on("updateToken", (tokenDocument, updates) => {
             if (!game.Levels3DPreview._active) return;
+            if ("level" in updates && tokenDocument.parent?.isView) {
+                const L = game.Levels3DPreview;
+                const here = tokenDocument.includedInLevel?.(canvas.level) ?? tokenDocument.level === canvas.level?.id;
+                if (!here) {
+                    L.tokens[tokenDocument.id]?.destroy();
+                    delete L.tokens[tokenDocument.id];
+                } else if (tokenDocument.object && !L.tokens[tokenDocument.id]) L.addToken(tokenDocument.object);
+            }
             game.Levels3DPreview.tokens[tokenDocument.id]?.drawEffects();
             const wasFreeUpdated = updates?.flags && updates?.flags["levels-3d-preview"] && updates?.flags["levels-3d-preview"].wasFreeMode !== undefined;
             if (wasFreeUpdated && game.Levels3DPreview.tokens[tokenDocument.id]) game.Levels3DPreview.tokens[tokenDocument.id].wasFreeMode = !!updates.flags["levels-3d-preview"].wasFreeMode;

@@ -10,7 +10,7 @@ import { createLayer, flash, glow, ribbon, embers, sparks, smokePuff, ORDER } fr
 import { SOOT, effectLightIntensity, groundMark, launchGroup, ballisticPath, useColorsIfDefault, loadRock, rockLayer, stopEmitting } from "./kit.js";
 
 const UP = new THREE.Vector3(0, 1, 0);
-const ROCKS = ["modules/canvas3dcompendium/assets/Tiles/Stylized%20Trees/Rock_4.glb", "modules/canvas3dcompendium/assets/Tiles/Stylized%20Trees/Rock_3.glb"];
+const ROCKS = ["modules/canvas3dcompendium/assets/Tiles/Stylized%20Nature%20MegaKit/Rock_Medium_2.glb", "modules/canvas3dcompendium/assets/Tiles/Stylized%20Nature%20MegaKit/Rock_Medium_1.glb"];
 
 export class MagicProjectileBase extends ProjectileParticle {
     static get LIGHT() {
@@ -408,7 +408,7 @@ export class Meteor extends MagicProjectileBase {
         if (rock) {
             rock.material.color.copy(this.palette.light);
             const mesh = new THREE.Mesh(rock.geometry, rock.material);
-            mesh.scale.setScalar(s * 0.22);
+            mesh.scale.setScalar(s * 0.084);
             this._rock = mesh;
             this.emitter.add(mesh);
         }
@@ -561,10 +561,10 @@ export class EarthProjectile extends ProjectileParticle {
             [new QUARKS.Bezier(1.3, 1.3, 1.2, 1), 0.2],
             [new QUARKS.Bezier(1, 0.8, 0.2, 0), 0.75],
         ]);
-        const rockSpec = { perDistance: per * 4, life: [0.6, 1.1], size: [s * 0.1, s * 0.22], shape: { type: "circle", radius: s * 0.25 }, aim: "up", speed: [s * 0.05, s * 0.2], sizeOverLife: sizeCurve, position: [0, -s * 0.03, 0], color: [[0, "white", 1], [1, "white", 1]], soft: false, order: 4 };
+        const rockSpec = { perDistance: per * 4, life: [0.6, 1.1], size: [s * 0.038, s * 0.084], shape: { type: "circle", radius: s * 0.25 }, aim: "up", speed: [s * 0.05, s * 0.2], sizeOverLife: sizeCurve, position: [0, -s * 0.03, 0], color: [[0, "white", 1], [1, "white", 1]], soft: false, order: 4 };
         await this.add(
             rockLayer(this, rocks[0], rockSpec),
-            rockLayer(this, rocks[1] ?? rocks[0], { ...rockSpec, perDistance: per * 3, size: [s * 0.08, s * 0.16] }),
+            rockLayer(this, rocks[1] ?? rocks[0], { ...rockSpec, perDistance: per * 3, size: [s * 0.03, s * 0.06] }),
             createLayer(this, { sprite: "dirt", blend: "normal", perDistance: per * 5, life: [0.4, 0.8], size: [s * 0.5, s * 0.9], speed: [s * 0.6, s * 1.2], rotation: true, aim: "up", gravity: s * 5, shape: { type: "cone", radius: s * 0.2, angle: Math.PI / 6 }, sizeOverLife: "grow", color: [[0, "ash", 1], [0.7, "smoke", 0.8], [1, "smoke", 0]] }),
             createLayer(this, { sprite: "debris_2x2", blend: "normal", perDistance: per * 3, life: [0.5, 0.9], size: [s * 0.03, s * 0.07], speed: [s * 1, s * 2.4], rotation: true, spin: [-6, 6], aim: "up", gravity: s * 9, shape: { type: "cone", radius: s * 0.2, angle: Math.PI / 4 }, color: [[0, "ash", 1], [0.8, "smoke", 1], [1, "smoke", 0]], soft: false }),
             smokePuff(this, { rate: 0, perDistance: per * 4, life: [1, 1.8], size: [s * 0.6, s * 1.1], speed: [s * 0.1, s * 0.3], position: [0, s * 0.05, 0], shape: { type: "circle", radius: s * 0.3 }, aim: "up", force: [0, s * 0.1, 0], color: [[0, "ash", 0], [0.15, "ash", 0.65], [1, "smoke", 0]] }),

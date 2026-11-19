@@ -167,6 +167,11 @@ export class WorkerHandler {
         this.raycastWorker.port.postMessage({ type: "remove", id });
     }
 
+    parkMesh(id, parked = true) {
+        if (!this.enabled) return;
+        this.raycastWorker.port.postMessage({ type: parked ? "park" : "unpark", id });
+    }
+
     clearMeshes() {
         if (!this.raycastWorker) return;
         this.raycastWorker.port.postMessage({ type: "clear" });

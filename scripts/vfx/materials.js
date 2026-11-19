@@ -21,11 +21,12 @@ export function isPersistentMap(map) {
     return persistentMaps.has(map);
 }
 
-export async function getTextureMaterial(path, blending = THREE.AdditiveBlending, owner = null) {
-    const video = isVideo(path);
-    const key = `${path}${blending}`;
-    if (materialCache[key] && !video) return materialCache[key];
+export function getTextureMaterial(path, blending = THREE.AdditiveBlending, owner = null) {
+    if (isVideo(path)) return createTextureMaterial(path, blending, owner, true);
+    return (materialCache[`${path}${blending}`] ??= createTextureMaterial(path, blending, owner, false));
+}
 
+async function createTextureMaterial(path, blending, owner, video) {
     const tex = await game.Levels3DPreview.helpers.loadTexture(path);
     if (tex.image?.currentTime) tex.image.currentTime = 0;
     const material = new THREE.MeshBasicMaterial({
@@ -40,7 +41,6 @@ export async function getTextureMaterial(path, blending = THREE.AdditiveBlending
         owner?._toDispose.push(material);
         return material;
     }
-    materialCache[key] = material;
     persistentMaps.add(material.map);
     return material;
 }

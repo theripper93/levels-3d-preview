@@ -15,6 +15,7 @@ const scene = new THREE.Scene();
 scene.tiles = {};
 scene.doors = {};
 scene._doors = [];
+let parked = {};
 
 function computeDoors() {
     const group = new THREE.Group();
@@ -33,6 +34,7 @@ function computeDoors() {
 const mergedMesh = new THREE.Mesh(new THREE.BufferGeometry(), new THREE.MeshBasicMaterial({ color: 0x00ff00 }));
 
 const basicMaterial = new THREE.MeshBasicMaterial({color: 0x00ff00});
+const doubleSidedMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00, side: THREE.DoubleSide });
 
 const raycaster = new THREE.Raycaster();
 
@@ -74,7 +76,7 @@ self.onconnect = function (e) {
                             hasDoor = true;
                             child.userData.sight = !child.userData.isOpen;
                         }
-                        child.material = basicMaterial;
+                        child.material = child.userData.doubleSided ? doubleSidedMaterial : basicMaterial;
                     }
                 });
                 boxes.forEach(box => {
@@ -111,7 +113,31 @@ self.onconnect = function (e) {
                 createMergedGeometryDebounced();
             }
 
-            if (message.type == "clear") { 
+            if (message.type == "park") {
+                const mesh = scene.tiles[message.id];
+                if (mesh) {
+                    const door = !!scene.doors[message.id];
+                    removeMeshFromScene(message.id, false);
+                    parked[message.id] = { mesh, door };
+                    createMergedGeometryDebounced();
+                }
+            }
+
+            if (message.type == "unpark") {
+                const entry = parked[message.id];
+                delete parked[message.id];
+                if (entry && !scene.tiles[message.id]) {
+                    scene.tiles[message.id] = entry.mesh;
+                    if (entry.door) scene.doors[message.id] = entry.mesh;
+                    else scene.add(entry.mesh);
+                    expandChangedBox(entry.mesh);
+                    createMergedGeometryDebounced();
+                }
+            }
+
+            if (message.type == "clear") {
+                Object.values(parked).forEach((entry) => disposeMesh(entry.mesh));
+                parked = {};
                 scene.tiles = {};
                 mergedMesh.geometry.dispose();
                 mergedMesh.geometry = new THREE.BufferGeometry();
@@ -170,16 +196,24 @@ self.onconnect = function (e) {
 };
 
 
-function removeMeshFromScene(id) {
-    const mesh = scene.tiles[id];
-    if (!mesh) return;
-    expandChangedBox(mesh);
+function disposeMesh(mesh) {
     mesh.traverse((child) => {
         if (child.isMesh) {
             child.geometry.disposeBoundsTree();
             child.geometry.dispose();
         }
     });
+}
+
+function removeMeshFromScene(id, dispose = true) {
+    if (parked[id]) {
+        disposeMesh(parked[id].mesh);
+        delete parked[id];
+    }
+    const mesh = scene.tiles[id];
+    if (!mesh) return;
+    expandChangedBox(mesh);
+    if (dispose) disposeMesh(mesh);
     mesh.removeFromParent();
     delete scene.tiles[id];
     delete scene.doors[id];

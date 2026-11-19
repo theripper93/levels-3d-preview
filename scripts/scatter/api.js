@@ -1,8 +1,9 @@
 import { factor } from "../main.js";
 import { encodeGridChanges } from "../helpers/chunkCodec.js";
-import { SCATTER_SETS } from "./sets.js";
+import { SCATTER_SETS, SCATTER_PROPS } from "./sets.js";
 import { sampleSurface, gridUnit } from "./surface.js";
-import { scatterDefaults, readDensity, refreshScatter, scatterFields } from "./scatterField.js";
+import { scatterDefaults, readDensity, refreshScatter, scatterFields, loadAsset } from "./scatterField.js";
+import { resolveItemAsset } from "./generate.js";
 
 const MODULE_ID = "levels-3d-preview";
 
@@ -68,12 +69,12 @@ function cellsIn(field, rect, nx, ny, cell) {
     return cells;
 }
 
-async function convertToTiles(doc, rect = null) {
+async function convertToTiles(doc, rect = null, filter = null) {
     const field = fieldOf(doc);
     if (!field) return [];
     const grid = await readDensity(doc);
-    const cells = cellsIn(field, rect, grid.nx, grid.ny, grid.cell);
-    const picked = field.instances.filter((inst) => cells.has(inst.cell));
+    const cells = filter ? null : cellsIn(field, rect, grid.nx, grid.ny, grid.cell);
+    const picked = field.instances.filter((inst) => (filter ? filter(inst) : cells.has(inst.cell)));
     const assets = await Promise.all(picked.map((inst) => field.assetInfo(inst.asset)));
     const k = gridUnit() / 2;
     const tiles = picked.map((inst, n) => {
@@ -92,15 +93,26 @@ async function convertToTiles(doc, rect = null) {
             flags: { [MODULE_ID]: { model3d: inst.asset.src, depth: Math.max(1, info.size.y * s), fillType: "stretch", sight: !!inst.asset.blocking, collision: !!inst.asset.blocking, castShadow: true } },
         };
     });
-    for (const i of cells) grid.values[i] = 0;
-    const densityUpdate = await writeDensity(doc, grid.values, { update: false });
+    const data = doc.flags[MODULE_ID].scatter;
+    const drop = new Set(picked.filter((inst) => inst.explicit).map((inst) => inst.item));
+    const update = {};
+    if (drop.size) update[`flags.${MODULE_ID}.scatter.items`] = (data.items ?? []).filter((_, n) => !drop.has(n));
+    const ids = picked.filter((inst) => inst.id).map((inst) => inst.id);
+    if (filter && ids.length) update[`flags.${MODULE_ID}.scatter.ex`] = [...(data.ex ?? []), ...ids];
+    if (!filter) {
+        for (const i of cells) grid.values[i] = 0;
+        Object.assign(update, await writeDensity(doc, grid.values, { update: false }));
+    }
     const created = await doc.parent.createEmbeddedDocuments("Tile", tiles);
-    if (!foundry.utils.isEmpty(densityUpdate)) await doc.update(densityUpdate);
+    if (!foundry.utils.isEmpty(update)) await doc.update(update);
     return created;
 }
 
 export const scatterApi = {
     sets: SCATTER_SETS,
+    props: SCATTER_PROPS,
+    itemAsset: (data, item) => resolveItemAsset(SCATTER_SETS[data?.set], item),
+    loadAsset,
     create,
     fieldOf,
     readDensity,

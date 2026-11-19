@@ -14,6 +14,13 @@ export function isFoliage(material) {
     return !WOOD.test(name) && LEAF.test(name);
 }
 
+THREE.ShaderChunk.common += "\nuniform bool l3dFoliage;\n";
+THREE.ShaderChunk.normal_fragment_begin = THREE.ShaderChunk.normal_fragment_begin.replace("float faceDirection = gl_FrontFacing ? 1.0 : - 1.0;", "float faceDirection = gl_FrontFacing || l3dFoliage ? 1.0 : - 1.0;");
+
+export function markFoliage(material) {
+    if (material?.side === THREE.DoubleSide && isFoliage(material)) material.userData.foliage = true;
+}
+
 export const WIND_GLSL = `
 uniform vec2 fwDir;
 uniform float fwStrength;

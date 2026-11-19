@@ -4,7 +4,9 @@ export function elevationFloor() {
         if (tile?.mapMakerMesh?.k !== "terrain" || !tile.mesh) continue;
         let state = null;
         tile.mesh.traverse((c) => (state ??= c.mapMakerTerrain ?? null));
-        if (state?.surfaceMesh) floor = Math.min(floor, state.lowestElevation());
+        if (!state?.surfaceMesh) continue;
+        const holed = state.holeKey && state.holeKey !== "[]";
+        floor = Math.min(floor, holed ? (state.data.min / canvas.scene.dimensions.size) * canvas.scene.dimensions.distance : state.lowestElevation());
     }
     return floor;
 }

@@ -3,11 +3,16 @@ import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { factor } from "../main.js";
 import { decodeGrid } from "../helpers/chunkCodec.js";
 import { SCATTER_SETS } from "./sets.js";
-import { generateInstances } from "./generate.js";
-import { sampleSurface, gridUnit } from "./surface.js";
+import { generateInstances, explicitInstances, resolveItemAsset, isGroundCover } from "./generate.js";
+import { sampleSurface, gridUnit, isObstacle } from "./surface.js";
 import { WIND_GLSL, windUniforms, updateWindSway, isFoliage } from "../shaders/wind/windSway.js";
+import { markReceivers } from "../vfx/surface/receivers.js";
 
-const CHUNK_CELLS = 16;
+const CHUNK_CELLS = 48;
+const MAX_CHUNKS = 3;
+const MERGE_MAX = 6;
+const SHADOW_MIN_HEIGHT = 0.35;
+const BLOCKER_MARGIN = 0.15;
 const QUALITY = {
     low: { density: 0.35, shadows: "none" },
     medium: { density: 0.65, shadows: "blocking" },
@@ -99,8 +104,91 @@ function windShadowMaterials(material, params) {
     };
 }
 
-function loadAsset(asset) {
-    const key = `${asset.src}|${asset.wind ?? 0}`;
+const imageKeys = new WeakMap();
+const functionIds = new WeakMap();
+const canonicalMaterials = new Map();
+const hashCanvas = new OffscreenCanvas(64, 64);
+const hashContext = hashCanvas.getContext("2d", { willReadFrequently: true });
+
+function imageKey(texture) {
+    const image = texture.image;
+    if (!image) return texture.uuid;
+    if (!imageKeys.has(image)) {
+        let key = texture.source.uuid;
+        try {
+            hashContext.clearRect(0, 0, 64, 64);
+            hashContext.drawImage(image, 0, 0, 64, 64);
+            const data = hashContext.getImageData(0, 0, 64, 64).data;
+            let a = 0x811c9dc5;
+            let b = 7;
+            for (let i = 0; i < data.length; i++) {
+                a = Math.imul(a ^ data[i], 0x01000193);
+                b = (b * 31 + data[i]) | 0;
+            }
+            key = `${image.width}x${image.height}:${a >>> 0}:${b >>> 0}`;
+        } catch {}
+        imageKeys.set(image, key);
+    }
+    return imageKeys.get(image);
+}
+
+function functionId(fn) {
+    if (!functionIds.has(fn)) functionIds.set(fn, foundry.utils.randomID());
+    return functionIds.get(fn);
+}
+
+function materialKey(material) {
+    const parts = [];
+    for (const [k, v] of Object.entries(material)) {
+        if (k === "uuid" || k === "id" || k === "version") continue;
+        if (v?.isTexture) parts.push(k, imageKey(v), v.channel, v.flipY, v.colorSpace, v.wrapS, v.wrapT, v.rotation, ...v.offset, ...v.repeat, ...v.center);
+        else if (v?.isColor) parts.push(k, v.getHex());
+        else if (v?.isVector2) parts.push(k, v.x, v.y);
+        else if (typeof v === "function") parts.push(k, functionId(v));
+        else if (v === null || ["number", "boolean", "string"].includes(typeof v)) parts.push(k, v);
+    }
+    return parts.join("|");
+}
+
+function canonicalMaterial(material) {
+    const key = materialKey(material);
+    if (!canonicalMaterials.has(key)) canonicalMaterials.set(key, material);
+    return canonicalMaterials.get(key);
+}
+
+function mergeSource(part) {
+    if (part.merge !== undefined) return part.merge;
+    const material = part.material;
+    if (part.shadow || Array.isArray(material) || part.geometry.groups.length > 1 || Object.keys(part.geometry.morphAttributes).length) return (part.merge = null);
+    const channels = new Set(Object.values(material).filter((v) => v?.isTexture).map((t) => t.channel));
+    const keep = (name) => ["position", "normal", "tangent"].includes(name) || (name === "color" && material.vertexColors) || (name.startsWith("uv") && channels.has(name === "uv" ? 0 : +name.slice(2)));
+    const geometry = new THREE.BufferGeometry();
+    for (const [name, a] of Object.entries(part.geometry.attributes)) {
+        if (!keep(name)) continue;
+        const array = new Float32Array(a.count * a.itemSize);
+        for (let i = 0; i < a.count; i++) for (let c = 0; c < a.itemSize; c++) array[i * a.itemSize + c] = a.getComponent(i, c);
+        geometry.setAttribute(name, new THREE.BufferAttribute(array, a.itemSize));
+    }
+    const index = part.geometry.index;
+    if (index) geometry.setIndex(new THREE.BufferAttribute(Uint32Array.from({ length: index.count }, (_, i) => index.getX(i)), 1));
+    else geometry.setIndex([...Array(geometry.attributes.position.count).keys()]);
+    const key = `${material.uuid}|${Object.entries(geometry.attributes).map(([name, a]) => name + a.itemSize).sort().join()}`;
+    return (part.merge = { geometry, key });
+}
+
+function posedGeometry(mesh) {
+    mesh.skeleton.update();
+    const g = mesh.geometry.clone();
+    g.deleteAttribute("skinIndex");
+    g.deleteAttribute("skinWeight");
+    const pos = g.attributes.position;
+    const v = new THREE.Vector3();
+    for (let i = 0; i < pos.count; i++) pos.setXYZ(i, ...mesh.getVertexPosition(i, v).toArray());
+    return g;
+}
+
+export function loadAsset(asset) {
+    const key = assetKey(asset);
     if (!assetCache.has(key)) {
         assetCache.set(
             key,
@@ -110,10 +198,10 @@ function loadAsset(asset) {
                 if (!root) return null;
                 root.updateMatrixWorld(true);
                 const raw = [];
-                root.traverse((c) => c.isMesh && !c.isSkinnedMesh && raw.push(c));
+                root.traverse((c) => c.isMesh && raw.push(c));
                 const box = new THREE.Box3();
                 const geometries = raw.map((c) => {
-                    const g = c.geometry.clone().applyMatrix4(c.matrixWorld);
+                    const g = (c.isSkinnedMesh ? posedGeometry(c) : c.geometry.clone()).applyMatrix4(c.matrixWorld);
                     g.computeBoundingBox();
                     box.union(g.boundingBox);
                     return g;
@@ -122,7 +210,10 @@ function loadAsset(asset) {
                 const sway = asset.wind ?? 0;
                 const parts = raw.map((c, k) => {
                     const materials = Array.isArray(c.material) ? c.material : [c.material];
-                    const converted = materials.map((m) => (sway ? windMaterial(m, swayParams(asset, m, box)) : m));
+                    const converted = materials.map((m) => {
+                        if (asset.tint) (m = m.clone()).color.multiply(new THREE.Color(asset.tint));
+                        return sway ? windMaterial(m, swayParams(asset, m, box)) : canonicalMaterial(m);
+                    });
                     const shadow = sway ? windShadowMaterials(materials[0], swayParams(asset, materials[0], box)) : null;
                     return { geometry: geometries[k], material: Array.isArray(c.material) ? converted : converted[0], shadow };
                 });
@@ -133,11 +224,16 @@ function loadAsset(asset) {
     return assetCache.get(key);
 }
 
+const assetKey = (asset) => `${asset.src}|${asset.wind ?? 0}|${asset.tint ?? ""}`;
+const ZERO = new THREE.Matrix4().makeScale(0, 0, 0);
+const LAY = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI / 2);
+
 export class ScatterField {
     constructor(tile3d) {
         this.tile3d = tile3d;
         this.container = new THREE.Group();
         this.content = new THREE.Group();
+        this.itemContent = new THREE.Group();
         this.proxies = new THREE.Group();
         this.proxies.visible = false;
         this.pick = new THREE.Mesh(new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ visible: false }));
@@ -145,12 +241,21 @@ export class ScatterField {
             if (canvas.tiles?.active) THREE.Mesh.prototype.raycast.call(this, raycaster, intersects);
         };
         this.pick.userData.noShaders = true;
-        this.container.add(this.content, this.proxies, this.pick);
+        this.container.add(this.content, this.itemContent, this.proxies, this.pick);
         this.pick.scale.set(this.width / factor, 1, this.height / factor);
         this.instances = [];
+        this.groups = new Map();
+        this.itemMeshes = [];
+        this.mergedMeshes = [];
+        this.merged = new Set();
+        this.hiddenMerged = new Set();
+        this.infos = new Map();
+        this.ex = new Set();
+        this.base = null;
         this.stats = {};
         this.version = 0;
         this.schedule = foundry.utils.debounce(() => this.generate(), 300);
+        this.quick = foundry.utils.debounce(() => this.generate(), 20);
         fields.add(this);
     }
 
@@ -180,6 +285,12 @@ export class ScatterField {
         return { x: t.center2d.x + v.x, y: t.center2d.y + v.z };
     }
 
+    sceneToLocal(x, y) {
+        const t = this.tile3d;
+        const v = new THREE.Vector3(x - t.center2d.x, 0, y - t.center2d.y).applyAxisAngle(THREE.Object3D.DEFAULT_UP, -this.angle);
+        return { x: v.x + this.width / 2, y: v.z + this.height / 2 };
+    }
+
     sceneRect() {
         const pts = [this.localToScene(0, 0), this.localToScene(this.width, 0), this.localToScene(0, this.height), this.localToScene(this.width, this.height)];
         const xs = pts.map((p) => p.x);
@@ -198,46 +309,111 @@ export class ScatterField {
         return this.sceneRect().intersects(new PIXI.Rectangle(cx - r, cy - r, r * 2, r * 2));
     }
 
+    baseKey() {
+        const { items, ex, ...rest } = this.data;
+        return JSON.stringify([rest, scatterQuality()]);
+    }
+
+    async blockers() {
+        const gridPx = canvas.scene.grid.size;
+        const margin = BLOCKER_MARGIN * gridPx;
+        const out = [];
+        for (const tile of Object.values(game.Levels3DPreview.tiles)) {
+            const doc = tile?.document;
+            if (!tile?.mesh || tile.scatterData || tile.dynaMesh === "mapMaker" || !doc?.flags["levels-3d-preview"]?.model3d || !isObstacle(tile)) continue;
+            const p = this.sceneToLocal(tile.center2d.x, tile.center2d.y);
+            const yaw = -Math.toRadians(doc.rotation) - this.angle;
+            out.push({ x: p.x, y: p.y, cos: Math.cos(yaw), sin: Math.sin(yaw), cx: 0, cz: 0, hx: Math.abs(doc.width) / 2 + margin, hz: Math.abs(doc.height) / 2 + margin });
+        }
+        for (const field of fields) {
+            if (field.disposed || !field.data?.items?.length) continue;
+            const set = SCATTER_SETS[field.data.set] ?? null;
+            for (const it of field.data.items) {
+                const asset = resolveItemAsset(set, it);
+                if (!asset || isGroundCover(asset)) continue;
+                const info = await loadAsset(asset).catch(() => null);
+                if (!info) continue;
+                const k = (gridPx / 2) * (it.s ?? 1);
+                const scene = field.localToScene(it.x, it.y);
+                const p = this.sceneToLocal(scene.x, scene.y);
+                const yaw = (it.r ?? 0) + field.angle - this.angle;
+                const { min, max } = info.box;
+                out.push({ x: p.x, y: p.y, cos: Math.cos(yaw), sin: Math.sin(yaw), cx: ((min.x + max.x) / 2) * k, cz: ((min.z + max.z) / 2) * k, hx: ((max.x - min.x) / 2) * k + margin, hz: ((max.z - min.z) / 2) * k + margin });
+            }
+        }
+        return out;
+    }
+
+    invalidate() {
+        this.base = null;
+        this.schedule();
+    }
+
+    dataChanged() {
+        if (this.base?.key === this.baseKey()) return this.quick();
+        this.schedule();
+    }
+
     async generate() {
         const L = game.Levels3DPreview;
-        if (this.disposed || !L?._active) return;
+        if (this.disposed || !L?._active || !(L._ready || L._loadingScatter) || this.tile3d._parked) return;
         if (Object.values(L.tiles).some((t) => t && !t._loaded && t !== this.tile3d)) return this.schedule();
         const version = ++this.version;
         const start = performance.now();
         const data = this.data;
-        const set = SCATTER_SETS[data.set];
-        const assets = set ? await Promise.all(set.assets.map((a) => loadAsset(a))) : [];
-        if (version !== this.version || this.disposed) return;
+        const set = SCATTER_SETS[data.set] ?? null;
         const t = this.tile3d;
-        const { values, nx, ny, cell } = await readDensity(this.document, data);
+        const gridPx = canvas.scene.grid.size;
+        const key = this.baseKey();
+        const blockers = set ? await this.blockers() : [];
         if (version !== this.version || this.disposed) return;
-        const depth = this.document.getFlag("levels-3d-preview", "depth");
-        const top = depth > 0 ? t.center.y + depth / factor : Infinity;
-        const sampler = set ? sampleSurface(this.sceneRect(), { top }) : null;
-        const quality = scatterQuality();
-        const instances = set
-            ? generateInstances({
-                  data: { ...data, cell },
-                  set,
-                  density: values,
-                  nx,
-                  ny,
-                  width: this.width,
-                  height: this.height,
-                  gridPx: canvas.scene.grid.size,
-                  qualityDensity: quality.density,
-                  fallbackY: t.center.y,
-                  sample: (lx, ly) => {
-                      const p = this.localToScene(lx, ly);
-                      return sampler.sample(p.x, p.y);
-                  },
-              }).filter((inst) => assets[inst.asset.index])
-            : [];
-        this.instances = instances;
-        this.build(instances, assets, quality);
-        this.stats = { instances: instances.length, meshes: this.content.children.length, ms: Math.round(performance.now() - start) };
-        t.sendToWorker();
+        const blockKey = JSON.stringify(blockers.map((b) => [b.x, b.y, b.cos * 100, b.sin * 100, b.hx, b.hz].map(Math.round)));
+        let base = this.base?.key === key && this.base.blockKey === blockKey ? this.base : null;
+        if (!base) {
+            const grid = await readDensity(this.document, data);
+            if (version !== this.version || this.disposed) return;
+            const depth = this.document.getFlag("levels-3d-preview", "depth");
+            const sampler = sampleSurface(this.sceneRect(), { top: depth > 0 ? t.center.y + depth / factor : Infinity });
+            const sample = (lx, ly) => {
+                const p = this.localToScene(lx, ly);
+                return sampler.sample(p.x, p.y);
+            };
+            const quality = scatterQuality();
+            const radii = blockers.length ? await Promise.all(set.assets.map((a) => loadAsset(a).then((info) => (Math.max(info.size.x, info.size.z) * gridPx) / 4).catch(() => null))) : [];
+            if (version !== this.version || this.disposed) return;
+            const generated = set ? generateInstances({ data: { ...data, cell: grid.cell }, set, density: grid.values, nx: grid.nx, ny: grid.ny, width: this.width, height: this.height, gridPx, qualityDensity: quality.density, sample, blockers, radii }) : [];
+            base = { key, blockKey, grid, sampler, sample, generated, quality };
+        }
+        const { nx, ny, cell } = base.grid;
+        const explicit = explicitInstances({ items: data.items, set, nx, ny, cell, gridPx, sample: base.sample, fallbackY: t.center.y, flat: data.flat || set?.kind === "furnish" ? (gridPx * 0.05) / factor : 0 });
+        const fresh = base !== this.base;
+        await this.loadAssets([...(fresh ? base.generated : []), ...explicit]);
+        if (version !== this.version || this.disposed) return;
+        const ex = new Set(data.ex ?? []);
+        const changed = fresh ? null : new Set([...ex, ...this.ex].filter((id) => ex.has(id) !== this.ex.has(id)));
+        this.base = base;
+        this.interior = set?.kind === "furnish";
+        this.ex = ex;
+        if (fresh || changed.size) this.buildGenerated(changed);
+        const items = explicit.filter((inst) => this.infos.get(assetKey(inst.asset)));
+        this.buildItems(items);
+        this.instances = [...[...this.groups.values()].flatMap((g) => g.list.filter((inst) => !ex.has(inst.id))), ...items];
+        this.pick.scale.set(this.width / factor, 1, this.height / factor);
+        this.pick.position.y = this.instances.length ? this.instances.reduce((sum, inst) => sum + inst.y, 0) / this.instances.length - t.center.y : 0;
+        this.container.updateMatrixWorld(true);
+        markReceivers(this.content, t);
+        markReceivers(this.itemContent, t);
+        L.lightWarmup?.warmObject(this.content);
+        L.lightWarmup?.warmObject(this.itemContent);
+        this.stats = { instances: this.instances.length, meshes: this.content.children.length + this.itemContent.children.length, ms: Math.round(performance.now() - start) };
+        if (this.updateProxies(items)) t.sendToWorker();
         Hooks.callAll("3DCanvasScatterGenerated", this);
+    }
+
+    async loadAssets(instances) {
+        const unique = new Map();
+        for (const inst of instances) if (!this.infos.has(assetKey(inst.asset))) unique.set(assetKey(inst.asset), inst.asset);
+        await Promise.all([...unique].map(async ([key, asset]) => this.infos.set(key, await loadAsset(asset).catch(() => null))));
     }
 
     instanceMatrix(inst, out = new THREE.Matrix4()) {
@@ -247,50 +423,168 @@ export class ScatterField {
         const normal = inst.normal.clone().applyAxisAngle(up, -this.angle);
         const tilt = new THREE.Quaternion().setFromUnitVectors(up, up.clone().lerp(normal, inst.asset.align ?? 0).normalize());
         const q = tilt.multiply(new THREE.Quaternion().setFromAxisAngle(up, inst.yaw));
+        if (inst.asset.lay) q.multiply(LAY);
         const pos = new THREE.Vector3((inst.x - this.width / 2) / factor, inst.y - t.center.y + (inst.asset.yOffset ?? 0) * k, (inst.z - this.height / 2) / factor);
         return out.compose(pos, q, new THREE.Vector3(k, k, k));
     }
 
-    build(instances, assets, quality) {
-        this.clear();
-        const chunkPx = CHUNK_CELLS * canvas.scene.grid.size;
-        const groups = new Map();
-        for (const inst of instances) {
-            const key = `${inst.asset.index}|${Math.floor(inst.x / chunkPx)},${Math.floor(inst.z / chunkPx)}`;
-            if (!groups.has(key)) groups.set(key, []);
-            groups.get(key).push(inst);
-        }
-        const matrix = new THREE.Matrix4();
-        for (const list of groups.values()) {
-            const asset = list[0].asset;
-            const info = assets[asset.index];
-            const castShadow = quality.shadows === "all" || (quality.shadows === "blocking" && !!asset.blocking);
-            for (const part of info.parts) {
-                const mesh = new THREE.InstancedMesh(part.geometry, part.material, list.length);
-                list.forEach((inst, i) => mesh.setMatrixAt(i, this.instanceMatrix(inst, matrix)));
-                mesh.instanceMatrix.needsUpdate = true;
-                mesh.computeBoundingSphere();
-                mesh.computeBoundingBox();
-                mesh.castShadow = castShadow;
-                mesh.receiveShadow = true;
-                if (part.shadow) {
-                    mesh.customDepthMaterial = part.shadow.depth;
-                    mesh.customDistanceMaterial = part.shadow.distance;
-                }
-                mesh.raycast = noRaycast;
-                mesh.userData.sight = false;
-                mesh.userData.collision = false;
-                mesh.userData.cameraCollision = false;
-                this.content.add(mesh);
-            }
-        }
-        this.buildProxies(instances, assets);
-        this.pick.scale.set(this.width / factor, 1, this.height / factor);
-        this.pick.position.y = instances.length ? instances.reduce((sum, inst) => sum + inst.y, 0) / instances.length - this.tile3d.center.y : 0;
-        this.container.updateMatrixWorld(true);
+    worldMatrix(inst, out = new THREE.Matrix4()) {
+        this.container.updateMatrixWorld();
+        return out.multiplyMatrices(this.container.matrixWorld, this.instanceMatrix(inst));
     }
 
-    buildProxies(instances, assets) {
+    castsShadow(asset, info) {
+        const quality = this.base.quality;
+        const tall = (info.size?.y ?? 1) * Math.max(...[asset.scale ?? 1].flat()) >= SHADOW_MIN_HEIGHT;
+        return !this.interior && (quality.shadows === "all" ? tall || !!asset.blocking : quality.shadows === "blocking" && !!asset.blocking);
+    }
+
+    mergeable(inst) {
+        return this.infoOf(inst).parts.every((part) => mergeSource(part));
+    }
+
+    instancedMeshes(list, parent) {
+        if (!list.length) return [];
+        const asset = list[0].asset;
+        const info = this.infos.get(assetKey(asset));
+        const castShadow = this.castsShadow(asset, info);
+        const matrix = new THREE.Matrix4();
+        list.forEach((inst) => (inst.refs = []));
+        return info.parts.map((part) => {
+            const mesh = new THREE.InstancedMesh(part.geometry, part.material, list.length);
+            list.forEach((inst, i) => {
+                mesh.setMatrixAt(i, this.instanceMatrix(inst, matrix));
+                inst.refs.push({ mesh, i });
+            });
+            mesh.instanceMatrix.needsUpdate = true;
+            mesh.computeBoundingSphere();
+            mesh.computeBoundingBox();
+            mesh.castShadow = castShadow;
+            mesh.receiveShadow = true;
+            mesh.renderOrder = this.interior ? 1 : 0;
+            if (part.shadow) {
+                mesh.customDepthMaterial = part.shadow.depth;
+                mesh.customDistanceMaterial = part.shadow.distance;
+            }
+            mesh.raycast = noRaycast;
+            mesh.userData.sight = false;
+            mesh.userData.collision = false;
+            mesh.userData.cameraCollision = false;
+            parent.add(mesh);
+            return mesh;
+        });
+    }
+
+    disposeMeshes(meshes = []) {
+        meshes.forEach((m) => {
+            m.removeFromParent();
+            m.dispose();
+        });
+    }
+
+    buildGenerated(changed = null) {
+        if (!changed) {
+            this.groups.forEach((g) => this.disposeMeshes(g.meshes));
+            this.groups.clear();
+            const chunkPx = Math.max(CHUNK_CELLS * canvas.scene.grid.size, Math.max(this.width, this.height) / MAX_CHUNKS);
+            for (const inst of this.base.generated) {
+                if (!this.infos.get(assetKey(inst.asset))) continue;
+                const key = `${inst.asset.index}|${Math.floor(inst.x / chunkPx)},${Math.floor(inst.z / chunkPx)}`;
+                if (!this.groups.has(key)) this.groups.set(key, { list: [], meshes: [] });
+                this.groups.get(key).list.push(inst);
+            }
+        }
+        for (const group of this.groups.values()) {
+            if (changed && !group.list.some((inst) => changed.has(inst.id))) continue;
+            this.disposeMeshes(group.meshes);
+            group.meshes = this.instancedMeshes(group.list.filter((inst) => !this.ex.has(inst.id) && !(this.interior && this.mergeable(inst))), this.content);
+        }
+        this.genProxy?.dispose();
+        this.genProxy = this.proxyGeometry([...this.groups.values()].flatMap((g) => g.list.filter((inst) => !this.ex.has(inst.id))));
+        this.proxyKey = null;
+    }
+
+    buildItems(items) {
+        this.disposeMeshes(this.itemMeshes);
+        const byAsset = new Map();
+        for (const inst of items) {
+            const key = assetKey(inst.asset);
+            if (!byAsset.has(key)) byAsset.set(key, []);
+            byAsset.get(key).push(inst);
+        }
+        const merge = this.interior ? [...this.groups.values()].flatMap((g) => g.list.filter((inst) => !this.ex.has(inst.id) && this.mergeable(inst))) : [];
+        const instanced = [];
+        for (const list of byAsset.values()) {
+            if ((this.interior || list.length <= MERGE_MAX) && this.mergeable(list[0])) merge.push(...list);
+            else instanced.push(list);
+        }
+        this.itemMeshes = instanced.flatMap((list) => this.instancedMeshes(list, this.itemContent));
+        this.merged = new Set(merge);
+        this.hiddenMerged = new Set();
+        this.buildMerged();
+    }
+
+    buildMerged() {
+        this.mergedMeshes.forEach((m) => {
+            m.removeFromParent();
+            m.geometry.dispose();
+        });
+        const groups = new Map();
+        const matrix = new THREE.Matrix4();
+        for (const inst of this.merged) {
+            inst.refs = [];
+            if (this.hiddenMerged.has(inst)) continue;
+            const info = this.infoOf(inst);
+            const castShadow = this.castsShadow(inst.asset, info);
+            this.instanceMatrix(inst, matrix);
+            for (const part of info.parts) {
+                const source = mergeSource(part);
+                const key = `${source.key}|${castShadow}`;
+                if (!groups.has(key)) groups.set(key, { material: part.material, castShadow, geometries: [] });
+                groups.get(key).geometries.push(source.geometry.clone().applyMatrix4(matrix));
+            }
+        }
+        this.mergedMeshes = [...groups.values()].map(({ material, castShadow, geometries }) => {
+            const mesh = new THREE.Mesh(geometries.length > 1 ? mergeGeometries(geometries) : geometries[0], material);
+            if (geometries.length > 1) geometries.forEach((g) => g.dispose());
+            mesh.geometry.computeBoundingSphere();
+            mesh.geometry.computeBoundingBox();
+            mesh.castShadow = castShadow;
+            mesh.receiveShadow = true;
+            mesh.renderOrder = this.interior ? 1 : 0;
+            mesh.raycast = noRaycast;
+            mesh.userData.sight = false;
+            mesh.userData.collision = false;
+            mesh.userData.cameraCollision = false;
+            this.itemContent.add(mesh);
+            return mesh;
+        });
+    }
+
+    updateProxies(items) {
+        const blocking = items.filter((inst) => inst.asset.blocking);
+        const key = JSON.stringify(blocking.map((inst) => [inst.asset.src, inst.x, inst.z, inst.y, inst.yaw, inst.scale]));
+        if (key === this.proxyKey) return false;
+        this.proxyKey = key;
+        this.proxies.children.slice().forEach((m) => {
+            m.removeFromParent();
+            m.geometry.disposeBoundsTree?.();
+            m.geometry.dispose();
+        });
+        const itemGeometry = this.proxyGeometry(blocking);
+        const parts = [this.genProxy, itemGeometry].filter(Boolean);
+        if (parts.length) {
+            const mesh = new THREE.Mesh(parts.length > 1 ? mergeGeometries(parts) : parts[0].clone(), proxyMaterial);
+            mesh.geometry.computeBoundsTree();
+            mesh.userData = { sight: true, collision: true, cameraCollision: false, noShaders: true };
+            this.proxies.add(mesh);
+        }
+        itemGeometry?.dispose();
+        this.tile3d._collidersVersion = (this.tile3d._collidersVersion ?? 0) + 1;
+        return true;
+    }
+
+    proxyGeometry(instances) {
         const template = new THREE.CylinderGeometry(1, 1, 1, 8, 1).translate(0, 0.5, 0);
         template.deleteAttribute("uv");
         template.deleteAttribute("normal");
@@ -298,7 +592,7 @@ export class ScatterField {
         const matrix = new THREE.Matrix4();
         for (const inst of instances) {
             if (!inst.asset.blocking) continue;
-            const info = assets[inst.asset.index];
+            const info = this.infos.get(assetKey(inst.asset));
             const radius = inst.asset.trunk ?? Math.min(info.size.x, info.size.z) * 0.4;
             const bottom = Math.min(0, info.box.min.y);
             const shape = new THREE.Matrix4().makeScale(radius, Math.max(info.box.max.y - bottom, 0.01), radius).setPosition((info.box.min.x + info.box.max.x) / 2, bottom, (info.box.min.z + info.box.max.z) / 2);
@@ -306,19 +600,64 @@ export class ScatterField {
             geometries.push(template.clone().applyMatrix4(this.instanceMatrix(yawOnly, matrix).multiply(shape)));
         }
         template.dispose();
-        if (!geometries.length) return;
-        const mesh = new THREE.Mesh(mergeGeometries(geometries), proxyMaterial);
+        if (!geometries.length) return null;
+        const merged = mergeGeometries(geometries);
         geometries.forEach((g) => g.dispose());
-        mesh.geometry.computeBoundsTree();
-        mesh.userData = { sight: true, collision: true, cameraCollision: false, noShaders: true };
-        this.proxies.add(mesh);
+        return merged;
+    }
+
+    setHidden(inst, hidden) {
+        if (this.merged.has(inst)) {
+            if (hidden === this.hiddenMerged.has(inst)) return;
+            this.hiddenMerged[hidden ? "add" : "delete"](inst);
+            return this.buildMerged();
+        }
+        const matrix = new THREE.Matrix4();
+        for (const { mesh, i } of inst.refs ?? []) {
+            mesh.setMatrixAt(i, hidden ? ZERO : this.instanceMatrix(inst, matrix));
+            mesh.instanceMatrix.needsUpdate = true;
+        }
+    }
+
+    infoOf(inst) {
+        return this.infos.get(assetKey(inst.asset)) ?? null;
+    }
+
+    pickInstance(ray, filter = () => true) {
+        this.container.updateMatrixWorld();
+        const container = this.container.matrixWorld;
+        const world = new THREE.Matrix4();
+        const inverse = new THREE.Matrix4();
+        const local = new THREE.Ray();
+        const hit = new THREE.Vector3();
+        let best = null;
+        for (const inst of this.instances) {
+            const info = this.infoOf(inst);
+            if (!info || !filter(inst, info)) continue;
+            world.multiplyMatrices(container, this.instanceMatrix(inst, inverse));
+            local.copy(ray).applyMatrix4(inverse.copy(world).invert());
+            if (!local.intersectBox(info.box, hit)) continue;
+            hit.applyMatrix4(world);
+            const distance = hit.distanceTo(ray.origin);
+            if (!best || distance < best.distance) best = { inst, distance, point: hit.clone(), field: this };
+        }
+        return best;
+    }
+
+    surfaceAt(x, y) {
+        return this.base?.sampler.sample(x, y) ?? null;
     }
 
     clear() {
-        this.content.children.slice().forEach((m) => {
-            m.removeFromParent();
-            m.dispose();
-        });
+        this.groups.forEach((g) => this.disposeMeshes(g.meshes));
+        this.groups.clear();
+        this.disposeMeshes(this.itemMeshes);
+        this.itemMeshes = [];
+        this.merged.clear();
+        this.buildMerged();
+        this.genProxy?.dispose();
+        this.genProxy = null;
+        this.proxyKey = null;
         this.proxies.children.slice().forEach((m) => {
             m.removeFromParent();
             m.geometry.disposeBoundsTree?.();
@@ -357,7 +696,7 @@ export class ScatterField {
 }
 
 export function refreshScatter(doc) {
-    for (const field of fields) if (!doc || field.overlaps(doc)) field.schedule();
+    for (const field of fields) if (!doc || field.overlaps(doc)) field.invalidate();
 }
 
 export function scatterFields() {
@@ -365,10 +704,16 @@ export function scatterFields() {
 }
 
 export function registerScatterHooks() {
-    const onChange = (doc) => {
-        if (doc.parent !== canvas.scene || doc.flags?.["levels-3d-preview"]?.scatter?.set) return;
-        refreshScatter(doc);
+    const onChange = (doc, changes) => {
+        if (doc.parent !== canvas.scene) return;
+        const scatter = doc.flags?.["levels-3d-preview"]?.scatter;
+        if (!scatter) return refreshScatter(doc);
+        if (!scatter.items?.length && !foundry.utils.hasProperty(changes ?? {}, "flags.levels-3d-preview.scatter.items")) return;
+        for (const field of fields) if (field.document !== doc && field.overlaps(doc)) field.quick();
     };
     for (const hook of ["createTile", "updateTile", "deleteTile"]) Hooks.on(hook, onChange);
-    Hooks.on("3DCanvasSceneReady", () => refreshScatter());
+    Hooks.on("3DCanvasSceneReady", (L, options) => {
+        if (options?.levelSwitch) return;
+        for (const field of fields) if (!field.base) field.invalidate();
+    });
 }

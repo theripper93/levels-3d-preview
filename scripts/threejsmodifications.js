@@ -1,3 +1,22 @@
+function positionsOnly(geometry) {
+    const pos = geometry.attributes.position;
+    const data = { attributes: {} };
+    if (pos) {
+        let array = pos.array;
+        if (pos.isInterleavedBufferAttribute) {
+            array = new Float32Array(pos.count * 3);
+            for (let i = 0; i < pos.count; i++) {
+                array[i * 3] = pos.getX(i);
+                array[i * 3 + 1] = pos.getY(i);
+                array[i * 3 + 2] = pos.getZ(i);
+            }
+        }
+        data.attributes.position = { itemSize: 3, type: array.constructor.name, array, normalized: pos.isInterleavedBufferAttribute ? false : pos.normalized };
+    }
+    if (geometry.index) data.index = { type: geometry.index.array.constructor.name, array: geometry.index.array };
+    return { uuid: geometry.uuid, type: "BufferGeometry", data };
+}
+
 export function injectThreeModifications(THREE) {
     THREE.Object3D.prototype.toJSONClean = function (meta) {
         // meta is a string when called from JSON.stringify
@@ -82,6 +101,9 @@ export function injectThreeModifications(THREE) {
             if (this.environment && this.environment.isTexture) {
                 object.environment = this.environment.toJSON(meta).uuid;
             }
+        } else if (this.isMesh && !this.isInstancedMesh && !this.isSkinnedMesh) {
+            meta.geometries[this.geometry.uuid] ??= positionsOnly(this.geometry);
+            object.geometry = this.geometry.uuid;
         } else if (this.isMesh || this.isLine || this.isPoints) {
             object.geometry = serialize(meta.geometries, this.geometry);
 
@@ -119,6 +141,7 @@ export function injectThreeModifications(THREE) {
             object.children = [];
 
             for (let i = 0; i < this.children.length; i++) {
+                if (this.children[i].name === "sightMesh" || this.children[i].userData?.noSight) continue;
                 object.children.push(this.children[i].toJSONClean(meta).object);
             }
         }

@@ -1,8 +1,25 @@
 import * as THREE from "three";
 import { factor } from "../main.js";
+import { SCATTER_SETS, SCATTER_PROPS } from "./sets.js";
 
 const MIN_NORMAL_Y = 0.6;
 const FLOAT_LIFT = 0.03;
+const REACH = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+const GROUND_COVER_SPACING = 0.5;
+const AROUND = [[1, 0], [-1, 0], [0, 1], [0, -1], [0.7, 0.7], [-0.7, 0.7], [0.7, -0.7], [-0.7, -0.7]];
+const HUG_RISE = 1;
+
+export const isGroundCover = (asset) => !asset.blocking && (asset.spacing ?? 1) < GROUND_COVER_SPACING;
+
+function hitsBlocker(blockers, x, y, radius) {
+    return blockers.some((b) => {
+        const dx = x - b.x;
+        const dy = y - b.y;
+        const u = dx * b.cos - dy * b.sin - b.cx;
+        const v = dx * b.sin + dy * b.cos - b.cz;
+        return Math.abs(u) < b.hx + radius && Math.abs(v) < b.hz + radius;
+    });
+}
 
 function hashInt(...values) {
     let h = 0x811c9dc5;
@@ -77,11 +94,54 @@ class SpatialHash {
         }
         return false;
     }
+
+    near(x, y, r) {
+        const ci = Math.floor(x / this.size);
+        const cj = Math.floor(y / this.size);
+        for (let dj = -1; dj <= 1; dj++) {
+            for (let di = -1; di <= 1; di++) {
+                if ((this.cells.get(`${ci + di},${cj + dj}`) ?? []).some((o) => o.asset.blocking && (o.x - x) ** 2 + (o.z - y) ** 2 < r * r)) return true;
+            }
+        }
+        return false;
+    }
 }
 
-export function generateInstances({ data, set, density, nx, ny, width, height, gridPx, qualityDensity = 1, sample, fallbackY = 0 }) {
+function nearWall(sample, s, x, y, r, rise) {
+    return AROUND.some(([dx, dy]) => {
+        const o = sample(x + dx * r, y + dy * r);
+        return !o || o.obstacle || o.y - s.y > rise;
+    });
+}
+
+const setAssets = (set) => (set?.assets ?? []).map((a, index) => ({ ...a, index, spacing: Math.max(0.05, a.spacing ?? 1), weight: a.weight ?? 0.5 }));
+
+export function resolveItemAsset(set, item) {
+    if (!item.src) return set?.assets[item.a] ? { ...set.assets[item.a], index: item.a } : null;
+    const src = decodeURI(item.src);
+    const same = (a) => decodeURI(a.src) === src;
+    const found = set?.assets.find(same) ?? Object.values(SCATTER_SETS).flatMap((s) => s.assets).find(same) ?? SCATTER_PROPS.find(same);
+    return { align: 0, wind: 0, blocking: false, yOffset: 0, ...found, src: item.src, index: `src:${src}` };
+}
+
+export function explicitInstances({ items = [], set, nx, ny, cell, gridPx, sample, fallbackY = 0, flat = 0 }) {
+    const out = [];
+    items.forEach((it, item) => {
+        const asset = resolveItemAsset(set, it);
+        if (!asset) return;
+        const s = sample(it.x, it.y);
+        const ground = !s || (flat && Math.abs(s.y - fallbackY) > flat) ? fallbackY : s.y;
+        const i = Math.min(nx - 1, Math.max(0, Math.floor(it.x / cell)));
+        const j = Math.min(ny - 1, Math.max(0, Math.floor(it.y / cell)));
+        out.push({ asset, x: it.x, z: it.y, y: ground + ((it.h ?? 0) * gridPx) / 2 / factor, yaw: it.r ?? 0, scale: it.s ?? 1, normal: new THREE.Vector3(0, 1, 0), cell: j * nx + i, explicit: true, item });
+    });
+    return out;
+}
+
+export function generateInstances({ data, set, density, nx, ny, width, height, gridPx, qualityDensity = 1, sample, blockers = [], radii = [] }) {
     const cell = data.cell;
-    const assets = set.assets.map((a, index) => ({ ...a, index, spacing: Math.max(0.05, a.spacing ?? 1), weight: a.weight ?? 0.5 }));
+    const assets = setAssets(set);
+    if (!assets.length) return [];
     const order = [...assets].sort((a, b) => (b.blocking ? 1 : 0) - (a.blocking ? 1 : 0) || b.spacing - a.spacing || a.index - b.index);
     const maxSep = Math.max(...assets.map((a) => a.spacing)) * gridPx;
     const hash = new SpatialHash(Math.max(maxSep, cell));
@@ -89,6 +149,7 @@ export function generateInstances({ data, set, density, nx, ny, width, height, g
     const out = [];
     const cellArea = (cell / gridPx) ** 2;
     for (const asset of order) {
+        const cover = isGroundCover(asset);
         const perCell = (asset.weight * cellArea * (data.density ?? 1) * (asset.blocking ? 1 : qualityDensity)) / asset.spacing ** 2;
         const [smin, smax] = Array.isArray(asset.scale) ? asset.scale : [asset.scale ?? 1, asset.scale ?? 1];
         for (let j = 0; j < ny; j++) {
@@ -105,25 +166,21 @@ export function generateInstances({ data, set, density, nx, ny, width, height, g
                     const scale = (smin + (smax - smin) * random() ** (asset.scaleBias ?? 1)) * (data.scale ?? 1);
                     if (x > width || y > height) continue;
                     if (hash.blocked(asset, x, y, gridPx)) continue;
+                    if (!cover && hitsBlocker(blockers, x, y, radii[asset.index] ? radii[asset.index] * scale : (asset.spacing * gridPx) / 2)) continue;
                     const s = sample(x, y);
                     if (!s || (!asset.float && s.normal.y < MIN_NORMAL_Y)) continue;
-                    if (avoid.buildings && s.obstacle) continue;
+                    const hug = (asset.hug ?? 0) * gridPx;
+                    if (hug && !(hash.near(x, y, hug) || hitsBlocker(blockers, x, y, hug) || nearWall(sample, s, x, y, hug, (hug * HUG_RISE) / factor))) continue;
+                    const reach = cover ? 0 : asset.spacing * 0.3 * scale * gridPx;
+                    if (avoid.buildings && (s.obstacle || (reach && REACH.some(([dx, dy]) => sample(x + dx * reach, y + dy * reach)?.obstacle)))) continue;
                     if (avoid.paths && s.path) continue;
                     if (asset.float ? !s.underwater : !asset.aquatic && avoid.water && s.underwater) continue;
-                    const item = { asset, x, z: y, y: asset.float ? s.waterY + (FLOAT_LIFT * gridPx) / factor : s.y, yaw, scale, normal: s.normal, cell: j * nx + i };
+                    const item = { asset, x, z: y, y: asset.float ? s.waterY + (FLOAT_LIFT * gridPx) / factor : s.y, yaw, scale, normal: s.normal, cell: j * nx + i, id: `${asset.index}.${j * nx + i}.${k}` };
                     hash.add(item);
                     out.push(item);
                 }
             }
         }
-    }
-    for (const it of data.items ?? []) {
-        const asset = assets[it.a];
-        if (!asset) continue;
-        const s = sample(it.x, it.y);
-        const i = Math.min(nx - 1, Math.max(0, Math.floor(it.x / cell)));
-        const j = Math.min(ny - 1, Math.max(0, Math.floor(it.y / cell)));
-        out.push({ asset, x: it.x, z: it.y, y: (s?.y ?? fallbackY) + ((it.h ?? 0) * gridPx) / 2 / factor, yaw: it.r ?? 0, scale: it.s ?? 1, normal: new THREE.Vector3(0, 1, 0), cell: j * nx + i, explicit: true });
     }
     return out;
 }

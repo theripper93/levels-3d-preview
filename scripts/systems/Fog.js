@@ -73,7 +73,7 @@ export class Fog {
     async init() {
         this.blank = await new THREE.TextureLoader().loadAsync("modules/levels-3d-preview/assets/blankTex.jpg");
         const base64 = await this.generateTexture();
-        this.fogTexture = this._sharedContext ? base64 : await new THREE.TextureLoader().loadAsync(base64);
+        this.fogTexture = this._sharedContext || !base64 ? (base64 ?? this.blank) : await new THREE.TextureLoader().loadAsync(base64);
         this.sceneDimensions = [canvas.dimensions.width / factor, canvas.dimensions.height / factor];
         this.sceneOrigin = [canvas.dimensions.sceneX / factor, canvas.dimensions.sceneY / factor];
     }
@@ -87,7 +87,7 @@ export class Fog {
         const base64 = isBlank ? this.blank : await this.generateTexture();
         if (seq !== this._updateSeq || this._destroyed) return;
         let texture = base64;
-        if (!this._sharedContext && !isBlank) {
+        if (!this._sharedContext && !isBlank && base64) {
             texture = await new THREE.TextureLoader().loadAsync(base64);
             if (seq !== this._updateSeq || this._destroyed) {
                 texture?.dispose();
@@ -115,6 +115,7 @@ export class Fog {
     }
 
     async generateTexture() {
+        if (!canvas.fog?.sprite || !canvas.masks?.vision?.vision) return this._sharedContext ? this.webglFogTexture : this._lastBase64;
         const originalTint = canvas.fog.sprite.tint;
         canvas.fog.sprite.tint = 0x808080;
         if (canvas.scene.fog.mode) canvas.app.renderer.render(canvas.fog.sprite, { renderTexture: this.pixiRenderTexture, clear: true });
@@ -175,6 +176,7 @@ function injectFogUniforms(shader, renderer) {
     this._userOnBeforeCompile?.call(this, shader, renderer);
     declareExtraSamplers(shader);
     Object.assign(shader.uniforms, fogUniforms);
+    shader.uniforms.l3dFoliage = { value: !!this.userData?.foliage };
     injectSurface(shader);
     if (shader.vertexShader.includes(PARTICLE_OFFSET_ATTRIBUTE)) injectParticleFoW(shader);
 }
@@ -208,7 +210,9 @@ export function injectFoWShaders(THREELIB) {
 
     THREELIB.ShaderChunk.fog_vertex += `
     #ifndef FOW_FROM_OFFSET
-    #ifdef USE_INSTANCING
+    #if defined( USE_BATCHING )
+        vWorldPositionFoW = (modelMatrix * (batchingMatrix * vec4( position , 1.0 ))).xyz;
+    #elif defined( USE_INSTANCING )
         vWorldPositionFoW = (modelMatrix * (instanceMatrix * vec4( position , 1.0 ))).xyz;
     #else
         vWorldPositionFoW = (modelMatrix * vec4( position , 1.0 )).xyz;

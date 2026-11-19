@@ -96,7 +96,8 @@ export async function buildMapEdge(parent, option, groundY) {
     const border = borderHeights(rect, groundY, DIORAMA_SAMPLES);
     const levels = border.map((p) => p[2]).sort((a, b) => a - b);
     const edgeY = option === "island" && seaY !== null ? seaY : levels[Math.floor(levels.length / 2)];
-    const ground = option === "fade" ? await buildGround(parent, Math.min(edgeY, groundY)) : null;
+    const parkedTerrain = !terrainStates().length && canvas.scene.tiles.some((d) => d.flags?.[MODULE_ID]?.mapMakerMesh?.k === "terrain");
+    const ground = option === "fade" && !parkedTerrain ? await buildGround(parent, Math.min(edgeY, groundY)) : null;
     if (build !== buildId) return ground?.geometry.dispose();
     clearMapEdge();
     const halfDiag = Math.hypot(rect.w, rect.h) / 2;
@@ -127,6 +128,7 @@ export async function buildMapEdge(parent, option, groundY) {
     }
     if (BACKDROP_SHAPES[backdrop]) buildBackdrop(group, rect, edgeY, halfDiag, BACKDROP_SHAPES[backdrop]);
     parent.scene.add(group);
+    parent.lightWarmup?.warmObject(group);
 }
 
 export function terrainLoaded() {
@@ -134,7 +136,7 @@ export function terrainLoaded() {
         let tries = 0;
         const check = () => {
             const tiles = game.Levels3DPreview.tiles ?? {};
-            const pending = canvas.scene.tiles.some((d) => d.flags?.[MODULE_ID]?.mapMakerMesh?.k === "terrain" && !tiles[d.id]?._loaded);
+            const pending = canvas.scene.tiles.some((d) => d.flags?.[MODULE_ID]?.mapMakerMesh?.k === "terrain" && canvas.tiles.get(d.id) && !tiles[d.id]?._loaded);
             if (pending && tries++ < 60) return setTimeout(check, 500);
             resolve();
         };
@@ -414,7 +416,10 @@ function buildBackdrop(group, rect, groundY, halfDiag, shape) {
 
 function terrainStates() {
     const states = [];
-    for (const mesh of terrainTargets()) mesh.traverse((o) => o.mapMakerTerrain && states.push(o.mapMakerTerrain));
+    for (const t of Object.values(game.Levels3DPreview.tiles ?? {})) {
+        if (t?.tile?.document?.flags?.[MODULE_ID]?.mapMakerMesh?.k !== "terrain" || !t.mesh || t.tile.document.elevation < 0) continue;
+        t.mesh.traverse((o) => o.mapMakerTerrain && states.push(o.mapMakerTerrain));
+    }
     return states;
 }
 

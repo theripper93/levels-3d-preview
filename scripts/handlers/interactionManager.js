@@ -15,6 +15,13 @@ THREE.Mesh.prototype.raycast = acceleratedRaycast;
 
 const DRAG_START_THRESHOLD_PX = 6;
 const DOUBLE_CLICK_WINDOW_MS = 250;
+const DOOR_REACH_CELLS = 0.5;
+
+function entityOf(object) {
+    let entity = object?.userData?.entity3D;
+    if (!entity) object?.traverseAncestors((parent) => (entity ??= parent.userData?.entity3D));
+    return entity;
+}
 
 function getSenseTypes() {
     return CONST.EDGE_SENSE_TYPES ?? CONST.WALL_SENSE_TYPES;
@@ -726,31 +733,50 @@ export class InteractionManager {
             const yConstant = tY + entity3D.shaders.clipping.heightOffset / factor;
             return yConstant > i.point.y;
         } else {
-            return i.object.material?.clippingPlanes[0].constant > i.point.y;
+            return i.object.material.clippingPlanes.every((plane) => plane.distanceToPoint(i.point) >= 0);
         }
+    }
+
+    _preferredDoor(hits, candidates = hits) {
+        if (this.activeLayerEntity === "Tile") return null;
+        const first = hits.find((i) => !i.object.userData.ignoreIntersect);
+        const blocker = entityOf(first?.object);
+        if (blocker?.isDoor) return blocker.isDoorHover ? first : null;
+        if (blocker?.embeddedName !== "Tile") return null;
+        const normal = first.face?.normal.clone().transformDirection(first.object.matrixWorld);
+        const slope = normal ? Math.abs(this.raycaster.ray.direction.dot(normal)) : 1;
+        const reach = (canvas.grid.size / factor) * DOOR_REACH_CELLS;
+        return (
+            candidates.find((i) => {
+                const entity = entityOf(i.object);
+                const gap = i.distance - first.distance;
+                return gap * slope <= reach && gap <= reach * 4 && entity?.isDoor && entity.isDoorHover;
+            }) ?? null
+        );
     }
 
     getHoverObject() {
         if (!this._hoverobj || !this._hoverobj.length) this._hoverobj = this._parent.scene.children.filter(this._collisionFilter);
         this.raycaster.setFromCamera(this.mousemove, this.camera);
-        let intersects = this.raycaster.intersectObjects(this._hoverobj, true).filter(this._clippingFilter);
-        if (intersects.length) intersects = intersects.filter((i) => !i.object?.userData?.ignoreHover);
+        const all = this.raycaster.intersectObjects(this._hoverobj, true).filter((i) => !i.object?.userData?.ignoreHover);
+        const intersects = all.filter(this._clippingFilter);
         if (!intersects.length) return null;
+        const hit = this._preferredDoor(intersects, all) ?? intersects[0];
         let parentInt;
-        if (!intersects[0].object.userData.entity3D)
-            intersects[0].object.traverseAncestors((parent) => {
+        if (!hit.object.userData.entity3D)
+            hit.object.traverseAncestors((parent) => {
                 if (parent.userData.entity3D && !parentInt) parentInt = parent;
             });
         return {
-            object: parentInt ?? intersects[0].object,
+            object: parentInt ?? hit.object,
             point: intersects[0].point,
-            intersect: intersects[0],
+            intersect: hit,
         };
     }
 
     _collisionFilter(object) {
         const _this = game.Levels3DPreview.interactionManager;
-        if (object.userData.ignoreHover) return false;
+        if (object.userData.ignoreHover || object.userData.noIntersect) return false;
         if (!canvas.activeLayer) return true;
         if (object.userData?.entity3D && _this.activeLayerEntity !== object.userData?.entity3D?.embeddedName && object.userData?.entity3D?.embeddedName !== "Note" && object.userData?.entity3D?.embeddedName !== "Tile") return false;
         if (object.userData?.entity3D && _this.activeLayerEntity !== "Tile" && object.userData?.entity3D?.embeddedName === "Tile" && !object.userData?.entity3D?.collision) return false;
@@ -1022,14 +1048,12 @@ export class InteractionManager {
         if (buildPlane) intersectTargets.push(buildPlane);
         const table = this._parent.table;
         if (table) intersectTargets.push(table);
-        const intersects0 = this.raycaster.intersectObjects(intersectTargets, true);
-        const intersects1 = intersects0.filter(this._clippingFilter);
-        const intersects = intersects1.filter((i) => !i?.object?.userData?.noIntersect);
-            // .filter(this._clippingFilter)
-            // .filter((i) => !i?.object?.userData?.noIntersect);
-        const originalObject = intersects.length > 0 ? intersects[0].object : null;
+        const all = this.raycaster.intersectObjects(intersectTargets, true).filter((i) => !i?.object?.userData?.noIntersect);
+        const intersects = all.filter(this._clippingFilter);
+        const door = this._preferredDoor(intersects, all);
+        const originalObject = door?.object ?? (intersects.length > 0 ? intersects[0].object : null);
         if (!intersects.length) return null;
-        for (let int of intersects) {
+        for (let int of all) {
             let actualObject;
             if (int.object.userData.ignoreIntersect) continue;
             if (!int.object.userData.entity3D)
@@ -1038,7 +1062,8 @@ export class InteractionManager {
                 });
             int.object = actualObject ?? int.object;
         }
-        let intersect = intersects.find((i) => i.object?.userData?.entity3D?.token) ?? intersects[0];
+        const token = intersects.find((i) => i.object?.userData?.entity3D?.token);
+        let intersect = (token && !(door?.distance < token.distance) ? token : door) ?? intersects[0];
         const controlledGroup = this._parent.controlledGroup;
         if (intersect?.object?.parent === controlledGroup) intersect.object = controlledGroup;
         return {

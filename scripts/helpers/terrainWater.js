@@ -2,7 +2,7 @@ import * as THREE from "three";
 import { decodeGrid, encodeGridChanges, patchGrid } from "./chunkCodec.js";
 import { refreshWaterBeds } from "../shaders/water/bedDepth.js";
 
-export const WATER_TYPES = ["water", "ocean", "river", "swamp", "acid", "lava"];
+export const WATER_TYPES = ["water", "ocean", "river", "swamp", "acid", "lava", "magicalFire"];
 
 export function waterDims(data) {
     if (data.wn) return data.wn;
@@ -22,6 +22,8 @@ export class TerrainWater {
         this.type = new Uint8Array(n);
         this.lq = new Uint16Array(n);
         this.tq = new Uint8Array(n);
+        this.vType = this.type;
+        this.vLevel = this.level;
         this.entries = new Map();
         this.reach = 0;
         this.disposed = false;
@@ -103,14 +105,14 @@ export class TerrainWater {
 
     surfaceAt(x, y) {
         const k = this.cellAt(x, y);
-        if (k < 0 || !this.type[k]) return null;
-        const entry = this.entries.get(this.type[k]);
-        return entry ? this.cornerHeight(entry.corners, x, y) : this.toPx(this.level[k]);
+        if (k < 0 || !this.vType[k]) return null;
+        const entry = this.entries.get(this.vType[k]);
+        return entry ? this.cornerHeight(entry.corners, x, y) : this.toPx(this.vLevel[k]);
     }
 
     typeAt(x, y) {
         const k = this.cellAt(x, y);
-        return k < 0 ? null : WATER_TYPES[this.type[k] - 1] ?? null;
+        return k < 0 ? null : WATER_TYPES[this.vType[k] - 1] ?? null;
     }
 
     cornersFor(t) {
@@ -123,8 +125,8 @@ export class TerrainWater {
                     for (let i = ci - 1; i <= ci; i++) {
                         if (i < 0 || j < 0 || i >= wx || j >= wy) continue;
                         const k = j * wx + i;
-                        if (this.type[k] !== t) continue;
-                        sum += this.level[k];
+                        if (this.vType[k] !== t) continue;
+                        sum += this.vLevel[k];
                         n++;
                     }
                 }
@@ -161,7 +163,7 @@ export class TerrainWater {
         };
         for (let j = 0; j < wy; j++) {
             for (let i = 0; i < wx; i++) {
-                if (this.type[j * wx + i] !== t) continue;
+                if (this.vType[j * wx + i] !== t) continue;
                 const a = vert(i, j), b = vert(i + 1, j), c = vert(i, j + 1), d = vert(i + 1, j + 1);
                 index.push(a, c, b, b, c, d);
             }
@@ -217,15 +219,18 @@ export class TerrainWater {
 
     build() {
         if (this.disposed) return;
-        const present = new Set(this.type);
+        this.applyPools();
+        const present = new Set(this.vType);
         present.delete(0);
         for (const key of [...this.entries.keys()]) if (!present.has(key)) this.remove(key);
         for (const t of present) {
             if (!WATER_TYPES[t - 1]) continue;
             const corners = this.cornersFor(t);
+            const fresh = !this.entries.has(t);
             const entry = this.entries.get(t) ?? this.createEntry(t);
             entry.corners = corners;
             this.setGeometry(entry.inner, this.innerGeometry(t, corners));
+            if (fresh) game.Levels3DPreview.lightWarmup?.warmObject(entry.inner.mesh);
             const ring = this.reach > 0 ? this.ringGeometry(t, corners) : null;
             if (ring) {
                 entry.ring ??= this.createPart(t, true, entry);
@@ -236,6 +241,29 @@ export class TerrainWater {
             }
         }
         refreshWaterBeds();
+    }
+
+    applyPools() {
+        const stamps = (this.state.data.stamps ?? []).filter((s) => s.pools?.length);
+        if (!stamps.length) {
+            this.vType = this.type;
+            this.vLevel = this.level;
+            return;
+        }
+        this.vType = this.type.slice();
+        this.vLevel = this.level.slice();
+        for (const stamp of stamps) {
+            const t = WATER_TYPES.indexOf(stamp.liquid ?? "lava") + 1;
+            const level = this.fromPx(stamp.level);
+            for (let q = 0; q < stamp.pools.length; q += 2) {
+                for (let n = 0; n < 9; n++) {
+                    const k = this.cellAt(stamp.pools[q] + ((n % 3) - 1) * this.cellW, stamp.pools[q + 1] + (((n / 3) | 0) - 1) * this.cellH);
+                    if (k < 0 || this.type[k]) continue;
+                    this.vType[k] = t;
+                    this.vLevel[k] = level;
+                }
+            }
+        }
     }
 
     setGeometry(part, geometry) {
@@ -256,7 +284,7 @@ export class TerrainWater {
         const L = game.Levels3DPreview;
         const id = WATER_TYPES[t - 1];
         const preset = L.CONFIG.shaders.shaders.realisticWater?.presets?.[id] ?? {};
-        const style = String(this.state.layers[0]?.src ?? "").includes("_Stylized2") ? 1 : 0;
+        const style = !(preset.crust > 0) && String(this.state.layers[0]?.src ?? "").includes("_Stylized2") ? 1 : 0;
         const mesh = new THREE.Mesh(new THREE.BufferGeometry(), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.2, metalness: 0 }));
         mesh.matrixAutoUpdate = false;
         mesh.receiveShadow = true;
@@ -303,7 +331,7 @@ export class TerrainWater {
         if (ring) px = this.ringSurface(corners, t, lx, lz);
         else {
             const k = this.cellAt(lx, lz);
-            px = k >= 0 && this.type[k] === t ? this.cornerHeight(corners, lx, lz) : null;
+            px = k >= 0 && this.vType[k] === t ? this.cornerHeight(corners, lx, lz) : null;
         }
         if (px === null || Number.isNaN(px)) return null;
         point.y = px * this.state.scale;

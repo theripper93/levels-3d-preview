@@ -1,6 +1,7 @@
 import { BufferGeometry, DepthTexture, Float32BufferAttribute, Group, Mesh, ShaderMaterial } from "three";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { frame } from "../../render/frame.js";
+import { compileForComposer } from "../../render/pipeline.js";
 import { displayBackground, displayTextureBackground } from "../../render/outputPass.js";
 import { VFX_LAYER } from "../constants.js";
 import { getQuality } from "../quality.js";
@@ -95,7 +96,10 @@ export class EffectsPass extends RenderPass {
         const delta = this.parent.timer.getDelta();
         const toScreen = this.renderToScreen;
         sceneUniforms.uSceneTime.value += delta;
-        if (warming.children.length) this.scene.add(warming);
+        if (warming.children.length) {
+            compileForComposer(this.parent, warming, this.camera, this.scene);
+            warming.clear();
+        }
         for (const pool of pools) pool.sync(this.scene, delta, capabilities[pool.capability]);
         const composer = this.parent.composer;
         if (composer.readBuffer !== this.target) composer.swapBuffers();
@@ -117,10 +121,6 @@ export class EffectsPass extends RenderPass {
             if (!this.validated) this.validate(renderer);
         }
         if (toScreen) this.present(renderer);
-        if (warming.parent) {
-            warming.clear();
-            warming.removeFromParent();
-        }
     }
 
     updateUniforms() {

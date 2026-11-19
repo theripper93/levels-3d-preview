@@ -290,6 +290,7 @@ export class Light3D {
     }
 
     get isEmitting() {
+        if (this._parent.hiddenLights?.has(this.light.document.id)) return false;
         return (this.light.emitsLight && !this.light.document.hidden) || !!this.light.document.flags?.["levels-3d-preview"]?.visibleWhenDisabled;
     }
 
@@ -412,37 +413,41 @@ export class Light3D {
         };
     }
 
+    get _interactive() {
+        return canvas.activeLayer?.options.objectClass?.embeddedName === "AmbientLight" && !!this.light && !this.light.destroyed;
+    }
+
     _onClickLeft(e) {
-        if (canvas.activeLayer.options.objectClass.embeddedName !== "AmbientLight") return;
+        if (!this._interactive) return;
         const event = e;
         this.light._onClickLeft(event);
     }
 
     _onClickLeft2(e) {
-        if (canvas.activeLayer.options.objectClass.embeddedName !== "AmbientLight") return;
+        if (!this._interactive) return;
         const event = e;
         this.light._onClickLeft2(event);
     }
 
     _onClickRight(e) {
-        if (canvas.activeLayer.options.objectClass.embeddedName !== "AmbientLight") return;
+        if (!this._interactive) return;
         const event = e;
         this.light._onClickRight(event);
     }
 
     _onClickRight2(e) {
-        if (canvas.activeLayer.options.objectClass.embeddedName !== "AmbientLight") return;
+        if (!this._interactive) return;
         const event = e;
         this.light._onClickRight2(event);
     }
 
     _onHoverIn(e) {
-        if (canvas.activeLayer.options.objectClass.embeddedName !== "AmbientLight") return;
+        if (!this._interactive) return;
         this.placeable._onHoverIn(e);
     }
 
     _onHoverOut(e) {
-        if (canvas.activeLayer.options.objectClass.embeddedName !== "AmbientLight") return;
+        if (!this._interactive) return;
         this.placeable._onHoverOut(e);
     }
 

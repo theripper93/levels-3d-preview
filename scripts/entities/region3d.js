@@ -379,7 +379,7 @@ export class Region3D extends THREE.Object3D {
         });
 
         Hooks.on("destroyRegion", (region) => {
-            if (!game.Levels3DPreview?._active) return;
+            if (!game.Levels3DPreview?._active || game.Levels3DPreview._levelSwitch) return;
             Region3D.destroy(region.document);
         });
     }

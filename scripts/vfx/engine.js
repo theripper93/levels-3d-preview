@@ -102,6 +102,7 @@ export class ParticleEngine {
                     this.sleep(startAfter).then(async () => {
                         const particleClass = PARTICLE_SYSTEMS.getParticleClass(params.type);
                         const projectileEmitter = new particleClass(origin, target, params);
+                        if (!projectileEmitter.anchor) return;
                         await projectileEmitter.init();
                         this.scene.add(projectileEmitter.emitter);
                         projectileEmitter.particleSystems.forEach((s) => this.system.addSystem(s));
@@ -175,7 +176,6 @@ export class ParticleEngine {
         } else {
             this.toCleanup.add(effect);
         }
-        this.cleanUpBatches();
     }
 
     cleanUpEffect(effect) {
@@ -189,6 +189,8 @@ export class ParticleEngine {
         ParticleEngine.disposeLights(effect.emitter);
         this.scene.remove(effect.emitter);
         effect.dispose();
+        effect.particleSystems.forEach((system) => this.system.deleteSystem(system));
+        this.cleanUpBatches();
     }
 
     cleanUpBatches() {

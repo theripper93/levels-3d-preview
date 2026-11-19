@@ -12,6 +12,7 @@ uniform float uWidth;
 uniform float uFlat;
 uniform vec3 uNormal;
 varying vec2 vStrip;
+varying vec3 vStripWorld;
 
 void main() {
     vec4 world = modelMatrix * vec4(position, 1.0);
@@ -22,6 +23,7 @@ void main() {
     side = sideLength > 1e-5 ? side / sideLength : vec3(1.0, 0.0, 0.0);
     world.xyz += side * aSide * aWidth * uWidth * 0.5;
     vStrip = vec2(aSide, aAlong);
+    vStripWorld = world.xyz;
     gl_Position = projectionMatrix * viewMatrix * world;
 }
 `;
@@ -29,6 +31,7 @@ void main() {
 const fragmentShader = `
 #include <common>
 #include <vfx_scene_pars_fragment>
+#include <vfx_fog_of_war_pars_fragment>
 uniform vec3 uCore;
 uniform vec3 uGlow;
 uniform float uIntensity;
@@ -45,6 +48,7 @@ uniform float uGlowPower;
 uniform float uSoft;
 uniform float uSeed;
 varying vec2 vStrip;
+varying vec3 vStripWorld;
 
 float stripHash(vec2 p) {
     return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
@@ -71,7 +75,7 @@ void main() {
     float n = stripFbm(vec2(along * uFrequency - uTime * uScroll, across * 1.7 + uSeed + uTime * 0.37));
     float glow = pow(1.0 - across, uGlowPower) * mix(1.0, n * 1.8, uNoise);
     float core = (1.0 - smoothstep(uCoreWidth * 0.35, uCoreWidth, across)) * mix(1.0, 0.65 + n * 0.7, uNoise * 0.6);
-    float alpha = clamp(glow + core, 0.0, 1.0) * mask * uOpacity;
+    float alpha = clamp(glow + core, 0.0, 1.0) * mask * uOpacity * vfxFogOfWar(vStripWorld);
     if (uSoft > 0.0) alpha *= vfxSoftFade(vfxScreenUv(), uSoft);
     if (alpha < 0.002) discard;
     vec3 color = (uGlow * glow + uCore * core) / max(glow + core, 0.001) * uIntensity;

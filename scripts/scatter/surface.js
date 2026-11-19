@@ -8,6 +8,7 @@ const PER_CELL = 4;
 const MAX_RES = 1024;
 const RANGE_CELLS = 400;
 const LARGE_CELLS = 12;
+const MIN_OBSTACLE_HEIGHT = 0.25;
 const PATH_WEIGHT = 30;
 
 export function gridUnit() {
@@ -29,7 +30,7 @@ export function isObstacle(tile) {
     if (box.isEmpty()) return false;
     const size = box.getSize(new THREE.Vector3());
     const gs = gridUnit();
-    return size.y > gs && Math.max(size.x, size.z) < LARGE_CELLS * gs;
+    return size.y > gs * MIN_OBSTACLE_HEIGHT && Math.max(size.x, size.z) < LARGE_CELLS * gs;
 }
 
 function terrainPaths() {
@@ -64,7 +65,7 @@ export function sampleSurface(rect, { top = Infinity } = {}) {
     const scale = Math.min(1, MAX_RES / Math.max((w / gs) * PER_CELL, (h / gs) * PER_CELL));
     const rw = Math.max(8, Math.ceil((w / gs) * PER_CELL * scale));
     const rh = Math.max(8, Math.ceil((h / gs) * PER_CELL * scale));
-    const surfaces = collectSurfaces((tile) => !isWater(tile));
+    const surfaces = collectSurfaces((tile) => !isWater(tile) && !tile.mapMakerMesh?.noSurface);
     const box = new THREE.Box3();
     surfaces.forEach((m) => box.expandByObject(m));
     const ceiling = Math.min(Number.isFinite(top) ? top : Infinity, (box.isEmpty() ? 0 : box.max.y) + gs);

@@ -70,4 +70,8 @@ float vfxFogOfWar(vec3 worldPosition) {
     if (sceneDimensions.x == 0.0 || worldPosition.x < sceneOrigin.x || worldPosition.z < sceneOrigin.y || worldPosition.x > limit.x || worldPosition.z > limit.y) return 1.0;
     return texture2D(fogTexture, worldPosition.xz / sceneDimensions).r;
 }
+
+float vfxFogVisible(vec3 worldPosition) {
+    return smoothstep(0.55, 0.95, vfxFogOfWar(worldPosition));
+}
 `;
