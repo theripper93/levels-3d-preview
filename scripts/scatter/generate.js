@@ -133,7 +133,7 @@ export function explicitInstances({ items = [], set, nx, ny, cell, gridPx, sampl
         const ground = !s || (flat && Math.abs(s.y - fallbackY) > flat) ? fallbackY : s.y;
         const i = Math.min(nx - 1, Math.max(0, Math.floor(it.x / cell)));
         const j = Math.min(ny - 1, Math.max(0, Math.floor(it.y / cell)));
-        out.push({ asset, x: it.x, z: it.y, y: ground + ((it.h ?? 0) * gridPx) / 2 / factor, yaw: it.r ?? 0, scale: it.s ?? 1, normal: new THREE.Vector3(0, 1, 0), cell: j * nx + i, explicit: true, item });
+        out.push({ asset, x: it.x, z: it.y, y: ground + ((it.h ?? 0) * gridPx) / 2 / factor, yaw: it.r ?? 0, scale: it.s ?? 1, normal: new THREE.Vector3(0, 1, 0), cell: j * nx + i, explicit: true, item, rx: it.rx ?? 0, rz: it.rz ?? 0, tint: it.c ?? null, hue: it.hu ?? 0 });
     });
     return out;
 }

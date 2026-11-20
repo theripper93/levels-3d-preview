@@ -846,7 +846,35 @@ export class TerrainState {
                         float a = max(hA + 1.0 - w - ma, 0.0);
                         float b = max(hB + w - ma, 0.0);
                         return b / max(a + b, 1e-4);
-                    }`,
+                    }
+                    vec4 mmGroupWeight(vec2 uv, vec2 tx, float g) {
+                        vec4 soft = texture(mmWeights, vec3(uv + vec2(2.2, 1.0) * tx, g)) + texture(mmWeights, vec3(uv + vec2(-1.0, 2.2) * tx, g)) + texture(mmWeights, vec3(uv + vec2(-2.2, -1.0) * tx, g)) + texture(mmWeights, vec3(uv + vec2(1.0, -2.2) * tx, g));
+                        return mix(texture(mmWeights, vec3(uv, g)), soft * 0.25, 0.65);
+                    }
+                    void mmLayer(int i, float raw, vec2 p, vec2 dx, vec2 dy, float fine, inout float acc, inout float wallW, inout int wallI, inout vec3 col, inout vec2 tn, inout float h, inout float r) {
+                        if (i < MM_COUNT) {
+                            acc += raw;
+                            float w = raw / max(acc, 1e-4);
+                            float edge = 1.0 - abs(w * 2.0 - 1.0);
+                            float mid = mmNoise(p * 18.0 + float(i) * 3.71) * 0.65 + mmNoise(p * 41.0 + float(i) * 1.37) * 0.35;
+                            w = clamp(w + ((mid - 0.5) * 1.2 + (fine - 0.5) * 0.4) * edge, 0.0, 1.0);
+                            wallW = mix(wallW, mmWalls[i], w);
+                            if (mmWalls[i] > 0.5 && w > 0.25) wallI = i;
+                            if (w > 0.0 && mmWalls[i] < 0.5) {
+                                float s = mmScales[i];
+                                vec4 d = textureGrad(mmDetail, vec3(p * s, float(i)), dx * s, dy * s);
+                                float t = mmBlend(h, d.b, w);
+                                if (t > 0.0) {
+                                    col = mix(col, textureGrad(mmLayers, vec3(p * s, float(i)), dx * s, dy * s).rgb * mmTints[i], t);
+                                    tn = mix(tn, d.rg * 2.0 - 1.0, t);
+                                    h = mix(h, d.b, t);
+                                    r = mix(r, d.a, t);
+                                }
+                            }
+                        }
+                    }
+                    #define MM_LAYER(I, RAW) mmLayer(I, RAW, mmP, mmDx, mmDy, mmFine, mmAcc, mmWallW, mmWallI, mmCol, mmTn, mmH, mmR)
+                    #define MM_GROUP(G, W) MM_LAYER(G * 4 + 1, W.x); MM_LAYER(G * 4 + 2, W.y); MM_LAYER(G * 4 + 3, W.z); MM_LAYER(G * 4 + 4, W.w)`,
                 )
                 .replace(
                     "#include <map_fragment>",
@@ -878,39 +906,24 @@ export class TerrainState {
                     float mmWallW = 0.0;
                     int mmWallI = -1;
                     vec2 mmTx = 1.0 / mmSz;
+                    #if MM_GROUPS > 1
                     for (int g = 0; g < MM_GROUPS; g++) {
-                        float mmG = float(g);
-                        vec4 mmSoft = texture(mmWeights, vec3(mmUv + vec2(2.2, 1.0) * mmTx, mmG)) + texture(mmWeights, vec3(mmUv + vec2(-1.0, 2.2) * mmTx, mmG)) + texture(mmWeights, vec3(mmUv + vec2(-2.2, -1.0) * mmTx, mmG)) + texture(mmWeights, vec3(mmUv + vec2(1.0, -2.2) * mmTx, mmG));
-                        mmWs[g] = mix(texture(mmWeights, vec3(mmUv, mmG)), mmSoft * 0.25, 0.65);
+                        mmWs[g] = mmGroupWeight(mmUv, mmTx, float(g));
                         mmAcc -= dot(mmWs[g], vec4(1.0));
                     }
+                    #else
+                    mmWs[0] = mmGroupWeight(mmUv, mmTx, 0.0);
+                    mmAcc -= dot(mmWs[0], vec4(1.0));
+                    #endif
                     mmAcc = max(mmAcc, 0.0);
+                    #if MM_GROUPS > 1
                     for (int g = 0; g < MM_GROUPS; g++) {
                         vec4 mmW4 = mmWs[g];
-                        for (int c = 0; c < 4; c++) {
-                            int i = g * 4 + c + 1;
-                            if (i >= MM_COUNT) break;
-                            float mmRaw = mmW4[c];
-                            mmAcc += mmRaw;
-                            float mmW = mmRaw / max(mmAcc, 1e-4);
-                            float mmEdge = 1.0 - abs(mmW * 2.0 - 1.0);
-                            float mmMid = mmNoise(mmP * 18.0 + float(i) * 3.71) * 0.65 + mmNoise(mmP * 41.0 + float(i) * 1.37) * 0.35;
-                            mmW = clamp(mmW + ((mmMid - 0.5) * 1.2 + (mmFine - 0.5) * 0.4) * mmEdge, 0.0, 1.0);
-                            mmWallW = mix(mmWallW, mmWalls[i], mmW);
-                            if (mmWalls[i] > 0.5 && mmW > 0.25) mmWallI = i;
-                            if (mmW > 0.0 && mmWalls[i] < 0.5) {
-                                float s = mmScales[i];
-                                vec4 d = textureGrad(mmDetail, vec3(mmP * s, float(i)), mmDx * s, mmDy * s);
-                                float t = mmBlend(mmH, d.b, mmW);
-                                if (t > 0.0) {
-                                    mmCol = mix(mmCol, textureGrad(mmLayers, vec3(mmP * s, float(i)), mmDx * s, mmDy * s).rgb * mmTints[i], t);
-                                    mmTn = mix(mmTn, d.rg * 2.0 - 1.0, t);
-                                    mmH = mix(mmH, d.b, t);
-                                    mmR = mix(mmR, d.a, t);
-                                }
-                            }
-                        }
+                        MM_GROUP(g, mmW4);
                     }
+                    #else
+                    MM_GROUP(0, mmWs[0]);
+                    #endif
                     vec3 mmGeo = normalize(vMmNormal);
                     vec3 mmObjN = normalize(mmGeo + vec3(mmTn.x, 0.0, -mmTn.y));
                     int mmSL = mmWallW > 0.25 && mmWallI >= 0 ? mmWallI : mmSlopeLayer;

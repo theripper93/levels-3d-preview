@@ -10,6 +10,7 @@ const QUADRANTS = [
     [1, 1],
 ];
 const _position = new Vector2();
+const UNPACK_STATE = ["UNPACK_ROW_LENGTH", "UNPACK_IMAGE_HEIGHT", "UNPACK_SKIP_PIXELS", "UNPACK_SKIP_ROWS", "UNPACK_SKIP_IMAGES"];
 
 export class MaskAtlas {
     constructor() {
@@ -79,6 +80,8 @@ export class MaskAtlas {
     }
 
     upload(renderer, block, data) {
+        const gl = renderer.getContext();
+        for (const name of UNPACK_STATE) renderer.state.pixelStorei(gl[name], 0);
         this.uploader.image = { width: block.size, height: block.size, data };
         _position.set(block.x, block.y);
         renderer.copyTextureToTexture(this.uploader, this.texture, null, _position);

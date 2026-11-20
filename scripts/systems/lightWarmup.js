@@ -1,11 +1,9 @@
 import * as THREE from "three";
 import { compileForComposer } from "../render/pipeline.js";
-import { useClusteredLights } from "../vfx/quality.js";
 
 export const WARMUP_LAYER = 31;
 const MAX_WAIT = 10000;
 const COMPILE_BUDGET = 2;
-export const EFFECT_POOL_SIZE = 4;
 
 export class LightWarmup {
     constructor(parent) {
@@ -22,13 +20,6 @@ export class LightWarmup {
     createEffectPool() {
         this.effectLights.clear();
         this.effectPool = [];
-        if (useClusteredLights()) return;
-        for (let i = 0; i < EFFECT_POOL_SIZE; i++) {
-            const light = new THREE.PointLight(0xffffff, 0, 0.0001, 2);
-            light.userData.pooled = true;
-            this.effectLights.add(light);
-            this.releaseEffectLight(light);
-        }
     }
 
     acquireEffectLight() {

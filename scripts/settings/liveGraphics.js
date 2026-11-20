@@ -45,7 +45,7 @@ function applyPending() {
     if (has(COMPOSER_KEYS)) canvas3d.buildComposerPasses();
     else if (keys.has("antialiasing")) canvas3d.initAA();
     if (keys.has("effectsQuality")) canvas3d.weather?.surface?.refreshQuality();
-    if (keys.has("fowQuality")) canvas3d.fogExploration?.refreshQuality();
+    if (keys.has("volumetricFog")) canvas3d.fogExploration?.refreshMist();
     if (has(SHADOW_KEYS)) applyShadows(canvas3d);
 }
 

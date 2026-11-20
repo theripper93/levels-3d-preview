@@ -3,7 +3,6 @@ import { MapBrowser } from "../apps/sharing.js";
 import { registerQualitySettings } from "../vfx/quality.js";
 import { GraphicsSettings } from "./performancePresets.js";
 import { queueGraphicsChange, updateRulerFontSize } from "./liveGraphics.js";
-
 const settingCache = {};
 
 export function getSetting(key) {
@@ -714,21 +713,14 @@ export function registerSettings() {
             default: "fxaa",
         });
 
-        game.settings.register("levels-3d-preview", "fowQuality", {
-            name: game.i18n.localize("levels3dpreview.settings.fowQuality.name"),
-            hint: game.i18n.localize("levels3dpreview.settings.fowQuality.hint"),
+        game.settings.register("levels-3d-preview", "volumetricFog", {
+            name: game.i18n.localize("levels3dpreview.settings.volumetricFog.name"),
+            hint: game.i18n.localize("levels3dpreview.settings.volumetricFog.hint"),
             scope: "client",
             config: false,
-            type: Number,
-            choices: {
-                1: game.i18n.localize("levels3dpreview.settings.fowQuality.options.native"),
-                0.75: game.i18n.localize("levels3dpreview.settings.fowQuality.options.high"),
-                0.5: game.i18n.localize("levels3dpreview.settings.fowQuality.options.medium"),
-                0.25: game.i18n.localize("levels3dpreview.settings.fowQuality.options.low"),
-                0.1: game.i18n.localize("levels3dpreview.settings.fowQuality.options.verylow"),
-            },
-            onChange: () => queueGraphicsChange("fowQuality"),
-            default: 1,
+            type: Boolean,
+            onChange: () => queueGraphicsChange("volumetricFog"),
+            default: false,
         });
 
         game.settings.register("levels-3d-preview", "dofblur", {

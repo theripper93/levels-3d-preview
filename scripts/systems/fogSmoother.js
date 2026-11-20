@@ -4,7 +4,11 @@ const TEXELS_PER_GRID = 8;
 const MAX_RESOLUTION = 2048;
 const SOFTNESS = 0.5;
 const SAFETY_MARGIN = 1.5;
-const FADE_DURATION = 0.25;
+const REVEAL_TAU = 0.5;
+const HIDE_TAU = 1;
+const FADE_DURATION = 1;
+const SETTLE_FACTOR = 7;
+const TOGGLE_SPEED = 2;
 const AXIS_X = new THREE.Vector2(1, 0);
 const AXIS_Y = new THREE.Vector2(0, 1);
 
@@ -76,11 +80,14 @@ const BLEND_SHADER = /* glsl */ `
 uniform sampler2D uShown;
 uniform sampler2D uTarget;
 uniform float uStep;
+uniform float uHideStep;
 void main() {
     ivec2 pixel = ivec2(gl_FragCoord.xy);
     float shown = texelFetch(uShown, pixel, 0).r;
     float target = texelFetch(uTarget, pixel, 0).r;
-    gl_FragColor = vec4(target <= shown ? target : min(target, shown + uStep), 0.0, 0.0, 1.0);
+    float rate = target <= shown ? uHideStep : uStep;
+    float next = shown + (target - shown) * rate;
+    gl_FragColor = vec4(abs(target - next) < 0.004 ? target : next, 0.0, 0.0, 1.0);
 }
 `;
 
@@ -100,7 +107,7 @@ export class FogSmoother {
         this.poolMaterial = passMaterial(POOL_SHADER, { uSource: { value: null }, uAxis: { value: AXIS_X }, uScale: { value: 1 } });
         this.erodeMaterial = passMaterial(ERODE_SHADER, { uSource: { value: null }, uRadius: { value: 0 } });
         this.blurMaterial = passMaterial(BLUR_SHADER, { uSource: { value: null }, uRadius: { value: 0 } });
-        this.blendMaterial = passMaterial(BLEND_SHADER, { uShown: { value: null }, uTarget: { value: null }, uStep: { value: 1 } });
+        this.blendMaterial = passMaterial(BLEND_SHADER, { uShown: { value: null }, uTarget: { value: null }, uStep: { value: 1 }, uHideStep: { value: 1 } });
         this.quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), this.blendMaterial);
         this.quad.frustumCulled = false;
         this.scene = new THREE.Scene();
@@ -111,6 +118,7 @@ export class FogSmoother {
         this.dirty = false;
         this.primed = false;
         this.fadeRemaining = 0;
+        this.speed = 1;
         this.shownIndex = 0;
         this.resize();
     }
@@ -147,7 +155,8 @@ export class FogSmoother {
         this.fadeRemaining = 0;
     }
 
-    setSource(texture, width, height) {
+    setSource(texture, width, height, toggled = false) {
+        if (toggled) this.speed = TOGGLE_SPEED;
         this.source = texture;
         this.sourceSize.set(width, height);
         this.dirty = true;
@@ -181,7 +190,7 @@ export class FogSmoother {
         this.pass(this.poolMaterial, { uSource: this.rows.texture, uAxis: AXIS_Y, uScale: this.sourceSize.y / this.height }, this.ping);
         this.pass(this.erodeMaterial, { uSource: this.ping.texture, uRadius: this.erodeRadius }, this.pong);
         this.pass(this.blurMaterial, { uSource: this.pong.texture, uRadius: this.blurRadius }, this.smoothed);
-        this.fadeRemaining = this.primed ? FADE_DURATION : 0;
+        this.fadeRemaining = this.primed ? Math.max(FADE_DURATION, SETTLE_FACTOR * Math.max(REVEAL_TAU, HIDE_TAU)) / this.speed : 0;
         this.primed = true;
     }
 
@@ -190,8 +199,11 @@ export class FogSmoother {
         this.fadeRemaining -= elapsed;
         const finalStep = this.fadeRemaining <= 0;
         if (finalStep) this.fadeRemaining = 0;
+        const speed = this.speed;
+        if (finalStep) this.speed = 1;
         const next = 1 - this.shownIndex;
-        this.pass(this.blendMaterial, { uShown: this.shown[this.shownIndex].texture, uTarget: this.smoothed.texture, uStep: finalStep ? 1 : elapsed / FADE_DURATION }, this.shown[next]);
+        const ease = (tau) => (finalStep ? 1 : 1 - Math.exp((-elapsed * speed) / tau));
+        this.pass(this.blendMaterial, { uShown: this.shown[this.shownIndex].texture, uTarget: this.smoothed.texture, uStep: ease(REVEAL_TAU), uHideStep: ease(HIDE_TAU) }, this.shown[next]);
         this.shownIndex = next;
     }
 

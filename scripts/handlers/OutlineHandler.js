@@ -1,16 +1,27 @@
 import * as THREE from "three";
-import { OutlinePass } from "three/addons/postprocessing/OutlinePass.js";
-import { VFX_LAYER } from "../vfx/constants.js";
+import { frame } from "../render/frame.js";
+import { compileForComposer } from "../render/pipeline.js";
+import { DisplayReferredColor } from "../render/outputPass.js";
+import { OUTLINE_LAYER, OUTLINE_ORDER, createOutlineMaterials, createProxy, isOutlineSource } from "../render/outlineShell.js";
+
+const OUTLINE_LAYERS = [
+    { width: 1.5, opacity: 1, boost: 1.15 },
+    { width: 2.5, opacity: 0.35, boost: 1 },
+    { width: 3.5, opacity: 0.12, boost: 1 },
+];
+const DISPLAY_LIMIT = 0.97;
 
 export class OutlineHandler {
     constructor(_parent) {
         this.parent = _parent;
         this._enabled = game.settings.get("levels-3d-preview", "outline");
+        this.controlledOutline = new Map();
+        this.hoveredOutline = new Map();
         if (this._enabled) this.init();
     }
 
     get active() {
-        return this._enabled && !!(this.controlledOutline.selectedObjects.length || this.hoveredOutline.selectedObjects.length);
+        return this._enabled && !!(this.controlledOutline.size || this.hoveredOutline.size);
     }
 
     get renderer() {
@@ -31,101 +42,140 @@ export class OutlineHandler {
 
     getDispositionColor(disposition) {
         const disp = Object.entries(CONST.TOKEN_DISPOSITIONS).find((entry) => entry[1] === disposition);
-        return CONFIG.Canvas.dispositionColors[disp[0]] || CONFIG.Canvas.dispositionColors.NEUTRAL;
+        return CONFIG.Canvas.dispositionColors[disp?.[0]] || CONFIG.Canvas.dispositionColors.NEUTRAL;
     }
 
     init() {
-        this.controlledOutline = new OutlinePass(new THREE.Vector2(window.innerWidth, window.innerHeight), this.scene, this.camera);
-        this.composer.addPass(this.controlledOutline);
-        this.hoveredOutline = new OutlinePass(this.renderer.getSize(new THREE.Vector2()), this.scene, this.camera);
-        this.composer.addPass(this.hoveredOutline);
-        for (const pass of [this.controlledOutline, this.hoveredOutline]) this.excludeEffects(pass);
+        this.resolution = { value: new THREE.Vector2(1, 1) };
+        this.materials = createOutlineMaterials(this.resolution, OUTLINE_LAYERS);
+        this.root = new THREE.Group();
+        this.root.matrixAutoUpdate = false;
+        this.root.matrixWorldAutoUpdate = false;
+        this.root.renderOrder = OUTLINE_ORDER;
+        this.root.layers.set(OUTLINE_LAYER);
+        this.displayColor = new DisplayReferredColor();
+        this.scratchColor = new THREE.Color();
+        this.exposure = { toneMappingExposure: 1 };
+        this.camera.layers.enable(OUTLINE_LAYER);
     }
 
-    excludeEffects(pass) {
-        const render = pass.render;
-        pass.render = (...args) => {
-            if (!pass.selectedObjects.length) return render.apply(pass, args);
-            const layers = pass.renderCamera.layers;
-            const mask = layers.mask;
-            layers.disable(VFX_LAYER);
-            try {
-                render.apply(pass, args);
-            } finally {
-                layers.mask = mask;
-            }
-        };
+    createProxies(source, colors) {
+        return this.materials.map((material, index) => createProxy(source, material, OUTLINE_ORDER + index, colors[index]));
     }
 
     warmUp() {
         if (!this._enabled) return;
         const models = Object.values(this.parent.tokens).map((t) => t.model).filter(Boolean);
-        const dummy = models.length ? null : new THREE.Mesh(new THREE.BoxGeometry(), new THREE.MeshBasicMaterial());
-        if (dummy) this.scene.add(dummy);
-        const { composer, renderer } = this;
-        const previous = renderer.getRenderTarget();
+        const dummy = new THREE.Mesh(new THREE.BoxGeometry(), new THREE.MeshBasicMaterial());
+        const group = new THREE.Group();
+        for (const object of [dummy, ...models]) object.traverse((child) => isOutlineSource(child) && group.add(...this.createProxies(child, [])));
         try {
-            for (const pass of [this.controlledOutline, this.hoveredOutline]) {
-                const selected = pass.selectedObjects;
-                pass.selectedObjects = dummy ? [dummy] : models;
-                try {
-                    pass.render(renderer, composer.writeBuffer, composer.readBuffer, 0, false);
-                } finally {
-                    pass.selectedObjects = selected;
-                }
-            }
+            compileForComposer(this.parent, group, this.camera, this.scene);
         } finally {
-            renderer.setRenderTarget(previous);
-            if (dummy) {
-                this.scene.remove(dummy);
-                dummy.geometry.dispose();
-                dummy.material.dispose();
-            }
+            dummy.geometry.dispose();
+            dummy.material.dispose();
         }
+    }
+
+    addOutline(outlines, object, color) {
+        const entry = { object, color: new THREE.Color().setHex(color, THREE.NoColorSpace), colors: OUTLINE_LAYERS.map(() => new THREE.Color()), items: [] };
+        object.traverse((source) => {
+            if (!isOutlineSource(source)) return;
+            const proxies = this.createProxies(source, [null, ...entry.colors]);
+            entry.items.push({ source, proxies });
+            this.root.add(...proxies);
+        });
+        outlines.set(object, entry);
+    }
+
+    removeOutline(outlines, object) {
+        const entry = outlines.get(object);
+        if (!entry) return;
+        for (const item of entry.items) for (const proxy of item.proxies) proxy.removeFromParent();
+        outlines.delete(object);
     }
 
     toggleControlled(object, controlled) {
         if (!this._enabled) return;
-        if (controlled) {
-            if (this.controlledOutline.selectedObjects.includes(object)) return;
-            this.controlledOutline.visibleEdgeColor.set(CONFIG.Canvas.dispositionColors.CONTROLLED);
-            this.controlledOutline.hiddenEdgeColor.set(CONFIG.Canvas.dispositionColors.CONTROLLED);
-            this.controlledOutline.selectedObjects.push(object);
-        } else {
-            if (!this.controlledOutline.selectedObjects.includes(object)) return;
-            this.controlledOutline.selectedObjects.splice(this.controlledOutline.selectedObjects.indexOf(object), 1);
-        }
+        if (!controlled) return this.removeOutline(this.controlledOutline, object);
+        if (!this.controlledOutline.has(object)) this.addOutline(this.controlledOutline, object, CONFIG.Canvas.dispositionColors.CONTROLLED);
     }
 
     toggleHovered(object, hovered, disposition) {
         if (!this._enabled) return;
-        if (hovered) {
-            if (this.hoveredOutline.selectedObjects.includes(object)) return;
-            this.hoveredOutline.visibleEdgeColor.set(this.getDispositionColor(disposition));
-            this.hoveredOutline.hiddenEdgeColor.set(this.getDispositionColor(disposition));
-            this.hoveredOutline.selectedObjects.push(object);
-        } else {
-            if (!this.hoveredOutline.selectedObjects.includes(object)) return;
-            this.hoveredOutline.selectedObjects.splice(this.hoveredOutline.selectedObjects.indexOf(object), 1);
-        }
+        if (!hovered) return this.removeOutline(this.hoveredOutline, object);
+        const color = this.getDispositionColor(disposition);
+        const entry = this.hoveredOutline.get(object);
+        if (entry) entry.color.setHex(color, THREE.NoColorSpace);
+        else this.addOutline(this.hoveredOutline, object, color);
     }
 
     clearAllOutlines() {
-        this.controlledOutline.selectedObjects = [];
-        this.hoveredOutline.selectedObjects = [];
+        for (const outlines of [this.controlledOutline, this.hoveredOutline]) for (const object of [...outlines.keys()]) this.removeOutline(outlines, object);
+    }
+
+    update() {
+        if (!this.active) {
+            if (this.root?.parent) this.root.removeFromParent();
+            return;
+        }
+        if (this.root.parent !== this.scene) this.scene.add(this.root);
+        this.renderer.getDrawingBufferSize(this.resolution.value);
+        const mask = this.camera.layers.mask;
+        for (const outlines of [this.controlledOutline, this.hoveredOutline]) for (const entry of outlines.values()) this.updateEntry(entry, mask);
+    }
+
+    updateEntry(entry, mask) {
+        const shown = isShownIn(entry.object, this.scene);
+        if (shown) this.updateColors(entry);
+        for (const { source, proxies } of entry.items) {
+            const visible = shown && (source.layers.mask & mask) !== 0 && isShownWithin(source, entry.object);
+            for (const proxy of proxies) proxy.visible = visible;
+        }
+    }
+
+    updateColors(entry) {
+        OUTLINE_LAYERS.forEach((layer, index) => this.toSceneColor(this.scratchColor.copy(entry.color).multiplyScalar(layer.boost), entry.colors[index]));
+    }
+
+    toSceneColor(display, target) {
+        display.r = Math.min(display.r, DISPLAY_LIMIT);
+        display.g = Math.min(display.g, DISPLAY_LIMIT);
+        display.b = Math.min(display.b, DISPLAY_LIMIT);
+        display.convertSRGBToLinear();
+        this.exposure.toneMappingExposure = frame.exposure;
+        this.displayColor.wrap(display, this.exposure).getRGB(target);
     }
 
     destroy() {
         if (!this._enabled) return;
-        this.composer.removePass(this.controlledOutline);
-        this.composer.removePass(this.hoveredOutline);
-        this.controlledOutline.dispose();
-        this.hoveredOutline.dispose();
+        this.clearAllOutlines();
+        this.root.removeFromParent();
+        for (const material of this.materials) material.dispose();
     }
 
     static setHooks() {
         setOutlineHooks();
     }
+}
+
+function isShownIn(object, scene) {
+    let current = object;
+    while (current) {
+        if (!current.visible) return false;
+        if (current === scene) return true;
+        current = current.parent;
+    }
+    return false;
+}
+
+function isShownWithin(object, root) {
+    let current = object;
+    while (current && current !== root) {
+        if (!current.visible) return false;
+        current = current.parent;
+    }
+    return current === root;
 }
 
 function setOutlineHooks() {

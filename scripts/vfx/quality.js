@@ -27,12 +27,12 @@ function readTier() {
 export function getQuality() {
     if (cached) return cached;
     const tier = readTier();
-    cached = { tier, ...QUALITY_TIERS[tier], reduceMotion: !!readSetting("reduceMotion", false), ao: AO_SAMPLES[readSetting("ambientOcclusion", "medium")] ?? 0 };
+    cached = { tier, ...QUALITY_TIERS[tier], reduceMotion: photosensitiveMode(), ao: AO_SAMPLES[readSetting("ambientOcclusion", "medium")] ?? 0 };
     return cached;
 }
 
-export function useClusteredLights() {
-    return readSetting("clusteredLights", true);
+function photosensitiveMode() {
+    return game.settings.settings.has("core.photosensitiveMode") ? !!game.settings.get("core", "photosensitiveMode") : false;
 }
 
 export function refreshQuality() {
@@ -61,16 +61,6 @@ export function registerQualitySettings() {
         },
     });
 
-    game.settings.register(MODULE_ID, "reduceMotion", {
-        name: "levels3dpreview.vfx.settings.reduceMotion.name",
-        hint: "levels3dpreview.vfx.settings.reduceMotion.hint",
-        scope: "client",
-        config: false,
-        type: Boolean,
-        default: false,
-        onChange: () => refreshQuality(),
-    });
-
     game.settings.register(MODULE_ID, "ambientOcclusion", {
         name: "levels3dpreview.settings.ambientOcclusion.name",
         hint: "levels3dpreview.settings.ambientOcclusion.hint",
@@ -85,21 +75,15 @@ export function registerQualitySettings() {
         },
     });
 
-    game.settings.register(MODULE_ID, "clusteredLights", {
-        name: "levels3dpreview.settings.clusteredLights.name",
-        hint: "levels3dpreview.settings.clusteredLights.hint",
-        scope: "client",
-        config: false,
-        type: Boolean,
-        default: true,
-        requiresReload: true,
-    });
-
     game.settings.register(MODULE_ID, "enableEffects", {
         scope: "client",
         config: false,
         type: Boolean,
         default: true,
+    });
+
+    Hooks.on("clientSettingChanged", (key) => {
+        if (key === "core.photosensitiveMode") refreshQuality();
     });
 
     const storage = game.settings.storage.get("client");

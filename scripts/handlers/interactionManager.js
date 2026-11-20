@@ -181,7 +181,18 @@ export class InteractionManager {
     computeSightCollision(v1, v2, type = "move", elongate = false, useDistance = true, useClipping = false, returnAll = false) {
         const origin = posCanvasTo3d(v1);
         const target = posCanvasTo3d(v2);
-        return this.computeSightCollisionFrom3DPositions(origin, target, type, elongate, useDistance, useClipping, returnAll);
+        if (elongate || useClipping || returnAll) return this.computeSightCollisionFrom3DPositions(origin, target, type, elongate, useDistance, useClipping, returnAll);
+        const key = `${type}|${useDistance}|${origin.x}|${origin.y}|${origin.z}|${target.x}|${target.y}|${target.z}`;
+        if (!this._rayMemo) {
+            this._rayMemo = new Map();
+            queueMicrotask(() => (this._rayMemo = null));
+        }
+        let result = this._rayMemo.get(key);
+        if (result === undefined) {
+            result = this.computeSightCollisionFrom3DPositions(origin, target, type, elongate, useDistance, useClipping, returnAll);
+            this._rayMemo.set(key, result);
+        }
+        return result ? result.clone() : result;
     }
 
     computeSightCollisionFrom3DPositions(origin, target, type, elongate, useDistance = true, useClipping = false, returnAll = false) {

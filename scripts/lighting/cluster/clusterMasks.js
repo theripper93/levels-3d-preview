@@ -17,6 +17,10 @@ const WAKE_HOOKS = ["canvasReady", "initializeLightSources", "lightingRefresh", 
 
 const _position = new Vector3();
 
+function maskRadius(light) {
+    return light.baseDistance > 0 ? light.baseDistance : light.distance;
+}
+
 function getLightShape(source) {
     const lightSource = source.lightSource ?? source.light;
     if (!lightSource?.active) return null;
@@ -138,7 +142,7 @@ export class ClusterMasks {
         const light = entry.light;
         const source = light.source;
         const seen = entry.seen;
-        if (source !== seen.source || light.distance !== seen.distance) return true;
+        if (source !== seen.source || maskRadius(light) !== seen.distance) return true;
         if (source && getLightShape(source) !== seen.shape) return true;
         const e = light.matrixWorld.elements;
         return e[12] !== seen.x || e[13] !== seen.y || e[14] !== seen.z;
@@ -158,7 +162,7 @@ export class ClusterMasks {
         const seen = entry.seen;
         this.stale.delete(entry);
         seen.source = source;
-        seen.distance = light.distance;
+        seen.distance = maskRadius(light);
         seen.shape = source ? getLightShape(source) : null;
         light.updateWorldMatrix(true, false);
         const e = light.matrixWorld.elements;
@@ -170,7 +174,7 @@ export class ClusterMasks {
         const shape = seen.shape;
         const position = _position.setFromMatrixPosition(light.matrixWorld);
         const radiusPx = shape?.config?.radius;
-        const half = radiusPx > 0 ? radiusPx / factor : light.distance;
+        const half = radiusPx > 0 ? radiusPx / factor : seen.distance;
         if (!(half > 0)) return entry.center && this.release(entry);
         const cx = shape ? shape.origin.x / factor : position.x;
         const cz = shape ? shape.origin.y / factor : position.z;

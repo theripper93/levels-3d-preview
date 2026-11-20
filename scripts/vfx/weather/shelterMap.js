@@ -165,6 +165,7 @@ export class ShelterMap {
         scene.background = state.background;
         for (const [child, visible] of hidden) child.visible = visible;
         this.ready = true;
+        this.version = (this.version ?? 0) + 1;
     }
 
     sample(x, z) {

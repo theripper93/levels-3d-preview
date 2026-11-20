@@ -19,7 +19,7 @@ function inverseRRTAndODTFit(value) {
     return (-b + Math.sqrt(b * b - 4 * a * c)) / (2 * a);
 }
 
-class DisplayReferredColor extends Color {
+export class DisplayReferredColor extends Color {
     wrap(source, renderer) {
         this.source = source;
         this.renderer = renderer;

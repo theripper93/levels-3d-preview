@@ -951,7 +951,7 @@ class Levels3DPreview {
 
         const antialiasing = {
             fxaa: () => {
-                const aa = new ShaderPass(FXAAShader);
+                const aa = new ShaderPass({ ...FXAAShader, fragmentShader: patchFXAA(FXAAShader.fragmentShader) });
                 const pixelRatio = this.renderer.getPixelRatio();
                 aa.material.uniforms["resolution"].value.x = 1 / (window.innerWidth * pixelRatio);
                 aa.material.uniforms["resolution"].value.y = 1 / (window.innerHeight * pixelRatio);
@@ -1586,13 +1586,7 @@ class Levels3DPreview {
                 this.camera.position.copy(this._toggleCameraLockPosition);
             }
             this.recoverCamera();
-            if (!this._visibilityCache) this._visibilityCache = new Map();
-            const visibilityCache = this._visibilityCache;
-            visibilityCache.clear();
-            if (this.outline.active)
-                this.scene.traverse((o) => {
-                    visibilityCache.set(o.uuid, o.visible);
-                });
+            this.outline.update();
             this.shadowBatcher.update();
             this.kitBatcher.update();
             cameraShake.apply(this.camera, delta, this.controls.target);
@@ -1609,10 +1603,6 @@ class Levels3DPreview {
                 this.resizeCanvasToDisplaySize();
                 recomputeGravity();
             }
-            if (visibilityCache.size)
-                this.scene.traverse((o) => {
-                    o.visible = visibilityCache.get(o.uuid);
-                });
         } catch (error) {
             this._errCount++;
             console.error("3D Canvas: An Error Occured in the Rendering Loop", error);
@@ -2226,6 +2216,28 @@ window.addEventListener("resize", () => {
         setTimeout(() => game.Levels3DPreview?.resizeCanvasToDisplaySize(), 250);
     }
 });
+
+const FXAA_APPLY = `vec4 ApplyFXAA( sampler2D tex2D, vec2 texSize, vec2 uv ) {
+    LuminanceData luminance = SampleLuminanceNeighborhood( tex2D, texSize, uv );
+    vec2 sampleUv = uv;
+    if ( !ShouldSkipPixel( luminance ) ) {
+        float pixelBlend = DeterminePixelBlendFactor( luminance );
+        EdgeData edge = DetermineEdge( texSize, luminance );
+        float finalBlend = max( pixelBlend, DetermineEdgeBlendFactor( tex2D, texSize, luminance, edge, uv ) );
+        if ( edge.isHorizontal ) sampleUv.y += edge.pixelStep * finalBlend;
+        else sampleUv.x += edge.pixelStep * finalBlend;
+    }
+    return Sample( tex2D, sampleUv );
+}
+
+`;
+
+function patchFXAA(source) {
+    const start = source.indexOf("vec4 ApplyFXAA");
+    const end = source.indexOf("void main()");
+    const body = start >= 0 && end > start ? source.slice(0, start) + FXAA_APPLY + source.slice(end) : source;
+    return body.replace("return texture( tex2D, uv );", "return textureLod( tex2D, uv, 0.0 );");
+}
 
 function updateTokenRotationCamera(token) {
     const cPos = game.Levels3DPreview.camera.position;

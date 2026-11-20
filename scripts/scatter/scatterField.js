@@ -104,6 +104,48 @@ function windShadowMaterials(material, params) {
     };
 }
 
+const HUE_VERTEX = `#include <begin_vertex>
+vInstanceHue = instanceHue;`;
+const HUE_FRAGMENT = `#include <map_fragment>
+{
+    const vec3 hueAxis = vec3(0.57735027);
+    float hueCos = cos(vInstanceHue);
+    diffuseColor.rgb = diffuseColor.rgb * hueCos + cross(hueAxis, diffuseColor.rgb) * sin(vInstanceHue) + hueAxis * dot(hueAxis, diffuseColor.rgb) * (1.0 - hueCos);
+}`;
+const hueVariants = new WeakMap();
+
+function hueCompile(previous) {
+    return function (shader, renderer) {
+        previous?.call(this, shader, renderer);
+        shader.vertexShader = shader.vertexShader.replace("#include <common>", `#include <common>
+attribute float instanceHue;
+varying float vInstanceHue;`).replace("#include <begin_vertex>", HUE_VERTEX);
+        shader.fragmentShader = shader.fragmentShader.replace("#include <common>", `#include <common>
+varying float vInstanceHue;`).replace("#include <map_fragment>", HUE_FRAGMENT);
+    };
+}
+
+function hueMaterial(material) {
+    if (Array.isArray(material)) return material.map(hueMaterial);
+    if (!hueVariants.has(material)) {
+        const m = material.clone();
+        const previous = material._userOnBeforeCompile;
+        m.onBeforeCompile = hueCompile(previous);
+        const baseKey = THREE.Material.prototype.customProgramCacheKey;
+        m.customProgramCacheKey = function () {
+            return `${baseKey.call(this)}|hue|${previous?.toString() ?? ""}`;
+        };
+        hueVariants.set(material, m);
+    }
+    return hueVariants.get(material);
+}
+
+function hueGeometry(geometry, list) {
+    const g = geometry.clone();
+    g.setAttribute("instanceHue", new THREE.InstancedBufferAttribute(new Float32Array(list.map((inst) => ((inst.hue ?? 0) * Math.PI) / 180)), 1));
+    return g;
+}
+
 const imageKeys = new WeakMap();
 const functionIds = new WeakMap();
 const canonicalMaterials = new Map();
@@ -365,7 +407,7 @@ export class ScatterField {
         const t = this.tile3d;
         const gridPx = canvas.scene.grid.size;
         const key = this.baseKey();
-        const blockers = set ? await this.blockers() : [];
+        const blockers = set && set.kind !== "furnish" ? await this.blockers() : [];
         if (version !== this.version || this.disposed) return;
         const blockKey = JSON.stringify(blockers.map((b) => [b.x, b.y, b.cos * 100, b.sin * 100, b.hx, b.hz].map(Math.round)));
         let base = this.base?.key === key && this.base.blockKey === blockKey ? this.base : null;
@@ -395,8 +437,12 @@ export class ScatterField {
         this.interior = set?.kind === "furnish";
         this.ex = ex;
         if (fresh || changed.size) this.buildGenerated(changed);
-        const items = explicit.filter((inst) => this.infos.get(assetKey(inst.asset)));
-        this.buildItems(items);
+        const itemsKey = JSON.stringify(data.items ?? []);
+        const same = !fresh && !changed.size && this.items && itemsKey === this.itemsKey;
+        const items = same ? this.items : explicit.filter((inst) => this.infos.get(assetKey(inst.asset)));
+        if (!same) this.buildItems(items);
+        this.items = items;
+        this.itemsKey = itemsKey;
         this.instances = [...[...this.groups.values()].flatMap((g) => g.list.filter((inst) => !ex.has(inst.id))), ...items];
         this.pick.scale.set(this.width / factor, 1, this.height / factor);
         this.pick.position.y = this.instances.length ? this.instances.reduce((sum, inst) => sum + inst.y, 0) / this.instances.length - t.center.y : 0;
@@ -404,7 +450,7 @@ export class ScatterField {
         markReceivers(this.content, t);
         markReceivers(this.itemContent, t);
         L.lightWarmup?.warmObject(this.content);
-        L.lightWarmup?.warmObject(this.itemContent);
+        if (!same) for (const mesh of this.itemContent.children) L.lightWarmup?.warmObject(mesh);
         this.stats = { instances: this.instances.length, meshes: this.content.children.length + this.itemContent.children.length, ms: Math.round(performance.now() - start) };
         if (this.updateProxies(items)) t.sendToWorker();
         Hooks.callAll("3DCanvasScatterGenerated", this);
@@ -423,6 +469,7 @@ export class ScatterField {
         const normal = inst.normal.clone().applyAxisAngle(up, -this.angle);
         const tilt = new THREE.Quaternion().setFromUnitVectors(up, up.clone().lerp(normal, inst.asset.align ?? 0).normalize());
         const q = tilt.multiply(new THREE.Quaternion().setFromAxisAngle(up, inst.yaw));
+        if (inst.rx || inst.rz) q.multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(inst.rx ?? 0, 0, inst.rz ?? 0, "YXZ")));
         if (inst.asset.lay) q.multiply(LAY);
         const pos = new THREE.Vector3((inst.x - this.width / 2) / factor, inst.y - t.center.y + (inst.asset.yOffset ?? 0) * k, (inst.z - this.height / 2) / factor);
         return out.compose(pos, q, new THREE.Vector3(k, k, k));
@@ -449,11 +496,16 @@ export class ScatterField {
         const info = this.infos.get(assetKey(asset));
         const castShadow = this.castsShadow(asset, info);
         const matrix = new THREE.Matrix4();
+        const color = new THREE.Color();
+        const tinted = list.some((inst) => inst.tint);
+        const hued = list.some((inst) => inst.hue);
         list.forEach((inst) => (inst.refs = []));
         return info.parts.map((part) => {
-            const mesh = new THREE.InstancedMesh(part.geometry, part.material, list.length);
+            const mesh = new THREE.InstancedMesh(hued ? hueGeometry(part.geometry, list) : part.geometry, hued ? hueMaterial(part.material) : part.material, list.length);
+            mesh.userData.ownGeometry = hued;
             list.forEach((inst, i) => {
                 mesh.setMatrixAt(i, this.instanceMatrix(inst, matrix));
+                if (tinted) mesh.setColorAt(i, color.set(inst.tint ?? 0xffffff));
                 inst.refs.push({ mesh, i });
             });
             mesh.instanceMatrix.needsUpdate = true;
@@ -479,6 +531,7 @@ export class ScatterField {
         meshes.forEach((m) => {
             m.removeFromParent();
             m.dispose();
+            if (m.userData.ownGeometry) m.geometry.dispose();
         });
     }
 
@@ -508,14 +561,14 @@ export class ScatterField {
         this.disposeMeshes(this.itemMeshes);
         const byAsset = new Map();
         for (const inst of items) {
-            const key = assetKey(inst.asset);
+            const key = `${assetKey(inst.asset)}|${inst.tint ? "tint" : ""}|${inst.hue ? "hue" : ""}`;
             if (!byAsset.has(key)) byAsset.set(key, []);
             byAsset.get(key).push(inst);
         }
         const merge = this.interior ? [...this.groups.values()].flatMap((g) => g.list.filter((inst) => !this.ex.has(inst.id) && this.mergeable(inst))) : [];
         const instanced = [];
         for (const list of byAsset.values()) {
-            if ((this.interior || list.length <= MERGE_MAX) && this.mergeable(list[0])) merge.push(...list);
+            if (!list[0].tint && !list[0].hue && (this.interior || list.length <= MERGE_MAX) && this.mergeable(list[0])) merge.push(...list);
             else instanced.push(list);
         }
         this.itemMeshes = instanced.flatMap((list) => this.instancedMeshes(list, this.itemContent));
@@ -533,6 +586,7 @@ export class ScatterField {
         const matrix = new THREE.Matrix4();
         for (const inst of this.merged) {
             inst.refs = [];
+            inst.mergedRanges = [];
             if (this.hiddenMerged.has(inst)) continue;
             const info = this.infoOf(inst);
             const castShadow = this.castsShadow(inst.asset, info);
@@ -540,12 +594,19 @@ export class ScatterField {
             for (const part of info.parts) {
                 const source = mergeSource(part);
                 const key = `${source.key}|${castShadow}`;
-                if (!groups.has(key)) groups.set(key, { material: part.material, castShadow, geometries: [] });
-                groups.get(key).geometries.push(source.geometry.clone().applyMatrix4(matrix));
+                if (!groups.has(key)) groups.set(key, { material: part.material, castShadow, geometries: [], count: 0 });
+                const group = groups.get(key);
+                const geometry = source.geometry.clone().applyMatrix4(matrix);
+                const count = geometry.attributes.position.count;
+                inst.mergedRanges.push({ group, start: group.count, count, source: source.geometry });
+                group.count += count;
+                group.geometries.push(geometry);
             }
         }
-        this.mergedMeshes = [...groups.values()].map(({ material, castShadow, geometries }) => {
+        this.mergedMeshes = [...groups.values()].map((group) => {
+            const { material, castShadow, geometries } = group;
             const mesh = new THREE.Mesh(geometries.length > 1 ? mergeGeometries(geometries) : geometries[0], material);
+            group.mesh = mesh;
             if (geometries.length > 1) geometries.forEach((g) => g.dispose());
             mesh.geometry.computeBoundingSphere();
             mesh.geometry.computeBoundingBox();
@@ -610,12 +671,31 @@ export class ScatterField {
         if (this.merged.has(inst)) {
             if (hidden === this.hiddenMerged.has(inst)) return;
             this.hiddenMerged[hidden ? "add" : "delete"](inst);
-            return this.buildMerged();
+            if (!inst.mergedRanges?.length) return this.buildMerged();
+            return this.writeMerged(inst, hidden);
         }
         const matrix = new THREE.Matrix4();
         for (const { mesh, i } of inst.refs ?? []) {
             mesh.setMatrixAt(i, hidden ? ZERO : this.instanceMatrix(inst, matrix));
             mesh.instanceMatrix.needsUpdate = true;
+        }
+    }
+
+    writeMerged(inst, hidden) {
+        const matrix = this.instanceMatrix(inst, new THREE.Matrix4());
+        const v = new THREE.Vector3();
+        for (const { group, start, count, source } of inst.mergedRanges) {
+            const position = group.mesh.geometry.attributes.position;
+            const from = source.attributes.position;
+            for (let k = 0; k < count; k++) {
+                if (hidden) position.setXYZ(start + k, 0, 0, 0);
+                else {
+                    v.fromBufferAttribute(from, k).applyMatrix4(matrix);
+                    position.setXYZ(start + k, v.x, v.y, v.z);
+                }
+            }
+            position.addUpdateRange(start * 3, count * 3);
+            position.needsUpdate = true;
         }
     }
 
@@ -653,6 +733,7 @@ export class ScatterField {
         this.groups.clear();
         this.disposeMeshes(this.itemMeshes);
         this.itemMeshes = [];
+        this.items = null;
         this.merged.clear();
         this.buildMerged();
         this.genProxy?.dispose();

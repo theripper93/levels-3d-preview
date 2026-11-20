@@ -17,7 +17,7 @@
         <legend>{{localize "levels3dpreview.performance.settings.header"}}</legend>
         {{#each settings}}
         {{formGroup field value=value localize=true}}
+        {{#if resolution}}<p class="hint resolution-hint">{{{@root.resolutionHint}}}</p>{{/if}}
         {{/each}}
-        <p class="hint resolution-hint">{{{resolutionHint}}}</p>
     </fieldset>
 </div>

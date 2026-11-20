@@ -2,7 +2,7 @@ import { HandlebarsApplication, mergeClone } from "../lib/utils.js";
 
 const MODULE_ID = "levels-3d-preview";
 
-export const GRAPHICS_SETTINGS = ["resolutionMultiplier", "effectsQuality", "ambientOcclusion", "shadowQuality", "softShadows", "antialiasing", "fowQuality", "dofblur", "enableShaders", "waterQuality", "scatterQuality", "groundCover", "reduceMotion", "clusteredLights"];
+export const GRAPHICS_SETTINGS = ["resolutionMultiplier", "effectsQuality", "ambientOcclusion", "shadowQuality", "softShadows", "antialiasing", "volumetricFog", "dofblur", "enableShaders", "waterQuality", "scatterQuality", "groundCover"];
 
 const performancePresets = {
     verylow: {
@@ -10,7 +10,7 @@ const performancePresets = {
         softShadows: false,
         shadowQuality: 0,
         antialiasing: "none",
-        fowQuality: 0.1,
+        volumetricFog: false,
         enableShaders: false,
         effectsQuality: "off",
         waterQuality: "low",
@@ -22,7 +22,7 @@ const performancePresets = {
         softShadows: false,
         shadowQuality: 0,
         antialiasing: "none",
-        fowQuality: 0.25,
+        volumetricFog: false,
         enableShaders: true,
         effectsQuality: "low",
         waterQuality: "low",
@@ -34,7 +34,7 @@ const performancePresets = {
         softShadows: false,
         shadowQuality: 2,
         antialiasing: "fxaa",
-        fowQuality: 0.5,
+        volumetricFog: false,
         enableShaders: true,
         effectsQuality: "medium",
         waterQuality: "high",
@@ -46,7 +46,7 @@ const performancePresets = {
         softShadows: true,
         shadowQuality: 4,
         antialiasing: "smaa",
-        fowQuality: 0.75,
+        volumetricFog: true,
         enableShaders: true,
         effectsQuality: "high",
         waterQuality: "high",
@@ -58,7 +58,7 @@ const performancePresets = {
         softShadows: true,
         shadowQuality: 8,
         antialiasing: "smaa",
-        fowQuality: 1,
+        volumetricFog: true,
         enableShaders: true,
         effectsQuality: "ultra",
         waterQuality: "high",
@@ -148,7 +148,7 @@ export class GraphicsSettings extends HandlebarsApplication {
             const field = createField(setting);
             this.#fields.set(key, field);
             values[key] = game.settings.get(MODULE_ID, key);
-            settings.push({ field, value: values[key] });
+            settings.push({ field, value: values[key], resolution: key === "resolutionMultiplier" });
         }
         const preset = findCurrentPreset(values);
         return {

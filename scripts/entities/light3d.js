@@ -5,7 +5,6 @@ import { flameSeed, flameTime, setLightFlicker } from "../vfx/light/noise.js";
 import { getLightAnimation, sampleColor, sampleIntensity, sampleRadius, sampleRevolve } from "../vfx/light/animations.js";
 import { LightEffects } from "../vfx/light/lightEffects.js";
 import { ClusterLight } from "../lighting/cluster/clusterLight.js";
-import { useClusteredLights } from "../vfx/quality.js";
 
 const LIGHT_SHADOW_RADIUS = 3;
 
@@ -28,7 +27,7 @@ export class Light3D {
 
     init() {
         this.lightFx = this.isToken ? null : new LightEffects(this);
-        this.clustered = useClusteredLights();
+        this.clustered = true;
         this.isPointLight = this.angle == 360;
         this.light3d = this.createLight3D(this.wantsShadow(this.light));
         this.mesh = new THREE.Group();
