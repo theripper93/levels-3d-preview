@@ -19,12 +19,16 @@ function isWater(tile) {
     return !!tile?.shaders?.realisticWater?.enabled;
 }
 
+function isDecal(tile) {
+    return tile.dynaMesh === "decal" || tile.tile?.document?.flags?.["levels-3d-preview"]?.dynaMesh === "decal";
+}
+
 function isTerrain(tile) {
     return tile.isTerrain || tile.isPlane || tile.dynaMesh === "mapGen" || tile.noiseType !== "none" || (tile.dynaMesh === "mapMaker" && tile.mapMakerMesh?.k === "terrain");
 }
 
 export function isObstacle(tile) {
-    if (isWater(tile) || isTerrain(tile)) return false;
+    if (isWater(tile) || isTerrain(tile) || isDecal(tile)) return false;
     if (tile.dynaMesh === "mapMaker") return true;
     const box = new THREE.Box3().setFromObject(tile.mesh);
     if (box.isEmpty()) return false;
@@ -65,7 +69,7 @@ export function sampleSurface(rect, { top = Infinity } = {}) {
     const scale = Math.min(1, MAX_RES / Math.max((w / gs) * PER_CELL, (h / gs) * PER_CELL));
     const rw = Math.max(8, Math.ceil((w / gs) * PER_CELL * scale));
     const rh = Math.max(8, Math.ceil((h / gs) * PER_CELL * scale));
-    const surfaces = collectSurfaces((tile) => !isWater(tile) && !tile.mapMakerMesh?.noSurface);
+    const surfaces = collectSurfaces((tile) => !isWater(tile) && !isDecal(tile) && !tile.mapMakerMesh?.noSurface);
     const box = new THREE.Box3();
     surfaces.forEach((m) => box.expandByObject(m));
     const ceiling = Math.min(Number.isFinite(top) ? top : Infinity, (box.isEmpty() ? 0 : box.max.y) + gs);

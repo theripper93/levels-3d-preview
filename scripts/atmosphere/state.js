@@ -128,10 +128,11 @@ export class AtmosphereState {
 
         samplePreset(preset, elevation, sample);
         if (darkness > 0) lerpSample(sample, samplePreset(preset, Math.min(elevation, NIGHT_ELEVATION), nightSample), darkness);
-        if (custom) {
-            customTint(sky.color, tint).lerp(WHITE, 0.3);
+        if (sky.color && !setting) {
+            customTint(sky.color, tint).lerp(WHITE, 0.2);
             sample.zenith.multiply(tint);
-            sample.horizon.multiply(tint.lerp(WHITE, THREE.MathUtils.lerp(0.7, 1, 1 - THREE.MathUtils.smoothstep(Math.abs(elevation), 0, TWILIGHT_WIDTH))));
+            sample.ground.multiply(tint);
+            sample.horizon.multiply(tint.lerp(WHITE, THREE.MathUtils.lerp(0.25, 0.5, 1 - THREE.MathUtils.smoothstep(Math.abs(elevation), 0, TWILIGHT_WIDTH))));
         }
 
         this.daylight = THREE.MathUtils.smoothstep(elevation, -0.04, 0.2) * (1 - darkness);
