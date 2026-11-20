@@ -545,9 +545,16 @@ export const surfaceNormalFragment = /* glsl */ `
 #ifdef L3D_SURFACE
 if (uSurfaceEnabled > 0.5) {
     float surfacePixel = length(fwidth(vWorldPositionFoW.xz));
+    #ifdef L3D_SURFACE_BLADE
+    vec3 surfaceWorldNormal = vec3(0.0, 1.0, 0.0);
+    #else
     vec3 surfaceWorldNormal = normalize((vec4(nonPerturbedNormal, 0.0) * viewMatrix).xyz);
+    #endif
     SurfaceInfo surface = surfaceInfo(vWorldPositionFoW, surfaceWorldNormal, surfacePixel);
     if (surface.inside > 0.5) {
+        #ifdef L3D_SURFACE_BLADE
+        surface.up *= smoothstep(0.0, 0.7, L3D_SURFACE_BLADE + uSurfaceCover * 0.7 - 0.1);
+        #endif
         #ifdef L3D_SURFACE_FORCE_BANK
         surface.bank += 1.0;
         #endif

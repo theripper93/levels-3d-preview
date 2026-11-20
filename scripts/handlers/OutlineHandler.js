@@ -57,6 +57,33 @@ export class OutlineHandler {
         };
     }
 
+    warmUp() {
+        if (!this._enabled) return;
+        const models = Object.values(this.parent.tokens).map((t) => t.model).filter(Boolean);
+        const dummy = models.length ? null : new THREE.Mesh(new THREE.BoxGeometry(), new THREE.MeshBasicMaterial());
+        if (dummy) this.scene.add(dummy);
+        const { composer, renderer } = this;
+        const previous = renderer.getRenderTarget();
+        try {
+            for (const pass of [this.controlledOutline, this.hoveredOutline]) {
+                const selected = pass.selectedObjects;
+                pass.selectedObjects = dummy ? [dummy] : models;
+                try {
+                    pass.render(renderer, composer.writeBuffer, composer.readBuffer, 0, false);
+                } finally {
+                    pass.selectedObjects = selected;
+                }
+            }
+        } finally {
+            renderer.setRenderTarget(previous);
+            if (dummy) {
+                this.scene.remove(dummy);
+                dummy.geometry.dispose();
+                dummy.material.dispose();
+            }
+        }
+    }
+
     toggleControlled(object, controlled) {
         if (!this._enabled) return;
         if (controlled) {

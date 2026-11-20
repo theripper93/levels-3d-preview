@@ -44,7 +44,7 @@ export async function switchLevel(L) {
     const sceneId = canvas.scene.id;
     const levelId = canvas.level.id;
     await preload(L, loads);
-    if (!L._active || canvas.scene?.id !== sceneId || canvas.level?.id !== levelId) return;
+    if (!L._active || L._levelSwitch || !canvas.ready || canvas.scene?.id !== sceneId || canvas.level?.id !== levelId) return;
     L._pauseRendering = false;
     const bindings = [
         [L.tokens, canvas.tokens, "token", (token) => L.addToken(token)],

@@ -54,13 +54,20 @@ export async function computeMapMakerBoundsAsync(data) {
     const b = new THREE.Box3();
     const matrix = new THREE.Matrix4();
     const part = new THREE.Matrix4();
+    const v = new THREE.Vector3();
     for (const p of data.parts ?? []) {
         part.fromArray(p.m);
         for (const piece of await loadKitPieces(p.src, p.node)) {
-            if (!piece.geometry.boundingBox) piece.geometry.computeBoundingBox();
-            const pb = piece.geometry.boundingBox.clone().applyMatrix4(matrix.multiplyMatrices(part, piece.matrix));
-            if (p.clip) pb.intersect(new THREE.Box3(new THREE.Vector3(p.clip[0], p.clip[1], p.clip[2]), new THREE.Vector3(p.clip[3], p.clip[4], p.clip[5])));
-            if (!pb.isEmpty()) b.union(pb);
+            matrix.multiplyMatrices(part, piece.matrix);
+            const position = piece.geometry.attributes.position;
+            if (p.s) b.union(proxyBox(p, piece, 1) ?? new THREE.Box3());
+            if (!p.clip) {
+                for (let i = 0; i < position.count; i++) b.expandByPoint(v.fromBufferAttribute(position, i).applyMatrix4(matrix));
+                continue;
+            }
+            const geo = new THREE.BufferGeometry().setAttribute("position", position.clone()).setIndex(piece.geometry.index);
+            const clipped = clipToBox((geo.index ? geo.toNonIndexed() : geo).applyMatrix4(matrix), p.clip);
+            if (clipped) b.union(new THREE.Box3().setFromBufferAttribute(clipped.attributes.position));
         }
     }
     if (b.isEmpty()) return { minX: 0, maxX: 1, minY: 0, maxY: 1, minZ: 0, maxZ: 1 };
@@ -207,19 +214,21 @@ async function buildKitMesh(data, unitScale, { shareMaterials = false } = {}) {
 
 const proxyMaterial = new THREE.MeshBasicMaterial({ visible: false });
 
+function proxyBox(part, piece, unitScale) {
+    if (!piece.geometry.boundingBox) piece.geometry.computeBoundingBox();
+    const matrix = new THREE.Matrix4().makeScale(unitScale, unitScale, unitScale).multiply(new THREE.Matrix4().fromArray(part.m)).multiply(piece.matrix);
+    const box = piece.geometry.boundingBox.clone().applyMatrix4(matrix);
+    if (part.clip) box.intersect(new THREE.Box3().setFromArray(part.clip.map((v) => v * unitScale)));
+    return box.isEmpty() ? null : box.expandByScalar(unitScale);
+}
+
 function solidProxy(parts, loaded, partKey, unitScale) {
     const boxes = [];
-    const scale = new THREE.Matrix4().makeScale(unitScale, unitScale, unitScale);
-    const matrix = new THREE.Matrix4();
     for (const part of parts) {
         if (!part.s) continue;
-        matrix.multiplyMatrices(scale, new THREE.Matrix4().fromArray(part.m));
         for (const piece of loaded.get(partKey(part)) ?? []) {
-            if (!piece.geometry.boundingBox) piece.geometry.computeBoundingBox();
-            const box = piece.geometry.boundingBox.clone().applyMatrix4(new THREE.Matrix4().multiplyMatrices(matrix, piece.matrix));
-            if (part.clip) box.intersect(new THREE.Box3().setFromArray(part.clip.map((v) => v * unitScale)));
-            if (box.isEmpty()) continue;
-            box.expandByScalar(unitScale);
+            const box = proxyBox(part, piece, unitScale);
+            if (!box) continue;
             const size = box.getSize(new THREE.Vector3());
             const center = box.getCenter(new THREE.Vector3());
             boxes.push(new THREE.BoxGeometry(size.x, size.y, size.z).translate(center.x, center.y, center.z));

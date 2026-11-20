@@ -1,5 +1,5 @@
 import { HandlebarsApplication, mergeClone } from "../lib/utils.js";
-import { SKY_DEFAULTS } from "../systems/globalIllumination.js";
+import { SKY_DEFAULTS, darknessAtTime } from "../systems/globalIllumination.js";
 import { PRESET_IDS, SETTING_IDS } from "../atmosphere/presets.js";
 
 const MOON_PHASES = ["new", "waxingCrescent", "firstQuarter", "waxingGibbous", "full", "waningGibbous", "lastQuarter", "waningCrescent"];
@@ -84,7 +84,8 @@ export class DynamicSkyConfig extends HandlebarsApplication {
         const data = foundry.utils.expandObject(new foundry.applications.ux.FormDataExtended(this.element).object).flags["levels-3d-preview"];
         const sky = data.dynamicSky;
         const time = Number(data.sunPosition);
-        atmosphere.setOverride({ enabled: sky.enabled, preset: sky.preset, time, sky });
+        const darkness = sky.enabled && sky.setting === "outdoor" && game.Levels3DPreview.lights.globalIllumination.darknessDrivesSky ? darknessAtTime(this.object, time) : undefined;
+        atmosphere.setOverride({ enabled: sky.enabled, preset: sky.preset, time, sky, darkness });
         if (!sky.enabled) game.Levels3DPreview.lights.globalIllumination.setTarget({ time });
     }
 

@@ -1475,6 +1475,7 @@ class Levels3DPreview {
             }
             this.timer.update();
             const delta = this.timer.getDelta();
+            this.fogExploration?.update(delta);
             this.grid?.updateGrid();
             let calculateObstructing = false;
             Object.values(this.tiles).forEach((tile) => {
@@ -1585,7 +1586,6 @@ class Levels3DPreview {
                 this.camera.position.copy(this._toggleCameraLockPosition);
             }
             this.recoverCamera();
-            //this.fogExploration?.update();
             if (!this._visibilityCache) this._visibilityCache = new Map();
             const visibilityCache = this._visibilityCache;
             visibilityCache.clear();
@@ -1824,8 +1824,11 @@ class Levels3DPreview {
         if (this._builtSceneId !== sceneId || !this._active) return;
         this._progressText = game.i18n.localize("levels3dpreview.controls.loading.gravity");
         this.interactionManager.forceSightCollisions();
+        await this.clusterManager?.settleMasks();
+        if (this._builtSceneId !== sceneId || !this._active) return;
         this._progressText = game.i18n.localize("levels3dpreview.controls.loading.shaders");
         compileForComposer(this, this.scene, this.camera);
+        this.outline.warmUp();
         this.uploadTextures();
         this._ready = true;
         this._firstFrame = true;

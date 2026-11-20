@@ -457,10 +457,11 @@ export function registerWrappers() {
         }
 
         function updateFog(wrapped, ...args) {
-            wrapped(...args);
+            const result = wrapped(...args);
             if (game.Levels3DPreview._active && game.Levels3DPreview.fogExploration) {
                 game.Levels3DPreview.fogExploration.needsUpdate = true;
             }
+            return result;
         }
 
         function drawPreview(wrapped, ...args) {

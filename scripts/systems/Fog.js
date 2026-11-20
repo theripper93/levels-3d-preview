@@ -4,6 +4,7 @@ import { rawTexture } from "../three/rawTexture.js";
 import { injectSurface } from "../vfx/surface/receivers.js";
 import { clusterUniforms } from "../lighting/cluster/clusterManager.js";
 import { declareExtraSamplers } from "../lighting/cluster/clusterChunks.js";
+import { FogSmoother } from "./fogSmoother.js";
 
 export const fogUniforms = {
     fogTexture: { value: null },
@@ -27,6 +28,7 @@ export class Fog {
         this.debouncedUpdate = this._sharedContext ? this.updateTexture.bind(this) : foundry.utils.debounce(this.updateTexture.bind(this), 100);
         this.extractor ??= new foundry.canvas.TextureExtractor(canvas.app.renderer, { callerName: "FogExtractorCanvas3D", controlHash: true, format: PIXI.FORMATS.RED });
         this.extractor.reset();
+        this.smoother = new FogSmoother(parent.renderer);
         this.initTexture();
         this.initPixiRT();
         this.initOverlay();
@@ -99,14 +101,28 @@ export class Fog {
         this.fogTexture = texture;
         this.fogTexture.minFilter = THREE.NearestFilter;
         this.fogTexture.flipY = false;
+        this.smoother.resize();
+        this.smoother.setSource(texture, ...this.getSourceSize(texture));
         this.updateShaders();
         //Dispose the previous texture only once the new one is assigned; never dispose the shared blank texture
         if (previous && previous !== texture && previous !== this.blank && !this._sharedContext) previous.dispose();
     }
 
+    getSourceSize(texture) {
+        if (texture === this.webglFogTexture) return [this.pixiRenderTexture.baseTexture.realWidth, this.pixiRenderTexture.baseTexture.realHeight];
+        const image = texture.image;
+        return [image?.width ?? 0, image?.height ?? 0];
+    }
+
+    update(delta) {
+        if (!this._ready || !this.smoother.active) return;
+        this.smoother.update(delta);
+        fogUniforms.fogTexture.value = this.smoother.texture;
+    }
+
     updateShaders() {
         if (!this._ready) return;
-        fogUniforms.fogTexture.value = this.fogTexture;
+        fogUniforms.fogTexture.value = this.smoother.primed ? this.smoother.texture : this.fogTexture;
         fogUniforms.fogOverlay.value = this._overlay;
         fogUniforms.useOverlay.value = !!this._overlay;
         fogUniforms.overlayRepeat.value = this.overlayRepeat;
@@ -151,6 +167,7 @@ export class Fog {
         this.fogTexture?.dispose();
         this.webglFogTexture?.dispose();
         this.pixiRenderTexture?.destroy(true);
+        this.smoother?.dispose();
         fogUniforms.fogTexture.value = null;
         fogUniforms.fogOverlay.value = null;
         fogUniforms.useOverlay.value = false;

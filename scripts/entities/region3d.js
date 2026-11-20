@@ -359,7 +359,10 @@ export class Region3D extends THREE.Object3D {
     }
 
     static setHooks() {
+        Hooks.on("canvasReady", () => canvas.scene?.regions.forEach((region) => region.polygonTree));
+
         Hooks.on("createRegion", (region) => {
+            region.polygonTree;
             if (game.Levels3DPreview?._active) Region3D.fresh.add(region.id);
         });
 
@@ -374,6 +377,7 @@ export class Region3D extends THREE.Object3D {
         });
 
         Hooks.on("updateRegion", (region, changes) => {
+            region.polygonTree;
             if (!game.Levels3DPreview?._active || !region.object || !foundry.utils.hasProperty(changes, "flags.levels-3d-preview")) return;
             Region3D.handle(region);
         });

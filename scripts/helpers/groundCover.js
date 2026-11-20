@@ -21,6 +21,8 @@ const _matrix = new THREE.Matrix4();
 const _box = new THREE.Box3();
 const SEED_DELAY = 400;
 const SEED_TEXELS = 1 << 24;
+const GROW_SECONDS = 2;
+const FADE_SECONDS = 4;
 
 export function groundCoverQuality() {
     const key = game.settings.settings.has("levels-3d-preview.groundCover") ? game.settings.get("levels-3d-preview", "groundCover") : "medium";
@@ -150,8 +152,25 @@ float gcBilinear(sampler2D tex, vec2 uv, vec2 grid) {
     return mix(mix(a, b, t.x), mix(c, d, t.x), t.y);
 }
 float gcHeightAt(vec2 uv) {
-    if (gcOutOn > 0.5 && (uv.x < 0.0 || uv.y < 0.0 || uv.x > 1.0 || uv.y > 1.0)) return gcBilinear(gcOut, (uv * gcSize + gcOutPad) / (gcSize + 2.0 * gcOutPad), gcOutGrid);
-    return gcBilinear(gcHeight, uv, gcGrid);
+    float h = 0.0;
+    if (gcOutOn > 0.5 && (uv.x < 0.0 || uv.y < 0.0 || uv.x > 1.0 || uv.y > 1.0)) h = gcBilinear(gcOut, (uv * gcSize + gcOutPad) / (gcSize + 2.0 * gcOutPad), gcOutGrid);
+    else h = gcBilinear(gcHeight, uv, gcGrid);
+    return h;
+}
+void gcLayer(int i, float w, vec2 lp, inout float dens, inout float sum, inout int pick, inout float pickW) {
+    if (i >= GC_COUNT) return;
+    sum += w;
+    float d = gcDensity[i];
+    if (gcGaps[i] > 0.0 && w > 0.0) d = max(d, gcGaps[i] * (1.0 - smoothstep(0.25, 0.5, textureLod(gcDetail, vec3(lp * gcScales[i], float(i)), 0.0).b)));
+    dens += w * d;
+    if (w > pickW) { pickW = w; pick = i; }
+}
+void gcGroup(int g, vec2 wuv, vec2 lp, inout float dens, inout float sum, inout int pick, inout float pickW) {
+    vec4 w4 = textureLod(gcWeights, vec3(wuv, float(g)), 0.0);
+    gcLayer(g * 4 + 1, w4.x, lp, dens, sum, pick, pickW);
+    gcLayer(g * 4 + 2, w4.y, lp, dens, sum, pick, pickW);
+    gcLayer(g * 4 + 3, w4.z, lp, dens, sum, pick, pickW);
+    gcLayer(g * 4 + 4, w4.w, lp, dens, sum, pick, pickW);
 }
 void main() {
 gcO0 = vec4(0.0);
@@ -162,8 +181,10 @@ gcO3 = vec4(0.0);
 #endif
 #ifdef GC_SEED
 vec2 gcId = gcOrigin + floor(gl_FragCoord.xy);
+vec4 gcIdTexel = vec4(gcId, 1.0, 1.0);
 #else
-vec2 gcId = texelFetch(gcIds, ivec2(gl_FragCoord.xy), 0).rg;
+vec4 gcIdTexel = texelFetch(gcIds, ivec2(gl_FragCoord.xy), 0);
+vec2 gcId = gcIdTexel.rg;
 #endif
 ivec2 gcIi = ivec2(gcId);
 int gcBits = (gcIi.x | gcIi.y) & ((1 << (GC_LODS - 1)) - 1);
@@ -180,7 +201,7 @@ float gcKeep = gcEnabled * max(gcInside, gcOutOn * step(gcOutDist, gcOutPad * 0.
 #ifdef GC_SEED
 float gcFade = 1.0;
 #else
-float gcFade = 1.0 - smoothstep(gcRadius * 0.3, gcRadius * 0.88, length(gcLp - gcCenter));
+float gcFade = (1.0 - smoothstep(gcRadius * 0.3, gcRadius * 0.88, length(gcLp - gcCenter))) * gcIdTexel.b;
 #endif
 if (gcKeep * gcFade <= 0.0) return;
 vec2 gcWuv = (gcUv * (gcGrid - 1.0) + 0.5) / gcGrid;
@@ -188,19 +209,11 @@ float gcDens = 0.0;
 float gcSum = 0.0;
 int gcPick = 0;
 float gcPickW = 0.0;
-for (int g = 0; g < GC_GROUPS; g++) {
-    vec4 w4 = textureLod(gcWeights, vec3(gcWuv, float(g)), 0.0);
-    for (int c = 0; c < 4; c++) {
-        int i = g * 4 + c + 1;
-        if (i >= GC_COUNT) break;
-        float w = w4[c];
-        gcSum += w;
-        float d = gcDensity[i];
-        if (gcGaps[i] > 0.0 && w > 0.0) d = max(d, gcGaps[i] * (1.0 - smoothstep(0.25, 0.5, textureLod(gcDetail, vec3(gcLp * gcScales[i], float(i)), 0.0).b)));
-        gcDens += w * d;
-        if (w > gcPickW) { gcPickW = w; gcPick = i; }
-    }
-}
+#if GC_GROUPS > 1
+for (int g = 0; g < GC_GROUPS; g++) gcGroup(g, gcWuv, gcLp, gcDens, gcSum, gcPick, gcPickW);
+#else
+gcGroup(0, gcWuv, gcLp, gcDens, gcSum, gcPick, gcPickW);
+#endif
 float gcW0 = clamp(1.0 - gcSum, 0.0, 1.0);
 gcDens += gcW0 * gcDensity[0];
 if (gcW0 >= gcPickW) gcPick = 0;
@@ -251,11 +264,11 @@ vec3 gcRock = textureLod(gcColors, vec3(gcLp * gcScales[GC_COLOR_LAYER], float(G
 vec3 gcGround = textureLod(gcColors, vec3(gcLp * gcScales[gcPick], float(gcPick)), 5.0).rgb;
 vec3 gcStone = mix(vec3(max(dot(gcGround, vec3(0.3, 0.6, 0.1)), 0.12)) * vec3(1.02, 0.95, 0.85), gcRock * 2.2, 0.35);
 gcO1 = vec4(gcRnd2.y * 6.2831853, min(gcLod, float(GC_LODS - 1)), gcDry, max(dot(gcRock, vec3(0.3, 0.6, 0.1)), 0.02));
-gcO2 = vec4(mix(gcStone, gcGround, 0.25) * mix(0.7, 1.2, gcRnd2.z), 0.0);
+gcO2 = vec4(mix(gcStone, gcGround, 0.25) * mix(0.7, 1.2, gcRnd2.z), gcIdTexel.a);
 #else
 int gcTex = gcDensity[gcPick] > 0.0 ? gcPick : 0;
 gcO1 = vec4(gcRnd2.y * 6.2831853, min(gcLod, float(GC_LODS - 1)), gcDry, 0.0);
-gcO2 = vec4(textureLod(gcColors, vec3(gcLp * gcScales[gcTex], float(gcTex)), 5.0).rgb * mix(0.85, 1.15, gcRnd2.z), 0.0);
+gcO2 = vec4(textureLod(gcColors, vec3(gcLp * gcScales[gcTex], float(gcTex)), 5.0).rgb * mix(0.85, 1.15, gcRnd2.z), gcIdTexel.a);
 #endif
 }
 `;
@@ -273,6 +286,7 @@ varying float gcTip;
 varying float gcDry;
 varying vec3 gcObj;
 varying float gcRockLum;
+varying float gcAlpha;
 ${WIND_GLSL}
 `;
 
@@ -303,7 +317,9 @@ transformed.y -= 0.07 * gcScale * gcS;
 vWorldPositionFoW = (modelMatrix * vec4(transformed, 1.0)).xyz;
 gcDry = gcD1.z;
 gcRockLum = gcD1.w;
-gcColor = texelFetch(gcData2, gcT, 0).rgb;
+vec4 gcD2 = texelFetch(gcData2, gcT, 0);
+gcColor = gcD2.rgb;
+gcAlpha = gcD2.a;
 gcTip = tip;
 `;
 
@@ -318,8 +334,11 @@ class CoverLayer {
         this.range = shared.range;
         this.chunkSide = Math.ceil(grid / CHUNK) + 2;
         const side = this.chunkSide * CHUNK;
-        this.ids = new THREE.DataTexture(new Float32Array(side * side * 2), side, side, THREE.RGFormat, THREE.FloatType);
+        this.ids = new THREE.DataTexture(new Float32Array(side * side * 4), side, side, THREE.RGBAFormat, THREE.FloatType);
         this.lists = new Map();
+        this.fades = new Map();
+        this.lastCull = 0;
+        this.grown = false;
         this.items = [];
         this.count = 0;
         this.stale = true;
@@ -382,7 +401,8 @@ class CoverLayer {
             Object.assign(shader.uniforms, this.uniforms, windUniforms);
             shader.vertexShader = defines + shader.vertexShader.replace("#include <common>", `#include <common>\n${VERTEX_PARS}`).replace("#include <begin_vertex>", `#include <begin_vertex>\n${VERTEX_MAIN}`);
             shader.fragmentShader = (`#define GC_COLOR_LAYER ${kind === "pebble" ? shared.slopeIndex : -1}\n` + shader.fragmentShader)
-                .replace("#include <common>", "#include <common>\nuniform sampler2DArray gcColors;\nvarying vec3 gcColor;\nvarying float gcTip;\nvarying float gcDry;\nvarying vec3 gcObj;\nvarying float gcRockLum;")
+                .replace("#include <common>", "#include <common>\nuniform sampler2DArray gcColors;\nvarying vec3 gcColor;\nvarying float gcTip;\nvarying float gcDry;\nvarying vec3 gcObj;\nvarying float gcRockLum;\nvarying float gcAlpha;")
+                .replace("#include <clipping_planes_fragment>", "#include <clipping_planes_fragment>\nif (gcAlpha < 0.999 && fract(52.9829189 * fract(dot(gl_FragCoord.xy, vec2(0.06711056, 0.00583715)))) >= gcAlpha) discard;")
                 .replace(
                     "#include <map_fragment>",
                     kind === "grass"
@@ -400,6 +420,7 @@ class CoverLayer {
         this.mesh.userData.noIntersect = true;
         this.mesh.userData.noSurface = true;
         material.userData.noSurface = true;
+        material.defines = { ...material.defines, L3D_SURFACE: "", ...(kind === "grass" ? { L3D_SURFACE_BLADE: "gcTip" } : {}) };
         this.mesh.onBeforeRender = (renderer, scene, camera, geo, mat) => {
             geo.instanceCount = mat === material && this.passesReady(renderer) ? this.cull(renderer, camera) : 0;
             if (geo.instanceCount) this.prepare(renderer, geo.instanceCount);
@@ -434,6 +455,14 @@ class CoverLayer {
         const reach = u.gcRadius.value * 0.88;
         const margin = u.gcScale.value + u.gcWidth.value * 2 ** (LOD_LEVELS - 1);
         const { x: cx, y: cz } = u.gcCenter.value;
+        const now = performance.now();
+        const dt = Math.min(0.1, (now - this.lastCull) / 1000);
+        const growStep = dt / GROW_SECONDS;
+        const fadeStep = dt / FADE_SECONDS;
+        this.lastCull = now;
+        const radius = u.gcRadius.value;
+        const seen = new Set();
+        let growing = false;
         const items = [];
         for (let j = 0; j < this.chunkSide; j++) {
             const z0 = (u.gcOrigin.value.y + j * CHUNK) * cell;
@@ -444,6 +473,18 @@ class CoverLayer {
                 const x1 = x0 + span + cell;
                 if (x1 < -pad || x0 > u.gcSize.value.x + pad) continue;
                 if (Math.hypot(Math.max(x0 - cx, 0, cx - x1), Math.max(z0 - cz, 0, cz - z1)) > reach) continue;
+                const key = (u.gcOrigin.value.x / CHUNK + i) * 65536 + u.gcOrigin.value.y / CHUNK + j;
+                seen.add(key);
+                const target = 1 - THREE.MathUtils.smoothstep(Math.hypot((x0 + x1) / 2 - cx, (z0 + z1) / 2 - cz), radius * 0.3, radius * 0.88);
+                const previous = this.fades.get(key);
+                const start = this.grown ? 0 : target;
+                const advance = (shown, step) => (target <= shown ? target : Math.min(target, shown + step));
+                const size = advance(previous?.size ?? start, growStep);
+                const alpha = advance(previous?.alpha ?? start, fadeStep);
+                const grow = target > 0 ? size / target : 1;
+                const fade = target > 0 ? alpha / target : 1;
+                if (grow < 1 || fade < 1 || previous?.grow < 1 || previous?.fade < 1) growing = true;
+                this.fades.set(key, { size, alpha, grow, fade });
                 _box.min.set(x0 - margin, this.range.min - u.gcScale.value, z0 - margin);
                 _box.max.set(x1 + margin, this.range.max + u.gcScale.value * 3, z1 + margin);
                 if (!_frustum.intersectsBox(_box)) continue;
@@ -451,8 +492,10 @@ class CoverLayer {
                 items.push(u.gcOrigin.value.x / CHUNK + i, u.gcOrigin.value.y / CHUNK + j, level);
             }
         }
+        for (const key of this.fades.keys()) if (!seen.has(key)) this.fades.delete(key);
+        if (seen.size) this.grown = true;
         if (this.stale && performance.now() - this.dirtyAt > SEED_DELAY) this.seed(renderer);
-        if (items.length !== this.items.length || items.some((v, k) => v !== this.items[k])) this.fill(items);
+        if (growing || items.length !== this.items.length || items.some((v, k) => v !== this.items[k])) this.fill(items);
         return this.count;
     }
 
@@ -462,10 +505,17 @@ class CoverLayer {
         let k = 0;
         for (let n = 0; n < items.length; n += 3) {
             const list = this.list(items[n], items[n + 1], items[n + 2]);
-            data.set(list, k);
-            k += list.length;
+            const fades = this.fades.get(items[n] * 65536 + items[n + 1]);
+            const grow = fades?.grow ?? 1;
+            const fade = fades?.fade ?? 1;
+            for (let p = 0; p < list.length; p += 2) {
+                data[k++] = list[p];
+                data[k++] = list[p + 1];
+                data[k++] = grow;
+                data[k++] = fade;
+            }
         }
-        this.count = k / 2;
+        this.count = k / 4;
         this.ids.needsUpdate = true;
     }
 

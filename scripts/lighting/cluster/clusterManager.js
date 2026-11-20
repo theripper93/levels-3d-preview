@@ -293,6 +293,17 @@ export class ClusterManager {
         this.stats.lastUpdateMs = performance.now() - start;
     }
 
+    async settleMasks(timeout = 10000) {
+        if (!this._enabled) return;
+        const end = performance.now() + timeout;
+        this.masks.dirtyFrames = Math.max(this.masks.dirtyFrames, 1);
+        do {
+            this.update();
+            if (!this.masks.busy) return;
+            await new Promise((resolve) => setTimeout(resolve, 16));
+        } while (performance.now() < end);
+    }
+
     configureGrid() {
         const dimensions = canvas?.dimensions;
         if (!dimensions) return false;

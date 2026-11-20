@@ -100,6 +100,7 @@ export class ParticleEngine {
                 for (let target of to) {
                     if (tokenAnimation?.to && tokenAnimation.to.options.start) this.playTokenAnimation(tokenAnimation.to, target);
                     this.sleep(startAfter).then(async () => {
+                        if (origin?.destroyed || target?.destroyed) return;
                         const particleClass = PARTICLE_SYSTEMS.getParticleClass(params.type);
                         const projectileEmitter = new particleClass(origin, target, params);
                         if (!projectileEmitter.anchor) return;

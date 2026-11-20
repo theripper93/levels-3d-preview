@@ -183,7 +183,7 @@ function buildCaveMask(stamp, data, nx, ny, layers) {
             m.F[q] = norm(stamp.z + (fbm(x / (1.7 * cell), y / (1.7 * cell), seed + 3) - 0.5) * 2 * CAVE.floor * cell - (inside && pools.length ? poolDrop(pools, x, y, cell, seed) : 0));
             m.T[q] = norm(stamp.z + stamp.wall * (1 - CAVE.top / 2 + CAVE.top * fbm(x / (2.2 * cell), y / (2.2 * cell), seed + 7)));
             m.p[q] = (1 - m.a[q]) * (1 - o) + (1 - m.c[q]) * o;
-            if (m.pw) m.pw[q] = smooth(u / (0.3 * cell) + 1) * (1 - m.b[q]);
+            if (m.pw) m.pw[q] = smooth(u / (0.3 * cell) + 1) * (1 - m.b[q]) * (1 - o);
         }
     }
     return m;
@@ -497,18 +497,23 @@ export class TerrainState {
         const splat = this.splat;
         splat.set(weights);
         paintRoads(splat, masks.filter((m) => m.kind === "road"), this.nx, n, slices);
+        const caveSlices = new Set();
         for (const m of masks) {
             if (m.kind === "road") continue;
+            const earlier = [...caveSlices];
             for (const [index, p] of [[m.paint, m.p], [m.wallPaint, m.pw]]) {
                 if (!(index > 0) || !p) continue;
                 const target = (index - 1) * n;
+                const covered = earlier.filter((s) => s !== target);
                 for (let q = 0; q < p.length; q++) {
                     if (m.skip[q] || !p[q]) continue;
                     const k = (m.j0 + ((q / m.cw) | 0)) * this.nx + m.i0 + (q % m.cw);
                     let other = 0;
                     for (let s = 0; s < slices; s++) if (s * n !== target) other = Math.max(other, weights[s * n + k]);
                     splat[target + k] = Math.max(splat[target + k], Math.round(255 * p[q] * (1 - other / 255)));
+                    for (const s of covered) splat[s + k] = Math.round(splat[s + k] * (1 - p[q]));
                 }
+                if (m.kind === "cave") caveSlices.add(target);
             }
         }
         return splat;

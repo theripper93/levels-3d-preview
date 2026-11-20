@@ -336,7 +336,7 @@ Sky.SkyShader = {
             float fogBand = 1.0 - smoothstep(-0.02, mix(0.06, 0.3, fogAmount), y);
             sky = mix(sky, fogColor, fogAmount * fogBand);
             sky *= 1.0 - 0.3 * (1.0 - env) * smoothstep(0.0, 0.3, -y);
-            sky = mix(sky, fogColor, edgeBlend * (1.0 - smoothstep(-0.01, 0.05, y)));
+            sky = mix(sky, fogColor, edgeBlend * (1.0 - env) * (1.0 - smoothstep(-0.01, 0.05, y)));
 
             if (env > 0.5) sky = min(sky, vec3(environmentClamp));
 

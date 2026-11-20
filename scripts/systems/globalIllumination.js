@@ -2,7 +2,7 @@ import * as THREE from "three";
 import { factor } from "../main.js";
 import { Sky } from "../three/Sky.js";
 import {DynamicSkyConfig} from "../settings/dynamicSkyConfig.js";
-import { AtmosphereState } from "../atmosphere/state.js";
+import { AtmosphereState, nightAt } from "../atmosphere/state.js";
 import { installAtmosphereFog, applyAtmosphereFog, resetAtmosphereFog } from "../atmosphere/fog.js";
 import { updateMapEdge } from "../atmosphere/mapEdge.js";
 import { SkyEnvironment } from "../atmosphere/environment.js";
@@ -29,6 +29,32 @@ const settingBackground = new THREE.Color();
 const WORK_SKY = new THREE.Color(0xffffff);
 const WORK_GROUND = new THREE.Color(0x6e6a66);
 const workScratch = new THREE.Color();
+const timeAngle = new THREE.Quaternion();
+const LIGHTS_ON_TIME = 19.5;
+const LIGHTS_OFF_TIME = 6.5;
+const DUSK_DARKNESS = 0.1;
+const TIME_SPLINE = new THREE.SplineCurve([new THREE.Vector2(0, 0), new THREE.Vector2(6, Math.PI / 2), new THREE.Vector2(12, Math.PI), new THREE.Vector2(20, (Math.PI * 3) / 2), new THREE.Vector2(24, 2 * Math.PI)]);
+
+function sunAngleAt(time) {
+    return TIME_SPLINE.getPointAt(time / 24).y;
+}
+
+function sunQuaternion(time, tilt, target) {
+    return target.setFromEuler(sunEuler.set((tilt * Math.PI) / 2, 0, sunAngleAt(time)));
+}
+
+export function darknessAtTime(scene, time) {
+    const flags = scene.flags[MODULE_ID] ?? {};
+    const sign = (flags.sunDistance ?? 10) < 0 ? 1 : -1;
+    const t = Math.clamp(Number(time), 0, 24);
+    sunLocal.set(0, sign, 0).applyQuaternion(sunQuaternion(t, Number(flags.sunTilt ?? 0), timeAngle));
+    const dusk = t >= LIGHTS_ON_TIME || t < LIGHTS_OFF_TIME ? DUSK_DARKNESS : 0;
+    return Math.round(Math.max(nightAt(sunLocal.y), dusk) * 100) / 100;
+}
+
+export function timeDrivesDarkness(scene) {
+    return isDynamicSkyEnabled(scene) && (scene.getFlag(MODULE_ID, "dynamicSky")?.setting ?? SKY_DEFAULTS.setting) === "outdoor";
+}
 
 
 export class GlobalIllumination {
@@ -130,13 +156,11 @@ export class GlobalIllumination {
     }
 
     generateTimeSpline() {
-        const spline = new THREE.SplineCurve([new THREE.Vector2(0, 0), new THREE.Vector2(6, Math.PI / 2), new THREE.Vector2(12, Math.PI), new THREE.Vector2(20, (Math.PI * 3) / 2), new THREE.Vector2(24, 2 * Math.PI)]);
-        this._timeSpline = spline;
+        this._timeSpline = TIME_SPLINE;
     }
 
     getAngleAt(time) {
-        const angle = this._timeSpline.getPointAt(time / 24).y;
-        return angle;
+        return sunAngleAt(time);
     }
 
     init() {
@@ -205,7 +229,7 @@ export class GlobalIllumination {
     }
 
     getSunAngle(time, tilt, target = new THREE.Quaternion()) {
-        return target.setFromEuler(sunEuler.set((tilt * Math.PI) / 2, 0, this.getAngleAt(time)));
+        return sunQuaternion(time, tilt, target);
     }
 
     computeTarget(flags = true) {
@@ -248,7 +272,7 @@ export class GlobalIllumination {
         const minutes = new Date((game.time.worldTime + worldClockDelta) * 1000).getUTCMinutes();
         const hours = new Date((game.time.worldTime + worldClockDelta) * 1000).getUTCHours();
         const final = parseFloat((hours + minutes / 60).toFixed(1));
-        canvas.scene.setFlag(MODULE_ID, "sunPosition", final);
+        canvas.scene.update({ [`flags.${MODULE_ID}.sunPosition`]: final }, { worldTime: true });
     }
 
     onOverrideChanged() {
@@ -389,6 +413,12 @@ export class GlobalIllumination {
             if (timeSync == "off" || timeSync == "darkness") return;
             previousTime = game.time.worldTime;
             game.Levels3DPreview.lights.globalIllumination.setFromWorldTime();
+        });
+
+        Hooks.on("preUpdateScene", (scene, updates, options) => {
+            const time = updates.flags?.[MODULE_ID]?.sunPosition;
+            if (time === undefined || options.worldTime || updates.environment?.darknessLevel !== undefined || !timeDrivesDarkness(scene)) return;
+            foundry.utils.setProperty(updates, "environment.darknessLevel", darknessAtTime(scene, time));
         });
 
         Hooks.on("preUpdateScene", (scene, updates) => {

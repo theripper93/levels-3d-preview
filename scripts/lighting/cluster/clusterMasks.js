@@ -57,6 +57,11 @@ export class ClusterMasks {
         return this.atlas.texture;
     }
 
+    get busy() {
+        const o = this.occlusion;
+        return !!(this.stale.size || this.rasterQueue.size || o.queue.size || o.inflight.size || o.pending.size || o.job);
+    }
+
     get gridWorld() {
         const factor = game.Levels3DPreview?.factor ?? 1000;
         return (canvas?.dimensions?.size ?? 100) / factor;

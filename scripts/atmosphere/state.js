@@ -30,6 +30,10 @@ const scratch = new THREE.Color();
 const tint = new THREE.Color();
 const WHITE = new THREE.Color(1, 1, 1);
 
+export function nightAt(elevation) {
+    return 1 - THREE.MathUtils.smoothstep(elevation, -0.25, -0.02);
+}
+
 function luminance(color) {
     return 0.2126 * color.r + 0.7152 * color.g + 0.0722 * color.b;
 }
@@ -132,7 +136,7 @@ export class AtmosphereState {
 
         this.daylight = THREE.MathUtils.smoothstep(elevation, -0.04, 0.2) * (1 - darkness);
         this.twilight = (1 - THREE.MathUtils.smoothstep(Math.abs(elevation), 0, TWILIGHT_WIDTH)) * (1 - darkness);
-        this.night = Math.max(1 - THREE.MathUtils.smoothstep(elevation, -0.25, -0.02), darkness);
+        this.night = Math.max(nightAt(elevation), darkness);
 
         const overcast = Math.clamp(weather.overcast, 0, 1) * weatherScale;
         const flash = Math.clamp(weather.flash, 0, 1) * weatherScale;
