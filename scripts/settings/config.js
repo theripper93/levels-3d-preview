@@ -58,7 +58,9 @@ export function registerConfigs() {
     });
 
     Hooks.on("closeSceneConfig", (app) => {
-        if (app.document === canvas.scene) game.Levels3DPreview?.outputPass?.setupUniforms(canvas.scene.getFlag("levels-3d-preview", "pp"));
+        if (app.document !== canvas.scene) return;
+        game.Levels3DPreview?.outputPass?.setupUniforms(canvas.scene.getFlag("levels-3d-preview", "pp"));
+        if (game.Levels3DPreview?._bloomPreview) game.Levels3DPreview.setBloom();
     });
 
     Hooks.on("renderSceneConfig", (app, html) => {
@@ -596,6 +598,12 @@ export function registerConfigs() {
         if (app._activeTab) html.querySelector(`nav[data-group="levels-3d-preview"] .item[data-tab="${app._activeTab}"]`)?.click();
 
         if (canvas.scene.id !== app.document.id) return;
+        const bloomInputs = ["bloom", ...bloomFlags].map((key) => html.querySelector(`[name="flags.levels-3d-preview.${key}"]`)).filter(Boolean);
+        const previewBloom = () => {
+            if (!game.Levels3DPreview?._active) return;
+            game.Levels3DPreview.setBloom(Object.fromEntries(bloomInputs.map((input) => [input.name.split(".").pop(), input.type === "checkbox" ? input.checked : Number(input.value)])));
+        };
+        bloomInputs.forEach((input) => ["input", "change"].forEach((type) => input.addEventListener(type, previewBloom)));
         html.querySelectorAll("[name^='flags.levels-3d-preview.']").forEach(el => el.addEventListener("change", (e) => {
             if (!game.Levels3DPreview._active) return;
             const sunPosition = html.querySelector("[name='flags.levels-3d-preview.sunPosition']").value;

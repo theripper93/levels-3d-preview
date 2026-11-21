@@ -72,8 +72,8 @@ function applyShadows(canvas3d) {
     const illumination = canvas3d.lights.globalIllumination;
     const sun = illumination?.global?.sunlight;
     const lights = [...Object.values(canvas3d.lights.sceneLights), ...Object.values(canvas3d.tokens).map((token) => token.light)].filter((light) => light?.light3d);
-    const casters = lights.filter((light) => !light.light3d.isClusterLight).map((light) => [light.light3d, quality > 0 && !!light.light.document.getFlag(MODULE_ID, "castShadow")]);
-    const promoted = lights.filter((light) => light.light3d.isClusterLight && light.wantsShadow?.(light.light));
+    const casters = lights.filter((light) => !light.light3d.isClusterLight).map((light) => [light.light3d, !!light.wantsShadow?.(light.light)]);
+    const promoted = lights.filter((light) => (light.light3d.isClusterLight ? light.wantsShadow?.(light.light) : !light.wantsShadow?.(light.light) && light.clustered));
     if (sun) casters.push([sun, quality > 0 && illumination._distance !== 0 && illumination.sunShadows]);
     const previous = { type: renderer.shadowMap.type, cast: casters.map(([light]) => light.castShadow) };
     const change = {

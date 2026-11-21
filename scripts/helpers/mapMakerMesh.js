@@ -22,6 +22,106 @@ diffuseColor.rgb *= 0.6;
 diffuseColor.a = mix(0.5, 0.95, crystalRim);
 `;
 
+export const KIT_HUE_GLSL = `
+uniform vec3 kitHueRef;
+vec3 kitToSrgb(vec3 c) { c = clamp(c, 0.0, 1.0); return mix(c * 12.92, 1.055 * pow(c, vec3(1.0 / 2.4)) - 0.055, step(0.0031308, c)); }
+vec3 kitToLinear(vec3 c) { return mix(c / 12.92, pow((c + 0.055) / 1.055, vec3(2.4)), step(0.04045, c)); }
+vec3 kitRgbToHsl(vec3 c) {
+    float hi = max(c.r, max(c.g, c.b));
+    float lo = min(c.r, min(c.g, c.b));
+    float l = (hi + lo) * 0.5;
+    float d = hi - lo;
+    if (d < 1e-5) return vec3(0.0, 0.0, l);
+    float s = d / (1.0 - abs(2.0 * l - 1.0) + 1e-5);
+    float h = hi == c.r ? (c.g - c.b) / d + (c.g < c.b ? 6.0 : 0.0) : hi == c.g ? (c.b - c.r) / d + 2.0 : (c.r - c.g) / d + 4.0;
+    return vec3(h / 6.0, s, l);
+}
+vec3 kitHslToRgb(vec3 hsl) {
+    vec3 k = clamp(abs(mod(hsl.x * 6.0 + vec3(0.0, 4.0, 2.0), 6.0) - 3.0) - 1.0, 0.0, 1.0);
+    return hsl.z + hsl.y * (k - 0.5) * (1.0 - abs(2.0 * hsl.z - 1.0));
+}
+vec3 kitHueRemap(vec3 texel, vec3 target) {
+    vec3 src = kitRgbToHsl(kitToSrgb(texel));
+    vec3 dst = kitRgbToHsl(kitToSrgb(target));
+    float h = fract(src.x + dst.x - kitHueRef.x + 1.0);
+    float s = clamp(src.y * dst.y / max(kitHueRef.y, 0.001), 0.0, 1.0);
+    float l = src.z <= kitHueRef.z ? src.z * dst.z / max(kitHueRef.z, 0.001) : dst.z + (src.z - kitHueRef.z) * (1.0 - dst.z) / max(1.0 - kitHueRef.z, 0.001);
+    float near = 1.0 - smoothstep(0.09, 0.12, abs(fract(src.x - kitHueRef.x + 0.5) - 0.5)) * smoothstep(0.05, 0.2, src.y);
+    return mix(texel, kitToLinear(kitHslToRgb(vec3(h, s, l))), near);
+}
+`;
+const HUE_MAP = `
+vec3 kitHueTarget = diffuseColor.rgb;
+#if defined( USE_COLOR_ALPHA )
+    kitHueTarget *= vColor.rgb;
+#elif defined( USE_COLOR )
+    kitHueTarget *= vColor;
+#endif
+diffuseColor.rgb = vec3(1.0);
+#include <map_fragment>
+#ifdef USE_MAP
+    diffuseColor.rgb = kitHueRemap(diffuseColor.rgb, kitHueTarget);
+#else
+    diffuseColor.rgb = kitHueTarget;
+#endif
+`;
+const HUE_COLOR = `
+#ifdef USE_COLOR_ALPHA
+    diffuseColor.a *= vColor.a;
+#endif
+`;
+
+function kitHueShader(shader) {
+    shader.uniforms.kitHueRef = { value: new THREE.Vector3().fromArray(this.userData.kitHueRef ?? [0, 0, 0.5]) };
+    shader.fragmentShader = shader.fragmentShader.replace("void main() {", `${KIT_HUE_GLSL}\nvoid main() {`).replace("#include <map_fragment>", HUE_MAP).replace("#include <color_fragment>", HUE_COLOR);
+}
+
+const hueReferences = new WeakMap();
+
+function hueReference(material) {
+    const texture = material.map;
+    let average = texture ? hueReferences.get(texture) : null;
+    if (texture && !average) {
+        average = [1, 1, 1];
+        try {
+            const context = new OffscreenCanvas(32, 32).getContext("2d", { willReadFrequently: true });
+            context.drawImage(texture.image, 0, 0, 32, 32);
+            const data = context.getImageData(0, 0, 32, 32).data;
+            const sum = [0, 0, 0];
+            for (let i = 0; i < data.length; i += 4) for (let k = 0; k < 3; k++) sum[k] += data[i + k];
+            average = sum.map((v) => v / (255 * (data.length / 4)));
+        } catch {}
+        hueReferences.set(texture, average);
+    }
+    const color = new THREE.Color().setRGB(...(average ?? [1, 1, 1]), THREE.SRGBColorSpace);
+    if (material.color) color.multiply(material.color);
+    const hsl = color.getHSL({}, THREE.SRGBColorSpace);
+    return [hsl.h, hsl.s, hsl.l];
+}
+
+function applyKitHue(material, hex) {
+    if (!material.color) return;
+    if (!material.defines || !("KIT_HUE" in material.defines)) {
+        material.userData.kitHueRef = hueReference(material);
+        material.defines = { ...material.defines, KIT_HUE: "" };
+        material.userData.batchShader = true;
+        material.onBeforeCompile = kitHueShader;
+        material.needsUpdate = true;
+    }
+    material.color = new THREE.Color(hex);
+}
+
+export function previewKitHue(root, names, hex) {
+    root?.traverse((child) => {
+        if (!child.isMesh) return;
+        for (const material of [child.material].flat()) {
+            if (!material || !names.includes(material.name)) continue;
+            applyKitHue(material, hex || new THREE.Color().setHSL(...(material.userData.kitHueRef ?? hueReference(material)), THREE.SRGBColorSpace));
+            material.needsUpdate = true;
+        }
+    });
+}
+
 function crystalShader(shader) {
     shader.uniforms.fwTime = windUniforms.fwTime;
     shader.fragmentShader = shader.fragmentShader.replace("void main() {", "uniform float fwTime;\nvoid main() {").replace("#include <emissivemap_fragment>", `#include <emissivemap_fragment>\n${CRYSTAL_FRAGMENT}`);
@@ -197,6 +297,7 @@ async function buildKitMesh(data, unitScale, { shareMaterials = false } = {}) {
         const override = !shareMaterials && data.mo?.[material.name];
         const mat = shareMaterials ? material : Object.assign(material.clone(), override || {});
         if (!shareMaterials && tint && mat.color) mat.color = mat.color.clone().multiply(new THREE.Color(tint));
+        if (!shareMaterials && data.hue?.[material.name]) applyKitHue(mat, data.hue[material.name]);
         if (!shareMaterials && glow && mat.emissive) {
             const emissive = new THREE.Color(glow);
             const luma = 0.2126 * emissive.r + 0.7152 * emissive.g + 0.0722 * emissive.b;

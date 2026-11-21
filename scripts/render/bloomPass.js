@@ -2,8 +2,8 @@ import { ShaderMaterial } from "three";
 import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
 import { frame } from "./frame.js";
 
-const BLOOM_THRESHOLD = 1;
-const BLOOM_THRESHOLD_RANGE = 7;
+const BLOOM_THRESHOLD_MIN = 0.4;
+const BLOOM_THRESHOLD_MAX = 8;
 export const BLOOM_RADIUS = 0.6;
 const BLOOM_KNEE = 0.15;
 const BLOOM_CLAMP = 32;
@@ -33,7 +33,7 @@ void main() {
 `;
 
 export function bloomThreshold(flag) {
-    return BLOOM_THRESHOLD + (flag ?? 0) * BLOOM_THRESHOLD_RANGE;
+    return BLOOM_THRESHOLD_MIN * (BLOOM_THRESHOLD_MAX / BLOOM_THRESHOLD_MIN) ** Math.clamp(Number(flag) || 0, 0, 1);
 }
 
 export class HDRBloomPass extends UnrealBloomPass {

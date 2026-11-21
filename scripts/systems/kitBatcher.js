@@ -105,6 +105,11 @@ export class KitBatcher {
 
     update() {
         if (!this.enabled) return;
+        const shadowType = this._parent.renderer.shadowMap.type;
+        if (shadowType !== this.shadowType) {
+            if (this.shadowType !== undefined) for (const batch of this.batches.values()) batch.mesh.material.needsUpdate = true;
+            this.shadowType = shadowType;
+        }
         const tiles = this._parent.tiles;
         let changed = false;
         for (const [id, record] of this.records) {

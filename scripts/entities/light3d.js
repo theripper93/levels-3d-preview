@@ -40,7 +40,8 @@ export class Light3D {
     }
 
     wantsShadow(light) {
-        return !!light.document.getFlag("levels-3d-preview", "castShadow") && game.settings.get("levels-3d-preview", "shadowQuality") > 0;
+        if (!light.document.getFlag("levels-3d-preview", "castShadow") || game.settings.get("levels-3d-preview", "shadowQuality") <= 0) return false;
+        return this.angle != 360 || !game.settings.get("levels-3d-preview", "softShadows");
     }
 
     createLight3D(castShadow) {

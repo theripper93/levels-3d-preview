@@ -69,7 +69,7 @@ import { registerSettings } from "./settings/settingsConfig.js";
 import { filterMigration, migrateSceneFilters } from "./settings/sceneLook.js";
 import { WaveFunctionSolver } from "./generators/WaveFunctionCollapse.js";
 import { applyHeightmap } from "./helpers/applyHeightmap.js";
-import { computeMapMakerBounds, computeMapMakerBoundsAsync, buildMapMakerGeometry, modelBounds } from "./helpers/mapMakerMesh.js";
+import { computeMapMakerBounds, computeMapMakerBoundsAsync, buildMapMakerGeometry, modelBounds, previewKitHue } from "./helpers/mapMakerMesh.js";
 import { TerrainState, MAX_TERRAIN_LAYERS } from "./helpers/mapMakerTerrain.js";
 import { ROAD_STYLES, roadSpline } from "./helpers/terrainRoads.js";
 import { WATER_TYPES, waterDims } from "./helpers/terrainWater.js";
@@ -298,7 +298,7 @@ class Levels3DPreview {
         this._heightmapCache = {};
         this.scatter = scatterApi;
         this.sceneEssentials = { fields: essentialsFields, update: essentialsUpdate };
-        this.mapMaker = { computeBounds: computeMapMakerBounds, computeBoundsAsync: computeMapMakerBoundsAsync, buildGeometry: buildMapMakerGeometry, modelBounds, TerrainState, MAX_TERRAIN_LAYERS, ROAD_STYLES, roadSpline, WATER_TYPES, waterDims };
+        this.mapMaker = { computeBounds: computeMapMakerBounds, computeBoundsAsync: computeMapMakerBoundsAsync, buildGeometry: buildMapMakerGeometry, modelBounds, previewKitHue, TerrainState, MAX_TERRAIN_LAYERS, ROAD_STYLES, roadSpline, WATER_TYPES, waterDims };
         this._fullTransparency = game.settings.get("levels-3d-preview", "fullTransparency");
         this.socket = Socket;
         Socket.register("Particle3D", this.particleSocket);
@@ -925,11 +925,7 @@ class Levels3DPreview {
             this.composer.addPass(this.pixelPass);
         }
 
-        if (canvas.scene.getFlag("levels-3d-preview", "bloom")) {
-            this.bloomPass ??= new HDRBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.4, 0.4, bloomThreshold(0));
-            this.setBloom();
-            this.composer.addPass(this.bloomPass);
-        }
+        this.setBloom(this._bloomPreview);
 
         const dofblur = this.CONFIG.bokeh[game.settings.get("levels-3d-preview", "dofblur")];
         if (dofblur) {
@@ -972,11 +968,21 @@ class Levels3DPreview {
         this.composer.addPass(this.aaShader);
     }
 
-    setBloom() {
-        if (!this.bloomPass || !canvas.scene.getFlag("levels-3d-preview", "bloom")) return;
-        this.bloomPass.threshold = bloomThreshold(canvas.scene.getFlag("levels-3d-preview", "bloomThreshold"));
-        this.bloomPass.strength = canvas.scene.getFlag("levels-3d-preview", "bloomStrength") ?? 0.4;
-        this.bloomPass.radius = canvas.scene.getFlag("levels-3d-preview", "bloomRadius") ?? BLOOM_RADIUS;
+    setBloom(preview = null) {
+        this._bloomPreview = preview;
+        if (!this.composer || !canvas.scene) return;
+        const { bloom, bloomThreshold: threshold, bloomStrength, bloomRadius } = { ...canvas.scene.flags["levels-3d-preview"], ...preview };
+        const active = this.composer.passes.includes(this.bloomPass);
+        if (bloom && !active) {
+            this.bloomPass ??= new HDRBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.4, BLOOM_RADIUS, bloomThreshold(0));
+            const next = [this.bokeh, this.outputPass].find((pass) => pass && this.composer.passes.includes(pass));
+            if (next) this.composer.insertPass(this.bloomPass, this.composer.passes.indexOf(next));
+            else this.composer.addPass(this.bloomPass);
+        } else if (!bloom && active) this.composer.removePass(this.bloomPass);
+        if (!bloom) return;
+        this.bloomPass.threshold = bloomThreshold(threshold);
+        this.bloomPass.strength = bloomStrength ?? 0.4;
+        this.bloomPass.radius = bloomRadius ?? BLOOM_RADIUS;
     }
 
     addToken(token) {
@@ -2108,8 +2114,7 @@ Hooks.on("updateScene", (scene, updates) => {
         "renderSceneLights" in flags ||
         "mirrorLevels" in flags ||
         "grid" in updates ||
-        "enableFogOfWar" in flags ||
-        "bloom" in flags
+        "enableFogOfWar" in flags
     ) {
         game.Levels3DPreview.reload();
         return;

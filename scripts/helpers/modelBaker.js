@@ -4,6 +4,7 @@ import { GLTFExporter } from "three/addons/exporters/GLTFExporter.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { dynamicImport } from "../lib/utils.js";
 import { factor } from "../main.js";
+import { KIT_HUE_GLSL } from "./mapMakerMesh.js";
 
 const MERGE_PROTECTED = new Set(["base", "eyeL", "eyeR", "portrait-target", "sightMesh"]);
 const MATERIAL_MAPS = ["map", "normalMap", "roughnessMap", "metalnessMap", "aoMap", "emissiveMap", "alphaMap", "bumpMap", "displacementMap", "lightMap", "specularMap", "envMap", "clearcoatMap", "clearcoatNormalMap", "clearcoatRoughnessMap", "sheenColorMap", "sheenRoughnessMap", "transmissionMap", "thicknessMap", "specularIntensityMap", "specularColorMap", "iridescenceMap", "anisotropyMap", "matcap", "gradientMap"];
@@ -128,7 +129,7 @@ export function isMergeable(mesh) {
 
 export function materialKey(material) {
     const texture = (t) => (t ? `${t.source?.uuid ?? t.uuid}:${t.offset.x},${t.offset.y}:${t.repeat.x},${t.repeat.y}:${t.rotation}:${t.channel}:${t.wrapS}:${t.wrapT}:${t.flipY}:${t.colorSpace}` : "");
-    const values = [material.type, material.side, material.alphaTest, material.opacity, material.vertexColors, material.flatShading, material.wireframe, material.depthWrite, material.depthTest, material.blending];
+    const values = [material.type, "KIT_HUE" in (material.defines ?? {}), material.side, material.alphaTest, material.opacity, material.vertexColors, material.flatShading, material.wireframe, material.depthWrite, material.depthTest, material.blending];
     for (const key of ["color", "emissive", "specularColor", "sheenColor", "attenuationColor"]) values.push(material[key]?.getHexString?.() ?? "");
     for (const key of ["roughness", "metalness", "emissiveIntensity", "aoMapIntensity", "envMapIntensity", "bumpScale", "displacementScale", "clearcoat", "transmission", "ior", "sheen", "specularIntensity"]) values.push(material[key] ?? "");
     values.push(material.normalScale ? `${material.normalScale.x},${material.normalScale.y}` : "");
@@ -391,6 +392,8 @@ vec2 uv_${key}() { return (${key}Transform * vec3(${texture.channel === 1 ? "vUv
 vec4 sample_${key}() { return texture(${key}, uv_${key}()); }`;
     });
     const has = (key) => maps.includes(key);
+    const hue = has("map") && "KIT_HUE" in (material.defines ?? {});
+    if (hue) ownUniforms.kitHueRef = { value: new THREE.Vector3().fromArray(material.userData.kitHueRef) };
     return new THREE.RawShaderMaterial({
         glslVersion: THREE.GLSL3,
         side: THREE.DoubleSide,
@@ -420,6 +423,7 @@ in vec4 vTangent;
 in vec2 vBakeUv;
 out vec4 outColor;
 ${samplers.join("\n")}
+${hue ? KIT_HUE_GLSL : ""}
 vec3 srgb(vec3 c) {
     c = clamp(c, 0.0, 1.0);
     return mix(c * 12.92, pow(c, vec3(1.0 / 2.4)) * 1.055 - 0.055, step(0.0031308, c));
@@ -444,7 +448,7 @@ void main() {
         outColor = vec4(1.0);
     } else if (mode == ${MODE.color}) {
         vec4 c = vec4(diffuse, opacity);
-        ${has("map") ? "c *= sample_map();" : ""}
+        ${hue ? "vec4 kitTexel = sample_map(); c = vec4(kitHueRemap(kitTexel.rgb, diffuse), opacity * kitTexel.a);" : has("map") ? "c *= sample_map();" : ""}
         ${has("alphaMap") ? "c.a *= sample_alphaMap().g;" : ""}
         if (vertexColors) c *= vColor;
         outColor = vec4(srgb(c.rgb), alphaOut ? c.a : 1.0);
