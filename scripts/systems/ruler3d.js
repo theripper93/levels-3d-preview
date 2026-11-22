@@ -46,6 +46,10 @@ export class RulerPath3D {
         this.signature = null;
         this.pulseMaterials = [];
         this._sphereGeometry = null;
+        this._geometries = new Map();
+        this._used = new Set();
+        this._materials = new Map();
+        this._meshes = [];
     }
 
     get scene() {
@@ -68,10 +72,13 @@ export class RulerPath3D {
     }
 
     clear() {
-        for (const child of this.group.children) {
-            child.geometry?.dispose();
-            child.material?.dispose();
+        for (const [key, geometry] of this._geometries) {
+            if (this._used.has(key)) continue;
+            geometry.dispose();
+            this._geometries.delete(key);
         }
+        this._used = new Set();
+        this._meshes.push(...this.group.children);
         this.group.clear();
         this.pulseMaterials = [];
         this.signature = null;
@@ -79,11 +86,35 @@ export class RulerPath3D {
 
     destroy() {
         this.clear();
+        for (const geometry of this._geometries.values()) geometry.dispose();
+        this._geometries.clear();
+        for (const { body, core } of this._materials.values()) {
+            body.dispose();
+            core.dispose();
+        }
+        this._materials.clear();
+        this._meshes = [];
         this.group.removeFromParent();
+    }
+
+    _geometry(key, create) {
+        let geometry = this._geometries.get(key);
+        if (!geometry) {
+            geometry = create();
+            this._geometries.set(key, geometry);
+        }
+        this._used.add(key);
+        return geometry;
     }
 
     _createMaterials(color, alpha, pulse) {
         const c = toThreeColor(color);
+        const key = `${c.getHexString()}|${alpha}|${pulse}`;
+        const cached = this._materials.get(key);
+        if (cached) {
+            if (pulse && !this.pulseMaterials.includes(cached.body)) this.pulseMaterials.push(cached.body, cached.core);
+            return cached;
+        }
         const opaque = alpha >= 1 && !pulse;
         const body = new THREE.MeshBasicMaterial({
             color: c,
@@ -102,15 +133,24 @@ export class RulerPath3D {
             body.userData.baseOpacity = core.userData.baseOpacity = alpha;
             this.pulseMaterials.push(body, core);
         }
-        return { body, core };
+        const materials = { body, core };
+        this._materials.set(key, materials);
+        return materials;
     }
 
     _addMesh(geometry, material, renderOrder) {
-        const mesh = new THREE.Mesh(geometry, material);
-        mesh.userData.ignoreHover = true;
-        mesh.userData.noIntersect = true;
-        mesh.raycast = () => {};
-        if (renderOrder !== undefined) mesh.renderOrder = renderOrder;
+        let mesh = this._meshes.pop();
+        if (mesh) {
+            mesh.geometry = geometry;
+            mesh.material = material;
+            mesh.position.set(0, 0, 0);
+        } else {
+            mesh = new THREE.Mesh(geometry, material);
+            mesh.userData.ignoreHover = true;
+            mesh.userData.noIntersect = true;
+            mesh.raycast = () => {};
+        }
+        mesh.renderOrder = renderOrder ?? 0;
         this.group.add(mesh);
         return mesh;
     }
@@ -127,17 +167,18 @@ export class RulerPath3D {
         }
         const tubular = Math.max(1, (points.length - 1) * 2);
         const { body, core } = this._createMaterials(color, alpha, pulse);
-        this._addMesh(new THREE.TubeGeometry(curve, tubular, radius, 8, false), body);
-        this._addMesh(new THREE.TubeGeometry(curve, tubular, radius * 0.4, 6, false), core, RULER_RENDER_ORDER);
+        const key = `${radius}|${points.map((p) => `${p.x},${p.y},${p.z}`).join(";")}`;
+        this._addMesh(this._geometry(`t8|${key}`, () => new THREE.TubeGeometry(curve, tubular, radius, 8, false)), body);
+        this._addMesh(this._geometry(`t6|${key}`, () => new THREE.TubeGeometry(curve, tubular, radius * 0.4, 6, false)), core, RULER_RENDER_ORDER);
     }
 
     addSphere(point, { radius, color = 0xffffff, alpha = 1, pulse = false } = {}) {
         if (!(radius > 0) || !(alpha > 0)) return;
         const r = radius * rulerPixelScale();
         const { body, core } = this._createMaterials(color, alpha, pulse);
-        const outer = this._addMesh(new THREE.SphereGeometry(r, 16, 12), body);
+        const outer = this._addMesh(this._geometry(`s16|${r}`, () => new THREE.SphereGeometry(r, 16, 12)), body);
         outer.position.copy(point);
-        const inner = this._addMesh(new THREE.SphereGeometry(r * 0.5, 12, 8), core, RULER_RENDER_ORDER - 1);
+        const inner = this._addMesh(this._geometry(`s12|${r}`, () => new THREE.SphereGeometry(r * 0.5, 12, 8)), core, RULER_RENDER_ORDER - 1);
         inner.position.copy(point);
     }
 
@@ -182,20 +223,34 @@ export class RulerLabels3D {
     async render(entries, template) {
         const renderId = ++this._renderId;
         if (!template || !entries.length) {
+            this._htmls = null;
             this._element?.replaceChildren();
             return;
         }
-        const labels = [];
-        for (const { context, anchor } of entries) {
-            const html = await foundry.applications.handlebars.renderTemplate(template, context);
+        const htmls = [];
+        for (const { context } of entries) {
+            htmls.push(await foundry.applications.handlebars.renderTemplate(template, context));
             if (renderId !== this._renderId) return;
-            const label = foundry.utils.parseHTML(html);
+        }
+        const element = this.element;
+        const children = element.children;
+        if (this._htmls && children.length === htmls.length && htmls.every((html, i) => html === this._htmls[i])) {
+            for (let i = 0; i < children.length; i++) children[i]._anchor3d = entries[i].anchor;
+            this.update();
+            return;
+        }
+        const labels = [];
+        const kept = [];
+        for (let i = 0; i < htmls.length; i++) {
+            const label = foundry.utils.parseHTML(htmls[i]);
             if (!(label instanceof HTMLElement)) continue;
-            label._anchor3d = anchor;
+            label._anchor3d = entries[i].anchor;
             label.style.setProperty("--ui-scale", 1);
             labels.push(label);
+            kept.push(htmls[i]);
         }
-        this.element.replaceChildren(...labels);
+        this._htmls = kept.length === htmls.length ? htmls : null;
+        element.replaceChildren(...labels);
         this.update();
     }
 
@@ -218,6 +273,7 @@ export class RulerLabels3D {
 
     clear() {
         this._renderId++;
+        this._htmls = null;
         this._element?.replaceChildren();
     }
 

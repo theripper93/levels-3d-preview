@@ -336,7 +336,7 @@ export const realisticWater = {
         { mode: "append", injectionPoint: "#include <roughnessmap_fragment>", noConditional: true, shaderCode: "roughnessFactor = rw_rough;" },
         { mode: "append", injectionPoint: "#include <metalnessmap_fragment>", noConditional: true, shaderCode: "metalnessFactor = 0.0;" },
         { mode: "append", injectionPoint: "#include <normal_fragment_maps>", noConditional: true, shaderCode: "normal = normalize((viewMatrix * vec4(rw_n, 0.0)).xyz);" },
-        { mode: "append", injectionPoint: "#include <emissivemap_fragment>", noConditional: true, shaderCode: "totalEmissiveRadiance = rw_emis;" },
+        { mode: "append", injectionPoint: "#include <emissivemap_fragment>", noConditional: true, shaderCode: "totalEmissiveRadiance = rw_emis;\n#define L3D_VM_KEEP (rw_emis * rw_lava)" },
         {
             mode: "prepend",
             injectionPoint: "#include <opaque_fragment>",

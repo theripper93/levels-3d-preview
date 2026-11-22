@@ -1,6 +1,7 @@
 import { Color, ColorManagement, Matrix3, ShaderChunk, ShaderLib, ShaderMaterial, SRGBTransfer, Vector3, Vector4 } from "three";
 import { FullScreenQuad, Pass } from "three/addons/postprocessing/Pass.js";
 import { frame } from "./frame.js";
+import { visionNight } from "../systems/visionModeMask.js";
 
 const TONE_MAPPING = "ACESFilmic";
 const CONTRAST_PIVOT = 0.18;
@@ -182,7 +183,7 @@ export class OutputPass extends Pass {
         }
         const { exposure, contrast, saturation, vignette, night, nightTint } = atmosphere.grade;
         atmosphereGrade.value.set(exposure, contrast, saturation, vignette);
-        atmosphereNight.value.set(nightTint.r, nightTint.g, nightTint.b, night);
+        atmosphereNight.value.set(nightTint.r, nightTint.g, nightTint.b, night * visionNight.scale);
     }
 
     render(renderer, writeBuffer, readBuffer) {

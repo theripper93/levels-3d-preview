@@ -105,6 +105,7 @@ export class EffectsPass extends RenderPass {
         if (composer.readBuffer !== this.target) composer.swapBuffers();
         frame.depthTexture = active ? sceneDepth : null;
         if (active) this.updateUniforms();
+        if (active && !this.validated) this.bindSceneTextures(false);
         const background = this.scene.background;
         if (background?.isColor) this.scene.background = displayBackground.wrap(background, renderer);
         const restoreIntensity = displayTextureBackground(this.scene, renderer);
@@ -117,10 +118,18 @@ export class EffectsPass extends RenderPass {
             this.renderToScreen = toScreen;
         }
         if (active) {
+            if (!this.validated) {
+                this.validate(renderer);
+                this.bindSceneTextures(true);
+            }
             if (this.distortion.count) this.renderDistortion(renderer);
-            if (!this.validated) this.validate(renderer);
         }
         if (toScreen) this.present(renderer);
+    }
+
+    bindSceneTextures(bound) {
+        sceneUniforms.tSceneDepth.value = bound ? sceneDepth : farDepth;
+        sceneUniforms.tSceneColor.value = bound ? this.target.texture : null;
     }
 
     updateUniforms() {

@@ -1,9 +1,14 @@
 import * as THREE from "three";
+import { MeshBVH } from "three-mesh-bvh";
 import { factor } from "../main.js";
 import { decodeGrid, encodeGridChanges, patchGrid } from "./chunkCodec.js";
 import { GroundCover } from "./groundCover.js";
-import { buildRoadMask, applyRoad, linkRoads, paintRoads } from "./terrainRoads.js";
+import { applyRoad, paintRoads } from "./terrainRoads.js";
+import { applyCave, fbm, smooth, pointInPoly } from "./terrainMasks.js";
+import { terrainJobs } from "./terrainWorkerClient.js";
 import { TerrainWater, waterDims } from "./terrainWater.js";
+
+export { fbm, smooth, pointInPoly };
 
 const CHUNK = 64;
 export const MAX_TERRAIN_LAYERS = 16;
@@ -17,238 +22,6 @@ export function flatLevel(data) {
 const STRUCTURE = ["w", "h", "nx", "ny", "min", "max", "chunk", "wn"];
 const signature = (data, keys) => JSON.stringify(keys.map((k) => (k === "wn" && data ? waterDims(data) : data?.[k] ?? null)));
 const stampKey = (data) => JSON.stringify([data?.stamps ?? [], data?.roads ?? []]);
-
-const CAVE_BASE = { shift: 0.1, jag: 0.6, fine: 0.2, band: 0.6, rim: 0.6, outer: 1.8, floor: 0.07, top: 0.35, mouth: 0.5, ramp: 2 };
-const CAVE_STYLES = { mine: { ...CAVE_BASE,shift: 0.05, jag: 0.12, fine: 0.05, band: 0.3, floor: 0.025, top: 0.12 } };
-const POOL = { depth: 0.45, sigma: 0.65, radius: 0.75, wobble: 0.4, bank: 0.6 };
-export const smooth = (t) => (t <= 0 ? 0 : t >= 1 ? 1 : t * t * (3 - 2 * t));
-
-function hashNoise(x, y, seed) {
-    const s = Math.sin(x * 127.1 + y * 311.7 + seed * 61.3) * 43758.5453;
-    return s - Math.floor(s);
-}
-
-function valueNoise(x, y, seed) {
-    const xi = Math.floor(x), yi = Math.floor(y);
-    const tx = x - xi, ty = y - yi;
-    const sx = tx * tx * (3 - 2 * tx), sy = ty * ty * (3 - 2 * ty);
-    const a = hashNoise(xi, yi, seed), b = hashNoise(xi + 1, yi, seed), c = hashNoise(xi, yi + 1, seed), d = hashNoise(xi + 1, yi + 1, seed);
-    return (a + (b - a) * sx) * (1 - sy) + (c + (d - c) * sx) * sy;
-}
-
-export function fbm(x, y, seed) {
-    let v = 0, amp = 0.5, f = 1;
-    for (let o = 0; o < 3; o++) {
-        v += amp * valueNoise(x * f, y * f, seed + o * 17);
-        f *= 2.03;
-        amp *= 0.5;
-    }
-    return v / 0.875;
-}
-
-function smoothLoop(poly, step) {
-    let pts = [];
-    for (let a = 0; a < poly.length; a += 2) {
-        const b = (a + 2) % poly.length;
-        const n = Math.max(1, Math.round(Math.hypot(poly[b] - poly[a], poly[b + 1] - poly[a + 1]) / step));
-        for (let k = 0; k < n; k++) pts.push(poly[a] + ((poly[b] - poly[a]) * k) / n, poly[a + 1] + ((poly[b + 1] - poly[a + 1]) * k) / n);
-    }
-    for (let it = 0; it < 2; it++) {
-        const next = [];
-        for (let a = 0; a < pts.length; a += 2) {
-            const b = (a + 2) % pts.length;
-            next.push(pts[a] * 0.75 + pts[b] * 0.25, pts[a + 1] * 0.75 + pts[b + 1] * 0.25, pts[a] * 0.25 + pts[b] * 0.75, pts[a + 1] * 0.25 + pts[b + 1] * 0.75);
-        }
-        pts = next;
-    }
-    return pts;
-}
-
-function segDist(x, y, s, k) {
-    const x1 = s[k], y1 = s[k + 1], dx = s[k + 2] - x1, dy = s[k + 3] - y1;
-    const t = Math.max(0, Math.min(1, ((x - x1) * dx + (y - y1) * dy) / (dx * dx + dy * dy || 1)));
-    return Math.hypot(x - x1 - t * dx, y - y1 - t * dy);
-}
-
-function refAt(ref, x, y) {
-    const fx = Math.max(0, Math.min(ref.cols - 1.001, (x - ref.x) / ref.cell));
-    const fy = Math.max(0, Math.min(ref.rows - 1.001, (y - ref.y) / ref.cell));
-    const i = Math.floor(fx), j = Math.floor(fy), tx = fx - i, ty = fy - j;
-    const v = ref.v, k = j * ref.cols + i;
-    return (v[k] * (1 - tx) + v[k + 1] * tx) * (1 - ty) + (v[k + ref.cols] * (1 - tx) + v[k + ref.cols + 1] * tx) * ty;
-}
-
-function poolDrop(pools, x, y, cell, seed) {
-    let f = 0;
-    for (let q = 0; q < pools.length; q += 2) {
-        const r2 = ((x - pools[q]) ** 2 + (y - pools[q + 1]) ** 2) / (cell * cell);
-        if (r2 < 9) f += Math.exp(-r2 / (POOL.sigma * POOL.sigma));
-    }
-    if (f < 1e-3) return 0;
-    const d = POOL.sigma * Math.sqrt(Math.max(0, -Math.log(f))) - POOL.radius + POOL.wobble * (2 * fbm(x / (1.1 * cell), y / (1.1 * cell), seed + 23) - 1);
-    return POOL.depth * cell * smooth(-d / POOL.bank);
-}
-
-function buildCaveMask(stamp, data, nx, ny, layers) {
-    const { w, h, min, max } = data;
-    const CAVE = CAVE_STYLES[stamp.variant] ?? CAVE_BASE;
-    const cell = stamp.cell || 100;
-    const seed = stamp.seed ?? 1;
-    const pools = (stamp.pools ?? []).map((v, q, p) => v + (hashNoise(p[q - (q % 2)], p[q - (q % 2) + 1], seed + 5 + (q % 2)) - 0.5) * 0.4 * cell);
-    const norm = (v) => Math.max(0, Math.min(1, (v - min) / (max - min)));
-    const reach = (CAVE.shift + CAVE.jag + CAVE.band + CAVE.rim + CAVE.outer) * cell;
-    const segs = [];
-    let bx0 = Infinity, by0 = Infinity, bx1 = -Infinity, by1 = -Infinity;
-    for (const poly of stamp.polys) {
-        const p = smoothLoop(poly, cell);
-        for (let a = 0; a < p.length; a += 2) {
-            const b = (a + 2) % p.length;
-            segs.push(p[a], p[a + 1], p[b], p[b + 1]);
-            bx0 = Math.min(bx0, p[a]);
-            bx1 = Math.max(bx1, p[a]);
-            by0 = Math.min(by0, p[a + 1]);
-            by1 = Math.max(by1, p[a + 1]);
-        }
-    }
-    const i0 = Math.max(0, Math.floor(((bx0 - reach) / w) * (nx - 1)));
-    const i1 = Math.min(nx - 1, Math.ceil(((bx1 + reach) / w) * (nx - 1)));
-    const j0 = Math.max(0, Math.floor(((by0 - reach) / h) * (ny - 1)));
-    const j1 = Math.min(ny - 1, Math.ceil(((by1 + reach) / h) * (ny - 1)));
-    const cw = i1 - i0 + 1, ch = j1 - j0 + 1;
-    if (cw <= 0 || ch <= 0 || !segs.length) return null;
-    const bx = (bx0 - reach), by = (by0 - reach);
-    const bw = Math.ceil((bx1 - bx0 + 2 * reach) / cell) + 1;
-    const buckets = new Map();
-    for (let k = 0; k < segs.length; k += 4) {
-        const qi0 = Math.floor((Math.min(segs[k], segs[k + 2]) - bx) / cell), qi1 = Math.floor((Math.max(segs[k], segs[k + 2]) - bx) / cell);
-        const qj0 = Math.floor((Math.min(segs[k + 1], segs[k + 3]) - by) / cell), qj1 = Math.floor((Math.max(segs[k + 1], segs[k + 3]) - by) / cell);
-        for (let qj = qj0; qj <= qj1; qj++) for (let qi = qi0; qi <= qi1; qi++) {
-            const key = qj * bw + qi;
-            if (!buckets.has(key)) buckets.set(key, []);
-            buckets.get(key).push(k);
-        }
-    }
-    const span = Math.ceil(reach / cell);
-    const open = stamp.open ?? [];
-    const mouth = new Uint8Array(segs.length / 4);
-    for (let k = 0; k < segs.length; k += 4) {
-        const mx = (segs[k] + segs[k + 2]) / 2, my = (segs[k + 1] + segs[k + 3]) / 2;
-        for (let e = 0; e < open.length && !mouth[k / 4]; e += 4) if (segDist(mx, my, open, e) < 0.3 * cell) mouth[k / 4] = 1;
-    }
-    const size = cw * ch;
-    const m = { kind: "cave", i0, j0, cw, ch, F: new Float32Array(size), T: new Float32Array(size), a: new Float32Array(size), b: new Float32Array(size), c: new Float32Array(size), R: stamp.ref?.v?.length ? new Float32Array(size) : null, o: new Float32Array(size), p: new Float32Array(size), skip: new Uint8Array(size) };
-    m.paint = stamp.paint ? layers.findIndex((l) => l.id === stamp.paint) : -1;
-    m.wallPaint = stamp.wallPaint ? layers.findIndex((l) => l.id === stamp.wallPaint) : -1;
-    if (m.wallPaint > 0) m.pw = new Float32Array(size);
-    const crossings = [];
-    for (let j = 0; j < ch; j++) {
-        const y = ((j0 + j) / (ny - 1)) * h;
-        crossings.length = 0;
-        for (let k = 0; k < segs.length; k += 4) {
-            const y1 = segs[k + 1], y2 = segs[k + 3];
-            if (y1 > y !== y2 > y) crossings.push(segs[k] + ((y - y1) * (segs[k + 2] - segs[k])) / (y2 - y1));
-        }
-        crossings.sort((p, q) => p - q);
-        let cross = 0;
-        for (let i = 0; i < cw; i++) {
-            const x = ((i0 + i) / (nx - 1)) * w;
-            while (cross < crossings.length && crossings[cross] < x) cross++;
-            const inside = cross % 2 === 1;
-            const q = j * cw + i;
-            let d = reach;
-            let dWall = reach;
-            const qi = Math.floor((x - bx) / cell), qj = Math.floor((y - by) / cell);
-            for (let dj = -span; dj <= span; dj++) for (let di = -span; di <= span; di++) {
-                const list = buckets.get((qj + dj) * bw + qi + di);
-                if (list) for (const k of list) {
-                    const dk = segDist(x, y, segs, k);
-                    d = Math.min(d, dk);
-                    if (!mouth[k / 4]) dWall = Math.min(dWall, dk);
-                }
-            }
-            let dOpen = Infinity;
-            for (let k = 0; k < open.length; k += 4) dOpen = Math.min(dOpen, segDist(x, y, open, k));
-            const o = open.length ? smooth(0.5 + (dWall - dOpen) / (CAVE.mouth * cell)) : 0;
-            if (!inside && d >= reach && o === 0) {
-                m.skip[q] = 1;
-                continue;
-            }
-            const sd = inside ? -d : d;
-            const u = sd - (CAVE.shift + CAVE.jag * smooth((fbm(x / (2.2 * cell), y / (2.2 * cell), seed) - 0.3) / 0.4) + CAVE.fine * fbm(x / (0.6 * cell), y / (0.6 * cell), seed + 11)) * cell;
-            m.a[q] = smooth(u / (CAVE.band * cell));
-            m.b[q] = smooth((u - (CAVE.band + CAVE.rim) * cell) / (CAVE.outer * cell));
-            m.c[q] = smooth(sd / (CAVE.ramp * cell));
-            m.o[q] = o;
-            if (m.R) m.R[q] = norm(refAt(stamp.ref, x, y));
-            m.F[q] = norm(stamp.z + (fbm(x / (1.7 * cell), y / (1.7 * cell), seed + 3) - 0.5) * 2 * CAVE.floor * cell - (inside && pools.length ? poolDrop(pools, x, y, cell, seed) : 0));
-            m.T[q] = norm(stamp.z + stamp.wall * (1 - CAVE.top / 2 + CAVE.top * fbm(x / (2.2 * cell), y / (2.2 * cell), seed + 7)));
-            m.p[q] = (1 - m.a[q]) * (1 - o) + (1 - m.c[q]) * o;
-            if (m.pw) m.pw[q] = smooth(u / (0.3 * cell) + 1) * (1 - m.b[q]) * (1 - o);
-        }
-    }
-    return m;
-}
-
-function applyCave(out, m, nx) {
-    const { i0, j0, cw } = m;
-    for (let q = 0; q < m.skip.length; q++) {
-        if (m.skip[q]) continue;
-        const k = (j0 + ((q / cw) | 0)) * nx + i0 + (q % cw);
-        const r = out[k];
-        const floor = m.R ? m.F[q] + Math.min(0, r - m.R[q]) : m.F[q];
-        const top = Math.max(r, m.T[q]);
-        let closed = floor + (top - floor) * m.a[q];
-        closed += (r - closed) * m.b[q];
-        const opened = floor + (r - floor) * m.c[q];
-        out[k] = closed + (opened - closed) * m.o[q];
-    }
-}
-
-function buildStampMasks(data, nx, ny, layers = []) {
-    const { w, h, min, max } = data;
-    const roads = (data.roads ?? []).map((road) => buildRoadMask(road, data, nx, ny, layers)).filter(Boolean);
-    const masks = linkRoads(roads, nx, ny);
-    for (const stamp of data.stamps ?? []) {
-        if (stamp.kind === "cave") {
-            const mask = buildCaveMask(stamp, data, nx, ny, layers);
-            if (mask) masks.push(mask);
-            continue;
-        }
-        const falloff = Math.max(1, stamp.falloff ?? 50);
-        let bx0 = Infinity, by0 = Infinity, bx1 = -Infinity, by1 = -Infinity;
-        for (const poly of stamp.polys) {
-            for (let k = 0; k < poly.length; k += 2) {
-                bx0 = Math.min(bx0, poly[k]);
-                bx1 = Math.max(bx1, poly[k]);
-                by0 = Math.min(by0, poly[k + 1]);
-                by1 = Math.max(by1, poly[k + 1]);
-            }
-        }
-        const i0 = Math.max(0, Math.floor(((bx0 - falloff) / w) * (nx - 1)));
-        const i1 = Math.min(nx - 1, Math.ceil(((bx1 + falloff) / w) * (nx - 1)));
-        const j0 = Math.max(0, Math.floor(((by0 - falloff) / h) * (ny - 1)));
-        const j1 = Math.min(ny - 1, Math.ceil(((by1 + falloff) / h) * (ny - 1)));
-        const cw = i1 - i0 + 1, ch = j1 - j0 + 1;
-        if (cw <= 0 || ch <= 0) continue;
-        const weights = new Float32Array(cw * ch);
-        for (let j = 0; j < ch; j++) {
-            for (let i = 0; i < cw; i++) {
-                const x = ((i0 + i) / (nx - 1)) * w;
-                const y = ((j0 + j) / (ny - 1)) * h;
-                let inside = false;
-                let dist = Infinity;
-                for (const poly of stamp.polys) {
-                    if (pointInPoly(x, y, poly)) inside = !inside;
-                    dist = Math.min(dist, distToPoly(x, y, poly));
-                }
-                const t = dist / falloff;
-                weights[j * cw + i] = inside ? 0 : t < 1 ? t * t * (3 - 2 * t) : 1;
-            }
-        }
-        masks.push({ i0, j0, cw, ch, target: (stamp.z - min) / (max - min), weights, ...(stamp.cover ? { kind: "cover" } : {}) });
-    }
-    return masks;
-}
 
 function applyStamps(raw, masks, nx, ny, data) {
     const out = new Float32Array(raw);
@@ -273,27 +46,6 @@ function applyStamps(raw, masks, nx, ny, data) {
         }
     }
     return out;
-}
-
-export function pointInPoly(x, y, p) {
-    let inside = false;
-    for (let a = 0, b = p.length - 2; a < p.length; b = a, a += 2) {
-        const xi = p[a], yi = p[a + 1], xj = p[b], yj = p[b + 1];
-        if (yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) inside = !inside;
-    }
-    return inside;
-}
-
-function distToPoly(x, y, p) {
-    let best = Infinity;
-    for (let a = 0, b = p.length - 2; a < p.length; b = a, a += 2) {
-        const x1 = p[b], y1 = p[b + 1], x2 = p[a], y2 = p[a + 1];
-        const dx = x2 - x1, dy = y2 - y1;
-        const len = dx * dx + dy * dy || 1;
-        const t = Math.max(0, Math.min(1, ((x - x1) * dx + (y - y1) * dy) / len));
-        best = Math.min(best, Math.hypot(x - (x1 + t * dx), y - (y1 + t * dy)));
-    }
-    return best;
 }
 
 const MAP_SUFFIX = /_(Color|NormalGL|Roughness|AmbientOcclusion|Metalness|Emissive)\./;
@@ -404,7 +156,8 @@ export class TerrainState {
         this.hq = new Uint16Array(n).fill(this.flatQ);
         this.raw = new Float32Array(n);
         this.weights = new Uint8Array(n * Math.max(1, this.layers.length - 1));
-        this.stampMasks = buildStampMasks(data, this.nx, this.ny, this.layers);
+        this.stampMasks = [];
+        this.maskEpoch = 0;
         this.group = new THREE.Group();
         Object.defineProperty(this.group, "mapMakerTerrain", { value: this, enumerable: false });
         this.water = new TerrainWater(this);
@@ -436,6 +189,8 @@ export class TerrainState {
         const lookChanged = signature(data, ["layers", "slope"]) !== seen.look;
         const stampsChanged = stampKey(data) !== seen.stamps;
         this.data = data;
+        const layers = lookChanged ? (data.layers ?? []).slice(0, MAX_TERRAIN_LAYERS) : this.layers;
+        const masks = lookChanged || stampsChanged ? this.buildMasks(data, layers) : null;
         let heightsChanged = false;
         await patchGrid(seen.hc, data.hc, this.hq, nx, ny, chunk, 16, this.flatQ, (i0, j0, cw, ch) => {
             heightsChanged = true;
@@ -443,11 +198,11 @@ export class TerrainState {
         });
         const waterChanged = await this.water.patch(seen, data);
         if (lookChanged) {
-            this.layers = (data.layers ?? []).slice(0, MAX_TERRAIN_LAYERS);
+            this.layers = layers;
             this.weights = new Uint8Array(n * Math.max(1, this.layers.length - 1));
             await Promise.all(this.layers.slice(1).map((l, k) => decodeGrid(data.sc?.[l.id], this.layerWeights(k + 1), nx, ny, chunk, 8)));
             this.wq = this.weights.slice();
-            this.stampMasks = buildStampMasks(data, nx, ny, this.layers);
+            this.stampMasks = await masks;
             this.composeSplat();
             this.disposeMaterials();
             await this.createMaterial();
@@ -463,10 +218,10 @@ export class TerrainState {
                     });
                 }),
             );
-            if (stampsChanged) this.stampMasks = buildStampMasks(data, nx, ny, this.layers);
+            if (stampsChanged) this.stampMasks = await masks;
             if (splatChanged || stampsChanged) this.refreshSplat();
         }
-        if (stampsChanged) this.refreshHoles();
+        if (stampsChanged) await this.refreshHoles();
         if (heightsChanged || stampsChanged) this.refreshHeights();
         if (waterChanged || lookChanged || stampsChanged) this.water.build();
         this.remember(data);
@@ -474,13 +229,26 @@ export class TerrainState {
 
     async load() {
         const { nx, ny, chunk } = this;
+        const masks = this.buildMasks(this.data, this.layers);
         await Promise.all([decodeGrid(this.data.hc, this.hq, nx, ny, chunk, 16), ...this.layers.slice(1).map((l, k) => decodeGrid(this.data.sc?.[l.id], this.layerWeights(k + 1), nx, ny, chunk, 8)), this.water.load(this.data)]);
         for (let k = 0; k < this.raw.length; k++) this.raw[k] = this.hq[k] / 65535;
         this.wq = this.weights.slice();
+        this.stampMasks = await masks;
         this.composeSplat();
         this.buildGeometry();
+        await this.refreshSurface();
         await this.createMaterial();
         this.water.build();
+    }
+
+    buildMasks(data, layers) {
+        this.maskEpoch++;
+        return this.maskJob(data, layers);
+    }
+
+    maskJob(data, layers) {
+        const { w, h, min, max, roads, stamps } = data;
+        return terrainJobs.run("masks", { data: { w, h, min, max, roads, stamps }, nx: this.nx, ny: this.ny, layers: layers.map(({ id }) => ({ id })) });
     }
 
     waterAt(x, y) {
@@ -547,9 +315,21 @@ export class TerrainState {
     setRoads(roads) {
         this.data = { ...this.data, roads };
         this.seen.stamps = stampKey(this.data);
-        this.stampMasks = buildStampMasks(this.data, this.nx, this.ny, this.layers);
-        this.refreshSplat();
-        this.refreshHeights();
+        this._roadsDirty = true;
+        return (this._roadJob ??= this.applyRoads());
+    }
+
+    async applyRoads() {
+        while (this._roadsDirty) {
+            this._roadsDirty = false;
+            const epoch = this.maskEpoch;
+            const masks = await this.maskJob(this.data, this.layers);
+            if (epoch !== this.maskEpoch || !this.surfaceMesh || this.water.disposed) continue;
+            this.stampMasks = masks;
+            this.refreshSplat();
+            this.refreshHeights();
+        }
+        this._roadJob = null;
     }
 
     onRoad(x, y) {
@@ -633,7 +413,9 @@ export class TerrainState {
         const surface = new THREE.BufferGeometry();
         surface.setAttribute("position", new THREE.BufferAttribute(positions, 3));
         surface.setAttribute("uv", new THREE.BufferAttribute(uvs, 2));
-        surface.setIndex(this.surfaceIndex());
+        surface.computeBoundsTree = function (options) {
+            return this.boundsTree ?? THREE.BufferGeometry.prototype.computeBoundsTree.call(this, options);
+        };
         this.updateNormals(surface, positions);
         surface.computeBoundingBox();
 
@@ -652,32 +434,24 @@ export class TerrainState {
         this.markerMesh.userData.noSight = true;
         this.markerMesh.raycast = () => {};
         this.group.add(this.surfaceMesh, this.skirtMesh, this.markerMesh);
-        surface.computeBoundsTree?.();
     }
 
-    surfaceIndex() {
-        const { nx, ny } = this;
+    async refreshSurface() {
+        const geometry = this.surfaceMesh.geometry;
         const { w, h } = this.data;
         const holes = (this.data.stamps ?? []).flatMap((s) => s.holes ?? []);
         this.holeKey = JSON.stringify(holes);
-        const index = [];
-        for (let j = 0; j < ny - 1; j++) {
-            for (let i = 0; i < nx - 1; i++) {
-                const x = ((i + 0.5) / (nx - 1)) * w, y = ((j + 0.5) / (ny - 1)) * h;
-                if (holes.some((p) => pointInPoly(x, y, p))) continue;
-                const a = j * nx + i, b = a + 1, c = a + nx, d = c + 1;
-                index.push(a, c, b, b, c, d);
-            }
-        }
-        return index;
+        const version = this.heightVersion;
+        const { roots, index } = await terrainJobs.run("surface", { positions: geometry.getAttribute("position").array, nx: this.nx, ny: this.ny, w, h, holes });
+        if (this.surfaceMesh?.geometry !== geometry || this.water.disposed) return;
+        geometry.setIndex(new THREE.BufferAttribute(index, 1));
+        geometry.boundsTree = MeshBVH.deserialize({ roots, index, indirectBuffer: null }, geometry, { setIndex: false });
+        if (version !== this.heightVersion) geometry.boundsTree.refit();
     }
 
-    refreshHoles() {
-        const geometry = this.surfaceMesh?.geometry;
-        if (!geometry || JSON.stringify((this.data.stamps ?? []).flatMap((s) => s.holes ?? [])) === this.holeKey) return;
-        geometry.setIndex(this.surfaceIndex());
-        geometry.boundsTree = null;
-        geometry.computeBoundsTree?.();
+    async refreshHoles() {
+        if (!this.surfaceMesh || JSON.stringify((this.data.stamps ?? []).flatMap((s) => s.holes ?? [])) === this.holeKey) return;
+        await this.refreshSurface();
     }
 
     refreshHeights() {
@@ -806,6 +580,7 @@ export class TerrainState {
             mmTints: { value: layers.map((l) => new THREE.Color(l?.tint ?? "#ffffff")) },
             mmSlopeLayer: { value: slopeIndex },
             mmWalls: { value: layers.map((l) => (l?.wall ? 1 : 0)) },
+            mmCrisp: { value: layers.map((l) => (l?.crisp ? 1 : 0)) },
             mmSlope: { value: new THREE.Vector2(slope.start ?? 0.55, slope.end ?? 0.75) },
         };
         material.userData.mmUniforms = uniforms;
@@ -831,6 +606,7 @@ export class TerrainState {
                     uniform vec3 mmTints[MM_COUNT];
                     uniform int mmSlopeLayer;
                     uniform float mmWalls[MM_COUNT];
+                    uniform float mmCrisp[MM_COUNT];
                     uniform vec2 mmSlope;
                     float mmHash(vec2 p) {
                         return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
@@ -851,19 +627,21 @@ export class TerrainState {
                         vec4 soft = texture(mmWeights, vec3(uv + vec2(2.2, 1.0) * tx, g)) + texture(mmWeights, vec3(uv + vec2(-1.0, 2.2) * tx, g)) + texture(mmWeights, vec3(uv + vec2(-2.2, -1.0) * tx, g)) + texture(mmWeights, vec3(uv + vec2(1.0, -2.2) * tx, g));
                         return mix(texture(mmWeights, vec3(uv, g)), soft * 0.25, 0.65);
                     }
-                    void mmLayer(int i, float raw, vec2 p, vec2 dx, vec2 dy, float fine, inout float acc, inout float wallW, inout int wallI, inout vec3 col, inout vec2 tn, inout float h, inout float r) {
+                    void mmLayer(int i, float raw, float sharp, vec2 p, vec2 dx, vec2 dy, float fine, inout float acc, inout float wallW, inout int wallI, inout vec3 col, inout vec2 tn, inout float h, inout float r) {
                         if (i < MM_COUNT) {
+                            bool crisp = mmCrisp[i] > 0.5;
+                            if (crisp) raw = sharp;
                             acc += raw;
                             float w = raw / max(acc, 1e-4);
                             float edge = 1.0 - abs(w * 2.0 - 1.0);
                             float mid = mmNoise(p * 18.0 + float(i) * 3.71) * 0.65 + mmNoise(p * 41.0 + float(i) * 1.37) * 0.35;
-                            w = clamp(w + ((mid - 0.5) * 1.2 + (fine - 0.5) * 0.4) * edge, 0.0, 1.0);
+                            w = crisp ? smoothstep(0.4, 0.6, w) : clamp(w + ((mid - 0.5) * 1.2 + (fine - 0.5) * 0.4) * edge, 0.0, 1.0);
                             wallW = mix(wallW, mmWalls[i], w);
                             if (mmWalls[i] > 0.5 && w > 0.25) wallI = i;
                             if (w > 0.0 && mmWalls[i] < 0.5) {
                                 float s = mmScales[i];
                                 vec4 d = textureGrad(mmDetail, vec3(p * s, float(i)), dx * s, dy * s);
-                                float t = mmBlend(h, d.b, w);
+                                float t = crisp ? w : mmBlend(h, d.b, w);
                                 if (t > 0.0) {
                                     col = mix(col, textureGrad(mmLayers, vec3(p * s, float(i)), dx * s, dy * s).rgb * mmTints[i], t);
                                     tn = mix(tn, d.rg * 2.0 - 1.0, t);
@@ -873,8 +651,8 @@ export class TerrainState {
                             }
                         }
                     }
-                    #define MM_LAYER(I, RAW) mmLayer(I, RAW, mmP, mmDx, mmDy, mmFine, mmAcc, mmWallW, mmWallI, mmCol, mmTn, mmH, mmR)
-                    #define MM_GROUP(G, W) MM_LAYER(G * 4 + 1, W.x); MM_LAYER(G * 4 + 2, W.y); MM_LAYER(G * 4 + 3, W.z); MM_LAYER(G * 4 + 4, W.w)`,
+                    #define MM_LAYER(I, RAW, SHARP) mmLayer(I, RAW, SHARP, mmP, mmDx, mmDy, mmFine, mmAcc, mmWallW, mmWallI, mmCol, mmTn, mmH, mmR)
+                    #define MM_GROUP(G, W, S) MM_LAYER(G * 4 + 1, W.x, S.x); MM_LAYER(G * 4 + 2, W.y, S.y); MM_LAYER(G * 4 + 3, W.z, S.z); MM_LAYER(G * 4 + 4, W.w, S.w)`,
                 )
                 .replace(
                     "#include <map_fragment>",
@@ -916,13 +694,16 @@ export class TerrainState {
                     mmAcc -= dot(mmWs[0], vec4(1.0));
                     #endif
                     mmAcc = max(mmAcc, 0.0);
+                    vec2 mmUvC = (vMmUv * (mmSz - 1.0) + 0.5) / mmSz;
                     #if MM_GROUPS > 1
                     for (int g = 0; g < MM_GROUPS; g++) {
                         vec4 mmW4 = mmWs[g];
-                        MM_GROUP(g, mmW4);
+                        vec4 mmC4 = texture(mmWeights, vec3(mmUvC, float(g)));
+                        MM_GROUP(g, mmW4, mmC4);
                     }
                     #else
-                    MM_GROUP(0, mmWs[0]);
+                    vec4 mmC0 = texture(mmWeights, vec3(mmUvC, 0.0));
+                    MM_GROUP(0, mmWs[0], mmC0);
                     #endif
                     vec3 mmGeo = normalize(vMmNormal);
                     vec3 mmObjN = normalize(mmGeo + vec3(mmTn.x, 0.0, -mmTn.y));

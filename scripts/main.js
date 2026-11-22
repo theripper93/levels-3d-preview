@@ -47,6 +47,7 @@ import { SMAAPass } from "three/addons/postprocessing/SMAAPass.js";
 import { RenderPixelatedPass } from "three/addons/postprocessing/RenderPixelatedPass.js";
 import { ShaderPass } from "three/addons/postprocessing/ShaderPass.js";
 import { OutlineHandler } from "./handlers/OutlineHandler.js";
+import { DetectionLook } from "./handlers/detectionLook.js";
 import { ShaderHandler, shaders } from "./shaders/ShaderLib.js";
 import { DecalGeometry } from "three/addons/geometries/DecalGeometry.js";
 import { WorkerHandler } from "./helpers/workers.js";
@@ -90,6 +91,9 @@ import { Shape3D } from "./entities/shape3d.js";
 import { Region3D } from "./entities/region3d.js";
 import { check3DToggleConflicts } from "./helpers/conflict-manager.js";
 import { acceptFrame } from "./helpers/frameRate.js";
+import { injectMatrixWorld, updateSceneMatrixWorld } from "./three/matrixWorld.js";
+import { installFixedSamplers } from "./three/fixedSamplers.js";
+import { setSightCeilingHooks } from "./systems/sightCeiling.js";
 
 // import "../scss/module.scss";
 
@@ -98,12 +102,15 @@ export const factor = 1000;
 export const MODULE_ID = "levels-3d-preview";
 
 const SCATTER_LOAD_TIMEOUT = 20000;
+const SETTLE_TIMEOUT = 10000;
+const SETTLE_QUIET_FRAMES = 3;
 
 injectFoWShaders(THREE);
 installClusterChunks(THREE);
 vfx.surface.installSurfaceChunks(THREE);
 injectThreeModifications(THREE);
 injectLegacyLights();
+injectMatrixWorld();
 
 registerConfigs();
 registerSettings();
@@ -123,6 +130,7 @@ GlobalIllumination.setHooks();
 BuildPanel.setHooks();
 setLevelsHooks();
 setLevelSwitchHooks();
+setSightCeilingHooks();
 setHudHook();
 setSharingHooks();
 
@@ -639,6 +647,7 @@ class Levels3DPreview {
         this.camera.updateProjectionMatrix();
 
         this.scene = new THREE.Scene();
+        this.scene.updateMatrixWorld = updateSceneMatrixWorld;
         this.material = new THREE.MeshNormalMaterial();
 
         if (this._sharedContext) {
@@ -665,6 +674,7 @@ class Levels3DPreview {
         this.renderer.shadowMap.type = game.settings.get("levels-3d-preview", "softShadows") ? THREE.VSMShadowMap : THREE.PCFShadowMap;
         this.shadowBatcher = new ShadowBatcher(this);
         this.kitBatcher = new KitBatcher(this);
+        installFixedSamplers(this.renderer);
 
         this.renderer.debug.checkShaderErrors = true;
 
@@ -731,6 +741,7 @@ class Levels3DPreview {
         el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 300, fill: "forwards" });
         this._fullTransparency = game.settings.get("levels-3d-preview", "fullTransparency");
         this._ready = false;
+        this._settling = false;
         this._isFirstFrame = true;
         this._finalizingLoad = false;
         this._envReady = false;
@@ -744,6 +755,7 @@ class Levels3DPreview {
         this.shaderHandler = new ShaderHandler(this);
         this.shaderHandler.shaders.push(...toPreserve);
         this.scene = new THREE.Scene();
+        this.scene.updateMatrixWorld = updateSceneMatrixWorld;
         this.scene.background = new THREE.Color(canvas.level.background.color ?? 0xffffff);
         this.rangeFinderMode = game.settings.get("levels-3d-preview", "rangeFinder");
         this.buildComposerPasses();
@@ -939,6 +951,8 @@ class Levels3DPreview {
 
         this.outline?.destroy();
         this.outline = new OutlineHandler(this);
+        this.detectionLook?.destroy();
+        this.detectionLook = new DetectionLook(this);
         this.initAA();
     }
 
@@ -1421,6 +1435,8 @@ class Levels3DPreview {
     }
 
     alignChatBubbles() {
+        this._chatBubbles ??= document.getElementsByClassName("chat-bubble");
+        if (!this._chatBubbles.length) return;
         const bubbles = document.querySelectorAll(".chat-bubble");
         bubbles.forEach((bubble) => {
             const token3D = this.tokens[bubble.dataset.tokenId];
@@ -1593,16 +1609,13 @@ class Levels3DPreview {
             }
             this.recoverCamera();
             this.outline.update();
+            this.detectionLook.update();
             this.shadowBatcher.update();
             this.kitBatcher.update();
             cameraShake.apply(this.camera, delta, this.controls.target);
             this.composer.render(time);
             cameraShake.restore(this.camera);
             if (this._firstFrame) {
-                setTimeout(() => {
-                    document.querySelector("#board").style.opacity = 1;
-                    this.renderer.domElement.style.opacity = 1;
-                }, 100);
                 this._firstFrame = false;
                 this.workers._waitingForInit = true;
                 Object.values(this.tiles).forEach((t) => t?.mesh && t.sendToWorker());
@@ -1826,17 +1839,56 @@ class Levels3DPreview {
         compileForComposer(this, this.scene, this.camera);
         this.outline.warmUp();
         this.uploadTextures();
+        this._settling = true;
         this._ready = true;
         this._firstFrame = true;
         this.loadingTokens = {};
         this.loadingTiles = {};
         this._onReady();
+        this._pendingBars = true;
         setTimeout(() => {
+            this._pendingBars = false;
             Object.values(this.tokens).forEach((token) => {
                 token.forceDrawBars();
                 token.drawName();
             });
         }, 200);
+        await this._settleLoad(sceneId);
+        if (this._builtSceneId !== sceneId) return;
+        this._settling = false;
+        if (!this._active) return;
+        this._reveal();
+    }
+
+    async _settleLoad(sceneId) {
+        const start = performance.now();
+        let programs = -1;
+        let quiet = 0;
+        while (performance.now() - start < SETTLE_TIMEOUT) {
+            await new Promise((resolve) => requestAnimationFrame(resolve));
+            if (this._builtSceneId !== sceneId || !this._active) return;
+            const count = this.renderer.info.programs.length;
+            quiet = count === programs && this._isSettled() ? quiet + 1 : 0;
+            programs = count;
+            if (quiet >= SETTLE_QUIET_FRAMES) return;
+        }
+    }
+
+    _isSettled() {
+        if (this._pendingBars || !this.kitBatcher.idle || !this.shadowBatcher.idle || !this.lightWarmup.idle) return false;
+        if (scatterFields().some((field) => field.busy)) return false;
+        return this.renderer.info.programs.every((program) => program.isReady());
+    }
+
+    _reveal() {
+        document.querySelector("#board").style.opacity = 1;
+        this.renderer.domElement.style.opacity = 1;
+        if (!this._fadeLoadingScreen) return;
+        const el = document.querySelector(".levels-3d-preview-loading-screen");
+        el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 200, fill: "forwards" }).finished.then(() => {
+            el.classList.add("hidden");
+            document.querySelector("#levels-3d-preview-loading-bar-inner").style.width = "0%";
+        });
     }
 
     setProgressBar(label, progress) {
@@ -1864,15 +1916,8 @@ class Levels3DPreview {
     }
 
     _onReady() {
-        if (game.settings.get("levels-3d-preview", "loadingShown")) {
-            setTimeout(() => {
-                const el = document.querySelector(".levels-3d-preview-loading-screen");
-                el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 200, fill: "forwards" }).finished.then(() => {
-                    el.classList.add("hidden");
-                    document.querySelector("#levels-3d-preview-loading-bar-inner").style.width = "0%";
-                });
-            }, 500);
-        } else {
+        this._fadeLoadingScreen = game.settings.get("levels-3d-preview", "loadingShown");
+        if (!this._fadeLoadingScreen) {
             this.CONFIG.UI.BUILD_PANEL.FORCE_AUTOHIDE_OFF = true;
             game.settings.set("levels-3d-preview", "loadingShown", true);
         }
@@ -1943,6 +1988,7 @@ class Levels3DPreview {
             ?.find((w) => w.id === "miniCanvas")
             ?.close(true);
         document.querySelector("#board").style.display = "unset";
+        document.querySelector("#board").style.opacity = 1;
         canvas.stage.renderable = true;
         this.clear3Dscene();
         this.weather?.destroy();

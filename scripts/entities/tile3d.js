@@ -889,7 +889,7 @@ export class Tile3D {
         this.sightMesh = this.scatterField.proxies;
         this.mesh.position.set(this.center.x, this.center.y, this.center.z);
         this.mesh.rotation.set(0, -this.angle * this.rotSign, 0);
-        Object.assign(this.mesh.userData, { hitbox: this.mesh, interactive: true, entity3D: this, dynamicShadow: true });
+        Object.assign(this.mesh.userData, { hitbox: this.mesh, interactive: true, entity3D: this });
         if (this._destroyed) return;
         this._parent.scene.add(this.mesh);
         this.initBoundingBox();
@@ -2164,12 +2164,13 @@ export class Tile3D {
 
     _onClickLeft(e) {
         const oT = e.originalIntersect?.userData;
-        if (oT?.isDoor && canvas.activeLayer.options.objectClass.embeddedName === "Token" && !(oT?.isSecret && !game.user.isGM)) {
+        const doorInSight = this.doorInSight();
+        if (doorInSight && oT?.isDoor && canvas.activeLayer.options.objectClass.embeddedName === "Token" && !(oT?.isSecret && !game.user.isGM)) {
             if (this.isToFar(e.originalIntersect)) ui.notifications.error(game.i18n.localize("levels3dpreview.errors.toofarfromdoor"));
             else Socket.toggleDoor({ tileId: this.tile.id, sceneId: canvas.scene.id, userId: game.user.id, subDoorId: oT.doorId });
         }
 
-        if (canvas.activeLayer.options.objectClass.embeddedName === "Token" && this.isDoor && !(this.isSecret && !game.user.isGM)) {
+        if (doorInSight && canvas.activeLayer.options.objectClass.embeddedName === "Token" && this.isDoor && !(this.isSecret && !game.user.isGM)) {
             if (this.isToFar()) ui.notifications.error(game.i18n.localize("levels3dpreview.errors.toofarfromdoor"));
             else {
                 if (this.checkPuzzleLock()) Socket.toggleDoor({ tileId: this.tile.id, sceneId: canvas.scene.id, userId: game.user.id });
@@ -2230,6 +2231,19 @@ export class Tile3D {
         this.tile._onClickRight2(event);
     }
 
+    doorInSight() {
+        if (!canvas.visibility?.tokenVision) return true;
+        const point = this._parent.interactionManager?._mouseHoverIntersect?.intersect?.point;
+        if (!point) return true;
+        const sources = canvas.effects.visionSources.filter((source) => source.active);
+        if (!sources.length) return game.user.isGM;
+        const lights = canvas.effects.lightSources.filter((light) => light.active);
+        const x = point.x * factor;
+        const y = point.z * factor;
+        const t = canvas.dimensions.size / 4;
+        return [[x, y], [x - t, y], [x + t, y], [x, y - t], [x, y + t]].some(([px, py]) => sources.some((source) => source.shape?.contains(px, py) || (source.los?.contains(px, py) && lights.some((light) => light.shape?.contains(px, py)))));
+    }
+
     get isDoorHover() {
         const isGM = game.user.isGM;
         const MATTPointer = this.tile.document.flags["monks-active-tiles"]?.pointer;
@@ -2243,7 +2257,7 @@ export class Tile3D {
         if (!canvas.activeLayer) return;
         if (canvas.activeLayer.options.objectClass.embeddedName !== "Tile") {
             this.triggerMATT(e, "hoverin");
-            if (this.isDoorHover) {
+            if (this.isDoorHover && this.doorInSight()) {
                 game.Levels3DPreview.outline.toggleHovered(this.mesh, true, 1);
                 this._parent.setCursor("pointer");
             }

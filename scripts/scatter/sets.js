@@ -1,3 +1,5 @@
+import { modernProps, modernFurnish, MODERN_THUMBS } from "./modernSets.js";
+
 const TILES = "modules/canvas3dcompendium/assets/Tiles/";
 const SN = `${TILES}Stylized%20Nature%20MegaKit/`;
 const BASALT = "#5a463f";
@@ -323,12 +325,12 @@ const PROP_LIST = [
     prop("FarmCrate_Carrot", [0.72, 0.57, 0.42], { yOffset: 0.02, back: 0.36 }),
     prop("FarmCrate_Empty", [0.72, 0.42, 0.25], { yOffset: 0.02 }),
     prop("Bag", [0.66, 0.54, 0.8], { back: 0.24 }),
-    prop("Bed_Twin1", [1.88, 2.42, 0.81], { placement: "wall", back: 1.21 }),
-    prop("Bed_Twin2", [1.88, 2.42, 0.76], { placement: "wall", back: 1.21 }),
+    prop("Bed_Twin1", [1.88, 2.42, 0.81], { placement: "wall", backed: true, back: 1.21 }),
+    prop("Bed_Twin2", [1.88, 2.42, 0.76], { placement: "wall", backed: true, back: 1.21 }),
     prop("Chest_Wood", [1.28, 0.82, 0.69], { back: 0.38, yOffset: 0.02 }),
     prop("Nightstand_Shelf", [0.7, 0.39, 1.21], { placement: "wall", top: 1.21, back: 0.19, yOffset: 0.01 }),
     prop("Cabinet", [1.36, 0.36, 1], { placement: "wall", top: 1, back: 0.18 }),
-    prop("Bookcase_2", [1.46, 0.42, 2.53], { placement: "wall", back: 0.21, yOffset: 0.02, blocking: true, boards: [0.14, 0.77, 1.15, 1.54, 1.92], inner: [1.2, 0] }),
+    prop("Bookcase_2", [1.46, 0.42, 2.53], { placement: "wall", backed: true, back: 0.21, yOffset: 0.02, blocking: true, boards: [0.14, 0.77, 1.15, 1.54, 1.92], inner: [1.2, 0] }),
     prop("Shelf_Arch", [1.24, 0.32, 1.58], { placement: "wall", back: 0.01, yOffset: 0.61, boards: [-0.41, 0.13, 0.64], inner: [1.05, 0.16] }),
     prop("BookStand", [0.5, 0.52, 1.44], { back: 0.26 }),
     prop("CandleStick_Stand", [0.74, 0.74, 1.31], { placement: "corner", yOffset: 0.01 }),
@@ -403,8 +405,8 @@ const PROP_LIST = [
     prop("FarmCrate_Oranges", [0.72, 0.42, 0.25], { yOffset: 0.02 }),
     prop("FarmCrate_Leek", [0.72, 0.52, 0.36], { yOffset: 0.02, back: 0.31 }),
     prop("FarmCrate_Radish", [0.72, 0.59, 0.38], { yOffset: 0.02, back: 0.3 }),
-    prop("Bed_Double", [2.56, 2.42, 0.81], { placement: "wall", back: 1.21 }),
-    prop("Bed_Bunk", [1.88, 2.42, 2.13], { placement: "wall", back: 1.21, yOffset: 0.01 }),
+    prop("Bed_Double", [2.56, 2.42, 0.81], { placement: "wall", backed: true, back: 1.21 }),
+    prop("Bed_Bunk", [1.88, 2.42, 2.13], { placement: "wall", backed: true, back: 1.21, yOffset: 0.01 }),
     prop("Nightstand_Drawer", [0.72, 0.5, 0.9], { placement: "wall", top: 0.89, back: 0.25, yOffset: 0.01 }),
     prop("Cage_Large", [0.86, 0.81, 1.33], { yOffset: 0.04 }),
     prop("Chest_Legendary", [1.39, 0.71, 0.84], { back: 0.35, yOffset: 0.01 }),
@@ -423,7 +425,7 @@ const PROP_LIST = [
     onTable("Potion_5", [0.12, 0.1, 0.23]),
     onTable("Potion_7", [0.18, 0.1, 0.17]),
     onTable("Potion_8", [0.12, 0.12, 0.26]),
-    prop("Bed_Bunk2", [1.88, 2.42, 2.13], { placement: "wall", back: 1.21, yOffset: 0.01 }),
+    prop("Bed_Bunk2", [1.88, 2.42, 2.13], { placement: "wall", backed: true, back: 1.21, yOffset: 0.01 }),
     prop("Bench_MetalSides", [2.83, 0.62, 0.57], { back: 0.32, yOffset: 0.01 }),
     prop("Vase_1", [0.67, 0.67, 0.71], { placement: "corner", scale: [0.9, 1.1] }),
     prop("Vase_3", [0.56, 0.56, 0.92], { placement: "corner", scale: [0.9, 1.1] }),
@@ -470,8 +472,8 @@ const PROP_LIST = [
     hung("Sign_Armory_2", [0.14, 1.21, 1.23], 2.3, 0, { front: "+x" }),
     prop("Chair_3", [0.68, 0.6, 1.48], { back: 0.32 }),
     prop("Desk", [1.86, 0.78, 0.84], { placement: "wall", top: 0.84, back: 0.39 }),
-    prop("Bed_Double2", [2.56, 2.42, 0.76], { placement: "wall", back: 1.21 }),
-    prop("Bed_Twin3", [1.88, 2.42, 0.76], { placement: "wall", back: 1.21 }),
+    prop("Bed_Double2", [2.56, 2.42, 0.76], { placement: "wall", backed: true, back: 1.21 }),
+    prop("Bed_Twin3", [1.88, 2.42, 0.76], { placement: "wall", backed: true, back: 1.21 }),
     hung("Shelf_Small", [1.14, 0.29, 0.65], 1.2, 0, { boards: [0.03, 0.33], inner: [1, 0.15] }),
     onTable("Pot_2", [0.56, 0.48, 0.36], { yOffset: 0.02 }),
     onTable("Pan_1", [0.51, 0.9, 0.1], { yOffset: 0.02 }),
@@ -545,6 +547,8 @@ const SCIFI_LIST = [
     sf("Columns/Column_Hollow", [1.21, 1.21, 5], { placement: "center", scale: [0.88, 0.92], blocking: true }),
     sf("Props/Prop_Fan_Small", [1.68, 1.68, 0.44], { yOffset: 0.05, scale: [0.85, 0.95] }),
     sf("Props/Prop_Pipe_Small_Straight", [0.14, 4, 0.14], { placement: "wall", hung: true, yOffset: 2.9, back: 0.09, front: "+x", scale: [1, 1] }),
+    sf("Decals/Decal_Warning", [2.68, 0.01, 1.06], { id: "SF_Decal_Warning_Wall", placement: "wall", hung: true, stand: true, yOffset: 2.8, back: 0, scale: [0.6, 0.6] }),
+    sf("Decals/Decal_Caution", [2.66, 0.01, 1.03], { id: "SF_Decal_Caution_Wall", placement: "wall", hung: true, stand: true, yOffset: 2.8, back: 0, scale: [0.6, 0.6] }),
     se("Prop_Desk_Small", [2.06, 1.03, 0.94], { placement: "wall", back: 0.53, top: 0.94, scale: [0.85, 0.85] }),
     se("Prop_Desk_Medium", [2.84, 1.03, 0.94], { placement: "wall", back: 0.53, top: 0.94, scale: [0.85, 0.85] }),
     se("Prop_Desk_L", [2.22, 2.22, 0.94], { placement: "wall", back: 1.42, pivot: [0.31, 0], top: 0.94, surface: { x: [-0.8, 1.42], z: [-1.42, -0.75] }, scale: [0.85, 0.85] }),
@@ -616,9 +620,11 @@ const RUINS_LIST = [
     sn("Bush_Long_1", [1.68, 1.64, 2.37], { placement: "corner", scale: [0.35, 0.5] }),
 ];
 
-export const SCATTER_KIT_PROPS = { scifi: SCIFI_LIST, dungeon: DUNGEON_LIST, ruins: RUINS_LIST };
+const MODERN_LIST = modernProps(prop);
 
-const PROP_BY_ID = Object.fromEntries([...PROP_LIST, ...ATTACH_LIST, ...WORN_LIST, ...SCIFI_LIST, ...DUNGEON_LIST, ...RUINS_LIST].map((p) => [p.id, p]));
+export const SCATTER_KIT_PROPS = { scifi: SCIFI_LIST, dungeon: DUNGEON_LIST, ruins: RUINS_LIST, modern: MODERN_LIST };
+
+const PROP_BY_ID = Object.fromEntries([...PROP_LIST, ...ATTACH_LIST, ...WORN_LIST, ...SCIFI_LIST, ...DUNGEON_LIST, ...RUINS_LIST, ...MODERN_LIST].map((p) => [p.id, p]));
 
 const furnish = (id, icon, weights, { family = "fantasy", ...rules }) => ({
     name: `levels3dpreview.scatter.sets.${id}`,
@@ -637,9 +643,10 @@ const KEEPSAKES = ["Candle_1", "CandleStick", "Book_5", "Book_Stack_3", "Bottle_
 const LIGHTS = (lo, hi, perWall = 4) => ({ place: "wall", items: ["Torch_Metal", "Lantern_Wall"], count: [lo, hi], perWall });
 
 const SPEC_KEYS = ["around", "ends", "side", "foot", "front", "top", "shelves", "rack", "attach", "under"];
-const groupIds = (g) => [...(g.items ?? []), ...(g.alt ?? []), ...SPEC_KEYS.flatMap((k) => (g[k] ? groupIds(g[k]) : []))];
+const groupIds = (g) => [...(g.keep ?? []), ...(g.items ?? []), ...(g.alt ?? []), ...SPEC_KEYS.flatMap((k) => (g[k] ? groupIds(g[k]) : []))];
+const zeroWeights = (groups) => Object.fromEntries(groups.flatMap(groupIds).map((pid) => [pid, 0]));
 const kitFurnish = (id, icon, clutter, rules) =>
-    furnish(id, icon, { ...Object.fromEntries(rules.groups.flatMap(groupIds).map((pid) => [pid, 0])), ...clutter }, rules);
+    furnish(id, icon, { ...zeroWeights(rules.groups.filter((g) => !g.appended)), ...clutter, ...zeroWeights(rules.groups.filter((g) => g.appended)) }, rules);
 const clutterOf = (ids, w) => Object.fromEntries(ids.map((pid) => [pid, w]));
 
 const FURNISH_SETS = {
@@ -845,7 +852,12 @@ const SE_MED = ["SE_Prop_Syringe", "SE_Prop_HealthPack_Tube", "SE_Prop_HealthPac
 const SE_AMMO = ["SE_Prop_Ammo_Small", "SE_Prop_Ammo_Closed", "SE_Prop_Ammo"];
 const SE_GUNS = ["SE_Gun_Rifle", "SE_Gun_Sniper", "SE_Gun_Pistol", "SE_Gun_Revolver"];
 const SF_PODS = ["SF_Prop_Pod", "SF_Prop_Pod_Short"];
-const SF_DECALS = (ids, hi = 1) => ({ place: "floor", items: ids, count: [0, hi] });
+const SF_SIGN_OF = { SF_Decal_Warning: "SF_Decal_Warning_Wall", SF_Decal_Caution: "SF_Decal_Caution_Wall" };
+const SF_DECALS = (ids, hi = 1) => {
+    const floor = ids.filter((id) => !SF_SIGN_OF[id]);
+    return { place: floor.length ? "floor" : null, keep: ids, items: floor, count: [0, hi] };
+};
+const SF_SIGNS = (ids, hi = 1) => ({ place: "wall", items: ids.map((id) => SF_SIGN_OF[id]), count: [0, hi], perWall: 5, appended: true });
 const DG_TORCHES = (lo, hi, perWall = 4) => ({ place: "wall", items: ["Torch_Metal", W("Torch_Metal")], count: [lo, hi], perWall });
 const RU_TORCHES = (lo, hi, perWall = 5) => ({ place: "wall", items: [W("Torch_Metal")], count: [lo, hi], perWall });
 const SHARDS = [W("Vase_Rubble_Medium"), W("Vase_Rubble_Large"), W("Vase_Rubble_Small")];
@@ -894,6 +906,7 @@ const KIT_FURNISH_SETS = {
             { place: "center", items: ["SF_Prop_Fan_Big"], count: [0, 1], minRoom: 12, margin: 1 },
             { place: "floor", items: ["SF_Prop_Cable_1", "SF_Prop_Clamp", "SF_Prop_Vent_Big"], count: [1, 4] },
             SF_DECALS(["SF_Decal_Warning", "SF_Decal_Caution"]),
+            SF_SIGNS(["SF_Decal_Warning", "SF_Decal_Caution"]),
         ],
     }),
     sfLab: kitFurnish("sfLab", "fa-solid fa-flask-vial", clutterOf(["SF_Prop_Vent_Small", "SF_Prop_Clamp"], 0.5), {
@@ -924,6 +937,7 @@ const KIT_FURNISH_SETS = {
             SF_LIGHTS,
             { place: "floor", items: ["SF_Decal_Dashes", "SF_Prop_Clamp", "SF_Prop_Cable_1", "SE_Prop_Ammo", "SE_Prop_Ammo_Small"], count: [1, 3] },
             SF_DECALS(["SF_Decal_Warning", "SF_Decal_Caution", "SF_Decal_Arrows"], 2),
+            SF_SIGNS(["SF_Decal_Warning", "SF_Decal_Caution"], 2),
         ],
     }),
     sfTeleporter: kitFurnish("sfTeleporter", "fa-solid fa-atom", clutterOf(["SF_Prop_Vent_Small", "SF_Prop_Clamp"], 0.4), {
@@ -937,6 +951,7 @@ const KIT_FURNISH_SETS = {
             { place: "corner", items: ["SF_Prop_Crate1", "SF_Prop_Crate2", "SF_Prop_Barrel_Small"], count: [0, 2], cluster: [1, 2] },
             SF_LIGHTS,
             SF_DECALS(["SF_Decal_Arrows", "SF_Decal_Warning"], 2),
+            SF_SIGNS(["SF_Decal_Warning"]),
         ],
     }),
     sfQuarters: kitFurnish("sfQuarters", "fa-solid fa-bed", clutterOf(["SE_Prop_Ammo_Small", "SF_Prop_Clamp"], 0.3), {
@@ -1155,6 +1170,7 @@ const KIT_FURNISH_SETS = {
 
 const THUMBS = {
     ...NATURE_THUMBS,
+    ...MODERN_THUMBS,
     sfBridge: `${SCIFI}Props/Prop_Computer`, sfEngineering: `${SCIFI}Props/Prop_PipeHolder`, sfLab: `${SCIFI}Props/Prop_ItemHolder`, sfCargo: `${SCIFI}Props/Prop_Crate4`, sfTeleporter: `${SCIFI}Props/Prop_Teleporter`,
     sfCorridor: `${SCIFI}Props/Prop_Light_Wide`, dining: `${PROPS}CandleStick_Triple`, greatHall: `${PROPS}Chair_3`, corridor: `${PROPS}Torch_Metal`,
     sfQuarters: `${SCIFI_ESS}Prop_Locker`, sfMess: `${SCIFI_ESS}Prop_Mug`, sfMedBay: `${SCIFI_ESS}Prop_HealthPack`, sfArmory: `${SCIFI_ESS}Gun_Rifle`,
@@ -1164,4 +1180,4 @@ const THUMBS = {
     kitchen: `${PROPS}Cauldron`, smithy: `${PROPS}Anvil_Log`, alchemy: `${PROPS}Potion_2`, shop: `${PROPS}Coin_Pile_2`, armory: `${PROPS}Shield_Wooden`,
 };
 
-export const SCATTER_SETS = Object.fromEntries(Object.entries({ ...NATURE_SETS, ...FURNISH_SETS, ...KIT_FURNISH_SETS }).map(([id, set]) => [id, { ...set, thumb: THUMBS[id] ? `${THUMBS[id]}.webp` : null }]));
+export const SCATTER_SETS = Object.fromEntries(Object.entries({ ...NATURE_SETS, ...FURNISH_SETS, ...KIT_FURNISH_SETS, ...modernFurnish(kitFurnish, clutterOf) }).map(([id, set]) => [id, { ...set, thumb: THUMBS[id] ? `${THUMBS[id]}.webp` : null }]));

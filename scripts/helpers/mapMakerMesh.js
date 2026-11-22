@@ -294,7 +294,7 @@ async function buildKitMesh(data, unitScale, { shareMaterials = false } = {}) {
         if (geos.length > 1) geos.forEach((g) => g.dispose());
         if (!merged) continue;
         merged.computeBoundingBox();
-        const override = !shareMaterials && data.mo?.[material.name];
+        const override = !shareMaterials && (data.mo?.[material.name] ?? data.mo?.[material.name.split(".")[0]]);
         const mat = shareMaterials ? material : Object.assign(material.clone(), override || {});
         if (!shareMaterials && tint && mat.color) mat.color = mat.color.clone().multiply(new THREE.Color(tint));
         if (!shareMaterials && data.hue?.[material.name]) applyKitHue(mat, data.hue[material.name]);

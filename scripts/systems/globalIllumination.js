@@ -83,13 +83,13 @@ export class GlobalIllumination {
         this.ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
     }
 
-    updateAmbientLight() {
+    updateAmbientLight({ intensity, color } = {}) {
         if(!this.ambientLight) this.initAmbientLight();
         const ambientLight = this.ambientLight;
-        const intensity = canvas.scene.getFlag(MODULE_ID, "ambientLightIntensity") ?? 0;
+        intensity = Number(intensity ?? canvas.scene.getFlag(MODULE_ID, "ambientLightIntensity") ?? 0) || 0;
         ambientLight.intensity = intensity;
-        ambientLight.color.set(canvas.scene.getFlag(MODULE_ID, "ambientLightColor") ?? "#ffffff");
-        intensity > 0 ? this._parent.scene.add(ambientLight) : this._parent.scene.remove(ambientLight);
+        ambientLight.color.set(color || (canvas.scene.getFlag(MODULE_ID, "ambientLightColor") ?? "#ffffff"));
+        if (intensity > 0 !== !!ambientLight.parent) intensity > 0 ? this._parent.scene.add(ambientLight) : this._parent.scene.remove(ambientLight);
     }
 
     get skyData() {

@@ -6,6 +6,7 @@ module.exports = {
     entry: {
         index: "./scripts/main.js",
         raycastWorker: "./scripts/helpers/raycastWorker.js",
+        terrainWorker: "./scripts/helpers/terrainWorker.js",
     },
     output: {
         filename: "[name].js",

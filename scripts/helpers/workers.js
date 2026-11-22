@@ -7,6 +7,8 @@ export class WorkerHandler {
         this.callbacks = {};
         this._lastResults = {};
         this._lastKnownValid = {};
+        this.computeCounts = {};
+        this.lastRequests = {};
         this._visionReady = false;
         this._waitingForInit = false;
         this.lightMaskCallbacks = {};
@@ -41,6 +43,7 @@ export class WorkerHandler {
                     }
                 }
                 if (e.data.type == "refresh") {
+                    this.lastRequests = {};
                     if (this._waitingForInit) this._visionReady = true;
                     this.refresh();
                 }
@@ -52,6 +55,7 @@ export class WorkerHandler {
                     }
                 }
                 if (e.data.type == "meshesChanged") {
+                    this.lastRequests = {};
                     this.meshesChangedListeners.forEach((listener) => listener(e.data.bbox));
                 }
                 if (e.data.type == "rulerPoints") {
@@ -159,16 +163,19 @@ export class WorkerHandler {
 
     addMesh(data) {
         if (!this.enabled) return;
+        this.lastRequests = {};
         this.raycastWorker.port.postMessage(data);
     }
 
     removeMesh(id) {
         if (!this.enabled) return;
+        this.lastRequests = {};
         this.raycastWorker.port.postMessage({ type: "remove", id });
     }
 
     parkMesh(id, parked = true) {
         if (!this.enabled) return;
+        this.lastRequests = {};
         this.raycastWorker.port.postMessage({ type: parked ? "park" : "unpark", id });
     }
 
@@ -181,6 +188,8 @@ export class WorkerHandler {
         this.lightMaskCallbacks = {};
         this._lastResults = {};
         this._lastKnownValid = {};
+        this.computeCounts = {};
+        this.lastRequests = {};
         if (this._blobUrl) {
             URL.revokeObjectURL(this._blobUrl);
             this._blobUrl = null;

@@ -334,9 +334,11 @@ void main() {
 export const fogFragment = `
 #include <common>
 #include <vfx_scene_pars_fragment>
+#include <vfx_fog_of_war_pars_fragment>
 ${regionPars}
 varying vec3 vRegionWorld;
 void main() {
+    if (l3dVM > 3.5) discard;
     vec3 origin = cameraPosition;
     vec3 direction = normalize(vRegionWorld - origin);
     vec3 boxMin = vec3(uFieldRect.x, uShape.y, uFieldRect.y);
@@ -366,7 +368,7 @@ void main() {
         float n = rfFbm(p.xz * 9.0 + vec2(p.y * 6.0 + uTime * 0.08, -uTime * 0.05));
         float amount = footprint * layer * smoothstep(0.15, 0.75, n * 0.8 + layer * 0.35);
         float flash = 0.0;
-        amount *= regionLifecycle(p.xz, flash);
+        amount *= regionLifecycle(p.xz, flash) * vfxFogOfWar(p);
         density += amount;
         lightness += amount * n;
     }

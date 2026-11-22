@@ -52,7 +52,7 @@ function initHooks() {
     if (hooksReady) return;
     hooksReady = true;
     for (const hook of ["createTile", "updateTile", "deleteTile"]) Hooks.on(hook, () => refreshWaterBeds());
-    Hooks.on("3DCanvasSceneReady", (L, options) => !options?.levelSwitch && refreshWaterBeds());
+    Hooks.on("3DCanvasSceneReady", (L, options) => !options?.levelSwitch && renderAll());
 }
 
 export const refreshWaterBeds = foundry.utils.debounce(renderAll, 500);

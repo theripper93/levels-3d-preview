@@ -6,6 +6,7 @@ import { noisePars } from "../vfx/region/shaders.js";
 import { ShelterMap } from "../vfx/weather/shelterMap.js";
 import { wind } from "../vfx/weather/wind.js";
 import { terrainWaterMeshes } from "../helpers/terrainWater.js";
+import { gradeMistColor } from "./visionModeMask.js";
 
 const MODULE_ID = "levels-3d-preview";
 const MIST_HEIGHT = 1.5;
@@ -16,6 +17,7 @@ const MIST_STEPS = 12;
 const DRIFT_SPEED = 0.12;
 const WIND_DRIFT = 0.6;
 const CALM_DRIFT = new THREE.Vector2(0.6, 0.8);
+export const MIST_RENDER_ORDER = 1000;
 
 export function volumetricFogEnabled() {
     return !!(game.settings?.settings?.has(`${MODULE_ID}.volumetricFog`) && game.settings.get(MODULE_ID, "volumetricFog"));
@@ -140,6 +142,11 @@ const MIST_TINT = { unexplored: 0x3a4250, explored: 0x5a6472 };
 function setSceneColor(target, value, fallback, scale) {
     const hex = value === null || value === undefined ? fallback : Number(foundry.utils.Color.from(value));
     return target.setHex(hex).multiplyScalar(scale);
+}
+
+function indoorMist() {
+    const setting = canvas.scene.getFlag(MODULE_ID, "dynamicSky")?.setting;
+    return (!!setting && setting !== "outdoor") || (canvas.level?.elevation?.bottom ?? 0) < 0;
 }
 
 function levelFloor() {
@@ -324,7 +331,7 @@ export class FogMist {
         this.mesh = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), this.material);
         this.mesh.layers.set(VFX_LAYER);
         this.mesh.frustumCulled = false;
-        this.mesh.renderOrder = 1000;
+        this.mesh.renderOrder = MIST_RENDER_ORDER;
         this.mesh.castShadow = false;
         this.mesh.receiveShadow = false;
         this.mesh.raycast = () => {};
@@ -387,10 +394,15 @@ export class FogMist {
         this.uniforms.uMist.value.set(floor, top, grid, density);
         this.mesh.position.set((x0 + x1) / 2, (floor + top) / 2, (z0 + z1) / 2);
         this.mesh.scale.set(x1 - x0, top - floor, z1 - z0);
-        const colors = canvas.scene.fog?.colors ?? {};
-        const scale = darknessScale();
-        setSceneColor(this.uniforms.uUnexplored.value, colors.unexplored, MIST_TINT.unexplored, scale);
-        setSceneColor(this.uniforms.uExplored.value, colors.explored, MIST_TINT.explored, scale);
+        if (indoorMist()) {
+            this.uniforms.uUnexplored.value.setRGB(0, 0, 0);
+            this.uniforms.uExplored.value.setRGB(0, 0, 0);
+        } else {
+            const colors = canvas.scene.fog?.colors ?? {};
+            const scale = darknessScale();
+            gradeMistColor(setSceneColor(this.uniforms.uUnexplored.value, colors.unexplored, MIST_TINT.unexplored, scale));
+            gradeMistColor(setSceneColor(this.uniforms.uExplored.value, colors.explored, MIST_TINT.explored, scale));
+        }
         this.uniforms.uDepthClip.value = capabilities.active ? 1 : 0;
         this.material.depthTest = !capabilities.active;
         this.updateMotion(delta);

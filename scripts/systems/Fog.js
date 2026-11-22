@@ -6,8 +6,11 @@ import { clusterUniforms } from "../lighting/cluster/clusterManager.js";
 import { declareExtraSamplers } from "../lighting/cluster/clusterChunks.js";
 import { FogSmoother } from "./fogSmoother.js";
 import { FogMist, volumetricFogEnabled } from "./fogMist.js";
+import { VisionModeMask, visionModeUniforms, VISION_MODE_PARS, VISION_MODE_FRAGMENT } from "./visionModeMask.js";
 
 const MASK_TEXELS_PER_GRID = 16;
+const WALL_SAMPLE_OFFSET_GRIDS = 0.25;
+const ALBEDO_DECLARATION = /\bvec4\s+diffuseColor\s*=/;
 
 export const fogUniforms = {
     fogTexture: { value: null },
@@ -16,7 +19,9 @@ export const fogUniforms = {
     overlayRepeat: { value: new THREE.Vector2(1, 1) },
     sceneDimensions: { value: new THREE.Vector2() },
     sceneOrigin: { value: new THREE.Vector2() },
+    fogWallOffset: { value: 0 },
     ...clusterUniforms,
+    ...visionModeUniforms,
 };
 
 export class Fog {
@@ -32,6 +37,7 @@ export class Fog {
         this.extractor ??= new foundry.canvas.TextureExtractor(canvas.app.renderer, { callerName: "FogExtractorCanvas3D", controlHash: true, format: PIXI.FORMATS.RED });
         this.extractor.reset();
         this.smoother = new FogSmoother(parent.renderer);
+        this.visionMask = new VisionModeMask();
         this.smoothing = true;
         this.mist = null;
         this.initTexture();
@@ -87,6 +93,7 @@ export class Fog {
         this.fogTexture = this._sharedContext || !base64 ? (base64 ?? this.blank) : await new THREE.TextureLoader().loadAsync(base64);
         this.sceneDimensions = [canvas.dimensions.width / factor, canvas.dimensions.height / factor];
         this.sceneOrigin = [canvas.dimensions.sceneX / factor, canvas.dimensions.sceneY / factor];
+        this.wallOffset = (canvas.dimensions.size / factor) * WALL_SAMPLE_OFFSET_GRIDS;
     }
 
     async updateTexture(force = false) {
@@ -97,6 +104,7 @@ export class Fog {
         const isBlank = game.user.isGM && !canvas.effects?.visionSources?.size;
         const toggled = this._wasBlank !== undefined && this._wasBlank !== isBlank;
         this._wasBlank = isBlank;
+        if (isBlank) this.visionMask.reset();
         const base64 = isBlank ? this.blank : await this.generateTexture();
         if (seq !== this._updateSeq || this._destroyed) return;
         let texture = base64;
@@ -130,6 +138,7 @@ export class Fog {
     update(delta) {
         if (!this._ready) return;
         this.mist?.update(delta);
+        this.visionMask.update(delta);
         if (!this.smoothing || !this.smoother.active) return;
         this.smoother.update(delta);
         fogUniforms.fogTexture.value = this.smoother.texture;
@@ -143,6 +152,7 @@ export class Fog {
         fogUniforms.overlayRepeat.value = this.overlayRepeat;
         fogUniforms.sceneDimensions.value = this.sceneDimensions;
         fogUniforms.sceneOrigin.value = this.sceneOrigin;
+        fogUniforms.fogWallOffset.value = this.wallOffset;
     }
 
     async generateTexture() {
@@ -152,14 +162,17 @@ export class Fog {
         if (canvas.scene.fog.mode) canvas.app.renderer.render(canvas.fog.sprite, { renderTexture: this.pixiRenderTexture, clear: true });
         canvas.app.renderer.render(canvas.masks.vision.vision, { renderTexture: this.pixiRenderTexture, clear: !canvas.scene.fog.mode });
         canvas.fog.sprite.tint = originalTint;
+        this.visionMask.refresh();
+        this.visionMask.render(canvas.app.renderer, this.pixiRenderTexture);
         if (this._sharedContext) {
             this.webglFogTexture.sourceTexture = Object.values(this.pixiRenderTexture.baseTexture._glTextures)[0]?.texture ?? null;
             return this.webglFogTexture;
         } else {
-            let base64 = await this.extractor.extract({
+            const packed = this.visionMask.active;
+            let base64 = await this.getExtractor(packed).extract({
                 texture: this.pixiRenderTexture,
                 compression: foundry.canvas.TextureExtractor.COMPRESSION_MODES.BASE64,
-                type: "image/webp",
+                type: packed ? "image/png" : "image/webp",
                 quality: 0.8,
                 debug: false,
             });
@@ -178,7 +191,14 @@ export class Fog {
         }
     }
 
+    getExtractor(packed) {
+        if (!packed) return this.extractor;
+        this.packedExtractor ??= new foundry.canvas.TextureExtractor(canvas.app.renderer, { callerName: "FogExtractorCanvas3DPacked", controlHash: true, format: PIXI.FORMATS.RGBA });
+        return this.packedExtractor;
+    }
+
     dispose() {
+        this.visionMask?.destroy();
         this.fogTexture?.dispose();
         this.webglFogTexture?.dispose();
         this.pixiRenderTexture?.destroy(true);
@@ -190,6 +210,7 @@ export class Fog {
         fogUniforms.useOverlay.value = false;
         fogUniforms.sceneDimensions.value = new THREE.Vector2(0, 0);
         fogUniforms.sceneOrigin.value = new THREE.Vector2(0, 0);
+        fogUniforms.fogWallOffset.value = 0;
     }
 
     destroy() {
@@ -206,11 +227,22 @@ function injectParticleFoW(shader) {
     if (!shader.fragmentShader.includes("#include <fog_fragment>")) shader.fragmentShader = shader.fragmentShader.replace("#include <tonemapping_fragment>", "#include <fog_fragment>\n#include <tonemapping_fragment>");
 }
 
+export function selfLitUniform(material) {
+    return (material._l3dSelfLit ??= { value: false });
+}
+
+export function noVisionModeUniform(material) {
+    return (material._l3dNoVisionMode ??= { value: !!material.userData?.noVisionMode });
+}
+
 function injectFogUniforms(shader, renderer) {
     this._userOnBeforeCompile?.call(this, shader, renderer);
     declareExtraSamplers(shader);
     Object.assign(shader.uniforms, fogUniforms);
     shader.uniforms.l3dFoliage = { value: !!this.userData?.foliage };
+    shader.uniforms.l3dNoVisionMode = noVisionModeUniform(this);
+    shader.uniforms.l3dSelfLit = selfLitUniform(this);
+    if (ALBEDO_DECLARATION.test(shader.fragmentShader)) shader.fragmentShader = "#define L3D_VM_ALBEDO diffuseColor.rgb\n" + shader.fragmentShader;
     injectSurface(shader);
     if (shader.vertexShader.includes(PARTICLE_OFFSET_ATTRIBUTE)) injectParticleFoW(shader);
 }
@@ -240,7 +272,8 @@ export function injectFoWShaders(THREELIB) {
     uniform sampler2D fogTexture;
     uniform sampler2D fogOverlay;
     uniform bool useOverlay;
-    `;
+    uniform float fogWallOffset;
+    ` + VISION_MODE_PARS;
 
     THREELIB.ShaderChunk.fog_vertex += `
     #ifndef FOW_FROM_OFFSET
@@ -256,15 +289,25 @@ export function injectFoWShaders(THREELIB) {
 
     THREELIB.ShaderChunk.fog_fragment =
         `
+    vec2 fowSampleXZ = vWorldPositionFoW.xz;
+    vec3 fowFaceNormal = cross( dFdx( vWorldPositionFoW ), dFdy( vWorldPositionFoW ) );
+    float fowFaceLength = dot( fowFaceNormal, fowFaceNormal );
+    if( fogWallOffset > 0.0 && fowFaceLength > 0.0 ){
+        fowFaceNormal *= inversesqrt( fowFaceLength );
+        if( dot( fowFaceNormal, cameraPosition - vWorldPositionFoW ) < 0.0 ) fowFaceNormal = -fowFaceNormal;
+        float fowHorizontal = length( fowFaceNormal.xz );
+        fowSampleXZ += fowFaceNormal.xz / max( fowHorizontal, 1e-4 ) * fogWallOffset * smoothstep( 0.7, 0.95, fowHorizontal );
+    }
     if( sceneDimensions.x != 0.0 && vWorldPositionFoW.x >= sceneOrigin.x && vWorldPositionFoW.x <= sceneDimensions.x - sceneOrigin.x && vWorldPositionFoW.z >= sceneOrigin.y && vWorldPositionFoW.z <= sceneDimensions.y - sceneOrigin.y ){
         float sceneX = (vWorldPositionFoW.x)/sceneDimensions.x;
         float sceneY = (vWorldPositionFoW.z)/sceneDimensions.y;
-        vec4 fogTexel = texture( fogTexture, vec2(sceneX, sceneY) );
+        vec4 fogTexel = texture( fogTexture, fowSampleXZ / sceneDimensions );
         if(useOverlay && fogTexel.r == 0.0){
             vec4 overlayTexel = texture( fogOverlay, vec2(sceneX * overlayRepeat.x, sceneY * overlayRepeat.y) );
             gl_FragColor = mix(gl_FragColor, overlayTexel, 1.0 - fogTexel.r);
         }else{
-            gl_FragColor.rgb = mix( vec3(0.0, 0.0, 0.0), gl_FragColor.rgb, fogTexel.r );
+            if (!l3dNoVisionMode) gl_FragColor.rgb = mix( vec3(0.0, 0.0, 0.0), gl_FragColor.rgb, fogTexel.r );
+            ${VISION_MODE_FRAGMENT}
         }
     }
     ` + THREELIB.ShaderChunk.fog_fragment;

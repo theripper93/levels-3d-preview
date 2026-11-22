@@ -4,10 +4,11 @@ import { ClusterMasks } from "./clusterMasks.js";
 import { ClusterLight } from "./clusterLight.js";
 import { setClusterSamplerLimit } from "./clusterChunks.js";
 import { factor } from "../../main.js";
+import { refreshWorldMatrix } from "../../three/matrixWorld.js";
 
 export const EFFECT_SLOTS = 16;
 export const DATA_WIDTH = 1024;
-export const RECORD_TEXELS = 5;
+export const RECORD_TEXELS = 6;
 const RECORD_FLOATS = RECORD_TEXELS * 4;
 const ROW_FLOATS = DATA_WIDTH * 4;
 const MIN_CAPACITY = 256;
@@ -52,6 +53,7 @@ export const clusterUniforms = {
     uClusterCell: { value: 1 },
     uClusterDims: { value: new Vector2() },
     uClusterEffects: { value: 0 },
+    uClusterLevels: { value: 0 },
 };
 
 const scratch = new Float32Array(RECORD_FLOATS);
@@ -211,7 +213,7 @@ export class ClusterManager {
     }
 
     writeRecord(light, state) {
-        light.updateWorldMatrix(true, false);
+        refreshWorldMatrix(light);
         const e = light.matrixWorld.elements;
         const x = e[12];
         const y = e[13];
@@ -256,6 +258,7 @@ export class ClusterManager {
             scratch[18] = physical.distance;
         }
         scratch[19] = penumbraCos;
+        scratch[20] = light.userData.brightRatio ?? 0;
         const offset = state.slot * RECORD_FLOATS;
         let changed = false;
         for (let i = 0; i < RECORD_FLOATS; i++) {

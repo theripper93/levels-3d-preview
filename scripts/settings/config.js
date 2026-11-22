@@ -16,6 +16,7 @@ import { lookPresetField, activateLookPreset } from "./sceneLook.js";
 import { lightFxConfigFields, activateLightFxConfig } from "../vfx/light/config.js";
 import { TacticalPingPicker, loadUserEmotes } from "../entities/effects/ping.js";
 import { injectBakeButton } from "../helpers/modelBaker.js";
+import { skipDefaultReloads } from "./sceneConfigSubmit.js";
 
 export function registerConfigs() {
     const documentsToWiden = ["Scene", "Token", "Tile", "AmbientLight"];
@@ -550,6 +551,7 @@ export function registerConfigs() {
             },
         };
         const injected = injectConfig.inject(app, html, data);
+        skipDefaultReloads(app);
         activateWeatherConfig(app, html, () => injectConfig._trySetPosition(app, { height: "auto" }));
         activateStatusSection(app, html);
         activateLookPreset(html);

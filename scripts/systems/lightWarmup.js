@@ -52,6 +52,10 @@ export class LightWarmup {
         this.pending.add(light);
     }
 
+    get idle() {
+        return !this.batch && !this.objects.length && !this.pending.size && !this.changes.length;
+    }
+
     isWarming(light) {
         return this.pending.has(light) || !!this.batch?.lights.has(light);
     }
@@ -77,7 +81,7 @@ export class LightWarmup {
 
     isInScene(object) {
         while (object.parent) object = object.parent;
-        return object === this._parent.scene;
+        return object === this._parent.scene || object === this._parent.kitBatcher?.root;
     }
 
     warmObject(object) {
@@ -90,10 +94,15 @@ export class LightWarmup {
         if (!programs.length) return;
         const layers = new Map();
         object.traverse((child) => {
-            layers.set(child, child.layers.mask);
+            layers.set(child, this.originalMask(child));
             child.layers.set(WARMUP_LAYER);
         });
         this.objects.push({ layers, programs, start: performance.now() });
+    }
+
+    originalMask(child) {
+        for (const entry of this.objects) if (entry.layers.has(child)) return entry.layers.get(child);
+        return child.layers.mask;
     }
 
     updateObjects() {
@@ -113,9 +122,11 @@ export class LightWarmup {
         if (!lights.size && !this.changes.length) return;
         lights.forEach((light) => this.pending.delete(light));
         const objects = [];
-        this._parent.scene.traverse((object) => {
+        const collect = (object) => {
             if (object.material) objects.push(object);
-        });
+        };
+        this._parent.scene.traverse(collect);
+        this._parent.kitBatcher?.root.traverse(collect);
         this.batch = { lights, changes: this.changes.splice(0), objects, index: 0, programs: [], start: performance.now() };
         this.compileStep();
     }

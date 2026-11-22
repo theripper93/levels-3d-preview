@@ -72,6 +72,7 @@ uniform vec2 uClusterOrigin;
 uniform float uClusterCell;
 uniform ivec2 uClusterDims;
 uniform int uClusterEffects;
+uniform float uClusterLevels;
 #define L3D_CLUSTER_TEXEL( index ) texelFetch( uClusterLights, ivec2( ( index ) % ${DATA_WIDTH}, ( index ) / ${DATA_WIDTH} ), 0 )
 `;
 
@@ -86,7 +87,12 @@ const accumulateLight = (slot) => /* glsl */ `
             vec4 l3dT2 = L3D_CLUSTER_TEXEL( l3dBase + 2 );
             vec4 l3dT4 = L3D_CLUSTER_TEXEL( l3dBase + 4 );
             directLight.direction = normalize( l3dVector );
-            directLight.color = l3dT1.rgb * getDistanceAttenuation( l3dDistance, l3dT0.w, l3dT1.a );
+            float l3dAttenuation = getDistanceAttenuation( l3dDistance, l3dT0.w, l3dT1.a );
+            if ( uClusterLevels > 0.0 ) {
+                float l3dBright = L3D_CLUSTER_TEXEL( l3dBase + 5 ).x * l3dT0.w;
+                if ( l3dBright > 0.0 && l3dDistance > l3dBright ) l3dAttenuation = mix( l3dAttenuation, pow2( saturate( 1.0 - pow4( l3dDistance / l3dT0.w ) ) ) / max( pow( l3dBright, l3dT1.a ), 0.01 ), uClusterLevels );
+            }
+            directLight.color = l3dT1.rgb * l3dAttenuation;
             directLight.visible = true;
             if ( l3dT2.w > -1.5 ) directLight.color *= getSpotAttenuation( l3dT2.w, l3dT4.w, dot( directLight.direction, ( viewMatrix * vec4( l3dT2.xyz, 0.0 ) ).xyz ) );
             #ifndef L3D_NO_CLUSTER_MASKS

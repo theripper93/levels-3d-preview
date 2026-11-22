@@ -7,6 +7,7 @@ import { LightEffects } from "../vfx/light/lightEffects.js";
 import { ClusterLight } from "../lighting/cluster/clusterLight.js";
 
 const LIGHT_SHADOW_RADIUS = 3;
+const MIN_BRIGHT_RATIO = 0.25;
 
 export class Light3D {
     constructor(light, parent, isToken) {
@@ -231,6 +232,7 @@ export class Light3D {
         this.light3d.baseDistance = radius;
         this.light3d.decay = decay;
         this.light3d.intensity = alpha;
+        this.light3d.userData.brightRatio = Light3D.brightRatio(this.dim, this.bright);
         this.light3d.shadow.camera.far = radius;
         this.light3d.shadow.camera.near = 0.02;
         this.initialLightParams = {
@@ -274,6 +276,11 @@ export class Light3D {
             });
         }
         if (particleChanged && enableParticle) this.initParticle();
+    }
+
+    static brightRatio(dim, bright) {
+        if (!(dim > bright)) return 0;
+        return Math.max(bright / dim, MIN_BRIGHT_RATIO);
     }
 
     static computeParams({ x, y, elevation, dim, bright, alpha, color }) {

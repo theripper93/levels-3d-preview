@@ -50,7 +50,7 @@ export async function updatePerformanceAlert() {
 }
 
 const scheduleAlert = foundry.utils.debounce(() => updatePerformanceAlert().catch(console.error), 3000);
-Hooks.on("3DCanvasSceneReady", (L, options) => !options?.levelSwitch && scheduleAlert());
+Hooks.on("3DCanvasSceneReady", (L, options) => !options?.levelSwitch && updatePerformanceAlert().catch(console.error));
 Hooks.on("3DCanvasBakeComplete", scheduleAlert);
 Hooks.on("renderBuildPanel", applyPerformanceAlert);
 

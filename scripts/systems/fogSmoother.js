@@ -3,7 +3,6 @@ import * as THREE from "three";
 const TEXELS_PER_GRID = 8;
 const MAX_RESOLUTION = 2048;
 const SOFTNESS = 0.5;
-const SAFETY_MARGIN = 1.5;
 const REVEAL_TAU = 0.5;
 const HIDE_TAU = 1;
 const FADE_DURATION = 1;
@@ -28,27 +27,13 @@ void main() {
     ivec2 step = ivec2(uAxis);
     ivec2 base = pixel * (ivec2(1) - step);
     float value = 1.0;
-    for (int i = first; i <= last; i++) value = min(value, texelFetch(uSource, base + step * i, 0).r);
-    gl_FragColor = vec4(value, 0.0, 0.0, 1.0);
-}
-`;
-
-const ERODE_SHADER = /* glsl */ `
-uniform sampler2D uSource;
-uniform float uRadius;
-void main() {
-    ivec2 size = textureSize(uSource, 0);
-    ivec2 pixel = ivec2(gl_FragCoord.xy);
-    int radius = int(ceil(uRadius));
-    float limit = uRadius * uRadius;
-    float value = 1.0;
-    for (int y = -radius; y <= radius; y++) {
-        for (int x = -radius; x <= radius; x++) {
-            if (float(x * x + y * y) > limit) continue;
-            value = min(value, texelFetch(uSource, clamp(pixel + ivec2(x, y), ivec2(0), size - 1), 0).r);
-        }
+    vec3 sum = vec3(0.0);
+    for (int i = first; i <= last; i++) {
+        vec4 texel = texelFetch(uSource, base + step * i, 0);
+        value = min(value, texel.r);
+        sum += texel.gba;
     }
-    gl_FragColor = vec4(value, 0.0, 0.0, 1.0);
+    gl_FragColor = vec4(value, sum / float(max(last - first + 1, 1)));
 }
 `;
 
@@ -61,18 +46,22 @@ void main() {
     int radius = int(uRadius);
     float limit = uRadius * uRadius;
     float sigma = max(uRadius * 0.5, 0.5);
-    float total = 0.0;
+    vec4 total = vec4(0.0);
+    vec2 layers = vec2(0.0);
     float weight = 0.0;
     for (int y = -radius; y <= radius; y++) {
         for (int x = -radius; x <= radius; x++) {
             float d = float(x * x + y * y);
             if (d > limit) continue;
             float w = exp(-0.5 * d / (sigma * sigma));
-            total += texelFetch(uSource, clamp(pixel + ivec2(x, y), ivec2(0), size - 1), 0).r * w;
+            vec4 texel = texelFetch(uSource, clamp(pixel + ivec2(x, y), ivec2(0), size - 1), 0);
+            total += texel * w;
+            layers += clamp(vec2(texel.r * 2.0, texel.r * 2.0 - 1.0), 0.0, 1.0) * w;
             weight += w;
         }
     }
-    gl_FragColor = vec4(total / weight, 0.0, 0.0, 1.0);
+    vec2 edge = smoothstep(vec2(0.45), vec2(0.8), layers / weight);
+    gl_FragColor = vec4((edge.x + edge.y) * 0.5, total.gba / weight);
 }
 `;
 
@@ -83,11 +72,11 @@ uniform float uStep;
 uniform float uHideStep;
 void main() {
     ivec2 pixel = ivec2(gl_FragCoord.xy);
-    float shown = texelFetch(uShown, pixel, 0).r;
-    float target = texelFetch(uTarget, pixel, 0).r;
-    float rate = target <= shown ? uHideStep : uStep;
-    float next = shown + (target - shown) * rate;
-    gl_FragColor = vec4(abs(target - next) < 0.004 ? target : next, 0.0, 0.0, 1.0);
+    vec4 shown = texelFetch(uShown, pixel, 0);
+    vec4 target = texelFetch(uTarget, pixel, 0);
+    vec4 rate = mix(vec4(uStep), vec4(uHideStep), vec4(lessThanEqual(target, shown)));
+    vec4 next = shown + (target - shown) * rate;
+    gl_FragColor = mix(next, target, vec4(lessThan(abs(target - next), vec4(0.004))));
 }
 `;
 
@@ -96,7 +85,7 @@ function passMaterial(fragmentShader, uniforms) {
 }
 
 function maskTarget(width, height, filter = THREE.NearestFilter) {
-    const target = new THREE.WebGLRenderTarget(width, height, { format: THREE.RedFormat, minFilter: filter, magFilter: filter, depthBuffer: false, generateMipmaps: false });
+    const target = new THREE.WebGLRenderTarget(width, height, { format: THREE.RGBAFormat, minFilter: filter, magFilter: filter, depthBuffer: false, generateMipmaps: false });
     target.texture.colorSpace = THREE.NoColorSpace;
     return target;
 }
@@ -105,7 +94,6 @@ export class FogSmoother {
     constructor(renderer) {
         this.renderer = renderer;
         this.poolMaterial = passMaterial(POOL_SHADER, { uSource: { value: null }, uAxis: { value: AXIS_X }, uScale: { value: 1 } });
-        this.erodeMaterial = passMaterial(ERODE_SHADER, { uSource: { value: null }, uRadius: { value: 0 } });
         this.blurMaterial = passMaterial(BLUR_SHADER, { uSource: { value: null }, uRadius: { value: 0 } });
         this.blendMaterial = passMaterial(BLEND_SHADER, { uShown: { value: null }, uTarget: { value: null }, uStep: { value: 1 }, uHideStep: { value: 1 } });
         this.quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), this.blendMaterial);
@@ -146,9 +134,7 @@ export class FogSmoother {
         this.width = outWidth;
         this.height = outHeight;
         this.blurRadius = Math.max(1, Math.round(this.texelsPerGrid * SOFTNESS));
-        this.erodeRadius = this.blurRadius + SAFETY_MARGIN;
         this.ping = maskTarget(outWidth, outHeight);
-        this.pong = maskTarget(outWidth, outHeight);
         this.smoothed = maskTarget(outWidth, outHeight);
         this.shown = [maskTarget(outWidth, outHeight, THREE.LinearFilter), maskTarget(outWidth, outHeight, THREE.LinearFilter)];
         this.primed = false;
@@ -188,8 +174,7 @@ export class FogSmoother {
         }
         this.pass(this.poolMaterial, { uSource: source, uAxis: AXIS_X, uScale: this.sourceSize.x / this.width }, this.rows);
         this.pass(this.poolMaterial, { uSource: this.rows.texture, uAxis: AXIS_Y, uScale: this.sourceSize.y / this.height }, this.ping);
-        this.pass(this.erodeMaterial, { uSource: this.ping.texture, uRadius: this.erodeRadius }, this.pong);
-        this.pass(this.blurMaterial, { uSource: this.pong.texture, uRadius: this.blurRadius }, this.smoothed);
+        this.pass(this.blurMaterial, { uSource: this.ping.texture, uRadius: this.blurRadius }, this.smoothed);
         this.fadeRemaining = this.primed ? Math.max(FADE_DURATION, SETTLE_FACTOR * Math.max(REVEAL_TAU, HIDE_TAU)) / this.speed : 0;
         this.primed = true;
     }
@@ -224,7 +209,6 @@ export class FogSmoother {
         this.rows?.dispose();
         this.rows = null;
         this.ping?.dispose();
-        this.pong?.dispose();
         this.smoothed?.dispose();
         this.shown?.forEach((target) => target.dispose());
     }
@@ -232,7 +216,6 @@ export class FogSmoother {
     dispose() {
         this.disposeTargets();
         this.poolMaterial.dispose();
-        this.erodeMaterial.dispose();
         this.blurMaterial.dispose();
         this.blendMaterial.dispose();
         this.quad.geometry.dispose();

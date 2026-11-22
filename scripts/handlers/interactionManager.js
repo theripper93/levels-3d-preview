@@ -9,6 +9,7 @@ import { computeBoundsTree, disposeBoundsTree } from "three-mesh-bvh";
 import { acceleratedRaycast } from "../three/acceleratedRaycast.js";
 import { Note3D } from "../entities/note3d.js";
 import { movementFloor } from "../helpers/elevationFloor.js";
+import { SightBroadphase } from "./sightBroadphase.js";
 THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
 THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
 THREE.Mesh.prototype.raycast = acceleratedRaycast;
@@ -73,6 +74,7 @@ export class InteractionManager {
         this.sightRaycaster = new THREE.Raycaster();
         this.sightRaycaster.firstHitOnly = true;
         this._sightCollisions = {};
+        this.sightBroadphase = new SightBroadphase(levels3dPreview.renderer);
         this.mouse = new THREE.Vector2();
         this.mousemove = new THREE.Vector2();
         this.controls = levels3dPreview.controls;
@@ -204,7 +206,8 @@ export class InteractionManager {
         this.sightRaycaster.firstHitOnly = !useClipping;
         this.sightRaycaster.set(origin, direction);
         this.forceSightCollisions(rectp0, rectp1);
-        let collisions = this.sightRaycaster.intersectObjects(this._sightCollisions[type] ?? this._sightCollisions["move"], true);
+        const candidates = this.sightBroadphase.filter(this.sightRaycaster, this._sightCollisions[type] ?? this._sightCollisions["move"]);
+        let collisions = this.sightRaycaster.intersectObjects(candidates, true);
         if (!collisions.length) return false;
         if (useClipping && !returnAll) {
             collisions = collisions.filter((c) => c.point.y < (game.Levels3DPreview.BuildPanel._clipHeight ?? Infinity));
@@ -658,11 +661,11 @@ export class InteractionManager {
     }
 
     updateHoverObj() {
-        this._hoverobj = this._parent.scene.children.filter(this._collisionFilter);
+        this._hoverobj = this._hoverObjects();
     }
 
     updateHoverObjNoDebounce() {
-        this._hoverobj = this._parent.scene.children.filter(this._collisionFilter);
+        this._hoverobj = this._hoverObjects();
     }
 
     _onMouseMove(event, force = false) {
@@ -767,9 +770,9 @@ export class InteractionManager {
     }
 
     getHoverObject() {
-        if (!this._hoverobj || !this._hoverobj.length) this._hoverobj = this._parent.scene.children.filter(this._collisionFilter);
+        if (!this._hoverobj || !this._hoverobj.length) this._hoverobj = this._hoverObjects();
         this.raycaster.setFromCamera(this.mousemove, this.camera);
-        const all = this.raycaster.intersectObjects(this._hoverobj, true).filter((i) => !i.object?.userData?.ignoreHover);
+        const all = this.raycaster.intersectObjects(this.sightBroadphase.filter(this.raycaster, this._hoverobj), true).filter((i) => !i.object?.userData?.ignoreHover);
         const intersects = all.filter(this._clippingFilter);
         if (!intersects.length) return null;
         const hit = this._preferredDoor(intersects, all) ?? intersects[0];
@@ -786,13 +789,26 @@ export class InteractionManager {
     }
 
     _collisionFilter(object) {
-        const _this = game.Levels3DPreview.interactionManager;
-        if (object.userData.ignoreHover || object.userData.noIntersect) return false;
-        if (!canvas.activeLayer) return true;
-        if (object.userData?.entity3D && _this.activeLayerEntity !== object.userData?.entity3D?.embeddedName && object.userData?.entity3D?.embeddedName !== "Note" && object.userData?.entity3D?.embeddedName !== "Tile") return false;
-        if (object.userData?.entity3D && _this.activeLayerEntity !== "Tile" && object.userData?.entity3D?.embeddedName === "Tile" && !object.userData?.entity3D?.collision) return false;
-        if (!object.visible) return false;
-        return true;
+        return game.Levels3DPreview.interactionManager._hoverTest(object, !!canvas.activeLayer, game.Levels3DPreview.interactionManager.activeLayerEntity);
+    }
+
+    _hoverTest(object, hasLayer, layerEntity) {
+        const userData = object.userData;
+        if (userData.ignoreHover || userData.noIntersect) return false;
+        if (!hasLayer) return true;
+        const entity3D = userData.entity3D;
+        if (entity3D) {
+            const name = entity3D.embeddedName;
+            if (layerEntity !== name && name !== "Note" && name !== "Tile") return false;
+            if (layerEntity !== "Tile" && name === "Tile" && !entity3D.collision) return false;
+        }
+        return !!object.visible;
+    }
+
+    _hoverObjects() {
+        const hasLayer = !!canvas.activeLayer;
+        const layerEntity = this.activeLayerEntity;
+        return this._parent.scene.children.filter((object) => this._hoverTest(object, hasLayer, layerEntity));
     }
 
     _onWheel(event) {

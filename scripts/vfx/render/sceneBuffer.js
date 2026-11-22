@@ -66,6 +66,7 @@ vec4 vfxSceneColor(vec2 uv) {
 
 ShaderChunk.vfx_fog_of_war_pars_fragment = `
 float vfxFogOfWar(vec3 worldPosition) {
+    if (l3dVM > 3.5) return 0.0;
     vec2 limit = sceneDimensions - sceneOrigin;
     if (sceneDimensions.x == 0.0 || worldPosition.x < sceneOrigin.x || worldPosition.z < sceneOrigin.y || worldPosition.x > limit.x || worldPosition.z > limit.y) return 1.0;
     return texture2D(fogTexture, worldPosition.xz / sceneDimensions).r;

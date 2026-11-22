@@ -7,6 +7,7 @@ import { generateInstances, explicitInstances, resolveItemAsset, isGroundCover }
 import { sampleSurface, gridUnit, isObstacle } from "./surface.js";
 import { WIND_GLSL, windUniforms, updateWindSway, isFoliage } from "../shaders/wind/windSway.js";
 import { markReceivers } from "../vfx/surface/receivers.js";
+import { setWindSwayParams } from "../shaders/wind/windBatch.js";
 
 const CHUNK_CELLS = 48;
 const MAX_CHUNKS = 3;
@@ -25,6 +26,48 @@ const TREE_PROFILE = { anchor: 0.3, stiffness: 3 };
 const PLANT_PROFILE = { anchor: 0, stiffness: 2 };
 const proxyMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true });
 const noRaycast = () => {};
+const pickSpheres = new WeakMap();
+const _pickMesh = new THREE.Mesh();
+const _pickHits = [];
+const _pickMatrix = new THREE.Matrix4();
+const _pickLocal = new THREE.Matrix4();
+const _pickSphere = new THREE.Sphere();
+
+function instanceSpheres(mesh) {
+    let entry = pickSpheres.get(mesh);
+    const elements = mesh.matrixWorld.elements;
+    if (entry && entry.version === mesh.instanceMatrix.version && entry.count === mesh.count && entry.matrix.every((v, i) => v === elements[i])) return entry.spheres;
+    if (mesh.geometry.boundingSphere === null) mesh.geometry.computeBoundingSphere();
+    const spheres = new Float32Array(mesh.count * 4);
+    for (let i = 0; i < mesh.count; i++) {
+        _pickMatrix.multiplyMatrices(mesh.matrixWorld, mesh.getMatrixAt(i, _pickLocal));
+        _pickSphere.copy(mesh.geometry.boundingSphere).applyMatrix4(_pickMatrix);
+        spheres.set([_pickSphere.center.x, _pickSphere.center.y, _pickSphere.center.z, _pickSphere.radius], i * 4);
+    }
+    entry = { version: mesh.instanceMatrix.version, count: mesh.count, matrix: [...elements], spheres };
+    pickSpheres.set(mesh, entry);
+    return spheres;
+}
+
+function raycastInstances(mesh, raycaster, intersects) {
+    const spheres = instanceSpheres(mesh);
+    _pickMesh.geometry = mesh.geometry;
+    _pickMesh.material = mesh.material;
+    for (let i = 0; i < mesh.count; i++) {
+        _pickSphere.center.fromArray(spheres, i * 4);
+        _pickSphere.radius = spheres[i * 4 + 3];
+        if (!raycaster.ray.intersectsSphere(_pickSphere)) continue;
+        _pickMesh.matrixWorld.multiplyMatrices(mesh.matrixWorld, mesh.getMatrixAt(i, _pickLocal));
+        _pickHits.length = 0;
+        _pickMesh.raycast(raycaster, _pickHits);
+        for (const hit of _pickHits) {
+            hit.instanceId = i;
+            hit.object = mesh;
+            intersects.push(hit);
+        }
+    }
+    _pickHits.length = 0;
+}
 
 export function scatterQuality() {
     const key = game.settings.settings.has("levels-3d-preview.scatterQuality") ? game.settings.get("levels-3d-preview", "scatterQuality") : "high";
@@ -92,6 +135,7 @@ function windMaterial(material, params) {
     const m = material.clone();
     const previous = material._userOnBeforeCompile === material.onBeforeCompile ? null : material._userOnBeforeCompile;
     m.onBeforeCompile = swayCompile(params, previous);
+    if (!previous) setWindSwayParams(m, { sway: params.sway, height: Math.max(params.box.max.y - params.box.min.y, 1e-3), base: params.box.min.y, anchor: params.anchor, stiffness: params.stiffness, flutter: params.flutter });
     return m;
 }
 
@@ -254,7 +298,7 @@ export function loadAsset(asset) {
                     const materials = Array.isArray(c.material) ? c.material : [c.material];
                     const converted = materials.map((m) => {
                         if (asset.tint) (m = m.clone()).color.multiply(new THREE.Color(asset.tint));
-                        return sway ? windMaterial(m, swayParams(asset, m, box)) : canonicalMaterial(m);
+                        return sway ? windMaterial(canonicalMaterial(m), swayParams(asset, m, box)) : canonicalMaterial(m);
                     });
                     const shadow = sway ? windShadowMaterials(materials[0], swayParams(asset, materials[0], box)) : null;
                     return { geometry: geometries[k], material: Array.isArray(c.material) ? converted : converted[0], shadow };
@@ -279,8 +323,8 @@ export class ScatterField {
         this.proxies = new THREE.Group();
         this.proxies.visible = false;
         this.pick = new THREE.Mesh(new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ visible: false }));
-        this.pick.raycast = function (raycaster, intersects) {
-            if (canvas.tiles?.active) THREE.Mesh.prototype.raycast.call(this, raycaster, intersects);
+        this.pick.raycast = (raycaster, intersects) => {
+            if (canvas.tiles?.active) this.raycastContent(raycaster, intersects);
         };
         this.pick.userData.noShaders = true;
         this.container.add(this.content, this.itemContent, this.proxies, this.pick);
@@ -296,8 +340,18 @@ export class ScatterField {
         this.base = null;
         this.stats = {};
         this.version = 0;
-        this.schedule = foundry.utils.debounce(() => this.generate(), 300);
-        this.quick = foundry.utils.debounce(() => this.generate(), 20);
+        this.queued = false;
+        this.generating = 0;
+        const schedule = foundry.utils.debounce(() => this.generate(), 300);
+        const quick = foundry.utils.debounce(() => this.generate(), 20);
+        this.schedule = () => {
+            this.queued = true;
+            schedule();
+        };
+        this.quick = () => {
+            this.queued = true;
+            quick();
+        };
         fields.add(this);
     }
 
@@ -396,7 +450,21 @@ export class ScatterField {
         this.schedule();
     }
 
+    get busy() {
+        return this.queued || this.generating > 0;
+    }
+
     async generate() {
+        this.queued = false;
+        this.generating++;
+        try {
+            return await this.regenerate();
+        } finally {
+            this.generating--;
+        }
+    }
+
+    async regenerate() {
         const L = game.Levels3DPreview;
         if (this.disposed || !L?._active || !(L._ready || L._loadingScatter) || this.tile3d._parked) return;
         if (Object.values(L.tiles).some((t) => t && !t._loaded && t !== this.tile3d)) return this.schedule();
@@ -701,6 +769,17 @@ export class ScatterField {
 
     infoOf(inst) {
         return this.infos.get(assetKey(inst.asset)) ?? null;
+    }
+
+    raycastContent(raycaster, intersects) {
+        if (!this.instances.length) return THREE.Mesh.prototype.raycast.call(this.pick, raycaster, intersects);
+        for (const group of [this.content, this.itemContent]) {
+            for (const mesh of group.children) {
+                if (!mesh.geometry.boundsTree) mesh.geometry.computeBoundsTree({ indirect: true });
+                if (mesh.isInstancedMesh) raycastInstances(mesh, raycaster, intersects);
+                else if (mesh.isMesh) THREE.Mesh.prototype.raycast.call(mesh, raycaster, intersects);
+            }
+        }
     }
 
     pickInstance(ray, filter = () => true) {

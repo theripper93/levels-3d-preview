@@ -1,4 +1,4 @@
-import { fbm, smooth } from "./mapMakerTerrain.js";
+import { fbm, smooth } from "./terrainMasks.js";
 
 export const ROAD_STYLES = {
     trail: { rank: 1, edge: 0.45, shoulder: 0, ruts: 0.05, camber: 0, raise: 0, stones: 0, grass: 0.3, pebble: 1.3, verge: 1.8, crisp: 0 },
@@ -6,6 +6,7 @@ export const ROAD_STYLES = {
     stone: { rank: 3, edge: 0.25, shoulder: 0.1, ruts: 0, camber: 0, raise: 0, stones: 1, grass: 0.45, pebble: 1, verge: 1.7, crisp: 0.2 },
     cobble: { rank: 4, edge: 0.15, shoulder: 0.2, ruts: 0, camber: 0.035, raise: 0, stones: 0, grass: 0.6, pebble: 0.4, verge: 2.2, crisp: 0.6 },
     paved: { rank: 5, edge: 0.05, shoulder: 0.15, ruts: 0, camber: 0.02, raise: 0.06, stones: 0, grass: 0.15, pebble: 0.2, verge: 1.6, crisp: 1 },
+    asphalt: { rank: 6, edge: 0, shoulder: 0, ruts: 0, camber: 0.01, raise: 0, stones: 0, grass: 0, pebble: 0, verge: 1, crisp: 1 },
 };
 
 export function roadSpline(flat, spacing) {

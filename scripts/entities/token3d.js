@@ -11,6 +11,9 @@ import { imageTo3d } from "../helpers/imageTo3D.js";
 import * as coords3d from "../helpers/coords3d.js";
 import { meshesToSingleMesh } from "../helpers/geometryUtils.js";
 import { createTargetGeometry } from "./effects/target.js";
+import { noVisionModeUniform, selfLitUniform } from "../systems/Fog.js";
+import { MIST_RENDER_ORDER } from "../systems/fogMist.js";
+import { cappedEyeHeight } from "../systems/sightCeiling.js";
 THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
 THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
 THREE.Mesh.prototype.raycast = acceleratedRaycast;
@@ -116,7 +119,7 @@ export class Token3D {
         await this.initShaders();
         this.animationHandler.init();
         if (this.particleData.type != "none") this.initParticle();
-        const boundingBoxDepth = ((this.losHeight - this.document.elevation) * canvas.scene.dimensions.size) / canvas.dimensions.distance / factor;
+        const boundingBoxDepth = ((this.baseLosHeight - this.document.elevation) * canvas.scene.dimensions.size) / canvas.dimensions.distance / factor;
         const boundingBox = new THREE.BoxGeometry((this.baseDocumentWidth * canvas.grid.size) / factor, boundingBoxDepth, (this.baseDocumentHeight * canvas.grid.size) / factor);
         const boundingMesh = new THREE.Mesh(boundingBox, new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true, transparent: true, opacity: 1 }));
         boundingMesh.position.set(0, boundingBoxDepth / 2, 0);
@@ -574,7 +577,7 @@ export class Token3D {
         const f = this.factor;
         const w = token.w / f;
         const h = token.h / f;
-        const d = ((this.losHeight - token.document.elevation) * canvas.scene.dimensions.size) / canvas.dimensions.distance / f;
+        const d = ((this.baseLosHeight - token.document.elevation) * canvas.scene.dimensions.size) / canvas.dimensions.distance / f;
         //create a box
         const color = this.color;
         const geometry = new THREE.BoxGeometry(w, d, h);
@@ -794,8 +797,12 @@ export class Token3D {
         return modelHeight;
     }
 
-    get losHeight() {
+    get baseLosHeight() {
         return this.token.document.elevation + this.tokenHeight * 0.89;
+    }
+
+    get losHeight() {
+        return cappedEyeHeight(this, this.baseLosHeight);
     }
 
     setPositionFrom2D(force = false) {
@@ -1052,7 +1059,7 @@ export class Token3D {
     }
 
     updateHiden() {
-        if (!game.user.isGM && this.hidden) return;
+        if ((!game.user.isGM && this.hidden) || this._ghostLook) return;
         if (!this.originalMatData) {
             this.originalMatData = {};
             this.model.traverse((child) => {
@@ -1163,6 +1170,10 @@ export class Token3D {
         const mesh = effectBaseMesh;
         mesh.traverse((child) => {
             if (child.isMesh && child.material.name == "effect") child.material = this._getEffectMaterial(effect);
+            if (!child.isMesh) return;
+            noVisionModeUniform(child.material).value = true;
+            child.material.transparent = true;
+            child.renderOrder = MIST_RENDER_ORDER + 1;
         });
         mesh.rotation.set(Math.random() * Math.PI * 2, Math.random() * Math.PI * 2, Math.random() * Math.PI * 2);
         this._effectsCache[effect] = mesh;
@@ -1341,8 +1352,8 @@ export class Token3D {
 
     refreshBorder() {
         if (!this.border) return;
-        const isInactive = !this.token.controlled && !this.token._hover;
-        const color = isInactive ? this.baseColor : this.token.border?._lineStyle?.color;
+        const isInactive = !this.token.controlled && !this.token.hover;
+        const color = isInactive ? this.baseColor : this.token.border?.tint;
         const combatColor = this.combatColor;
         const isActiveCombatant = game.combat?.current?.tokenId === this.token.id && game.settings.get("levels-3d-preview", "highlightCombat");
         const threeColor = isInactive && isActiveCombatant ? this.combatColor : new THREE.Color(color);
@@ -1351,6 +1362,7 @@ export class Token3D {
         const isEmissive = !(isInactive && !isActiveCombatant);
         if (highlightMaterial?.length) {
             highlightMaterial.forEach((m) => {
+                noVisionModeUniform(m.material).value = isEmissive;
                 m.material.color = threeColor;
                 m.material.emissive = isEmissive ? threeColor : new THREE.Color(0, 0, 0);
                 m.material.emissiveIntensity = isEmissive ? 0.8 : 0;
@@ -1359,6 +1371,7 @@ export class Token3D {
 
         if (highlight_ringMaterial?.length) {
             highlight_ringMaterial.forEach((m) => {
+                noVisionModeUniform(m.material).value = isEmissive || this.token.targeted.size > 0;
                 m.material.color = isActiveCombatant ? combatColor : new THREE.Color(color);
                 if (this.token.targeted.size) {
                     m.material.color = new THREE.Color(1, 1, 1);
@@ -1407,6 +1420,7 @@ export class Token3D {
             transparent: true,
             alphaTest: 0.1,
         });
+        spriteMaterial.userData.noVisionMode = true;
         const sprite = new THREE.Sprite(spriteMaterial);
         sprite.center.set(0.5, 0.5);
         this._disposeSprite(this.nameplate);
@@ -1414,6 +1428,7 @@ export class Token3D {
         this.nameplate = sprite;
         this.nameplate.userData.ignoreIntersect = true;
         this.nameplate.userData.ignoreHover = true;
+        this.nameplate.renderOrder = MIST_RENDER_ORDER + 1;
         this.nameplate.scale.set(width, height, 1);
         this.nameplate.position.set(0, this.d + height / 2 + 0.042, 0);
         this.mesh.add(this.nameplate);
@@ -1450,6 +1465,7 @@ export class Token3D {
             map: texture,
             transparent: true,
         });
+        spriteMaterial.userData.noVisionMode = true;
         const sprite = new THREE.Sprite(spriteMaterial);
         sprite.center.set(0.5, 0.5);
         this._disposeSprite(this.bars);
@@ -1457,6 +1473,7 @@ export class Token3D {
         this.bars = sprite;
         this.bars.userData.ignoreIntersect = true;
         this.bars.userData.ignoreHover = true;
+        this.bars.renderOrder = MIST_RENDER_ORDER + 1;
         this.bars.scale.set(width, height, 1);
         this.bars.position.set(0, this.d - height + 0.037, 0);
         this.mesh.add(this.bars);
@@ -1579,9 +1596,26 @@ export class Token3D {
         if (this.heightIndicator) this.heightIndicator.rotation.y += 0.01;
         if (this.reticule) this.reticule.rotation.y += 0.0005 / this._shaderSize;
         if (!this._loaded || !this.mesh || !this.nameplate) return;
-        this.mesh.visible = this.alwaysVisible || this.token.visible || this.token.hasPreview;
+        const visible = this.alwaysVisible || this.token.visible || this.token.hasPreview;
+        this.mesh.visible = visible;
+        const detectionFilter = visible ? this.token.detectionFilter ?? null : null;
+        const invisible = visible && this.document.hasStatusEffect(CONFIG.specialStatusEffects.INVISIBLE);
+        if (detectionFilter !== this._detectionFilter || invisible !== this._invisibleLook) {
+            this._detectionFilter = detectionFilter;
+            this._invisibleLook = invisible;
+            this._parent.detectionLook?.sync(this, detectionFilter, invisible);
+        }
         this.nameplate.visible = this.token.nameplate?.visible;
+        const selfLit = !!this.token.controlled;
+        if (selfLit !== this._selfLit) {
+            this._selfLit = selfLit;
+            this.model?.traverse((mesh) => {
+                if (mesh.isMesh) for (const material of [mesh.material].flat()) if (material) selfLitUniform(material).value = selfLit;
+            });
+        }
         if (this.bars) this.bars.visible = this.token?.bars?.visible;
+        const showBase = !this._detectedKnockout || this.token.controlled || this.token.hover;
+        if (this.border && this.border.visible !== showBase) this.border.visible = showBase;
     }
 
     getColor() {
@@ -1651,6 +1685,7 @@ export class Token3D {
     destroy() {
         if (this._destroyed) return;
         this.destroyDragGhost();
+        this._parent.detectionLook?.release(this);
         this.light?.destroy();
         this._parent.scene.remove(this.mesh);
         this._destroyed = true;

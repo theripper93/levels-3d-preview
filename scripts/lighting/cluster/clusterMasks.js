@@ -3,6 +3,7 @@ import { MaskAtlas, MIN_BLOCK } from "./masks/maskAtlas.js";
 import { MaskRasterizer } from "./masks/maskRaster.js";
 import { TileOcclusion } from "./masks/tileOcclusion.js";
 import { BASE_SQUARES, CONTACT_SQUARES, HANG_SQUARES, PROP_MAX_SQUARES, PROP_PAD_SQUARES, REACH_SQUARES, SPAN_SQUARES, WALL_SQUARES } from "./masks/selfOcclusion.js";
+import { refreshWorldMatrix } from "../../three/matrixWorld.js";
 
 const MAX_RASTERS_PER_FRAME = 8;
 const MAX_TILE_SIZE = 256;
@@ -164,7 +165,7 @@ export class ClusterMasks {
         seen.source = source;
         seen.distance = maskRadius(light);
         seen.shape = source ? getLightShape(source) : null;
-        light.updateWorldMatrix(true, false);
+        refreshWorldMatrix(light);
         const e = light.matrixWorld.elements;
         seen.x = e[12];
         seen.y = e[13];
