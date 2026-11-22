@@ -224,6 +224,7 @@ export class VisionModeMask {
         const restoreLights = type !== VISION_MODE.none && restoresLights(mode);
         if (restoreLights && canvas.environment?.globalLightSource?.active) type = VISION_MODE.none;
         this.type = type;
+        this.signature = `${type}|${restoreLights}|${sourceWeight(leader, type)}`;
         if (type === VISION_MODE.none) return this.reset();
         this.setUniforms(type, mode, sources, leader, restoreLights);
         if (type === VISION_MODE.blind) return;

@@ -256,7 +256,6 @@
                 "label": "Emote",
                 "notes": "Select a Custom player emote to use with 3D Canvas tactical pings."
             },
-            "meshStats": "Vertices: %v% | Triangles: %t% | Meshes: %m% | Instances: %i%",
             "maxElevation": {
                 "label": "Max Elevation",
                 "notes": "The highest elevation tokens can reach in this scene."
@@ -290,7 +289,8 @@
                     "none": "None",
                     "door": "Door",
                     "secret": "Secret"
-                }
+                },
+                "label": "Door Type"
             },
             "textureMode": {
                 "label": "Texture Mode",
@@ -301,9 +301,6 @@
             },
             "textureRepeat": {
                 "label": "Texture Repeat"
-            },
-            "flipY": {
-                "label": "Flip Texture Vertically"
             },
             "doorState": {
                 "options": {
@@ -322,20 +319,6 @@
                     "linkWithAnimation": "Link with 3D Model Animation",
                     "linkWithAnimationReversed": "Link with Single 3D Model Animation"
                 }
-            },
-            "doorAnimateAngle": {
-                "label": "Door Animation Angle"
-            },
-            "doorAnimationDuration": {
-                "label": "Door Animation Duration",
-                "units": "ms"
-            },
-            "doorSlidePercent": {
-                "label": "Door Slide Percentage"
-            },
-            "doorDouble": {
-                "label": "Double Door",
-                "notes": "Splits the tile into two mirrored leaves, hinged at the outer edges, that open and close together. Animation angle and slide direction apply to the left leaf and are mirrored for the right one."
             },
             "doorGrabTokens": {
                 "label": "Capture Tokens",
@@ -602,91 +585,20 @@
             "gmOnlyInteractive": {
                 "label": "GM Only Interaction"
             },
-            "displacementMap": {
-                "label": "Heightmap/Heatmap"
-            },
-            "invertDisplacementMap": {
-                "label": "Invert Heightmap/Heatmap"
-            },
-            "displacementIntensity": {
-                "label": "Heightmap Intensity"
-            },
-            "displacementMatrix": {
-                "label": "Heightmap Matrix"
-            },
             "wallSidesTexture": {
                 "label": "Sides Texture"
             },
             "wallSidesTint": {
                 "label": "Sides Tint"
             },
-            "onAnimation": {
-                "label": "Animation Function"
-            },
-            "fillType": {
-                "header": "Tiling",
-                "tabNotes": "Choose whether to repeat the 3D model or stretch it to fit the tile.",
-                "label": "Fill Type",
-                "options": {
-                    "stretch": "Single",
-                    "tile": "Repeat",
-                    "merged": "Merged Tile"
-                }
-            },
-            "enableGravity": {
-                "label": "Gravity",
-                "options": {
-                    "none": "Disabled",
-                    "gravity": "Gravity only",
-                    "gravityRotation": "Gravity + Surface Rotation"
-                }
-            },
             "depth": {
                 "label": "Depth"
             },
-            "material": {
-                "label": "Material",
-                "header": "Material",
-                "tabNotes": "Configure the visual properties of the material applied to this tile. Sliders set at -0.01 will use the default value for the material.",
-                "options": {
-                    "none": "Default",
-                    "optgroup": {
-                        "presets": "Presets",
-                        "advanced": "Advanced"
-                    },
-                    "presets": {
-                        "basic-plastic": "Basic Plastic",
-                        "premium-plastic": "Premium Plastic",
-                        "steel": "Steel",
-                        "bronze": "Bronze",
-                        "copper": "Copper",
-                        "hammered-steel": "Hammered Steel",
-                        "leather": "Leather",
-                        "marble": "Marble",
-                        "wood": "Wood"
-                    },
-                    "basic": "Basic (no Lighting/Shadows)",
-                    "texcol": "Texture/Color",
-                    "plastic": "Plastic",
-                    "wood": "Wood",
-                    "metal": "Metal",
-                    "pbr": "PBR"
-                }
-            },
             "color": {
-                "label": "Color",
-                "notes": "Materials and colors work only on some models, usually untextured ones."
+                "label": "Color"
             },
             "tint": {
-                "label": "Tint Color"
-            },
-            "shading": {
-                "label": "Shading",
-                "options": {
-                    "default": "Default",
-                    "flat": "Flat",
-                    "smooth": "Smooth"
-                }
+                "label": "Tint"
             },
             "sides": {
                 "label": "Side",
@@ -696,45 +608,6 @@
                     "BackSide": "Back Side",
                     "DoubleSide": "Double Side"
                 }
-            },
-            "basic": {
-                "header": "Basic",
-                "tabNotes": "Configure 3d model, positioning, and scaling options."
-            },
-            "effects": {
-                "header": "Effects",
-                "tabNotes": "Configure the special effects to apply to this tile."
-            },
-            "noise": {
-                "header": "Noise",
-                "tabNotes": "Add a noise effect to distort the model.",
-                "label": "Noise Type",
-                "options": {
-                    "none": "None",
-                    "simplex": "Simplex",
-                    "perlin": "Perlin"
-                }
-            },
-            "noiseScale": {
-                "label": "Noise Scale"
-            },
-            "noiseHeight": {
-                "label": "Height"
-            },
-            "noisePersistence": {
-                "label": "Persistence"
-            },
-            "noiseOctaves": {
-                "label": "Octaves"
-            },
-            "noiseLacunarity": {
-                "label": "Lacunarity"
-            },
-            "noiseExponent": {
-                "label": "Exponent"
-            },
-            "noiseFlattening": {
-                "label": "Flattening"
             },
             "shaderIntensity": {
                 "label": "Shader Intensity"
@@ -755,11 +628,7 @@
                 "label": "Base Color"
             },
             "disableBase": {
-                "label": "Disable Base"
-            },
-            "removeBase": {
-                "label": "Remove Base",
-                "notes": "Removes the model's base if it's named base in the model file."
+                "label": "Hide Base"
             },
             "solidBaseMode": {
                 "label": "Base Mode",
@@ -790,9 +659,6 @@
             "animSpeed": {
                 "label": "Animation Speed"
             },
-            "forceFlyingMode": {
-                "label": "Force Flying Mode"
-            },
             "paused": {
                 "label": "Paused"
             },
@@ -819,14 +685,8 @@
             "autoGround": {
                 "label": "Auto Ground"
             },
-            "rotationX": {
-                "label": "Rotation X"
-            },
             "rotationY": {
-                "label": "Rotation Y"
-            },
-            "rotationZ": {
-                "label": "Rotation Z"
+                "label": "Facing"
             },
             "rotateBase": {
                 "label": "Fix Base Rotation",
@@ -844,15 +704,6 @@
             "scale": {
                 "label": "Scale"
             },
-            "yScale": {
-                "label": "Y Scale"
-            },
-            "tileScale": {
-                "label": "Tile Scale"
-            },
-            "gap": {
-                "label": "Gap"
-            },
             "tilt": {
                 "label": "Tilt"
             },
@@ -862,38 +713,16 @@
             "tiltZ": {
                 "label": "Tilt Y"
             },
-            "randomRotation": {
-                "label": "Randomize Rotation"
-            },
-            "randomColor": {
-                "label": "Randomize Color"
-            },
-            "randomDepth": {
-                "label": "Randomize Depth"
-            },
-            "randomScale": {
-                "label": "Randomize Scale"
-            },
-            "randomPosition": {
-                "label": "Randomize Position"
-            },
-            "randomSeed": {
-                "label": "Random Seed"
-            },
             "maxInstances": {
                 "label": "Max Instances"
             },
             "tiling": {
                 "label": "Tiling Options"
             },
-            "shader": {
-                "header": "Shaders"
-            },
             "attachments": {
-                "header": "Attachments",
-                "tabNotes": "Configure the attachments to this token. To add an attachment, select the token, move to the Tiles Layer, position the tile you wish to attach on the token, right click the tile and click the 'Attach Tile to Token' option.",
                 "filename": "Attachment Name",
-                "info": "Tile %s attached to token"
+                "info": "Tile %s attached to token",
+                "hint": "Right-click a tile on this token and choose Attach Tile to Token."
             },
             "wallOpacity": {
                 "label": "Opacity"
@@ -910,12 +739,6 @@
             "alphaClip": {
                 "label": "Alpha Clip"
             },
-            "transmission": {
-                "label": "Transmission"
-            },
-            "ior": {
-                "label": "IoR"
-            },
             "wallDepth": {
                 "label": "Wall Depth"
             },
@@ -929,19 +752,7 @@
                 "label": "Block Movement"
             },
             "tsight": {
-                "header": "Vision",
-                "tabNotes": "Configure the vision, light blocking and collision properties of this tile.",
                 "label": "Block Sight"
-            },
-            "aura": {
-                "header": "Auras"
-            },
-            "advanced": {
-                "header": "Advanced"
-            },
-            "position": {
-                "header": "Position",
-                "tabNotes": "Set the position, scale, rotation, and offset. The offset changes the tile's pivot point and doesn't work on merged tiles. Width, height, and rotation are also in the Basic tab."
             },
             "auraRange": {
                 "label": "Aura Range"
@@ -950,7 +761,8 @@
                 "label": "Aura Color"
             },
             "tcameraCollision": {
-                "label": "Camera Collider"
+                "label": "Block Camera",
+                "notes": "Stops the camera from passing through this tile."
             },
             "sightMeshComplexity": {
                 "label": "Collider Resolution"
@@ -966,19 +778,16 @@
                     "2": "On (From Sky)"
                 }
             },
-            "stem": {
-                "label": "Enable Stem"
-            },
             "collisionPlane": {
                 "label": "Collision Plane"
             },
             "castShadow": {
                 "label": "Cast Shadow",
-                "notes": "Enable the shadow casting on the light - WARNING High performance impact!."
+                "notes": "Casts shadows, which can reduce performance."
             },
             "visibleWhenDisabled": {
                 "label": "Visible When Disabled",
-                "notes": "If the light is disabled, it will still be visible. It will not provide a vision source but will still apply the visual effect of lighting."
+                "notes": "Keeps the light visible while it is off."
             },
             "postprocessing": {
                 "header": "Post Processing",
@@ -1040,7 +849,7 @@
                 "label": "Texture"
             },
             "particleColor": {
-                "label": "Color"
+                "label": "Particle Color"
             },
             "particleSize": {
                 "label": "Size"
@@ -1085,16 +894,6 @@
                         "optgroup": "Directional (Requires Emission Angle)"
                     }
                 },
-                "ParticlePosition": {
-                    "label": "Position",
-                    "options": {
-                        "surface": "Surface",
-                        "center": "Center"
-                    }
-                },
-                "ParticleRadius": {
-                    "label": "Radius"
-                },
                 "ParticleIntensity": {
                     "label": "Intensity"
                 },
@@ -1105,13 +904,14 @@
                     "label": "Scale"
                 },
                 "ParticleEmitterSizeMultiplier": {
-                    "label": "Area Multiplier"
+                    "label": "Particle Area",
+                    "notes": "Sets the area in which particles appear."
                 },
                 "ParticleColor": {
-                    "label": "Color Primary"
+                    "label": "Primary Color"
                 },
                 "ParticleColor2": {
-                    "label": "Color Secondary"
+                    "label": "Secondary Color"
                 },
                 "ParticleForce": {
                     "label": "Force"
@@ -1132,10 +932,10 @@
                     "label": "Gravity"
                 },
                 "enableParticle": {
-                    "label": "Enable Particle Effect"
+                    "label": "Enable Particles"
                 },
                 "enableParticleHidden": {
-                    "label": "Enable Particle Effect when Hidden/Disabled."
+                    "label": "Show When Light Is Off"
                 },
                 "ParticleAlphaStart": {
                     "label": "Starting Opacity"
@@ -1151,11 +951,41 @@
                 },
                 "ParticlePushZ": {
                     "label": "Push Z"
-                },
-                "header": {
-                    "title": "Particle Effect",
-                    "notes": "The particle effect to use for the light."
                 }
+            },
+            "material": {
+                "hint": "A value of -0.01 uses the model's default."
+            },
+            "playback": {
+                "label": "Animation Playback",
+                "options": {
+                    "loop": "Loop",
+                    "once": "Play Once",
+                    "paused": "Paused"
+                }
+            },
+            "baseStyle": {
+                "label": "Base Style",
+                "options": {
+                    "default": "Default (World Setting)",
+                    "merge": "Sunk Into Base",
+                    "ontop": "On Top of Base",
+                    "hidden": "Hidden"
+                }
+            },
+            "doorDouble": {
+                "label": "Double Door",
+                "notes": "Splits the tile into two mirrored leaves, hinged at the outer edges, that open and close together. Animation angle and slide direction apply to the left leaf and are mirrored for the right one."
+            },
+            "doorAnimationDuration": {
+                "label": "Door Animation Duration",
+                "units": "ms"
+            },
+            "doorAnimateAngle": {
+                "label": "Door Animation Angle"
+            },
+            "doorSlidePercent": {
+                "label": "Door Slide Percentage"
             }
         },
         "settings": {
@@ -1564,11 +1394,18 @@
                     "medium": "Medium",
                     "high": "High"
                 }
+            },
+            "removeModelBase": {
+                "name": "Remove Model Base",
+                "hint": "Removes the part of each token model named \"base\" in the model file."
+            },
+            "tokenStem": {
+                "name": "Token Stem",
+                "hint": "Draws a clear pole from the ground to raised tokens, like a flight stand."
             }
         },
         "scatter": {
             "tab": "Scatter",
-            "tabNotes": "Fill this tile's area with instanced assets from a curated set. The assets sit on whatever surface is below the tile.",
             "set": "Scatter Set",
             "none": "None",
             "seed": "Seed",
@@ -1869,7 +1706,14 @@
                 "essentials": "Essentials",
                 "skyLight": "Sky & Light",
                 "weather": "Weather",
-                "visuals": "Visuals"
+                "visuals": "Visuals",
+                "position": "Position",
+                "material": "Material",
+                "door": "Door",
+                "effects": "Effects",
+                "attachments": "Attachments",
+                "lightEffects": "Light Effects",
+                "particles": "Particles"
             },
             "sections": {
                 "status": "3D Status",
@@ -1884,7 +1728,18 @@
                 "bloom": "Bloom",
                 "mapEdge": "Map Edge",
                 "objects": "Scene Objects",
-                "advanced": "Advanced"
+                "advanced": "Advanced",
+                "collisionSight": "Collision & Sight",
+                "animation": "Animation",
+                "interaction": "Interaction",
+                "base": "Base",
+                "offset": "Offset",
+                "aura": "Aura",
+                "shaders": "Shaders",
+                "avoid": "Avoid Areas",
+                "customParticle": "Custom Particle",
+                "movement": "Movement",
+                "spotlight": "Spotlight"
             },
             "status": {
                 "ready": "This scene is ready: players will see it in 3D.",
@@ -2682,18 +2537,14 @@
                     "content": "This setting allows you to set the 3D Model of the token. Similar to 2D images you can browse and upload 3D Files."
                 },
                 "step-2": {
-                    "title": "Material",
-                    "content": "This setting allows you to set the material of the token. You can chose between presets or use a custom material."
+                    "title": "Tint",
+                    "content": "Works best on untextured or lightly colored tokens."
                 },
                 "step-3": {
-                    "title": "Color",
-                    "content": "This setting allows you to set the color of the token if you are using a preset material or a non-colored token."
-                },
-                "step-4": {
                     "title": "Token Browser",
                     "content": "This button will open the Token Browser."
                 },
-                "step-5": {
+                "step-4": {
                     "title": "Token Browser",
                     "content": "This window allows you to browse the included tokens. By default only the colorized tokens are shown, you can see all tokens by enabling the corresponding setting in the 3D Canvas Mappmaking Pack module settings."
                 }
@@ -2960,10 +2811,6 @@
             }
         },
         "lightFx": {
-            "header": {
-                "title": "3D Light Effects",
-                "notes": "Glow, light shafts and one-click presets. A preset sets the light color, radius, animation and the attached particle effect together."
-            },
             "presets": {
                 "label": "Presets",
                 "candle": "Candle",
@@ -2975,7 +2822,7 @@
             },
             "lightHalo": {
                 "label": "Glow Halo",
-                "notes": "Draws a soft glow at the light source. It is hidden when something blocks the view of the source."
+                "notes": "Draws a soft glow at the light source."
             },
             "lightHaloScale": {
                 "label": "Halo Size"

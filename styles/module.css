@@ -307,3 +307,7 @@
         width: 4em;
     }
 }
+
+[data-tab="levels-3d-preview"] fieldset:has(> .form-group):not(:has(> .form-group:not(.hidden))):not(:has(> :not(legend, .form-group))) {
+    display: none;
+}

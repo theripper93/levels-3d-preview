@@ -86,7 +86,7 @@ export const AdvancedTileConfiguration = () => {
 //Mapmaking pack tours
 
 export const Tokens = () => {
-    return new GenericTour("tokens", [`a[data-tab="levels-3d-preview"]`, `.form-group:has(label[for="flags.levels-3d-preview.model3d"])`, `.form-group:has(label[for="flags.levels-3d-preview.material"])`, `.form-group:has(label[for="flags.levels-3d-preview.color"])`, `button:has(.fa-regular.fa-person)`, `button:has(.fa-regular.fa-person)`], {
+    return new GenericTour("tokens", [`a[data-tab="levels-3d-preview"]`, `.form-group:has(label[for="flags.levels-3d-preview.model3d"])`, `.form-group:has(label[for="flags.levels-3d-preview.color"])`, `button:has(.fa-regular.fa-person)`, `button:has(.fa-regular.fa-person)`], {
         moduleId: "levels-3d-preview",
         localizationRoot: "levels3dpreview.tours",
         display: true,

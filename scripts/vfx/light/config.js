@@ -9,16 +9,15 @@ export function lightFxConfigFields() {
         .map(([id, preset]) => `<button type="button" data-light-preset="${id}"><i class="${preset.icon}"></i> ${localize(`presets.${id}`)}</button>`)
         .join("");
     return {
-        lightFxHeader: {
+        lightFxPresets: {
             type: "custom",
-            html: `<fieldset><legend><i class="fas fa-sun"></i> ${localize("header.title")}</legend><p class="hint">${localize("header.notes")}</p><div class="form-group"><label>${localize("presets.label")}</label><div class="form-fields">${buttons}</div></div>`,
+            html: `<div class="form-group"><label>${localize("presets.label")}</label><div class="form-fields">${buttons}</div></div>`,
         },
         lightHalo: { type: "checkbox", label: localize("lightHalo.label"), notes: localize("lightHalo.notes"), default: false },
         lightHaloScale: { type: "range", label: localize("lightHaloScale.label"), default: 1, min: 0.25, max: 4, step: 0.05 },
         lightShaft: { type: "checkbox", label: localize("lightShaft.label"), notes: localize("lightShaft.notes"), default: false },
         lightShaftIntensity: { type: "range", label: localize("lightShaftIntensity.label"), default: 0.35, min: 0.05, max: 1, step: 0.05 },
         lightShaftMotes: { type: "checkbox", label: localize("lightShaftMotes.label"), default: true },
-        lightFxEnd: { type: "custom", html: "</fieldset>" },
     };
 }
 

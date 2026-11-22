@@ -30,6 +30,18 @@
   </div>
 
   <div class="form-group">
+    <label>{{localize "levels3dpreview.settings.removeModelBase.name"}}</label>
+    <input type="checkbox" name="removeModelBase" data-dtype="Boolean" {{checked removeModelBase}} />
+    <p class="hint">{{localize "levels3dpreview.settings.removeModelBase.hint"}}</p>
+  </div>
+
+  <div class="form-group">
+    <label>{{localize "levels3dpreview.settings.tokenStem.name"}}</label>
+    <input type="checkbox" name="tokenStem" data-dtype="Boolean" {{checked tokenStem}} />
+    <p class="hint">{{localize "levels3dpreview.settings.tokenStem.hint"}}</p>
+  </div>
+
+  <div class="form-group">
     <label>{{localize "levels3dpreview.settings.rotateIndicator.name"}}</label>
     <input type="checkbox" name="rotateIndicator" data-dtype="Boolean" {{checked colorizeInidcator}} />
     <p class="hint">{{localize "levels3dpreview.settings.rotateIndicator.hint"}}</p>

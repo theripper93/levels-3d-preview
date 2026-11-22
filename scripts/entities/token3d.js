@@ -5,7 +5,7 @@ import { TokenAnimationHandler } from "../handlers/tokenAnimationHandler.js";
 import { computeBoundsTree, disposeBoundsTree } from "three-mesh-bvh";
 import { acceleratedRaycast } from "../three/acceleratedRaycast.js";
 import { heightHighlightShaderMaterial, radialGradientShaderMaterial } from "../shaders/shaderMaterials.js";
-import { ActiveEffectEffect } from "./effects/activeEffect.js";
+import { drawEffectIcons, disposeEffectIcons } from "./effects/effectIcons.js";
 import { RangeRingEffect } from "./effects/rangeRing.js";
 import { imageTo3d } from "../helpers/imageTo3D.js";
 import * as coords3d from "../helpers/coords3d.js";
@@ -50,7 +50,6 @@ export class Token3D {
         this.baseDepth = 0.008 * (canvas.grid.size / 100);
         this.elevation3d = 0;
         this.materialsCache = {};
-        this._effectsCache = {};
         this.proneHandler = {};
         this.combatColor = new THREE.Color("#005eff");
         this._loaded = false;
@@ -99,11 +98,11 @@ export class Token3D {
         const globalFlatTokenStyle = game.settings.get("levels-3d-preview", "flatTokenStyle") ?? "default";
         if (this.flatTokenStyle === "default") this.flatTokenStyle = globalFlatTokenStyle;
 
-        this.stem = this.document.getFlag("levels-3d-preview", "stem") ?? false;
+        this.stem = game.settings.get("levels-3d-preview", "tokenStem");
 
         this.standupFace = this.flatTokenStyle == "flat";
         this.wasFreeMode = this.document.getFlag("levels-3d-preview", "wasFreeMode") ?? false;
-        this.removeBase = this.document.getFlag("levels-3d-preview", "removeBase") ?? true;
+        this.removeBase = game.settings.get("levels-3d-preview", "removeModelBase");
         this.attachments = this.document.getFlag("levels-3d-preview", "attachments") ?? [];
         this.enableReticule = game.settings.get("levels-3d-preview", "enableReticule");
         this.particleData = this.getParticleData();
@@ -638,7 +637,7 @@ export class Token3D {
                     {
                         x: this.token.center.x,
                         y: this.token.center.y,
-                        z: this.losHeight,
+                        z: this.baseLosHeight,
                     },
                     {
                         x: dest.x + this.baseDocumentWidth * canvas.grid.size * 0.5,
@@ -1107,90 +1106,8 @@ export class Token3D {
         const defeated = this.token?.actor?.effects.some((e) => e.statuses.has(CONFIG.specialStatusEffects.DEFEATED)) || this.token?.combatant?.defeated;
         this.isProne = defeated || this.isTokenProne ? true : false;
         if (oldProne !== this.isProne) this.toggleProne();
-        // const actorEffects = this.token.actor?.temporaryEffects || [];
         const actorEffects = this.token.actor?.appliedEffects.filter(e => ((e.showIcon === CONST.ACTIVE_EFFECT_SHOW_ICON.ALWAYS) || ((e.showIcon === CONST.ACTIVE_EFFECT_SHOW_ICON.CONDITIONAL) && e.isTemporary))) ?? [];
-        const effects = actorEffects.map((e) => e.img ?? e);
-        if (effects.length === this.effectsContainer.children.length) return;
-        if (!firstDraw && effects.length > this.effectsContainer.children.length) {
-            const newEffects = effects.filter((effect) => !this.effectsContainer.children.map((child) => child.userData.effect).includes(effect));
-            newEffects.forEach((effect) => {
-                new ActiveEffectEffect(this, effect);
-            });
-        }
-        const toRemove = this.effectsContainer.children.filter((child) => !effects.includes(child.userData.effect));
-        toRemove.forEach((child) => {
-            child.userData.targetPosition = new THREE.Vector3(0, 0, 0);
-            child.userData.initialPosition = child.position.clone();
-            child.userData.delta = 0;
-        });
-        //this.effectsContainer.remove(...toRemove)
-        let effectsize = this.h / 5;
-        effectsize = Math.min(Math.max(effectsize, 0.02), 0.05); // * (canvas.grid.size / 100);
-
-        const radiusSubdivision = (Math.PI * 2) / effects.length;
-        let currentRadius = 0;
-        const currentEffects = this.effectsContainer.children.map((child) => child.userData.effect);
-        const tokenRadius = Math.max(this.h, this.w);
-        for (let effect of effects) {
-            const position = {
-                x: Math.sin(currentRadius) * (tokenRadius / 2),
-                y: this.d + effectsize * 0.5,
-                z: Math.cos(currentRadius) * (tokenRadius / 2),
-            };
-            const mesh = this._getEffectMesh(effect, effectsize);
-            mesh.userData.delta = 0;
-            mesh.userData.effect = effect;
-            mesh.userData.targetPosition = new THREE.Vector3(position.x, position.y, position.z); //mesh.position.set(position.x, position.y, position.z);
-            mesh.userData.initialPosition = mesh.position.clone();
-
-            this.effectsContainer.add(mesh);
-            currentRadius += radiusSubdivision;
-        }
-    }
-
-    rotateEffects(delta) {
-        if (!this.effectsContainer || !this.effectsContainer?.children?.length) return;
-        const speed = delta / 8;
-        this.effectsContainer.rotation.y += speed;
-        this.effectsContainer.children.forEach((c) => {
-            c.rotation.x -= speed / 2;
-            if (c.userData.delta < 1) {
-                c.userData.delta += delta;
-                c.position.lerp(c.userData.targetPosition, c.userData.delta);
-                if (delta > 1) c.position.set(c.userData.targetPosition.x, c.userData.targetPosition.y, c.userData.targetPosition.z);
-                if (c.userData.targetPosition.y == 0 && c.position.y <= this.baseDepth) c.removeFromParent();
-            }
-        });
-    }
-
-    _getEffectMesh(effect, effectsize) {
-        if (this._effectsCache[effect]) return this._effectsCache[effect];
-        const effectBaseMesh = game.Levels3DPreview.models.effect.clone();
-        effectBaseMesh.scale.multiplyScalar(effectsize);
-        const mesh = effectBaseMesh;
-        mesh.traverse((child) => {
-            if (child.isMesh && child.material.name == "effect") child.material = this._getEffectMaterial(effect);
-            if (!child.isMesh) return;
-            noVisionModeUniform(child.material).value = true;
-            child.material.transparent = true;
-            child.renderOrder = MIST_RENDER_ORDER + 1;
-        });
-        mesh.rotation.set(Math.random() * Math.PI * 2, Math.random() * Math.PI * 2, Math.random() * Math.PI * 2);
-        this._effectsCache[effect] = mesh;
-        return mesh;
-    }
-
-    _getEffectMaterial(effect) {
-        const cachedEffect = this._parent.effectsCache[effect];
-        if (cachedEffect) return cachedEffect;
-        const material = new THREE.MeshBasicMaterial({
-            map: new THREE.TextureLoader().load(effect, (texture) => {
-                texture.colorSpace = THREE.SRGBColorSpace;
-                texture.needsUpdate = true;
-            }),
-        });
-        this._parent.effectsCache[effect] = material;
-        return material;
+        drawEffectIcons(this, actorEffects, firstDraw);
     }
 
     drawBorder() {
@@ -1430,7 +1347,7 @@ export class Token3D {
         this.nameplate.userData.ignoreHover = true;
         this.nameplate.renderOrder = MIST_RENDER_ORDER + 1;
         this.nameplate.scale.set(width, height, 1);
-        this.nameplate.position.set(0, this.d + height / 2 + 0.042, 0);
+        this.nameplate.position.set(0, this.d + height / 2 + 0.042 + (this.labelLift ?? 0), 0);
         this.mesh.add(this.nameplate);
         //reset name as it was changed
         //name.width /= 2;
@@ -1475,7 +1392,7 @@ export class Token3D {
         this.bars.userData.ignoreHover = true;
         this.bars.renderOrder = MIST_RENDER_ORDER + 1;
         this.bars.scale.set(width, height, 1);
-        this.bars.position.set(0, this.d - height + 0.037, 0);
+        this.bars.position.set(0, this.d - height + 0.037 + (this.labelLift ?? 0), 0);
         this.mesh.add(this.bars);
     }
 
@@ -1697,7 +1614,7 @@ export class Token3D {
 
     _disposeResources() {
         //Only dispose resources owned by this token. Shared caches (targetMaterialsCache, coinBorderMaterialCache,
-        //heightHighlightMaterialCache, diamondGeometry, _parent.effectsCache, _parent.models, helpers.textureCache) are left alone.
+        //heightHighlightMaterialCache, diamondGeometry, _parent.models, helpers.textureCache) are left alone.
         try {
             if (this.mixer) {
                 this.mixer.stopAllAction();
@@ -1706,6 +1623,7 @@ export class Token3D {
             }
             this._disposeSprite(this.nameplate);
             this._disposeSprite(this.bars);
+            disposeEffectIcons(this);
             this.hitbox?.geometry?.dispose();
             this.hitbox?.material?.dispose();
             this.boundingMesh?.geometry?.dispose();
@@ -1883,7 +1801,7 @@ export class Token3D {
             const x = (updates.x ?? tokenDocument.x) + tokenDocument.width * (canvas.grid.size / 2);
             const y = (updates.y ?? tokenDocument.y) + tokenDocument.height * (canvas.grid.size / 2);
             const token3d = game.Levels3DPreview.tokens[tokenDocument.id];
-            const height = token3d ? (token3d.losHeight ?? tokenDocument.elevation) - tokenDocument.elevation : 0;
+            const height = token3d ? (token3d.baseLosHeight ?? tokenDocument.elevation) - tokenDocument.elevation : 0;
             const elevation = (updates.elevation ?? tokenDocument.elevation) + height;
             const collision = game.Levels3DPreview.interactionManager.computeSightCollision({ x, y, z: elevation }, { x, y, z: -100000 });
             if (!collision) return;

@@ -5,9 +5,9 @@ function localize(key) {
     return game.i18n.localize(`levels3dpreview.sceneConfig.${key}`);
 }
 
-export function section(id, legend, fields) {
+export function section(id, legend, fields, hint) {
     return {
-        [`${id}SectionStart`]: { type: "custom", html: `<fieldset><legend>${localize(`sections.${legend}`)}</legend>` },
+        [`${id}SectionStart`]: { type: "custom", html: `<fieldset><legend>${localize(`sections.${legend}`)}</legend>${hint ? `<p class="hint">${hint}</p>` : ""}` },
         ...fields,
         [`${id}SectionEnd`]: { type: "custom", html: `</fieldset>` },
     };

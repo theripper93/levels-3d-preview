@@ -5,6 +5,7 @@ import { injectSurface } from "../vfx/surface/receivers.js";
 import { clusterUniforms } from "../lighting/cluster/clusterManager.js";
 import { declareExtraSamplers } from "../lighting/cluster/clusterChunks.js";
 import { FogSmoother } from "./fogSmoother.js";
+import { FogRegion, tokensMoving, unionRect } from "./fogRegion.js";
 import { FogMist, volumetricFogEnabled } from "./fogMist.js";
 import { VisionModeMask, visionModeUniforms, VISION_MODE_PARS, VISION_MODE_FRAGMENT } from "./visionModeMask.js";
 
@@ -37,6 +38,9 @@ export class Fog {
         this.extractor ??= new foundry.canvas.TextureExtractor(canvas.app.renderer, { callerName: "FogExtractorCanvas3D", controlHash: true, format: PIXI.FORMATS.RED });
         this.extractor.reset();
         this.smoother = new FogSmoother(parent.renderer);
+        this.region = new FogRegion();
+        this.pendingRect = null;
+        this.pendingFull = true;
         this.visionMask = new VisionModeMask();
         this.smoothing = true;
         this.mist = null;
@@ -105,7 +109,9 @@ export class Fog {
         const toggled = this._wasBlank !== undefined && this._wasBlank !== isBlank;
         this._wasBlank = isBlank;
         if (isBlank) this.visionMask.reset();
-        const base64 = isBlank ? this.blank : await this.generateTexture();
+        const generated = isBlank ? null : this.generateTexture();
+        this.trackRegion(isBlank);
+        const base64 = isBlank ? this.blank : await generated;
         if (seq !== this._updateSeq || this._destroyed) return;
         let texture = base64;
         if (!this._sharedContext && !isBlank && base64) {
@@ -122,11 +128,21 @@ export class Fog {
         this.fogTexture.flipY = false;
         if (this.smoothing) {
             this.smoother.resize();
-            this.smoother.setSource(texture, ...this.getSourceSize(texture), toggled);
+            this.smoother.setSource(texture, ...this.getSourceSize(texture), toggled, this.pendingFull ? null : (this.pendingRect ?? false));
+            this.pendingFull = false;
+            this.pendingRect = null;
         }
         this.updateShaders();
         //Dispose the previous texture only once the new one is assigned; never dispose the shared blank texture
         if (previous && previous !== texture && previous !== this.blank && !this._sharedContext) previous.dispose();
+    }
+
+    trackRegion(isBlank) {
+        const signature = `${isBlank}|${canvas.scene.fog.mode}|${this.visionMask.signature}|${canvas.environment?.darknessLevel}`;
+        const rect = this.region.update();
+        if (signature !== this.signature || !tokensMoving()) this.pendingFull = true;
+        this.signature = signature;
+        if (!this.pendingFull) this.pendingRect = unionRect(this.pendingRect, rect);
     }
 
     getSourceSize(texture) {
@@ -139,6 +155,7 @@ export class Fog {
         if (!this._ready) return;
         this.mist?.update(delta);
         this.visionMask.update(delta);
+        if (this.smoothing && this.smoother.partial && !tokensMoving()) this.smoother.refresh();
         if (!this.smoothing || !this.smoother.active) return;
         this.smoother.update(delta);
         fogUniforms.fogTexture.value = this.smoother.texture;

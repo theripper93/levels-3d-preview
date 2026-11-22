@@ -7,6 +7,7 @@ import { pos3DToCanvas, centerElement } from "./helpers/coords3d.js";
 import { registerFrameRateDisplay } from "./helpers/frameRate.js";
 import { movementFloor } from "./helpers/elevationFloor.js";
 import { testMoveCollision, walkGroundElevation, setMoveAction } from "./handlers/moveWalk.js";
+import { registerAnimationSourceThrottle } from "./handlers/animationSourceThrottle.js";
 
 export function registerWrappers() {
     Object.defineProperty(foundry.canvas.placeables.Token.prototype, "object3d", {
@@ -30,6 +31,8 @@ export function registerWrappers() {
         libWrapper.register("levels-3d-preview", "foundry.canvas.geometry.ClockwiseSweepPolygon.prototype._compute", computePolygonDispatch, "MIXED");
         libWrapper.register("levels-3d-preview", "foundry.documents.collections.Scenes.prototype.preload", preload3D, "WRAPPER");
         libWrapper.register("levels-3d-preview", "foundry.canvas.sources.PointLightSource.prototype._updateGeometry", lightGeometry, "MIXED");
+        libWrapper.register("levels-3d-preview", "foundry.canvas.sources.PointVisionSource.prototype._updateGeometry", lightGeometry, "MIXED");
+        registerAnimationSourceThrottle();
         libWrapper.register("levels-3d-preview", "canvas.app.renderer.events.pointer.getLocalPosition", pointerPositionWrapper, "MIXED");
         libWrapper.register("levels-3d-preview", "foundry.canvas.layers.ControlsLayer.prototype.handlePing", HandlePing, "WRAPPER");
         libWrapper.register("levels-3d-preview", "canvas.regions.placeRegion", placeRegion, "MIXED");
@@ -52,21 +55,29 @@ export function registerWrappers() {
         if (game[game.system.id]?.canvas?.AbilityTemplate?.prototype?.drawPreview) libWrapper.register("levels-3d-preview", `game.${game.system.id}.canvas.AbilityTemplate.prototype.drawPreview`, placeTemplate, "MIXED");
 
         let testTarget;
+        let testSource = null;
         function _testCollisionWrapped(wrapped, ...args) {
+            const previousTarget = testTarget;
+            const previousSource = testSource;
             testTarget = args[1];
-            return wrapped(...args);
+            testSource = args[0];
+            try {
+                return wrapped(...args);
+            } finally {
+                testTarget = previousTarget;
+                testSource = previousSource;
+            }
         }
 
         function containsWrapper(wrapped, ...args) {
             const originalResult = wrapped(...args);
             
-            if (originalResult || !game.Levels3DPreview?._active || !testTarget) return originalResult;
+            if (originalResult || !game.Levels3DPreview?._active || !game.Levels3DPreview.object3dSight || !testTarget) return originalResult;
             if (this.config.type !== "sight" && this.config.type !== "move") return originalResult;
             if (this.config.source instanceof foundry.canvas.sources.GlobalLightSource) return originalResult;
-            
-            const collision = game.Levels3DPreview.interactionManager.computeSightCollision(this.origin, testTarget.point, this.config.type);
+
             testTarget = null;
-            return !collision;
+            return true;
         }
 
         function getVisionOrigin(wrapped, ...args) {
@@ -371,18 +382,14 @@ export function registerWrappers() {
             worker.lastRequests[id] = requestKey;
             worker.requestWorkerRaycast(message, (points) => {
                 this.points = points;
-                if (lastRaycast) return;
+                if (worker.lastRequests[id] !== requestKey) return;
                 const object = this.config.source.object;
                 const reinitialize = () => {
                     object.updatedByWorker = true;
                     if (object.initializeSources) object.initializeSources();
                     if (object.initializeLightSource) object.initializeLightSource();
                 };
-                if (!object.animationContexts?.size) return reinitialize();
-                const count = worker.computeCounts[id];
-                canvas.app.ticker.addOnce(() => {
-                    if (worker.computeCounts[id] === count && !object.destroyed) reinitialize();
-                }, null, PIXI.UPDATE_PRIORITY.UTILITY);
+                if (!object.animationContexts?.size) reinitialize();
             });
         }
 
@@ -515,12 +522,15 @@ export function registerWrappers() {
             const options = args[0] ?? {};
             if (!game.Levels3DPreview?._active || options.rotate || (!options.dx && !options.dy)) return wrapped(...args);
             const { x: dx, y: dy } = handleArrowKeys({ dx: options.dx ?? 0, dy: options.dy ?? 0 });
-            return wrapped({ ...options, dx: dx || 0, dy: dy || 0 }, ...args.slice(1));
+            const result = wrapped({ ...options, dx: dx || 0, dy: dy || 0 }, ...args.slice(1));
+            game.Levels3DPreview.firstPerson?.watchMove(result, dx || 0, dy || 0);
+            return result;
         }
 
         function prepareKeyboardMovementUpdates(wrapped, objects, dx, dy, dz, ...rest) {
             const result = wrapped(objects, dx, dy, dz, ...rest);
             try {
+                if (!dz) game.Levels3DPreview?.firstPerson?.addFacing(result);
                 const interactionManager = game.Levels3DPreview?._active ? game.Levels3DPreview.interactionManager : null;
                 if (!interactionManager || dz || (!dx && !dy)) return result;
                 const movement = result?.[1]?.movement;
@@ -534,7 +544,7 @@ export function registerWrappers() {
                     const center = token.document.getCenterPoint(waypoint);
                     const start = token.document.getCenterPoint(token.document._source);
                     const walked = walkGroundElevation({ x: start.x, y: start.y, z: token.document.elevation }, { x: center.x, y: center.y, z: token.document.elevation });
-                    const from = { x: center.x, y: center.y, z: token3d.losHeight ?? token.document.elevation };
+                    const from = { x: center.x, y: center.y, z: token3d.baseLosHeight ?? token.document.elevation };
                     const collision = walked === null ? interactionManager.computeSightCollision(from, { x: center.x, y: center.y, z: -100000 }, "move") : null;
                     if (walked === null && !collision) continue;
                     const elevation = walked ?? pos3DToCanvas(collision).elevation;
@@ -747,6 +757,16 @@ export function registerWrappers() {
             }
         }
 
+        function testDoorSight(origin, destination, wall) {
+            const ownMesh = game.Levels3DPreview.walls[wall?.id]?.mesh;
+            const hits = game.Levels3DPreview.interactionManager.computeSightCollision(origin, destination, "sight", false, true, false, true);
+            if (!hits) return false;
+            return hits.some((hit) => {
+                for (let object = hit.object; object; object = object.parent) if (object === ownMesh) return false;
+                return true;
+            });
+        }
+
         function sceneTestSurfaceCollision(wrapped, ...args) {
             const [ origin2d, destination2d, options ] = args;
             const origin = {
@@ -765,8 +785,12 @@ export function registerWrappers() {
             const type = options.type === "sight" ? "sight" : "move";
             if (options.mode === "any") {
                 const collisionCore = wrapped(...args);
-                const collision3d = !!(type === "move" ? testMoveCollision(origin, destination) : game.Levels3DPreview.interactionManager.computeSightCollision(origin, destination, type));
-                return collisionCore || collision3d;
+                if (collisionCore || options.tMin >= options.tMax) return collisionCore;
+                if (type === "move") return !!testMoveCollision(origin, destination);
+                const interactionManager = game.Levels3DPreview.interactionManager;
+                const door = interactionManager.visibilityThrottle?.currentObject;
+                if (door instanceof foundry.canvas.containers.DoorControl) return testDoorSight(origin, destination, door.wall);
+                return interactionManager.sightOccluders.test(origin, destination, testSource?.sourceId);
             }
             // Distance in canvas pixel space between the origin and an ElevatedPoint-like {x, y, elevation}
             const distancePixels = canvas.dimensions.distancePixels ?? (canvas.dimensions.size / canvas.dimensions.distance);

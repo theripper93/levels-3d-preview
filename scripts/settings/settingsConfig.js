@@ -87,7 +87,7 @@ class canvas3dConfig extends HandlebarsApplication {
 
     async _prepareContext(options) {
         const data = {};
-        const settingsKeys = ["useRaycastRuler", "enableDragRuler", "paddingAppearance", "pingsound", "lightHelpers", "templateEffects", "templateAuto3D", "enableReticule", "fullTransparency", "outline", "gameCameraWarnings", "gameCameraAutoLock", "gameCameraDefaultGm", "gameCameraClipping", "gameCameraMaxZoom", "gameCameraMinAzimuth", "gameCameraMaxAzimuth", "gameCameraMinAngle", "gameCameraMaxAngle", "enableGameCamera", "rangeFinder", "sharedContext", "rotateIndicator", "navigatorAuto", "showAdvanced", "canpingpan", "canping", "baseStyle", "solidBaseMode", "solidBaseColor", "highlightCombat", "startMarker", "hideTarget", "hideEffects", "autoPan", "flatTokenStyle", "preventNegative", "miniCanvas", "debugMode", "cameralockzero", "allTokens", "autoAssignToken", "assetBrowserCustomPath", "autoApply", "autoClose", "regionsAlwaysFlat", "exactTokenVisibility", "dynamicTokenVisibility"];
+        const settingsKeys = ["useRaycastRuler", "enableDragRuler", "paddingAppearance", "pingsound", "lightHelpers", "templateEffects", "templateAuto3D", "enableReticule", "fullTransparency", "outline", "gameCameraWarnings", "gameCameraAutoLock", "gameCameraDefaultGm", "gameCameraClipping", "gameCameraMaxZoom", "gameCameraMinAzimuth", "gameCameraMaxAzimuth", "gameCameraMinAngle", "gameCameraMaxAngle", "enableGameCamera", "rangeFinder", "sharedContext", "rotateIndicator", "navigatorAuto", "showAdvanced", "canpingpan", "canping", "baseStyle", "solidBaseMode", "solidBaseColor", "removeModelBase", "tokenStem", "highlightCombat", "startMarker", "hideTarget", "hideEffects", "autoPan", "flatTokenStyle", "preventNegative", "miniCanvas", "debugMode", "cameralockzero", "allTokens", "autoAssignToken", "assetBrowserCustomPath", "autoApply", "autoClose", "regionsAlwaysFlat", "exactTokenVisibility", "dynamicTokenVisibility"];
         for (let key of settingsKeys) {
             data[key] = game.settings.get("levels-3d-preview", key);
         }
@@ -362,6 +362,24 @@ export function registerSettings() {
             config: false,
             type: String,
             default: "#2b2b2b",
+        });
+
+        game.settings.register("levels-3d-preview", "removeModelBase", {
+            name: game.i18n.localize("levels3dpreview.settings.removeModelBase.name"),
+            hint: game.i18n.localize("levels3dpreview.settings.removeModelBase.hint"),
+            scope: "world",
+            config: false,
+            type: Boolean,
+            default: true,
+        });
+
+        game.settings.register("levels-3d-preview", "tokenStem", {
+            name: game.i18n.localize("levels3dpreview.settings.tokenStem.name"),
+            hint: game.i18n.localize("levels3dpreview.settings.tokenStem.hint"),
+            scope: "world",
+            config: false,
+            type: Boolean,
+            default: false,
         });
 
         game.settings.register("levels-3d-preview", "highlightCombat", {

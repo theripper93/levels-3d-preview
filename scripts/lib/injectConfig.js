@@ -338,7 +338,7 @@ const _template = `
         {{/if}}
 
         {{#if (eq input.type 'color')}}
-            <color-picker name="{{input.name}}" value="{{input.value}}" default="#000000"></color-picker>
+            <color-picker name="{{input.name}}" value="{{input.value}}" placeholder="{{input.placeholder}}" default="#000000"></color-picker>
         {{/if}}
 
         {{#if (eq input.type 'filepicker')}}

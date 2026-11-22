@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { OrbitControls } from "./three/OrbitControls.js";
 import { GameCamera } from "./handlers/GameCamera.js";
+import { FirstPersonController } from "./handlers/firstPerson.js";
 import { TransformControls } from "./three/TransformControls.js";
 import { GLTFLoader } from "./three/GLTFLoader.js";
 import { Token3D } from "./entities/token3d.js";
@@ -535,7 +536,6 @@ class Levels3DPreview {
             ],
             models: {
                 targetIndicator: "modules/levels-3d-preview/assets/targetIndicator.glb",
-                effect: "modules/levels-3d-preview/assets/effect.glb",
             },
             textures: {
                 reticule: "modules/levels-3d-preview/assets/animatedreticule.webm",
@@ -605,7 +605,6 @@ class Levels3DPreview {
                 }),
             },
         };
-        this.effectsCache = {};
         this.targetTextures = {};
         this.Classes = {
             Template3D: Template3D,
@@ -692,6 +691,7 @@ class Levels3DPreview {
         this.cutsceneEngine = new CutsceneEngine(this);
 
         this.GameCamera = new GameCamera(this.camera, this.controls, this);
+        this.firstPerson = new FirstPersonController(this);
         //clipping
         this.renderer.localClippingEnabled = true;
         Hooks.callAll("3DCanvasPostInit", this);
@@ -703,10 +703,6 @@ class Levels3DPreview {
         this.presetMaterialHandler = new PresetMaterialHandler(this.CONFIG.presetMaterials);
         this.models.target = await (await this.helpers.loadModel(this.CONFIG.models.targetIndicator)).model;
         this.models.target.children[0].material = new THREE.MeshBasicMaterial();
-        this.models.effect = await (await this.helpers.loadModel(this.CONFIG.models.effect)).model;
-        const box3 = new THREE.Box3().setFromObject(this.models.effect);
-        //scale model to make it 1x1x1
-        this.models.effect.scale.multiplyScalar(1 / Math.max(box3.max.x - box3.min.x, box3.max.y - box3.min.y, box3.max.z - box3.min.z));
         //load targeting reticule
         const tex = await this.helpers.loadTexture(this.CONFIG.textures.reticule);
         const reticule = new THREE.Sprite(
@@ -747,8 +743,7 @@ class Levels3DPreview {
         this._envReady = false;
         this._lightsOk = !canvas.scene.getFlag("levels-3d-preview", "bakeLights");
         this._builtSceneId = canvas.scene.id;
-        this.firstPersonMode = false;
-        this._prevCameraPos = null;
+        this.firstPerson?.reset();
         this.clear3Dscene();
         const toPreserve = this.shaderHandler?.shaders?.filter((s) => s.entity3D?.mesh?.userData?.isBackground || s.entity3D?.mesh?.isTable) ?? [];
         this.shaderHandler?.dispose();
@@ -1457,26 +1452,7 @@ class Levels3DPreview {
 
     toggleFirstPerson() {
         if (!this.firstPersonMode && !canvas.tokens.controlled.length) return;
-
-        if (!this.firstPersonMode) {
-            this._prevGameCameraState = this.GameCamera.enabled;
-            this._prevCameraPos = {
-                camera: this.camera.position.clone(),
-                controls: this.controls.target.clone(),
-            };
-        } else {
-            if (this._prevCameraPos) {
-                this.camera.position.copy(this._prevCameraPos.camera);
-                this.controls.target.copy(this._prevCameraPos.controls);
-            }
-            if (this._prevGameCameraState === true) this.GameCamera.toggle();
-            delete this._prevCameraPos;
-            delete this._prevGameCameraState;
-        }
-        this.firstPersonMode = !this.firstPersonMode;
-        this.camera.near = this.firstPersonMode ? 0.05 : 0.01;
-        this.camera.updateProjectionMatrix();
-        if (this.GameCamera.enabled && this.firstPersonMode) this.GameCamera.toggle();
+        this.firstPerson.toggle();
     }
 
     animation(time) {
@@ -1536,7 +1512,6 @@ class Levels3DPreview {
                 if (token) {
                     token.updateVisibility();
                     token.updateProne(delta);
-                    token.rotateEffects(delta);
                     token.light?.update(time);
                     if (token.mixer) {
                         token.mixer.update(delta);
@@ -1588,22 +1563,8 @@ class Levels3DPreview {
             this.pings.forEach((ping) => {
                 ping.update(delta);
             });
-            this.controls.update();
-            if (this.firstPersonMode) {
-                let controlled = canvas.tokens.controlled[0];
-                if (!controlled && _token?.scene == canvas.scene) {
-                    _token.control({ releaseOthers: true });
-                    controlled = _token;
-                }
-                if (controlled) {
-                    updateTokenRotationCameraThrottle(controlled);
-                    const token3d = this.tokens[controlled.id];
-                    if (token3d) {
-                        const pos = token3d.headFast;
-                        this.camera.position.set(pos.x, pos.y, pos.z);
-                    }
-                }
-            }
+            if (this.firstPersonMode) this.firstPerson.update(delta);
+            else this.controls.update();
             if (this._toggleCameraLockPosition) {
                 this.camera.position.copy(this._toggleCameraLockPosition);
             }
@@ -1747,6 +1708,7 @@ class Levels3DPreview {
     }
 
     setCameraToControlled(token) {
+        if (this.firstPersonMode) return;
         let cToken, token3D;
         if (!(token instanceof Token3D) && !token?.userData?.original) {
             cToken = token ?? canvas.tokens.controlled[0];
@@ -1978,6 +1940,7 @@ class Levels3DPreview {
     close() {
         document.querySelector(".levels-3d-preview-loading-screen").classList.add("hidden");
         const wasActive = this._active;
+        this.firstPerson?.reset();
         this._active = false;
         ui.controls.render({force:true, reset: true});
         this.BuildPanel?.close();
@@ -2289,19 +2252,5 @@ function patchFXAA(source) {
     const body = start >= 0 && end > start ? source.slice(0, start) + FXAA_APPLY + source.slice(end) : source;
     return body.replace("return texture( tex2D, uv );", "return textureLod( tex2D, uv, 0.0 );");
 }
-
-function updateTokenRotationCamera(token) {
-    const cPos = game.Levels3DPreview.camera.position;
-    const cTar = game.Levels3DPreview.controls.target;
-
-    const angle = Math.atan2(cTar.z - cPos.z, cTar.x - cPos.x);
-    const rotation = ((Math.toDegrees(angle - 90) % 360) + 360) % 360;
-    const current = (((token.document.rotation ?? 0) % 360) + 360) % 360;
-    const diff = Math.abs(rotation - current);
-    if (Math.min(diff, 360 - diff) < 0.5) return;
-    token.document.update({ rotation });
-}
-
-const updateTokenRotationCameraThrottle = throttle(updateTokenRotationCamera, 500);
 
 //javascript:(function(){var script=document.createElement('script');script.onload=function(){var stats=new Stats();document.body.appendChild(stats.dom);requestAnimationFrame(function loop(){stats.update();requestAnimationFrame(loop)});};script.src='//mrdoob.github.io/stats.js/build/stats.min.js';document.head.appendChild(script);})()

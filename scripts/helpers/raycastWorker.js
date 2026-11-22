@@ -139,6 +139,8 @@ self.onconnect = function (e) {
                 Object.values(parked).forEach((entry) => disposeMesh(entry.mesh));
                 parked = {};
                 scene.tiles = {};
+                scene.doors = {};
+                scene._doors = [];
                 mergedMesh.geometry.dispose();
                 mergedMesh.geometry = new THREE.BufferGeometry();
                 while (scene.children.length > 0) {

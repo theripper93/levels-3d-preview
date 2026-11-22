@@ -148,6 +148,7 @@ export function setMoveAction(action) {
 
 export function testMoveCollision(origin, destination) {
     const hit = interactionManager().computeSightCollision(origin, destination, "move");
+    if (hit && hit.distanceTo(posCanvasTo3d(destination)) <= cellSize() * LIFT_CELLS) return null;
     if (!hit || !WALKING_ACTIONS.has(currentAction)) return hit;
     const from = posCanvasTo3d(origin);
     const result = walk(from, posCanvasTo3d(destination));

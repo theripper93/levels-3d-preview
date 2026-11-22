@@ -10,6 +10,8 @@ const MAX_TILE_SIZE = 256;
 const TEXELS_PER_SQUARE = 16;
 const TOKEN_THROTTLE_MS = 150;
 const MOVE_EPSILON = 0.001;
+const MOVE_STEP_SQUARES = 0.05;
+const SETTLE_MS = 50;
 const RADIUS_TOLERANCE = 0.02;
 const TILE_KEY_SQUARES = 0.05;
 const SWEEP_PER_FRAME = 2;
@@ -179,22 +181,34 @@ export class ClusterMasks {
         if (!(half > 0)) return entry.center && this.release(entry);
         const cx = shape ? shape.origin.x / factor : position.x;
         const cz = shape ? shape.origin.y / factor : position.z;
-        let dirty = !entry.center || Math.hypot(cx - entry.center[0], cz - entry.center[1]) > MOVE_EPSILON || Math.abs(half - entry.half) > entry.half * RADIUS_TOLERANCE;
-        if (dirty) {
-            entry.center = [cx, cz];
-            entry.half = half;
-        }
         if (shape !== entry.shape) {
             entry.shape = shape;
             const points = shape ? (shape._l3dWallPoints ?? shape.points) : null;
             const hash = points ? hashPoints(points) ^ Math.round(radiusPx) : null;
-            if (hash !== entry.wallHash) {
-                entry.wallHash = hash;
-                entry.walls = points ? { points: Float32Array.from(points, (v) => v / factor), origin: [cx, cz], radius: radiusPx / factor } : null;
-                dirty = true;
+            if (hash !== entry.shapeHash) {
+                entry.shapeHash = hash;
+                entry.nextWalls = points ? { points: Float32Array.from(points, (v) => v / factor), origin: [cx, cz], radius: radiusPx / factor } : null;
+                entry.changedAt = now;
             }
         }
-        if (dirty) this.rasterQueue.add(entry);
+        const probe = entry.probe;
+        if (!probe || probe[0] !== cx || probe[1] !== cz || probe[2] !== half) {
+            entry.probe = [cx, cz, half];
+            entry.changedAt = now;
+        }
+        const distance = entry.center ? Math.hypot(cx - entry.center[0], cz - entry.center[1]) : Infinity;
+        const resized = !entry.center || Math.abs(half - entry.half) > entry.half * RADIUS_TOLERANCE;
+        const wallsChanged = entry.shapeHash !== entry.wallHash;
+        if (distance > MOVE_EPSILON || resized || wallsChanged) {
+            const settled = now - entry.changedAt >= SETTLE_MS;
+            if (distance > MOVE_STEP_SQUARES * this.gridWorld || resized || settled || (wallsChanged && distance <= MOVE_EPSILON)) {
+                entry.center = [cx, cz];
+                entry.half = half;
+                entry.wallHash = entry.shapeHash;
+                entry.walls = entry.nextWalls;
+                this.rasterQueue.add(entry);
+            } else this.stale.add(entry);
+        }
         if (this.useTiles) this.checkTiles(entry, source, position.y, now);
     }
 

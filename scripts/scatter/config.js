@@ -1,5 +1,6 @@
 import { SCATTER_SETS } from "./sets.js";
 import { scatterApi } from "./api.js";
+import { section } from "../settings/sceneConfigLayout.js";
 
 const L = (key) => game.i18n.localize(`levels3dpreview.scatter.${key}`);
 
@@ -16,17 +17,22 @@ export function scatterConfigTab(doc) {
     return {
         "scatter-3d": {
             tabLabel: L("tab"),
-            tabNotes: L("tabNotes"),
             tabIcon: "fas fa-seedling",
-            "scatter.set": { type: "select", label: L("set"), default: "", options },
-            "scatter.seed": { type: "number", label: L("seed"), default: seedFor(doc.id) },
-            "scatter.base": { ...range("base", 0, 255, 1, 0), notes: L("baseNotes") },
-            "scatter.density": range("density", 0.1, 3, 0.1, 1),
-            "scatter.scale": range("scale", 0.25, 3, 0.05, 1),
-            "scatter.avoid.buildings": check("avoidBuildings"),
-            "scatter.avoid.paths": check("avoidPaths"),
-            "scatter.avoid.water": check("avoidWater"),
-            scatterConvert: { type: "custom", html: `<button type="button" data-scatter-convert><i class="fas fa-object-ungroup"></i> ${L("convert")}</button>` },
+            ...section("scatter", "basics", {
+                "scatter.set": { type: "select", label: L("set"), default: "", options },
+                "scatter.base": { ...range("base", 0, 255, 1, 0), notes: L("baseNotes") },
+                "scatter.density": range("density", 0.1, 3, 0.1, 1),
+                "scatter.scale": range("scale", 0.25, 3, 0.05, 1),
+            }),
+            ...section("scatterAvoid", "avoid", {
+                "scatter.avoid.buildings": check("avoidBuildings"),
+                "scatter.avoid.paths": check("avoidPaths"),
+                "scatter.avoid.water": check("avoidWater"),
+            }),
+            ...section("scatterAdvanced", "advanced", {
+                "scatter.seed": { type: "number", label: L("seed"), default: seedFor(doc.id) },
+                scatterConvert: { type: "custom", html: `<button type="button" data-scatter-convert><i class="fas fa-object-ungroup"></i> ${L("convert")}</button>` },
+            }),
         },
     };
 }

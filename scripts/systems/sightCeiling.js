@@ -125,23 +125,23 @@ function virtualCeiling(targets, cx, cy, floor, realCeiling) {
 function computeCeiling(targets, cx, cy, floor) {
     const d = canvas.scene.dimensions.distance;
     const up = cast(targets.sight, offSeam(cx, cy, floor + d * 0.1), UP, Infinity);
-    let ceiling = up ? toElevation(up.point.y) : Infinity;
-    if (isIndoorSky()) ceiling = Math.min(ceiling, virtualCeiling(targets.sight, cx, cy, floor, ceiling));
-    return ceiling;
+    const real = up ? toElevation(up.point.y) : Infinity;
+    const virtual = isIndoorSky() ? virtualCeiling(targets.sight, cx, cy, floor, real) : Infinity;
+    return { real, virtual };
 }
 
 export function sightCeilingAt(x, y, elevation) {
-    if (!isReady()) return { floor: elevation, ceiling: Infinity };
+    if (!isReady()) return { floor: elevation, ceiling: Infinity, real: Infinity, virtual: Infinity };
     const { i, j, cx, cy } = cellOf(x, y);
     const targets = collisionLists(cx, cy);
     const floor = findFloor(targets, x, y, elevation);
     const key = `${i}|${j}|${Math.round(floor * 10)}`;
-    let ceiling = cache.get(key);
-    if (ceiling === undefined) {
-        ceiling = computeCeiling(targets, cx, cy, floor);
-        cache.set(key, ceiling);
+    let ceilings = cache.get(key);
+    if (ceilings === undefined) {
+        ceilings = computeCeiling(targets, cx, cy, floor);
+        cache.set(key, ceilings);
     }
-    return { floor, ceiling };
+    return { floor, ceiling: Math.min(ceilings.real, ceilings.virtual), ...ceilings };
 }
 
 export function cappedEyeHeight(token3d, raw) {
@@ -169,7 +169,9 @@ function clampedElevation(tokenDocument, changes) {
     const center = { x: x + tokenDocument.width * half, y: y + tokenDocument.height * half };
     const height = token3d.tokenHeight;
     const d = canvas.scene.dimensions.distance;
-    let { floor, ceiling } = sightCeilingAt(center.x, center.y, e1);
+    const probe = sightCeilingAt(center.x, center.y, e1);
+    let floor = probe.floor;
+    let ceiling = e0 < probe.virtual ? probe.ceiling : probe.real;
     if (x === tokenDocument.x && y === tokenDocument.y && e1 > e0) {
         const { cx, cy } = cellOf(center.x, center.y);
         const start = e0 + d * 0.1;

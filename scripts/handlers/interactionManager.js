@@ -10,6 +10,8 @@ import { acceleratedRaycast } from "../three/acceleratedRaycast.js";
 import { Note3D } from "../entities/note3d.js";
 import { movementFloor } from "../helpers/elevationFloor.js";
 import { SightBroadphase } from "./sightBroadphase.js";
+import { SightOccluders } from "./sightOccluders.js";
+import { VisibilityThrottle } from "./visibilityThrottle.js";
 THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
 THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
 THREE.Mesh.prototype.raycast = acceleratedRaycast;
@@ -75,6 +77,9 @@ export class InteractionManager {
         this.sightRaycaster.firstHitOnly = true;
         this._sightCollisions = {};
         this.sightBroadphase = new SightBroadphase(levels3dPreview.renderer);
+        this.sightOccluders = new SightOccluders(this);
+        this.visibilityThrottle = new VisibilityThrottle();
+        for (const hook of ["createTile", "updateTile", "deleteTile", "createWall", "updateWall", "deleteWall"]) Hooks.on(hook, () => (this._candidateCache = this._rayMemo = null));
         this.mouse = new THREE.Vector2();
         this.mousemove = new THREE.Vector2();
         this.controls = levels3dPreview.controls;
@@ -115,57 +120,33 @@ export class InteractionManager {
     }
 
     generateSightCollisions(p0, p1) {
-        const tileQuadtree = [];
-        const wallsQuadtree = [];
         if (p0 && p1 && p0.x == p1.x && p0.y == p1.y) {
             p0 = null;
             p1 = null;
         }
+        const cache = this._sightCandidates();
+        let tiles = cache.tiles;
+        let walls = cache.walls;
         if (p0 && p1) {
-            const rectX = Math.min(p0.x, p1.x);
-            const rectY = Math.min(p0.y, p1.y);
-            const rectW = Math.abs(p1.x - p0.x);
-            const rectH = Math.abs(p1.y - p0.y);
-            const rect = new PIXI.Rectangle(rectX, rectY, rectW, rectH);
-            const wallsQuadtreeSet = canvas.walls.quadtree.getObjects(rect);
-            const tileQuadtreeSet = canvas.tiles.quadtree.getObjects(rect);
-            wallsQuadtreeSet.forEach((w) => wallsQuadtree.push(this._parent.walls[w.id]));
-            tileQuadtreeSet.forEach((t) => tileQuadtree.push(this._parent.tiles[t.id]));
+            const rect = new PIXI.Rectangle(Math.min(p0.x, p1.x), Math.min(p0.y, p1.y), Math.abs(p1.x - p0.x), Math.abs(p1.y - p0.y));
+            const treeTiles = cache.treeTiles.filter((entry) => rect.overlaps(entry.r));
+            const treeWalls = cache.treeWalls.filter((entry) => rect.overlaps(entry.r));
+            if (treeTiles.length) tiles = treeTiles;
+            if (treeWalls.length) walls = treeWalls;
         }
         const collisionObjects = [];
         const sightObjects = [];
         const cameraObjects = [];
-        const tiles = tileQuadtree.length ? tileQuadtree : Object.values(this._parent.tiles);
-        const walls = wallsQuadtree.length ? wallsQuadtree : Object.values(this._parent.walls);
-        for (let tile of tiles) {
-            if (!tile || tile?.document?.hidden /*!tile?.mesh?.visible**/) continue;
-            const mesh = tile.sightMesh ?? tile.mesh;
-            if(!mesh) continue;
-            if (tile.hasTags) {
-                mesh.traverse((o) => {
-                    const ud = o?.userData;
-                    if (!ud?.collision && !ud?.sight && !ud?.cameraCollision) return;
-                    const clone = getTaggedColliderClone(tile, o);
-                    if (ud.collision) collisionObjects.push(clone);
-                    if (ud.sight) sightObjects.push(clone);
-                    if (ud.cameraCollision) cameraObjects.push(clone);
-                });
-            } else {
-                if (tile.collision) collisionObjects.push(mesh);
-                if (tile.sight) sightObjects.push(mesh);
-                if (tile.cameraCollision) cameraObjects.push(mesh);
-            }
+        for (const { entry } of tiles) {
+            if (!entry) continue;
+            collisionObjects.push(...entry.move);
+            sightObjects.push(...entry.sight);
+            cameraObjects.push(...entry.camera);
         }
-        for (let wall of walls) {
-            if (!wall?.placeable) continue;
-            if (wall.placeable.isDoor && wall.placeable.document.ds === CONST.WALL_DOOR_STATES.OPEN) continue;
-            if (!wall.mesh?.visible && wall.isDisabledVisible === true) continue;
-            // NONE and LIMITED do not block. PROXIMITY/DISTANCE depend on the source distance, which a static
-            // collision list cannot express, so they are approximated as always blocking.
-            const SENSE_TYPES = getSenseTypes();
-            const sightType = wall.placeable.document.sight;
-            if (sightType === SENSE_TYPES.NORMAL || sightType === SENSE_TYPES.PROXIMITY || sightType === SENSE_TYPES.DISTANCE) sightObjects.push(wall.mesh);
-            if (wall.placeable.document.move === SENSE_TYPES.NORMAL) collisionObjects.push(wall.mesh);
+        for (const { entry } of walls) {
+            if (!entry) continue;
+            sightObjects.push(...entry.sight);
+            collisionObjects.push(...entry.move);
         }
         if (this._parent.board) {
             sightObjects.push(this._parent.board);
@@ -177,7 +158,69 @@ export class InteractionManager {
             sight: sightObjects,
             camera: cameraObjects,
         };
-        //if (!p0 && !p1) canvas.tokens.controlled.forEach((t) => t.updateSource());
+    }
+
+    _sightCandidates() {
+        const frame = canvas.app.ticker.lastTime;
+        if (this._candidateCache?.frame === frame) return this._candidateCache;
+        const tileEntries = new Map();
+        const tileEntry = (tile) => {
+            if (!tile || tile?.document?.hidden) return null;
+            if (tileEntries.has(tile)) return tileEntries.get(tile);
+            const entry = { move: [], sight: [], camera: [] };
+            const mesh = tile.sightMesh ?? tile.mesh;
+            if (mesh) {
+                if (tile.hasTags) {
+                    mesh.traverse((o) => {
+                        const ud = o?.userData;
+                        if (!ud?.collision && !ud?.sight && !ud?.cameraCollision) return;
+                        const clone = getTaggedColliderClone(tile, o);
+                        if (ud.collision) entry.move.push(clone);
+                        if (ud.sight) entry.sight.push(clone);
+                        if (ud.cameraCollision) entry.camera.push(clone);
+                    });
+                } else {
+                    if (tile.collision) entry.move.push(mesh);
+                    if (tile.sight) entry.sight.push(mesh);
+                    if (tile.cameraCollision) entry.camera.push(mesh);
+                }
+            }
+            tileEntries.set(tile, entry);
+            return entry;
+        };
+        const wallEntries = new Map();
+        const SENSE_TYPES = getSenseTypes();
+        const wallEntry = (wall) => {
+            if (!wall?.placeable) return null;
+            if (wallEntries.has(wall)) return wallEntries.get(wall);
+            const entry = { move: [], sight: [] };
+            const document = wall.placeable.document;
+            const open = wall.placeable.isDoor && document.ds === CONST.WALL_DOOR_STATES.OPEN;
+            if (!open && !(!wall.mesh?.visible && wall.isDisabledVisible === true)) {
+                if (document.sight === SENSE_TYPES.NORMAL || document.sight === SENSE_TYPES.PROXIMITY || document.sight === SENSE_TYPES.DISTANCE) entry.sight.push(wall.mesh);
+                if (document.move === SENSE_TYPES.NORMAL) entry.move.push(wall.mesh);
+            }
+            wallEntries.set(wall, entry);
+            return entry;
+        };
+        const treeEntries = (quadtree, collection, entryOf) => {
+            const seen = new Set();
+            const out = [];
+            for (const record of quadtree.all) {
+                if (seen.has(record.t)) continue;
+                seen.add(record.t);
+                out.push({ r: record.r, entry: entryOf(collection[record.t.id]) });
+            }
+            return out;
+        };
+        this._candidateCache = {
+            frame,
+            tiles: Object.values(this._parent.tiles).map((tile) => ({ entry: tileEntry(tile) })),
+            walls: Object.values(this._parent.walls).map((wall) => ({ entry: wallEntry(wall) })),
+            treeTiles: treeEntries(canvas.tiles.quadtree, this._parent.tiles, tileEntry),
+            treeWalls: treeEntries(canvas.walls.quadtree, this._parent.walls, wallEntry),
+        };
+        return this._candidateCache;
     }
 
     computeSightCollision(v1, v2, type = "move", elongate = false, useDistance = true, useClipping = false, returnAll = false) {
@@ -185,9 +228,10 @@ export class InteractionManager {
         const target = posCanvasTo3d(v2);
         if (elongate || useClipping || returnAll) return this.computeSightCollisionFrom3DPositions(origin, target, type, elongate, useDistance, useClipping, returnAll);
         const key = `${type}|${useDistance}|${origin.x}|${origin.y}|${origin.z}|${target.x}|${target.y}|${target.z}`;
-        if (!this._rayMemo) {
+        const frame = canvas.app.ticker.lastTime;
+        if (!this._rayMemo || this._rayMemoFrame !== frame) {
             this._rayMemo = new Map();
-            queueMicrotask(() => (this._rayMemo = null));
+            this._rayMemoFrame = frame;
         }
         let result = this._rayMemo.get(key);
         if (result === undefined) {
@@ -216,6 +260,7 @@ export class InteractionManager {
         if (returnAll) return collisions;
         const collision = collisions[0];
         if (collision.distance > distance) return false;
+        this._lastSightHit = collision.object;
         if (elongate) {
             return collision.point.add(direction.multiplyScalar(0.025));
         }
