@@ -43,9 +43,14 @@ export class BatchPrepass extends THREE.Mesh {
         this.matrixWorldAutoUpdate = false;
         this.matrixWorld = source.matrixWorld;
         this.layers = source.layers;
-        this.renderOrder = source.renderOrder - 0.5;
         this.userData.kitBatch = true;
     }
+
+    get renderOrder() {
+        return (this.source?.renderOrder ?? 0) - 0.5;
+    }
+
+    set renderOrder(value) {}
 
     get geometry() {
         return this.source?.geometry ?? emptyGeometry;

@@ -1,5 +1,6 @@
 import { GLTFLoader as ThreeGLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
+import { dedupeTextures } from "./textureDedupe.js";
 
 const DRACO_DECODER_PATH = "https://www.gstatic.com/draco/versioned/decoders/1.5.7/";
 
@@ -22,5 +23,17 @@ export class GLTFLoader extends ThreeGLTFLoader {
         dracoLoader.setDecoderPath(DRACO_DECODER_PATH);
         this.setDRACOLoader(dracoLoader);
         this.register((parser) => new GLTFSingleScenePlugin(parser));
+    }
+
+    parse(data, path, onLoad, onError) {
+        return super.parse(
+            data,
+            path,
+            (gltf) => {
+                for (const scene of gltf.scenes ?? [gltf.scene]) if (scene) dedupeTextures(scene);
+                onLoad(gltf);
+            },
+            onError,
+        );
     }
 }

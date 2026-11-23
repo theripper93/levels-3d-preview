@@ -41,6 +41,7 @@ export class KitBatcher {
         this.sources = [];
         this.autoUpdateScene = null;
         this.stale = new Set();
+        this.pruned = [];
         this.cursor = 0;
         this.splitter = new SideSplitter(this.root);
         this.lod = new BatchLod(this);
@@ -93,7 +94,7 @@ export class KitBatcher {
         const renderer = this._parent.renderer;
         const render = renderer.render;
         renderer.render = function (scene, camera) {
-            if (batcher.active || (!batcher.sources.length && !batcher.splitter.size) || scene !== batcher._parent.scene || scene.overrideMaterial) return render.call(this, scene, camera);
+            if (batcher.active || scene !== batcher._parent.scene || scene.overrideMaterial) return render.call(this, scene, camera);
             batcher.begin(scene, camera);
             try {
                 return render.call(this, scene, camera);
@@ -156,13 +157,25 @@ export class KitBatcher {
         for (const batch of this.batches.values()) batch.mesh.visible = batch.ready && batch.shown > 0;
         this.lod.update(sources, camera, this._parent.renderer);
         this.splitter.begin(scene);
-        scene.add(this.root);
+        this.pruneInert(scene);
+        if (this.sources.length || this.splitter.size) scene.add(this.root);
+    }
+
+    pruneInert(scene) {
+        const pruned = this.pruned;
+        for (const child of scene.children) {
+            if (child === this.root || !child.visible || hasVisibleRenderable(child)) continue;
+            child.visible = false;
+            pruned.push(child);
+        }
     }
 
     end() {
         if (!this.active) return;
         this.active = false;
         for (const source of this.sources) source.object.visible = source.wasVisible;
+        for (const object of this.pruned) object.visible = true;
+        this.pruned.length = 0;
         this.splitter.end();
         if (this.autoUpdateScene) this.autoUpdateScene.matrixWorldAutoUpdate = true;
         this.autoUpdateScene = null;
@@ -362,9 +375,13 @@ export class KitBatcher {
 
     getBatch(material, object, order) {
         const wind = !!windSwayParams(material);
-        const key = `${materialKey(material)}#${definesKey(material)}#${!!material.userData?.foliage}#${attributeKey(object.geometry)}#${object.receiveShadow}#${order}#${wind}`;
+        const orderFree = isOrderFree(material);
+        const key = `${materialKey(material)}#${definesKey(material)}#${!!material.userData?.foliage}#${attributeKey(object.geometry)}#${object.receiveShadow}#${orderFree ? "any" : order}#${wind}`;
         let batch = this.batches.get(key);
-        if (batch) return batch;
+        if (batch) {
+            if (order < batch.mesh.renderOrder) batch.mesh.renderOrder = order;
+            return batch;
+        }
         const batchMaterial = material.clone();
         batchMaterial.defines = { ...material.defines };
         batchMaterial.color?.set(0xffffff);
@@ -487,6 +504,22 @@ function isShownWithin(object, root) {
     return false;
 }
 
+function hasVisibleRenderable(object) {
+    if (isDrawable(object)) return true;
+    const children = object.children;
+    for (let i = 0; i < children.length; i++) if (children[i].visible && hasVisibleRenderable(children[i])) return true;
+    return false;
+}
+
+function isDrawable(object) {
+    if (object.isSprite || object.isLight || object.isLOD || object.isSkinnedMesh) return true;
+    if (!object.isMesh && !object.isLine && !object.isPoints) return false;
+    const material = object.material;
+    if (!Array.isArray(material)) return material?.visible !== false;
+    for (let i = 0; i < material.length; i++) if (material[i]?.visible !== false) return true;
+    return false;
+}
+
 function isCurrent(record) {
     for (const source of record.sources) {
         const object = source.object;
@@ -509,6 +542,10 @@ function isBatchableMaterial(material, kit) {
     if (!material || !(kit ? material.isMeshStandardMaterial : MATERIAL_TYPES.has(material.type))) return false;
     if (!kit && (material.transparent || material.transmission > 0)) return false;
     return (!material._userOnBeforeCompile || material.userData.batchShader || (!kit && windSwayParams(material))) && !material.clippingPlanes?.length && !material.wireframe && !material.alphaToCoverage && !(material.displacementMap && material.displacementScale);
+}
+
+function isOrderFree(material) {
+    return !material.transparent && material.depthTest && material.depthWrite && material.blending === THREE.NormalBlending && !material.alphaToCoverage;
 }
 
 function materialVersion(material) {

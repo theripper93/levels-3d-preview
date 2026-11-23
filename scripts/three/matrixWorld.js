@@ -100,6 +100,11 @@ export function updateSceneMatrixWorld(force) {
     updateNode(this, force);
 }
 
+export function isWorldMatrixStale(object) {
+    for (let node = object; node; node = node.parent) if (node.matrixWorldNeedsUpdate || node._trsDirty || !node.matrixAutoUpdate || isMoved(node)) return true;
+    return false;
+}
+
 export function refreshWorldMatrix(object) {
     for (let node = object; node; node = node.parent) {
         if (node.matrixWorldNeedsUpdate || node._trsDirty || !node.matrixAutoUpdate || isMoved(node)) return object.updateWorldMatrix(true, false);

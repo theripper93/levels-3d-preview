@@ -11,6 +11,7 @@ const activeLights = new Set();
 const CULL_STEP = 0.1;
 const CULL_MEASURE = 0.5;
 const CULL_VIEW_MARGIN = 0.3;
+const RATE_MAX_STEP = 0.05;
 const _frustum = new THREE.Frustum();
 const _projection = new THREE.Matrix4();
 const _sphere = new THREE.Sphere();
@@ -37,6 +38,7 @@ export class ParticleEngine {
         this.warmGroup = new THREE.Group();
         this.warmSystems = [];
         this.pendingTextures = [];
+        this.rateTiers = { full: 0.15, half: 0.06, frozen: 0.012 };
         this.init();
     }
 
@@ -155,20 +157,26 @@ export class ParticleEngine {
         if (!camera) return;
         _frustum.setFromProjectionMatrix(_projection.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse), camera.coordinateSystem, camera.reversedDepth);
         const grid = canvas.grid.size / this._parent.factor;
+        const frame = (this._rateFrame = ((this._rateFrame ?? 0) + 1) % 4);
+        const perspective = camera.isPerspectiveCamera;
+        const screenScale = perspective ? 1 / (2 * Math.tan(THREE.MathUtils.DEG2RAD * camera.fov * 0.5)) : camera.zoom / (camera.top - camera.bottom);
         for (const effect of this.effects) {
             if (effect._duration !== Infinity || !effect.emitter) continue;
-            const culling = (effect._culling ??= { radius: grid, hidden: false, pending: 0, age: Infinity });
+            const culling = (effect._culling ??= { radius: grid, hidden: false, pending: 0, age: Infinity, throttled: false, phase: (this._ratePhase = ((this._ratePhase ?? 0) + 1) % 4) });
             _sphere.center.setFromMatrixPosition(effect.emitter.matrixWorld);
-            _sphere.radius = culling.radius + grid + camera.position.distanceTo(_sphere.center) * CULL_VIEW_MARGIN;
+            const distance = camera.position.distanceTo(_sphere.center);
+            _sphere.radius = culling.radius + grid + distance * CULL_VIEW_MARGIN;
             if (_frustum.intersectsSphere(_sphere)) {
                 if (culling.hidden) this.revealEffect(effect, culling);
                 culling.age += delta;
                 if (culling.age >= CULL_MEASURE) this.measureEffect(effect, culling);
+                this.throttleEffect(effect, culling, delta, this.rateInterval((culling.radius * screenScale) / (perspective ? Math.max(distance, 1e-6) : 1)), frame);
                 continue;
             }
             if (!culling.hidden) {
                 culling.hidden = true;
-                culling.pending = 0;
+                if (!culling.throttled) culling.pending = 0;
+                culling.throttled = false;
                 for (const system of effect.particleSystems) {
                     system.paused = true;
                     system.emitter.visible = false;
@@ -179,7 +187,35 @@ export class ParticleEngine {
         }
     }
 
-    stepHiddenEffect(effect, culling) {
+    rateInterval(size) {
+        const tiers = this.rateTiers;
+        if (size >= tiers.full) return 1;
+        if (size >= tiers.half) return 2;
+        return size >= tiers.frozen ? 4 : 0;
+    }
+
+    throttleEffect(effect, culling, delta, interval, frame) {
+        if (interval === 1) {
+            if (!culling.throttled) return;
+            culling.throttled = false;
+            this.stepEffect(effect, culling);
+            for (const system of effect.particleSystems) system.paused = false;
+            return;
+        }
+        if (!culling.throttled) {
+            culling.throttled = true;
+            culling.pending = 0;
+            for (const system of effect.particleSystems) system.paused = true;
+        }
+        if (interval === 0) {
+            culling.pending = Math.min(culling.pending + delta, RATE_MAX_STEP);
+            return;
+        }
+        culling.pending += delta;
+        if ((frame + culling.phase) % interval === 0 || culling.pending >= RATE_MAX_STEP) this.stepEffect(effect, culling);
+    }
+
+    stepEffect(effect, culling) {
         const pending = culling.pending;
         culling.pending = 0;
         if (!(pending > 0)) return;
@@ -188,6 +224,11 @@ export class ParticleEngine {
             system.update(pending);
             system.paused = true;
         }
+    }
+
+    stepHiddenEffect(effect, culling) {
+        if (!(culling.pending > 0)) return;
+        this.stepEffect(effect, culling);
         this.measureEffect(effect, culling);
     }
 

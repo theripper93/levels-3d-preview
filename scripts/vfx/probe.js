@@ -36,12 +36,12 @@ function sceneLights() {
 
 function addLight(light, position, target) {
     if (!light.visible || light.intensity <= 0 || light.layers.mask === WARMUP_LAYER_MASK) return;
-    light.getWorldPosition(lightPosition);
+    lightPosition.setFromMatrixPosition(light.matrixWorld);
     const distance = lightPosition.distanceTo(position);
     if (light.distance > 0 && distance >= light.distance) return;
     let falloff = light.distance > 0 ? Math.pow(1 - distance / light.distance, light.decay || 1) : 1;
     if (light.isSpotLight) {
-        lightAxis.copy(light.target.getWorldPosition(sunTarget)).sub(lightPosition).normalize();
+        lightAxis.copy(sunTarget.setFromMatrixPosition(light.target.matrixWorld)).sub(lightPosition).normalize();
         toSample.copy(position).sub(lightPosition).normalize();
         const cone = Math.cos(light.angle);
         falloff *= THREE.MathUtils.smoothstep(lightAxis.dot(toSample), cone, cone + (1 - cone) * Math.max(light.penumbra, 0.05));

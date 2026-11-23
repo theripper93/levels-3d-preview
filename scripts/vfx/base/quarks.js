@@ -2,8 +2,16 @@ import * as THREE from "three";
 import * as QUARKS from "three.quarks";
 import { SimplexNoise } from "three/addons/math/SimplexNoise.js";
 import { getQuality } from "../quality.js";
+import { isWorldMatrixStale } from "../../three/matrixWorld.js";
+import "./spriteBatchUpdate.js";
 
 const displayColor = new THREE.Color();
+const baseUpdateWorldMatrix = THREE.Object3D.prototype.updateWorldMatrix;
+
+QUARKS.ParticleEmitter.prototype.updateWorldMatrix = function (updateParents, updateChildren) {
+    if (updateParents && !updateChildren && !isWorldMatrixStale(this)) return;
+    return baseUpdateWorldMatrix.call(this, updateParents, updateChildren);
+};
 
 class BudgetedValue {
     constructor(source, scale) {
