@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { refreshQuality } from "../vfx/quality.js";
+import { refreshDressing } from "../scatter/scatterField.js";
 
 const MODULE_ID = "levels-3d-preview";
 const REBUILD_KEYS = ["enableShaders", "effectsToggle"];
@@ -44,7 +45,10 @@ function applyPending() {
     }
     if (has(COMPOSER_KEYS)) canvas3d.buildComposerPasses();
     else if (keys.has("antialiasing")) canvas3d.initAA();
-    if (keys.has("effectsQuality")) canvas3d.weather?.surface?.refreshQuality();
+    if (keys.has("effectsQuality")) {
+        canvas3d.weather?.surface?.refreshQuality();
+        refreshDressing();
+    }
     if (keys.has("volumetricFog")) canvas3d.fogExploration?.refreshMist();
     if (has(SHADOW_KEYS)) applyShadows(canvas3d);
 }

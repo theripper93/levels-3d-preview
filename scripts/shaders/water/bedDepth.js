@@ -108,11 +108,13 @@ function renderBed(state) {
     const range = RANGE_CELLS * gs;
     const cx = (box.min.x + box.max.x) / 2;
     const cz = (box.min.z + box.max.z) / 2;
-    const top = topDownCamera(cx, cz, w, h, surface + range, range * 2);
-    const below = topDownCamera(cx, cz, w, h, surface, range);
-    const [fromTop, fromSurface] = renderTopDown(collectSurfaces((tile) => !isWater(tile)), rw, rh, [top, below]);
     const local = localSurfaces(state.entity3D.waterSurfaceAt, cx - w / 2, cz - h / 2, w, h, rw, rh);
-    const depth = blur(classify(fromTop, fromSurface, rw * rh, surface, gs, local), rw, rh);
+    const low = lowestSurface(local, surface);
+    const top = topDownCamera(cx, cz, w, h, surface + range, range * 2);
+    const cameras = [top, topDownCamera(cx, cz, w, h, surface, range)];
+    if (surface - low > gs * 0.05) cameras.push(topDownCamera(cx, cz, w, h, low, range));
+    const [fromTop, fromSurface, fromLow] = renderTopDown(collectSurfaces((tile) => !isWater(tile)), rw, rh, cameras);
+    const depth = blur(classify(fromTop, fromSurface, rw * rh, surface, gs, local, fromLow), rw, rh);
     if (state.params.contained !== false) contain(depth, rw, rh);
     state.uniforms.bedMatrix.value.multiplyMatrices(top.projectionMatrix, top.matrixWorldInverse);
     state.uniforms.size.value = Math.max(w, h) / gs;
@@ -375,7 +377,14 @@ function flowField(depth, shore, w, h, ax, ay, degrees) {
     return flow;
 }
 
-function classify(fromTop, fromSurface, n, max, gs, local) {
+function lowestSurface(local, max) {
+    if (!local) return max;
+    let low = max;
+    for (const v of local) if (v < low) low = v;
+    return low;
+}
+
+function classify(fromTop, fromSurface, n, max, gs, local, fromLow) {
     const depth = new Float32Array(n);
     for (let i = 0; i < n; i++) {
         const k = i * 4;
@@ -389,8 +398,9 @@ function classify(fromTop, fromSurface, n, max, gs, local) {
             continue;
         }
         const above = (fromTop[k] - surface) / gs;
+        const under = fromLow && fromSurface[k + 1] > 0.5 && fromSurface[k] > surface + gs * 0.01 ? fromLow : fromSurface;
         if (above <= 0) depth[i] = -above;
-        else if (above > OVERHANG && fromSurface[k + 1] > 0.5 && fromSurface[k + 2] > 0.5) depth[i] = (surface - fromSurface[k]) / gs;
+        else if (above > OVERHANG && under[k + 1] > 0.5 && under[k + 2] > 0.5) depth[i] = (surface - under[k]) / gs;
         else depth[i] = -Math.min(Math.max(above, 0.02), 2);
     }
     return depth;

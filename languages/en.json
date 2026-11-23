@@ -215,6 +215,10 @@
             "scenedirbutton": "Browse Community 3D Maps",
             "contextbutton": "Share Scene"
         },
+        "thumbnail": {
+            "generate": "Generate 3D Thumbnail",
+            "notActive": "The 3D thumbnail needs this scene open and fully loaded in 3D."
+        },
         "keybindings": {
             "dialog": {
                 "title": "3D Canvas: Remove Core Keybindings",
@@ -2313,7 +2317,8 @@
                     "swamp": "Swamp",
                     "acid": "Acid",
                     "lava": "Lava",
-                    "magicalFire": "Magical Fire"
+                    "magicalFire": "Magical Fire",
+                    "sewage": "Sewage"
                 },
                 "shallow_color": "Shallow Color",
                 "deep_color": "Deep Color",
@@ -2328,6 +2333,7 @@
                 "foam": "Foam",
                 "bubbles": "Bubbles",
                 "scum": "Scum",
+                "oil": "Oily Sheen",
                 "reflectivity": "Reflectivity",
                 "glow_color": "Glow Color",
                 "glow": "Glow",

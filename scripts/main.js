@@ -85,6 +85,7 @@ import { canSwitchLevel, clearParkedTiles, setLevelSwitchHooks, switchLevel } fr
 import { createTargetGeometry } from "./entities/effects/target.js";
 import { injectLegacyLights } from "./three/legacyLights.js";import { Socket } from "./lib/socket.js";
 import { renderSceneToImage } from "./helpers/export2d.js";
+import { setThumbnailHooks, captureSceneThumbnail, updateSceneThumbnail } from "./helpers/sceneThumbnail.js";
 import { BuildPanelApp } from "./apps/BuildPanelApp.js";
 import { QuickTerrain } from "./apps/QuickTerrain.js";
 import { essentialsFields, essentialsUpdate } from "./settings/sceneEssentials.js";
@@ -134,6 +135,7 @@ setLevelSwitchHooks();
 setSightCeilingHooks();
 setHudHook();
 setSharingHooks();
+setThumbnailHooks();
 
 globalThis.Particle3D = Particle3D;
 
@@ -551,6 +553,8 @@ class Levels3DPreview {
             extrudeWalls,
             attachTileToToken,
             renderSceneToImage,
+            captureSceneThumbnail,
+            updateSceneThumbnail,
             WaveFunctionSolver,
             TEXTURES: {
                 BLANK: new THREE.TextureLoader().load("modules/levels-3d-preview/assets/blankTex.jpg"),

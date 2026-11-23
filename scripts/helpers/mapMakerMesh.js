@@ -135,7 +135,7 @@ export async function buildMapMakerMesh(data) {
         return new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ visible: false }));
     }
     const materials = await Promise.all(groups.map((key) => getMapMakerMaterial(data.mats?.[key])));
-    const mesh = new THREE.Mesh(geometry, materials);
+    const mesh = new THREE.Mesh(geometry, data.single ? materials[0] : materials);
     mesh.userData.mapMaker = data.k;
     return mesh;
 }
@@ -170,6 +170,11 @@ export async function computeMapMakerBoundsAsync(data) {
             if (clipped) b.union(new THREE.Box3().setFromBufferAttribute(clipped.attributes.position));
         }
     }
+    if (data.w) {
+        const w = computeMapMakerBounds(data.w);
+        b.union(new THREE.Box3(new THREE.Vector3(w.minX, w.minZ, w.minY), new THREE.Vector3(w.maxX, w.maxZ, w.maxY)));
+    }
+    if (data.pad) b.union(new THREE.Box3().setFromArray(data.pad));
     if (b.isEmpty()) return { minX: 0, maxX: 1, minY: 0, maxY: 1, minZ: 0, maxZ: 1 };
     return { minX: b.min.x, maxX: b.max.x, minY: b.min.z, maxY: b.max.z, minZ: b.min.y, maxZ: b.max.y };
 }
@@ -309,6 +314,13 @@ async function buildKitMesh(data, unitScale, { shareMaterials = false } = {}) {
     }
     const proxy = solidProxy(parts, loaded, partKey, unitScale);
     if (proxy) group.add(proxy);
+    if (data.w) group.add(await buildMapMakerMesh(data.w));
+    if (data.pad) {
+        const pad = new THREE.Box3().setFromArray(data.pad.map((v) => v * unitScale));
+        const size = pad.getSize(new THREE.Vector3());
+        const center = pad.getCenter(new THREE.Vector3());
+        group.add(new THREE.Mesh(new THREE.BoxGeometry(size.x, size.y, size.z).translate(center.x, center.y, center.z), proxyMaterial));
+    }
     group.userData.mapMaker = "kit";
     return group;
 }

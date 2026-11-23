@@ -171,13 +171,13 @@ function buildCaveMask(stamp, data, nx, ny, layers) {
     return m;
 }
 
-export function applyCave(out, m, nx) {
+export function applyCave(out, m, nx, raw = out) {
     const { i0, j0, cw } = m;
     for (let q = 0; q < m.skip.length; q++) {
         if (m.skip[q]) continue;
         const k = (j0 + ((q / cw) | 0)) * nx + i0 + (q % cw);
         const r = out[k];
-        const floor = m.R ? m.F[q] + Math.min(0, r - m.R[q]) : m.F[q];
+        const floor = m.R ? m.F[q] + Math.min(0, raw[k] - m.R[q]) : m.F[q];
         const top = Math.max(r, m.T[q]);
         let closed = floor + (top - floor) * m.a[q];
         closed += (r - closed) * m.b[q];

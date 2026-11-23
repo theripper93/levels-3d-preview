@@ -218,6 +218,7 @@ export class Light3D {
             dim: this.dim,
             bright: this.bright,
             alpha: this.alpha,
+            luminosity: this.luminosity,
             color: this.color,
         });
         this.z = params.z;
@@ -283,14 +284,27 @@ export class Light3D {
         return Math.max(bright / dim, MIN_BRIGHT_RATIO);
     }
 
-    static computeParams({ x, y, elevation, dim, bright, alpha, color }) {
+    static tintStrength(alpha) {
+        const a = Math.clamp(alpha ?? 0.5, 0, 1);
+        return (3 * a) / (1 + 2 * a);
+    }
+
+    static tint(color, alpha) {
+        const full = new THREE.Color(color || "#ffffff");
+        const tinted = new THREE.Color(1, 1, 1).lerp(full, Light3D.tintStrength(alpha));
+        const luminance = (c) => 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b;
+        return { color: tinted, scale: Math.sqrt(luminance(full) / Math.max(luminance(tinted), 1e-6)) };
+    }
+
+    static computeParams({ x, y, elevation, dim, bright, alpha, luminosity, color }) {
         const { size, distance } = canvas.scene.dimensions;
         const z = (elevation * size) / distance;
+        const tint = Light3D.tint(color, alpha);
         return {
             z: elevation,
-            color: color || "#ffffff",
+            color: tint.color,
             radius: (Math.max(dim, bright) * (size / distance)) / factor,
-            intensity: alpha * 9,
+            intensity: Math.max(0, luminosity ?? 0.5) * 9 * tint.scale,
             decay: (dim / (bright + 10)) * 2,
             position: { x: x / factor, y: z / factor, z: y / factor },
         };
@@ -472,6 +486,10 @@ export class Light3D {
 
     get alpha() {
         return this.lightData.alpha ?? this.light.document.lightAlpha;
+    }
+
+    get luminosity() {
+        return this.lightData.luminosity ?? 0.5;
     }
 
     get color() {

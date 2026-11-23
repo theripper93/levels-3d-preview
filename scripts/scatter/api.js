@@ -2,7 +2,7 @@ import { factor } from "../main.js";
 import { encodeGridChanges } from "../helpers/chunkCodec.js";
 import { SCATTER_SETS, SCATTER_PROPS } from "./sets.js";
 import { sampleSurface, gridUnit } from "./surface.js";
-import { scatterDefaults, readDensity, refreshScatter, scatterFields, loadAsset } from "./scatterField.js";
+import { scatterDefaults, readDensity, refreshScatter, scatterFields, loadAsset, surfacesChanged } from "./scatterField.js";
 import { resolveItemAsset } from "./generate.js";
 
 const MODULE_ID = "levels-3d-preview";
@@ -123,5 +123,6 @@ export const scatterApi = {
     avoidSampler: (rect) => sampleSurface(rect),
     refresh: refreshScatter,
     refreshAll: () => refreshScatter(),
+    surfacesChanged,
     fields: scatterFields,
 };

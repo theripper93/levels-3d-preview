@@ -8,6 +8,9 @@ import { sampleSurface, gridUnit, isObstacle } from "./surface.js";
 import { WIND_GLSL, windUniforms, updateWindSway, isFoliage } from "../shaders/wind/windSway.js";
 import { markReceivers } from "../vfx/surface/receivers.js";
 import { setWindSwayParams } from "../shaders/wind/windBatch.js";
+import { buildDressing, dressTier } from "./dressing.js";
+import { dressUniforms } from "./cobwebs.js";
+import { propLevel, propMaterial, propFrame, dressPropVector, propWebs, buildPropWebs } from "./propDressing.js";
 
 const CHUNK_CELLS = 48;
 const MAX_CHUNKS = 3;
@@ -322,12 +325,13 @@ export class ScatterField {
         this.itemContent = new THREE.Group();
         this.proxies = new THREE.Group();
         this.proxies.visible = false;
+        this.dressContent = new THREE.Group();
         this.pick = new THREE.Mesh(new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ visible: false }));
         this.pick.raycast = (raycaster, intersects) => {
             if (canvas.tiles?.active) this.raycastContent(raycaster, intersects);
         };
         this.pick.userData.noShaders = true;
-        this.container.add(this.content, this.itemContent, this.proxies, this.pick);
+        this.container.add(this.content, this.itemContent, this.dressContent, this.proxies, this.pick);
         this.pick.scale.set(this.width / factor, 1, this.height / factor);
         this.instances = [];
         this.groups = new Map();
@@ -406,7 +410,7 @@ export class ScatterField {
     }
 
     baseKey() {
-        const { items, ex, ...rest } = this.data;
+        const { items, ex, dress, ...rest } = this.data;
         return JSON.stringify([rest, scatterQuality()]);
     }
 
@@ -483,6 +487,7 @@ export class ScatterField {
             const grid = await readDensity(this.document, data);
             if (version !== this.version || this.disposed) return;
             const depth = this.document.getFlag("levels-3d-preview", "depth");
+            const sampledAt = performance.now();
             const sampler = sampleSurface(this.sceneRect(), { top: depth > 0 ? t.center.y + depth / factor : Infinity });
             const sample = (lx, ly) => {
                 const p = this.localToScene(lx, ly);
@@ -492,10 +497,10 @@ export class ScatterField {
             const radii = blockers.length ? await Promise.all(set.assets.map((a) => loadAsset(a).then((info) => (Math.max(info.size.x, info.size.z) * gridPx) / 4).catch(() => null))) : [];
             if (version !== this.version || this.disposed) return;
             const generated = set ? generateInstances({ data: { ...data, cell: grid.cell }, set, density: grid.values, nx: grid.nx, ny: grid.ny, width: this.width, height: this.height, gridPx, qualityDensity: quality.density, sample, blockers, radii }) : [];
-            base = { key, blockKey, grid, sampler, sample, generated, quality };
+            base = { key, blockKey, grid, sampler, sample, generated, quality, sampledAt };
         }
         const { nx, ny, cell } = base.grid;
-        const explicit = explicitInstances({ items: data.items, set, nx, ny, cell, gridPx, sample: base.sample, fallbackY: t.center.y, flat: data.flat || set?.kind === "furnish" ? (gridPx * 0.05) / factor : 0 });
+        const explicit = explicitInstances({ items: data.items, set, nx, ny, cell, gridPx, sample: base.sample, fallbackY: t.center.y, flat: this.flatTolerance(data, set) });
         const fresh = base !== this.base;
         await this.loadAssets([...(fresh ? base.generated : []), ...explicit]);
         if (version !== this.version || this.disposed) return;
@@ -504,21 +509,34 @@ export class ScatterField {
         this.base = base;
         this.interior = set?.kind === "furnish";
         this.ex = ex;
-        if (fresh || changed.size) this.buildGenerated(changed);
+        const prevLevel = this.level;
+        this.level = this.interior ? propLevel(data.dress) : null;
+        const levelKey = JSON.stringify(this.level);
+        const relevel = levelKey !== this.levelKey;
+        this.levelKey = levelKey;
+        const swap = relevel && !fresh && !changed.size && !!prevLevel && !!this.level;
+        const rebuild = relevel && !swap;
+        if (swap) this.swapLevel();
+        if (fresh || changed.size || rebuild) this.buildGenerated(rebuild ? null : changed);
         const itemsKey = JSON.stringify(data.items ?? []);
-        const same = !fresh && !changed.size && this.items && itemsKey === this.itemsKey;
+        const same = !fresh && !changed.size && !rebuild && this.items && itemsKey === this.itemsKey;
         const items = same ? this.items : explicit.filter((inst) => this.infos.get(assetKey(inst.asset)));
         if (!same) this.buildItems(items);
         this.items = items;
         this.itemsKey = itemsKey;
+        const dressKey = JSON.stringify([data.dress ?? null, data.dress ? dressTier() : null]);
+        const redress = fresh || dressKey !== this.dressKey;
+        if (redress) this.buildDress(data.dress, base.sample);
+        this.dressKey = dressKey;
         this.instances = [...[...this.groups.values()].flatMap((g) => g.list.filter((inst) => !ex.has(inst.id))), ...items];
+        if (!same || redress) this.buildPropDress(data.dress);
         this.pick.scale.set(this.width / factor, 1, this.height / factor);
         this.pick.position.y = this.instances.length ? this.instances.reduce((sum, inst) => sum + inst.y, 0) / this.instances.length - t.center.y : 0;
         this.container.updateMatrixWorld(true);
         markReceivers(this.content, t);
         markReceivers(this.itemContent, t);
         L.lightWarmup?.warmObject(this.content);
-        if (!same) for (const mesh of this.itemContent.children) L.lightWarmup?.warmObject(mesh);
+        if (!same || swap) for (const mesh of this.itemContent.children) L.lightWarmup?.warmObject(mesh);
         this.stats = { instances: this.instances.length, meshes: this.content.children.length + this.itemContent.children.length, ms: Math.round(performance.now() - start) };
         if (this.updateProxies(items)) t.sendToWorker();
         Hooks.callAll("3DCanvasScatterGenerated", this);
@@ -568,9 +586,14 @@ export class ScatterField {
         const tinted = list.some((inst) => inst.tint);
         const hued = list.some((inst) => inst.hue);
         list.forEach((inst) => (inst.refs = []));
+        const dressed = this.level ? new Float32Array(list.flatMap((inst) => dressPropVector(propFrame(inst, info, this.propScale()), this.propScale().metre))) : null;
         return info.parts.map((part) => {
-            const mesh = new THREE.InstancedMesh(hued ? hueGeometry(part.geometry, list) : part.geometry, hued ? hueMaterial(part.material) : part.material, list.length);
-            mesh.userData.ownGeometry = hued;
+            const geometry = hued ? hueGeometry(part.geometry, list) : dressed ? part.geometry.clone() : part.geometry;
+            if (dressed) geometry.setAttribute("dressProp", new THREE.InstancedBufferAttribute(dressed, 4));
+            const baseMaterial = hued ? hueMaterial(part.material) : part.material;
+            const mesh = new THREE.InstancedMesh(geometry, propMaterial(baseMaterial, this.level, asset), list.length);
+            mesh.userData.ownGeometry = hued || !!dressed;
+            mesh.userData.dressBase = { material: baseMaterial, asset };
             list.forEach((inst, i) => {
                 mesh.setMatrixAt(i, this.instanceMatrix(inst, matrix));
                 if (tinted) mesh.setColorAt(i, color.set(inst.tint ?? 0xffffff));
@@ -659,13 +682,16 @@ export class ScatterField {
             const info = this.infoOf(inst);
             const castShadow = this.castsShadow(inst.asset, info);
             this.instanceMatrix(inst, matrix);
+            const dressed = this.level ? dressPropVector(propFrame(inst, info, this.propScale()), this.propScale().metre) : null;
             for (const part of info.parts) {
                 const source = mergeSource(part);
-                const key = `${source.key}|${castShadow}`;
-                if (!groups.has(key)) groups.set(key, { material: part.material, castShadow, geometries: [], count: 0 });
+                const material = propMaterial(part.material, this.level, inst.asset);
+                const key = `${source.key}|${castShadow}|${material.uuid}`;
+                if (!groups.has(key)) groups.set(key, { material, castShadow, geometries: [], count: 0, dressBase: { material: part.material, asset: inst.asset } });
                 const group = groups.get(key);
                 const geometry = source.geometry.clone().applyMatrix4(matrix);
                 const count = geometry.attributes.position.count;
+                if (dressed) geometry.setAttribute("dressProp", new THREE.BufferAttribute(new Float32Array(count * 4).map((_, k) => dressed[k % 4]), 4));
                 inst.mergedRanges.push({ group, start: group.count, count, source: source.geometry });
                 group.count += count;
                 group.geometries.push(geometry);
@@ -675,6 +701,7 @@ export class ScatterField {
             const { material, castShadow, geometries } = group;
             const mesh = new THREE.Mesh(geometries.length > 1 ? mergeGeometries(geometries) : geometries[0], material);
             group.mesh = mesh;
+            mesh.userData.dressBase = group.dressBase;
             if (geometries.length > 1) geometries.forEach((g) => g.dispose());
             mesh.geometry.computeBoundingSphere();
             mesh.geometry.computeBoundingBox();
@@ -688,6 +715,88 @@ export class ScatterField {
             this.itemContent.add(mesh);
             return mesh;
         });
+    }
+
+    swapLevel() {
+        for (const mesh of [...this.content.children, ...this.itemContent.children]) {
+            const base = mesh.userData.dressBase;
+            if (base) mesh.material = propMaterial(base.material, this.level, base.asset);
+        }
+    }
+
+    buildDress(dress, sample) {
+        this.disposeDress();
+        if (!dress) return;
+        const t = this.tile3d;
+        const gridPx = canvas.scene.grid.size;
+        const metre = gridPx / 2 / factor;
+        const flat = (gridPx * 0.05) / factor;
+        const toLocal = (lx, ly, h) => new THREE.Vector3((lx - this.width / 2) / factor, h * metre, (ly - this.height / 2) / factor);
+        const reach = gridPx / 8;
+        const valid = (s) => s && Math.abs(s.y - t.center.y) <= flat;
+        const heights = [];
+        for (let j = 1; j < 12; j++) for (let i = 1; i < 12; i++) {
+            const s = sample((this.width * i) / 12, (this.height * j) / 12);
+            if (valid(s)) heights.push(s.y - t.center.y);
+        }
+        heights.sort((a, b) => a - b);
+        const base = heights.length ? heights[Math.floor(heights.length * 0.75)] : 0;
+        const floorAt = (lx, ly) => {
+            let best = -Infinity;
+            for (const [dx, dy] of [[0, 0], [reach, 0], [-reach, 0], [0, reach], [0, -reach]]) {
+                const s = sample(lx + dx, ly + dy);
+                if (valid(s)) best = Math.max(best, s.y - t.center.y);
+            }
+            return Number.isFinite(best) ? Math.max(best, base - flat * 0.2) : base;
+        };
+        const holeAt = (lx, ly) => {
+            const s = sample(lx, ly);
+            return !s || s.y - t.center.y < base - flat * 0.6;
+        };
+        try {
+            for (const mesh of buildDressing(dress, { toLocal, metre, floorAt, holeAt, detail: scatterQuality().density })) {
+                this.dressContent.add(mesh);
+                game.Levels3DPreview.lightWarmup?.warmObject(mesh);
+            }
+        } catch (err) {
+            console.error(err);
+        }
+    }
+
+    propScale() {
+        const metre = gridUnit() / 2;
+        return { metre, centerY: this.tile3d.center.y, mPx: metre * factor };
+    }
+
+    buildPropDress(dress) {
+        for (const mesh of this.propDressMeshes ?? []) {
+            mesh.removeFromParent();
+            mesh.geometry.dispose();
+        }
+        this.propDressMeshes = [];
+        if (!this.interior || !dress) return;
+        const scale = this.propScale();
+        const frames = this.instances.map((inst) => this.infoOf(inst) && propFrame(inst, this.infoOf(inst), scale)).filter(Boolean);
+        dressUniforms.dressMetre.value = scale.metre;
+        const toLocal = (lx, ly, h) => new THREE.Vector3((lx - this.width / 2) / factor, h * scale.metre, (ly - this.height / 2) / factor);
+        try {
+            this.propDressMeshes = buildPropWebs(propWebs(frames, dress, scale), { toLocal, metre: scale.metre, detail: scatterQuality().density });
+            for (const mesh of this.propDressMeshes) {
+                this.dressContent.add(mesh);
+                game.Levels3DPreview.lightWarmup?.warmObject(mesh);
+            }
+        } catch (err) {
+            console.error(err);
+        }
+    }
+
+    disposeDress() {
+        for (const mesh of this.dressContent.children.slice()) {
+            mesh.removeFromParent();
+            mesh.geometry.dispose();
+            if (mesh.userData.ownMaterial) mesh.material.dispose();
+        }
+        this.dressKey = null;
     }
 
     updateProxies(items) {
@@ -807,12 +916,24 @@ export class ScatterField {
         return this.base?.sampler.sample(x, y) ?? null;
     }
 
+    flatTolerance(data = this.data, set = SCATTER_SETS[data.set] ?? null) {
+        return data.flat ?? set?.kind === "furnish" ? (canvas.scene.grid.size * 0.05) / factor : 0;
+    }
+
+    groundAt(x, y) {
+        const s = this.surfaceAt(x, y);
+        const center = this.tile3d.center.y;
+        const flat = this.flatTolerance();
+        return !s || (flat && Math.abs(s.y - center) > flat) ? center : s.y;
+    }
+
     clear() {
         this.groups.forEach((g) => this.disposeMeshes(g.meshes));
         this.groups.clear();
         this.disposeMeshes(this.itemMeshes);
         this.itemMeshes = [];
         this.items = null;
+        this.disposeDress();
         this.merged.clear();
         this.buildMerged();
         this.genProxy?.dispose();
@@ -857,6 +978,20 @@ export class ScatterField {
 
 export function refreshScatter(doc) {
     for (const field of fields) if (!doc || field.overlaps(doc)) field.invalidate();
+}
+
+let surfaceChangedAt = 0;
+const refreshStaleSurfaces = foundry.utils.debounce(() => {
+    for (const field of fields) if (field.base && field.base.sampledAt < surfaceChangedAt) field.invalidate();
+}, 150);
+
+export function surfacesChanged() {
+    surfaceChangedAt = performance.now();
+    refreshStaleSurfaces();
+}
+
+export function refreshDressing() {
+    for (const field of fields) if (!field.disposed && field.data?.dress) field.quick();
 }
 
 export function scatterFields() {

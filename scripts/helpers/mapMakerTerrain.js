@@ -23,28 +23,26 @@ const STRUCTURE = ["w", "h", "nx", "ny", "min", "max", "chunk", "wn"];
 const signature = (data, keys) => JSON.stringify(keys.map((k) => (k === "wn" && data ? waterDims(data) : data?.[k] ?? null)));
 const stampKey = (data) => JSON.stringify([data?.stamps ?? [], data?.roads ?? []]);
 
-function applyStamps(raw, masks, nx, ny, data) {
-    const out = new Float32Array(raw);
-    for (const mask of masks) {
-        if (mask.kind === "road") {
-            applyRoad(out, mask, data, nx, ny);
-            continue;
-        }
-        if (mask.kind === "cave") {
-            applyCave(out, mask, nx);
-            continue;
-        }
-        if (mask.kind === "cover") continue;
-        const { i0, j0, cw, ch, target, weights } = mask;
-        for (let j = 0; j < ch; j++) {
-            for (let i = 0; i < cw; i++) {
-                const wgt = weights[j * cw + i];
-                if (wgt === 1) continue;
-                const idx = (j0 + j) * nx + i0 + i;
-                out[idx] = target + (out[idx] - target) * wgt;
-            }
+function applyFlatten(out, mask, nx, insideOnly = false) {
+    const { i0, j0, cw, ch, target, weights } = mask;
+    for (let j = 0; j < ch; j++) {
+        for (let i = 0; i < cw; i++) {
+            const wgt = weights[j * cw + i];
+            if (wgt === 1 || (insideOnly && wgt !== 0)) continue;
+            const idx = (j0 + j) * nx + i0 + i;
+            out[idx] = target + (out[idx] - target) * wgt;
         }
     }
+}
+
+function applyStamps(raw, masks, nx, ny, data) {
+    const out = new Float32Array(raw);
+    const flat = masks.filter((m) => !m.kind);
+    for (const mask of masks) if (mask.kind === "road") applyRoad(out, mask, data, nx, ny);
+    for (const mask of flat) applyFlatten(out, mask, nx);
+    const caves = masks.filter((m) => m.kind === "cave");
+    for (const mask of caves) applyCave(out, mask, nx, raw);
+    if (caves.length) for (const mask of flat) applyFlatten(out, mask, nx, true);
     return out;
 }
 
@@ -222,7 +220,10 @@ export class TerrainState {
             if (splatChanged || stampsChanged) this.refreshSplat();
         }
         if (stampsChanged) await this.refreshHoles();
-        if (heightsChanged || stampsChanged) this.refreshHeights();
+        if (heightsChanged || stampsChanged) {
+            this.refreshHeights();
+            game.Levels3DPreview?.scatter?.surfacesChanged?.();
+        }
         if (waterChanged || lookChanged || stampsChanged) this.water.build();
         this.remember(data);
     }

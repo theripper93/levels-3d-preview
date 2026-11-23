@@ -2,7 +2,7 @@ import * as THREE from "three";
 import { decodeGrid, encodeGridChanges, patchGrid } from "./chunkCodec.js";
 import { refreshWaterBeds } from "../shaders/water/bedDepth.js";
 
-export const WATER_TYPES = ["water", "ocean", "river", "swamp", "acid", "lava", "magicalFire"];
+export const WATER_TYPES = ["water", "ocean", "river", "swamp", "acid", "lava", "magicalFire", "sewage"];
 
 export function waterDims(data) {
     if (data.wn) return data.wn;

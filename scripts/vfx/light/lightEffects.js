@@ -16,12 +16,12 @@ export class LightEffects {
         const flags = document.flags?.[MODULE_ID] ?? {};
         const enabled = getQuality().enabled;
         const { color, radius } = this.light3d.initialLightParams;
-        const alpha = this.light3d.alpha ?? 0.5;
+        const luminosity = Math.max(0, this.light3d.luminosity);
         const unit = canvas.dimensions.size / factor;
         if (enabled && flags.lightHalo) {
             this.halo ??= new LightHalo();
             this.light3d.mesh.add(this.halo);
-            this.halo.configure({ color, size: unit * 1.2 * (flags.lightHaloScale ?? 1), intensity: 0.4 + alpha });
+            this.halo.configure({ color, size: unit * 1.2 * (flags.lightHaloScale ?? 1), intensity: 0.4 + luminosity });
         } else this.disposeHalo();
         if (enabled && flags.lightShaft && !this.light3d.isPointLight) {
             this.shaft ??= new LightShaft();

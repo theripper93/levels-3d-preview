@@ -196,7 +196,8 @@ if (realisticWater_bubbles > 0.0) {
 float rw_scum = 0.0;
 if (realisticWater_scum > 0.0) {
     vec2 rw_sp = (rw_p - rw_dir * realisticWater_flow_speed * rw_t) / clamp(0.5 * rw_sm, 0.25, 1.0);
-    rw_sp += 0.6 * (vec2(rw_noised(rw_sp * 2.1).x, rw_noised(rw_sp * 2.1 + 7.3).x) - 0.5);
+    if (realisticWater_oil > 0.0) rw_sp = vec2(dot(rw_sp, rw_dir) / (1.0 + 0.8 * realisticWater_oil), dot(rw_sp, vec2(-rw_dir.y, rw_dir.x)) * 1.3) * (1.0 + 1.3 * realisticWater_oil);
+    rw_sp +=0.6 * (vec2(rw_noised(rw_sp * 2.1).x, rw_noised(rw_sp * 2.1 + 7.3).x) - 0.5);
     float rw_sn = 0.7 * rw_noised(rw_sp * 0.6).x + 0.3 * rw_noised(rw_sp * 3.1 + 5.3).x;
     float rw_sth = 0.8 - 0.5 * realisticWater_scum - 0.15 * rw_noised(rw_sp * 1.3).x * 1.5 * (1.0 - smoothstep(0.0, 0.4 * rw_sm, rw_sd));
     float rw_saa = fwidth(rw_sn) + 0.02;
@@ -251,10 +252,13 @@ float rw_foam = mix(rw_foamR, max(rw_line1, rw_line2), rw_styl) * step(0.001, re
 float rw_cx = dot(rw_p, vec2(-rw_fd.y, rw_fd.x));
 float rw_sx = mix(rw_sd + 0.3 * (rw_noised(rw_p * 0.8).x - 0.5), rw_cx, smoothstep(0.8, 1.5, rw_hw)) * 3.0 / rw_rs;
 float rw_sw0 = mix(0.08, 0.02, rw_styl);
-float rw_st = mix(smoothstep(0.85 - rw_sw0, 0.85 + rw_sw0, rw_noised(vec2(rw_sx, 0.0) + rw_a1 * 0.25 / rw_rs).x), smoothstep(0.85 - rw_sw0, 0.85 + rw_sw0, rw_noised(vec2(rw_sx, 0.0) + rw_a0 * 0.25 / rw_rs).x), smoothstep(0.0, 1.0, rw_w0));
-float rw_bank = smoothstep(rw_fwid * 0.5, rw_fwid * 0.5 + min(0.15, 0.3 * rw_hw), rw_sd) * (1.0 - smoothstep(0.55, 0.85, rw_sd / rw_hw)) * smoothstep(0.45, 0.6, rw_noised(rw_a0 * 1.2 / rw_rs).x) * mix(1.0, 0.5, rw_styl * smoothstep(0.8, 1.5, rw_hw));
+float rw_st0 = smoothstep(0.85 - rw_sw0, 0.85 + rw_sw0, rw_noised(vec2(rw_sx, 0.0) + rw_a0 * 0.25 / rw_rs).x) * smoothstep(0.45, 0.6, rw_noised(rw_a0 * 1.2 / rw_rs).x);
+float rw_st1 = smoothstep(0.85 - rw_sw0, 0.85 + rw_sw0, rw_noised(vec2(rw_sx, 0.0) + rw_a1 * 0.25 / rw_rs).x) * smoothstep(0.45, 0.6, rw_noised(rw_a1 * 1.2 / rw_rs + vec2(4.1, 2.7)).x);
+float rw_st = mix(rw_st1, rw_st0, smoothstep(0.0, 1.0, rw_w0));
+float rw_bank = smoothstep(rw_fwid * 0.5, rw_fwid * 0.5 + min(0.15, 0.3 * rw_hw), rw_sd) * (1.0 - smoothstep(0.55, 0.85, rw_sd / rw_hw)) * mix(1.0, 0.5, rw_styl * smoothstep(0.8, 1.5, rw_hw));
 rw_foam = max(rw_foam, rw_st * clamp(realisticWater_flow_speed * 1.6, 0.0, 1.0) * realisticWater_foam * rw_lod * rw_bank * (1.0 - rw_lava));
-rw_foam = max(rw_foam, realisticWater_foam * mix(rw_crest * smoothstep(0.4, 0.7, rw_fn), step(0.6, rw_crest * (0.5 + rw_fn)), rw_styl) * (1.0 - rw_lava));
+float rw_cap = rw_noised(vec2(dot(rw_p, rw_dir) * 3.0, dot(rw_p, vec2(-rw_dir.y, rw_dir.x)) * 0.8) / rw_rs + rw_drift).x;
+rw_foam = max(rw_foam, realisticWater_foam * mix(0.8 * rw_crest * smoothstep(0.5, 0.75, rw_fn) * smoothstep(0.5, 0.75, rw_cap), step(0.6, rw_crest * (0.5 + rw_fn)), rw_styl) * (1.0 - rw_lava));
 float rw_sk = rw_noised(vec2(dot(rw_p, vec2(0.8, 0.6)) * 1.5, dot(rw_p, vec2(-0.6, 0.8)) * 9.0) / min(rw_rs, 0.3) + vec2(rw_drift, 0.0)).x;
 float rw_spk = smoothstep(0.95, 0.95 + fwidth(rw_sk) + 1e-3, rw_sk) * smoothstep(0.4, 1.2, rw_sm) * step(0.34, rw_tc) * rw_styl * (1.0 - rw_lava) * rw_lod * (1.0 - rw_scum);
 rw_foam = max(rw_foam, rw_spk * 0.9);
@@ -265,7 +269,7 @@ float rw_caus = pow(1.0 - abs(rw_ca * 2.0 - 1.0), 6.0) * (1.0 - rw_tc) * (1.0 - 
 rw_col += rw_caus * 0.5 * realisticWater_shallow_color;
 rw_alpha += rw_caus * 0.15;
 rw_col = mix(rw_col, rw_lavaCol * mix(1.0, 0.3, rw_crack), rw_lava);
-rw_col = mix(rw_col, realisticWater_foam_color * (0.8 + 0.3 * rw_fn), rw_scum);
+rw_col = mix(rw_col, realisticWater_foam_color * (0.8 + 0.3 * rw_fn), rw_scum * mix(1.0, 0.5, step(0.001, realisticWater_oil)));
 rw_alpha = max(rw_alpha, rw_scum);
 rw_col = mix(rw_col, mix(mix(realisticWater_foam_color, realisticWater_shallow_color, 0.25), realisticWater_foam_color, rw_styl), rw_foam);
 rw_alpha = max(rw_alpha, rw_foam * mix(0.8, 0.95, rw_styl)) * rw_edge * opacity;
@@ -273,17 +277,27 @@ diffuseColor = vec4(rw_col, clamp(rw_alpha, 0.0, 1.0));
 float rw_gl = pow(rw_em, 3.0) * 0.5 + 0.12 * (0.6 + 0.4 * sin(rw_t * 2.0 + rw_fn * 6.28)) + rw_pop * step(0.001, realisticWater_bubbles);
 vec3 rw_emis = realisticWater_glow * mix(realisticWater_glow_color * rw_gl * mix(1.0, 0.5, rw_styl), rw_lavaEm + realisticWater_foam_color * rw_pop, rw_lava);
 float rw_rough = mix(mix(0.35, 0.04, realisticWater_reflectivity), 0.6, rw_styl);
+float rw_oilm = 0.0;
+vec3 rw_irid = vec3(1.0);
+if (realisticWater_oil > 0.0) {
+    vec2 rw_op = (rw_p - rw_dir * realisticWater_flow_speed * rw_t) / clamp(0.6 * rw_sm, 0.3, 1.2);
+    float rw_on = 0.65 * rw_noised(rw_op * 0.7 + 3.7).x + 0.35 * rw_noised(rw_op * 2.3 + 1.9).x;
+    rw_oilm = smoothstep(0.6 - 0.3 * realisticWater_oil, 0.8 - 0.3 * realisticWater_oil, rw_on) * realisticWater_oil * (1.0 - rw_scum) * (1.0 - rw_foam) * (1.0 - rw_lava);
+    rw_irid = 0.58 + 0.32 * cos(6.28318 * (rw_on * 3.0 + 0.4 * rw_noised(rw_op * 5.0).x + vec3(0.0, 0.33, 0.67)));
+    rw_rough = mix(max(rw_rough, 0.8), 0.14, rw_oilm);
+}
 rw_rough = max(mix(rw_rough, 0.85, max(rw_foam, rw_lava * (1.0 - rw_crack))), 0.9 * rw_scum);
 `;
 
 const PRESETS = {
-    water: { shallow_color: "#318b85", deep_color: "#0d3f5c", foam_color: "#ffffff", glow_color: "#ffffff", opacity: 0.92, clarity: 1.2, flow_speed: 0.05, wave_strength: 0.5, wave_scale: 1, ripple_size: 0.35, foam: 0.6, bubbles: 0, scum: 0, reflectivity: 0.8, glow: 0, crust: 0 },
-    ocean: { shallow_color: "#248893", deep_color: "#062b49", foam_color: "#ffffff", glow_color: "#ffffff", opacity: 0.95, clarity: 2, flow_speed: 0.03, wave_strength: 1.2, wave_scale: 2, ripple_size: 0.5, foam: 0.9, bubbles: 0, scum: 0, reflectivity: 0.9, glow: 0, crust: 0 },
-    river: { shallow_color: "#368371", deep_color: "#1b5560", foam_color: "#ffffff", glow_color: "#ffffff", opacity: 0.9, clarity: 0.5, flow_speed: 0.6, wave_strength: 0.3, wave_scale: 0.6, ripple_size: 0.3, foam: 0.7, bubbles: 0, scum: 0, reflectivity: 0.75, glow: 0, crust: 0 },
-    swamp: { shallow_color: "#6b7a2e", deep_color: "#2c3516", foam_color: "#4f6b1f", glow_color: "#ffffff", opacity: 0.98, clarity: 0.25, flow_speed: 0.02, wave_strength: 0.1, wave_scale: 0.5, ripple_size: 0.4, foam: 0.3, bubbles: 0.15, scum: 0.5, reflectivity: 0.35, glow: 0, crust: 0 },
-    acid: { shallow_color: "#c8f03a", deep_color: "#2f7a0a", foam_color: "#ecffb8", glow_color: "#7dff1a", opacity: 0.92, clarity: 0.25, flow_speed: 0.05, wave_strength: 0.3, wave_scale: 0.6, ripple_size: 0.3, foam: 0.6, bubbles: 0.5, scum: 0, reflectivity: 0.3, glow: 0.6, crust: 0 },
-    lava: { shallow_color: "#ff7a10", deep_color: "#2b2927", foam_color: "#ffc828", glow_color: "#d2300a", opacity: 1, clarity: 0.05, flow_speed: 0.3, wave_strength: 0.15, wave_scale: 0.5, ripple_size: 0.6, foam: 0, bubbles: 0.3, scum: 0, reflectivity: 0.15, glow: 1.4, crust: 0.01 },
-    magicalFire: { shallow_color: "#b45cff", deep_color: "#1d1430", foam_color: "#f0c8ff", glow_color: "#7a1fff", opacity: 1, clarity: 0.05, flow_speed: 0.35, wave_strength: 0.15, wave_scale: 0.5, ripple_size: 0.6, foam: 0, bubbles: 0.35, scum: 0, reflectivity: 0.15, glow: 1.6, crust: 0.01 },
+    water: { shallow_color: "#318b85", deep_color: "#0d3f5c", foam_color: "#ffffff", glow_color: "#ffffff", opacity: 0.92, clarity: 1.2, flow_speed: 0.05, wave_strength: 0.5, wave_scale: 1, ripple_size: 0.35, foam: 0.6, bubbles: 0, scum: 0, oil: 0, reflectivity: 0.8, glow: 0, crust: 0 },
+    ocean: { shallow_color: "#248893", deep_color: "#062b49", foam_color: "#ffffff", glow_color: "#ffffff", opacity: 0.95, clarity: 2, flow_speed: 0.03, wave_strength: 1.2, wave_scale: 2, ripple_size: 0.5, foam: 0.9, bubbles: 0, scum: 0, oil: 0, reflectivity: 0.9, glow: 0, crust: 0 },
+    river: { shallow_color: "#368371", deep_color: "#1b5560", foam_color: "#ffffff", glow_color: "#ffffff", opacity: 0.9, clarity: 0.5, flow_speed: 0.6, wave_strength: 0.3, wave_scale: 0.6, ripple_size: 0.3, foam: 0.7, bubbles: 0, scum: 0, oil: 0, reflectivity: 0.75, glow: 0, crust: 0 },
+    swamp: { shallow_color: "#6b7a2e", deep_color: "#2c3516", foam_color: "#4f6b1f", glow_color: "#ffffff", opacity: 0.98, clarity: 0.25, flow_speed: 0.02, wave_strength: 0.1, wave_scale: 0.5, ripple_size: 0.4, foam: 0.3, bubbles: 0.15, scum: 0.5, oil: 0, reflectivity: 0.35, glow: 0, crust: 0 },
+    acid: { shallow_color: "#c8f03a", deep_color: "#2f7a0a", foam_color: "#ecffb8", glow_color: "#7dff1a", opacity: 0.92, clarity: 0.25, flow_speed: 0.05, wave_strength: 0.3, wave_scale: 0.6, ripple_size: 0.3, foam: 0.6, bubbles: 0.5, scum: 0, oil: 0, reflectivity: 0.3, glow: 0.6, crust: 0 },
+    lava: { shallow_color: "#ff7a10", deep_color: "#2b2927", foam_color: "#ffc828", glow_color: "#d2300a", opacity: 1, clarity: 0.05, flow_speed: 0.3, wave_strength: 0.15, wave_scale: 0.5, ripple_size: 0.6, foam: 0, bubbles: 0.3, scum: 0, oil: 0, reflectivity: 0.15, glow: 1.4, crust: 0.01 },
+    magicalFire: { shallow_color: "#b45cff", deep_color: "#1d1430", foam_color: "#f0c8ff", glow_color: "#7a1fff", opacity: 1, clarity: 0.05, flow_speed: 0.35, wave_strength: 0.15, wave_scale: 0.5, ripple_size: 0.6, foam: 0, bubbles: 0.35, scum: 0, oil: 0, reflectivity: 0.15, glow: 1.6, crust: 0.01 },
+    sewage: { shallow_color: "#433924", deep_color: "#1a160d", foam_color: "#5c5341", glow_color: "#ffffff", opacity: 1, clarity: 0.1, flow_speed: 0.06, wave_strength: 0.04, wave_scale: 0.4, ripple_size: 0.5, foam: 0.15, bubbles: 0.08, scum: 0.15, oil: 0.6, reflectivity: 0.12, glow: 0, crust: 0 },
 };
 
 const slider = (def, min, max, step) => ({ type: "float", default: def, min, max, step });
@@ -296,7 +310,7 @@ export const realisticWater = {
         basics: ["enabled", "preset", "style", "contained"],
         colour: ["shallow_color", "deep_color", "opacity", "clarity"],
         motion: ["flow_direction", "flow_speed", "wave_strength", "wave_scale", "ripple_size"],
-        surface: ["foam", "foam_color", "bubbles", "scum", "reflectivity"],
+        surface: ["foam", "foam_color", "bubbles", "scum", "oil", "reflectivity"],
         glow: ["glow", "glow_color", "crust"],
     },
     refresh: () => refreshWaterBeds(),
@@ -317,6 +331,7 @@ export const realisticWater = {
         foam_color: { type: "vec3", default: PRESETS.water.foam_color },
         bubbles: slider(0, 0, 1, 0.01),
         scum: slider(0, 0, 1, 0.01),
+        oil: slider(0, 0, 1, 0.01),
         reflectivity: slider(0.8, 0, 1, 0.01),
         glow: slider(0, 0, 5, 0.05),
         glow_color: { type: "vec3", default: "#ffffff" },
@@ -345,6 +360,9 @@ export const realisticWater = {
             float rw_nv = clamp(dot(normal, normalize(vViewPosition)), 0.0, 1.0);
             float rw_fr = 0.05 + 0.95 * pow(1.0 - rw_nv, 3.0);
             diffuseColor.a = mix(diffuseColor.a, 1.0, rw_fr * realisticWater_reflectivity * rw_edge * mix(1.0, 0.3, rw_styl) * (1.0 - rw_lava) * (1.0 - rw_scum));
+            #ifdef STANDARD
+            if (rw_oilm > 0.0) outgoingLight += ((reflectedLight.directSpecular + reflectedLight.indirectSpecular) * (rw_irid * 1.3 - 0.8) + (reflectedLight.directDiffuse + reflectedLight.indirectDiffuse) * rw_irid * (0.03 + 0.25 * rw_fr)) * rw_oilm;
+            #endif
             ${HIGHLIGHT_APPLY}`,
         },
     ],

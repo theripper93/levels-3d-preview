@@ -146,6 +146,7 @@ export class Tile3D {
             this.setPathTraced();
             markReceivers(this.mesh, this);
             this._loaded = true;
+            if (this.mapMakerMesh?.k === "terrain") this._parent.scatter?.surfacesChanged?.();
             this.elevation3d = this.mesh.position.y;
             this.setHidden();
             this.sendToWorker();
@@ -176,11 +177,12 @@ export class Tile3D {
     applyDoorClip() {
         const clip = this.tile.document.getFlag("levels-3d-preview", "doorClip");
         if (!Array.isArray(clip) || !this.mesh) return;
-        const [x0, x1, y1] = clip;
+        const [x0, x1, y1, y0] = clip;
         const planes = [];
         if (Number.isFinite(x0)) planes.push(new THREE.Plane(new THREE.Vector3(1, 0, 0), -x0 / factor));
         if (Number.isFinite(x1)) planes.push(new THREE.Plane(new THREE.Vector3(-1, 0, 0), x1 / factor));
         if (Number.isFinite(y1)) planes.push(new THREE.Plane(new THREE.Vector3(0, -1, 0), y1 / factor));
+        if (Number.isFinite(y0)) planes.push(new THREE.Plane(new THREE.Vector3(0, 1, 0), -y0 / factor));
         if (!planes.length) return;
         const matrix = new THREE.Matrix4().compose(this.mesh.position, this.mesh.quaternion, new THREE.Vector3(1, 1, 1));
         planes.forEach((plane) => plane.applyMatrix4(matrix));
