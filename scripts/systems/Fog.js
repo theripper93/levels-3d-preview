@@ -8,6 +8,7 @@ import { FogSmoother } from "./fogSmoother.js";
 import { FogRegion, tokensMoving, unionRect } from "./fogRegion.js";
 import { FogMist, volumetricFogEnabled } from "./fogMist.js";
 import { VisionModeMask, visionModeUniforms, VISION_MODE_PARS, VISION_MODE_FRAGMENT } from "./visionModeMask.js";
+import { injectReveal } from "./reveal.js";
 
 const MASK_TEXELS_PER_GRID = 16;
 const WALL_SAMPLE_OFFSET_GRIDS = 0.25;
@@ -262,6 +263,7 @@ function injectFogUniforms(shader, renderer) {
     if (ALBEDO_DECLARATION.test(shader.fragmentShader)) shader.fragmentShader = "#define L3D_VM_ALBEDO diffuseColor.rgb\n" + shader.fragmentShader;
     injectSurface(shader);
     if (shader.vertexShader.includes(PARTICLE_OFFSET_ATTRIBUTE)) injectParticleFoW(shader);
+    injectReveal(shader, this);
 }
 
 export function injectFoWShaders(THREELIB) {

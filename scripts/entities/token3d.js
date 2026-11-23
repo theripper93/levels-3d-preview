@@ -116,6 +116,7 @@ export class Token3D {
         if (this.document.light.bright !== 0 || this.document.light.dim) this.loadLight();
         this._loaded = true;
         await this.initShaders();
+        this._parent.detectionLook?.prewarm(this);
         this.animationHandler.init();
         if (this.particleData.type != "none") this.initParticle();
         const boundingBoxDepth = ((this.baseLosHeight - this.document.elevation) * canvas.scene.dimensions.size) / canvas.dimensions.distance / factor;
@@ -1058,44 +1059,15 @@ export class Token3D {
     }
 
     updateHiden() {
-        if ((!game.user.isGM && this.hidden) || this._ghostLook) return;
-        if (!this.originalMatData) {
-            this.originalMatData = {};
-            this.model.traverse((child) => {
-                if (child.isMesh) {
-                    this.originalMatData[child.material.uuid] = {
-                        transparent: child.material.transparent,
-                        opacity: child.material.opacity,
-                        format: child.material.format,
-                        alphaTest: child.material.alphaTest,
-                        depthWrite: child.material.depthWrite,
-                    };
-                }
-            });
-        }
-        const hidden = this.hidden; // || this.hasClone;
-        if (this._hidden === hidden) return;
-        this._hidden = this.hidden; // || this.hasClone;
-        this.model.traverse((child) => {
-            if (child.isMesh) {
-                if (hidden) {
-                    child.material.transparent = true;
-                    child.material.opacity = 0.5;
-                    child.material.alphaTest = 0;
-                    child.material.depthWrite = false;
-                    child.material.format = THREE.RGBAFormat;
-                    child.material.needsUpdate = true;
-                } else {
-                    const originalData = this.originalMatData[child.material.uuid];
-                    child.material.transparent = originalData.transparent;
-                    child.material.opacity = originalData.opacity;
-                    child.material.alphaTest = originalData.alphaTest;
-                    child.material.depthWrite = originalData.depthWrite;
-                    child.material.format = originalData.format;
-                    child.material.needsUpdate = true;
-                }
-            }
-        });
+        if (!this._loaded || !this.mesh || !this.model) return;
+        const visible = this.alwaysVisible || this.token.visible || this.token.hasPreview;
+        const filter = visible ? this.token.detectionFilter ?? null : null;
+        const invisible = visible && this.document.hasStatusEffect(CONFIG.specialStatusEffects.INVISIBLE);
+        const hidden = visible && game.user.isGM && this.hidden;
+        const look = this._look;
+        if (look && look.filter === filter && look.invisible === invisible && look.hidden === hidden && look.model === this.model) return;
+        this._look = { filter, invisible, hidden, model: this.model };
+        this._parent.detectionLook?.sync(this, filter, invisible, hidden);
     }
 
     drawEffects(firstDraw = false) {
@@ -1515,13 +1487,7 @@ export class Token3D {
         if (!this._loaded || !this.mesh || !this.nameplate) return;
         const visible = this.alwaysVisible || this.token.visible || this.token.hasPreview;
         this.mesh.visible = visible;
-        const detectionFilter = visible ? this.token.detectionFilter ?? null : null;
-        const invisible = visible && this.document.hasStatusEffect(CONFIG.specialStatusEffects.INVISIBLE);
-        if (detectionFilter !== this._detectionFilter || invisible !== this._invisibleLook) {
-            this._detectionFilter = detectionFilter;
-            this._invisibleLook = invisible;
-            this._parent.detectionLook?.sync(this, detectionFilter, invisible);
-        }
+        this.updateHiden();
         this.nameplate.visible = this.token.nameplate?.visible;
         const selfLit = !!this.token.controlled;
         if (selfLit !== this._selfLit) {

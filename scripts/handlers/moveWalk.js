@@ -157,6 +157,13 @@ export function testMoveCollision(origin, destination) {
     return Math.abs(arrival - result.feet) <= cellSize() * (STEP_CELLS + LIFT_CELLS) ? null : hit;
 }
 
+export function walkStep(origin, destination) {
+    const result = walk(posCanvasTo3d(origin), posCanvasTo3d(destination));
+    if (!result.grounded) return null;
+    if (result.blocked !== undefined) return { blocked: true };
+    return { elevation: pos3DToCanvas(new THREE.Vector3(0, result.feet, 0)).elevation };
+}
+
 export function walkGroundElevation(origin, destination) {
     if (!game.Levels3DPreview?._active || !interactionManager()) return null;
     const result = walk(posCanvasTo3d(origin), posCanvasTo3d(destination));

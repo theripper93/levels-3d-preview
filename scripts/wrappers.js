@@ -8,6 +8,7 @@ import { registerFrameRateDisplay } from "./helpers/frameRate.js";
 import { movementFloor } from "./helpers/elevationFloor.js";
 import { testMoveCollision, walkGroundElevation, setMoveAction } from "./handlers/moveWalk.js";
 import { registerAnimationSourceThrottle } from "./handlers/animationSourceThrottle.js";
+import { registerRulerPathfinding } from "./systems/rulerPathfinding.js";
 
 export function registerWrappers() {
     Object.defineProperty(foundry.canvas.placeables.Token.prototype, "object3d", {
@@ -48,6 +49,7 @@ export function registerWrappers() {
         libWrapper.register("levels-3d-preview", "foundry.canvas.placeables.Token.prototype._onDragLeftMove", onDragLeftMove, "MIXED");
         libWrapper.register("levels-3d-preview", "foundry.canvas.placeables.Token.prototype._prepareDragLeftDropUpdates", prepareDragLeftDropUpdates, "WRAPPER");
         libWrapper.register("levels-3d-preview", "foundry.canvas.placeables.Token.prototype._getMovementCollisionTestConfiguration", movementCollisionConfiguration, "WRAPPER");
+        registerRulerPathfinding();
         for (const hook of ["canvasTearDown", "createTile", "updateTile", "deleteTile", "3DCanvasSceneReady", "3DCanvasBakeComplete"]) Hooks.on(hook, clearDragFloor);
         Hooks.on("updateSetting", (setting) => {
             if (setting.key === "levels-3d-preview.preventNegative") clearDragFloor();
@@ -204,13 +206,7 @@ export function registerWrappers() {
             let elevation = cursorElevation;
             if (this !== draggedToken) elevation = this.document._source.elevation + (cursorElevation - draggedToken.document._source.elevation);
             elevation = Math.max(elevation, floor);
-            if (options?.snap) {
-                const interval = canvas.dimensions.distance / (CONFIG.Canvas.elevationSnappingPrecision || 1);
-                elevation = elevation.toNearest(interval);
-            } else {
-                elevation = Math.round(elevation * 100) / 100;
-            }
-            result.elevation = elevation;
+            result.elevation = Math.round(elevation * 10) / 10;
             return result;
         }
 

@@ -41,6 +41,7 @@ import { ClusterManager } from "./lighting/cluster/clusterManager.js";
 import { installClusterChunks } from "./lighting/cluster/clusterChunks.js";
 import { ShadowBatcher } from "./systems/shadowBatcher.js";
 import { KitBatcher } from "./systems/kitBatcher.js";
+import { RevealSystem, installRevealChunks } from "./systems/reveal.js";
 import { Particle3D } from "./systems/particleSystem.js";
 import { defaultTokenAnimations } from "./handlers/tokenAnimationHandler.js";
 import { presetMaterials, PresetMaterialHandler, populateScene } from "./helpers/presetMaterials.js";
@@ -111,6 +112,7 @@ const GEOMETRY_SETTLE_TIMEOUT = 180000;
 
 injectFoWShaders(THREE);
 installClusterChunks(THREE);
+installRevealChunks(THREE);
 vfx.surface.installSurfaceChunks(THREE);
 injectThreeModifications(THREE);
 injectLegacyLights();
@@ -679,6 +681,7 @@ class Levels3DPreview {
         this.renderer.shadowMap.type = game.settings.get("levels-3d-preview", "softShadows") ? THREE.VSMShadowMap : THREE.PCFShadowMap;
         this.shadowBatcher = new ShadowBatcher(this);
         this.kitBatcher = new KitBatcher(this);
+        this.reveal = new RevealSystem(this);
         installFixedSamplers(this.renderer);
 
         this.renderer.debug.checkShaderErrors = true;
@@ -954,6 +957,7 @@ class Levels3DPreview {
         this.outline = new OutlineHandler(this);
         this.detectionLook?.destroy();
         this.detectionLook = new DetectionLook(this);
+        this.detectionLook.warmUp();
         this.initAA();
     }
 
@@ -1580,6 +1584,7 @@ class Levels3DPreview {
             this.shadowBatcher.update();
             this.kitBatcher.update();
             cameraShake.apply(this.camera, delta, this.controls.target);
+            this.reveal.update(delta);
             this.composer.render(time);
             cameraShake.restore(this.camera);
             if (this._firstFrame) {
@@ -1809,6 +1814,7 @@ class Levels3DPreview {
         this.uploadTextures();
         this._settling = true;
         this._ready = true;
+        this.detectionLook.warmUp();
         this._firstFrame = true;
         this.loadingTokens = {};
         this.loadingTiles = {};

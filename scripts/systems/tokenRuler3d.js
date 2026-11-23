@@ -1,11 +1,8 @@
 import * as THREE from "three";
-import { factor } from "../main.js";
 import { posCanvasTo3d, unitsToPixels } from "../helpers/coords3d.js";
 import { RulerPath3D, RulerLabels3D, is3DActive, rulerPixelScale } from "./ruler3d.js";
 
 const tokenRulers = new Set();
-
-const MAX_TERRAIN_SAMPLES = 32;
 
 const PENDING_ALPHA = 0.5;
 const PENDING_DASH = 12;
@@ -163,7 +160,6 @@ export function TokenRuler3DMixin(Base) {
             }
             if (!path3d.attach()) return;
             path3d.visible = this.visible;
-            const terrain = this._useTerrainFollowing();
             for (const { waypoints, searching } of rulerPaths) {
                 if (!waypoints.length) continue;
                 const points = waypoints.map((w) => this._waypointTo3D(w));
@@ -178,7 +174,7 @@ export function TokenRuler3DMixin(Base) {
                     if (waypoint.unreachable) alpha *= 0.35;
                     const pending = waypoint.stage === "pending";
                     if (pending) alpha *= PENDING_ALPHA;
-                    const line = terrain && this._shouldFollowTerrain(waypoint) ? this._sampleTerrain(start, points[i]) : [start, points[i]];
+                    const line = [start, points[i]];
                     const style = { width, color, alpha, pulse: searching && waypoint.stage === "planned" };
                     if (pending) for (const dash of this._dashLine(line, width)) path3d.addLine(dash, style);
                     else path3d.addLine(line, style);
@@ -256,42 +252,6 @@ export function TokenRuler3DMixin(Base) {
             }
             this.#labels3d.hidden = !this.visible;
             this.#labels3d.render(entries, template);
-        }
-
-        _useTerrainFollowing() {
-            try {
-                return !!game.settings.get("levels-3d-preview", "useRaycastRuler") && !!game.Levels3DPreview?.interactionManager?._sightCollisions?.move?.length;
-            } catch {
-                return false;
-            }
-        }
-
-        _shouldFollowTerrain(waypoint) {
-            const actionConfig = waypoint.actionConfig;
-            if (!actionConfig?.visualize || actionConfig.teleport) return false;
-            if (waypoint.action === "fly" || waypoint.action === "burrow") return false;
-            return true;
-        }
-
-        _sampleTerrain(a, b) {
-            const im = game.Levels3DPreview.interactionManager;
-            const cell = canvas.dimensions.size / factor;
-            const horizontal = Math.hypot(b.x - a.x, b.z - a.z);
-            const samples = Math.min(MAX_TERRAIN_SAMPLES, Math.ceil(horizontal / (cell / 2)));
-            if (samples < 2) return [a, b];
-            const above = unitsToPixels(canvas.dimensions.distance * 0.5);
-            const below = unitsToPixels(canvas.dimensions.distance * 2);
-            const top = Math.max(a.y, b.y) + above;
-            const bottom = Math.min(a.y, b.y) - below;
-            const points = [a];
-            for (let i = 1; i < samples; i++) {
-                const p = new THREE.Vector3().lerpVectors(a, b, i / samples);
-                const hit = im.computeSightCollisionFrom3DPositions(new THREE.Vector3(p.x, top, p.z), new THREE.Vector3(p.x, bottom, p.z), "move", false, true);
-                if (hit) p.y = hit.y;
-                points.push(p);
-            }
-            points.push(b);
-            return points;
         }
 
         _clear3D() {

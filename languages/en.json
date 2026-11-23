@@ -531,6 +531,10 @@
                 "label": "Enable Game Camera",
                 "notes": "Uses the game camera in this scene. The game camera must also be turned on in the 3D Canvas settings."
             },
+            "revealTokens": {
+                "label": "Reveal Selected Tokens",
+                "notes": "See through objects that hide your selected tokens from the camera."
+            },
             "model3d": {
                 "label": "3D Model"
             },
@@ -1054,9 +1058,9 @@
                 "name": "Token Drag Ruler",
                 "hint": "Show a token's path and distance while dragging it in 3D. Doesn't affect the Ruler tool."
             },
-            "useRaycastRuler": {
-                "name": "Terrain-Following Token Ruler",
-                "hint": "The ruler follows the 3D terrain between waypoints. This is for display only and doesn't change measured distances. It doesn't apply to flying, burrowing, or teleporting."
+            "rulerPathfinding": {
+                "name": "Ruler Pathfinding",
+                "hint": "On gridded scenes, dragged tokens follow the shortest path around obstacles."
             },
             "resolutionMultiplier": {
                 "name": "Resolution Multiplier",
@@ -2894,7 +2898,8 @@
         "mergeTiles": {
             "title": "Merge Tiles",
             "occlusionGroup": " - Occlusion ID: ",
-            "content": "Merging Tiles is an irreversible action, it's suggested to make a backup of the scene before merging high amounts of tiles.<br>You are about to merge <strong>%count% Tiles</strong>. Selected tiles will be excluded. Are you sure you want to continue?"
+            "content": "Merging Tiles is an irreversible action, it's suggested to make a backup of the scene before merging high amounts of tiles.<br>You are about to merge <strong>%count% Tiles</strong>. Selected tiles will be excluded. Are you sure you want to continue?",
+            "unmergeFailed": "Failed to split the merged tiles. The merged tiles were kept."
         },
         "extrudeWalls": {
             "title": "Extrude Walls",

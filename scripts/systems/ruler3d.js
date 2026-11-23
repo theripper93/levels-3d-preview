@@ -27,14 +27,12 @@ export function rulerPixelScale() {
     return size / 0.002 / factor;
 }
 
-export function get3DCursorElevation(event) {
+export function get3DCursorElevation() {
     const im = game.Levels3DPreview?.interactionManager;
     if (!im || im.isFreeMode || im.forceFree) return undefined;
     const z = im.canvas2dMousePosition?.z;
     if (!Number.isFinite(z)) return undefined;
-    const precision = CONFIG.Canvas.elevationSnappingPrecision || 1;
-    const interval = event?.shiftKey ? 0.01 : canvas.dimensions.distance / precision;
-    return Math.round(z / interval) * interval;
+    return Math.round(z * 10) / 10;
 }
 
 export class RulerPath3D {
@@ -421,13 +419,13 @@ export function Ruler3DMixin(Base) {
         _onDragStart(event) {
             super._onDragStart(event);
             if (!is3DActive()) return;
-            this._set3DElevation(get3DCursorElevation(event), this.path.length);
+            this._set3DElevation(get3DCursorElevation(), this.path.length);
         }
 
         _onMouseMove(event) {
             super._onMouseMove(event);
             if (!is3DActive() || !this.active) return;
-            this._set3DElevation(get3DCursorElevation(event), 1);
+            this._set3DElevation(get3DCursorElevation(), 1);
         }
 
         _addDragWaypoint(point, options) {

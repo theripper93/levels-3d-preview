@@ -87,7 +87,7 @@ class canvas3dConfig extends HandlebarsApplication {
 
     async _prepareContext(options) {
         const data = {};
-        const settingsKeys = ["useRaycastRuler", "enableDragRuler", "paddingAppearance", "pingsound", "lightHelpers", "templateEffects", "templateAuto3D", "enableReticule", "fullTransparency", "outline", "gameCameraWarnings", "gameCameraAutoLock", "gameCameraDefaultGm", "gameCameraClipping", "gameCameraMaxZoom", "gameCameraMinAzimuth", "gameCameraMaxAzimuth", "gameCameraMinAngle", "gameCameraMaxAngle", "enableGameCamera", "rangeFinder", "sharedContext", "rotateIndicator", "navigatorAuto", "showAdvanced", "canpingpan", "canping", "baseStyle", "solidBaseMode", "solidBaseColor", "removeModelBase", "tokenStem", "highlightCombat", "startMarker", "hideTarget", "hideEffects", "autoPan", "flatTokenStyle", "preventNegative", "miniCanvas", "debugMode", "cameralockzero", "allTokens", "autoAssignToken", "assetBrowserCustomPath", "autoApply", "autoClose", "regionsAlwaysFlat", "exactTokenVisibility", "dynamicTokenVisibility"];
+        const settingsKeys = ["rulerPathfinding", "enableDragRuler", "paddingAppearance", "pingsound", "lightHelpers", "templateEffects", "templateAuto3D", "enableReticule", "fullTransparency", "outline", "gameCameraWarnings", "gameCameraAutoLock", "gameCameraDefaultGm", "gameCameraClipping", "gameCameraMaxZoom", "gameCameraMinAzimuth", "gameCameraMaxAzimuth", "gameCameraMinAngle", "gameCameraMaxAngle", "enableGameCamera", "rangeFinder", "sharedContext", "rotateIndicator", "navigatorAuto", "showAdvanced", "canpingpan", "canping", "baseStyle", "solidBaseMode", "solidBaseColor", "removeModelBase", "tokenStem", "highlightCombat", "startMarker", "hideTarget", "hideEffects", "autoPan", "flatTokenStyle", "preventNegative", "miniCanvas", "debugMode", "cameralockzero", "allTokens", "autoAssignToken", "assetBrowserCustomPath", "autoApply", "autoClose", "regionsAlwaysFlat", "exactTokenVisibility", "dynamicTokenVisibility"];
         for (let key of settingsKeys) {
             data[key] = game.settings.get("levels-3d-preview", key);
         }
@@ -303,14 +303,21 @@ export function registerSettings() {
             default: true,
         });
 
-        game.settings.register("levels-3d-preview", "useRaycastRuler", {
+        game.settings.register("levels-3d-preview", "rulerPathfinding", {
+            scope: "world",
+            config: false,
+            type: Boolean,
+            default: true,
+            onChange: () => {
+                canvas?.tokens?.recalculatePlannedMovementPaths?.();
+            },
+        });
+
+        game.settings.register("levels-3d-preview", "rulerPathfindingMigrated", {
             scope: "world",
             config: false,
             type: Boolean,
             default: false,
-            onChange: () => {
-                canvas?.tokens?.placeables.forEach((t) => t.renderFlags.set({ refreshRuler: true }));
-            },
         });
 
         game.settings.register("levels-3d-preview", "enableDragRuler", {

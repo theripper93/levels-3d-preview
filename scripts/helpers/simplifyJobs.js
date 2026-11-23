@@ -32,14 +32,16 @@ export function runCoarseChain({ indices, positions, attributes, stride, weights
     const levels = [];
     const scale = MeshoptSimplifier.getScale(positions, 3);
     let previous = indices.length;
+    let previousError = 0;
     for (const ratio of ratios) {
         const target = Math.floor((indices.length * ratio) / 3) * 3;
         let [result, error] = stride ? MeshoptSimplifier.simplifyWithAttributes(indices, positions, 3, attributes, stride, weights, null, target, 1, []) : MeshoptSimplifier.simplify(indices, positions, 3, target, 1, []);
-        if (result.length > target * 1.5) [result, error] = MeshoptSimplifier.simplifySloppy(indices, positions, 3, null, target, 1);
         if (!result.length || result.length > previous * LOD_STEP) continue;
+        error = Math.max(error, previousError);
         const [remap, unique] = MeshoptSimplifier.compactMesh(result);
         levels.push({ indices: result, remap, unique, error: error * scale });
         previous = result.length;
+        previousError = error;
     }
     return levels;
 }
@@ -116,7 +118,7 @@ export function payloadTransferables(payload) {
     return [...buffers];
 }
 
-const CACHE_VERSION = 1;
+const CACHE_VERSION = 3;
 
 export function cacheKey(payload) {
     let h1 = 0x811c9dc5 ^ CACHE_VERSION;

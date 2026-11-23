@@ -2933,22 +2933,25 @@ export async function autoMergeTiles(tiles = canvas.tiles.placeables, skipContro
     }
 }
 
-export async function unmergeTile(tile) {
+function getUnmergedTileData(tile) {
     const instancesMatrix = tile.flags["levels-3d-preview"].mergedMatrix;
     const newTiles = [];
-    const originalX = tile.x;
-    const originalY = tile.y;
+    const originalX = tile.x - tile.width * (tile.texture.anchorX ?? 0);
+    const originalY = tile.y - tile.height * (tile.texture.anchorY ?? 0);
     const originalZ = tile.elevation;
     for (const instance of instancesMatrix) {
+        const anchorX = instance.anchorX ?? 0;
+        const anchorY = instance.anchorY ?? 0;
         const newTileData = tile.toObject();
+        delete newTileData._id;
         delete newTileData.flags["levels-3d-preview"].mergedMatrix;
         delete newTileData.flags["levels-3d-preview"].originalDimensions;
         newTileData.width = instance.width * factor;
         newTileData.height = instance.height * factor;
-        newTileData.x = (instance.x + instance.width * instance.anchorX) * factor + originalX;
-        newTileData.y = (instance.y + instance.height * instance.anchorY) * factor + originalY;
-        newTileData.texture.anchorX = instance.anchorX;
-        newTileData.texture.anchorY = instance.anchorY;
+        newTileData.x = (instance.x + instance.width * anchorX) * factor + originalX;
+        newTileData.y = (instance.y + instance.height * anchorY) * factor + originalY;
+        newTileData.texture.anchorX = anchorX;
+        newTileData.texture.anchorY = anchorY;
         newTileData.elevation = (instance.z * factor) / (canvas.scene.dimensions.size / canvas.scene.dimensions.distance) + originalZ;
         newTileData.flags["levels-3d-preview"].depth = instance.depth * factor;
         newTileData.flags["levels-3d-preview"].color = instance.color;
@@ -2957,8 +2960,29 @@ export async function unmergeTile(tile) {
         newTileData.flags["levels-3d-preview"].tiltZ = instance.tiltZ;
         newTiles.push(newTileData);
     }
-    await canvas.scene.createEmbeddedDocuments("Tile", newTiles);
-    await tile.delete();
+    return newTiles;
+}
+
+async function unmergeTileDocuments(tileDocuments) {
+    const newTiles = tileDocuments.flatMap(getUnmergedTileData);
+    const created = await canvas.scene.createEmbeddedDocuments("Tile", newTiles);
+    if (created.length !== newTiles.length) {
+        await canvas.scene.deleteEmbeddedDocuments(
+            "Tile",
+            created.map((td) => td.id),
+        );
+        ui.notifications.error(game.i18n.localize("levels3dpreview.mergeTiles.unmergeFailed"));
+        return false;
+    }
+    await canvas.scene.deleteEmbeddedDocuments(
+        "Tile",
+        tileDocuments.map((td) => td.id),
+    );
+    return true;
+}
+
+export async function unmergeTile(tile) {
+    return unmergeTileDocuments([tile]);
 }
 
 export async function unmergeTiles(tiles = canvas.tiles.placeables) {
@@ -2971,13 +2995,7 @@ export async function unmergeTiles(tiles = canvas.tiles.placeables) {
         }
     }
     if (!unmergeTargets.length) return;
-    await unmerge();
-    async function unmerge() {
-        for (const tileDocument of unmergeTargets) {
-            await unmergeTile(tileDocument);
-        }
-        ui.notifications.info(`Unmerged ${unmergeTargets.length} tiles into ${count} tiles`);
-    }
+    if (await unmergeTileDocuments(unmergeTargets)) ui.notifications.info(`Unmerged ${unmergeTargets.length} tiles into ${count} tiles`);
 }
 
 export async function splitToChunks(tileDocument, splitX, splitY) {

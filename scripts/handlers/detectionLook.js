@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { frame } from "../render/frame.js";
 import { DisplayReferredColor } from "../render/outputPass.js";
+import { compileForComposer } from "../render/pipeline.js";
 import { OUTLINE_LAYER, OUTLINE_ORDER, createOutlineMaterials, createProxy, isOutlineSource } from "../render/outlineShell.js";
 
 const DISPLAY_LIMIT = 0.97;
@@ -8,6 +9,7 @@ const FILL_DEPTH = -0.99998;
 const FILL_ALPHA = 0.22;
 const RING_ALPHA = 0.7;
 const GHOST_OPACITY = 0.3;
+const DASH_PERIOD = 14;
 
 const RIM_LAYERS = {
     outline: [
@@ -20,7 +22,13 @@ const RIM_LAYERS = {
         { width: 4.5, opacity: 0.45, boost: 1.15 },
         { width: 8, opacity: 0.18, boost: 1 },
     ],
+    hidden: [
+        { width: 2.5, opacity: 1, boost: 1.1 },
+        { width: 4, opacity: 0.3, boost: 1 },
+    ],
 };
+
+const HIDDEN_STYLE = { kind: "outline", color: new THREE.Color(1, 0.68, 0.25), knockout: false, wave: false, set: "hidden" };
 
 const fillVertexShader = `
 #include <common>
@@ -69,7 +77,11 @@ void main() {
 `;
 
 const GHOST_GLOW = 0.12;
-const GHOST_CHUNK = "#include <alphamap_fragment>\nfloat l3dGhostLum = dot(diffuseColor.rgb, vec3(0.2126, 0.7152, 0.0722));\ndiffuseColor.rgb = mix(diffuseColor.rgb, vec3(l3dGhostLum) * vec3(0.85, 1.0, 1.1), 0.5) * 0.55;";
+const GHOST_CHUNK = "#include <alphamap_fragment>\nfloat l3dGhostLum = dot(diffuseColor.rgb, vec3(0.2126, 0.7152, 0.0722));\ndiffuseColor.rgb = mix(diffuseColor.rgb, vec3(l3dGhostLum) * l3dGhostTint, 0.5) * 0.55;";
+const GHOST_VARIANTS = {
+    invisible: { tint: new THREE.Color(0.85, 1.0, 1.1), opacity: GHOST_OPACITY },
+    hidden: { tint: new THREE.Color(1.1, 0.8, 0.75), opacity: 0.5 },
+};
 const GHOST_GLOW_CHUNK = `#include <emissivemap_fragment>\ntotalEmissiveRadiance += diffuseColor.rgb * ${GHOST_GLOW.toFixed(3)};`;
 
 function createFillMaterial(resolution) {
@@ -102,18 +114,20 @@ function createFillMaterial(resolution) {
     return material;
 }
 
-function createGhostMaterial(material) {
+function createGhostMaterial(material, variant) {
     if (!material) return material;
     const ghost = material.clone();
     const base = material._userOnBeforeCompile;
     const key = material.customProgramCacheKey();
+    const tint = { value: variant.tint };
     ghost.onBeforeCompile = function (shader, renderer) {
         base?.call(this, shader, renderer);
-        shader.fragmentShader = shader.fragmentShader.replace("#include <alphamap_fragment>", GHOST_CHUNK).replace("#include <emissivemap_fragment>", GHOST_GLOW_CHUNK);
+        shader.uniforms.l3dGhostTint = tint;
+        shader.fragmentShader = `uniform vec3 l3dGhostTint;\n${shader.fragmentShader}`.replace("#include <alphamap_fragment>", GHOST_CHUNK).replace("#include <emissivemap_fragment>", GHOST_GLOW_CHUNK);
     };
     ghost.customProgramCacheKey = () => `${key}|l3dGhost`;
     ghost.transparent = true;
-    ghost.opacity = material.opacity * GHOST_OPACITY;
+    ghost.opacity = material.opacity * variant.opacity;
     ghost.alphaTest = 0;
     ghost.depthWrite = false;
     return ghost;
@@ -140,6 +154,8 @@ export class DetectionLook {
         this.sets = {};
         this.entries = new Map();
         this.ghostCache = new Map();
+        this.hiddenCache = new Map();
+        this.prewarmed = new WeakSet();
         this.root = new THREE.Group();
         this.root.matrixAutoUpdate = false;
         this.root.matrixWorldAutoUpdate = false;
@@ -159,37 +175,71 @@ export class DetectionLook {
 
     getSet(name) {
         if (this.sets[name]) return this.sets[name];
-        const layers = RIM_LAYERS[name === "glow" ? "glow" : "outline"];
-        const materials = createOutlineMaterials(this.resolution, layers);
-        const fill = name === "glow" ? null : createFillMaterial(this.resolution);
+        const layers = RIM_LAYERS[name] ?? RIM_LAYERS.outline;
+        const materials = createOutlineMaterials(this.resolution, layers, name === "hidden");
+        const fill = name === "glow" || name === "hidden" ? null : createFillMaterial(this.resolution);
         if (fill) fill.uniforms.detectWave.value = name === "wave" ? 1 : 0;
         return (this.sets[name] = { name, layers, materials, fill });
     }
 
-    sync(token3d, filter, invisible) {
+    sync(token3d, filter, invisible, hidden) {
         const model = token3d.model;
         if (!model) return;
-        const style = filter ? this.styleFor(filter) : null;
+        const style = filter ? this.styleFor(filter) : hidden && !invisible ? HIDDEN_STYLE : null;
         const knockout = !!style?.knockout;
-        const ghost = !knockout && (invisible || style?.kind === "glow");
+        const variant = knockout ? null : invisible || style?.kind === "glow" ? "invisible" : hidden ? "hidden" : null;
         const current = this.entries.get(token3d);
-        if (current && current.style === style && current.knockout === knockout && current.ghost === ghost) return;
+        if (current && current.model === model && current.style === style && current.knockout === knockout && current.variant === variant) return;
         if (current) this.release(token3d);
-        if (!style && !ghost) return;
-        const entry = { token3d, model, style, knockout, ghost, items: [], ghosts: [], colors: [] };
+        if (!style && !variant) return;
+        const entry = { token3d, model, style, knockout, variant, items: [], ghosts: [], colors: [] };
         if (style) this.addProxies(entry);
         if (knockout) model.visible = false;
         token3d._detectedKnockout = knockout;
-        if (ghost) this.applyGhost(entry);
+        if (variant) this.applyGhost(entry);
         this.entries.set(token3d, entry);
         this.parent.camera.layers.enable(OUTLINE_LAYER);
         this.warm(entry);
     }
 
+    prewarm(token3d) {
+        const model = token3d.model;
+        if (!game.user.isGM || !this.parent._ready || !model || this.prewarmed.has(model)) return;
+        this.prewarmed.add(model);
+        const set = this.getSet(HIDDEN_STYLE.set);
+        const looks = [];
+        const proxies = new THREE.Group();
+        model.traverse((mesh) => {
+            if (!mesh.isMesh || mesh.userData?.noOutline) return;
+            looks.push({ mesh, ghost: this.ghostLook(mesh.material, "hidden") });
+            if (isOutlineSource(mesh)) proxies.add(...set.materials.map((material, index) => createProxy(mesh, material, OUTLINE_ORDER + index)));
+        });
+        const target = {
+            traverse: (callback) => {
+                for (const { mesh, ghost } of looks) {
+                    const original = mesh.material;
+                    mesh.material = ghost;
+                    try {
+                        callback(mesh);
+                    } finally {
+                        mesh.material = original;
+                    }
+                }
+                proxies.traverse(callback);
+            },
+            traverseVisible: () => {},
+        };
+        compileForComposer(this.parent, target, this.parent.camera, this.parent.scene);
+    }
+
+    warmUp() {
+        for (const token3d of Object.values(this.parent.tokens)) this.prewarm(token3d);
+    }
+
     warm(entry) {
         const warmup = this.parent.lightWarmup;
         if (!warmup) return;
-        if (entry.ghost) warmup.warmObject(entry.model);
+        if (entry.variant) warmup.warmObject(entry.model);
         if (!entry.items.length) return;
         if (this.root.parent !== this.parent.scene) this.parent.scene.add(this.root);
         warmup.warmObject(this.root);
@@ -201,6 +251,10 @@ export class DetectionLook {
         entry.colors = set.layers.map(() => new THREE.Color());
         entry.fillColor = new THREE.Color();
         entry.ringColor = new THREE.Color();
+        if (set.name === "hidden") {
+            entry.model.updateWorldMatrix(true, true);
+            entry.center = new THREE.Box3().setFromObject(entry.model).getCenter(new THREE.Vector3()).applyMatrix4(entry.model.matrixWorld.clone().invert());
+        }
         const materials = [...set.materials];
         const colors = [null, ...entry.colors];
         if (entry.knockout && set.fill) {
@@ -209,21 +263,26 @@ export class DetectionLook {
         }
         entry.model.traverse((source) => {
             if (!isOutlineSource(source)) return;
-            const proxies = materials.map((material, index) => this.createProxy(source, material, OUTLINE_ORDER + index, colors[index], entry.ringColor));
+            const proxies = materials.map((material, index) => this.createProxy(source, material, OUTLINE_ORDER + index, colors[index], entry));
             entry.items.push({ source, proxies });
             this.root.add(...proxies);
         });
     }
 
-    createProxy(source, material, renderOrder, color, ringColor) {
+    createProxy(source, material, renderOrder, color, entry) {
         const proxy = createProxy(source, material, renderOrder, color);
-        if (material.uniforms.outlineRadius) {
-            const render = proxy.onBeforeRender;
+        const render = proxy.onBeforeRender;
+        if (entry.center) {
+            proxy.onBeforeRender = (...args) => {
+                render(...args);
+                material.uniforms.outlineCenter.value.copy(entry.center).applyMatrix4(entry.model.matrixWorld);
+            };
+        } else if (material.uniforms.outlineRadius) {
             const radius = source.geometry.boundingSphere.radius;
             proxy.onBeforeRender = (...args) => {
                 render(...args);
                 material.uniforms.outlineRadius.value = radius * source.matrixWorld.getMaxScaleOnAxis();
-                material.uniforms.detectRingColor.value.copy(ringColor);
+                material.uniforms.detectRingColor.value.copy(entry.ringColor);
             };
         }
         return proxy;
@@ -233,25 +292,30 @@ export class DetectionLook {
         entry.model.traverse((mesh) => {
             if (!mesh.isMesh || mesh.userData?.noOutline) return;
             const original = mesh.material;
-            const ghost = Array.isArray(original) ? original.map((material) => this.ghostFor(material)) : this.ghostFor(original);
+            const ghost = this.ghostLook(original, entry.variant);
             entry.ghosts.push({ mesh, original, ghost, castShadow: mesh.castShadow });
             mesh.material = ghost;
             mesh.castShadow = false;
         });
-        entry.token3d._ghostLook = true;
     }
 
-    ghostFor(material) {
+    ghostLook(material, name) {
+        return Array.isArray(material) ? material.map((entry) => this.ghostFor(entry, name)) : this.ghostFor(material, name);
+    }
+
+    ghostFor(material, name = "invisible") {
         if (!material) return material;
-        const cached = this.ghostCache.get(material);
+        const variant = GHOST_VARIANTS[name];
+        const cache = name === "hidden" ? this.hiddenCache : this.ghostCache;
+        const cached = cache.get(material);
         if (!cached) {
-            const ghost = createGhostMaterial(material);
-            this.ghostCache.set(material, { ghost });
+            const ghost = createGhostMaterial(material, variant);
+            cache.set(material, { ghost });
             return ghost;
         }
         cached.ghost.map = material.map;
         if (material.color) cached.ghost.color?.copy(material.color);
-        cached.ghost.opacity = material.opacity * GHOST_OPACITY;
+        cached.ghost.opacity = material.opacity * variant.opacity;
         return cached.ghost;
     }
 
@@ -261,9 +325,6 @@ export class DetectionLook {
             mesh.castShadow = castShadow;
         }
         entry.ghosts.length = 0;
-        entry.token3d._ghostLook = false;
-        entry.token3d._hidden = undefined;
-        if (entry.token3d.model) entry.token3d.updateHiden();
     }
 
     release(token3d) {
@@ -273,7 +334,7 @@ export class DetectionLook {
         for (const item of entry.items) for (const proxy of item.proxies) proxy.removeFromParent();
         if (entry.knockout) entry.model.visible = true;
         token3d._detectedKnockout = false;
-        if (entry.ghost) this.removeGhost(entry);
+        if (entry.variant) this.removeGhost(entry);
     }
 
     update() {
@@ -300,6 +361,7 @@ export class DetectionLook {
 
     animateSets() {
         const time = canvas.photosensitiveMode ? 0 : this.time;
+        const dash = DASH_PERIOD * this.parent.renderer.getPixelRatio();
         for (const set of Object.values(this.sets)) {
             const width = set.name === "wave" ? 1 + 0.25 * Math.sin((time * Math.PI * 2) / 1.5) : 1;
             const strength = set.name === "glow" ? 1.25 + 0.75 * Math.sin(time * Math.PI) : 1;
@@ -307,6 +369,7 @@ export class DetectionLook {
                 const uniforms = set.materials[index + 1].uniforms;
                 uniforms.outlineWidth.value = layer.width * width;
                 uniforms.outlineOpacity.value = Math.min(layer.opacity * strength, 1);
+                if (set.name === "hidden") uniforms.outlineDash.value.set(dash, 0);
             });
             if (set.fill) set.fill.uniforms.detectTime.value = time;
         }
@@ -329,11 +392,16 @@ export class DetectionLook {
     }
 
     destroy() {
-        for (const token3d of [...this.entries.keys()]) this.release(token3d);
+        for (const token3d of [...this.entries.keys()]) {
+            this.release(token3d);
+            token3d._look = null;
+        }
         this.root.removeFromParent();
         for (const set of Object.values(this.sets)) for (const material of [...set.materials, set.fill]) material?.dispose();
         for (const { ghost } of this.ghostCache.values()) ghost.dispose();
+        for (const { ghost } of this.hiddenCache.values()) ghost.dispose();
         this.ghostCache.clear();
+        this.hiddenCache.clear();
         this.sets = {};
     }
 }

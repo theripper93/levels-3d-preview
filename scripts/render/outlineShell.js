@@ -15,6 +15,7 @@ uniform vec2 outlineResolution;
 uniform float outlineWidth;
 uniform float outlineDepth;
 uniform vec3 outlineCenter;
+varying vec2 vOutlineCenter;
 
 void main() {
     #include <morphinstance_vertex>
@@ -30,6 +31,7 @@ void main() {
     #include <project_vertex>
     vec2 halfResolution = outlineResolution * 0.5;
     vec4 center = projectionMatrix * viewMatrix * vec4(outlineCenter, 1.0);
+    vOutlineCenter = (center.xy / max(center.w, 1e-4) * 0.5 + 0.5) * outlineResolution;
     vec2 radial = center.w > 0.0 ? (gl_Position.xy / gl_Position.w - center.xy / center.w) * halfResolution : vec2(0.0);
     float radialLength = length(radial);
     radial = radialLength > 1e-4 ? radial / radialLength : vec2(0.0);
@@ -53,10 +55,25 @@ void main() {
 }
 `;
 
-function createMaterial(resolution, { width, depth, opacity, mark }) {
+const dashedFragmentShader = `
+uniform vec3 outlineColor;
+uniform float outlineOpacity;
+uniform vec2 outlineDash;
+varying vec2 vOutlineCenter;
+
+void main() {
+    vec2 offset = gl_FragCoord.xy - vOutlineCenter;
+    float arc = atan(offset.y, offset.x) * length(offset) / outlineDash.x - outlineDash.y;
+    float edge = min(fwidth(arc), 0.25);
+    float dash = 1.0 - smoothstep(0.25 - edge, 0.25 + edge, abs(fract(arc) - 0.5));
+    gl_FragColor = vec4(outlineColor, outlineOpacity * dash);
+}
+`;
+
+function createMaterial(resolution, { width, depth, opacity, mark, dashed }) {
     const material = new THREE.ShaderMaterial({
         vertexShader,
-        fragmentShader,
+        fragmentShader: dashed && !mark ? dashedFragmentShader : fragmentShader,
         uniforms: {
             outlineResolution: resolution,
             outlineWidth: { value: width },
@@ -64,6 +81,7 @@ function createMaterial(resolution, { width, depth, opacity, mark }) {
             outlineCenter: { value: new THREE.Vector3() },
             outlineColor: { value: new THREE.Color() },
             outlineOpacity: { value: opacity },
+            outlineDash: { value: new THREE.Vector2(10, 0) },
         },
         transparent: true,
         forceSinglePass: true,
@@ -80,8 +98,8 @@ function createMaterial(resolution, { width, depth, opacity, mark }) {
     return material;
 }
 
-export function createOutlineMaterials(resolution, layers) {
-    return [createMaterial(resolution, { width: 0, depth: MARK_DEPTH, opacity: 0, mark: true }), ...layers.map((layer) => createMaterial(resolution, { ...layer, depth: RIM_DEPTH, mark: false }))];
+export function createOutlineMaterials(resolution, layers, dashed = false) {
+    return [createMaterial(resolution, { width: 0, depth: MARK_DEPTH, opacity: 0, mark: true }), ...layers.map((layer) => createMaterial(resolution, { ...layer, depth: RIM_DEPTH, mark: false, dashed }))];
 }
 
 export function isOutlineSource(object) {

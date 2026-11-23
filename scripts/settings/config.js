@@ -490,6 +490,12 @@ export function registerConfigs() {
                         notes: flag("enableGameCamera.notes"),
                         default: true,
                     },
+                    revealTokens: {
+                        type: "checkbox",
+                        label: flag("revealTokens.label"),
+                        notes: flag("revealTokens.notes"),
+                        default: true,
+                    },
                     enableFogOfWar: {
                         type: "checkbox",
                         label: flag("enableFogOfWar.label"),
