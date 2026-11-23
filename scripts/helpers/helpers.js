@@ -4,14 +4,12 @@ import { Ruler3D } from "../systems/ruler3d.js";
 import { posCanvasTo3d } from "./coords3d.js";
 import { mergeVertices } from "three/addons/utils/BufferGeometryUtils.js";
 import { setPerformancePreset } from "../settings/performancePresets.js";
-import { SimplifyModifier } from "three/addons/modifiers/SimplifyModifier.js";
+import { simplifierReady, simplifyGeometry as reduceGeometry, simplifyModel } from "./meshSimplify.js";
 import { showSceneReport, showPerformanceDialog } from "../settings/performanceReport.js";
 import { Ping } from "../entities/effects/ping.js";
 import {Socket} from "../lib/socket.js";
 import { mergeMeshes } from "./modelBaker.js";
 import { markFoliage } from "../shaders/wind/windSway.js";
-
-const simplify = new SimplifyModifier();
 
 const sightMeshMaterial = new THREE.MeshBasicMaterial({
     color: 0xffffff,
@@ -232,7 +230,7 @@ export class Helpers {
             }
         });
         if (extension.startsWith("[heroforge]") || modelPath.includes("heroforge")) this.convertMaterials(output.model);
-        this.simplifyGeometry(output.model);
+        await this.simplifyGeometry(output.model, isSkinned || !!output.object?.animations?.length);
         if (isSkinned) return { output, isSkinned: true };
         if (!output?.object?.animations?.length) {
             this.applyTransforms(output.model);
@@ -243,7 +241,7 @@ export class Helpers {
         return { output, isSkinned: false };
     }
 
-    simplifyGeometry(model, tol = 1e-4) {
+    async simplifyGeometry(model, animated = false, tol = 1e-4) {
         let originalVertices = 0;
         let finalVertices = 0;
         model.traverse((child) => {
@@ -256,8 +254,10 @@ export class Helpers {
                 child.updateMatrix();
             }
         });
-
-        console.log(`3D Canvas | Simplified Geometry Vertices: ${originalVertices} -> ${finalVertices}`);
+        await simplifierReady;
+        const start = performance.now();
+        const triangles = animated ? null : await simplifyModel(model);
+        console.log(`3D Canvas | Simplified Geometry Vertices: ${originalVertices} -> ${finalVertices}` + (triangles ? `, Triangles: ${triangles.before} -> ${triangles.after} (${Math.round(performance.now() - start)}ms)` : ""));
     }
 
     applyTransforms(model) {
@@ -295,8 +295,8 @@ export class Helpers {
             sightMesh.traverse((child) => {
                 if (child.isMesh) {
                     originalVerts += child.geometry.attributes.position.count;
-                    //child.geometry = mergeVertices(child.geometry, 0.1 * (1 / complexity));
-                    child.geometry = simplify.modify(child.geometry, Math.floor(child.geometry.attributes.position.count * (1 - complexity)));
+                    const reduced = reduceGeometry(child.geometry.index ? child.geometry : mergeVertices(child.geometry), { ratio: complexity, error: 1, minTriangles: 0, attributes: false });
+                    child.geometry = reduced === child.geometry ? reduced.clone() : reduced;
                     child.material = sightMeshMaterial;
                     child.geometry.computeBoundsTree();
                     finalVerts += child.geometry.attributes.position.count;

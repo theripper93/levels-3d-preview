@@ -3,6 +3,8 @@ import { isAnimatedTile, isInScene, sameMatrix, textureKey } from "./shadowBatch
 import { compileForComposer } from "../render/pipeline.js";
 import { SideSplitter } from "./sideSplitter.js";
 import { setStaticSubtree } from "../three/matrixWorld.js";
+import { BatchPrepass, prepassAllowed, wantsPrepass } from "./batchPrepass.js";
+import { BatchLod } from "./batchLod.js";
 import { windBatchCompile, windSwayParams, windSwayKey, addWindAttributes } from "../shaders/wind/windBatch.js";
 
 const BUILD_DELAY = 500;
@@ -41,6 +43,7 @@ export class KitBatcher {
         this.stale = new Set();
         this.cursor = 0;
         this.splitter = new SideSplitter(this.root);
+        this.lod = new BatchLod(this);
         this.wrapRenderer();
         Hooks.on("3DCanvasScatterGenerated", (field) => {
             this.splitter.invalidate(field.document.id);
@@ -68,11 +71,13 @@ export class KitBatcher {
     clear() {
         this.end();
         for (const batch of this.batches.values()) {
+            batch.prepass?.removeFromParent();
             batch.mesh.removeFromParent();
             batch.mesh.material.dispose();
             batch.mesh.dispose();
         }
         for (const record of this.records.values()) setStaticSubtree(record.mesh, false);
+        this.lod.clear();
         this.batches.clear();
         this.records.clear();
         this.pending.clear();
@@ -114,9 +119,13 @@ export class KitBatcher {
         if (camera.parent === null && camera.matrixWorldAutoUpdate) camera.updateMatrixWorld();
         _frustum.setFromProjectionMatrix(_projection.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse), camera.coordinateSystem, camera.reversedDepth);
         const mask = camera.layers.mask;
+        const prepassEnabled = prepassAllowed(this._parent.renderer);
         for (const batch of this.batches.values()) {
             batch.ready = this.isReady(batch);
             batch.mesh.layers.mask = mask;
+            const prepass = prepassEnabled && wantsPrepass(batch);
+            if (prepass && !batch.prepass) this.root.add((batch.prepass = new BatchPrepass(batch.mesh)));
+            if (batch.prepass) batch.prepass.active = prepass;
         }
         for (const record of this.shownList) record.shown = isInScene(record.mesh, scene);
         const sources = this.sources;
@@ -132,6 +141,7 @@ export class KitBatcher {
             source.wasVisible = object.visible;
             if (source.ready) object.visible = false;
             if (!moved && visible === source.visible && count === source.count) continue;
+            this.lod.dirty = true;
             source.visible = visible;
             source.count = count;
             for (const entry of source.entries) {
@@ -144,6 +154,7 @@ export class KitBatcher {
             }
         }
         for (const batch of this.batches.values()) batch.mesh.visible = batch.ready && batch.shown > 0;
+        this.lod.update(sources, camera, this._parent.renderer);
         this.splitter.begin(scene);
         scene.add(this.root);
     }
@@ -212,7 +223,8 @@ export class KitBatcher {
             changed = true;
         }
         if (changed) this.updateActive();
-        if (!this.pending.size) for (const batch of this.batches.values()) if (batch.grown) this.trim(batch);
+        if (!this.pending.size) this.lod.flush();
+        if (!this.pending.size && !this.lod.busy) for (const batch of this.batches.values()) if (batch.grown) this.trim(batch);
     }
 
     updateActive() {
@@ -341,6 +353,7 @@ export class KitBatcher {
                 if (entry.on) entry.batch.shown--;
                 mesh.deleteInstance(entry.id);
                 if (--entry.geometry.refs) continue;
+                this.lod.detach(entry.geometry);
                 mesh.deleteGeometry(entry.geometry.id);
                 entry.batch.geometries.delete(entry.geometry.key);
             }
@@ -381,6 +394,7 @@ export class KitBatcher {
         if (wind) addWindAttributes(geometry, wind);
         const entry = { key, id: this.addGeometry(batch, geometry), refs: 0 };
         batch.geometries.set(key, entry);
+        this.lod.attach(batch, entry, geometry);
         return entry;
     }
 
@@ -397,6 +411,16 @@ export class KitBatcher {
         const id = mesh.addGeometry(geometry);
         batch.grown = true;
         return id;
+    }
+
+    reserve(batch, vertices, indices) {
+        const mesh = batch.mesh;
+        if (mesh.unusedVertexCount >= vertices && mesh.unusedIndexCount >= indices) return;
+        mesh.optimize();
+        if (mesh.unusedVertexCount >= vertices && mesh.unusedIndexCount >= indices) return;
+        batch.vertices = batch.vertices - mesh.unusedVertexCount + vertices;
+        batch.indices = batch.indices - mesh.unusedIndexCount + indices;
+        mesh.setGeometrySize(batch.vertices, batch.indices);
     }
 
     addInstance(batch, geometryId) {

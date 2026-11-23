@@ -7,6 +7,7 @@ module.exports = {
         index: "./scripts/main.js",
         raycastWorker: "./scripts/helpers/raycastWorker.js",
         terrainWorker: "./scripts/helpers/terrainWorker.js",
+        simplifyWorker: "./scripts/helpers/simplifyWorker.js",
     },
     output: {
         filename: "[name].js",

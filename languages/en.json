@@ -22,7 +22,8 @@
                 "env": "Creating 3D Environment...",
                 "gravity": "Computing Gravity...",
                 "scatter": "Placing Scatter and Furniture...",
-                "shaders": "Compiling Shaders..."
+                "shaders": "Compiling Shaders...",
+                "optimize": "Optimizing Geometry..."
             },
             "loadingScreen": {
                 "navtools": "Scene Navigation tools (left of ",

@@ -2,7 +2,8 @@ import { ShaderChunk } from "three";
 import { EFFECT_SLOTS, DATA_WIDTH, RECORD_TEXELS } from "./clusterManager.js";
 
 const MULTI_SCATTERING_GUARD = "#if ( NUM_SUN_LIGHTS > 0 || NUM_DIR_LIGHTS > 0 || NUM_POINT_LIGHTS > 0 || NUM_SPOT_LIGHTS > 0 )";
-const SAMPLER_LIMIT_PATTERN = /#define L3D_MAX_SAMPLERS \d+/;
+const SHADOW_TEST = /directLight\.color \*= \( directLight\.visible && receiveShadow \) \? (get(?:Point)?Shadow\([^;]*?\)) : 1\.0;/g;
+const SAMPLER_LIMIT_PATTERN =/#define L3D_MAX_SAMPLERS \d+/;
 const FOW_SAMPLERS = 2;
 const SOFT_CLIP = "2.0";
 const MASK_FLOOR = "0.04";
@@ -159,6 +160,7 @@ export function setClusterSamplerLimit(limit) {
 export function installClusterChunks(THREELIB) {
     const chunks = THREELIB.ShaderChunk;
     if (!chunks.lights_fragment_begin.includes(MULTI_SCATTERING_GUARD)) console.warn("3D Canvas | Clustered lights could not patch multi-scattering compensation");
-    chunks.lights_fragment_begin = chunks.lights_fragment_begin.replace(MULTI_SCATTERING_GUARD, `#if !defined( L3D_NO_CLUSTER ) || ${MULTI_SCATTERING_GUARD.slice(4)}`) + clusterFragmentChunk();
+    chunks.lights_fragment_begin =
+        chunks.lights_fragment_begin.replace(MULTI_SCATTERING_GUARD, `#if !defined( L3D_NO_CLUSTER ) || ${MULTI_SCATTERING_GUARD.slice(4)}`).replace(SHADOW_TEST, "if ( directLight.visible && receiveShadow && directLight.color != vec3( 0.0 ) ) directLight.color *= $1;") + clusterFragmentChunk();
     chunks.lights_pars_begin += clusterParsChunk();
 }

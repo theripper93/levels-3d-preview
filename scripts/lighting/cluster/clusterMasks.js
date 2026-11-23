@@ -2,6 +2,7 @@ import { Vector3 } from "three";
 import { MaskAtlas, MIN_BLOCK } from "./masks/maskAtlas.js";
 import { MaskRasterizer } from "./masks/maskRaster.js";
 import { TileOcclusion } from "./masks/tileOcclusion.js";
+import { summarizeMask } from "./masks/maskCoverage.js";
 import { BASE_SQUARES, CONTACT_SQUARES, HANG_SQUARES, PROP_MAX_SQUARES, PROP_PAD_SQUARES, REACH_SQUARES, SPAN_SQUARES, WALL_SQUARES } from "./masks/selfOcclusion.js";
 import { refreshWorldMatrix } from "../../three/matrixWorld.js";
 
@@ -115,6 +116,7 @@ export class ClusterMasks {
         if (entry.light.mask) {
             entry.light.mask = null;
             this.manager.markRecordsDirty();
+            this.manager.markGridDirty();
         }
     }
 
@@ -284,6 +286,7 @@ export class ClusterMasks {
             if (entry.center) this.rasterQueue.add(entry);
         }
         this.manager.markRecordsDirty();
+        this.manager.markGridDirty();
         return true;
     }
 
@@ -301,6 +304,7 @@ export class ClusterMasks {
                 if (!entry.block) {
                     if (!this.shrink()) {
                         entry.light.mask = null;
+                        this.manager.markGridDirty();
                         this.manager.warnOnce?.("maskAtlas", "3D Canvas | Light mask atlas is full, some lights are unmasked");
                         continue;
                     }
@@ -317,10 +321,13 @@ export class ClusterMasks {
                 tiles: this.useTiles ? (entry.tiles ?? null) : null,
             });
             this.atlas.upload(renderer, entry.block, data);
-            entry.light.mask = { rect: this.atlas.rect(entry.block), center: [entry.center[0], entry.center[1], entry.half] };
+            entry.light.mask = { rect: this.atlas.rect(entry.block), center: [entry.center[0], entry.center[1], entry.half], coverage: summarizeMask(data, size) };
             count++;
         }
-        if (count) this.manager.markRecordsDirty();
+        if (count) {
+            this.manager.markRecordsDirty();
+            this.manager.markGridDirty();
+        }
         this.stats.rasters += count;
         this.stats.lastFrameRasters = count;
         this.stats.lastFrameUploads = this.atlas.uploads - uploads;

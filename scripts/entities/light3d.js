@@ -5,6 +5,7 @@ import { flameSeed, flameTime, setLightFlicker } from "../vfx/light/noise.js";
 import { getLightAnimation, sampleColor, sampleIntensity, sampleRadius, sampleRevolve } from "../vfx/light/animations.js";
 import { LightEffects } from "../vfx/light/lightEffects.js";
 import { ClusterLight } from "../lighting/cluster/clusterLight.js";
+import { setStaticSubtree } from "../three/matrixWorld.js";
 
 const LIGHT_SHADOW_RADIUS = 3;
 const MIN_BRIGHT_RATIO = 0.25;
@@ -38,6 +39,11 @@ export class Light3D {
             this._parent.scene.add(this.mesh);
             if (game.user.isGM) this.createHandle();
         }
+        this.updateStaticSubtree();
+    }
+
+    updateStaticSubtree() {
+        if (!this.isToken) setStaticSubtree(this.mesh, !this.lightFx?.shaft);
     }
 
     wantsShadow(light) {
@@ -277,6 +283,7 @@ export class Light3D {
             });
         }
         if (particleChanged && enableParticle) this.initParticle();
+        this.updateStaticSubtree();
     }
 
     static brightRatio(dim, bright) {

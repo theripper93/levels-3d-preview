@@ -275,7 +275,7 @@ async function buildKitMesh(data, unitScale, { shareMaterials = false } = {}) {
                 if (!["position", "normal", "uv", "color", "tangent"].includes(name)) geo.deleteAttribute(name);
             }
             geo.morphAttributes = {};
-            if (geo.index) geo = geo.toNonIndexed();
+            if (geo.index && part.clip) geo = geo.toNonIndexed();
             const uvt = part.uv?.[piece.material.name];
             if (uvt && geo.attributes.uv) {
                 const uv = geo.attributes.uv;
@@ -287,6 +287,7 @@ async function buildKitMesh(data, unitScale, { shareMaterials = false } = {}) {
                 geo = clipToBox(geo, part.clip.map((v) => v * unitScale));
                 if (!geo) continue;
             }
+            if (!geo.index) geo.setIndex(identityIndex(geo.attributes.position.count));
             const key = `${piece.material.uuid}|${part.c ?? ""}|${part.g ?? ""}|${Object.keys(geo.attributes).sort().join(",")}`;
             let bucket = buckets.get(key);
             if (!bucket) buckets.set(key, (bucket = { material: piece.material, tint: part.c, glow: part.g, geos: [] }));
@@ -385,7 +386,23 @@ function clipToBox(geo, box) {
     return res;
 }
 
+function identityIndex(count) {
+    const array = count > 65535 ? new Uint32Array(count) : new Uint16Array(count);
+    for (let i = 0; i < count; i++) array[i] = i;
+    return new THREE.BufferAttribute(array, 1);
+}
+
 function flipWinding(geo) {
+    if (geo.index) {
+        const a = geo.index.array;
+        for (let i = 0; i + 2 < geo.index.count; i += 3) {
+            const t = a[i + 1];
+            a[i + 1] = a[i + 2];
+            a[i + 2] = t;
+        }
+        geo.index.needsUpdate = true;
+        return;
+    }
     for (const attr of Object.values(geo.attributes)) {
         const a = attr.array;
         const s = attr.itemSize;

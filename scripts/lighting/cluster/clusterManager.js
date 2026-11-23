@@ -1,6 +1,7 @@
 import { DataTexture, RGBAFormat, FloatType, LinearFilter, Vector2 } from "three";
 import { punctualToPhysical } from "../../three/legacyLights.js";
 import { ClusterMasks } from "./clusterMasks.js";
+import { maskReaches } from "./masks/maskCoverage.js";
 import { ClusterLight } from "./clusterLight.js";
 import { setClusterSamplerLimit } from "./clusterChunks.js";
 import { factor } from "../../main.js";
@@ -344,20 +345,38 @@ export class ClusterManager {
         }
     }
 
+    updateCells(light, state) {
+        const mask = light.mask ?? null;
+        const grid = this.grid;
+        const cache = state.cellCache;
+        if (cache && cache.mask === mask && cache.x === state.binX && cache.z === state.binZ && cache.radius === state.binRadius && cache.grid === grid.key) return;
+        const { width, cell, originX, originZ } = grid;
+        const cells = [];
+        this.forEachCell(state, (index) => {
+            const cx = index % width;
+            const minX = originX + cx * cell;
+            const minZ = originZ + ((index - cx) / width) * cell;
+            if (maskReaches(mask, minX, minX + cell, minZ, minZ + cell)) cells.push(index);
+        });
+        state.cells = cells;
+        state.cellCache = { mask, x: state.binX, z: state.binZ, radius: state.binRadius, grid: grid.key };
+    }
+
     rebuildGrid() {
         this._gridDirty = false;
         if (!this.configureGrid()) return;
         const { width, height, counts } = this.grid;
         const binned = [];
-        for (const state of this.states.values()) {
+        for (const [light, state] of this.states) {
             if (!state.binned) continue;
             state.binX = state.x;
             state.binZ = state.z;
             state.binRadius = state.peakRadius * BIN_MARGIN;
+            this.updateCells(light, state);
             binned.push(state);
         }
         counts.fill(0);
-        for (const state of binned) this.forEachCell(state, (index) => counts[index]++);
+        for (const state of binned) for (const index of state.cells) counts[index]++;
         let total = 0;
         for (let i = 0; i < counts.length; i++) total += counts[i];
         const listBase = this.gridBase + Math.ceil(counts.length / 2);
@@ -373,12 +392,11 @@ export class ClusterManager {
         }
         const listStart = listBase * 4;
         for (const state of binned) {
-            this.forEachCell(state, (index) => {
+            for (const index of state.cells) {
                 const filled = data[headerStart + index * 2 + 1];
-                if (filled >= counts[index]) return;
                 data[listStart + data[headerStart + index * 2] + filled] = state.slot;
                 data[headerStart + index * 2 + 1] = filled + 1;
-            });
+            }
         }
         this.uploadRows(this.gridBase / DATA_WIDTH, endRow);
         clusterUniforms.uClusterLayout.value.set(this.gridBase, listBase);

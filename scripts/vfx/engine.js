@@ -8,6 +8,14 @@ import { ParticleSystem } from "./base/quarks.js";
 
 const vfxCache = {};
 const activeLights = new Set();
+const CULL_STEP = 0.1;
+const CULL_MEASURE = 0.5;
+const CULL_VIEW_MARGIN = 0.3;
+const _frustum = new THREE.Frustum();
+const _projection = new THREE.Matrix4();
+const _sphere = new THREE.Sphere();
+const _center = new THREE.Vector3();
+const _particle = new THREE.Vector3();
 
 const WARM_MODES = [QUARKS.RenderMode.BillBoard, QUARKS.RenderMode.StretchedBillBoard, QUARKS.RenderMode.HorizontalBillBoard];
 const WARM_TILES = [
@@ -128,6 +136,7 @@ export class ParticleEngine {
         if (delta > 500) return;
         if (this.pendingTextures.length) this.pendingTextures.splice(0).forEach((texture) => this._parent.renderer.initTexture(texture));
         if (this.system) {
+            this.cullEffects(delta);
             this.system.update(delta);
             this.effects.forEach((effect) => {
                 effect.tick(delta);
@@ -139,6 +148,72 @@ export class ParticleEngine {
                 this.cleanUpEffect(effect);
             });
         }
+    }
+
+    cullEffects(delta) {
+        const camera = this._parent.camera;
+        if (!camera) return;
+        _frustum.setFromProjectionMatrix(_projection.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse), camera.coordinateSystem, camera.reversedDepth);
+        const grid = canvas.grid.size / this._parent.factor;
+        for (const effect of this.effects) {
+            if (effect._duration !== Infinity || !effect.emitter) continue;
+            const culling = (effect._culling ??= { radius: grid, hidden: false, pending: 0, age: Infinity });
+            _sphere.center.setFromMatrixPosition(effect.emitter.matrixWorld);
+            _sphere.radius = culling.radius + grid + camera.position.distanceTo(_sphere.center) * CULL_VIEW_MARGIN;
+            if (_frustum.intersectsSphere(_sphere)) {
+                if (culling.hidden) this.revealEffect(effect, culling);
+                culling.age += delta;
+                if (culling.age >= CULL_MEASURE) this.measureEffect(effect, culling);
+                continue;
+            }
+            if (!culling.hidden) {
+                culling.hidden = true;
+                culling.pending = 0;
+                for (const system of effect.particleSystems) {
+                    system.paused = true;
+                    system.emitter.visible = false;
+                }
+            }
+            culling.pending += delta;
+            if (culling.pending >= CULL_STEP) this.stepHiddenEffect(effect, culling);
+        }
+    }
+
+    stepHiddenEffect(effect, culling) {
+        const pending = culling.pending;
+        culling.pending = 0;
+        if (!(pending > 0)) return;
+        for (const system of effect.particleSystems) {
+            system.paused = false;
+            system.update(pending);
+            system.paused = true;
+        }
+        this.measureEffect(effect, culling);
+    }
+
+    revealEffect(effect, culling) {
+        this.stepHiddenEffect(effect, culling);
+        culling.hidden = false;
+        for (const system of effect.particleSystems) {
+            system.paused = false;
+            system.emitter.visible = true;
+        }
+    }
+
+    measureEffect(effect, culling) {
+        culling.age = 0;
+        _center.setFromMatrixPosition(effect.emitter.matrixWorld);
+        let radius = culling.radius;
+        for (const system of effect.particleSystems) {
+            const matrix = system.emitter.matrixWorld;
+            for (let i = 0; i < system.particleNum; i++) {
+                const particle = system.particles[i];
+                _particle.copy(particle.position);
+                if (!system.worldSpace) _particle.applyMatrix4(matrix);
+                radius = Math.max(radius, _particle.distanceTo(_center) + Math.max(particle.size.x, particle.size.y, particle.size.z));
+            }
+        }
+        culling.radius = radius;
     }
 
     stop(id) {
@@ -169,6 +244,7 @@ export class ParticleEngine {
             s.duration = 0;
             s.markForDestroy = true;
             s.paused = false;
+            s.emitter.visible = true;
         });
         effect.releaseLights();
         if (force) {

@@ -59,6 +59,7 @@ export class MiniCanvas extends HandlebarsApplication {
         board.style.height = "100%";
         board.style.display = "block";
         canvas.stage.renderable = true;
+        game.Levels3DPreview.syncCoreLightAnimation();
     }
 
     resize() {
@@ -75,6 +76,7 @@ export class MiniCanvas extends HandlebarsApplication {
         if (game.Levels3DPreview._active) {
             document.getElementById("board").style.display = "none";
             canvas.stage.renderable = false;
+            game.Levels3DPreview.syncCoreLightAnimation();
         }
         super.close();
         this.updateControls(false);

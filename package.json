@@ -23,6 +23,7 @@
     "vendor": "node -e \"['index.mjs','xatlas.wasm'].forEach(f=>require('fs').copyFileSync('node_modules/xatlas-wasm/dist/'+f,'scripts/lib/xatlas/'+f))\""
   },
   "dependencies": {
+    "meshoptimizer": "^1.3.0",
     "three": "^0.187.0",
     "three-mesh-bvh": "^0.9.1",
     "three.quarks": "^0.17.1",

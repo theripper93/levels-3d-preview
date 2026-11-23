@@ -32,6 +32,7 @@ export function registerWrappers() {
         libWrapper.register("levels-3d-preview", "foundry.documents.collections.Scenes.prototype.preload", preload3D, "WRAPPER");
         libWrapper.register("levels-3d-preview", "foundry.canvas.sources.PointLightSource.prototype._updateGeometry", lightGeometry, "MIXED");
         libWrapper.register("levels-3d-preview", "foundry.canvas.sources.PointVisionSource.prototype._updateGeometry", lightGeometry, "MIXED");
+        libWrapper.register("levels-3d-preview", "foundry.canvas.groups.EffectsCanvasGroup.prototype.activateAnimation", activateLightAnimation, "MIXED");
         registerAnimationSourceThrottle();
         libWrapper.register("levels-3d-preview", "canvas.app.renderer.events.pointer.getLocalPosition", pointerPositionWrapper, "MIXED");
         libWrapper.register("levels-3d-preview", "foundry.canvas.layers.ControlsLayer.prototype.handlePing", HandlePing, "WRAPPER");
@@ -474,6 +475,11 @@ export function registerWrappers() {
             const bounds = new PIXI.Rectangle(-1, -1, 2, 2);
             if (this._geometry.bounds) this._geometry.bounds.copyFrom(bounds);
             else this._geometry.bounds = bounds;
+        }
+
+        function activateLightAnimation(wrapped, ...args) {
+            if (!game.Levels3DPreview?._active || canvas.stage.renderable) return wrapped(...args);
+            this.deactivateAnimation();
         }
 
         async function preload3D(wrapped, ...args) {

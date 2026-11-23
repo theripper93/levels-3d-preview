@@ -25,6 +25,7 @@ import { GlobalIllumination, isDynamicSkyEnabled } from "./systems/globalIllumin
 import { InteractionManager, dropFunctions } from "./handlers/interactionManager.js";
 import initTemplateEffects from "./shaders/templateEffects.js";
 import { Helpers } from "./helpers/helpers.js";
+import { simplifyJobs } from "./helpers/meshSimplify.js";
 import { WeatherSystem } from "./systems/weatherSystem.js";
 import { EXRLoader } from "three/addons/loaders/EXRLoader.js";
 import { compileForComposer, createComposer, createHdrPasses } from "./render/pipeline.js";
@@ -106,6 +107,7 @@ export const MODULE_ID = "levels-3d-preview";
 const SCATTER_LOAD_TIMEOUT = 20000;
 const SETTLE_TIMEOUT = 10000;
 const SETTLE_QUIET_FRAMES = 3;
+const GEOMETRY_SETTLE_TIMEOUT = 180000;
 
 injectFoWShaders(THREE);
 installClusterChunks(THREE);
@@ -1830,11 +1832,14 @@ class Levels3DPreview {
         const start = performance.now();
         let programs = -1;
         let quiet = 0;
-        while (performance.now() - start < SETTLE_TIMEOUT) {
+        while (true) {
             await new Promise((resolve) => requestAnimationFrame(resolve));
             if (this._builtSceneId !== sceneId || !this._active) return;
+            const optimizing = this.kitBatcher.lod.busy;
+            if (optimizing) this.setProgressBar(game.i18n.localize("levels3dpreview.controls.loading.optimize"), Math.round((100 * simplifyJobs.completed) / Math.max(1, simplifyJobs.submitted)));
+            if (performance.now() - start >= (optimizing ? GEOMETRY_SETTLE_TIMEOUT : SETTLE_TIMEOUT)) return;
             const count = this.renderer.info.programs.length;
-            quiet = count === programs && this._isSettled() ? quiet + 1 : 0;
+            quiet = count === programs && !optimizing && this._isSettled() ? quiet + 1 : 0;
             programs = count;
             if (quiet >= SETTLE_QUIET_FRAMES) return;
         }
@@ -1939,6 +1944,14 @@ class Levels3DPreview {
                 canvas.stage.renderable = false;
             }
         }
+        this.syncCoreLightAnimation();
+    }
+
+    syncCoreLightAnimation() {
+        const effects = canvas.effects;
+        if (!effects?.activateAnimation) return;
+        if (this._active && !canvas.stage.renderable) effects.deactivateAnimation();
+        else effects.activateAnimation();
     }
 
     close() {
@@ -1957,6 +1970,7 @@ class Levels3DPreview {
         document.querySelector("#board").style.display = "unset";
         document.querySelector("#board").style.opacity = 1;
         canvas.stage.renderable = true;
+        this.syncCoreLightAnimation();
         this.clear3Dscene();
         this.weather?.destroy();
         this.weather = null;
