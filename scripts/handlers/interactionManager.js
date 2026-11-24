@@ -1923,12 +1923,13 @@ export const dropFunctions = {
         if (useSnapped) {
             snapped = canvas.grid.getSnappedPoint({x: data.x, y: data.y}, {mode: CONST.GRID_SNAPPING_MODES.TOP_LEFT_CORNER});
         }
+        const minSide = Math.max(1, Math.round(canvas.grid.size / 10));
         return await canvas.scene.createEmbeddedDocuments("Tile", [
             {
                 x: Math.round(snapped ? snapped.x : data.x),
                 y: Math.round(snapped ? snapped.y : data.y),
-                width: Math.round(width),
-                height: Math.round(height),
+                width: Math.max(Math.round(width), minSide),
+                height: Math.max(Math.round(height), minSide),
                 elevation: data.elevation,
                 texture: { src: "modules/levels-3d-preview/assets/blank.webp" },
                 flags: data.flags,

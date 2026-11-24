@@ -5,6 +5,7 @@ import { RULER_TOKEN_OFFSET } from "../helpers/coords3d.js";
 import { LineSegments2 } from "three/addons/lines/LineSegments2.js";
 import { LineSegmentsGeometry } from "three/addons/lines/LineSegmentsGeometry.js";
 import { LineMaterial } from "three/addons/lines/LineMaterial.js";
+import { compileForComposer } from "../render/pipeline.js";
 
 export { RULER_TOKEN_OFFSET };
 
@@ -159,6 +160,18 @@ function inertObject(object) {
 }
 
 const emptyLineGeometry = new LineSegmentsGeometry();
+
+export function warmRulerMaterials(parent) {
+    const lines = new RulerPath3D("ruler-warmup");
+    const a = new THREE.Vector3(0, -1e5, 0);
+    const b = new THREE.Vector3(1, -1e5, 0);
+    const outline = { thickness: 1, color: 0x000000 };
+    for (const dashed of [false, true]) lines.addSegment(a, b, { width: 1, outline, dashed, outlineDashed: dashed });
+    lines.addWaypoint(a, { radius: 1, outline });
+    lines.build();
+    compileForComposer(parent, lines.group, parent.camera, parent.scene);
+    lines.destroy();
+}
 
 export class RulerPath3D {
     constructor(name) {

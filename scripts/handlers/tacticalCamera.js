@@ -82,7 +82,12 @@ export class TacticalCamera {
     }
 
     get preferred() {
-        return game.settings.get(MODULE_ID, "tacticalCamera");
+        return (this._preferred ??= game.settings.get(MODULE_ID, "tacticalCamera"));
+    }
+
+    onPreferredChange(value) {
+        this._preferred = value;
+        this.refreshButton();
     }
 
     get active() {

@@ -103,7 +103,7 @@ export class AssetPlacementPreview {
     }
 
     get sources() {
-        return [...(this.browser.element?.querySelectorAll("li.selected") ?? [])].map((li) => li.dataset.output);
+        return this.browser.selectedSources();
     }
 
     get active() {
@@ -511,8 +511,7 @@ export class AssetPlacementPreview {
     }
 
     cancel() {
-        this.browser.element?.querySelectorAll("li.selected").forEach((li) => li.classList.remove("selected"));
-        this.refresh();
+        this.browser.clearSelection();
     }
 
     hide() {

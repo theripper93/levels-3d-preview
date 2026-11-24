@@ -27,7 +27,38 @@
             "lockNone": "Select one or more tiles to lock or unlock.",
             "locked": "Tiles locked.",
             "unlocked": "Tiles unlocked.",
-            "tour": "Tour"
+            "tour": "Tour",
+            "advanced": "Advanced filters",
+            "packs": "Asset pack",
+            "allPacks": "All packs",
+            "favorite": "Favorite",
+            "randomVariant": "Random variant",
+            "categories": {
+                "all": "All",
+                "recent": "Recent",
+                "favorites": "Favorites",
+                "buildings": "Buildings & kit pieces",
+                "furniture": "Furniture",
+                "storage": "Storage & containers",
+                "lighting": "Lighting",
+                "tableware": "Tableware & food",
+                "items": "Weapons & items",
+                "decor": "Decor & clutter",
+                "dungeon": "Dungeon dressing",
+                "trees": "Trees & plants",
+                "rocks": "Rocks",
+                "creatures": "Creatures",
+                "vehicles": "Vehicles & ships",
+                "billboards": "Billboards"
+            },
+            "styles": {
+                "fantasy": "Fantasy",
+                "toy": "Toy",
+                "scifi": "Sci-Fi",
+                "modern": "Modern",
+                "nature": "Nature",
+                "other": "Other"
+            }
         },
         "quickScene": {
             "label": "Quick 3D Scene",

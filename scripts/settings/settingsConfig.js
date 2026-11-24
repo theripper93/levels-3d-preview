@@ -205,7 +205,7 @@ export function registerSettings() {
             config: false,
             type: Boolean,
             default: true,
-            onChange: () => game.Levels3DPreview?.tacticalCamera?.refreshButton(),
+            onChange: (value) => game.Levels3DPreview?.tacticalCamera?.onPreferredChange(value),
         });
 
         game.settings.register("levels-3d-preview", "gameCameraRemoved", {
@@ -631,6 +631,13 @@ export function registerSettings() {
             config: false,
             type: Boolean,
             default: false,
+        });
+
+        game.settings.register("levels-3d-preview", "assetBrowserMemory", {
+            scope: "client",
+            config: false,
+            type: Object,
+            default: {},
         });
 
         game.settings.register("levels-3d-preview", "autoApply", {

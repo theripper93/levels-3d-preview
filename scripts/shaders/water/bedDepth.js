@@ -2,6 +2,7 @@ import * as THREE from "three";
 import { factor } from "../../main.js";
 import { collectSurfaces, renderTopDown, topDownCamera } from "../../helpers/topDownRender.js";
 import { clearLavaLights, syncLavaLights } from "./lavaLights.js";
+import { affectsSurface, changedRect, trackTileRects } from "../../helpers/tileChange.js";
 
 const DEEP = 50;
 const MAX_SHORE = 20;
@@ -51,11 +52,39 @@ function gridUnit() {
 function initHooks() {
     if (hooksReady) return;
     hooksReady = true;
-    for (const hook of ["createTile", "updateTile", "deleteTile"]) Hooks.on(hook, () => refreshWaterBeds());
+    trackTileRects();
+    Hooks.on("createTile", (doc) => refreshNear(doc));
+    Hooks.on("updateTile", (doc, changes) => affectsSurface(changes) && refreshNear(doc));
+    Hooks.on("deleteTile", (doc) => refreshNear(doc));
     Hooks.on("3DCanvasSceneReady", (L, options) => !options?.levelSwitch && renderAll());
 }
 
-export const refreshWaterBeds = foundry.utils.debounce(renderAll, 500);
+function refreshNear(doc) {
+    if (doc.parent !== canvas.scene) return;
+    const rect = changedRect(doc, canvas.scene.grid.size);
+    for (const state of states.values()) if ((state.entity3D?.document?.id ?? state.entity3D?.id) === doc.id) state.localKey = null;
+    for (const state of states.values()) if (!state.rect || state.rect.intersects(rect)) return refreshWaterBeds(rect);
+}
+
+let dirty = null;
+let dirtyAll = false;
+const scheduleRender = foundry.utils.debounce(renderAll, 500);
+
+export function refreshWaterBeds(rect = null) {
+    if (rect) (dirty ??= []).push(rect);
+    else dirtyAll = true;
+    scheduleRender();
+}
+
+function sameBed(a, b) {
+    if (!a || a.rw !== b.rw || a.rh !== b.rh || a.x0 !== b.x0 || a.z0 !== b.z0 || a.surface !== b.surface) return false;
+    for (let i = 0; i < a.depth.length; i++) if (a.depth[i] !== b.depth[i]) return false;
+    return true;
+}
+
+function needsRender(state, rects) {
+    return !rects || !state.rect || !state.bed || rects.some((r) => r.intersects(state.rect));
+}
 
 function renderAll() {
     const L = game.Levels3DPreview;
@@ -69,18 +98,33 @@ function renderAll() {
     }
     if (!states.size) return;
     const pending = Object.values(L.tiles).some((t) => t && !t._loaded);
-    if (pending && retries++ < 40) return refreshWaterBeds();
+    if (pending && retries++ < 40) return scheduleRender();
     retries = 0;
+    const rects = dirtyAll ? null : dirty;
+    dirty = null;
+    dirtyAll = false;
+    if (!rects) for (const state of states.values()) state.localKey = null;
     const rendered = [];
+    const all = [];
     for (const state of states.values()) {
+        if (!needsRender(state, rects)) {
+            all.push(state.bed);
+            continue;
+        }
         try {
             const bed = renderBed(state);
+            if (bed && sameBed(state.bed, bed)) {
+                all.push(state.bed);
+                continue;
+            }
+            state.bed = bed;
             if (bed) rendered.push(bed);
         } catch (e) {
             console.error("3D Canvas | water bed depth failed", e);
         }
     }
-    for (const bed of rendered) finishBed(bed, rendered);
+    all.push(...rendered);
+    for (const bed of rendered) finishBed(bed, all);
 }
 
 function isWater(entity) {
@@ -108,7 +152,12 @@ function renderBed(state) {
     const range = RANGE_CELLS * gs;
     const cx = (box.min.x + box.max.x) / 2;
     const cz = (box.min.z + box.max.z) / 2;
-    const local = localSurfaces(state.entity3D.waterSurfaceAt, cx - w / 2, cz - h / 2, w, h, rw, rh);
+    const localKey = [cx, cz, w, h, rw, rh].join();
+    if (state.localKey !== localKey) {
+        state.local = localSurfaces(state.entity3D.waterSurfaceAt, cx - w / 2, cz - h / 2, w, h, rw, rh);
+        state.localKey = localKey;
+    }
+    const local = state.local;
     const low = lowestSurface(local, surface);
     const top = topDownCamera(cx, cz, w, h, surface + range, range * 2);
     const cameras = [top, topDownCamera(cx, cz, w, h, surface, range)];
@@ -118,6 +167,7 @@ function renderBed(state) {
     if (state.params.contained !== false) contain(depth, rw, rh);
     state.uniforms.bedMatrix.value.multiplyMatrices(top.projectionMatrix, top.matrixWorldInverse);
     state.uniforms.size.value = Math.max(w, h) / gs;
+    state.rect = new PIXI.Rectangle((cx - w / 2) * factor, (cz - h / 2) * factor, w * factor, h * factor);
     return { state, depth, local, rw, rh, x0: cx - w / 2, z0: cz - h / 2, w, h, surface, gs, area: w * h, id: state.entity3D.id ?? "" };
 }
 

@@ -6,6 +6,7 @@ import { noisePars } from "../vfx/region/shaders.js";
 import { ShelterMap } from "../vfx/weather/shelterMap.js";
 import { wind } from "../vfx/weather/wind.js";
 import { terrainWaterMeshes } from "../helpers/terrainWater.js";
+import { lowestGround } from "../helpers/mapMakerTerrain.js";
 import { gradeMistColor } from "./visionModeMask.js";
 
 const MODULE_ID = "levels-3d-preview";
@@ -151,7 +152,9 @@ function indoorMist() {
 
 function levelFloor() {
     const bottom = canvas.level?.elevation?.bottom;
-    const elevation = Number.isFinite(bottom) ? bottom : 0;
+    let elevation = Number.isFinite(bottom) ? bottom : 0;
+    const lowest = !canvas.scene.levels?.some((level) => level !== canvas.level && (level.elevation?.bottom ?? 0) < elevation);
+    if (lowest) elevation = Math.min(elevation, lowestGround());
     return (elevation * canvas.dimensions.size) / canvas.dimensions.distance / factor;
 }
 

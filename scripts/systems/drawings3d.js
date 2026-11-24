@@ -29,6 +29,15 @@ export const paintUniforms = {
     l3dPaintBands: { value: Array.from({ length: MAX_BANDS }, () => new THREE.Vector2()) },
 };
 
+const PAINT_DATA = [paintUniforms.l3dPaintRect, paintUniforms.l3dPaintRows, paintUniforms.l3dPaintBands];
+
+function setPaintCount(count) {
+    paintUniforms.l3dPaintCount.value = count;
+    for (const uniform of PAINT_DATA) uniform.needsUpdate = count > 0;
+}
+
+setPaintCount(0);
+
 const PAINT_PARS = /* glsl */ `
 #if defined( L3D_SURFACE ) && !defined( L3D_SURFACE_BLADE ) && !defined( L3D_SURFACE_FORCE_BANK )
 #ifdef L3D_SAMPLERS
@@ -424,11 +433,11 @@ export class Drawings3D {
             if (!band) return slot.set(0, 0);
             slot.set(Number.isFinite(band.bottom) ? unitsToPixels(band.bottom) : -NO_LIMIT, Number.isFinite(band.top) ? unitsToPixels(band.top) : NO_LIMIT);
         });
-        paintUniforms.l3dPaintCount.value = bands.length;
+        setPaintCount(bands.length);
     }
 
     clearUniforms() {
-        paintUniforms.l3dPaintCount.value = 0;
+        setPaintCount(0);
     }
 
     clear() {

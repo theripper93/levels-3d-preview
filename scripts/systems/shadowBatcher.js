@@ -5,7 +5,7 @@ import { windDepthMaterials, windSwayParams, windSwayKey, addWindAttributes } fr
 const BUILD_DELAY = 500;
 const BUILD_BUDGET = 4;
 const SETTLE_BUDGET = 50;
-const CHECK_BUDGET = 256;
+const CHECK_BUDGET = 64;
 const INITIAL_VERTICES = 4096;
 const INITIAL_INSTANCES = 64;
 const LAYERS_EXCEPT_DEFAULT = 0xfffffffe;

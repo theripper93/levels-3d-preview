@@ -10,13 +10,13 @@
         {{#each packs}}
         <button type="button" class="{{#if active}}active{{/if}}" data-action="togglePack" data-pack="{{id}}">{{name}}</button>
         {{/each}}
-        <button type="button" class="{{#if mapMakerOnly}}active{{/if}}" data-action="toggleMapMaker"><i class="fa-solid fa-hammer"></i> {{localize "levels3dpreview.sharing.mapbrowser.mapMaker"}}</button>
+        <button type="button" class="{{#if mapMakerOnly}}active{{/if}}" data-action="toggleMapMaker"><i class="fa-solid fa-compass-drafting"></i> {{localize "levels3dpreview.sharing.mapbrowser.mapMaker"}}</button>
     </nav>
     <div class="tdc-map-list">
         {{#each maps}}
         <article class="tdc-map-card" data-map-id="{{id}}" data-packs="{{packIds}}" data-search="{{searchText}}" data-map-maker="{{mapMaker}}">
             {{#if image}}<img src="{{image}}" alt="" loading="lazy">{{/if}}
-            {{#if mapMaker}}<span class="tdc-map-badge"><i class="fa-solid fa-hammer"></i> {{localize "levels3dpreview.sharing.mapbrowser.mapMaker"}}</span>{{/if}}
+            {{#if mapMaker}}<span class="tdc-map-badge"><i class="fa-solid fa-compass-drafting"></i> {{localize "levels3dpreview.sharing.mapbrowser.mapMaker"}}</span>{{/if}}
             <div class="tdc-map-stats">
                 <button type="button" class="icon {{#if starred}}fa-solid{{else}}fa-regular{{/if}} fa-heart {{#if notStarOwned}}not-starred{{/if}}" data-action="star" {{disabled starred}}></button>
                 <span>{{stars}}</span>

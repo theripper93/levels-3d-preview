@@ -5,6 +5,7 @@ import { getQuality } from "../vfx/quality.js";
 const PIXEL_ERROR = { off: 2, low: 2, medium: 1.5, high: 1, ultra: 1 };
 const COARSER_MARGIN = 0.7;
 const INDEX_BUDGET = 1500000;
+const FLUSH_BUDGET = 4;
 const _size = new Vector2();
 
 const PRESETS = [null, 1.5, 3];
@@ -72,7 +73,12 @@ export class BatchLod {
             if (!byBatch.has(item.batch)) byBatch.set(item.batch, []);
             byBatch.get(item.batch).push(item);
         }
+        const start = performance.now();
         for (const [batch, items] of byBatch) {
+            if (performance.now() - start > FLUSH_BUDGET) {
+                this.queue.push(...items);
+                continue;
+            }
             let vertices = 0;
             let indices = 0;
             for (const { levels } of items) {

@@ -597,7 +597,7 @@ export class MapBrowser extends HandlebarsApplication {
         if (!map) return;
         const mapData = this._mapList.find((m) => m.id == id);
         const journalData = createJournal ? await this.getJournalEntry(mapData.name + ` (${mapData.author})`, mapData.description) : {};
-        map.data.thumb = mapData.image && !mapData.image.startsWith("data:") ? mapData.image : null;
+        map.data.thumb = mapData.image && foundry.data.validators.hasFileExtension(mapData.image, Object.keys(CONST.IMAGE_FILE_EXTENSIONS)) ? mapData.image : null;
         const originalID = map.data._id;
         const newID = foundry.utils.randomID();
         map.data.active = false;

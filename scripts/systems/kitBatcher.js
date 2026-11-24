@@ -12,7 +12,7 @@ const BUILD_BUDGET = 4;
 const SETTLE_BUDGET = 50;
 const INITIAL_VERTICES = 16384;
 const INITIAL_INSTANCES = 64;
-const CHECK_BUDGET = 256;
+const CHECK_BUDGET = 64;
 const KINDS = new Set(["kit", "wall", "floor"]);
 const MATERIAL_TYPES = new Set(["MeshStandardMaterial", "MeshPhysicalMaterial", "MeshBasicMaterial", "MeshLambertMaterial", "MeshPhongMaterial"]);
 const SKIP_KEYS = new Set(["uuid", "id", "name", "version", "color", "userData", "_listeners"]);
@@ -41,7 +41,6 @@ export class KitBatcher {
         this.sources = [];
         this.autoUpdateScene = null;
         this.stale = new Set();
-        this.pruned = [];
         this.cursor = 0;
         this.splitter = new SideSplitter(this.root);
         this.lod = new BatchLod(this);
@@ -94,7 +93,7 @@ export class KitBatcher {
         const renderer = this._parent.renderer;
         const render = renderer.render;
         renderer.render = function (scene, camera) {
-            if (batcher.active || scene !== batcher._parent.scene || scene.overrideMaterial) return render.call(this, scene, camera);
+            if (batcher.active || (!batcher.sources.length && !batcher.splitter.size) || scene !== batcher._parent.scene || scene.overrideMaterial) return render.call(this, scene, camera);
             batcher.begin(scene, camera);
             try {
                 return render.call(this, scene, camera);
@@ -157,25 +156,13 @@ export class KitBatcher {
         for (const batch of this.batches.values()) batch.mesh.visible = batch.ready && batch.shown > 0;
         this.lod.update(sources, camera, this._parent.renderer);
         this.splitter.begin(scene);
-        this.pruneInert(scene);
-        if (this.sources.length || this.splitter.size) scene.add(this.root);
-    }
-
-    pruneInert(scene) {
-        const pruned = this.pruned;
-        for (const child of scene.children) {
-            if (child === this.root || !child.visible || hasVisibleRenderable(child)) continue;
-            child.visible = false;
-            pruned.push(child);
-        }
+        scene.add(this.root);
     }
 
     end() {
         if (!this.active) return;
         this.active = false;
         for (const source of this.sources) source.object.visible = source.wasVisible;
-        for (const object of this.pruned) object.visible = true;
-        this.pruned.length = 0;
         this.splitter.end();
         if (this.autoUpdateScene) this.autoUpdateScene.matrixWorldAutoUpdate = true;
         this.autoUpdateScene = null;
@@ -237,7 +224,15 @@ export class KitBatcher {
         }
         if (changed) this.updateActive();
         if (!this.pending.size) this.lod.flush();
-        if (!this.pending.size && !this.lod.busy) for (const batch of this.batches.values()) if (batch.grown) this.trim(batch);
+        if (!this.pending.size && !this.lod.busy) this.trimNext();
+    }
+
+    trimNext() {
+        for (const batch of this.batches.values()) {
+            if (!batch.grown) continue;
+            this.trim(batch);
+            return;
+        }
     }
 
     updateActive() {
@@ -501,22 +496,6 @@ function isShownWithin(object, root) {
         if (current === root) return true;
         if (!current.visible) return false;
     }
-    return false;
-}
-
-function hasVisibleRenderable(object) {
-    if (isDrawable(object)) return true;
-    const children = object.children;
-    for (let i = 0; i < children.length; i++) if (children[i].visible && hasVisibleRenderable(children[i])) return true;
-    return false;
-}
-
-function isDrawable(object) {
-    if (object.isSprite || object.isLight || object.isLOD || object.isSkinnedMesh) return true;
-    if (!object.isMesh && !object.isLine && !object.isPoints) return false;
-    const material = object.material;
-    if (!Array.isArray(material)) return material?.visible !== false;
-    for (let i = 0; i < material.length; i++) if (material[i]?.visible !== false) return true;
     return false;
 }
 

@@ -43,6 +43,15 @@ export const revealUniforms = {
     uRevealBody: { value: Array.from({ length: REVEAL_SLOTS }, () => new THREE.Vector4()) },
 };
 
+const REVEAL_DATA = Object.values(revealUniforms).filter((uniform) => uniform !== revealUniforms.uRevealCount);
+
+function setRevealCount(count) {
+    revealUniforms.uRevealCount.value = count;
+    for (const uniform of REVEAL_DATA) uniform.needsUpdate = count > 0;
+}
+
+setRevealCount(0);
+
 const REVEAL_PARS = /* glsl */ `
 #ifdef L3D_REVEAL
 uniform bool l3dReveal;
@@ -214,7 +223,7 @@ export class RevealSystem {
                 if (this.writeSlot(count, state, camera)) count++;
             }
         }
-        uniforms.uRevealCount.value = count;
+        setRevealCount(count);
     }
 
     controlledTokens() {
@@ -340,6 +349,6 @@ export class RevealSystem {
     destroy() {
         this.states.clear();
         this.targets = [];
-        revealUniforms.uRevealCount.value = 0;
+        setRevealCount(0);
     }
 }

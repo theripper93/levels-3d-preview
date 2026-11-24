@@ -2,6 +2,7 @@ import * as THREE from "three";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { factor } from "../main.js";
 import { decodeGrid } from "../helpers/chunkCodec.js";
+import { affectsSurface, changedRect, trackTileRects } from "../helpers/tileChange.js";
 import { SCATTER_SETS } from "./sets.js";
 import { generateInstances, explicitInstances, resolveItemAsset, isGroundCover } from "./generate.js";
 import { sampleSurface, gridUnit, isObstacle } from "./surface.js";
@@ -17,6 +18,7 @@ const MAX_CHUNKS = 3;
 const MERGE_MAX = 6;
 const SHADOW_MIN_HEIGHT = 0.35;
 const BLOCKER_MARGIN = 0.15;
+const MAX_PATCHES = 12;
 const QUALITY = {
     low: { density: 0.35, shadows: "none" },
     medium: { density: 0.65, shadows: "blocking" },
@@ -444,9 +446,52 @@ export class ScatterField {
         return out;
     }
 
-    invalidate() {
-        this.base = null;
+    invalidate(rect = null) {
+        if (rect && this.base && !this.angle && (this.base.patches ?? 0) < MAX_PATCHES) (this.dirty ??= []).push(rect);
+        else {
+            this.base = null;
+            this.dirty = null;
+        }
         this.schedule();
+    }
+
+    patchBase(base, dirty, top, blockers, radii, set, data) {
+        const area = dirty[0].clone();
+        for (const r of dirty.slice(1)) area.enlarge(r);
+        const bounds = this.sceneRect();
+        const x0 = Math.max(area.x, bounds.x);
+        const y0 = Math.max(area.y, bounds.y);
+        const x1 = Math.min(area.right, bounds.right);
+        const y1 = Math.min(area.bottom, bounds.bottom);
+        if (x1 <= x0 || y1 <= y0) return base;
+        const rect = new PIXI.Rectangle(x0, y0, x1 - x0, y1 - y0);
+        const sampler = sampleSurface(rect, { top });
+        const previous = base.sample;
+        const sample = (lx, ly) => {
+            const p = this.localToScene(lx, ly);
+            return rect.contains(p.x, p.y) ? sampler.sample(p.x, p.y) : previous(lx, ly);
+        };
+        const { nx, ny, cell, values } = base.grid;
+        const a = this.sceneToLocal(x0, y0);
+        const b = this.sceneToLocal(x1, y1);
+        const i0 = Math.max(0, Math.floor(Math.min(a.x, b.x) / cell) - 1);
+        const i1 = Math.min(nx - 1, Math.floor(Math.max(a.x, b.x) / cell) + 1);
+        const j0 = Math.max(0, Math.floor(Math.min(a.y, b.y) / cell) - 1);
+        const j1 = Math.min(ny - 1, Math.floor(Math.max(a.y, b.y) / cell) + 1);
+        const inside = (index) => {
+            const i = index % nx;
+            const j = Math.floor(index / nx);
+            return i >= i0 && i <= i1 && j >= j0 && j <= j1;
+        };
+        const density = new values.constructor(values.length);
+        for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) density[j * nx + i] = values[j * nx + i];
+        const fresh = set ? generateInstances({ data: { ...data, cell }, set, density, nx, ny, width: this.width, height: this.height, gridPx: canvas.scene.grid.size, qualityDensity: base.quality.density, sample, blockers, radii }) : [];
+        const kept = [];
+        const replaced = [];
+        for (const inst of base.generated) (inside(inst.cell) ? replaced : kept).push(inst);
+        const sig = (list) => list.map((inst) => `${inst.id}:${Math.round(inst.y * 1e4)}`).sort().join("|");
+        if (sig(replaced) === sig(fresh)) return { ...base, sample, sampledAt: performance.now(), patches: (base.patches ?? 0) + 1, same: true };
+        return { ...base, sample, generated: [...kept, ...fresh], sampledAt: performance.now(), patches: (base.patches ?? 0) + 1, same: false };
     }
 
     dataChanged() {
@@ -498,10 +543,18 @@ export class ScatterField {
             if (version !== this.version || this.disposed) return;
             const generated = set ? generateInstances({ data: { ...data, cell: grid.cell }, set, density: grid.values, nx: grid.nx, ny: grid.ny, width: this.width, height: this.height, gridPx, qualityDensity: quality.density, sample, blockers, radii }) : [];
             base = { key, blockKey, grid, sampler, sample, generated, quality, sampledAt };
+            this.dirty = null;
+        } else if (this.dirty?.length) {
+            const radii = blockers.length ? await Promise.all(set.assets.map((a) => loadAsset(a).then((info) => (Math.max(info.size.x, info.size.z) * gridPx) / 4).catch(() => null))) : [];
+            if (version !== this.version || this.disposed) return;
+            const dirty = this.dirty;
+            this.dirty = null;
+            const depth = this.document.getFlag("levels-3d-preview", "depth");
+            base = this.patchBase(base, dirty, depth > 0 ? t.center.y + depth / factor : Infinity, blockers, radii, set, data);
         }
         const { nx, ny, cell } = base.grid;
         const explicit = explicitInstances({ items: data.items, set, nx, ny, cell, gridPx, sample: base.sample, fallbackY: t.center.y, flat: this.flatTolerance(data, set) });
-        const fresh = base !== this.base;
+        const fresh = base !== this.base && !base.same;
         await this.loadAssets([...(fresh ? base.generated : []), ...explicit]);
         if (version !== this.version || this.disposed) return;
         const ex = new Set(data.ex ?? []);
@@ -519,15 +572,18 @@ export class ScatterField {
         if (swap) this.swapLevel();
         if (fresh || changed.size || rebuild) this.buildGenerated(rebuild ? null : changed);
         const itemsKey = JSON.stringify(data.items ?? []);
-        const same = !fresh && !changed.size && !rebuild && this.items && itemsKey === this.itemsKey;
+        const explicitKey = JSON.stringify(explicit.map((inst) => [inst.x, inst.z, Math.round(inst.y * 1e4)]));
+        const same = !fresh && !changed.size && !rebuild && this.items && itemsKey === this.itemsKey && explicitKey === this.explicitKey;
         const items = same ? this.items : explicit.filter((inst) => this.infos.get(assetKey(inst.asset)));
         if (!same) this.buildItems(items);
         this.items = items;
         this.itemsKey = itemsKey;
+        this.explicitKey = explicitKey;
         const dressKey = JSON.stringify([data.dress ?? null, data.dress ? dressTier() : null]);
         const redress = fresh || dressKey !== this.dressKey;
         if (redress) this.buildDress(data.dress, base.sample);
         this.dressKey = dressKey;
+        if (!fresh && !changed.size && !rebuild && !swap && same && !redress) return;
         this.instances = [...[...this.groups.values()].flatMap((g) => g.list.filter((inst) => !ex.has(inst.id))), ...items];
         if (!same || redress) this.buildPropDress(data.dress);
         this.pick.scale.set(this.width / factor, 1, this.height / factor);
@@ -976,8 +1032,8 @@ export class ScatterField {
     }
 }
 
-export function refreshScatter(doc) {
-    for (const field of fields) if (!doc || field.overlaps(doc)) field.invalidate();
+export function refreshScatter(doc, rect = null) {
+    for (const field of fields) if (!doc || (rect ? field.sceneRect().intersects(rect) : field.overlaps(doc))) field.invalidate(rect);
 }
 
 let surfaceChangedAt = 0;
@@ -999,14 +1055,20 @@ export function scatterFields() {
 }
 
 export function registerScatterHooks() {
-    const onChange = (doc, changes) => {
+    trackTileRects();
+    const onChange = (doc, changes, update = false) => {
         if (doc.parent !== canvas.scene) return;
         const scatter = doc.flags?.["levels-3d-preview"]?.scatter;
-        if (!scatter) return refreshScatter(doc);
+        if (!scatter) {
+            if (update && (!affectsSurface(changes) || doc.flags?.["levels-3d-preview"]?.mapMakerMesh?.k === "terrain")) return;
+            return refreshScatter(doc, changedRect(doc, canvas.scene.grid.size));
+        }
         if (!scatter.items?.length && !foundry.utils.hasProperty(changes ?? {}, "flags.levels-3d-preview.scatter.items")) return;
         for (const field of fields) if (field.document !== doc && field.overlaps(doc)) field.quick();
     };
-    for (const hook of ["createTile", "updateTile", "deleteTile"]) Hooks.on(hook, onChange);
+    Hooks.on("createTile", (doc, options) => onChange(doc, options));
+    Hooks.on("updateTile", (doc, changes) => onChange(doc, changes, true));
+    Hooks.on("deleteTile", (doc, options) => onChange(doc, options));
     Hooks.on("3DCanvasSceneReady", (L, options) => {
         if (options?.levelSwitch) return;
         for (const field of fields) if (!field.base) field.invalidate();

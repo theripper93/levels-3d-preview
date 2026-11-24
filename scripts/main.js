@@ -5,7 +5,7 @@ import { FirstPersonController } from "./handlers/firstPerson.js";
 import { TransformControls } from "./three/TransformControls.js";
 import { GLTFLoader } from "./three/GLTFLoader.js";
 import { Token3D } from "./entities/token3d.js";
-import { Ruler3D, registerRuler3D, redrawRulers3D } from "./systems/ruler3d.js";
+import { Ruler3D, registerRuler3D, redrawRulers3D, warmRulerMaterials } from "./systems/ruler3d.js";
 import { TokenRuler3D, registerTokenRuler3D, recreateTokenRulers3D } from "./systems/tokenRuler3d.js";
 import { unitsToPixels, centerElement } from "./helpers/coords3d.js";
 import { buildMapEdge, getMapEdge, terrainLoaded } from "./atmosphere/mapEdge.js";
@@ -25,7 +25,6 @@ import { GlobalIllumination, isDynamicSkyEnabled } from "./systems/globalIllumin
 import { InteractionManager, dropFunctions } from "./handlers/interactionManager.js";
 import initTemplateEffects from "./shaders/templateEffects.js";
 import { Helpers } from "./helpers/helpers.js";
-import { simplifyJobs } from "./helpers/meshSimplify.js";
 import { WeatherSystem } from "./systems/weatherSystem.js";
 import { EXRLoader } from "three/addons/loaders/EXRLoader.js";
 import { compileForComposer, createComposer, createHdrPasses } from "./render/pipeline.js";
@@ -74,7 +73,7 @@ import { filterMigration, migrateSceneFilters } from "./settings/sceneLook.js";
 import { WaveFunctionSolver } from "./generators/WaveFunctionCollapse.js";
 import { applyHeightmap } from "./helpers/applyHeightmap.js";
 import { computeMapMakerBounds, computeMapMakerBoundsAsync, buildMapMakerGeometry, modelBounds, previewKitHue } from "./helpers/mapMakerMesh.js";
-import { TerrainState, MAX_TERRAIN_LAYERS } from "./helpers/mapMakerTerrain.js";
+import { TerrainState, MAX_TERRAIN_LAYERS, lowestGround } from "./helpers/mapMakerTerrain.js";
 import { ROAD_STYLES, roadSpline } from "./helpers/terrainRoads.js";
 import { WATER_TYPES, waterDims } from "./helpers/terrainWater.js";
 import { scatterApi } from "./scatter/api.js";
@@ -112,7 +111,6 @@ export const MODULE_ID = "levels-3d-preview";
 const SCATTER_LOAD_TIMEOUT = 20000;
 const SETTLE_TIMEOUT = 10000;
 const SETTLE_QUIET_FRAMES = 3;
-const GEOMETRY_SETTLE_TIMEOUT = 180000;
 
 injectFoWShaders(THREE);
 installClusterChunks(THREE);
@@ -324,6 +322,7 @@ class Levels3DPreview {
         Socket.register("Particle3D", this.particleSocket);
         Socket.register("Particle3DStop", this.Particle3DStop);
         Socket.register("toggleDoor", this.toggleDoor);
+        Socket.register("playDoorSound", this.playDoorSound);
         this.isLevels = game.modules.get("levels")?.active;
         this.fpsKillSwitch = 1;
         this.camera;
@@ -1542,9 +1541,10 @@ class Levels3DPreview {
             this.kitBatcher.update();
             cameraShake.apply(this.camera, delta, this.controls.target);
             this.reveal.update(delta);
-            this.composer.render(time);
+            const compiling = this._settling && !this._programsReady();
+            if (!compiling) this.composer.render(time);
             cameraShake.restore(this.camera);
-            if (this._firstFrame) {
+            if (this._firstFrame && !compiling) {
                 this._firstFrame = false;
                 this.workers._waitingForInit = true;
                 Object.values(this.tiles).forEach((t) => t?.mesh && t.sendToWorker());
@@ -1583,13 +1583,14 @@ class Levels3DPreview {
     }
 
     _onCameraChange() {
+        const groundY = unitsToPixels(lowestGround());
         const centerPosition = this.controls.target.clone();
-        centerPosition.y = unitsToPixels(canvas.primary.background.elevation);
+        centerPosition.y = groundY;
         const groundPosition = this.camera.position.clone();
-        groundPosition.y = unitsToPixels(canvas.primary.background.elevation);
+        groundPosition.y = groundY;
         const d = centerPosition.distanceTo(groundPosition);
 
-        const origin = new THREE.Vector2(this.controls.target.y - 0.05, 0);
+        const origin = new THREE.Vector2(this.controls.target.y - groundY - 0.05, 0);
         const remote = new THREE.Vector2(0, d);
         const angleRadians = Math.atan2(remote.y - origin.y, remote.x - origin.x);
         this.controls.maxPolarAngle = angleRadians;
@@ -1765,6 +1766,7 @@ class Levels3DPreview {
         this._progressText = game.i18n.localize("levels3dpreview.controls.loading.shaders");
         compileForComposer(this, this.scene, this.camera);
         this.outline.warmUp();
+        warmRulerMaterials(this);
         this.uploadTextures();
         this._settling = true;
         this._ready = true;
@@ -1795,11 +1797,9 @@ class Levels3DPreview {
         while (true) {
             await new Promise((resolve) => requestAnimationFrame(resolve));
             if (this._buildId !== buildId || !this._active) return;
-            const optimizing = this.kitBatcher.lod.busy;
-            if (optimizing) this.setProgressBar(game.i18n.localize("levels3dpreview.controls.loading.optimize"), Math.round((100 * simplifyJobs.completed) / Math.max(1, simplifyJobs.submitted)));
-            if (performance.now() - start >= (optimizing ? GEOMETRY_SETTLE_TIMEOUT : SETTLE_TIMEOUT)) return;
+            if (performance.now() - start >= SETTLE_TIMEOUT) return;
             const count = this.renderer.info.programs.length;
-            quiet = count === programs && !optimizing && this._isSettled() ? quiet + 1 : 0;
+            quiet = count === programs && this._isSettled() ? quiet + 1 : 0;
             programs = count;
             if (quiet >= SETTLE_QUIET_FRAMES) return;
         }
@@ -1808,6 +1808,10 @@ class Levels3DPreview {
     _isSettled() {
         if (this._pendingBars || !this.kitBatcher.idle || !this.shadowBatcher.idle || !this.lightWarmup.idle) return false;
         if (scatterFields().some((field) => field.busy)) return false;
+        return this._programsReady();
+    }
+
+    _programsReady() {
         return this.renderer.info.programs.every((program) => program.isReady());
     }
 
@@ -1974,6 +1978,17 @@ class Levels3DPreview {
         game.Levels3DPreview.particleSystem.stop(id);
     }
 
+    playDoorSound({ src, sceneId, x, y, elevation }) {
+        if (!canvas.ready || canvas.scene?.id !== sceneId) return;
+        canvas.sounds.playAtPosition(src, { x, y, elevation }, canvas.dimensions.distance * 12, {
+            volume: 1.0,
+            easing: true,
+            walls: false,
+            gmAlways: true,
+            muffledEffect: { type: "lowpass", intensity: 5 },
+        });
+    }
+
     toggleDoor({ tileId, sceneId, userId, subDoorId }) {
         if (!game.user.isGM) {
             const GMConnected = game.users.some(u => u.isGM && u.active);
@@ -2001,7 +2016,9 @@ class Levels3DPreview {
                 sounds = [CONFIG.sounds.lock];
             }
             const src = sounds[Math.floor(Math.random() * sounds.length)];
-            foundry.audio.AudioHelper.play({ src }, true);
+            const x = tile.x + tile.width * (0.5 - (tile.texture.anchorX ?? 0.5));
+            const y = tile.y + tile.height * (0.5 - (tile.texture.anchorY ?? 0.5));
+            Socket.playDoorSound({ src, sceneId, x, y, elevation: tile.elevation ?? 0 });
         }
 
         if (subDoorId) {

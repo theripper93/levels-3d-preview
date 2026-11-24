@@ -929,9 +929,10 @@ export class Tile3D {
         const object = this.dynamesh === "decal" ? model.scene : game.Levels3DPreview.helpers.groundModel(model.scene, this.autoGround, this.autoCenter);
         this._attachModel = object.children[0];
         const box = new THREE.Box3().setFromObject(object);
-        const mWidth = box.max.x - box.min.x;
-        const mHeight = box.max.z - box.min.z;
+        const mWidth = Math.max(box.max.x - box.min.x, 0.00001);
+        const mHeight = Math.max(box.max.z - box.min.z, 0.00001);
         const mDepth = Math.max(box.max.y - box.min.y, 0.00001);
+        const minSide = Math.max(1, Math.round(canvas.grid.size / 10));
         //migration
 
         if (!this.depth) {
@@ -953,8 +954,10 @@ export class Tile3D {
                 }
                 const depth = mDepth * this.yScale * scale; //*2
                 this.depth = Math.round(depth * factor) / factor;
-                const wDiff = (this.tile.document.width - Math.round(scale * mWidth * factor)) / 2;
-                const hDiff = (this.tile.document.height - Math.round(scale * mHeight * factor)) / 2;
+                const fitWidth = Math.max(Math.round(scale * mWidth * factor), minSide);
+                const fitHeight = Math.max(Math.round(scale * mHeight * factor), minSide);
+                const wDiff = (this.tile.document.width - fitWidth) / 2;
+                const hDiff = (this.tile.document.height - fitHeight) / 2;
                 this.tile.document.update({
                     flags: {
                         "levels-3d-preview": {
@@ -962,8 +965,8 @@ export class Tile3D {
                             fillType: "stretch",
                         },
                     },
-                    width: Math.round(scale * mWidth * factor),
-                    height: Math.round(scale * mHeight * factor),
+                    width: fitWidth,
+                    height: fitHeight,
                     x: this.x + wDiff,
                     y: this.y + hDiff,
                 });

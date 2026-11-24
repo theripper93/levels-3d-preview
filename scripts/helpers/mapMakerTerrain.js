@@ -12,8 +12,15 @@ export { fbm, smooth, pointInPoly };
 
 const CHUNK = 64;
 export const MAX_TERRAIN_LAYERS = 16;
+export const SKIRT_CELLS = 3;
 const LAYER_SIZE = 1024;
 const layerArrayCache = new Map();
+
+export function lowestGround(scene = canvas.scene) {
+    let min = canvas.primary?.background?.elevation ?? 0;
+    for (const tile of scene?.tiles ?? []) if (tile.flags?.["levels-3d-preview"]?.mapMakerMesh?.k === "terrain") min = Math.min(min, tile.elevation);
+    return min;
+}
 
 export function flatLevel(data) {
     return ((data.base ?? 0) - data.min) / (data.max - data.min);
@@ -22,6 +29,7 @@ export function flatLevel(data) {
 const STRUCTURE = ["w", "h", "nx", "ny", "min", "max", "chunk", "wn"];
 const signature = (data, keys) => JSON.stringify(keys.map((k) => (k === "wn" && data ? waterDims(data) : data?.[k] ?? null)));
 const stampKey = (data) => JSON.stringify([data?.stamps ?? [], data?.roads ?? []]);
+const shapeKey = (data) => JSON.stringify([(data?.stamps ?? []).filter((s) => !s.cover), data?.roads ?? []]);
 
 function applyFlatten(out, mask, nx, insideOnly = false) {
     const { i0, j0, cw, ch, target, weights } = mask;
@@ -172,6 +180,7 @@ export class TerrainState {
             structure: signature(data, STRUCTURE),
             look: signature(data, ["layers", "slope"]),
             stamps: stampKey(data),
+            shape: shapeKey(data),
         };
     }
 
@@ -186,6 +195,7 @@ export class TerrainState {
         const n = nx * ny;
         const lookChanged = signature(data, ["layers", "slope"]) !== seen.look;
         const stampsChanged = stampKey(data) !== seen.stamps;
+        const shapeChanged = shapeKey(data) !== seen.shape;
         this.data = data;
         const layers = lookChanged ? (data.layers ?? []).slice(0, MAX_TERRAIN_LAYERS) : this.layers;
         const masks = lookChanged || stampsChanged ? this.buildMasks(data, layers) : null;
@@ -220,11 +230,11 @@ export class TerrainState {
             if (splatChanged || stampsChanged) this.refreshSplat();
         }
         if (stampsChanged) await this.refreshHoles();
-        if (heightsChanged || stampsChanged) {
+        if (heightsChanged || shapeChanged) {
             this.refreshHeights();
             game.Levels3DPreview?.scatter?.surfacesChanged?.();
-        }
-        if (waterChanged || lookChanged || stampsChanged) this.water.build();
+        } else if (stampsChanged && this.cover?.height) this.cover.update(this.cover.height.image.data);
+        if (waterChanged || lookChanged || shapeChanged) this.water.build();
         this.remember(data);
     }
 
@@ -316,6 +326,7 @@ export class TerrainState {
     setRoads(roads) {
         this.data = { ...this.data, roads };
         this.seen.stamps = stampKey(this.data);
+        this.seen.shape = shapeKey(this.data);
         this._roadsDirty = true;
         return (this._roadJob ??= this.applyRoads());
     }
@@ -484,7 +495,9 @@ export class TerrainState {
         for (let j = ny - 2; j > 0; j--) border.push(j * nx);
         border.push(0);
         const out = [];
-        const bottom = this.data.min * this.scale;
+        let low = Infinity;
+        for (const k of border) low = Math.min(low, positions[k * 3 + 1]);
+        const bottom = Math.max(this.data.min * this.scale, low - SKIRT_CELLS * canvas.scene.grid.size * this.scale);
         for (let k = 0; k < border.length - 1; k++) {
             const a = border[k], b = border[k + 1];
             const ax = positions[a * 3], ay = positions[a * 3 + 1], az = positions[a * 3 + 2];

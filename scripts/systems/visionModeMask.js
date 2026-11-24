@@ -47,6 +47,15 @@ export const visionModeUniforms = {
     l3dVMGlow: { value: 0 },
 };
 
+const VISION_MODE_DATA = Object.values(visionModeUniforms).filter((uniform) => uniform !== visionModeUniforms.l3dVM);
+
+function setVisionModeType(type) {
+    visionModeUniforms.l3dVM.value = type;
+    for (const uniform of VISION_MODE_DATA) uniform.needsUpdate = type !== VISION_MODE.none;
+}
+
+setVisionModeType(VISION_MODE.none);
+
 export const VISION_MODE_PARS = /* glsl */ `
 uniform float l3dVM;
 uniform vec4 l3dVMGrade;
@@ -242,7 +251,7 @@ export class VisionModeMask {
     setUniforms(type, mode, sources, leader, restoreLights) {
         const look = lookFor(type, mode);
         const adjustments = mode.canvas?.uniforms ?? {};
-        visionModeUniforms.l3dVM.value = type;
+        setVisionModeType(type);
         visionNight.target = 0;
         visionModeUniforms.l3dVMGrade.value.set(look.gain, look.contrast, adjustments.saturation ?? -1, look.lift);
         visionModeUniforms.l3dVMFloor.value = type === VISION_MODE.grade || type === VISION_MODE.amplify ? SIGHT_FLOOR : 0;
@@ -330,7 +339,7 @@ export class VisionModeMask {
     reset() {
         this.type = VISION_MODE.none;
         this.animated = false;
-        visionModeUniforms.l3dVM.value = VISION_MODE.none;
+        setVisionModeType(VISION_MODE.none);
         clusterUniforms.uClusterLevels.value = 0;
         visionNight.target = 1;
     }

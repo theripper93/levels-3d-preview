@@ -2,7 +2,7 @@ import * as THREE from "three";
 import { factor, MODULE_ID } from "../main.js";
 import { atmosphereFogUniforms } from "./fog.js";
 import { realisticWater } from "../shaders/water/realisticWater.js";
-import { fbm, smooth } from "../helpers/mapMakerTerrain.js";
+import { fbm, smooth, SKIRT_CELLS } from "../helpers/mapMakerTerrain.js";
 import { extraSurfaces } from "../helpers/topDownRender.js";
 import { elevationFloor } from "../helpers/elevationFloor.js";
 
@@ -417,7 +417,8 @@ function buildBackdrop(group, rect, groundY, halfDiag, shape) {
 function terrainStates() {
     const states = [];
     for (const t of Object.values(game.Levels3DPreview.tiles ?? {})) {
-        if (t?.tile?.document?.flags?.[MODULE_ID]?.mapMakerMesh?.k !== "terrain" || !t.mesh || t.tile.document.elevation < 0) continue;
+        const data = t?.tile?.document?.flags?.[MODULE_ID]?.mapMakerMesh;
+        if (data?.k !== "terrain" || !t.mesh || data.base !== undefined) continue;
         t.mesh.traverse((o) => o.mapMakerTerrain && states.push(o.mapMakerTerrain));
     }
     return states;
@@ -593,7 +594,7 @@ function buildBlueprintSheet(parent, rect, y) {
 function buildDiorama(group, rect, points, lowY, size, blueprint = false) {
     const depth = size * (blueprint ? 0.06 : 0.12);
     const topY = Math.max(...points.map((p) => p[2]));
-    const bottom = lowY - depth;
+    const bottom = lowY - Math.max(depth, (SKIRT_CELLS + 0.1) * canvas.scene.grid.size / factor);
     const positions = [];
     const sides = [];
     const index = [];

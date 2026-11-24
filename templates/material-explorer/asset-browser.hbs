@@ -1,27 +1,40 @@
 <div class="l3d-ab">
+    <nav class="l3d-ab-tabs" aria-label="{{localize "levels3dpreview.assetBrowser.category"}}">
+        {{#each categories}}
+        <button type="button" class="ui-control icon fa-solid {{this.icon}}" data-category="{{this.id}}" aria-pressed="{{this.active}}" data-tooltip data-tooltip-direction="LEFT" aria-label="{{this.label}}"></button>
+        {{/each}}
+    </nav>
     <div class="l3d-ab-filters">
         <div class="l3d-ab-search">
             <i class="fa-solid fa-magnifying-glass" inert></i>
             <input type="search" id="search" autocomplete="off" placeholder="{{localize "levels3dpreview.assetBrowser.search"}}">
         </div>
-        <select id="asset-packs" aria-label="{{localize "levels3dpreview.assetBrowser.category"}}">
-            <option value="all">{{localize "levels3dpreview.assetBrowser.all"}}</option>
-            <optgroup label="{{localize "levels3dpreview.assetBrowser.folders"}}">
-                {{#each folders}}
-                <option value="folder:{{this.id}}">{{this.label}}</option>
-                {{/each}}
-            </optgroup>
-            {{#each assetPacks}}
-            <optgroup label="{{this.name}}">
-                {{#each this.packs}}
-                <option value="{{this.query}}">{{this.name}}</option>
-                {{/each}}
-            </optgroup>
-            {{/each}}
-        </select>
+        <button type="button" class="ui-control icon toggle fa-solid fa-sliders" id="ab-advanced" aria-pressed="{{advanced}}" data-tooltip aria-label="{{localize "levels3dpreview.assetBrowser.advanced"}}"></button>
     </div>
+    <div class="l3d-ab-styles">
+        {{#each styles}}
+        <button type="button" class="ui-control toggle" data-style="{{this.id}}" aria-pressed="{{this.active}}">{{this.label}}</button>
+        {{/each}}
+    </div>
+    <select id="asset-packs" aria-label="{{localize "levels3dpreview.assetBrowser.packs"}}" {{#unless advanced}}hidden{{/unless}}>
+        <option value="all">{{localize "levels3dpreview.assetBrowser.allPacks"}}</option>
+        <optgroup label="{{localize "levels3dpreview.assetBrowser.folders"}}">
+            {{#each folders}}
+            <option value="folder:{{this.id}}">{{this.label}}</option>
+            {{/each}}
+        </optgroup>
+        {{#each assetPacks}}
+        <optgroup label="{{this.name}}">
+            {{#each this.packs}}
+            <option value="{{this.query}}">{{this.name}}</option>
+            {{/each}}
+        </optgroup>
+        {{/each}}
+    </select>
 
     <ol class="l3d-ab-grid"></ol>
+
+    <div class="l3d-ab-variants" hidden></div>
 
     <fieldset class="l3d-ab-options">
         <legend>{{localize "levels3dpreview.assetBrowser.placement"}}</legend>
