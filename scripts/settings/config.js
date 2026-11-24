@@ -718,13 +718,6 @@ export function registerConfigs() {
                             default: "#ffffff",
                         },
                     }),
-                    ...section("tokenBase", "base", {
-                        disableBase: {
-                            type: "checkbox",
-                            label: game.i18n.localize("levels3dpreview.flags.disableBase.label"),
-                            default: false,
-                        },
-                    }),
                     ...section("tokenAnimation", "animation", {
                         enableAnim: {
                             type: "checkbox",

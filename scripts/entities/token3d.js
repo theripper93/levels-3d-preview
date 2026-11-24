@@ -168,7 +168,6 @@ export class Token3D extends foundry.canvas.interaction.RenderFlagsMixin() {
     getFlags() {
         this.gtflPath = this.document.getFlag("levels-3d-preview", "model3d") ?? "";
         this.baseColor = game.settings.get("levels-3d-preview", "solidBaseColor");
-        this.disableBase = this.document.getFlag("levels-3d-preview", "disableBase");
         this.autoCenter = this.document.getFlag("levels-3d-preview", "autoCenter") ?? false;
         this.shaders = this.document.getFlag("levels-3d-preview", "shaders") ?? {};
         this.auraRange = this.document.getFlag("levels-3d-preview", "auraRange") ?? 0;
@@ -1149,8 +1148,6 @@ export class Token3D extends foundry.canvas.interaction.RenderFlagsMixin() {
             this.border.remove(child);
             this._disposeBorderChild(child);
         }
-
-        if (this.disableBase) return this.setUpProne(true);
 
         this._setupBorderMaterials();
 

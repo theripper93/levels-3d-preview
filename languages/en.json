@@ -657,9 +657,6 @@
             "shaderAlt": {
                 "label": "Use Alternative Mode"
             },
-            "disableBase": {
-                "label": "Hide Base"
-            },
             "draggable": {
                 "label": "Draggable"
             },
