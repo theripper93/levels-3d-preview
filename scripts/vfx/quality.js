@@ -20,8 +20,7 @@ function readSetting(key, fallback) {
 
 function readTier() {
     const tier = readSetting("effectsQuality", null);
-    if (QUALITY_TIERS[tier]) return tier;
-    return readSetting("enableEffects", true) ? "medium" : "off";
+    return QUALITY_TIERS[tier] ? tier : "medium";
 }
 
 export function getQuality() {
@@ -40,11 +39,6 @@ export function refreshQuality() {
     return getQuality();
 }
 
-function syncLegacySetting() {
-    const enabled = refreshQuality().enabled;
-    if (game.settings.get(MODULE_ID, "enableEffects") !== enabled) game.settings.set(MODULE_ID, "enableEffects", enabled);
-}
-
 export function registerQualitySettings() {
     game.settings.register(MODULE_ID, "effectsQuality", {
         name: "levels3dpreview.vfx.settings.effectsQuality.name",
@@ -55,8 +49,8 @@ export function registerQualitySettings() {
         choices: Object.fromEntries(Object.keys(QUALITY_TIERS).map((tier) => [tier, `levels3dpreview.vfx.settings.effectsQuality.choices.${tier}`])),
         default: "medium",
         onChange: () => {
-            const wasEnabled = game.settings.get(MODULE_ID, "enableEffects");
-            syncLegacySetting();
+            const wasEnabled = getQuality().enabled;
+            refreshQuality();
             queueGraphicsChange(wasEnabled === getQuality().enabled ? "effectsQuality" : "effectsToggle");
         },
     });
@@ -75,19 +69,14 @@ export function registerQualitySettings() {
         },
     });
 
-    game.settings.register(MODULE_ID, "enableEffects", {
-        scope: "client",
-        config: false,
-        type: Boolean,
-        default: true,
-    });
-
     Hooks.on("clientSettingChanged", (key) => {
         if (key === "core.photosensitiveMode") refreshQuality();
     });
 
     const storage = game.settings.storage.get("client");
-    const migrate = storage.getItem(`${MODULE_ID}.effectsQuality`) === null && game.settings.get(MODULE_ID, "enableEffects") === false;
-    if (migrate) game.settings.set(MODULE_ID, "effectsQuality", "off");
-    else syncLegacySetting();
+    const legacyKey = `${MODULE_ID}.enableEffects`;
+    const migrate = storage.getItem(`${MODULE_ID}.effectsQuality`) === null && storage.getItem(legacyKey) === "false";
+    storage.removeItem(legacyKey);
+    if (migrate) storage.setItem(`${MODULE_ID}.effectsQuality`, JSON.stringify("off"));
+    refreshQuality();
 }

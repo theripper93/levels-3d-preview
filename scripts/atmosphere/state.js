@@ -61,6 +61,11 @@ export class AtmosphereState {
         this.lightColor = new THREE.Color();
         this.lightIntensity = 1;
         this.lightIsMoon = false;
+        this.lightDirection = new THREE.Vector3(0, 1, 0);
+        this.lightDirected = false;
+        this.environmentGain = 1;
+        this.shadowSoftness = 1;
+        this.skyAnimated = false;
         this.skyZenith = new THREE.Color();
         this.skyHorizon = new THREE.Color();
         this.skyGround = new THREE.Color();
@@ -79,7 +84,7 @@ export class AtmosphereState {
         this.clouds = { cover: 0, density: 0, darkness: 0, tint: new THREE.Color(), speed: 1, scale: 1, alpha: 1, drift: new THREE.Vector2(), enabled: true };
         this.flash = 0;
         this.shadowIntensity = 1;
-        this.grade = { exposure: 1, contrast: 1, saturation: 1, vignette: 0, night: 0, nightTint: NIGHT_TINT };
+        this.grade = { exposure: 1, contrast: 1, saturation: 1, vignette: 0, night: 0, nightTint: NIGHT_TINT.clone() };
         this.weatherFog = 0;
         this.version = 0;
         this.weather = { cover: 0, darkness: 0, drift: new THREE.Vector2(), flash: 0, overcast: 0, fogAmount: 0, fogColor: new THREE.Color(0xb0b8c0) };
@@ -111,7 +116,7 @@ export class AtmosphereState {
         this.weather.drift.set(0, 0);
     }
 
-    compute({ sunDirection, moonDirection, sunDistance, sceneTint, darkness, sky, worldTime, gridSize }) {
+    compute({ sunDirection, moonDirection, sunDistance, sceneTint, darkness, sky, worldTime, gridSize, adjust }) {
         const presetId = sky.preset ?? "clear";
         const setting = getSetting(sky.setting);
         const custom = presetId === "custom" && !setting;
@@ -218,8 +223,14 @@ export class AtmosphereState {
         grade.saturation = presetGrade.saturation * (1 - overcast * OVERCAST_SATURATION);
         grade.vignette = VIGNETTE;
         grade.night = presetGrade.night * (setting ? 1 : this.night);
+        grade.nightTint.copy(NIGHT_TINT);
+        this.lightDirected = false;
+        this.environmentGain = 1;
+        this.shadowSoftness = 1;
+        this.skyAnimated = false;
 
         if (setting) this.applySetting(setting, sky.backgroundColor);
+        if (adjust) adjust(this, setting);
         this.updateVersion();
         if (flash > 0) this.applyFlash(flash);
         return this;

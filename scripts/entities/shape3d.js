@@ -3,6 +3,7 @@ import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { DiagonalStripesMaterial } from "../shaders/regionMaterial.js";
 import { factor } from "../main.js";
 import { WARMUP_LAYER } from "../systems/lightWarmup.js";
+import { getSetting } from "../settings/settingsConfig.js";
 
 export class Shape3D extends THREE.Object3D {
     constructor() {
@@ -28,7 +29,7 @@ export class Shape3D extends THREE.Object3D {
     }
 
     get extrude() {
-        const alwaysFlat = game.settings.get("levels-3d-preview", "regionsAlwaysFlat");
+        const alwaysFlat = getSetting("regionsAlwaysFlat");
         if (alwaysFlat) return true;
         return this.#extrude;
     }
@@ -39,7 +40,7 @@ export class Shape3D extends THREE.Object3D {
 
     get height() {
         if (this.#height !== null) return this.#height;
-        const alwaysFlat = game.settings.get("levels-3d-preview", "regionsAlwaysFlat");
+        const alwaysFlat = getSetting("regionsAlwaysFlat");
         if (alwaysFlat) return 0.01;
         return this.elevationTop - this.elevationBottom;
     }

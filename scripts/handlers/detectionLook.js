@@ -114,18 +114,21 @@ function createFillMaterial(resolution) {
     return material;
 }
 
+const ghostSources = new WeakMap();
+
 function createGhostMaterial(material, variant) {
     if (!material) return material;
     const ghost = material.clone();
     const base = material._userOnBeforeCompile;
-    const key = material.customProgramCacheKey();
     const tint = { value: variant.tint };
     ghost.onBeforeCompile = function (shader, renderer) {
         base?.call(this, shader, renderer);
         shader.uniforms.l3dGhostTint = tint;
+        if (shader.fragmentShader.includes("uniform vec3 l3dGhostTint;")) return;
         shader.fragmentShader = `uniform vec3 l3dGhostTint;\n${shader.fragmentShader}`.replace("#include <alphamap_fragment>", GHOST_CHUNK).replace("#include <emissivemap_fragment>", GHOST_GLOW_CHUNK);
     };
-    ghost.customProgramCacheKey = () => `${key}|l3dGhost`;
+    ghost.customProgramCacheKey = () => `${material.customProgramCacheKey()}|l3dGhost`;
+    ghostSources.set(ghost, material);
     ghost.transparent = true;
     ghost.opacity = material.opacity * variant.opacity;
     ghost.alphaTest = 0;
@@ -305,6 +308,7 @@ export class DetectionLook {
 
     ghostFor(material, name = "invisible") {
         if (!material) return material;
+        material = ghostSources.get(material) ?? material;
         const variant = GHOST_VARIANTS[name];
         const cache = name === "hidden" ? this.hiddenCache : this.ghostCache;
         const cached = cache.get(material);

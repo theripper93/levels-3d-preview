@@ -13,18 +13,20 @@ const ICON_GRID_SIZE = 0.22;
 const VERTEX = `
 attribute vec3 iAnchor;
 attribute vec4 iLayout;
-attribute vec2 iCell;
+attribute vec3 iCell;
 attribute vec4 iTint;
 attribute vec4 iRim;
 uniform vec2 uViewport;
 varying vec2 vUv;
 varying vec2 vCell;
+varying float vCover;
 varying vec4 vTint;
 varying vec4 vRim;
 varying float vInset;
 void main() {
     vUv = uv;
-    vCell = iCell;
+    vCell = iCell.xy;
+    vCover = iCell.z;
     vTint = iTint;
     vRim = iRim;
     vInset = iLayout.y;
@@ -43,6 +45,7 @@ uniform sampler2D uAtlas;
 uniform float uCells;
 varying vec2 vUv;
 varying vec2 vCell;
+varying float vCover;
 varying vec4 vTint;
 varying vec4 vRim;
 varying float vInset;
@@ -50,13 +53,14 @@ void main() {
     float d = length(vUv * 2.0 - 1.0) - 1.0;
     float aa = max(fwidth(d), 1e-4);
     float shape = 1.0 - smoothstep(-aa, 0.0, d);
-    float rim = smoothstep(-0.12 - aa, -0.12, d) * vRim.a;
+    float rimEdge = smoothstep(-0.12 - aa, -0.12, d);
+    float rim = rimEdge * vRim.a;
     vec3 backColor = mix(vec3(0.035, 0.035, 0.045), vRim.rgb, rim);
     float backAlpha = max(0.78, rim);
     vec2 iuv = (vUv - 0.5) / vInset + 0.5;
     vec2 inside = step(vec2(0.0), iuv) * step(iuv, vec2(1.0));
     vec2 cuv = clamp(iuv, 0.0, 1.0);
-    vec4 icon = texture2D(uAtlas, (vCell + vec2(cuv.x, 1.0 - cuv.y)) / uCells) * (inside.x * inside.y);
+    vec4 icon = texture2D(uAtlas, (vCell + vec2(cuv.x, 1.0 - cuv.y)) / uCells) * (inside.x * inside.y) * mix(1.0, 1.0 - rimEdge, vCover);
     float alpha = icon.a + backAlpha * (1.0 - icon.a);
     vec3 color = (icon.rgb * vTint.rgb + backColor * backAlpha * (1.0 - icon.a)) / max(alpha, 1e-4);
     gl_FragColor = vec4(color, alpha * shape * vTint.a);
@@ -160,16 +164,24 @@ class EffectIconAtlas {
         src ||= FALLBACK_ICON;
         if (this.entries.has(src)) return this.entries.get(src);
         const promise = this._loadImage(src)
-            .catch(() => this._loadImage(FALLBACK_ICON))
-            .then((image) =>
-                this._commit(this._alloc(), (ctx, x, y, size) => {
-                    const ratio = (image.naturalWidth || 1) / (image.naturalHeight || 1);
+            .then((image) => ({ image, cover: !/\.svg$/i.test(src.split("?")[0]) }))
+            .catch(() => this._loadImage(FALLBACK_ICON).then((image) => ({ image, cover: false })))
+            .then(({ image, cover }) => [
+                ...this._commit(this._alloc(), (ctx, x, y, size) => {
+                    const iw = image.naturalWidth || 1;
+                    const ih = image.naturalHeight || 1;
+                    if (cover) {
+                        const crop = Math.min(iw, ih);
+                        return ctx.drawImage(image, (iw - crop) / 2, (ih - crop) / 2, crop, crop, x - PAD, y - PAD, CELL, CELL);
+                    }
+                    const ratio = iw / ih;
                     const w = ratio >= 1 ? size : size * ratio;
                     const h = ratio >= 1 ? size / ratio : size;
                     ctx.drawImage(image, x + (size - w) / 2, y + (size - h) / 2, w, h);
                 }),
-            )
-            .catch(() => [0, 0]);
+                cover ? 1 : 0,
+            ])
+            .catch(() => [0, 0, 0]);
         this.entries.set(src, promise);
         return promise;
     }
@@ -184,7 +196,7 @@ class EffectIconAtlas {
             ctx.font = `bold ${Math.round(size * 0.62)}px Signika, sans-serif`;
             ctx.fillText(text, x + size / 2, y + size / 2 + size * 0.04, size);
         });
-        const promise = Promise.resolve(cell);
+        const promise = Promise.resolve([...cell, 0]);
         this.entries.set(key, promise);
         return promise;
     }
@@ -208,11 +220,13 @@ function labelState(token3d) {
     const token = token3d.token;
     const bars = token3d.bars?.isSprite && token3d.bars.scale.x > 0 ? token3d.bars.scale : null;
     const name = token3d.nameplate?.isSprite ? token3d.nameplate.scale : null;
+    const coreBars = token.bars?.destroyed ? null : token.bars;
+    const coreBar = coreBars?.bar1?.destroyed ? null : coreBars?.bar1;
     return {
         showName: !!token.nameplate?.visible,
-        showBars: !!token.bars?.visible && !!token3d.document.bar1?.attribute,
+        showBars: !!coreBars?.visible && !!token3d.document.bar1?.attribute,
         barWidth: bars?.x ?? (token.w || token3d.document.width * canvas.grid.size) / factor,
-        barHeight: bars?.y ?? (token.bars?.bar1?.height || 10) / factor,
+        barHeight: bars?.y ?? (coreBar?.height || 10) / factor,
         nameWidth: name?.x ?? 0,
     };
 }
@@ -322,8 +336,8 @@ async function buildMesh(token3d, atlas, placed) {
         geometry.setAttribute(name, new THREE.InstancedBufferAttribute(array, itemSize));
     };
     attribute("iAnchor", 3, (p) => [0, p.y, 0]);
-    attribute("iLayout", 4, (p) => [p.x, p.inset, p.bias, p.size]);
-    attribute("iCell", 2, (p, i) => cells[i]);
+    attribute("iLayout", 4, (p, i) => [p.x, cells[i][2] ? 1 : p.inset, p.bias, p.size]);
+    attribute("iCell", 3, (p, i) => cells[i]);
     attribute("iTint", 4, (p) => [p.tint.r, p.tint.g, p.tint.b, 1]);
     attribute("iRim", 4, (p) => p.rim);
     const extent = Math.max(token3d.w, token3d.h, token3d.d) * 2 + (canvas.grid.size / factor) * 2;

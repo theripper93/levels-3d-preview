@@ -7,8 +7,8 @@ const COARSER_MARGIN = 0.7;
 const INDEX_BUDGET = 1500000;
 const _size = new Vector2();
 
-const PRESETS = [null, 1.5, 3, 6];
-const LOW_TIERS = new Set(["off", "low"]);
+const PRESETS = [null, 1.5, 3];
+const DEFAULT_AGGRESSIVENESS = 2;
 
 export class BatchLod {
     constructor(batcher) {
@@ -35,7 +35,7 @@ export class BatchLod {
     }
 
     get aggressiveness() {
-        return this._aggressiveness ?? (LOW_TIERS.has(getQuality().tier) ? 3 : 2);
+        return this._aggressiveness ?? DEFAULT_AGGRESSIVENESS;
     }
 
     set aggressiveness(value) {

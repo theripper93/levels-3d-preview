@@ -39,13 +39,22 @@ export async function updateSceneThumbnail(scene = canvas.scene, options = {}) {
     return thumb;
 }
 
-export async function captureSceneThumbnail(scene = canvas.scene, { framing = "view", bounds = null } = {}) {
+export function canCaptureScene(scene = canvas.scene) {
+    return !!game.Levels3DPreview?._active && !!scene && scene.id === canvas.scene?.id;
+}
+
+export async function captureSceneCanvas(scene = canvas.scene, { framing = "view", bounds = null, size = THUMB } = {}) {
     const L = game.Levels3DPreview;
-    if (!L?._active || scene?.id !== canvas.scene?.id) throw new Error(game.i18n.localize("levels3dpreview.thumbnail.notActive"));
+    if (!canCaptureScene(scene)) throw new Error(game.i18n.localize("levels3dpreview.thumbnail.notActive"));
     await waitForSettled(L, scene.id);
-    const source = await captureFrame(L, framing === "auto" ? autoPose(L, bounds) : null);
-    const thumb = await foundry.helpers.media.ImageHelper.canvasToBase64(source, THUMB.format, THUMB.quality);
-    return { thumb, ...THUMB };
+    return captureFrame(L, framing === "auto" ? autoPose(L, bounds, size) : null, size);
+}
+
+export async function captureSceneThumbnail(scene = canvas.scene, options = {}) {
+    const size = options.size ?? THUMB;
+    const source = await captureSceneCanvas(scene, { ...options, size });
+    const thumb = await foundry.helpers.media.ImageHelper.canvasToBase64(source, size.format, size.quality);
+    return { thumb, ...size };
 }
 
 function isSettled(L) {
@@ -64,7 +73,7 @@ async function waitForSettled(L, sceneId) {
     }
 }
 
-function captureFrame(L, pose) {
+function captureFrame(L, pose, size) {
     return new Promise((resolve, reject) => {
         const composer = L.composer;
         const own = Object.hasOwn(composer, "render");
@@ -79,7 +88,7 @@ function captureFrame(L, pose) {
             clearTimeout(timeout);
             const draw = () => render.apply(composer, args);
             try {
-                resolve(renderThumbnail(L, pose, draw));
+                resolve(renderThumbnail(L, pose, draw, size));
             } catch (err) {
                 reject(err);
             } finally {
@@ -89,7 +98,7 @@ function captureFrame(L, pose) {
     });
 }
 
-function renderThumbnail(L, pose, draw) {
+function renderThumbnail(L, pose, draw, size) {
     const restore = [];
     const hide = (object) => {
         if (!object?.isObject3D || !object.visible) return;
@@ -106,7 +115,7 @@ function renderThumbnail(L, pose, draw) {
         if (pose) applyPose(L, pose, restore);
         L.clusterManager.update();
         draw();
-        return cropFrame(L);
+        return cropFrame(L, size);
     } finally {
         for (const undo of restore.reverse()) undo();
         L.clusterManager.update();
@@ -117,7 +126,7 @@ function prepareScene(L, hide, show, restore) {
     for (const token of Object.values(L.tokens)) hide(token?.mesh);
     for (const light of Object.values(L.lights.sceneLights)) {
         hide(light?.dragHandle);
-        hide(light?.lightHelper);
+        hide(light?.gizmo?.root);
     }
     for (const sound of Object.values(L.sounds)) hide(sound?.mesh);
     for (const note of Object.values(L.notes)) hide(note?.mesh);
@@ -131,6 +140,9 @@ function prepareScene(L, hide, show, restore) {
     }
     for (const region of Region3D.regions.values()) if (!region.hasShaders) hide(region);
     for (const finder of L.rangeFinders) finder.meshes?.forEach(hide);
+    const preview = L.interactionManager?.placementPreview;
+    hide(preview?._line?.group);
+    preview?.segments?.forEach((segment) => hide(segment.group));
     for (const ping of L.pings) hide(ping?.ping);
     for (const cursor of Object.values(L.cursors?._cursors ?? {})) hide(cursor);
     for (const child of L.scene.children) {
@@ -181,7 +193,7 @@ function refreshAmbient(gi) {
     else gi._mixWorkLight();
 }
 
-function autoPose(L, bounds) {
+function autoPose(L, bounds, size) {
     const initial = canvas.scene.getFlag("levels-3d-preview", "initialPosition");
     if (Number.isFinite(initial?.position?.x) && Number.isFinite(initial?.target?.x)) {
         return { position: new THREE.Vector3().copy(initial.position), target: new THREE.Vector3().copy(initial.target), fov: L.camera.fov };
@@ -194,14 +206,14 @@ function autoPose(L, bounds) {
     const forward = back.clone().negate();
     const right = new THREE.Vector3().crossVectors(forward, THREE.Object3D.DEFAULT_UP).normalize();
     const tanV = Math.tan(THREE.MathUtils.degToRad(AUTO_FOV / 2));
-    const tanH = (THUMB.width / THUMB.height) * tanV;
+    const tanH = (size.width / size.height) * tanV;
     const corner = new THREE.Vector3();
     let distance = 0;
     for (let i = 0; i < 8; i++) {
         corner.set(i & 1 ? box.max.x : box.min.x, i & 2 ? box.max.y : box.min.y, i & 4 ? box.max.z : box.min.z).sub(center);
         distance = Math.max(distance, Math.abs(corner.dot(right)) / tanH - corner.dot(forward));
     }
-    const tanFull = tanV * Math.max(1, THUMB.width / THUMB.height / L.camera.aspect);
+    const tanFull = tanV * Math.max(1, size.width / size.height / L.camera.aspect);
     const radius = box.getSize(corner).length() / 2;
     return { position: center.clone().addScaledVector(back, distance), target: center, fov: THREE.MathUtils.radToDeg(2 * Math.atan(tanFull)), far: distance + radius * 2 };
 }
@@ -236,20 +248,20 @@ function applyPose(L, pose, restore) {
     if (L.lights.globalIllumination?.sky) L.lights.globalIllumination.updateAtmosphere();
 }
 
-function cropFrame(L) {
+function cropFrame(L, size) {
     const source = L.renderer.getContext().canvas;
     const buffer = L.renderer.getDrawingBufferSize(new THREE.Vector2());
-    const aspect = THUMB.width / THUMB.height;
+    const aspect = size.width / size.height;
     const sw = Math.min(buffer.x, buffer.y * aspect);
     const sh = sw / aspect;
     const sx = (buffer.x - sw) / 2;
     const sy = source.height - buffer.y + (buffer.y - sh) / 2;
     const output = document.createElement("canvas");
-    output.width = THUMB.width;
-    output.height = THUMB.height;
+    output.width = size.width;
+    output.height = size.height;
     const context = output.getContext("2d");
     context.imageSmoothingEnabled = true;
     context.imageSmoothingQuality = "high";
-    context.drawImage(source, sx, sy, sw, sh, 0, 0, THUMB.width, THUMB.height);
+    context.drawImage(source, sx, sy, sw, sh, 0, 0, size.width, size.height);
     return output;
 }

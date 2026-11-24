@@ -1,13 +1,15 @@
 import * as THREE from "three";
 import { factor } from "../main.js";
-import * as coords3d from "../helpers/coords3d.js";
 import { flameSeed, flameTime, setLightFlicker } from "../vfx/light/noise.js";
 import { getLightAnimation, sampleColor, sampleIntensity, sampleRadius, sampleRevolve } from "../vfx/light/animations.js";
 import { LightEffects } from "../vfx/light/lightEffects.js";
 import { ClusterLight } from "../lighting/cluster/clusterLight.js";
 import { setStaticSubtree } from "../three/matrixWorld.js";
+import { getQuality } from "../vfx/quality.js";
+import { createEntityGizmo, placeableGizmoState, snapActive } from "./effects/placeableGizmo.js";
 
 const LIGHT_SHADOW_RADIUS = 3;
+const GIZMO_FLAGS = new Set(["refreshState", "refreshVisibility", "refreshField", "refreshTooltip", "refreshMeasurements"]);
 const MIN_BRIGHT_RATIO = 0.25;
 
 export class Light3D {
@@ -15,7 +17,6 @@ export class Light3D {
         this.light = light;
         this._parent = parent;
         this.isToken = isToken;
-        this._useHelper = game.user.isGM && game.settings.get("levels-3d-preview", "lightHelpers");
         this.animation = null;
         this.flicker = 1;
         this.refreshDebounced = foundry.utils.debounce(this.refresh.bind(this), 100);
@@ -33,11 +34,11 @@ export class Light3D {
         this.isPointLight = this.angle == 360;
         this.light3d = this.createLight3D(this.wantsShadow(this.light));
         this.mesh = new THREE.Group();
+        if (!this.isToken && game.user.isGM) this.gizmo = createEntityGizmo(this, { glyph: "icons/svg/light.svg", glyphOff: "icons/svg/light-off.svg" });
         this.refresh();
         if (!this.isToken) {
             this.mesh.add(this.light3d);
             this._parent.scene.add(this.mesh);
-            if (game.user.isGM) this.createHandle();
         }
         this.updateStaticSubtree();
     }
@@ -102,53 +103,52 @@ export class Light3D {
         return light3d.isClusterLight ? light3d.castShadow : !light3d.castShadow && this.clustered;
     }
 
-    get useHelper() {
-        return this._useHelper && !this.isToken;
+    rangeValues() {
+        return { radius: Math.max(this.dim, this.bright), angle: this.angle, rotation: this.rotation };
     }
 
-    createHandle() {
-        const texture = this._parent.textures.lightOn;
-        const size = (canvas.scene.dimensions.size * 0.5) / factor / 2;
-        const geometry = new THREE.SphereGeometry(size, 16, 16);
-        const material = new THREE.MeshBasicMaterial({ color: new THREE.Color("white"), transparent: true, depthWrite: false, opacity: 0.5 });
-        const lightSphere = new THREE.Mesh(geometry, material);
-        const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: texture, transparent: true, opacity: 0.8 }));
-        sprite.scale.set(size * 1.5, size * 1.5, size * 1.5);
-        const mesh = new THREE.Group();
-        mesh.add(lightSphere);
-        mesh.add(sprite);
-        this.mesh.userData.hitbox = mesh;
-        this.mesh.userData.interactive = true;
-        this.mesh.userData.entity3D = this;
-        mesh.userData.entity3D = this;
-        mesh.userData.isHitbox = true;
-        mesh.userData.sprite = sprite;
-        mesh.userData.sphere = lightSphere;
-        this.dragHandle = mesh;
-        this.mesh.add(mesh);
+    syncGizmo(range = this.rangeValues()) {
+        if (!this.gizmo || this.light.destroyed) return;
+        const light = this.light.hasPreview ? this.light._preview : this.light;
+        this.gizmo.sync(
+            placeableGizmoState(this, {
+                color: this.color ?? null,
+                disabled: !light.emitsLight,
+                radius: (range.radius * canvas.dimensions.distancePixels) / factor,
+                bright: Math.max(this.dim, this.bright) > 0 ? Math.min(this.dim, this.bright) / Math.max(this.dim, this.bright) : 0.5,
+                angle: range.angle,
+                rotation: range.rotation,
+                field: light.lightSource?.shape,
+            }),
+        );
     }
 
-    updateHandle() {
-        if (!this.dragHandle) return;
-        this.dragHandle.visible = canvas.lighting.active;
-        if (this.useHelper && this.lightHelper) this.lightHelper.visible = canvas.lighting.active && !this.light.document.hidden;
-        if (!this.dragHandle.visible) return;
-        this.dragHandle.userData.sprite.material.map = this.light.document.hidden ? this._parent.textures.lightOff : this._parent.textures.lightOn;
-        this.dragHandle.userData.sprite.material.color.set(this.light.document.hidden ? "#ff0000" : "#ffffff");
-        if(this.light.document.hidden && this.light.document.flags?.["levels-3d-preview"]?.visibleWhenDisabled) this.dragHandle.userData.sprite.material.color.set("#00ff00");
-        this.dragHandle.userData.sphere.material.color.set(this.color || "#ffffff");
+    commitRange({ radius, angle, rotation }) {
+        const max = Math.max(this.dim, this.bright);
+        const dim = max > 0 ? (this.dim / max) * radius : radius;
+        const bright = max > 0 ? (this.bright / max) * radius : radius / 2;
+        return this.light.document.update({ rotation, config: { dim: dim.toNearest(0.01), bright: bright.toNearest(0.01), angle } });
+    }
+
+    get dragLift() {
+        this.gizmo?.updateGround();
+        return this.gizmo?.height ?? 0;
+    }
+
+    onDragMove() {
+        this.syncGizmo();
     }
 
     async updatePositionFrom3D(e) {
         this.skipMoveAnimation = true;
-        const useSnapped = coords3d.useSnapped();
+        const useSnapped = snapActive();
         const x3d = this.mesh.position.x;
         const y3d = this.mesh.position.y;
         const z3d = this.mesh.position.z;
         const x = x3d * factor;
         const y = z3d * factor;
         const z = Math.round(((y3d * factor * canvas.dimensions.distance) / canvas.dimensions.size) * 100) / 100;
-        const snapped = canvas.grid.getSnappedPoint({x, y}, {mode: CONST.GRID_SNAPPING_MODES.TOP_LEFT_CORNER, resolution: 2});
+        const snapped = canvas.lighting.getSnappedPoint({ x, y });
         const elevation = this.light.document.elevation;
         const dest = {
             x: useSnapped ? snapped.x : x,
@@ -207,9 +207,6 @@ export class Light3D {
             color2: new THREE.Color(this.particleData.color2),
             legacy: this.particleData.color !== this.particleData.color2,
         };
-        if (this.dragHandle) {
-            this.dragHandle.position.set(0, 0, 0);
-        }
         const castShadow = this.wantsShadow(light);
         if (this.light3d.isClusterLight ? castShadow : !castShadow && this.clustered) this.swapLight3D(castShadow);
         if (castShadow && this.isEmitting) this.light3d.shadow.autoUpdate = true;
@@ -266,22 +263,7 @@ export class Light3D {
         this.flameSeed = flameSeed(this.particleEffectId);
         (this.baseColor ??= new THREE.Color()).set(color);
         this.lightFx?.refresh(light.document);
-        if (this.useHelper) {
-            this.mesh.remove(this.lightHelper);
-            this.lightHelper?.dispose();
-            this.lightHelper = this.angle != 360 ? new THREE.SpotLightHelper(this.light3d) : new THREE.PointLightHelper(this.light3d, radius);
-            this.mesh.add(this.lightHelper);
-            this.lightHelper.update();
-            this.lightHelper.matrix = this.light3d.matrix;
-            if (this.angle === 360) this.lightHelper.geometry = new THREE.SphereGeometry(radius, 8, 8);
-            else this.lightHelper.cone.lookAt(this.light3d.target.position);
-            this.lightHelper.userData.ignoreHover = true;
-            this.lightHelper.userData.interactive = false;
-            this.lightHelper.traverse((o) => {
-                o.userData.ignoreHover = true;
-                o.userData.interactive = false;
-            });
-        }
+        this.syncGizmo();
         if (particleChanged && enableParticle) this.initParticle();
         this.updateStaticSubtree();
     }
@@ -374,14 +356,9 @@ export class Light3D {
         this.light3d.dispose();
         this._parent.scene.remove(this.mesh);
         if (this.particleEffectId) Particle3D.stop(this.particleEffectId);
-        this.lightHelper?.dispose();
-        if (this.dragHandle) {
-            const { sphere, sprite } = this.dragHandle.userData;
-            sphere?.geometry?.dispose();
-            sphere?.material?.dispose();
-            sprite?.material?.dispose();
-            this.dragHandle = null;
-        }
+        this.gizmo?.dispose();
+        this.gizmo = null;
+        this.dragHandle = null;
     }
 
     get particleEffectId() {
@@ -389,7 +366,7 @@ export class Light3D {
     }
 
     initParticle() {
-        if (!game.settings.get("levels-3d-preview", "enableEffects")) return;
+        if (!getQuality().enabled) return;
         if (this.light.document.hidden && !this.light.document.getFlag("levels-3d-preview", "enableParticleHidden")) return;
         const particleData = this.particleData;
         const L = game.Levels3DPreview;
@@ -541,7 +518,21 @@ export class Light3D {
 
         Hooks.on("updateAmbientLight", refreshOrUpdate);
 
-        Hooks.on("refreshAmbientLight", refreshOrUpdate);
+        Hooks.on("refreshAmbientLight", (light, flags) => {
+            if (!game.Levels3DPreview?._active) return;
+            game.Levels3DPreview.lights.sceneLights[light.document.id]?.syncGizmo();
+            if (Object.keys(flags ?? {}).some((flag) => flags[flag] && !GIZMO_FLAGS.has(flag))) refreshOrUpdate(light.document);
+        });
+
+        const syncAll = () => {
+            if (!game.Levels3DPreview?._active) return;
+            for (const light3d of Object.values(game.Levels3DPreview.lights.sceneLights)) {
+                light3d.gizmo?.invalidateGround();
+                light3d.syncGizmo();
+            }
+        };
+        Hooks.on("activateLightingLayer", syncAll);
+        Hooks.on("deactivateLightingLayer", syncAll);
 
         Hooks.on("createAmbientLight", (lightDocument) => {
             if (game.Levels3DPreview?._active && lightDocument.object) game.Levels3DPreview.addLight(lightDocument.object);

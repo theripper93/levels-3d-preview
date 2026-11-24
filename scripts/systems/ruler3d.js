@@ -2,10 +2,11 @@ import * as THREE from "three";
 import { factor } from "../main.js";
 import * as coords3d from "../helpers/coords3d.js";
 import { RULER_TOKEN_OFFSET } from "../helpers/coords3d.js";
+import { LineSegments2 } from "three/addons/lines/LineSegments2.js";
+import { LineSegmentsGeometry } from "three/addons/lines/LineSegmentsGeometry.js";
+import { LineMaterial } from "three/addons/lines/LineMaterial.js";
 
 export { RULER_TOKEN_OFFSET };
-
-const RULER_RENDER_ORDER = 1e20;
 
 const freeRulers = new Set();
 
@@ -35,6 +36,130 @@ export function get3DCursorElevation() {
     return Math.round(z * 10) / 10;
 }
 
+const DOT_VERTEX = `
+uniform float uPixelRatio;
+attribute float aSize;
+attribute float aRing;
+attribute vec3 aColor;
+attribute vec3 aOutline;
+attribute float aAlpha;
+varying vec3 vColor;
+varying vec3 vOutline;
+varying float vAlpha;
+varying float vSize;
+varying float vRing;
+void main() {
+    vColor = aColor;
+    vOutline = aOutline;
+    vAlpha = aAlpha;
+    vSize = aSize * uPixelRatio;
+    vRing = aRing * uPixelRatio;
+    gl_PointSize = vSize;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+}
+`;
+
+const DOT_FRAGMENT = `
+varying vec3 vColor;
+varying vec3 vOutline;
+varying float vAlpha;
+varying float vSize;
+varying float vRing;
+void main() {
+    float r = length(gl_PointCoord - 0.5) * vSize;
+    float R = vSize * 0.5;
+    float aa = 0.75;
+    float disc = 1.0 - smoothstep(R - aa, R + aa, r);
+    float inner = 1.0 - smoothstep(R - vRing - aa, R - vRing + aa, r);
+    float a = disc * vAlpha;
+    if (a < 0.01) discard;
+    gl_FragColor = vec4(mix(vOutline, vColor, inner), a);
+    #include <colorspace_fragment>
+}
+`;
+
+const RULER_SCALE = 1.5;
+const XRAY_LINE_ALPHA = 0.6;
+const XRAY_OUTLINE_ALPHA = 0.4;
+const DASH = 12;
+const GAP = 8;
+const DASH_SPEED = 50;
+const LINE_ORDER = 1e15;
+
+const lineMaterials = new Map();
+const animatedMaterials = [];
+let dotMaterial = null;
+
+function syncDotPixelRatio(renderer) {
+    dotMaterial.uniforms.uPixelRatio.value = renderer.getPixelRatio();
+}
+
+function getDotMaterial() {
+    dotMaterial ??= new THREE.ShaderMaterial({
+        uniforms: { uPixelRatio: { value: 1 } },
+        vertexShader: DOT_VERTEX,
+        fragmentShader: DOT_FRAGMENT,
+        transparent: true,
+        depthTest: false,
+        depthWrite: false,
+    });
+    return dotMaterial;
+}
+
+function dashUnit() {
+    return canvas.dimensions.uiScale / factor;
+}
+
+function getLineMaterial({ outline, xray, width, alpha, dash, color }) {
+    const key = `${outline}|${xray}|${width}|${alpha}|${dash}|${color}`;
+    let material = lineMaterials.get(key);
+    if (!material) {
+        material = new LineMaterial({
+            color: outline ? color : 0xffffff,
+            vertexColors: !outline,
+            linewidth: width,
+            transparent: true,
+            opacity: alpha * (xray ? (outline ? XRAY_OUTLINE_ALPHA : XRAY_LINE_ALPHA) : 1),
+            depthTest: !xray,
+            depthWrite: false,
+            dashed: !!dash,
+            worldUnits: false,
+        });
+        material.toneMapped = false;
+        if (dash === "animated") animatedMaterials.push(material);
+        lineMaterials.set(key, material);
+    }
+    return material;
+}
+
+function configureDash(material, outline, thickness) {
+    if (!material.dashed) return;
+    const unit = dashUnit();
+    const shift = outline ? thickness * unit : 0;
+    material.dashSize = DASH * unit + 2 * shift;
+    material.gapSize = Math.max(GAP * unit - 2 * shift, 0);
+    material.userData.dashShift = shift;
+    material.dashOffset = shift;
+}
+
+function tickDashes() {
+    if (!animatedMaterials.length || !canvas?.dimensions) return;
+    const unit = dashUnit();
+    const travel = ((performance.now() / 1000) * DASH_SPEED * unit) % ((DASH + GAP) * unit);
+    for (let i = 0; i < animatedMaterials.length; i++) animatedMaterials[i].dashOffset = (animatedMaterials[i].userData.dashShift ?? 0) - travel;
+}
+
+function inertObject(object) {
+    object.userData.ignoreHover = true;
+    object.userData.noIntersect = true;
+    object.raycast = () => {};
+    object.castShadow = false;
+    object.receiveShadow = false;
+    return object;
+}
+
+const emptyLineGeometry = new LineSegmentsGeometry();
+
 export class RulerPath3D {
     constructor(name) {
         this.group = new THREE.Group();
@@ -42,12 +167,11 @@ export class RulerPath3D {
         this.group.userData.ignoreHover = true;
         this.group.userData.noIntersect = true;
         this.signature = null;
-        this.pulseMaterials = [];
-        this._sphereGeometry = null;
-        this._geometries = new Map();
-        this._used = new Set();
-        this._materials = new Map();
-        this._meshes = [];
+        this._batches = new Map();
+        this._dots = { positions: [], sizes: [], rings: [], colors: [], outlines: [], alphas: [] };
+        this._geometries = [];
+        this._linePool = [];
+        this._points = null;
     }
 
     get scene() {
@@ -70,121 +194,138 @@ export class RulerPath3D {
     }
 
     clear() {
-        for (const [key, geometry] of this._geometries) {
-            if (this._used.has(key)) continue;
-            geometry.dispose();
-            this._geometries.delete(key);
+        for (const object of this.group.children) {
+            if (object.isLineSegments2) {
+                object.geometry = emptyLineGeometry;
+                this._linePool.push(object);
+            }
         }
-        this._used = new Set();
-        this._meshes.push(...this.group.children);
         this.group.clear();
-        this.pulseMaterials = [];
+        this._points?.geometry.dispose();
+        for (const geometry of this._geometries) geometry.dispose();
+        this._geometries.length = 0;
+        this._batches.clear();
+        for (const list of Object.values(this._dots)) list.length = 0;
         this.signature = null;
     }
 
     destroy() {
         this.clear();
-        for (const geometry of this._geometries.values()) geometry.dispose();
-        this._geometries.clear();
-        for (const { body, core } of this._materials.values()) {
-            body.dispose();
-            core.dispose();
-        }
-        this._materials.clear();
-        this._meshes = [];
+        this._linePool.length = 0;
+        this._points = null;
         this.group.removeFromParent();
     }
 
-    _geometry(key, create) {
-        let geometry = this._geometries.get(key);
-        if (!geometry) {
-            geometry = create();
-            this._geometries.set(key, geometry);
+    addSegment(from, to, { width, color = 0xffffff, alpha = 1, outline = {}, dashed = false, outlineDashed = false, animated = false } = {}) {
+        if (!(width > 0) || !(alpha > 0)) return;
+        const thickness = outline.thickness ?? 0;
+        const outlineColor = toThreeColor(outline.color, 0x000000).getHex();
+        const dash = (flag) => (flag ? (animated ? "animated" : "static") : "");
+        const key = `${width}|${alpha}|${thickness}|${outlineColor}|${dash(dashed)}|${dash(outlineDashed)}`;
+        let batch = this._batches.get(key);
+        if (!batch) {
+            batch = { width, alpha, thickness, outlineColor, dash: dash(dashed), outlineDash: dash(outlineDashed), positions: [], colors: [] };
+            this._batches.set(key, batch);
         }
-        this._used.add(key);
-        return geometry;
-    }
-
-    _createMaterials(color, alpha, pulse) {
         const c = toThreeColor(color);
-        const key = `${c.getHexString()}|${alpha}|${pulse}`;
-        const cached = this._materials.get(key);
-        if (cached) {
-            if (pulse && !this.pulseMaterials.includes(cached.body)) this.pulseMaterials.push(cached.body, cached.core);
-            return cached;
-        }
-        const opaque = alpha >= 1 && !pulse;
-        const body = new THREE.MeshBasicMaterial({
-            color: c,
-            transparent: !opaque,
-            opacity: alpha,
-            depthWrite: opaque,
-        });
-        const core = new THREE.MeshBasicMaterial({
-            color: c,
-            transparent: true,
-            opacity: alpha,
-            depthTest: false,
-            depthWrite: false,
-        });
-        if (pulse) {
-            body.userData.baseOpacity = core.userData.baseOpacity = alpha;
-            this.pulseMaterials.push(body, core);
-        }
-        const materials = { body, core };
-        this._materials.set(key, materials);
-        return materials;
+        batch.positions.push(from.x, from.y, from.z, to.x, to.y, to.z);
+        batch.colors.push(c.r, c.g, c.b, c.r, c.g, c.b);
     }
 
-    _addMesh(geometry, material, renderOrder) {
-        let mesh = this._meshes.pop();
-        if (mesh) {
-            mesh.geometry = geometry;
-            mesh.material = material;
-            mesh.position.set(0, 0, 0);
-        } else {
-            mesh = new THREE.Mesh(geometry, material);
-            mesh.userData.ignoreHover = true;
-            mesh.userData.noIntersect = true;
-            mesh.raycast = () => {};
-        }
-        mesh.renderOrder = renderOrder ?? 0;
-        this.group.add(mesh);
-        return mesh;
-    }
-
-    addLine(points, { width, color = 0xffffff, alpha = 1, pulse = false } = {}) {
-        if (!(width > 0) || !(alpha > 0) || points.length < 2) return;
-        const radius = (width / 2) * rulerPixelScale();
-        let curve;
-        if (points.length === 2) {
-            curve = new THREE.LineCurve3(points[0], points[1]);
-        } else {
-            curve = new THREE.CurvePath();
-            for (let i = 1; i < points.length; i++) curve.add(new THREE.LineCurve3(points[i - 1], points[i]));
-        }
-        const tubular = Math.max(1, (points.length - 1) * 2);
-        const { body, core } = this._createMaterials(color, alpha, pulse);
-        const key = `${radius}|${points.map((p) => `${p.x},${p.y},${p.z}`).join(";")}`;
-        this._addMesh(this._geometry(`t8|${key}`, () => new THREE.TubeGeometry(curve, tubular, radius, 8, false)), body);
-        this._addMesh(this._geometry(`t6|${key}`, () => new THREE.TubeGeometry(curve, tubular, radius * 0.4, 6, false)), core, RULER_RENDER_ORDER);
-    }
-
-    addSphere(point, { radius, color = 0xffffff, alpha = 1, pulse = false } = {}) {
+    addWaypoint(point, { radius, color = 0xffffff, alpha = 1, outline = {} } = {}) {
         if (!(radius > 0) || !(alpha > 0)) return;
-        const r = radius * rulerPixelScale();
-        const { body, core } = this._createMaterials(color, alpha, pulse);
-        const outer = this._addMesh(this._geometry(`s16|${r}`, () => new THREE.SphereGeometry(r, 16, 12)), body);
-        outer.position.copy(point);
-        const inner = this._addMesh(this._geometry(`s12|${r}`, () => new THREE.SphereGeometry(r * 0.5, 12, 8)), core, RULER_RENDER_ORDER - 1);
-        inner.position.copy(point);
+        const thickness = outline.thickness ?? 0;
+        const c = toThreeColor(color);
+        const o = toThreeColor(outline.color, 0x000000);
+        const dots = this._dots;
+        dots.positions.push(point.x, point.y, point.z);
+        dots.sizes.push((radius + thickness) * 2 * RULER_SCALE);
+        dots.rings.push(thickness * 2);
+        dots.colors.push(c.r, c.g, c.b);
+        dots.outlines.push(o.r, o.g, o.b);
+        dots.alphas.push(alpha);
+    }
+
+    build() {
+        for (const batch of this._batches.values()) this._buildBatch(batch);
+        this._buildDots();
+    }
+
+    _line(geometry, material, renderOrder) {
+        const line = this._linePool.pop() ?? inertObject(new LineSegments2(emptyLineGeometry, material));
+        line.geometry = geometry;
+        line.material = material;
+        line.renderOrder = renderOrder;
+        this.group.add(line);
+        return line;
+    }
+
+    _buildBatch({ width, alpha, thickness, outlineColor, dash, outlineDash, positions, colors }) {
+        const geometry = new LineSegmentsGeometry();
+        geometry.setPositions(positions);
+        geometry.setColors(colors);
+        this._geometries.push(geometry);
+        const lineWidth = width * RULER_SCALE;
+        const outlineWidth = lineWidth + thickness * 4;
+        const layers = [];
+        if (thickness > 0) {
+            layers.push({ outline: true, xray: true, width: outlineWidth, dash: outlineDash, order: 0 });
+            layers.push({ outline: true, xray: false, width: outlineWidth, dash: outlineDash, order: 2 });
+        }
+        layers.push({ outline: false, xray: true, width: lineWidth, dash, order: 1 });
+        layers.push({ outline: false, xray: false, width: lineWidth, dash, order: 3 });
+        let measured = false;
+        for (const layer of layers) {
+            const material = getLineMaterial({ ...layer, alpha, color: outlineColor });
+            configureDash(material, layer.outline, thickness);
+            const line = this._line(geometry, material, LINE_ORDER + layer.order);
+            if (layer.dash && !measured) {
+                line.computeLineDistances();
+                measured = true;
+            }
+        }
+    }
+
+    _buildDots() {
+        const dots = this._dots;
+        if (!dots.alphas.length) return;
+        const geometry = new THREE.BufferGeometry();
+        geometry.setAttribute("position", new THREE.Float32BufferAttribute(dots.positions, 3));
+        geometry.setAttribute("aSize", new THREE.Float32BufferAttribute(dots.sizes, 1));
+        geometry.setAttribute("aRing", new THREE.Float32BufferAttribute(dots.rings, 1));
+        geometry.setAttribute("aColor", new THREE.Float32BufferAttribute(dots.colors, 3));
+        geometry.setAttribute("aOutline", new THREE.Float32BufferAttribute(dots.outlines, 3));
+        geometry.setAttribute("aAlpha", new THREE.Float32BufferAttribute(dots.alphas, 1));
+        if (!this._points) {
+            this._points = inertObject(new THREE.Points(geometry, getDotMaterial()));
+            this._points.frustumCulled = false;
+            this._points.renderOrder = LINE_ORDER + 4;
+            this._points.onBeforeRender = syncDotPixelRatio;
+        } else this._points.geometry = geometry;
+        this.group.add(this._points);
     }
 
     tick() {
-        if (!this.pulseMaterials.length) return;
-        const t = 0.5 + 0.5 * Math.sin(performance.now() * 0.006);
-        for (const m of this.pulseMaterials) m.opacity = m.userData.baseOpacity * (0.25 + 0.75 * t);
+        tickDashes();
     }
+}
+
+const LABEL_SKIP_KEYS = new Set(["waypoint", "action"]);
+
+function sanitizeLabelContext(context, seen = new Set()) {
+    seen.add(context);
+    for (const [key, value] of Object.entries(context)) {
+        if (LABEL_SKIP_KEYS.has(key)) continue;
+        if (typeof value === "number") {
+            if (Number.isNaN(value)) delete context[key];
+            else if (Number.isFinite(value)) context[key] = value.toNearest(0.01);
+        } else if (typeof value === "string") {
+            if (value.includes("NaN")) delete context[key];
+        } else if (value && typeof value === "object" && !seen.has(value) && Object.getPrototypeOf(value) === Object.prototype) {
+            sanitizeLabelContext(value, seen);
+        }
+    }
+    return context;
 }
 
 export class RulerLabels3D {
@@ -227,7 +368,7 @@ export class RulerLabels3D {
         }
         const htmls = [];
         for (const { context } of entries) {
-            htmls.push(await foundry.applications.handlebars.renderTemplate(template, context));
+            htmls.push(await foundry.applications.handlebars.renderTemplate(template, sanitizeLabelContext(context)));
             if (renderId !== this._renderId) return;
         }
         const element = this.element;
@@ -358,14 +499,16 @@ export function Ruler3DMixin(Base) {
             const path3d = this.#path3d;
             path3d.clear();
             if (!path3d.attach()) return;
+            const outline = this._configureOutline?.() ?? {};
             for (let i = 1; i < waypoints.length; i++) {
                 const { width, color = 0xffffff, alpha = 1 } = this._getSegmentStyle(waypoints[i]);
-                path3d.addLine([points[i - 1], points[i]], { width, color, alpha });
+                path3d.addSegment(points[i - 1], points[i], { width, color, alpha, outline });
             }
             for (let i = 0; i < waypoints.length; i++) {
                 const { radius, color = 0xffffff, alpha = 1 } = this._getWaypointStyle(waypoints[i]);
-                path3d.addSphere(points[i], { radius, color, alpha });
+                path3d.addWaypoint(points[i], { radius, color, alpha, outline });
             }
+            path3d.build();
         }
 
         _render3DLabels(waypoints, points) {

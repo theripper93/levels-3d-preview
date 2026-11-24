@@ -17,6 +17,7 @@ import { lightFxConfigFields, activateLightFxConfig } from "../vfx/light/config.
 import { TacticalPingPicker, loadUserEmotes } from "../entities/effects/ping.js";
 import { injectBakeButton } from "../helpers/modelBaker.js";
 import { skipDefaultReloads } from "./sceneConfigSubmit.js";
+import { WALL_DEFAULTS } from "../entities/wall3d.js";
 
 export function registerConfigs() {
     const documentsToWiden = ["Scene", "Token", "Tile", "AmbientLight"];
@@ -106,7 +107,7 @@ export function registerConfigs() {
                         label: flag("exr.label"),
                         placeholder: flag("exr.placeholder"),
                         notes: flag("exr.notes"),
-                        default: game.modules.get("canvas3dcompendium") ? "modules/canvas3dcompendium/assets/Beautiful-Sky/2K/Sky_LowPoly_01_Day_a.webp" : "modules/levels-3d-preview/assets/skybox/venice_sunrise_1k.exr",
+                        default: "",
                     },
                     sunPosition: {
                         type: "range",
@@ -402,7 +403,7 @@ export function registerConfigs() {
                         type: "select",
                         label: flag("mapEdge.label"),
                         notes: flag("mapEdge.notes"),
-                        default: "legacy",
+                        default: "fade",
                         options: Object.fromEntries(EDGE_OPTIONS.map((o) => [o, flag(`mapEdge.options.${o}`)])),
                     },
                     edgeTexture: {
@@ -425,7 +426,7 @@ export function registerConfigs() {
                     renderTable: {
                         type: "select",
                         label: flag("renderTable.label"),
-                        default: game.settings.get("levels-3d-preview", "paddingAppearance"),
+                        default: "none",
                         options: {
                             none: flag("renderTable.options.none"),
                             table: flag("renderTable.options.table"),
@@ -483,18 +484,6 @@ export function registerConfigs() {
                         label: flag("object3dSight.label"),
                         notes: flag("object3dSight.notes"),
                         default: false,
-                    },
-                    enableGameCamera: {
-                        type: "checkbox",
-                        label: flag("enableGameCamera.label"),
-                        notes: flag("enableGameCamera.notes"),
-                        default: true,
-                    },
-                    revealTokens: {
-                        type: "checkbox",
-                        label: flag("revealTokens.label"),
-                        notes: flag("revealTokens.notes"),
-                        default: true,
                     },
                     enableFogOfWar: {
                         type: "checkbox",
@@ -730,37 +719,10 @@ export function registerConfigs() {
                         },
                     }),
                     ...section("tokenBase", "base", {
-                        baseStyle: {
-                            type: "custom",
-                            html: `<div class="form-group">
-                            <label>${game.i18n.localize("levels3dpreview.flags.baseStyle.label")}</label>
-                            <div class="form-fields">
-                                <select data-base-style>
-                                    ${["default", "merge", "ontop", "hidden"].map((style) => `<option value="${style}">${game.i18n.localize(`levels3dpreview.flags.baseStyle.options.${style}`)}</option>`).join("")}
-                                </select>
-                            </div>
-                        </div>`,
-                        },
                         disableBase: {
                             type: "checkbox",
                             label: game.i18n.localize("levels3dpreview.flags.disableBase.label"),
                             default: false,
-                        },
-                        solidBaseMode: {
-                            type: "select",
-                            label: game.i18n.localize("levels3dpreview.flags.solidBaseMode.label"),
-                            default: "default",
-                            options: {
-                                default: game.i18n.localize("levels3dpreview.flags.solidBaseMode.options.default"),
-                                merge: game.i18n.localize("levels3dpreview.flags.solidBaseMode.options.merge"),
-                                ontop: game.i18n.localize("levels3dpreview.flags.solidBaseMode.options.ontop"),
-                            },
-                        },
-                        baseColor: {
-                            type: "color",
-                            label: game.i18n.localize("levels3dpreview.flags.baseColor.label"),
-                            default: "",
-                            placeholder: game.settings.get("levels-3d-preview", "solidBaseColor"),
                         },
                     }),
                     ...section("tokenAnimation", "animation", {
@@ -931,15 +893,6 @@ export function registerConfigs() {
         ShaderConfig.injectButton(app, html, html.querySelector(`#shader-config`));
 
         activateParticleFields(html, PS);
-        const disableBase = html.querySelector(`[name="flags.levels-3d-preview.disableBase"]`);
-        const solidBaseMode = html.querySelector(`[name="flags.levels-3d-preview.solidBaseMode"]`);
-        const baseStyle = html.querySelector("[data-base-style]");
-        [disableBase, solidBaseMode].forEach((input) => input.closest(".form-group").classList.add("hidden"));
-        baseStyle.value = disableBase.checked ? "hidden" : solidBaseMode.value;
-        baseStyle.addEventListener("change", () => {
-            disableBase.checked = baseStyle.value === "hidden";
-            if (!disableBase.checked) solidBaseMode.value = baseStyle.value;
-        });
         injectBakeButton(app, html);
     }
 
@@ -1040,7 +993,7 @@ export function registerConfigs() {
                             polygonbevelsolidifyjaggedstraight: game.i18n.localize("levels3dpreview.flags.dynaMesh.options.polygonbevelsolidifyjaggedstraight"),
                             polygonlathe: game.i18n.localize("levels3dpreview.flags.dynaMesh.options.polygonlathe"),
                             polygonchain: game.i18n.localize("levels3dpreview.flags.dynaMesh.options.polygonchain"),
-                            vines: game.i18n.localize("levels3dpreview.flags.dynaMesh.options.vines"),
+                            ...(app.document.getFlag("levels-3d-preview", "dynaMesh") === "vines" ? { vines: game.i18n.localize("levels3dpreview.flags.dynaMesh.options.vines") } : {}),
                         },
                     },
                     dynaMeshResolution: {
@@ -1399,6 +1352,7 @@ export function registerConfigs() {
         });
         const animationGroups = [...["enableAnim", "animIndex", "animSpeed"].map((flag) => flagInput(flag)), playback].map((input) => input.closest(".form-group"));
         if (!tile3d?.hasAnimations) animationGroups.forEach((group) => group.classList.add("hidden"));
+        if (tile3d && !tile3d._loaded) tile3d._onLoaded = () => tile3d.hasAnimations && animationGroups.forEach((group) => group.classList.remove("hidden"));
 
         const doorFields = {
             doorState: () => true,
@@ -1449,6 +1403,9 @@ export function registerConfigs() {
 
     Hooks.on("renderWallConfig", (app, html) => {
         if (html.querySelectorAll(`[data-tab="levels-3d-preview"]`).length) return;
+        const door = app.document.door;
+        const baseTint = door && door !== CONST.WALL_DOOR_TYPES.SECRET ? WALL_DEFAULTS.doorColor : WALL_DEFAULTS.color;
+        const tintFor = (textureFlag) => (app.document.getFlag("levels-3d-preview", textureFlag) ? "#ffffff" : baseTint);
 
         injectConfig.inject(app, html, {
             moduleId: "levels-3d-preview",
@@ -1469,12 +1426,12 @@ export function registerConfigs() {
             wallTint: {
                 type: "color",
                 label: game.i18n.localize("levels3dpreview.flags.color.label"),
-                default: "#ffffff",
+                default: tintFor("wallTexture"),
             },
             wallSidesTint: {
                 type: "color",
                 label: game.i18n.localize("levels3dpreview.flags.wallSidesTint.label"),
-                default: "#ffffff",
+                default: tintFor("wallSidesTexture"),
             },
             stretchTex: {
                 type: "checkbox",
@@ -1496,7 +1453,7 @@ export function registerConfigs() {
             roughness: {
                 type: "range",
                 label: game.i18n.localize("levels3dpreview.flags.roughness.label"),
-                default: 1,
+                default: WALL_DEFAULTS.roughness,
                 min: 0,
                 max: 1,
                 step: 0.01,
@@ -1504,7 +1461,7 @@ export function registerConfigs() {
             metalness: {
                 type: "range",
                 label: game.i18n.localize("levels3dpreview.flags.metalness.label"),
-                default: 1,
+                default: WALL_DEFAULTS.metalness,
                 min: 0,
                 max: 1,
                 step: 0.01,
@@ -1548,33 +1505,6 @@ export function registerConfigs() {
             },
         });
         ShaderConfig.injectButton(app, html, html.querySelector(`input[name="flags.levels-3d-preview.isFog"]`).closest(".form-group"));
-    });
-
-    Hooks.on("renderNoteConfig", (app, html) => {
-        if (html.querySelector(`[name="flags.levels-3d-preview.rotation"]`)) return;
-
-        injectConfig.inject(app, html, {
-            moduleId: "levels-3d-preview",
-            tab: {
-                name: "levels-3d-preview",
-                label: "3D",
-                icon: "fas fa-cube",
-            },
-            // inject: 'input[name="icon.custom"]',
-            model3d: {
-                type: "filepicker.any",
-                fpTypes: [".gltf", ".GLTF", ".glb", ".GLB", ".fbx", ".FBX"],
-                label: game.i18n.localize("levels3dpreview.flags.model3d.label"),
-            },
-            rotation: {
-                type: "range",
-                label: game.i18n.localize("levels3dpreview.flags.rotation.label"),
-                default: 0,
-                min: 0,
-                max: 360,
-                step: 1,
-            },
-        });
     });
 
     Hooks.on("renderAmbientLightConfig", (app, html) => {
@@ -1818,9 +1748,9 @@ export function registerConfigs() {
         <fieldset>
             <legend>${game.i18n.localize("levels3dpreview.flags.emote.header")}</legend>
             <div class="form-group character">
-            ${emote ? `<img class="avatar" src="${emote}" alt="Aoth (Human Druid)">` : ``}
+            ${emote ? `<img class="avatar" src="${emote}" alt="">` : ``}
                 <div class="form-fields">
-                    <file-picker name="flags.levels-3d-preview.emote" data-dtype="String" value="${emote}" type="image" />
+                    <file-picker name="flags.levels-3d-preview.emote" data-dtype="String" value="${emote}" type="image"></file-picker>
                 </div>
                 <p class="hint">${game.i18n.localize("levels3dpreview.flags.emote.notes")}</p>
             </div>
@@ -1879,25 +1809,23 @@ export function registerConfigs() {
             precedence: -1,
         });
 
-        game.keybindings.register("levels-3d-preview", "lockcamera", {
-            name: game.i18n.localize("levels3dpreview.keybindings.lockcamera"),
-            editable: [{ key: "Space" }],
+        game.keybindings.register("levels-3d-preview", "toggleTacticalCamera", {
+            name: game.i18n.localize("levels3dpreview.keybindings.toggleTacticalCamera"),
+            hint: game.i18n.localize("levels3dpreview.keybindings.toggleTacticalCameraHint"),
+            editable: [{ key: "KeyK" }],
             onDown: () => {
                 if (!game.Levels3DPreview._active || !game.Levels3DPreview.hasFocus) return;
-                game.Levels3DPreview.GameCamera.lock = !game.Levels3DPreview.GameCamera.lock;
-                document.querySelector("#clip-navigation-lock")?.classList.toggle("clip-navigation-enabled", game.Levels3DPreview.GameCamera.lock);
+                game.Levels3DPreview.tacticalCamera.toggle();
+                return true;
             },
         });
-        game.keybindings.register("levels-3d-preview", "gameCameraTopDown", {
-            name: game.i18n.localize("levels3dpreview.keybindings.gameCameraTopDown"),
+
+        game.keybindings.register("levels-3d-preview", "topdownView", {
+            name: game.i18n.localize("levels3dpreview.keybindings.topdownView"),
             editable: [{ key: "KeyO" }],
             onDown: () => {
                 if (!game.Levels3DPreview._active || !game.Levels3DPreview.hasFocus) return;
-                if (game.Levels3DPreview.GameCamera.enabled) {
-                    game.Levels3DPreview.GameCamera.toggleTopDown();
-                } else {
-                    game.Levels3DPreview.resetCamera(true);
-                }
+                game.Levels3DPreview.tacticalCamera.toggleTopDown();
             },
         });
 
@@ -1910,7 +1838,7 @@ export function registerConfigs() {
             },
             onUp: () => {
                 game.Levels3DPreview._toggleCameraLockPosition = null;
-                game.Levels3DPreview.GameCamera.onChangeFreeCamera();
+                game.Levels3DPreview.tacticalCamera.onChangeFreeCamera();
             },
         });
 
@@ -1930,12 +1858,13 @@ export function registerConfigs() {
             onDown: (context) => {
                 if (!game.Levels3DPreview._active || !game.Levels3DPreview.hasFocus) return;
                 if (game.Levels3DPreview.firstPerson?.keyMove(context, "panUp", 0, -1)) return true;
+                if (game.Levels3DPreview.tacticalCamera.onKey("panUp", true)) return true;
                 game.Levels3DPreview.controls.screenSpacePanning = false;
-                game.Levels3DPreview.GameCamera.lock = false;
             },
             onUp: () => {
                 game.Levels3DPreview.firstPerson?.keyRelease("panUp");
-                game.Levels3DPreview.controls.screenSpacePanning = game.settings.get("levels-3d-preview", "screenspacepanning");
+                game.Levels3DPreview.tacticalCamera.onKey("panUp", false);
+                game.Levels3DPreview.tacticalCamera.restorePanning();
             },
         });
 
@@ -1946,12 +1875,13 @@ export function registerConfigs() {
             onDown: (context) => {
                 if (!game.Levels3DPreview._active || !game.Levels3DPreview.hasFocus) return;
                 if (game.Levels3DPreview.firstPerson?.keyMove(context, "panDown", 0, 1)) return true;
+                if (game.Levels3DPreview.tacticalCamera.onKey("panDown", true)) return true;
                 game.Levels3DPreview.controls.screenSpacePanning = false;
-                game.Levels3DPreview.GameCamera.lock = false;
             },
             onUp: () => {
                 game.Levels3DPreview.firstPerson?.keyRelease("panDown");
-                game.Levels3DPreview.controls.screenSpacePanning = game.settings.get("levels-3d-preview", "screenspacepanning");
+                game.Levels3DPreview.tacticalCamera.onKey("panDown", false);
+                game.Levels3DPreview.tacticalCamera.restorePanning();
             },
         });
 
@@ -1962,12 +1892,13 @@ export function registerConfigs() {
             onDown: (context) => {
                 if (!game.Levels3DPreview._active || !game.Levels3DPreview.hasFocus) return;
                 if (game.Levels3DPreview.firstPerson?.keyMove(context, "panLeft", -1, 0)) return true;
+                if (game.Levels3DPreview.tacticalCamera.onKey("panLeft", true)) return true;
                 game.Levels3DPreview.controls.screenSpacePanning = false;
-                game.Levels3DPreview.GameCamera.lock = false;
             },
             onUp: () => {
                 game.Levels3DPreview.firstPerson?.keyRelease("panLeft");
-                game.Levels3DPreview.controls.screenSpacePanning = game.settings.get("levels-3d-preview", "screenspacepanning");
+                game.Levels3DPreview.tacticalCamera.onKey("panLeft", false);
+                game.Levels3DPreview.tacticalCamera.restorePanning();
             },
         });
 
@@ -1978,12 +1909,13 @@ export function registerConfigs() {
             onDown: (context) => {
                 if (!game.Levels3DPreview._active || !game.Levels3DPreview.hasFocus) return;
                 if (game.Levels3DPreview.firstPerson?.keyMove(context, "panRight", 1, 0)) return true;
+                if (game.Levels3DPreview.tacticalCamera.onKey("panRight", true)) return true;
                 game.Levels3DPreview.controls.screenSpacePanning = false;
-                game.Levels3DPreview.GameCamera.lock = false;
             },
             onUp: () => {
                 game.Levels3DPreview.firstPerson?.keyRelease("panRight");
-                game.Levels3DPreview.controls.screenSpacePanning = game.settings.get("levels-3d-preview", "screenspacepanning");
+                game.Levels3DPreview.tacticalCamera.onKey("panRight", false);
+                game.Levels3DPreview.tacticalCamera.restorePanning();
             },
         });
 

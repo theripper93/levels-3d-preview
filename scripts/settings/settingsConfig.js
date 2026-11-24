@@ -5,8 +5,47 @@ import { GraphicsSettings } from "./performancePresets.js";
 import { queueGraphicsChange, updateRulerFontSize } from "./liveGraphics.js";
 const settingCache = {};
 
+const CACHED_SETTINGS = ["tokenVisibility", "shadowQuality", "regionsAlwaysFlat", "preventNegative", "rulerPathfinding"];
+const TOKEN_VISIBILITY = ["off", "standard", "dynamic"];
+
 export function getSetting(key) {
     return settingCache[key] ?? game.settings.get("levels-3d-preview", key);
+}
+
+function readLegacySetting(key) {
+    const stored = game.settings.storage.get("world")?.getSetting?.(`levels-3d-preview.${key}`);
+    if (!stored) return undefined;
+    try {
+        return JSON.parse(stored._source?.value ?? stored.value);
+    } catch {
+        return undefined;
+    }
+}
+
+export async function migrateSettings() {
+    if (!game.user.isGM || game.settings.get("levels-3d-preview", "settingsMigrated")) return;
+    const exact = readLegacySetting("exactTokenVisibility") ?? true;
+    const dynamic = readLegacySetting("dynamicTokenVisibility") ?? false;
+    const visibility = !exact ? "off" : dynamic ? "dynamic" : "standard";
+    if (visibility !== game.settings.get("levels-3d-preview", "tokenVisibility")) await game.settings.set("levels-3d-preview", "tokenVisibility", visibility);
+    await game.settings.set("levels-3d-preview", "settingsMigrated", true);
+}
+
+const GAME_CAMERA_SETTINGS = ["enableGameCamera", "gameCameraMaxAngle", "gameCameraMinAngle", "gameCameraMaxZoom", "gameCameraClipping", "gameCameraDefaultGm"];
+
+export async function removeGameCameraData() {
+    if (!game.user.isGM || game.settings.get("levels-3d-preview", "gameCameraRemoved")) return;
+    const storage = game.settings.storage.get("world");
+    const ids = GAME_CAMERA_SETTINGS.map((key) => storage?.getSetting?.(`levels-3d-preview.${key}`)?.id).filter(Boolean);
+    try {
+        if (ids.length) await foundry.documents.Setting.deleteDocuments(ids);
+        for (const scene of game.scenes) {
+            if (scene.flags["levels-3d-preview"]?.enableGameCamera !== undefined) await scene.unsetFlag("levels-3d-preview", "enableGameCamera");
+        }
+    } catch (e) {
+        console.warn("3D Canvas | Game Camera data cleanup failed", e);
+    }
+    await game.settings.set("levels-3d-preview", "gameCameraRemoved", true);
 }
 
 class canvas3dConfig extends HandlebarsApplication {
@@ -42,16 +81,16 @@ class canvas3dConfig extends HandlebarsApplication {
                 template: 'modules/levels-3d-preview/templates/config/tab-canvas.hbs',
                 classes: ["scrollable"],
             },
+            regions: {
+                template: 'modules/levels-3d-preview/templates/config/tab-regions.hbs',
+                classes: ["scrollable"],
+            },
             token: {
                 template: 'modules/levels-3d-preview/templates/config/tab-token.hbs',
                 classes: ["scrollable"],
             },
             perm: {
                 template: 'modules/levels-3d-preview/templates/config/tab-perm.hbs',
-                classes: ["scrollable"],
-            },
-            gc: {
-                template: 'modules/levels-3d-preview/templates/config/tab-gc.hbs',
                 classes: ["scrollable"],
             },
             tools: {
@@ -73,10 +112,10 @@ class canvas3dConfig extends HandlebarsApplication {
             primary: {
                 tabs: [
                     { id: "canvas", icon: "fas fa-map", label: "levels3dpreview.settings.configApp.tabs.canvas" },
+                    { id: "regions", icon: "fas fa-draw-polygon", label: "levels3dpreview.settings.configApp.tabs.regions" },
                     { id: "token", icon: "fas fa-user-alt", label: "levels3dpreview.settings.configApp.tabs.token" },
                     { id: "base", icon: "fas fa-dot-circle", label: "levels3dpreview.settings.configApp.tabs.base" },
                     { id: "perm", icon: "fas fa-user-lock", label: "levels3dpreview.settings.configApp.tabs.perm" },
-                    { id: "gc", icon: "fas fa-video", label: "levels3dpreview.settings.configApp.tabs.gc" },
                     { id: "tools", icon: "fas fa-tools", label: "levels3dpreview.settings.configApp.tabs.tools" },
                     { id: "misc", icon: "fas fa-cogs", label: "levels3dpreview.settings.configApp.tabs.misc" },
                 ],
@@ -87,7 +126,7 @@ class canvas3dConfig extends HandlebarsApplication {
 
     async _prepareContext(options) {
         const data = {};
-        const settingsKeys = ["rulerPathfinding", "enableDragRuler", "paddingAppearance", "pingsound", "lightHelpers", "templateEffects", "templateAuto3D", "enableReticule", "fullTransparency", "outline", "gameCameraWarnings", "gameCameraAutoLock", "gameCameraDefaultGm", "gameCameraClipping", "gameCameraMaxZoom", "gameCameraMinAzimuth", "gameCameraMaxAzimuth", "gameCameraMinAngle", "gameCameraMaxAngle", "enableGameCamera", "rangeFinder", "sharedContext", "rotateIndicator", "navigatorAuto", "showAdvanced", "canpingpan", "canping", "baseStyle", "solidBaseMode", "solidBaseColor", "removeModelBase", "tokenStem", "highlightCombat", "startMarker", "hideTarget", "hideEffects", "autoPan", "flatTokenStyle", "preventNegative", "miniCanvas", "debugMode", "cameralockzero", "allTokens", "autoAssignToken", "assetBrowserCustomPath", "autoApply", "autoClose", "regionsAlwaysFlat", "exactTokenVisibility", "dynamicTokenVisibility"];
+        const settingsKeys = ["rulerPathfinding", "revealTokens", "regionShells", "pingsound", "templateEffects","rangeFinder", "canpingpan", "canping", "baseStyle", "solidBaseColor", "removeModelBase", "highlightCombat", "startMarker", "autoPan", "flatTokenStyle", "preventNegative", "allTokens", "autoAssignToken", "assetBrowserCustomPath", "autoApply", "autoClose", "regionsAlwaysFlat", "tokenVisibility"];
         for (let key of settingsKeys) {
             data[key] = game.settings.get("levels-3d-preview", key);
         }
@@ -161,86 +200,16 @@ export function registerSettings() {
             },
         });
 
-        game.settings.register("levels-3d-preview", "paddingAppearance", {
-            scope: "world",
-            config: false,
-            type: String,
-            default: "matpaper",
-        });
-
-        //game camera
-        game.settings.register("levels-3d-preview", "enableGameCamera", {
-            scope: "world",
-            config: false,
-            type: Boolean,
-            default: false,
-        });
-
-        game.settings.register("levels-3d-preview", "gameCameraMaxAngle", {
-            scope: "world",
-            config: false,
-            type: Number,
-            default: 45,
-        });
-
-        game.settings.register("levels-3d-preview", "gameCameraMinAngle", {
-            scope: "world",
-            config: false,
-            type: Number,
-            default: 45,
-        });
-
-        game.settings.register("levels-3d-preview", "gameCameraMaxAzimuth", {
-            scope: "world",
-            config: false,
-            type: Number,
-            default: 180,
-        });
-
-        game.settings.register("levels-3d-preview", "gameCameraMinAzimuth", {
-            scope: "world",
-            config: false,
-            type: Number,
-            default: -180,
-        });
-
-        game.settings.register("levels-3d-preview", "gameCameraMaxZoom", {
-            scope: "world",
-            config: false,
-            type: Number,
-            default: 1,
-        });
-
-        game.settings.register("levels-3d-preview", "gameCameraClipping", {
-            scope: "world",
-            config: false,
-            type: Boolean,
-            default: false,
-        });
-
-        game.settings.register("levels-3d-preview", "gameCameraDefaultGm", {
-            scope: "world",
-            config: false,
-            type: Boolean,
-            default: true,
-        });
-
-        game.settings.register("levels-3d-preview", "gameCameraWarnings", {
-            scope: "world",
-            config: false,
-            type: Boolean,
-            default: true,
-        });
-
-        game.settings.register("levels-3d-preview", "gameCameraAutoLock", {
-            scope: "world",
-            config: false,
-            type: Boolean,
-            default: true,
-        });
-
-        game.settings.register("levels-3d-preview", "removeKeybindingsPrompt", {
+        game.settings.register("levels-3d-preview", "tacticalCamera", {
             scope: "client",
+            config: false,
+            type: Boolean,
+            default: true,
+            onChange: () => game.Levels3DPreview?.tacticalCamera?.refreshButton(),
+        });
+
+        game.settings.register("levels-3d-preview", "gameCameraRemoved", {
+            scope: "world",
             config: false,
             type: Boolean,
             default: false,
@@ -282,35 +251,22 @@ export function registerSettings() {
             default: "ringSimple",
         });
 
-        game.settings.register("levels-3d-preview", "outline", {
-            scope: "world",
-            config: false,
-            type: Boolean,
-            default: true,
-        });
-
-        game.settings.register("levels-3d-preview", "fullTransparency", {
-            scope: "world",
-            config: false,
-            type: Boolean,
-            default: false,
-        });
-
-        game.settings.register("levels-3d-preview", "lightHelpers", {
-            scope: "world",
-            config: false,
-            type: Boolean,
-            default: true,
-        });
-
         game.settings.register("levels-3d-preview", "rulerPathfinding", {
             scope: "world",
             config: false,
             type: Boolean,
             default: true,
-            onChange: () => {
+            onChange: (value) => {
+                settingCache.rulerPathfinding = value;
                 canvas?.tokens?.recalculatePlannedMovementPaths?.();
             },
+        });
+
+        game.settings.register("levels-3d-preview", "revealTokens", {
+            scope: "world",
+            config: false,
+            type: Boolean,
+            default: true,
         });
 
         game.settings.register("levels-3d-preview", "rulerPathfindingMigrated", {
@@ -318,48 +274,6 @@ export function registerSettings() {
             config: false,
             type: Boolean,
             default: false,
-        });
-
-        game.settings.register("levels-3d-preview", "enableDragRuler", {
-            scope: "world",
-            config: false,
-            type: Boolean,
-            default: true,
-            onChange: () => {
-                canvas?.tokens?.placeables.forEach((t) => t.renderFlags.set({ refreshRuler: true }));
-            },
-        });
-
-        game.settings.register("levels-3d-preview", "enableReticule", {
-            scope: "world",
-            config: false,
-            type: Boolean,
-            default: true,
-        });
-
-        game.settings.register("levels-3d-preview", "navigatorAuto", {
-            scope: "world",
-            config: false,
-            type: String,
-            choices: {
-                none: game.i18n.localize("levels3dpreview.settings.navigatorAuto.options.none"),
-                players: game.i18n.localize("levels3dpreview.settings.navigatorAuto.options.players"),
-                all: game.i18n.localize("levels3dpreview.settings.navigatorAuto.options.all"),
-            },
-            default: "players",
-        });
-
-        game.settings.register("levels-3d-preview", "solidBaseMode", {
-            name: game.i18n.localize("levels3dpreview.settings.solidBaseMode.name"),
-            hint: game.i18n.localize("levels3dpreview.settings.solidBaseMode.hint"),
-            scope: "world",
-            config: false,
-            type: String,
-            choices: {
-                merge: game.i18n.localize("levels3dpreview.settings.solidBaseMode.options.merge"),
-                ontop: game.i18n.localize("levels3dpreview.settings.solidBaseMode.options.ontop"),
-            },
-            default: "ontop",
         });
 
         game.settings.register("levels-3d-preview", "solidBaseColor", {
@@ -380,15 +294,6 @@ export function registerSettings() {
             default: true,
         });
 
-        game.settings.register("levels-3d-preview", "tokenStem", {
-            name: game.i18n.localize("levels3dpreview.settings.tokenStem.name"),
-            hint: game.i18n.localize("levels3dpreview.settings.tokenStem.hint"),
-            scope: "world",
-            config: false,
-            type: Boolean,
-            default: false,
-        });
-
         game.settings.register("levels-3d-preview", "highlightCombat", {
             name: game.i18n.localize("levels3dpreview.settings.highlightCombat.name"),
             hint: game.i18n.localize("levels3dpreview.settings.highlightCombat.hint"),
@@ -404,55 +309,12 @@ export function registerSettings() {
             scope: "world",
             config: false,
             type: Boolean,
-            default: true,
-        });
-
-        game.settings.register("levels-3d-preview", "hideTarget", {
-            name: game.i18n.localize("levels3dpreview.settings.hideTarget.name"),
-            hint: game.i18n.localize("levels3dpreview.settings.hideTarget.hint"),
-            scope: "world",
-            config: false,
-            type: Boolean,
             default: false,
-        });
-
-        game.settings.register("levels-3d-preview", "hideEffects", {
-            name: game.i18n.localize("levels3dpreview.settings.hideEffects.name"),
-            hint: game.i18n.localize("levels3dpreview.settings.hideEffects.hint"),
-            scope: "world",
-            config: false,
-            type: Boolean,
-            default: false,
-        });
-
-        game.settings.register("levels-3d-preview", "sharedContext", {
-            scope: "world",
-            config: false,
-            type: Boolean,
-            default: true,
-        });
-
-        game.settings.register("levels-3d-preview", "rotateIndicator", {
-            name: game.i18n.localize("levels3dpreview.settings.rotateIndicator.name"),
-            hint: game.i18n.localize("levels3dpreview.settings.rotateIndicator.hint"),
-            scope: "world",
-            config: false,
-            type: Boolean,
-            default: true,
         });
 
         game.settings.register("levels-3d-preview", "templateEffects", {
             name: game.i18n.localize("levels3dpreview.settings.templateEffects.name"),
             hint: game.i18n.localize("levels3dpreview.settings.templateEffects.hint"),
-            scope: "world",
-            config: false,
-            type: Boolean,
-            default: true,
-        });
-
-        game.settings.register("levels-3d-preview", "templateAuto3D", {
-            name: game.i18n.localize("levels3dpreview.settings.templateAuto3D.name"),
-            hint: game.i18n.localize("levels3dpreview.settings.templateAuto3D.hint"),
             scope: "world",
             config: false,
             type: Boolean,
@@ -490,15 +352,16 @@ export function registerSettings() {
             default: "combat",
         });
 
-        game.settings.register("levels-3d-preview", "screenspacepanning", {
-            name: game.i18n.localize("levels3dpreview.settings.screenspacepanning.name"),
-            hint: game.i18n.localize("levels3dpreview.settings.screenspacepanning.hint"),
+        game.settings.register("levels-3d-preview", "enabledamping", {
+            name: game.i18n.localize("levels3dpreview.settings.enabledamping.name"),
+            hint: game.i18n.localize("levels3dpreview.settings.enabledamping.hint"),
             scope: "client",
             config: true,
             type: Boolean,
             default: true,
             onChange: (value) => {
-                game.Levels3DPreview.controls.screenSpacePanning = value;
+                const controls = game.Levels3DPreview?.controls;
+                if (controls) controls.enableDamping = value;
             },
         });
 
@@ -510,34 +373,16 @@ export function registerSettings() {
             type: Boolean,
             default: true,
             onChange: (value) => {
-                game.Levels3DPreview.GameCamera.setControlPreset();
+                game.Levels3DPreview?.tacticalCamera?.setControlPreset();
             },
         });
 
-        game.settings.register("levels-3d-preview", "enabledamping", {
-            name: game.i18n.localize("levels3dpreview.settings.enabledamping.name"),
-            hint: game.i18n.localize("levels3dpreview.settings.enabledamping.hint"),
-            scope: "client",
-            config: true,
-            type: Boolean,
-            default: true,
-            onChange: () => game.Levels3DPreview.UTILS.debouncedReload(),
-        });
 
         game.settings.register("levels-3d-preview", "loadingShown", {
             scope: "client",
             config: false,
             type: Boolean,
             default: false,
-        });
-
-        game.settings.register("levels-3d-preview", "cameralockzero", {
-            name: game.i18n.localize("levels3dpreview.settings.cameralockzero.name"),
-            hint: game.i18n.localize("levels3dpreview.settings.cameralockzero.hint"),
-            scope: "world",
-            config: false,
-            type: Boolean,
-            default: true,
         });
 
         game.settings.register("levels-3d-preview", "canping", {
@@ -565,6 +410,26 @@ export function registerSettings() {
             default: "sounds/combat/epic-turn-1hit.ogg",
         });
 
+        game.settings.register("levels-3d-preview", "tokenVisibility", {
+            name: game.i18n.localize("levels3dpreview.settings.tokenVisibility.name"),
+            hint: game.i18n.localize("levels3dpreview.settings.tokenVisibility.hint"),
+            scope: "world",
+            config: false,
+            type: String,
+            choices: Object.fromEntries(TOKEN_VISIBILITY.map((k) => [k, game.i18n.localize(`levels3dpreview.settings.tokenVisibility.options.${k}`)])),
+            default: "standard",
+            onChange: (value) => {
+                settingCache.tokenVisibility = value;
+            },
+        });
+
+        game.settings.register("levels-3d-preview", "settingsMigrated", {
+            scope: "world",
+            config: false,
+            type: Boolean,
+            default: false,
+        });
+
         game.settings.register("levels-3d-preview", "flatTokenStyle", {
             name: game.i18n.localize("levels3dpreview.settings.flatTokenStyle.name"),
             hint: game.i18n.localize("levels3dpreview.settings.flatTokenStyle.hint"),
@@ -579,30 +444,6 @@ export function registerSettings() {
             default: "extruded",
         });
 
-        game.settings.register("levels-3d-preview", "exactTokenVisibility", {
-            name: game.i18n.localize("levels3dpreview.settings.exactTokenVisibility.name"),
-            hint: game.i18n.localize("levels3dpreview.settings.exactTokenVisibility.hint"),
-            scope: "world",
-            config: false,
-            type: Boolean,
-            default: true,
-            onChange: (value) => {
-                settingCache.exactTokenVisibility = value;
-            },
-        });
-
-        game.settings.register("levels-3d-preview", "dynamicTokenVisibility", {
-            name: game.i18n.localize("levels3dpreview.settings.dynamicTokenVisibility.name"),
-            hint: game.i18n.localize("levels3dpreview.settings.dynamicTokenVisibility.hint"),
-            scope: "world",
-            config: false,
-            type: Boolean,
-            default: false,
-            onChange: (value) => {
-                settingCache.dynamicTokenVisibility = value;
-            },
-        });
-
         game.settings.register("levels-3d-preview", "preventNegative", {
             name: game.i18n.localize("levels3dpreview.settings.preventNegative.name"),
             hint: game.i18n.localize("levels3dpreview.settings.preventNegative.hint"),
@@ -610,24 +451,9 @@ export function registerSettings() {
             config: false,
             type: Boolean,
             default: true,
-        });
-
-        game.settings.register("levels-3d-preview", "showAdvanced", {
-            name: game.i18n.localize("levels3dpreview.settings.showAdvanced.name"),
-            hint: game.i18n.localize("levels3dpreview.settings.showAdvanced.hint"),
-            scope: "world",
-            config: false,
-            type: Boolean,
-            default: false,
-        });
-
-        game.settings.register("levels-3d-preview", "miniCanvas", {
-            name: game.i18n.localize("levels3dpreview.settings.miniCanvas.name"),
-            hint: game.i18n.localize("levels3dpreview.settings.miniCanvas.hint"),
-            scope: "world",
-            config: false,
-            type: Boolean,
-            default: false,
+            onChange: (value) => {
+                settingCache.preventNegative = value;
+            },
         });
 
         game.settings.register("levels-3d-preview", "enableShaders", {
@@ -696,7 +522,7 @@ export function registerSettings() {
             name: game.i18n.localize("levels3dpreview.settings.regionShells.name"),
             hint: game.i18n.localize("levels3dpreview.settings.regionShells.hint"),
             scope: "world",
-            config: true,
+            config: false,
             type: Boolean,
             default: true,
             onChange: () => {
@@ -719,7 +545,10 @@ export function registerSettings() {
                 2: game.i18n.localize("levels3dpreview.settings.shadowQuality.options.low"),
                 0: game.i18n.localize("levels3dpreview.settings.shadowQuality.options.none"),
             },
-            onChange: () => queueGraphicsChange("shadowQuality"),
+            onChange: (value) => {
+                settingCache.shadowQuality = value;
+                queueGraphicsChange("shadowQuality");
+            },
             default: 4,
         });
 
@@ -764,30 +593,6 @@ export function registerSettings() {
             default: false,
         });
 
-        game.settings.register("levels-3d-preview", "debugMode", {
-            name: game.i18n.localize("levels3dpreview.settings.debugMode.name"),
-            hint: game.i18n.localize("levels3dpreview.settings.debugMode.hint"),
-            scope: "world",
-            config: false,
-            type: Boolean,
-            default: false,
-            onChange: (sett) => {
-                game.Levels3DPreview.debugMode = sett;
-            },
-        });
-
-        game.settings.register("levels-3d-preview", "minicanvasposition", {
-            name: "",
-            hint: "",
-            scope: "client",
-            config: false,
-            type: Object,
-            default: {
-                top: 0,
-                left: 0,
-            },
-        });
-
         game.settings.register("levels-3d-preview", "allTokens", {
             name: "",
             hint: "",
@@ -828,13 +633,6 @@ export function registerSettings() {
             default: false,
         });
 
-        game.settings.register("levels-3d-preview", "assetbrowserpainttour", {
-            scope: "world",
-            config: false,
-            type: Boolean,
-            default: false,
-        });
-
         game.settings.register("levels-3d-preview", "autoApply", {
             name: "",
             hint: "",
@@ -860,26 +658,16 @@ export function registerSettings() {
             config: false,
             type: Boolean,
             default: false,
+            onChange: (value) => {
+                settingCache.regionsAlwaysFlat = value;
+            },
         });
 
-        settingCache.exactTokenVisibility = game.settings.get("levels-3d-preview", "exactTokenVisibility");
-        settingCache.dynamicTokenVisibility = game.settings.get("levels-3d-preview", "dynamicTokenVisibility");
+        for (const key of CACHED_SETTINGS) settingCache[key] = game.settings.get("levels-3d-preview", key);
     });
 
-    Hooks.once("ready", () => {
-        let clipNavigatorFollowClientDefault = false;
-        const autoModeSetting = game.settings.get("levels-3d-preview", "navigatorAuto");
-        if (autoModeSetting == "none") clipNavigatorFollowClientDefault = false;
-        else if (autoModeSetting == "players") clipNavigatorFollowClientDefault = !game.user.isGM;
-        else clipNavigatorFollowClientDefault = true;
-
-        game.settings.register("levels-3d-preview", "clipNavigatorFollowClient", {
-            scope: "client",
-            config: false,
-            type: Boolean,
-            default: clipNavigatorFollowClientDefault,
-        });
-    });
+    Hooks.once("ready", migrateSettings);
+    Hooks.once("ready", removeGameCameraData);
 
     //Welcome Message
 

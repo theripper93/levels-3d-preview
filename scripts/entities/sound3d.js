@@ -1,13 +1,13 @@
 import * as THREE from "three";
 import { factor } from "../main.js";
-import * as coords3d from "../helpers/coords3d.js";
+import { createEntityGizmo, placeableGizmoState, snapActive } from "./effects/placeableGizmo.js";
+
+const GIZMO_FLAGS = new Set(["refreshState", "refreshVisibility", "refreshField", "refreshTooltip", "refreshMeasurements"]);
 
 export class Sound3D {
     constructor(sound, parent) {
         this.sound = sound;
         this._parent = parent;
-        this._useHelper = game.user.isGM && game.settings.get("levels-3d-preview", "lightHelpers");
-        this.radius = ((sound.document.radius / canvas.dimensions.distance) * canvas.dimensions.size) / factor;
         this.embeddedName = this.sound.document.documentName;
         this.draggable = true;
         this.placeable = this.sound;
@@ -17,56 +17,48 @@ export class Sound3D {
     init() {
         this.mesh = new THREE.Group();
         this._parent.scene.add(this.mesh);
-        if (game.user.isGM) this.createHandle();
+        if (game.user.isGM) this.gizmo = createEntityGizmo(this, { glyph: "icons/svg/sound.svg", glyphOff: "icons/svg/sound-off.svg", fill: "#aaddff" });
         this.refresh();
     }
 
-    get useHelper() {
-        return this._useHelper;
+    rangeValues() {
+        return { radius: this.sound.document.radius };
     }
 
-    createHandle() {
-        const texture = this._parent.textures.soundOn;
-        const size = (canvas.scene.dimensions.size * 0.5) / factor / 2;
-        const geometry = new THREE.SphereGeometry(size, 16, 16);
-        const material = new THREE.MeshBasicMaterial({ color: new THREE.Color("white"), transparent: true, depthWrite: false, opacity: 0.5 });
-        const soundSphere = new THREE.Mesh(geometry, material);
-        const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: texture, transparent: true, opacity: 0.8 }));
-        sprite.scale.set(size * 1.5, size * 1.5, size * 1.5);
-        const mesh = new THREE.Group();
-        mesh.add(soundSphere);
-        mesh.add(sprite);
-        this.mesh.userData.hitbox = mesh;
-        this.mesh.userData.interactive = true;
-        this.mesh.userData.entity3D = this;
-        mesh.userData.entity3D = this;
-        mesh.userData.isHitbox = true;
-        mesh.userData.sprite = sprite;
-        mesh.userData.sphere = soundSphere;
-        this.dragHandle = mesh;
-        this.mesh.add(mesh);
+    syncGizmo(range = this.rangeValues()) {
+        if (!this.gizmo || this.sound.destroyed) return;
+        this.gizmo.sync(
+            placeableGizmoState(this, {
+                disabled: !this.sound.isAudible,
+                radius: (range.radius * canvas.dimensions.distancePixels) / factor,
+                field: this.sound.source?.shape,
+            }),
+        );
     }
 
-    updateHandle() {
-        if (!this.dragHandle) return;
-        this.dragHandle.visible = canvas.sounds.active;
-        if (this.useHelper && this.soundHelper) this.soundHelper.visible = canvas.sounds.active && !this.sound.document.hidden;
-        if (!this.dragHandle.visible) return;
-        this.dragHandle.userData.sprite.material.map = this.sound.document.hidden ? this._parent.textures.soundOff : this._parent.textures.soundOn;
-        this.dragHandle.userData.sprite.material.color.set(this.sound.document.hidden ? "#ff0000" : "#ffffff");
-        this.dragHandle.userData.sphere.material.color.set(this.color || "#ffffff");
+    commitRange({ radius }) {
+        return this.sound.document.update({ radius: radius.toNearest(0.01) });
+    }
+
+    get dragLift() {
+        this.gizmo?.updateGround();
+        return this.gizmo?.height ?? 0;
+    }
+
+    onDragMove() {
+        this.syncGizmo();
     }
 
     async updatePositionFrom3D(e) {
         this.skipMoveAnimation = true;
-        const useSnapped = coords3d.useSnapped();
+        const useSnapped = snapActive();
         const x3d = this.mesh.position.x;
         const y3d = this.mesh.position.y;
         const z3d = this.mesh.position.z;
         const x = x3d * factor;
         const y = z3d * factor;
         const z = Math.round(((y3d * factor * canvas.dimensions.distance) / canvas.dimensions.size) * 100) / 100;
-        const snapped = canvas.grid.getSnappedPoint({x, y}, {mode: CONST.GRID_SNAPPING_MODES.TOP_LEFT_CORNER, resolution: 2});
+        const snapped = canvas.sounds.getSnappedPoint({ x, y });
         const elevation = this.sound.document.elevation;
         const dest = {
             x: useSnapped ? snapped.x : x,
@@ -100,9 +92,6 @@ export class Sound3D {
 
     refresh() {
         const sound = this.sound;
-        if (this.dragHandle) {
-            this.dragHandle.position.set(0, 0, 0);
-        }
         const elevation = sound.document.elevation;
         const z = (elevation * canvas.scene.dimensions.size) / canvas.scene.dimensions.distance;
         this.z = elevation;
@@ -111,28 +100,17 @@ export class Sound3D {
             y: z / factor,
             z: this.sound.document.y / factor,
         };
-        if (this.useHelper) {
-            this.mesh.remove(this.soundHelper);
-            this.soundHelper?.geometry.dispose();
-            this.soundHelper?.material.dispose();
-            this.soundHelper = new THREE.Mesh(new THREE.SphereGeometry(this.radius, 16, 16), new THREE.MeshBasicMaterial({ color: new THREE.Color("white"), wireframe: true }));
-            this.mesh.add(this.soundHelper);
-            this.soundHelper.userData.ignoreHover = true;
-            this.soundHelper.userData.interactive = false;
-            this.soundHelper.traverse((o) => {
-                o.userData.ignoreHover = true;
-                o.userData.interactive = false;
-            });
-        }
         this.mesh.position.set(position.x, position.y, position.z);
+        this.syncGizmo();
     }
 
     update(delta) {}
 
     destroy() {
         this._parent.scene.remove(this.mesh);
-        this.soundHelper?.geometry?.dispose();
-        this.soundHelper?.material?.dispose();
+        this.gizmo?.dispose();
+        this.gizmo = null;
+        this.dragHandle = null;
     }
 
     _onClickLeft(e) {
@@ -180,14 +158,30 @@ export class Sound3D {
 
         Hooks.on("updateAmbientSound", refreshOrUpdate);
 
-        Hooks.on("refreshAmbientSound", refreshOrUpdate);
+        Hooks.on("refreshAmbientSound", (sound, flags) => {
+            if (!game.Levels3DPreview?._active) return;
+            game.Levels3DPreview.sounds[sound.document.id]?.syncGizmo();
+            if (Object.keys(flags ?? {}).some((flag) => flags[flag] && !GIZMO_FLAGS.has(flag))) refreshOrUpdate(sound.document);
+        });
+
+        const syncAll = () => {
+            if (!game.Levels3DPreview?._active) return;
+            for (const sound3d of Object.values(game.Levels3DPreview.sounds)) {
+                sound3d.gizmo?.invalidateGround();
+                sound3d.syncGizmo();
+            }
+        };
+        Hooks.on("activateSoundsLayer", syncAll);
+        Hooks.on("deactivateSoundsLayer", syncAll);
 
         Hooks.on("createAmbientSound", (soundDocument) => {
             if (game.Levels3DPreview?._active && soundDocument.object) game.Levels3DPreview.addSound(soundDocument.object);
         });
 
         Hooks.on("deleteAmbientSound", (soundDocument) => {
-            if (game.Levels3DPreview?._active) game.Levels3DPreview.sounds[soundDocument.id]?.destroy();
+            if (!game.Levels3DPreview?._active) return;
+            game.Levels3DPreview.sounds[soundDocument.id]?.destroy();
+            delete game.Levels3DPreview.sounds[soundDocument.id];
         });
 
         Hooks.on("pasteAmbientSound", (copy, data) => {

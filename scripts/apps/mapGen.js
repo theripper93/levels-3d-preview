@@ -431,8 +431,8 @@ export class MapGen extends HandlebarsApplication {
             this.document.update({
                 width,
                 height,
-                x,
-                y,
+                x: x + (this.document.texture.anchorX ?? 0) * width,
+                y: y + (this.document.texture.anchorY ?? 0) * height,
                 elevation: -canvas.scene.dimensions.distance,
                 flags: {
                     "levels-3d-preview": { depth: depth },

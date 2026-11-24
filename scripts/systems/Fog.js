@@ -9,6 +9,7 @@ import { FogRegion, tokensMoving, unionRect } from "./fogRegion.js";
 import { FogMist, volumetricFogEnabled } from "./fogMist.js";
 import { VisionModeMask, visionModeUniforms, VISION_MODE_PARS, VISION_MODE_FRAGMENT } from "./visionModeMask.js";
 import { injectReveal } from "./reveal.js";
+import { paintUniforms } from "./drawings3d.js";
 
 const MASK_TEXELS_PER_GRID = 16;
 const WALL_SAMPLE_OFFSET_GRIDS = 0.25;
@@ -24,6 +25,7 @@ export const fogUniforms = {
     fogWallOffset: { value: 0 },
     ...clusterUniforms,
     ...visionModeUniforms,
+    ...paintUniforms,
 };
 
 export class Fog {
@@ -31,13 +33,9 @@ export class Fog {
         this._parent = parent;
         this._ready = false;
         this._overlay = null;
-        this._lastBase64 = null;
         this.overlayRepeat = new THREE.Vector2(1, 1);
         this._updateSeq = 0;
-        //The shared context path is cheap (no GPU readback), so only debounce the extract/encode/decode path
-        this.debouncedUpdate = this._sharedContext ? this.updateTexture.bind(this) : foundry.utils.debounce(this.updateTexture.bind(this), 100);
-        this.extractor ??= new foundry.canvas.TextureExtractor(canvas.app.renderer, { callerName: "FogExtractorCanvas3D", controlHash: true, format: PIXI.FORMATS.RED });
-        this.extractor.reset();
+        this.debouncedUpdate = this.updateTexture.bind(this);
         this.smoother = new FogSmoother(parent.renderer);
         this.region = new FogRegion();
         this.pendingRect = null;
@@ -56,17 +54,13 @@ export class Fog {
         });
     }
 
-    get _sharedContext() {
-        return this._parent._sharedContext;
-    }
-
     initTexture() {
         this.webglFogTexture = new THREE.ExternalTexture();
     }
 
     initPixiRT() {
         const fogTexResolution = Math.min(canvas.visibility.textureConfiguration.resolution, MASK_TEXELS_PER_GRID / canvas.dimensions.size);
-        this.pixiRenderTexture = PIXI.RenderTexture.create({ width: canvas.dimensions.width, height: canvas.dimensions.height, resolution: this._sharedContext ? fogTexResolution : 0.1 });
+        this.pixiRenderTexture = PIXI.RenderTexture.create({ width: canvas.dimensions.width, height: canvas.dimensions.height, resolution: fogTexResolution });
         this.pixiRenderTexture.baseTexture.alphaMode = PIXI.ALPHA_MODES.NO_PREMULTIPLIED_ALPHA;
     }
 
@@ -94,8 +88,7 @@ export class Fog {
 
     async init() {
         this.blank = await new THREE.TextureLoader().loadAsync("modules/levels-3d-preview/assets/blankTex.jpg");
-        const base64 = await this.generateTexture();
-        this.fogTexture = this._sharedContext || !base64 ? (base64 ?? this.blank) : await new THREE.TextureLoader().loadAsync(base64);
+        this.fogTexture = await this.generateTexture();
         this.sceneDimensions = [canvas.dimensions.width / factor, canvas.dimensions.height / factor];
         this.sceneOrigin = [canvas.dimensions.sceneX / factor, canvas.dimensions.sceneY / factor];
         this.wallOffset = (canvas.dimensions.size / factor) * WALL_SAMPLE_OFFSET_GRIDS;
@@ -107,23 +100,15 @@ export class Fog {
         this.needsUpdate = false;
         const seq = ++this._updateSeq;
         const isBlank = game.user.isGM && !canvas.effects?.visionSources?.size;
-        const toggled = this._wasBlank !== undefined && this._wasBlank !== isBlank;
+        const sourceKey = isBlank ? "" : Array.from(canvas.effects?.visionSources?.keys() ?? []).sort().join("|");
+        const toggled = (this._wasBlank !== undefined && this._wasBlank !== isBlank) || (this._sourceKey !== undefined && this._sourceKey !== sourceKey);
         this._wasBlank = isBlank;
+        this._sourceKey = sourceKey;
         if (isBlank) this.visionMask.reset();
         const generated = isBlank ? null : this.generateTexture();
         this.trackRegion(isBlank);
-        const base64 = isBlank ? this.blank : await generated;
-        if (seq !== this._updateSeq || this._destroyed) return;
-        let texture = base64;
-        if (!this._sharedContext && !isBlank && base64) {
-            texture = await new THREE.TextureLoader().loadAsync(base64);
-            if (seq !== this._updateSeq || this._destroyed) {
-                texture?.dispose();
-                return;
-            }
-        }
-        if (!texture) return;
-        const previous = this.fogTexture;
+        const texture = isBlank ? this.blank : await generated;
+        if (seq !== this._updateSeq || this._destroyed || !texture) return;
         this.fogTexture = texture;
         this.fogTexture.minFilter = THREE.NearestFilter;
         this.fogTexture.flipY = false;
@@ -134,8 +119,6 @@ export class Fog {
             this.pendingRect = null;
         }
         this.updateShaders();
-        //Dispose the previous texture only once the new one is assigned; never dispose the shared blank texture
-        if (previous && previous !== texture && previous !== this.blank && !this._sharedContext) previous.dispose();
     }
 
     trackRegion(isBlank) {
@@ -174,7 +157,7 @@ export class Fog {
     }
 
     async generateTexture() {
-        if (!canvas.fog?.sprite || !canvas.masks?.vision?.vision) return this._sharedContext ? this.webglFogTexture : this._lastBase64;
+        if (!canvas.fog?.sprite || !canvas.masks?.vision?.vision) return this.webglFogTexture;
         const originalTint = canvas.fog.sprite.tint;
         canvas.fog.sprite.tint = 0x808080;
         if (canvas.scene.fog.mode) canvas.app.renderer.render(canvas.fog.sprite, { renderTexture: this.pixiRenderTexture, clear: true });
@@ -182,37 +165,8 @@ export class Fog {
         canvas.fog.sprite.tint = originalTint;
         this.visionMask.refresh();
         this.visionMask.render(canvas.app.renderer, this.pixiRenderTexture);
-        if (this._sharedContext) {
-            this.webglFogTexture.sourceTexture = Object.values(this.pixiRenderTexture.baseTexture._glTextures)[0]?.texture ?? null;
-            return this.webglFogTexture;
-        } else {
-            const packed = this.visionMask.active;
-            let base64 = await this.getExtractor(packed).extract({
-                texture: this.pixiRenderTexture,
-                compression: foundry.canvas.TextureExtractor.COMPRESSION_MODES.BASE64,
-                type: packed ? "image/png" : "image/webp",
-                quality: 0.8,
-                debug: false,
-            });
-            if (base64) this._lastBase64 = base64;
-            if (!base64) {
-                if (this._lastBase64) {
-                    return this._lastBase64;
-                }
-                //fallback to canvas base64 extraction
-                this.extractor.reset();
-                console.warn("3D Canvas | Failed to extract texture using foundry.canvas.TextureExtractor, falling back to PIXI.RenderTexture extraction");
-                base64 = await canvas.app.renderer.extract.base64(this.pixiRenderTexture, "image/webp", 0.8);
-            }
-            //const base64 = await canvas.app.renderer.extract.base64(this.pixiRenderTexture, "image/jpeg");
-            return base64;
-        }
-    }
-
-    getExtractor(packed) {
-        if (!packed) return this.extractor;
-        this.packedExtractor ??= new foundry.canvas.TextureExtractor(canvas.app.renderer, { callerName: "FogExtractorCanvas3DPacked", controlHash: true, format: PIXI.FORMATS.RGBA });
-        return this.packedExtractor;
+        this.webglFogTexture.sourceTexture = Object.values(this.pixiRenderTexture.baseTexture._glTextures)[0]?.texture ?? null;
+        return this.webglFogTexture;
     }
 
     dispose() {

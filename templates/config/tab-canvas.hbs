@@ -7,59 +7,15 @@
     </div>
 
     <div class="form-group">
-    <label>{{localize "levels3dpreview.settings.outline.name"}}</label>
-    <input type="checkbox" name="outline" data-dtype="Boolean" {{checked outline}} />
-    <p class="hint">{{localize "levels3dpreview.settings.outline.hint"}}</p>
-    </div>
-
-    <div class="form-group">
-    <label>{{localize "levels3dpreview.settings.fullTransparency.name"}}</label>
-    <input type="checkbox" name="fullTransparency" data-dtype="Boolean" {{checked fullTransparency}} />
-    <p class="hint">{{localize "levels3dpreview.settings.fullTransparency.hint"}}</p>
-    </div>
-
-    <div class="form-group">
-    <label>{{localize "levels3dpreview.settings.paddingAppearance.name"}}</label>
-    <select name="paddingAppearance" data-dtype="String">
-        <option {{#if (eq paddingAppearance "none")}}selected{{/if}} value="none">{{localize "levels3dpreview.flags.renderTable.options.none"}}</option>
-        <option {{#if (eq paddingAppearance "table")}}selected{{/if}} value="table">{{localize "levels3dpreview.flags.renderTable.options.table"}}</option>
-        <option {{#if (eq paddingAppearance "matpaper")}}selected{{/if}} value="matpaper">{{localize "levels3dpreview.flags.renderTable.options.matpaper"}}</option>
-        <option {{#if (eq paddingAppearance "matwood")}}selected{{/if}} value="matwood">{{localize "levels3dpreview.flags.renderTable.options.matwood"}}</option>
-        <option {{#if (eq paddingAppearance "matcloth")}}selected{{/if}} value="matcloth">{{localize "levels3dpreview.flags.renderTable.options.matcloth"}}</option>
-        <option {{#if (eq paddingAppearance "matblueprint")}}selected{{/if}} value="matblueprint">{{localize "levels3dpreview.flags.renderTable.options.matblueprint"}}</option>
-        <option {{#if (eq paddingAppearance "matcustom")}}selected{{/if}} value="matcustom">{{localize "levels3dpreview.flags.renderTable.options.matcustom"}}</option>
-    </select>
-    <p class="hint">{{localize "levels3dpreview.settings.paddingAppearance.hint"}}</p>
-    </div>
-
-    <div class="form-group">
-    <label>{{localize "levels3dpreview.settings.templateEffects.name"}}</label>
-    <input type="checkbox" name="templateEffects" data-dtype="Boolean" {{checked templateEffects}} />
-    <p class="hint">{{localize "levels3dpreview.settings.templateEffects.hint"}}</p>
-    </div>
-
-    <div class="form-group">
-    <label>{{localize "levels3dpreview.settings.templateAuto3D.name"}}</label>
-    <input type="checkbox" name="templateAuto3D" data-dtype="Boolean" {{checked templateAuto3D}} />
-    <p class="hint">{{localize "levels3dpreview.settings.templateAuto3D.hint"}}</p>
-    </div>
-
-    <div class="form-group">
-    <label>{{localize "levels3dpreview.settings.lightHelpers.name"}}</label>
-    <input type="checkbox" name="lightHelpers" data-dtype="Boolean" {{checked lightHelpers}} />
-    <p class="hint">{{localize "levels3dpreview.settings.lightHelpers.hint"}}</p>
+    <label>{{localize "levels3dpreview.settings.revealTokens.name"}}</label>
+    <input type="checkbox" name="revealTokens" data-dtype="Boolean" {{checked revealTokens}} />
+    <p class="hint">{{localize "levels3dpreview.settings.revealTokens.hint"}}</p>
     </div>
 
     <div class="form-group">
     <label>{{localize "levels3dpreview.settings.rulerPathfinding.name"}}</label>
     <input type="checkbox" name="rulerPathfinding" data-dtype="Boolean" {{checked rulerPathfinding}} />
     <p class="hint">{{localize "levels3dpreview.settings.rulerPathfinding.hint"}}</p>
-    </div>
-
-    <div class="form-group">
-    <label>{{localize "levels3dpreview.settings.enableDragRuler.name"}}</label>
-    <input type="checkbox" name="enableDragRuler" data-dtype="Boolean" {{checked enableDragRuler}} />
-    <p class="hint">{{localize "levels3dpreview.settings.enableDragRuler.hint"}}</p>
     </div>
 
     <div class="form-group">
@@ -80,12 +36,6 @@
         <option {{#if (eq autoPan "all")}}selected{{/if}} value="all">{{localize "levels3dpreview.settings.autoPan.options.all"}}</option>
     </select>
     <p class="hint">{{localize "levels3dpreview.settings.autoPan.hint"}}</p>
-    </div>
-
-    <div class="form-group">
-    <label>{{localize "levels3dpreview.settings.regionsAlwaysFlat.name"}}</label>
-    <input type="checkbox" name="regionsAlwaysFlat" data-dtype="Boolean" {{checked regionsAlwaysFlat}} />
-    <p class="hint">{{localize "levels3dpreview.settings.regionsAlwaysFlat.hint"}}</p>
     </div>
 
 </section>

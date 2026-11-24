@@ -14,7 +14,7 @@ const DISPLAY_LIMIT = 0.97;
 export class OutlineHandler {
     constructor(_parent) {
         this.parent = _parent;
-        this._enabled = game.settings.get("levels-3d-preview", "outline");
+        this._enabled = true;
         this.controlledOutline = new Map();
         this.hoveredOutline = new Map();
         if (this._enabled) this.init();

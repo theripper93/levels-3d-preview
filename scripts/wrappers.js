@@ -93,13 +93,13 @@ export function registerWrappers() {
 
         function getVisibilityTestPoints(wrapped, ...args) {
             const testPoints = [];
-            const exactTokenVisibility = getSetting("exactTokenVisibility");
-            if (!exactTokenVisibility) return wrapped(...args);
+            const tokenVisibility = getSetting("tokenVisibility");
+            if (tokenVisibility === "off") return wrapped(...args);
             const token3d = game.Levels3DPreview?._active ? this.object?.object3d : null;
 
             if (!token3d) return wrapped(...args);
 
-            const { tokenHeight, document: { elevation, width, height } } = token3d;
+            const { visibleHeight: tokenHeight, document: { elevation, width, height } } = token3d;
             const gridSize = canvas.grid.size;
             const center = token3d.documentCenter;
             const origin = {
@@ -107,8 +107,7 @@ export function registerWrappers() {
                 y: center.y - height * gridSize / 2,
             };
 
-            const dynamicTokenVisibility = getSetting("dynamicTokenVisibility");
-            if (!dynamicTokenVisibility) {
+            if (tokenVisibility !== "dynamic") {
                 const tokenW = width * gridSize;
                 const tokenH = height * gridSize;
                 // Center point
@@ -703,6 +702,7 @@ export function registerWrappers() {
             const originalOn = canvas.stage.on;
             const toRemove = [];
             let appliedShader = false;
+            let rightPress = null;
             let height = undefined;
             const placement = {
                 offset: 0,
@@ -733,7 +733,7 @@ export function registerWrappers() {
                     event.data.getLocalPosition = (obj) => canvas.app.renderer.events.pointer.getLocalPosition(obj) ?? {x: 0, y: 0, z: 0};
                     handler(event);
                     if (!canvas.regions._placementContext?.preview?.document) return;
-                    const surface = canvas.app.renderer.events.pointer.getLocalPosition()?.z;
+                    const surface = canvas.app.renderer.events.pointer.getLocalPosition(canvas.stage)?.z;
                     if (surface === undefined) return;
                     placement.surface = surface;
                     placement.sync();
@@ -742,8 +742,23 @@ export function registerWrappers() {
                         appliedShader = true;
                     }
                 }
-                game.Levels3DPreview.renderer.domElement.addEventListener(eventName, listener);
-                toRemove.push([eventName, listener]);
+                const element = game.Levels3DPreview.renderer.domElement;
+                const listen = (type, callback) => {
+                    element.addEventListener(type, callback);
+                    toRemove.push([type, callback]);
+                };
+                if (eventName !== "pointerdown") return listen(eventName, listener);
+                listen(eventName, (event) => event.button === 0 && listener(event));
+                listen("mousedown", (event) => {
+                    if (event.button === 2) rightPress = { x: event.clientX, y: event.clientY, camera: game.Levels3DPreview.camera.position.clone() };
+                });
+                listen("mouseup", (event) => {
+                    const press = rightPress;
+                    if (event.button !== 2 || !press) return;
+                    rightPress = null;
+                    const moved = Math.hypot(event.clientX - press.x, event.clientY - press.y) > 5 || press.camera.distanceTo(game.Levels3DPreview.camera.position) > 0.01;
+                    if (!moved) listener(event);
+                });
             }
             try {
                 return await wrapped(...args);

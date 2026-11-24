@@ -1,3 +1,12 @@
+{{#*inline "styleGroups"}}
+{{#each groups}}
+<optgroup label="{{localize label}}" {{#if disabled}}disabled{{/if}}>
+    {{#each choices}}
+    <option value="{{value}}" {{#if selected}}selected{{/if}}>{{localize label}}</option>
+    {{/each}}
+</optgroup>
+{{/each}}
+{{/inline}}
 <div>
     <div class="form-group">
         <label>{{localize "levels3dpreview.dynamicSkyConfig.enabled.label"}}</label>
@@ -18,6 +27,16 @@
     </div>
 
     <div class="form-group" data-indoor-only>
+        <label>{{localize "levels3dpreview.dynamicSkyConfig.style.label"}}</label>
+        <div class="form-fields">
+            <select name="flags.levels-3d-preview.dynamicSky.undergroundStyle">
+                {{> styleGroups groups=undergroundStyles}}
+            </select>
+        </div>
+        <p class="hint">{{localize "levels3dpreview.dynamicSkyConfig.undergroundStyle.notes"}}</p>
+    </div>
+
+    <div class="form-group" data-indoor-only data-style-fields="">
         <label>{{localize "levels3dpreview.dynamicSkyConfig.backgroundColor.label"}}</label>
         <div class="form-fields">
             <color-picker name="flags.levels-3d-preview.dynamicSky.backgroundColor" value="{{backgroundColor}}"></color-picker>
@@ -26,6 +45,16 @@
     </div>
 
     <div class="form-group" data-outdoor-only>
+        <label>{{localize "levels3dpreview.dynamicSkyConfig.style.label"}}</label>
+        <div class="form-fields">
+            <select name="flags.levels-3d-preview.dynamicSky.style">
+                {{> styleGroups groups=outdoorStyles}}
+            </select>
+        </div>
+        <p class="hint">{{localize "levels3dpreview.dynamicSkyConfig.style.notes"}}</p>
+    </div>
+
+    <div class="form-group" data-outdoor-only data-sky-option="preset">
         <label>{{localize "levels3dpreview.dynamicSkyConfig.preset.label"}}</label>
         <div class="form-fields">
             <select name="flags.levels-3d-preview.dynamicSky.preset">
@@ -35,7 +64,7 @@
         <p class="hint">{{localize "levels3dpreview.dynamicSkyConfig.preset.notes"}}</p>
     </div>
 
-    <div class="form-group" data-timed>
+    <div class="form-group" data-timed data-sky-option="time">
         <label>{{localize "levels3dpreview.dynamicSkyConfig.time.label"}}</label>
         <div class="form-fields">
             <range-picker name="flags.levels-3d-preview.sunPosition" value="{{time}}" min=0 max=24 step=0.1></range-picker>
@@ -43,10 +72,10 @@
         <p class="hint">{{localize "levels3dpreview.dynamicSkyConfig.time.notes"}}</p>
     </div>
 
-    <fieldset data-outdoor-only>
+    <fieldset data-outdoor-only data-sky-option="tint sun stars moon">
         <legend>{{localize "levels3dpreview.dynamicSkyConfig.sky"}}</legend>
 
-        <div class="form-group">
+        <div class="form-group" data-sky-option="tint">
             <label>{{localize "levels3dpreview.dynamicSkyConfig.color.label"}}</label>
             <div class="form-fields">
                 <color-picker name="flags.levels-3d-preview.dynamicSky.color" value="{{color}}"></color-picker>
@@ -54,28 +83,28 @@
             <p class="hint">{{localize "levels3dpreview.dynamicSkyConfig.color.notes"}}</p>
         </div>
 
-        <div class="form-group" data-custom-only>
+        <div class="form-group" data-custom-only data-sky-option="sun">
             <label>{{localize "levels3dpreview.dynamicSkyConfig.haze.label"}}</label>
             <div class="form-fields">
                 <range-picker name="flags.levels-3d-preview.dynamicSky.turbidity" value="{{turbidity}}" min=2 max=20 step=0.1></range-picker>
             </div>
         </div>
 
-        <div class="form-group" data-custom-only>
+        <div class="form-group" data-custom-only data-sky-option="sun">
             <label>{{localize "levels3dpreview.dynamicSkyConfig.sunGlow.label"}}</label>
             <div class="form-fields">
                 <range-picker name="flags.levels-3d-preview.dynamicSky.mieDirectionalG" value="{{mieDirectionalG}}" min=0.7 max=0.999 step=0.001></range-picker>
             </div>
         </div>
 
-        <div class="form-group" data-custom-only>
+        <div class="form-group" data-custom-only data-sky-option="stars">
             <label>{{localize "levels3dpreview.dynamicSkyConfig.starDensity.label"}}</label>
             <div class="form-fields">
                 <range-picker name="flags.levels-3d-preview.dynamicSky.starDensity" value="{{starDensity}}" min=0.1 max=2 step=0.1></range-picker>
             </div>
         </div>
 
-        <div class="form-group">
+        <div class="form-group" data-sky-option="moon">
             <label>{{localize "levels3dpreview.dynamicSkyConfig.moonPhase.label"}}</label>
             <div class="form-fields">
                 <select name="flags.levels-3d-preview.dynamicSky.moonPhase" data-dtype="Number">
@@ -85,7 +114,7 @@
         </div>
     </fieldset>
 
-    <fieldset data-outdoor-only>
+    <fieldset data-outdoor-only data-sky-option="clouds">
         <legend>{{localize "levels3dpreview.dynamicSkyConfig.clouds"}}</legend>
 
         <div class="form-group">
@@ -130,4 +159,29 @@
             </div>
         </div>
     </fieldset>
+
+    {{#each styleFields}}
+    <fieldset data-style-fields="{{id}}">
+        <legend>{{localize label}}</legend>
+        {{#each fields}}
+        <div class="form-group">
+            <label>{{localize label}}</label>
+            <div class="form-fields">
+                {{#if (eq type "color")}}
+                <color-picker name="{{name}}" value="{{value}}"></color-picker>
+                {{else if (eq type "checkbox")}}
+                <input type="checkbox" name="{{name}}" {{checked value}}>
+                {{else if (eq type "select")}}
+                <select name="{{name}}">
+                    {{selectOptions choices selected=value localize=true}}
+                </select>
+                {{else}}
+                <range-picker name="{{name}}" value="{{value}}" min="{{min}}" max="{{max}}" step="{{step}}"></range-picker>
+                {{/if}}
+            </div>
+            {{#if hint}}<p class="hint">{{localize hint}}</p>{{/if}}
+        </div>
+        {{/each}}
+    </fieldset>
+    {{/each}}
 </div>

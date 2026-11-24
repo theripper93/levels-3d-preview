@@ -1,3 +1,5 @@
+import { getSetting } from "../settings/settingsConfig.js";
+
 export function elevationFloor() {
     let floor = canvas.primary.background.elevation;
     for (const tile of Object.values(game.Levels3DPreview?.tiles ?? {})) {
@@ -12,5 +14,5 @@ export function elevationFloor() {
 }
 
 export function movementFloor() {
-    return game.settings.get("levels-3d-preview", "preventNegative") ? elevationFloor() : -Infinity;
+    return getSetting("preventNegative") ? elevationFloor() : -Infinity;
 }

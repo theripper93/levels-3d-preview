@@ -2,6 +2,7 @@ import * as THREE from "three";
 import { factor } from "../main.js";
 import { posCanvasTo3d, pos3DToCanvas, unitsToPixels } from "../helpers/coords3d.js";
 import * as coords3d from "../helpers/coords3d.js";
+import { RangeHandleDrag, pickGizmo } from "../entities/effects/placeableGizmo.js";
 import { PlacementPreview3D } from "../systems/placementPreview3d.js";
 import { GroupSelectHandler } from "./GroupSelectHandler.js";
 import { TileCreationQueue } from "./TileCreationQueue.js";
@@ -12,6 +13,9 @@ import { movementFloor } from "../helpers/elevationFloor.js";
 import { SightBroadphase } from "./sightBroadphase.js";
 import { SightOccluders } from "./sightOccluders.js";
 import { VisibilityThrottle } from "./visibilityThrottle.js";
+import { isRevealedHit, revealActive } from "../systems/reveal.js";
+import { doorCollider } from "./doorColliders.js";
+import { sightMeshMaterial } from "../helpers/helpers.js";
 THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
 THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
 THREE.Mesh.prototype.raycast = acceleratedRaycast;
@@ -19,11 +23,44 @@ THREE.Mesh.prototype.raycast = acceleratedRaycast;
 const DRAG_START_THRESHOLD_PX = 6;
 const DOUBLE_CLICK_WINDOW_MS = 250;
 const DOOR_REACH_CELLS = 0.5;
+const FOOT_LIFT_CELLS = 0.05;
+
+function footLift(v1, v2) {
+    const pixelsPerUnit = canvas.dimensions.size / canvas.dimensions.distance;
+    const rise = Math.abs((v2.z ?? 0) - (v1.z ?? 0)) * pixelsPerUnit;
+    if (rise >= Math.hypot(v2.x - v1.x, v2.y - v1.y)) return 0;
+    return canvas.dimensions.distance * FOOT_LIFT_CELLS;
+}
 
 function entityOf(object) {
     let entity = object?.userData?.entity3D;
     if (!entity) object?.traverseAncestors((parent) => (entity ??= parent.userData?.entity3D));
     return entity;
+}
+
+const MATT_POINTER_TRIGGERS = /click|hover/;
+
+function isInteractiveEntity(entity, object) {
+    if (object?.userData?.isDoor) return true;
+    if (!entity) return false;
+    if (entity.embeddedName === "Wall") return !!entity.placeable?.isDoor;
+    if (entity.embeddedName !== "Tile") return true;
+    if (entity.isDoorHover || entity.isInteractiveDynaMesh) return true;
+    const matt = entity.tile?.document?.flags?.["monks-active-tiles"];
+    return !!matt?.active && [matt.trigger].flat().some((trigger) => typeof trigger === "string" && MATT_POINTER_TRIGGERS.test(trigger));
+}
+
+function isSightProxy(entity, object) {
+    const proxy = entity?.sightMesh;
+    if (!proxy || proxy === entity.mesh) return false;
+    for (let node = object; node; node = node.parent) if (node === proxy) return true;
+    return false;
+}
+
+function notRevealed(hit) {
+    if (!revealActive()) return true;
+    const entity = entityOf(hit.object);
+    return !isRevealedHit(hit, isSightProxy(entity, hit.object)) || isInteractiveEntity(entity, hit.object);
 }
 
 function getSenseTypes() {
@@ -175,12 +212,12 @@ export class InteractionManager {
                         const ud = o?.userData;
                         if (!ud?.collision && !ud?.sight && !ud?.cameraCollision) return;
                         const clone = getTaggedColliderClone(tile, o);
-                        if (ud.collision) entry.move.push(clone);
+                        if (ud.collision) entry.move.push((ud.isDoor && o.isMesh && doorCollider(o)) || clone);
                         if (ud.sight) entry.sight.push(clone);
                         if (ud.cameraCollision) entry.camera.push(clone);
                     });
                 } else {
-                    if (tile.collision) entry.move.push(mesh);
+                    if (tile.collision) entry.move.push((tile.isDoor && !tile.isOpen && doorCollider(mesh)) || mesh);
                     if (tile.sight) entry.sight.push(mesh);
                     if (tile.cameraCollision) entry.camera.push(mesh);
                 }
@@ -224,6 +261,18 @@ export class InteractionManager {
     }
 
     computeSightCollision(v1, v2, type = "move", elongate = false, useDistance = true, useClipping = false, returnAll = false) {
+        const lift = type === "move" ? footLift(v1, v2) : 0;
+        if (lift) {
+            const side = sightMeshMaterial.side;
+            sightMeshMaterial.side = THREE.DoubleSide;
+            try {
+                const result = this.computeSightCollision({ x: v1.x, y: v1.y, z: (v1.z ?? 0) + lift }, { x: v2.x, y: v2.y, z: (v2.z ?? 0) + lift }, "moveFeet", elongate, useDistance, useClipping, returnAll);
+                if (result?.isVector3) result.y -= unitsToPixels(lift);
+                return result;
+            } finally {
+                sightMeshMaterial.side = side;
+            }
+        }
         const origin = posCanvasTo3d(v1);
         const target = posCanvasTo3d(v2);
         if (elongate || useClipping || returnAll) return this.computeSightCollisionFrom3DPositions(origin, target, type, elongate, useDistance, useClipping, returnAll);
@@ -345,13 +394,13 @@ export class InteractionManager {
         }
     }
 
-    _onTransformEnd() {
+    _onTransformEnd(event, snap = false) {
         this.controls.enabled = true;
         this.preventSelect = false;
         const object3d = this._parent.controlledGroup; //.userData.entity3D;
         if (!object3d) return;
         for (let child of object3d.children) {
-            child.userData.entity3D.updateFromTransform();
+            child.userData.entity3D.updateFromTransform(snap);
         }
         //object3d.updateFromTransform();
     }
@@ -502,7 +551,7 @@ export class InteractionManager {
             if (!dropFunction) return ui.notifications.error(game.i18n.localize("levels3dpreview.errors.notarget"));
 
             const placeable = await dropFunction.bind(this)(event, data);
-            if (placeable) placeable[0]?.object?.control({ releaseOthers: true });
+            if (placeable && !this._parent.CONFIG.UI.windows.AssetBrowser?.placementPreview?.active) placeable[0]?.object?.control({ releaseOthers: true });
         } catch (e) {
             console.error(e);
             ui.notifications.error(game.i18n.localize("levels3dpreview.errors.notarget"));
@@ -513,7 +562,7 @@ export class InteractionManager {
         if (!this.altControls) return false;
         if (ui.controls.tool.name !== "select") return false;
         if (this.activeLayerEntity === "Tile") {
-            return this._gizmoEnabled;
+            return this._gizmoEnabled && !this.currentHover?.placeable?.controlled;
         } else {
             return this.currentHover?.embeddedName !== this.activeLayerEntity;
         }
@@ -525,6 +574,7 @@ export class InteractionManager {
         }
         if (this._tokenDrag) return this._onTokenDragMouseDown(event);
         if (this._freeRuler) return this._onFreeRulerMouseDown(event);
+        if (this._handleDrag) return this._endHandleDrag({ which: 3 });
         if (this._groupSelect && this.activeLayerEntity != "Region") return this.groupSelectHandler.startSelect(event);
         if (this.preventSelect) return;
         const downId = foundry.utils.randomID();
@@ -569,7 +619,7 @@ export class InteractionManager {
         if (this._leftDown && this.activeLayerEntity === "Note" && ui.controls.tool.name === "journal") return Note3D.newNote(intersectData.point);
         if (this.isRulerDrag(event, intersectData)) this.toggleControls(false);
         if (!intersect || event.ctrlKey) return;
-        if (intersect.userData?.entity3D?.embeddedName === this.activeLayerEntity && !(this._gizmoEnabled && this.activeLayerEntity === "Tile")) this.toggleControls(false);
+        if (intersect.userData?.entity3D?.embeddedName === this.activeLayerEntity && !(this._gizmoEnabled && this.activeLayerEntity === "Tile" && !intersect.userData.entity3D.isTransformControls)) this.toggleControls(false);
         // A previous double click whose second mouseup never reached the canvas would leave clicks stuck: start over
         if (this.clicks >= 2 && !this.draggable) this.clicks = 0;
         this.clicks++;
@@ -642,6 +692,7 @@ export class InteractionManager {
         if (this._groupSelect) return this.groupSelectHandler.endSelect(event);
         if (this._tokenDrag) return this._onTokenDragMouseUp(event);
         if (this._freeRuler) return this._onFreeRulerMouseUp(event);
+        if (this._handleDrag) return this._endHandleDrag(event);
         if (event.which === 1) this._leftDown = false;
         if (event.which === 3) this._rightDown = false;
         if (!this._leftDown && !this._rightDown) this.toggleControls(true);
@@ -723,16 +774,20 @@ export class InteractionManager {
             if (this._tokenDrag) this._tokenDrag.manualPoint = null;
             if (this._pendingDrag) this._checkPendingDrag(event);
         }
-        if (this.draggable) return;
+        if (this.draggable || this._handleDrag) return;
         this.updateHoverObj();
         const intersect = this.getHoverObject();
         if (intersect) this._mouseHoverIntersect = intersect;
+        if (intersect?.gizmo || this._gizmoCursor) {
+            this._gizmoCursor = !!intersect?.gizmo;
+            this._parent.setCursor(this._gizmoCursor ? "pointer" : "auto");
+        }
         const object = intersect?.object;
         //Handle placeable hover event
         if (!event) return;
         if (intersect?.point) {
             this.canvas2dMousePosition = pos3DToCanvas(intersect.point);
-            canvas.mousePosition = this.canvas2dMousePosition;
+            canvas.mousePosition = Object.assign(this.canvas2dMousePosition.clone(), { elevation: this.canvas2dMousePosition.elevation });
             this.canvas3dMousePosition = intersect.point;
         }
         if (object && object?.userData?.entity3D?.placeable) {
@@ -775,25 +830,13 @@ export class InteractionManager {
     }
 
     _clippingFilter(i) {
+        if (!notRevealed(i)) return false;
         const camera = game.Levels3DPreview.camera;
-        let entity3D = i.object?.userData?.entity3D;
-        if (!entity3D)
-            i.object.traverseAncestors((parent) => {
-                if (parent.userData.entity3D && !entity3D) entity3D = parent.userData.entity3D;
-            });
-        const isClippingShader = entity3D?.shaders?.clipping?.enabled && canvas.tokens?.controlled?.length;
-        if (!i.object.material?.clippingPlanes && camera.near === 0.01 && !isClippingShader) return true;
+        if (!i.object.material?.clippingPlanes && camera.near === 0.01) return true;
         const distToCamera = i.point.distanceTo(camera.position);
         if (distToCamera < camera.near) return false;
-        if (!i.object.material?.clippingPlanes && !isClippingShader) return true;
-        if (isClippingShader) {
-            const t3d = game.Levels3DPreview.tokens[canvas.tokens.controlled[0].id];
-            const tY = t3d.mesh?.position?.y;
-            const yConstant = tY + entity3D.shaders.clipping.heightOffset / factor;
-            return yConstant > i.point.y;
-        } else {
-            return i.object.material.clippingPlanes.every((plane) => plane.distanceToPoint(i.point) >= 0);
-        }
+        if (!i.object.material?.clippingPlanes) return true;
+        return i.object.material.clippingPlanes.every((plane) => plane.distanceToPoint(i.point) >= 0);
     }
 
     _preferredDoor(hits, candidates = hits) {
@@ -815,6 +858,8 @@ export class InteractionManager {
     }
 
     getHoverObject() {
+        const gizmo = pickGizmo(this.mousemove, this.activeLayerEntity);
+        if (gizmo) return { object: gizmo.object, point: gizmo.point, intersect: { object: gizmo.sprite, point: gizmo.point }, gizmo };
         if (!this._hoverobj || !this._hoverobj.length) this._hoverobj = this._hoverObjects();
         this.raycaster.setFromCamera(this.mousemove, this.camera);
         const all = this.raycaster.intersectObjects(this.sightBroadphase.filter(this.raycaster, this._hoverobj), true).filter((i) => !i.object?.userData?.ignoreHover);
@@ -886,20 +931,26 @@ export class InteractionManager {
         }
         if (canvas.regions._placementContext) {
             const placement = this._regionPlacement;
-            if (event.ctrlKey && placement) {
+            const delta = event.deltaY || event.deltaX;
+            if (!delta || !(event.ctrlKey || event.shiftKey || event.altKey)) return;
+            event.preventDefault();
+            if (event.altKey && placement) {
                 const step = event.shiftKey ? canvas.scene.dimensions.distance / 5 : canvas.scene.dimensions.distance;
-                placement.offset -= Math.sign(event.deltaY) * step;
+                placement.offset -= Math.sign(delta) * step;
                 placement.sync();
                 return;
             }
-            event.delta = event.deltaY;
+            if (event.altKey) return;
+            event.delta = delta;
             canvas.regions._onMouseWheel(event);
             return;
         }
         const isSpecialKey = this.tiltX || this.tiltZ || this.scaleWidth || this.scaleHeight || this.scaleGap || this.scaleScale || this.scale;
         const dBig = canvas.grid.type > CONST.GRID_TYPES.SQUARE ? 60 : 45;
+        const freeRotation = this.activeLayerEntity === "AmbientLight" || this.activeLayerEntity === "AmbientSound";
         let snap = event.shiftKey ? dBig : 15;
-        const delta = Math.sign(event.deltaY) * snap;
+        if (freeRotation) snap = event.shiftKey ? 15 : 0;
+        const delta = Math.sign(event.deltaY) * (snap || 5);
         if (!this.draggable && event.ctrlKey && !isSpecialKey && !event.altKey && canvas.activeLayer?.controlled.length) {
             canvas.activeLayer?.rotateMany({ delta, snap });
         }
@@ -951,7 +1002,7 @@ export class InteractionManager {
         if (this.isRulerDrag(event, intersectData)) return this._onEnableRuler(event);
         const entity = event.entity;
         if (!entity || entity.isCaptured) return this.abortDrag();
-        if (this._gizmoEnabled && this.activeLayerEntity === "Tile") return this.abortDrag();
+        if (this._gizmoEnabled && this.activeLayerEntity === "Tile" && !entity.isTransformControls) return this.abortDrag();
         let intersect = event.intersect;
         const placeable = entity.placeable;
         if (!placeable?.controlled && placeable) placeable.control({ releaseOthers: true });
@@ -969,9 +1020,16 @@ export class InteractionManager {
             if (!this.startTokenDrag(entity, event, intersect)) return this.abortDrag();
             return;
         }
+        const handleDrag = RangeHandleDrag.start(entity, event.originalIntersect);
+        if (handleDrag) {
+            this._handleDrag = handleDrag;
+            this.toggleControls(false);
+            return;
+        }
         entity.isAnimating = false;
         entity.setPosition?.();
         this.draggable = intersect;
+        this._dragLift = entity.dragLift ?? 0;
         const target = intersect.userData?.isHitbox ? intersect.parent : intersect;
         const base = this._dragSurfaceIntersect(this.isFreeMode || this.forceFree)?.point;
         if (base && target?.position) this._dragOffset = new THREE.Vector3(target.position.x - base.x, 0, target.position.z - base.z);
@@ -1031,7 +1089,7 @@ export class InteractionManager {
     _onClickRight2(event) {
         const entity = event.entity;
         if ((entity?.tile && canvas.activeLayer?.options.objectClass.name !== "Tile" && !entity?.isDoor && !event?.originalIntersect?.userData?.isDoor) || !entity) {
-            if (this._downCameraPosition.distanceTo(this._upCameraPosition) < 0.01) game.Levels3DPreview.GameCamera.moveCameraToCursor();
+            if (this._downCameraPosition.distanceTo(this._upCameraPosition) < 0.01) this._parent.tacticalCamera.moveCameraToCursor();
         }
         if (!entity) return;
         entity._onClickRight2(event);
@@ -1052,42 +1110,6 @@ export class InteractionManager {
         if (!this.draggable) this.controls.enableZoom = true;
     }
 
-    getObstructingTiles() {
-        const obstructing = new Map();
-        const boxCenter = new THREE.Vector3(0, 0, 0);
-        const selectedToken = this._parent.tokens[canvas.tokens.controlled[0]?.id];
-        if (!selectedToken) return obstructing;
-        const position = selectedToken.head;
-        const cameraTokenDistance = this._parent.camera.position.distanceTo(position);
-        const cameraTokenMidPoint = new THREE.Vector3().addVectors(this._parent.camera.position, position).divideScalar(2);
-        const cameraTokenSphere = new THREE.Sphere(cameraTokenMidPoint, cameraTokenDistance / 2);
-        const collisions = this.computeSightCollisionFrom3DPositions(position, this._parent.camera.position, "sight", false, true, false, true) || [];
-        const collisionSpheres = [];
-        for (const collision of collisions) {
-            let tile3d = collision.object.userData.entity3D;
-            if (!tile3d)
-                collision.object.traverseAncestors((parent) => {
-                    if (parent.userData.entity3D && !tile3d) tile3d = parent.userData.entity3D;
-                });
-            if (!tile3d.shaders?.clipping?.diameter) continue;
-            const collisionSphere = new THREE.Sphere(collision.point, 10);
-            collisionSpheres.push(collisionSphere);
-            obstructing.set(tile3d, new THREE.Vector4(collision.point.x, collision.point.y, collision.point.z, 1));
-        }
-        const tiles = Object.values(this._parent.tiles);
-        if (!collisionSpheres.length) return obstructing;
-        for (const tile of tiles) {
-            if (obstructing.has(tile)) continue;
-            const tileBox = tile._worldBoundingBox;
-            if (!cameraTokenSphere.intersectsBox(tileBox)) continue;
-            tileBox.getCenter(boxCenter);
-            const boxSphereIntersect = collisionSpheres.reduce((prev, curr) => (prev.center.distanceTo(boxCenter) < curr.center.distanceTo(boxCenter) ? prev : curr));
-            if (boxSphereIntersect) obstructing.set(tile, new THREE.Vector4(boxSphereIntersect.center.x, boxSphereIntersect.center.y, boxSphereIntersect.center.z, 1));
-        }
-
-        return obstructing;
-    }
-
     findCameraLookatDistance() {
         const screenCenter = new THREE.Vector2(-0.1, +0.1);
         this.raycaster.setFromCamera(screenCenter, this.camera);
@@ -1105,6 +1127,8 @@ export class InteractionManager {
         this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
         this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
         this.raycaster.setFromCamera(this.mouse, this.camera);
+        const gizmo = pickGizmo(this.mouse, this.activeLayerEntity);
+        if (gizmo) return { object: gizmo.object, point: gizmo.point, originalObject: gizmo.sprite, intersectData: { object: gizmo.object, point: gizmo.point } };
         let intersectTargets = [];
         for (let child of this.scene.children.concat(this._parent.controlledGroup.children)) {
             if (this.activeLayerEntity !== child.userData?.entity3D?.embeddedName && child.userData?.entity3D?.embeddedName !== "Wall" && child.userData?.entity3D?.embeddedName !== "Tile" && child.userData?.entity3D?.embeddedName !== "Note") continue;
@@ -1150,6 +1174,7 @@ export class InteractionManager {
         this._lockTemplateElevation = false;
         this._draggable = object;
         this._dragOffset = null;
+        this._dragLift = 0;
         const center = this._parent.canvasCenter;
         if (object) {
             this.currentDragTarget = null;
@@ -1237,8 +1262,7 @@ export class InteractionManager {
             this.mousemove.y = -(screenPosition.y / window.innerHeight) * 2 + 1;
         }
         this.raycaster.setFromCamera(this.mousemove, this.camera);
-        const intersects = this.raycaster.intersectObjects(collisionGeometries, true);
-        return intersects;
+        return this.raycaster.intersectObjects(collisionGeometries, true).filter(notRevealed);
     }
 
     mousePostionToWorld() {
@@ -1251,7 +1275,20 @@ export class InteractionManager {
         }
     }
 
+    _endHandleDrag(event) {
+        const handleDrag = this._handleDrag;
+        this._handleDrag = null;
+        this._leftDown = false;
+        this._rightDown = false;
+        this.mousedown = false;
+        this.clicks = 0;
+        if (event.which === 1) handleDrag.commit();
+        else handleDrag.cancel();
+        this.toggleControls(true, true);
+    }
+
     dragObject() {
+        if (this._handleDrag) return this._handleDrag.update(this);
         if (this._tokenDrag) return this.updateTokenDrag();
         if (this._freeRuler) return this.updateFreeRuler();
         if (!this.draggable) return;
@@ -1271,19 +1308,21 @@ export class InteractionManager {
                 intersect.point.y = this.placementPreview.origin?.y ?? this._dragOriginY ?? intersect.point.y;
             }
             const offset = this._dragOffset;
-            this.currentDragTarget = new THREE.Vector3(intersect.point.x + (offset?.x ?? 0), !isFree ? intersect.point.y : entity3D.elevation3d, intersect.point.z + (offset?.z ?? 0));
+            const surfaceY = intersect.point.y + this._dragLift;
+            this.currentDragTarget = new THREE.Vector3(intersect.point.x + (offset?.x ?? 0), !isFree ? surfaceY : entity3D.elevation3d, intersect.point.z + (offset?.z ?? 0));
             const distance = target.position.distanceTo(this.currentDragTarget);
             let lerpFactor = 1 / (1 + distance * 20);
             if (lerpFactor < 0.1) lerpFactor = 0.1;
             this.canvas2dMousePosition = pos3DToCanvas(this.currentDragTarget);
-            canvas.mousePosition = this.canvas2dMousePosition;
+            canvas.mousePosition = Object.assign(this.canvas2dMousePosition.clone(), { elevation: this.canvas2dMousePosition.elevation });
             this.canvas3dMousePosition = this.currentDragTarget.clone();
             target.position.lerp(this.currentDragTarget, lerpFactor);
             if (!isFree) {
-                entity3D.elevation3d = intersect.point.y;
+                entity3D.elevation3d = surfaceY;
                 this.dragplane.position.set(center.x, intersect.point.y, center.z);
             }
             if (entity3D.template) entity3D.onMove();
+            entity3D.onDragMove?.();
             this.updateDragMeasure();
         }
     }
@@ -1327,6 +1366,7 @@ export class InteractionManager {
     }
 
     cancelDrag(force = false) {
+        if (this._handleDrag) return this._endHandleDrag({ which: 3 });
         if (this._tokenDrag) return this.cancelTokenDrag();
         if (this._freeRuler) return this.endFreeRuler();
         if (!this.draggable) return;
@@ -1353,7 +1393,7 @@ export class InteractionManager {
         const position = new THREE.Vector3(x, y, elevation);
         position.elevation = elevation;
         this.canvas2dMousePosition = position;
-        canvas.mousePosition = position;
+        canvas.mousePosition = Object.assign(position.clone(), { elevation });
         this.canvas3dMousePosition = point3d ?? posCanvasTo3d(position);
     }
 
@@ -1784,36 +1824,6 @@ export class InteractionManager {
                     canPopout: true,
                 },
             },
-        });
-    }
-
-    async removeWASDBindings() {
-        foundry.applications.api.DialogV2.confirm({
-            title: game.i18n.localize(`levels3dpreview.keybindings.dialog.title`),
-            content: game.i18n.localize(`levels3dpreview.keybindings.dialog.content`),
-        }).then(async res => {
-            if (!res) return game.settings.set("levels-3d-preview", "removeKeybindingsPrompt", true);
-            await game.keybindings.set(
-                "core",
-                "panUp",
-                game.keybindings.get("core", "panUp").filter((b) => b.key != "KeyW" && b.key != "ArrowUp" && b.key != "Numpad8"),
-            );
-            await game.keybindings.set(
-                "core",
-                "panDown",
-                game.keybindings.get("core", "panDown").filter((b) => b.key != "KeyS" && b.key != "ArrowDown" && b.key != "Numpad2"),
-            );
-            await game.keybindings.set(
-                "core",
-                "panLeft",
-                game.keybindings.get("core", "panLeft").filter((b) => b.key != "KeyA" && b.key != "ArrowLeft" && b.key != "Numpad4"),
-            );
-            await game.keybindings.set(
-                "core",
-                "panRight",
-                game.keybindings.get("core", "panRight").filter((b) => b.key != "KeyD" && b.key != "ArrowRight" && b.key != "Numpad6"),
-            );
-            await game.settings.set("levels-3d-preview", "removeKeybindingsPrompt", true);
         });
     }
 

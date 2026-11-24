@@ -8,6 +8,7 @@ const HIDE_TAU = 1;
 const FADE_DURATION = 1;
 const SETTLE_FACTOR = 7;
 const TOGGLE_SPEED = 2;
+const MIN_RATE = 0.25;
 const MAX_BLUR_RADIUS = 4;
 const FIT_ITERATIONS = 30;
 const REGION_PADDING = 2;
@@ -89,12 +90,14 @@ uniform sampler2D uShown;
 uniform sampler2D uTarget;
 uniform float uStep;
 uniform float uHideStep;
+uniform float uMinStep;
 void main() {
     ivec2 pixel = ivec2(gl_FragCoord.xy);
     vec4 shown = texelFetch(uShown, pixel, 0);
     vec4 target = texelFetch(uTarget, pixel, 0);
     vec4 rate = mix(vec4(uStep), vec4(uHideStep), vec4(lessThanEqual(target, shown)));
-    vec4 next = shown + (target - shown) * rate;
+    vec4 gap = target - shown;
+    vec4 next = shown + sign(gap) * min(abs(gap), max(abs(gap) * rate, vec4(uMinStep)));
     gl_FragColor = mix(next, target, vec4(lessThan(abs(target - next), vec4(0.004))));
 }
 `;
@@ -113,8 +116,8 @@ function passMaterial(fragmentShader, uniforms, options = {}) {
     return new THREE.ShaderMaterial({ uniforms, vertexShader: VERTEX_SHADER, fragmentShader, depthTest: false, depthWrite: false, ...options });
 }
 
-function maskTarget(width, height, filter = THREE.NearestFilter) {
-    const target = new THREE.WebGLRenderTarget(width, height, { format: THREE.RGBAFormat, minFilter: filter, magFilter: filter, depthBuffer: false, generateMipmaps: false });
+function maskTarget(width, height, filter = THREE.NearestFilter, type = THREE.UnsignedByteType) {
+    const target = new THREE.WebGLRenderTarget(width, height, { format: THREE.RGBAFormat, type, minFilter: filter, magFilter: filter, depthBuffer: false, generateMipmaps: false });
     target.texture.colorSpace = THREE.NoColorSpace;
     return target;
 }
@@ -168,7 +171,7 @@ export class FogSmoother {
         this.poolMaterial = passMaterial(POOL_SHADER, { uSource: { value: null }, uAxis: { value: AXIS_X }, uScale: { value: 1 } });
         this.blurRowsMaterial = passMaterial(BLUR_ROWS_SHADER, { uSource: { value: null }, uRadius: { value: 0 }, uWeights: { value: [] } });
         this.blurColumnsMaterial = passMaterial(BLUR_COLUMNS_SHADER, { uSource: { value: null }, uRadius: { value: 0 }, uWeights: { value: [] } });
-        this.blendMaterial = passMaterial(BLEND_SHADER, { uShown: { value: null }, uTarget: { value: null }, uStep: { value: 1 }, uHideStep: { value: 1 } });
+        this.blendMaterial = passMaterial(BLEND_SHADER, { uShown: { value: null }, uTarget: { value: null }, uStep: { value: 1 }, uHideStep: { value: 1 }, uMinStep: { value: 0 } });
         this.compareMaterial = passMaterial(COMPARE_SHADER, { uPrevious: { value: null }, uCurrent: { value: null } }, { colorWrite: false });
         this.quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), this.blendMaterial);
         this.quad.frustumCulled = false;
@@ -222,7 +225,7 @@ export class FogSmoother {
         this.ping = maskTarget(outWidth, outHeight);
         this.blurRows = maskTarget(outWidth, outHeight);
         this.smoothed = maskTarget(outWidth, outHeight);
-        this.shown = [maskTarget(outWidth, outHeight, THREE.LinearFilter), maskTarget(outWidth, outHeight, THREE.LinearFilter)];
+        this.shown = [maskTarget(outWidth, outHeight, THREE.LinearFilter, THREE.HalfFloatType), maskTarget(outWidth, outHeight, THREE.LinearFilter, THREE.HalfFloatType)];
         this.primed = false;
         this.valid = false;
         this.partial = false;
@@ -329,7 +332,7 @@ export class FogSmoother {
         if (this.stalled && !finalStep) return;
         const next = 1 - this.shownIndex;
         const ease = (tau) => (finalStep ? 1 : 1 - Math.exp((-elapsed * speed) / tau));
-        this.pass(this.blendMaterial, { uShown: this.shown[this.shownIndex].texture, uTarget: this.smoothed.texture, uStep: ease(REVEAL_TAU), uHideStep: ease(HIDE_TAU) }, this.shown[next]);
+        this.pass(this.blendMaterial, { uShown: this.shown[this.shownIndex].texture, uTarget: this.smoothed.texture, uStep: ease(REVEAL_TAU), uHideStep: ease(HIDE_TAU), uMinStep: elapsed * speed * MIN_RATE }, this.shown[next]);
         this.shownIndex = next;
         if (!finalStep) this.checkStalled();
     }

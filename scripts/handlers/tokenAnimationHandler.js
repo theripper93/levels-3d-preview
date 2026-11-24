@@ -143,9 +143,11 @@ export class TokenAnimationHandler {
 
     reset() {
         const initialState = this.initialState;
-        this.model.position.copy(initialState.position);
-        this.model.rotation.set(initialState.rotation.x, initialState.rotation.y, initialState.rotation.z);
-        this.model.scale.copy(initialState.scale);
+        if (this.model && initialState.position && initialState.rotation && initialState.scale) {
+            this.model.position.copy(initialState.position);
+            this.model.rotation.set(initialState.rotation.x, initialState.rotation.y, initialState.rotation.z);
+            this.model.scale.copy(initialState.scale);
+        }
 
         this._currentDelta = 0;
         this._animationStep = 0;

@@ -204,7 +204,6 @@ export async function showPerformanceDialog() {
     const dpr = game.settings.get("core", "pixelRatioResolutionScaling") ? window.devicePixelRatio : 1;
     const resMulti = game.settings.get("levels-3d-preview", "resolutionMultiplier");
     const dialogData = { "3D Canvas Engine": game.modules.get("levels-3d-preview").version, "Mapmaking Pack": game.modules.get("canvas3dcompendium")?.version, "FVTT CORE": support.coreVersion, GPU: support.gpu, Resolution: `${Math.round(window.innerWidth * dpr * resMulti)}x${Math.round(window.innerHeight * dpr * resMulti)}`, ...report };
-    dialogData["Shared Context"] = game.settings.get("levels-3d-preview", "sharedContext") ? game.i18n.localize("Yes") : game.i18n.localize("No");
     delete dialogData.color;
     delete dialogData.grade;
     const cursors = new Map();

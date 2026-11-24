@@ -2,8 +2,11 @@ import * as THREE from "three";
 import { factor } from "../main.js";
 import { DiagonalStripesMaterial } from "../shaders/regionMaterial.js";
 import { Shape3D } from "./shape3d.js";
+import { knownShaders } from "../shaders/ShaderLib.js";
 import { ObscureVisionConfig, ObscureVisionRegionBehaviorType } from "../apps/obscureVisionRegionBehavior.js";
 import { RegionEffect, THEMES, hitboxMaterial, resolveRegionFx } from "../vfx/region/index.js";
+import { getSetting } from "../settings/settingsConfig.js";
+import { RegionOutline3D, regionFillMaterial } from "./effects/regionOutline.js";
 
 export class Region3D extends THREE.Object3D {
     constructor(region, hidden = false) {
@@ -18,9 +21,10 @@ export class Region3D extends THREE.Object3D {
         const extrudeRegion = (region.shapes?.length > 1) || region.restriction.enabled;
         // this.material = new DiagonalStripesMaterial({ color: region.color.css });
         // this.material.side = this.height < 0.01 ? THREE.FrontSide : THREE.DoubleSide;
-        this.shaders = this.region?.getFlag("levels-3d-preview", "shaders") ?? {};
+        this.shaders = knownShaders(this.region?.getFlag("levels-3d-preview", "shaders"));
         this.hasShaders = Object.values(this.shaders).some((v) => v.enabled);
-        this.fx = this.hasShaders ? null : resolveRegionFx(region, this.isFog);
+        this.editPreview = !!region.object?.isPreview && canvas.regions?._placementContext?.preview !== region.object;
+        this.fx = this.hasShaders || this.editPreview ? null : resolveRegionFx(region, this.isFog);
         if (extrudeRegion) {
             this.drawExtrude(this.hasShaders);
         } else {
@@ -50,7 +54,7 @@ export class Region3D extends THREE.Object3D {
     }
 
     get height() {
-        const alwaysFlat = game.settings.get("levels-3d-preview", "regionsAlwaysFlat");
+        const alwaysFlat = getSetting("regionsAlwaysFlat");
         if (alwaysFlat) return 0.01;
         return this.#height;
     }
@@ -60,7 +64,7 @@ export class Region3D extends THREE.Object3D {
     }
 
     get bottom() {
-        const alwaysFlat = game.settings.get("levels-3d-preview", "regionsAlwaysFlat");
+        const alwaysFlat = getSetting("regionsAlwaysFlat");
         if (alwaysFlat) return 0;
         return this.#bottom;
     }
@@ -69,12 +73,38 @@ export class Region3D extends THREE.Object3D {
         return "Region";
     }
 
+    get placeable() {
+        return this.region?.object ?? null;
+    }
+
+    get isOwner() {
+        return !!this.region?.isOwner;
+    }
+
     addToScene() {
         game.Levels3DPreview.scene.add(this);
         this.effect?.addToScene();
     }
 
+    refreshState() {
+        if (!this.parent) return this.outline?.update(null);
+        this.outline ??= new RegionOutline3D();
+        this.outline.update(this.region.object);
+    }
+
+    _onHoverIn(event) {
+        const object = this.placeable;
+        if (!object || object.hover || object.isPreview || !ui.controls.tool?.interaction) return;
+        object._onHoverIn(event, { hoverOutOthers: true });
+    }
+
+    _onHoverOut(event) {
+        const object = this.placeable;
+        if (object?.hover && !object.destroyed) object._onHoverOut(event);
+    }
+
     destroy(dissolve = false) {
+        this.outline?.destroy();
         game.Levels3DPreview.scene.remove(this);
         if (dissolve) this.effect?.dissolve();
         else this.effect?.dispose();
@@ -106,6 +136,7 @@ export class Region3D extends THREE.Object3D {
             for (const shapeMesh of child.isMesh ? [child] : child.children) {
                 shapeMesh.userData.entity3D = this;
                 shapeMesh.userData.noIntersect = false;
+                shapeMesh.userData.ignoreHover = false;
             }
         }
         this.userData.hitbox = this;
@@ -118,9 +149,13 @@ export class Region3D extends THREE.Object3D {
         return new THREE.MeshStandardMaterial({ color: this.region?.color.css ?? 0xffffff, opacity: 0.7, transparent: true });
     }
 
+    get previewMaterial() {
+        return this.editPreview ? regionFillMaterial(this.region.color?.css ?? game.user.color.css) : null;
+    }
+
     drawShapes(useStandardMaterial) {
         for (const shape of this.region.shapes) {
-            const shape3d = Shape3D.create({ shape, region: this.region, material: useStandardMaterial ? this.getShaderMaterial() : null });
+            const shape3d = Shape3D.create({ shape, region: this.region, material: useStandardMaterial ? this.getShaderMaterial() : this.previewMaterial });
             if (this.fx && !useStandardMaterial) this.useHitboxMaterial(shape3d);
             this.add(shape3d);
         }
@@ -139,8 +174,8 @@ export class Region3D extends THREE.Object3D {
         const geometry = Shape3D.extrudeGeometry(this.region.polygonTree, { depth: this.height });
         geometry.translate(0, this.bottom, 0);
         const side = this.height <= 0.01 ? THREE.FrontSide : THREE.BackSide;
-        const material = useStandardMaterial ? this.getShaderMaterial() : this.fx ? hitboxMaterial(THREE.DoubleSide) : new DiagonalStripesMaterial({ color: this.region.color.css, scale: 30 });
-        if (!useStandardMaterial && !this.fx) material.side = side;
+        const material = useStandardMaterial ? this.getShaderMaterial() : this.fx ? hitboxMaterial(THREE.DoubleSide) : this.previewMaterial ?? new DiagonalStripesMaterial({ color: this.region.color.css, scale: 30 });
+        if (!useStandardMaterial && !this.fx && !this.editPreview) material.side = side;
         const mesh = new THREE.Mesh(geometry, material);
         this.add(mesh);
         this.applyHitbox();
@@ -176,7 +211,10 @@ export class Region3D extends THREE.Object3D {
             // refreshRegion fires on hover/control too; skip the (expensive) rebuild when nothing
             // that affects the 3D representation has changed.
             const existing = this.regions.get(region);
-            if (existing._signature === this.getSignature(region, hidden)) return existing;
+            if (existing._signature === this.getSignature(region, hidden)) {
+                existing.refreshState();
+                return existing;
+            }
             return this.update(region, hidden);
         }
         return this.create(region, hidden);
@@ -197,7 +235,7 @@ export class Region3D extends THREE.Object3D {
                 region.restriction?.enabled ?? false,
                 Region3D.isVisible(region),
                 !!hidden,
-                game.settings.get("levels-3d-preview", "regionsAlwaysFlat"),
+                getSetting("regionsAlwaysFlat"),
                 game.settings.get("levels-3d-preview", "regionShells"),
             ]);
         } catch (e) {
@@ -225,6 +263,7 @@ export class Region3D extends THREE.Object3D {
         const region3d = new Region3D(region, hidden);
         region3d._signature = this.getSignature(region, hidden);
         this.regions.set(region, region3d);
+        region3d.refreshState();
         return region3d;
     }
 
@@ -253,47 +292,10 @@ export class Region3D extends THREE.Object3D {
         return false;
     }
 
-    static getLightData(shape3d) {
-        const shape = shape3d.shape;
-        const defaults = foundry.applications.sheets.palette.AmbientLightPalette.createData;
-        const elevation = shape3d.origin.y * factor / canvas.scene.dimensions.distancePixels + 0.1;
-        return foundry.utils.mergeObject(defaults, {
-            config: {
-                dim: shape.radius / canvas.scene.dimensions.distancePixels,
-                bright: shape.radius / (2 * canvas.scene.dimensions.distancePixels),
-            },
-            x: shape.x,
-            y: shape.y,
-            elevation: elevation * 2,
-        }, { inplace: false });
-    }
-
     static async fromPreview(shape3d) {
 
         const shape = shape3d.shape;
 
-        if (shape3d.tool === "light") {
-            const lightData = this.getLightData(shape3d);
-            const lights = await canvas.scene.createEmbeddedDocuments("AmbientLight", [lightData]);
-            shape3d.destroy();
-            return lights;
-        }
-        
-        if (shape3d.tool === "sound") {
-            const defaults = foundry.applications.sheets.palette.AmbientSoundPalette.createData;
-            const elevation = shape3d.origin.y * factor / canvas.scene.dimensions.distancePixels + 0.1;
-            const soundData = foundry.utils.mergeObject(defaults, {
-                radius: shape.radius / canvas.scene.dimensions.distancePixels,
-                x: shape.x,
-                y: shape.y,
-                elevation: elevation * 2,
-            });
-            const sounds = await canvas.scene.createEmbeddedDocuments("AmbientSound", [soundData]);
-            sounds[0].sheet.render(true);
-            shape3d.destroy();
-            return sounds;
-        }
-        
         if (shape3d.tool === "tile") {
             let elevation = shape3d.origin.y * factor / canvas.scene.dimensions.distancePixels + 0.1;
             const width = shape3d.width * factor;
@@ -378,7 +380,7 @@ export class Region3D extends THREE.Object3D {
 
         Hooks.on("updateRegion", (region, changes) => {
             region.polygonTree;
-            if (!game.Levels3DPreview?._active || !region.object || !foundry.utils.hasProperty(changes, "flags.levels-3d-preview")) return;
+            if (!game.Levels3DPreview?._active || !region.object || !(foundry.utils.hasProperty(changes, "flags.levels-3d-preview") || "name" in changes)) return;
             Region3D.handle(region);
         });
 

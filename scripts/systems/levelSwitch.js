@@ -1,13 +1,16 @@
 import { Region3D } from "../entities/region3d.js";
 import { elevationFloor } from "../helpers/elevationFloor.js";
 import { scatterFields } from "../scatter/scatterField.js";
+import { takeSceneRedraw } from "./sceneRefresh.js";
 
 const LOAD_TIMEOUT = 20000;
 
 const parkedTiles = new Map();
 
 export function canSwitchLevel(L, { nextScene, nextLevel } = {}) {
-    return !!(L._active && L._ready && nextScene && nextLevel) && nextScene.id === canvas.scene?.id && nextLevel.id !== canvas.level?.id && L._builtSceneId === nextScene.id;
+    const softRedraw = takeSceneRedraw(nextScene);
+    if (!(L._active && L._ready && nextScene && nextLevel) || nextScene.id !== canvas.scene?.id || L._builtSceneId !== nextScene.id) return false;
+    return nextLevel.id !== canvas.level?.id || softRedraw;
 }
 
 async function preload(L, loads) {

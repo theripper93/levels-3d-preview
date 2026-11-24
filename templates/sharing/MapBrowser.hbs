@@ -1,34 +1,37 @@
 <div>
-    <div class="tdc-navbar">
-    <input type="text" placeholder="{{localize "levels3dpreview.sharing.mapbrowser.search"}}">
-    <button id="tdc-sort-newest" {{#if sortNewest}}class="active"{{/if}} >Newest</button>
-    <button id="tdc-sort-popular" {{#if sortPopular}}class="active"{{/if}}>Popular</button>
-    <button id="tdc-sort-downloads" {{#if sortDownloads}}class="active"{{/if}}>Downloads</button>
-    <button data-tooltip="levels3dpreview.sharing.mapbrowser.createJournal" id="tdc-journal" {{#if createJournal}}class="active"{{/if}}><i class="fas fa-scroll fa-fw"></i></button>
-    </div>
-    <div class="tdc-filters">
-        {{#each packs}}
-            <button class="tdc-filter {{#if installed}}active{{/if}}" data-filter="{{id}}">{{name}}</button>
+    <nav class="tdc-map-toolbar">
+        <input type="search" value="{{search}}" placeholder="{{localize "levels3dpreview.sharing.mapbrowser.search"}}" autocomplete="off">
+        {{#each sorts}}
+        <button type="button" class="{{#if active}}active{{/if}}" data-action="sort" data-sort="{{id}}" aria-pressed="{{active}}">{{localize label}}</button>
         {{/each}}
-    </div>
+        <button type="button" class="icon fa-solid fa-scroll {{#if createJournal}}active{{/if}}" data-action="toggleJournal" data-tooltip="levels3dpreview.sharing.mapbrowser.createJournal" aria-pressed="{{createJournal}}"></button>
+    </nav>
+    <nav class="tdc-map-toolbar">
+        {{#each packs}}
+        <button type="button" class="{{#if active}}active{{/if}}" data-action="togglePack" data-pack="{{id}}">{{name}}</button>
+        {{/each}}
+        <button type="button" class="{{#if mapMakerOnly}}active{{/if}}" data-action="toggleMapMaker"><i class="fa-solid fa-hammer"></i> {{localize "levels3dpreview.sharing.mapbrowser.mapMaker"}}</button>
+    </nav>
     <div class="tdc-map-list">
         {{#each maps}}
-            <div class="tdc-map-card" data-mapid="{{id}}" data-name="{{name}}" style="background-image: linear-gradient(transparent, black), url('{{image}}');">
-                <h3 style="margin: 0;">{{name}}</h3>
-                <span {{#if isWinner}}data-tooltip="This user won one of the 3D Mapmaking Contests"{{/if}} style="font-size: small;">by {{author}}{{#if isWinner}} <i class="fas fa-trophy-star"></i>{{/if}}</span>
-                <div class="tdc-btn-container">
-                <button {{#if starred}}style="pointer-events: none"{{/if}} class="tdc-map-star {{#if notStarOwned}}not-starred{{/if}}" data-mapid="{{id}}"><i class="{{#if starred}}fa-solid{{else}}fa-regular{{/if}} fa-heart"></i></button>
-                <span class="tdc-star-count">{{stars}}</span>
-                <button class="tdc-map-download" data-thumb="{{image}}" data-mapid="{{id}}"><i class="fas fa-cloud-arrow-down fa-swap-opacity"></i></button>
+        <article class="tdc-map-card" data-map-id="{{id}}" data-packs="{{packIds}}" data-search="{{searchText}}" data-map-maker="{{mapMaker}}">
+            {{#if image}}<img src="{{image}}" alt="" loading="lazy">{{/if}}
+            {{#if mapMaker}}<span class="tdc-map-badge"><i class="fa-solid fa-hammer"></i> {{localize "levels3dpreview.sharing.mapbrowser.mapMaker"}}</span>{{/if}}
+            <div class="tdc-map-stats">
+                <button type="button" class="icon {{#if starred}}fa-solid{{else}}fa-regular{{/if}} fa-heart {{#if notStarOwned}}not-starred{{/if}}" data-action="star" {{disabled starred}}></button>
+                <span>{{stars}}</span>
+                <button type="button" class="icon fa-solid fa-cloud-arrow-down" data-action="download"></button>
                 <span>{{downloads}}</span>
-                </div>
-                <p>{{{description}}}</p>
-                <div class="tdc-pack-container">
-                {{#each assetpacks}}
-                 <span data-pack="{{id}}" class="tdc-pack {{#unless installed}}missing{{/unless}}">{{name}}</span>
-                {{/each}}
-                </div>
             </div>
+            <h3>{{name}}</h3>
+            <span class="tdc-map-author" {{#if isWinner}}data-tooltip="levels3dpreview.sharing.mapbrowser.winner"{{/if}}>{{localize "levels3dpreview.sharing.mapbrowser.by" author=author}}{{#if isWinner}} <i class="fa-solid fa-trophy-star"></i>{{/if}}</span>
+            <p>{{{description}}}</p>
+            <div class="tdc-pack-container">
+                {{#each assetpacks}}
+                <span class="tdc-pack {{#unless installed}}missing{{/unless}}">{{name}}</span>
+                {{/each}}
+            </div>
+        </article>
         {{/each}}
     </div>
 </div>

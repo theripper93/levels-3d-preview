@@ -1,12 +1,14 @@
 import * as THREE from "three";
 import { factor } from "../main.js";
-import { Sky } from "../three/Sky.js";
 import {DynamicSkyConfig} from "../settings/dynamicSkyConfig.js";
 import { AtmosphereState, nightAt } from "../atmosphere/state.js";
 import { installAtmosphereFog, applyAtmosphereFog, resetAtmosphereFog } from "../atmosphere/fog.js";
 import { updateMapEdge } from "../atmosphere/mapEdge.js";
 import { SkyEnvironment } from "../atmosphere/environment.js";
 import { toneMappedBackground } from "../atmosphere/background.js";
+import { SkyStyleController } from "../atmosphere/sky/styleController.js";
+import { styleUsesTime } from "../atmosphere/sky/registry.js";
+import { getSetting } from "../settings/settingsConfig.js";
 
 const MODULE_ID = "levels-3d-preview";
 const MOON_OFFSET = 0.4;
@@ -23,6 +25,7 @@ const moonLocal = new THREE.Vector3();
 const sunDirection = new THREE.Vector3();
 const moonDirection = new THREE.Vector3();
 const overrideAngle = new THREE.Quaternion();
+const inverseAngle = new THREE.Quaternion();
 const sunEuler = new THREE.Euler();
 const overrideTint = new THREE.Color();
 const settingBackground = new THREE.Color();
@@ -53,7 +56,8 @@ export function darknessAtTime(scene, time) {
 }
 
 export function timeDrivesDarkness(scene) {
-    return isDynamicSkyEnabled(scene) && (scene.getFlag(MODULE_ID, "dynamicSky")?.setting ?? SKY_DEFAULTS.setting) === "outdoor";
+    const sky = scene.getFlag(MODULE_ID, "dynamicSky");
+    return isDynamicSkyEnabled(scene) && (sky?.setting ?? SKY_DEFAULTS.setting) === "outdoor" && styleUsesTime(sky);
 }
 
 
@@ -69,6 +73,7 @@ export class GlobalIllumination {
         this.DynamicSkyConfig = DynamicSkyConfig;
         this.atmosphere = new AtmosphereState();
         this.skyEnvironment = new SkyEnvironment(parent);
+        this.styles = new SkyStyleController(this);
         this.disposed = false;
         this._time = 12;
         this._distance = -10;
@@ -94,7 +99,8 @@ export class GlobalIllumination {
 
     get skyData() {
         const override = this.atmosphere.override;
-        const data = foundry.utils.mergeObject({ ...SKY_DEFAULTS }, canvas.scene.getFlag(MODULE_ID, "dynamicSky") ?? {});
+        const data = foundry.utils.mergeObject({ ...SKY_DEFAULTS }, foundry.utils.deepClone(canvas.scene.getFlag(MODULE_ID, "dynamicSky") ?? {}));
+        data.enabled = isDynamicSkyEnabled(canvas.scene);
         if (override?.sky) foundry.utils.mergeObject(data, override.sky);
         if (override?.enabled !== undefined) data.enabled = override.enabled;
         if (override?.preset) data.preset = override.preset;
@@ -111,10 +117,9 @@ export class GlobalIllumination {
     }
 
     initDynamicSky() {
-        if (this.sky) return;
-        const sky = new Sky();
+        if (this.sky) return this.styles.select(this._skyData);
+        const sky = this.styles.initial(this._skyData);
         this.sky = sky;
-        sky.scale.setScalar(450000);
         this._parent.scene.add(sky);
         this._parent.scene.environment = this.skyEnvironment.attach(sky);
     }
@@ -126,6 +131,7 @@ export class GlobalIllumination {
         if (dynamicSkyData.enabled) {
             this.initDynamicSky();
         } else if (this.sky) {
+            this.styles.reset();
             this.skyEnvironment.dispose();
             this._parent.scene.remove(this.sky);
             this.sky.dispose?.();
@@ -140,6 +146,7 @@ export class GlobalIllumination {
 
     dispose() {
         this.disposed = true;
+        this.styles.reset();
         this.skyEnvironment.dispose();
         this.sky = null;
     }
@@ -165,8 +172,6 @@ export class GlobalIllumination {
 
     init() {
         const sunlight = new THREE.DirectionalLight(0xffa95c, 4);
-        const debugSphere = new THREE.Mesh(new THREE.SphereGeometry(6 / 10, 16, 16), new THREE.MeshBasicMaterial({ color: 0xffa95c, transparent: true, opacity: 0.5, wireframe: true }));
-        debugSphere.visible = this._parent.debugMode;
         const lightTarget = new THREE.Object3D();
         sunlight.target = lightTarget;
         lightTarget.position.copy(this._parent.canvasCenter);
@@ -181,13 +186,11 @@ export class GlobalIllumination {
         sunlight.shadow.camera.bottom = -sizeY / 2;
         sunlight.shadow.camera.updateProjectionMatrix();
         lightingGroup.add(sunlight);
-        lightingGroup.add(debugSphere);
 
         this.hemisphereLight = new THREE.HemisphereLight(0xffffff, 0x000000, 0);
 
         this.global = {
             sunlight,
-            debugSphere,
             lightTarget,
             lightingGroup,
         };
@@ -224,6 +227,7 @@ export class GlobalIllumination {
         const texelSize = extent / mapSize;
         sunlight.shadow.mapSize.setScalar(mapSize);
         sunlight.shadow.radius = softness / texelSize;
+        this._sunShadowRadius = sunlight.shadow.radius;
         sunlight.shadow.blurSamples = SUN_BLUR_SAMPLES;
         sunlight.shadow.normalBias = texelSize * 1.5;
     }
@@ -260,10 +264,9 @@ export class GlobalIllumination {
         sunlight.color.copy(color);
         sunlight.position.set(0, distance, 0);
         sunlight.intensity = distance !== 0 ? intensity : 0;
-        sunlight.castShadow = distance !== 0 && this.sunShadows && game.settings.get(MODULE_ID, "shadowQuality") > 0;
+        sunlight.castShadow = distance !== 0 && this.sunShadows && getSetting("shadowQuality") > 0;
         this._sceneTint.copy(color);
         this._distance = distance;
-        this.global.debugSphere.position.y = distance;
         this.global.lightingGroup.rotation.setFromQuaternion(angle);
         this._parent.renderer.toneMappingExposure = exposure;
     }
@@ -281,6 +284,7 @@ export class GlobalIllumination {
     }
 
     update(delta) {
+        this.styles.update(delta);
         this.updateAnimation(delta);
         if (this.sky) this.updateAtmosphere();
     }
@@ -304,7 +308,7 @@ export class GlobalIllumination {
     }
 
     updateAtmosphere() {
-        const { sunlight, lightingGroup, debugSphere } = this.global;
+        const { sunlight, lightingGroup } = this.global;
         const override = this.atmosphere.override;
         const skyData = this._skyData;
         let tint = this._sceneTint;
@@ -323,7 +327,9 @@ export class GlobalIllumination {
         sunDirection.copy(sunLocal).applyQuaternion(lightingGroup.quaternion);
         moonDirection.copy(moonLocal).applyQuaternion(lightingGroup.quaternion);
         const darkness = override?.darkness ?? (this.darknessDrivesSky ? (canvas.environment?.darknessLevel ?? canvas.scene.environment.darknessLevel ?? 0) : 0);
+        const styleChanged = this.styles.prepare(skyData, { time: override?.time ?? this._time, darkness, sunDirection, moonDirection });
         const state = this.atmosphere.compute({
+            adjust: this.styles.adjust,
             sunDirection,
             moonDirection,
             sunDistance: distance,
@@ -335,9 +341,10 @@ export class GlobalIllumination {
         });
 
         const radius = Math.abs(distance);
-        if (state.lightIsMoon) sunlight.position.copy(moonLocal).multiplyScalar(radius);
+        if (state.lightDirected) sunlight.position.copy(state.lightDirection).applyQuaternion(inverseAngle.copy(lightingGroup.quaternion).invert()).multiplyScalar(radius);
+        else if (state.lightIsMoon) sunlight.position.copy(moonLocal).multiplyScalar(radius);
         else sunlight.position.set(0, distance, 0);
-        debugSphere.position.copy(sunlight.position);
+        if (this._sunShadowRadius) sunlight.shadow.radius = this._sunShadowRadius * state.shadowSoftness;
         sunlight.color.copy(state.lightColor);
         sunlight.intensity = state.lightIntensity;
         sunlight.shadow.autoUpdate = state.lightIntensity > 0.001;
@@ -359,10 +366,11 @@ export class GlobalIllumination {
         updateMapEdge(state, this.sky);
 
         const outdoor = state.setting === "outdoor";
-        this.sky.visible = outdoor;
+        this.sky.visible = outdoor || this.styles.underground;
         if (!outdoor) parent.scene.background = toneMappedBackground(state.fogColor, settingBackground);
 
         this.sky.applyState(state);
+        this.styles.apply(this.sky, state, styleChanged);
         this.skyEnvironment.update(state, hemisphere);
         this._mixWorkLight();
     }
@@ -450,12 +458,22 @@ export function getTimeSyncDefault(scene) {
 }
 
 export function isDynamicSkyEnabled(scene = canvas.scene) {
-    return !!(scene?.getFlag(MODULE_ID, "dynamicSky")?.enabled ?? SKY_DEFAULTS.enabled);
+    const enabled = scene?.getFlag(MODULE_ID, "dynamicSky")?.enabled;
+    if (enabled !== undefined && enabled !== null) return !!enabled;
+    return SKY_DEFAULTS.enabled || (!customEnvironment(scene, "exr") && !customEnvironment(scene, "skybox"));
+}
+
+const LEGACY_SKIES = new Set(["modules/levels-3d-preview/assets/skybox/venice_sunrise_1k.exr", "modules/canvas3dcompendium/assets/Beautiful-Sky/2K/Sky_LowPoly_01_Day_a.webp"]);
+
+function customEnvironment(scene, flag) {
+    const value = scene?.getFlag(MODULE_ID, flag);
+    return !!value && !LEGACY_SKIES.has(value);
 }
 
 export const SKY_DEFAULTS = {
     enabled: false,
     setting: "outdoor",
+    style: "realistic",
     backgroundColor: "",
     preset: "custom",
     turbidity: 10,

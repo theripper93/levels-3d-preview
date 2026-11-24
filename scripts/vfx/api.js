@@ -1,4 +1,3 @@
-import * as THREE from "three";
 import { factor } from "../main.js";
 import { Socket } from "../lib/socket.js";
 import { ParticleEngine } from "./engine.js";
@@ -58,7 +57,7 @@ export class Particle3D {
         return this;
     }
     toTarget() {
-        this.to("target");
+        this.to(Array.from(game.user.targets));
         return this;
     }
     attach(attach = true) {
@@ -67,6 +66,9 @@ export class Particle3D {
     }
     sprite(sprite) {
         this.params.sprite = sprite;
+        return this;
+    }
+    radial() {
         return this;
     }
     rate(particles, seconds) {
@@ -149,11 +151,6 @@ export class Particle3D {
     }
     startAfter(delay) {
         this.params.startAfter = delay;
-        return this;
-    }
-    radial(radius, direction = { x: 0, y: 1, z: 0 }, theta = 30) {
-        direction = new THREE.Vector3(direction.x, direction.y, direction.z);
-        this.params.radial = { radius, direction, theta };
         return this;
     }
     duration(duration) {

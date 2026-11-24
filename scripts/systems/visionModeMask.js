@@ -10,6 +10,12 @@ const GRADIENT_STOPS = [
     [0.75, 0.6],
     [1, 0],
 ];
+const RESTORE_STOPS = [
+    [0, 1],
+    [0.75, 1],
+    [0.9, 0.6],
+    [1, 0],
+];
 
 const VISION_MODE = { none: 0, grade: 1, amplify: 2, tremor: 3, blind: 4 };
 
@@ -181,13 +187,13 @@ export function gradeMistColor(color) {
     return color.setRGB(lum, lum, lum).multiplyScalar(MIST_GRADE.blind);
 }
 
-function createGradient() {
+function createGradient(stops) {
     const element = document.createElement("canvas");
     element.width = element.height = GRADIENT_SIZE;
     const context = element.getContext("2d");
     const half = GRADIENT_SIZE / 2;
     const gradient = context.createRadialGradient(half, half, 0, half, half, half);
-    for (const [stop, alpha] of GRADIENT_STOPS) gradient.addColorStop(stop, `rgba(255,255,255,${alpha})`);
+    for (const [stop, alpha] of stops) gradient.addColorStop(stop, `rgba(255,255,255,${alpha})`);
     context.fillStyle = gradient;
     context.fillRect(0, 0, GRADIENT_SIZE, GRADIENT_SIZE);
     return PIXI.Texture.from(element);
@@ -197,7 +203,8 @@ export class VisionModeMask {
     constructor() {
         this.type = VISION_MODE.none;
         this.animated = false;
-        this.gradient = createGradient();
+        this.gradient = createGradient(GRADIENT_STOPS);
+        this.restoreGradient = createGradient(RESTORE_STOPS);
         this.base = new PIXI.Graphics();
         this.restore = new PIXI.Graphics();
         this.coverageBase = new PIXI.Graphics();
@@ -261,7 +268,7 @@ export class VisionModeMask {
             const points = source.shape?.points;
             if (points?.length && source.visionMode?.vision?.preferred) this.restore.beginFill(0x000000, 1).drawPolygon(points).endFill();
         }
-        if (restoreLights) this.drawLights(this.restore, 0x000000);
+        if (restoreLights) this.drawLights(this.restore, 0x000000, this.restoreGradient);
         this.drawDarkness(this.restore, (level << 16) | (level << 8) | level);
     }
 
@@ -286,7 +293,7 @@ export class VisionModeMask {
         }
     }
 
-    drawLights(graphics, color) {
+    drawLights(graphics, color, texture = this.gradient) {
         for (const light of canvas.effects.lightSources) {
             if (!light.active || light instanceof foundry.canvas.sources.GlobalLightSource) continue;
             const points = light.shape?.points;
@@ -294,7 +301,7 @@ export class VisionModeMask {
             if (!points?.length || !(radius > 0)) continue;
             const scale = (radius * 2) / GRADIENT_SIZE;
             this.matrix.set(scale, 0, 0, scale, light.data.x - radius, light.data.y - radius);
-            graphics.beginTextureFill({ texture: this.gradient, color, alpha: 1, matrix: this.matrix }).drawPolygon(points).endFill();
+            graphics.beginTextureFill({ texture, color, alpha: 1, matrix: this.matrix }).drawPolygon(points).endFill();
         }
     }
 
@@ -334,5 +341,6 @@ export class VisionModeMask {
         this.modeLayer.destroy({ children: true });
         this.coverageLayer.destroy({ children: true });
         this.gradient.destroy(true);
+        this.restoreGradient.destroy(true);
     }
 }

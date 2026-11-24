@@ -81,7 +81,7 @@ export function clearMapEdge() {
 }
 
 export function getMapEdge(scene = canvas.scene) {
-    return scene.getFlag(MODULE_ID, "mapEdge") ?? "legacy";
+    return scene.getFlag(MODULE_ID, "mapEdge") ?? "fade";
 }
 
 export async function buildMapEdge(parent, option, groundY) {

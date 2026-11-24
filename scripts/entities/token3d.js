@@ -8,12 +8,15 @@ import { heightHighlightShaderMaterial, radialGradientShaderMaterial } from "../
 import { drawEffectIcons, disposeEffectIcons } from "./effects/effectIcons.js";
 import { RangeRingEffect } from "./effects/rangeRing.js";
 import { imageTo3d } from "../helpers/imageTo3D.js";
+import { buildMedallion, faceMedallion, isMedallionToken, medallionProneTarget } from "./tokenMedallion.js";
 import * as coords3d from "../helpers/coords3d.js";
 import { meshesToSingleMesh } from "../helpers/geometryUtils.js";
-import { createTargetGeometry } from "./effects/target.js";
+import { syncCombatHighlight, drawTargetChevrons } from "./effects/tokenMarkers.js";
+import { createTargetReticule, fitTargetReticule } from "./effects/targetReticule.js";
 import { noVisionModeUniform, selfLitUniform } from "../systems/Fog.js";
 import { MIST_RENDER_ORDER } from "../systems/fogMist.js";
 import { cappedEyeHeight } from "../systems/sightCeiling.js";
+import { getQuality } from "../vfx/quality.js";
 THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
 THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
 THREE.Mesh.prototype.raycast = acceleratedRaycast;
@@ -22,12 +25,110 @@ const BASE_LIFT_UNITS = 0.2;
 const heightHighlightMaterialCache = {};
 const diamondGeometry = new THREE.OctahedronGeometry(0.01, 0);
 
-const targetMaterialsCache = {};
 
 const coinBorderMaterialCache = {};
 
-export class Token3D {
+const pendingLoads = new Map();
+
+const awaitingDraw = new Set();
+
+const DOCUMENT_RENDER_FLAGS = {
+    width: ["redraw"],
+    height: ["redraw"],
+    actorId: ["redraw"],
+    actorLink: ["redraw"],
+    delta: ["refreshEffects"],
+    hidden: ["refreshEffects", "refreshParticles"],
+};
+
+const MODULE_FLAG_RENDER_FLAGS = {
+    wasFreeMode: [],
+    scale: ["refreshScale"],
+    animIndex: ["refreshAnimation"],
+    animSpeed: ["refreshAnimation"],
+    auraRange: ["refreshAura"],
+    auraColor: ["refreshAura"],
+    ParticleType: ["refreshParticles"],
+    ParticleSprite: ["refreshParticles"],
+    ParticleScale: ["refreshParticles"],
+    ParticleColor: ["refreshParticles"],
+    ParticleColor2: ["refreshParticles"],
+    ParticleIntensity: ["refreshParticles"],
+    ParticleRadius: ["refreshParticles"],
+    ParticlePosition: ["refreshParticles"],
+    enableParticleHidden: ["refreshParticles"],
+};
+
+export class Token3D extends foundry.canvas.interaction.RenderFlagsMixin() {
+    static RENDER_FLAGS = {
+        redraw: {},
+        refresh: { propagate: ["refreshPosition", "refreshNameplate", "refreshBars", "refreshEffects", "refreshBorder", "refreshTarget", "refreshLight", "refreshAnimation", "refreshAura", "refreshParticles"], alias: true },
+        refreshPosition: {},
+        refreshNameplate: {},
+        refreshBars: {},
+        refreshEffects: {},
+        refreshBorder: {},
+        refreshTarget: {},
+        refreshLight: {},
+        refreshAnimation: {},
+        refreshAura: {},
+        refreshParticles: {},
+        refreshScale: {},
+    };
+
+    static RENDER_FLAG_PRIORITY = "PERCEPTION";
+
+    static getUpdateRenderFlags(changed) {
+        const flags = {};
+        const add = (names) => names.forEach((name) => (flags[name] = true));
+        for (const [key, names] of Object.entries(DOCUMENT_RENDER_FLAGS)) if (key in changed) add(names);
+        if (changed.texture && "src" in changed.texture) flags.redraw = true;
+        if ("ring" in changed) flags.redraw = true;
+        if ("light" in changed && !foundry.utils.isEmpty(changed.light)) flags.refreshLight = true;
+        for (const [scope, value] of Object.entries(changed.flags ?? {})) {
+            if (scope !== MODULE_ID) {
+                if (scope.includes(MODULE_ID)) flags.redraw = true;
+                continue;
+            }
+            if (foundry.utils.getType(value) !== "Object") {
+                flags.redraw = true;
+                continue;
+            }
+            for (const key of Object.keys(value)) {
+                const names = MODULE_FLAG_RENDER_FLAGS[key.replace(/^-=/, "")];
+                if (names) add(names);
+                else flags.redraw = true;
+            }
+        }
+        return flags;
+    }
+
+    static reload(parent, token) {
+        const token3d = new Token3D(token, parent);
+        pendingLoads.set(token.id, token3d);
+        const settle = () => {
+            if (pendingLoads.get(token.id) === token3d) pendingLoads.delete(token.id);
+        };
+        token3d.load().then(
+            () => {
+                settle();
+                if (token3d._destroyed) return;
+                const current = parent.tokens[token.id];
+                if (token.destroyed || !parent._active || (current && current !== token3d)) return token3d.destroy();
+                parent.tokens[token.id] = token3d;
+                parent.scene.add(token3d.mesh);
+                if (token3d._redrawQueued) token3d.renderFlags.set({ redraw: true });
+            },
+            (error) => {
+                settle();
+                console.error("3D Canvas | Error loading token", error);
+            },
+        );
+        return token3d;
+    }
+
     constructor(tokenDocument, parent) {
+        super();
         this.token = tokenDocument;
         this.type = "Token";
         this.embeddedName = "Token";
@@ -40,12 +141,11 @@ export class Token3D {
         this._parent = parent;
         this.isBase = game.settings.get("levels-3d-preview", "baseStyle") !== "image";
         this.baseMode = game.settings.get("levels-3d-preview", "baseStyle");
+        this.facingBase = !!game.Levels3DPreview.CONFIG.tokenBase.find((b) => b?.id === this.baseMode)?.facing;
         this.color = this.getColor();
         this.factor = factor;
         this.dispositionColor = this.getDispColor();
-        const targetMaterial = targetMaterialsCache[this.dispositionColor.getHexString()] ?? new THREE.MeshBasicMaterial({ color: this.dispositionColor });
-        targetMaterialsCache[this.dispositionColor.getHexString()] = targetMaterial;
-        this.reticule = new THREE.Mesh(createTargetGeometry((this._shaderSize * canvas.scene.dimensions.size) / (2 * factor), this._shaderSize), targetMaterial);
+        this.reticule = createTargetReticule();
         this.targetSize = 0.1;
         this.baseDepth = 0.008 * (canvas.grid.size / 100);
         this.elevation3d = 0;
@@ -67,10 +167,7 @@ export class Token3D {
 
     getFlags() {
         this.gtflPath = this.document.getFlag("levels-3d-preview", "model3d") ?? "";
-        this.solidBaseMode = this.document.getFlag("levels-3d-preview", "solidBaseMode");
-        const flagBaseColor = this.document.getFlag("levels-3d-preview", "baseColor");
-        this.baseColor = /^#[0-9a-f]{6}$/i.test(flagBaseColor) ? flagBaseColor : game.settings.get("levels-3d-preview", "solidBaseColor");
-        if (!this.solidBaseMode || this.solidBaseMode === "default") this.solidBaseMode = game.settings.get("levels-3d-preview", "solidBaseMode");
+        this.baseColor = game.settings.get("levels-3d-preview", "solidBaseColor");
         this.disableBase = this.document.getFlag("levels-3d-preview", "disableBase");
         this.autoCenter = this.document.getFlag("levels-3d-preview", "autoCenter") ?? false;
         this.shaders = this.document.getFlag("levels-3d-preview", "shaders") ?? {};
@@ -81,8 +178,6 @@ export class Token3D {
         this.rotationZ = Math.toRadians(this.document.getFlag("levels-3d-preview", "rotationZ") ?? 0);
         this.offsetX = this.document.getFlag("levels-3d-preview", "offsetX") ?? 0;
         this.offsetY = this.document.getFlag("levels-3d-preview", "offsetY") ?? 0;
-        //this.offsetY += this.solidBaseMode === "ontop" ? this.baseDepth*factor : 0;
-        this.rotateIndicator = game.settings.get("levels-3d-preview", "rotateIndicator");
         this.offsetZ = this.document.getFlag("levels-3d-preview", "offsetZ") ?? 0;
         this.scale = this.document.getFlag("levels-3d-preview", "scale") ?? 1;
         this.enableAnim = this.document.getFlag("levels-3d-preview", "enableAnim") ?? true;
@@ -95,16 +190,14 @@ export class Token3D {
         this.imageTexture = this.document.getFlag("levels-3d-preview", "imageTexture") ?? "";
         this.collisionPlane = true;
         this.flatTokenStyle = this.document.getFlag("levels-3d-preview", "flatTokenStyle") ?? "default";
+        this.isMedallion = isMedallionToken(this.document, this.gtflPath, this.flatTokenStyle, this.imageTexture);
         const globalFlatTokenStyle = game.settings.get("levels-3d-preview", "flatTokenStyle") ?? "default";
         if (this.flatTokenStyle === "default") this.flatTokenStyle = globalFlatTokenStyle;
-
-        this.stem = game.settings.get("levels-3d-preview", "tokenStem");
 
         this.standupFace = this.flatTokenStyle == "flat";
         this.wasFreeMode = this.document.getFlag("levels-3d-preview", "wasFreeMode") ?? false;
         this.removeBase = game.settings.get("levels-3d-preview", "removeModelBase");
         this.attachments = this.document.getFlag("levels-3d-preview", "attachments") ?? [];
-        this.enableReticule = game.settings.get("levels-3d-preview", "enableReticule");
         this.particleData = this.getParticleData();
     }
 
@@ -113,9 +206,11 @@ export class Token3D {
         this.texture = await this._parent.helpers.loadTexture(this.imageTexture); //this.loadTexture();
         if (!this.texture?.image) this.texture = await this._parent.helpers.loadTexture(CONST.DEFAULT_TOKEN);
         const token3d = this.gtflPath || this.imageTexture ? await this.loadModel() : this.draw();
+        if (this._destroyed) return token3d;
         if (this.document.light.bright !== 0 || this.document.light.dim) this.loadLight();
         this._loaded = true;
         await this.initShaders();
+        if (this._destroyed) return token3d;
         this._parent.detectionLook?.prewarm(this);
         this.animationHandler.init();
         if (this.particleData.type != "none") this.initParticle();
@@ -166,6 +261,7 @@ export class Token3D {
 
     async getModel() {
         if (!this.gtflPath) {
+            if (this.isMedallion) return await buildMedallion(this);
             if (this.flatTokenStyle == "extruded" && this.texture.image) {
                 const standup3d = await imageTo3d(this.texture.image);
                 this.standUp = true;
@@ -254,23 +350,15 @@ export class Token3D {
     removeBaseAndReposition(object) {
         let model = object?.scene;
         if (!model) return;
-        let base, eyeL, eyeR;
+        let base, baseTop;
         model.traverse((child) => {
-            if (child.name === "base") {
-                base = child;
-            }
-            if (child.name === "eyeL" && !eyeL) {
-                eyeL = child;
-            }
-            if (child.name === "eyeR" && !eyeR) {
-                eyeR = child;
-            }
+            if (child.name === "base") base = child;
+            if (child.name === "baseTop") baseTop = child;
         });
         if (!base) return;
-        eyeL?.removeFromParent();
-        eyeR?.removeFromParent();
         const groundOffset = object?.object?.asset?.extras?.heroForge?.groundOffset ?? 0;
         base?.removeFromParent();
+        baseTop?.removeFromParent();
         model.children.forEach((c) => {
             c.position.y += groundOffset;
         });
@@ -287,7 +375,7 @@ export class Token3D {
             //this.removeBaseAndReposition(object);
         }
 
-        await this.setMaterial(model);
+        if (!this.isMedallion) await this.setMaterial(model);
         await this.setPortrait(model);
         //Apply rotation
         model.rotation.set(this.rotationX + model.rotation._x, this.rotationY + model.rotation._y, this.rotationZ + model.rotation._z);
@@ -296,7 +384,7 @@ export class Token3D {
         const maxSize = Math.max(originalSize.x, originalSize.y, originalSize.z);
         const targetScale = Math.min(this.baseDocumentWidth * canvas.grid.size, this.baseDocumentHeight * canvas.grid.size) / this.factor;
         const scaleFactor = targetScale / maxSize;
-        const scale = this.scale * scaleFactor;
+        const scale = this.isMedallion ? 1 : this.scale * scaleFactor;
         this.hasGeometry = model.geometry ? true : false;
         model.scale.set(scale, scale, scale);
         //Define hitbox and set offset parameters
@@ -329,7 +417,7 @@ export class Token3D {
         }
         model.position.set(centerOffset.x, centerOffset.y, centerOffset.z);
         model.traverse((child) => {
-            if (child.isMesh && !this.standUp) {
+            if (child.isMesh && !this.standUp && !this.isMedallion) {
                 child.castShadow = true;
                 child.receiveShadow = true;
                 if (this.collisionPlane) child.geometry.computeBoundsTree();
@@ -358,7 +446,7 @@ export class Token3D {
                 wireframe: true,
                 transparent: true,
                 opacity: 1,
-                visible: this._parent.debugMode,
+                visible: false,
             }),
         );
         hitbox.position.set(0, center.y + centerOffset.y, 0);
@@ -382,7 +470,7 @@ export class Token3D {
         this.targetContainer = new THREE.Group();
         this.mesh.add(this.targetContainer);
         this.effectsContainer = new THREE.Group();
-        this.effectsContainer.visible = !game.settings.get("levels-3d-preview", "hideEffects");
+        this.effectsContainer.visible = true;
         this.mesh.add(this.effectsContainer);
         this.border = new THREE.Group();
         this.mesh.add(this.border);
@@ -471,8 +559,8 @@ export class Token3D {
             metalness: metalness,
             map: this.texture, //new THREE.TextureLoader().load(this.imageTexture) : null,
             //depthWrite: this.texture && !this.gtflPath ? false : true,
-            transparent: this._parent._fullTransparency,
-            alphaTest: this._parent._fullTransparency ? 0.01 : 0.99,
+            transparent: false,
+            alphaTest: 0.99,
         };
 
         if (this.pathTraced) {
@@ -766,11 +854,11 @@ export class Token3D {
 
         const rotations = {
             x: 0,
-            y: -(token.mesh?.rotation ?? Math.toRadians(token.document?.rotation ?? 0)),
+            y: -((token.mesh?.destroyed ? null : token.mesh?.rotation) ?? Math.toRadians(token.document?.rotation ?? 0)),
             z: 0,
         };
         mesh.rotation.set(rotations.x, rotations.y, rotations.z);
-        if (this.border && !this.rotateIndicator) {
+        if (this.border && !this.facingBase) {
             this.border.rotation.set(-rotations.x, -rotations.y, -rotations.z);
         }
         if (this.light && this.document.light.angle != 360) {
@@ -803,6 +891,11 @@ export class Token3D {
 
     get losHeight() {
         return cappedEyeHeight(this, this.baseLosHeight);
+    }
+
+    get visibleHeight() {
+        const elevation = this.token.document.elevation;
+        return Math.max(0, cappedEyeHeight(this, elevation + this.tokenHeight) - elevation);
     }
 
     setPositionFrom2D(force = false) {
@@ -860,51 +953,19 @@ export class Token3D {
     }
 
     drawTargets() {
-        //remove old targets
-        this.reticule.visible = this.token.isTargeted;
+        this.reticule.visible = this.token.targeted.has(game.user);
+        if (this.reticule.visible) fitTargetReticule(this.reticule, this.token);
         if (!this.targetContainer) return;
-        this.updateTargetTexture();
-        if (this.isBase && game.settings.get("levels-3d-preview", "hideTarget")) return;
-        while (this.targetContainer.children.length) {
-            const child = this.targetContainer.children[0];
-            this.targetContainer.remove(child);
-            //per-target material is created fresh in this function; geometry is shared with the target model
-            child.children[0]?.material?.dispose();
-        }
-        this.targetSize = Math.min(this.h, this.w, this.d) * 0.3;
-        this.targetSize = Math.min(Math.max(this.targetSize, 0.02), 0.05);
-        let positionOffset = this.targetSize;
-        const targetModel = this._parent.models.target;
-        for (let target of Array.from(this.token.targeted)) {
-            if (target.id === game.user.id && this.enableReticule) continue;
-            const color = target.color.css;
-            const position = {
-                x: 0,
-                y: this.d + this.targetSize + positionOffset,
-                z: 0,
-            };
-            const mesh = targetModel.clone();
-            mesh.children[0].material = new THREE.MeshPhongMaterial({ color: color, emissive: color, emissiveIntensity: 0.8 });
-            mesh.scale.set(this.targetSize, this.targetSize, this.targetSize);
-            mesh.position.set(position.x, position.y, position.z);
-            this.targetContainer.add(mesh);
-            positionOffset += this.targetSize * 2.5;
-        }
-    }
-
-    _setReticule() {
-        this.enableReticule ? this.mesh.add(this.reticule) : this.mesh.remove(this.reticule);
-        const scale = Math.max(this.h, this.w, this.d) * 0.8;
-        this.reticule.scale.set(scale, scale, scale);
-        this.reticule.scale.multiplyScalar(1.2);
-        this.reticule.position.y = this.d / 2;
-        this.reticule.userData.ignoreHover = true;
-        this.reticule.userData.interactive = false;
-        this.reticule.userData.noIntersect = true;
+        const colors = Array.from(this.token.targeted)
+            .filter((user) => user !== game.user)
+            .map((user) => user.color.css);
+        drawTargetChevrons(this.targetContainer, colors, this.d, this.mesh.rotation);
     }
 
     setReticule() {
-        this.enableReticule ? this.mesh.add(this.reticule) : this.mesh.remove(this.reticule);
+        if (this.reticule.parent !== this.mesh) this.mesh.add(this.reticule);
+        fitTargetReticule(this.reticule, this.token);
+        this.reticule.position.y = this.d / 2;
         this.reticule.userData.ignoreHover = true;
         this.reticule.userData.interactive = false;
         this.reticule.userData.noIntersect = true;
@@ -1097,12 +1158,6 @@ export class Token3D {
             const base = resp.model;
             if (this._destroyed) return this._disposeBorderChild(base);
             const scaleFactor = resp.scale;
-            if (this.reticule && (this.baseMode == "ringHollow" || this.baseMode == "ringSimple" || this.baseMode == "ringSimpleSmall")) {
-                this.reticule.scale.set(scaleFactor, scaleFactor, scaleFactor);
-            }
-            if (this.reticule && this.flatTokenStyle == "coin") {
-                this.reticule.scale.set(1, 1, 1);
-            }
             const showDisp = resp.showDisp;
             if (showDisp) {
                 this.baseColor = this.dispositionColor;
@@ -1116,21 +1171,14 @@ export class Token3D {
             base.position.set(0, (BASE_LIFT_UNITS * canvas.scene.dimensions.distancePixels) / factor, 0);
             const offsetMesh = base.children.find((child) => child.name == "base");
             base.traverse((child) => {
-                if (child.isMesh) {
-                    if (child == offsetMesh) {
-                        if (child.material.color.r === 1 && child.material.color.g === 1 && child.material.color.b === 1) {
-                            child.material.color = new THREE.Color(this.baseColor);
-                        }
-                    } else {
-                        child.material.color = new THREE.Color(this.baseColor);
-                    }
+                if (child.isMesh && !(child == offsetMesh && child.material.map)) {
+                    child.material.color = new THREE.Color(this.baseColor);
                 }
             });
             const offsetBox = new THREE.Box3().setFromObject(offsetMesh);
             const offset = offsetBox.max.y;
-            if (this.solidBaseMode === "ontop") {
-                this.model.position.y += offset * scale * scaleFactor;
-            }
+            this._baseTopOffset = offset * scale * scaleFactor;
+            this.model.position.y += this._baseTopOffset;
             const hlMeshes = [];
             const hlrMeshes = [];
             base.traverse((child) => {
@@ -1143,20 +1191,15 @@ export class Token3D {
             this.refreshBorder();
             this.setUpProne(true);
         });
-
-        this.addStem();
     }
 
     _disposeBorderChild(object) {
         if (!object) return;
-        const isStem = object === this.stem;
         object.traverse((child) => {
             if (!child.isMesh) return;
             //base materials from helpers.getBase are per-instance clones, geometry is shared with the model cache
             const materials = Array.isArray(child.material) ? child.material : [child.material];
             materials.forEach((m) => m?.dispose());
-            //the stem owns its geometry
-            if (isStem) child.geometry?.dispose();
         });
     }
 
@@ -1189,95 +1232,26 @@ export class Token3D {
         };
     }
 
-    addStem() {
-        const baseRadius = (Math.SQRT2 * ((Math.max(this.baseDocumentWidth, this.baseDocumentHeight) * canvas.grid.size) / factor)) / 2;
-        if (!this.isBase || !this.stem) return;
-        let w = baseRadius * 1.02;
-        let h = baseRadius * 1.02;
-        const radius = Math.min(w, h) * 0.03;
-        const height = new THREE.Box3().setFromObject(this.model).min.y * 2;
-        const stemMesh = new THREE.Mesh(
-            new THREE.CylinderGeometry(radius, radius, height, 64),
-            new THREE.MeshStandardMaterial({
-                color: this.color,
-                transparent: true,
-                opacity: 0.5,
-                roughness: 0,
-                metalness: 1,
-            }),
-        );
-        stemMesh.position.set(0, height / 2, 0);
-        stemMesh.castShadow = true;
-        stemMesh.receiveShadow = true;
-        this.stem = stemMesh;
-        this.border.add(stemMesh);
-    }
-
-    async updateTargetTexture() {
-        if (!this.isBase) return;
-        const targeted = this.enableReticule ? Array.from(this.token.targeted).filter((t) => t.id !== game.user.id) : Array.from(this.token.targeted);
-        const colors = targeted.map((t) => t.color.css);
-        const colorstring = colors.join("");
-        if (!colors.length) return;
-        let text;
-        if (!this._parent.targetTextures[colorstring]) {
-            let g = new PIXI.Graphics();
-            for (let i = 0; i < colors.length; i++) {
-                g.beginFill(colors[i].replace("#", "0x"));
-                g.drawRect(i, 0, 1, 1);
-            }
-            const base64 = await canvas.app.renderer.extract.base64(g);
-            text = new THREE.TextureLoader().load(base64, (t) => {
-                t.magFilter = THREE.NearestFilter;
-                t.minFilter = THREE.NearestFilter;
-                t.needsUpdate = true;
-            });
-            this._parent.targetTextures[colorstring] = text;
-        } else {
-            text = this._parent.targetTextures[colorstring];
-        }
-        this._targetMap = text;
-    }
-
     refreshBorder() {
+        this.refreshCombatHighlight();
+        if (this.reticule?.visible) fitTargetReticule(this.reticule, this.token);
         if (!this.border) return;
         const isInactive = !this.token.controlled && !this.token.hover;
-        const color = isInactive ? this.baseColor : this.token.border?.tint;
-        const combatColor = this.combatColor;
-        const isActiveCombatant = game.combat?.current?.tokenId === this.token.id && game.settings.get("levels-3d-preview", "highlightCombat");
-        const threeColor = isInactive && isActiveCombatant ? this.combatColor : new THREE.Color(color);
-        const highlightMaterial = this.border.userData.highlight;
-        const highlight_ringMaterial = this.border.userData.highlight_ring;
-        const isEmissive = !(isInactive && !isActiveCombatant);
-        if (highlightMaterial?.length) {
-            highlightMaterial.forEach((m) => {
-                noVisionModeUniform(m.material).value = isEmissive;
-                m.material.color = threeColor;
-                m.material.emissive = isEmissive ? threeColor : new THREE.Color(0, 0, 0);
-                m.material.emissiveIntensity = isEmissive ? 0.8 : 0;
-            });
-        }
+        const threeColor = new THREE.Color(isInactive ? this.baseColor : this.token.border?.tint);
+        const isEmissive = !isInactive;
+        const meshes = [...(this.border.userData.highlight ?? []), ...(this.border.userData.highlight_ring ?? [])];
+        meshes.forEach((m) => {
+            noVisionModeUniform(m.material).value = isEmissive;
+            m.material.color = threeColor;
+            m.material.emissive = isEmissive ? threeColor : new THREE.Color(0, 0, 0);
+            m.material.emissiveIntensity = isEmissive ? 0.8 : 0;
+        });
+    }
 
-        if (highlight_ringMaterial?.length) {
-            highlight_ringMaterial.forEach((m) => {
-                noVisionModeUniform(m.material).value = isEmissive || this.token.targeted.size > 0;
-                m.material.color = isActiveCombatant ? combatColor : new THREE.Color(color);
-                if (this.token.targeted.size) {
-                    m.material.color = new THREE.Color(1, 1, 1);
-                    m.material.emissiveMap = this._targetMap;
-                    m.material.map = this._targetMap;
-                    m.material.emissiveIntensity = 0.8;
-                    m.material.needsUpdate = true;
-                } else {
-                    m.material.emissiveMap = null;
-                    m.material.map = null;
-                    m.material.color = threeColor;
-                    m.material.emissive = isEmissive ? threeColor : new THREE.Color(0, 0, 0);
-                    m.material.emissiveIntensity = isEmissive ? 0.8 : 0;
-                    m.material.needsUpdate = true;
-                }
-            });
-        }
+    refreshCombatHighlight() {
+        const combat = game.combat;
+        const show = !!combat?.started && combat.current?.tokenId === this.token.id && game.settings.get("levels-3d-preview", "highlightCombat");
+        syncCombatHighlight(this, show);
     }
 
     async drawName() {
@@ -1333,7 +1307,8 @@ export class Token3D {
     }
 
     async drawBars() {
-        if (!this.token?.bars) return;
+        const bars = this.token?.bars;
+        if (!bars || bars.destroyed || bars.bar1?.destroyed || bars.bar2?.destroyed) return;
         const bar1 = this.token.bars["bar1"].clone();
         const bar2 = this.token.bars["bar2"].clone();
         bar1.visible = true;
@@ -1386,7 +1361,10 @@ export class Token3D {
 
         targetPosition.y = targetPosition.y - box.min.y;
 
-        if (isFlat(this.standUp)) {
+        if (this.isMedallion) {
+            targetRotation.x = -Math.PI / 2;
+            targetPosition.copy(medallionProneTarget(this, this.model.position));
+        } else if (isFlat(this.standUp)) {
             targetRotation.x = -Math.PI / 2;
             targetPosition.y = targetPosition.y - dimensions.y / 2 + 0.02;
         } else if (isBird(dimensions, center)) {
@@ -1428,7 +1406,6 @@ export class Token3D {
         if (this.isProne) {
             this.model.position.copy(this.proneHandler.targetPosition);
             this.model.rotation.copy(this.proneHandler.targetRotation);
-            if (this.stem) this.stem.visible = !this.isProne;
         }
     }
 
@@ -1446,7 +1423,6 @@ export class Token3D {
             this.proneHandler.currentTarget.position = this.proneHandler.originalPosition;
             this.proneHandler.currentTarget.rotation = this.proneHandler.originalRotation;
         }
-        if (this.stem) this.stem.visible = !this.isProne;
     }
 
     updateProne(delta) {
@@ -1466,6 +1442,7 @@ export class Token3D {
     }
 
     faceCamera() {
+        if (this.isMedallion) return faceMedallion(this, this._parent.camera);
         if (!this.model?.children[0]) return;
         const camera = this._parent.camera;
         const vector = new THREE.Vector3(0, this._parent.camera.position.y >= Number.EPSILON ? -1 : 1, 0);
@@ -1483,7 +1460,6 @@ export class Token3D {
 
     updateVisibility() {
         if (this.heightIndicator) this.heightIndicator.rotation.y += 0.01;
-        if (this.reticule) this.reticule.rotation.y += 0.0005 / this._shaderSize;
         if (!this._loaded || !this.mesh || !this.nameplate) return;
         const visible = this.alwaysVisible || this.token.visible || this.token.hasPreview;
         this.mesh.visible = visible;
@@ -1590,15 +1566,12 @@ export class Token3D {
             this._disposeSprite(this.nameplate);
             this._disposeSprite(this.bars);
             disposeEffectIcons(this);
+            this.reticule?.material?.dispose();
             this.hitbox?.geometry?.dispose();
             this.hitbox?.material?.dispose();
             this.boundingMesh?.geometry?.dispose();
             this.boundingMesh?.material?.dispose();
-            //reticule geometry is created per token, its material is shared (targetMaterialsCache)
-            this.reticule?.geometry?.dispose();
-            //per-target materials
-            this.targetContainer?.children.forEach((child) => child.children[0]?.material?.dispose());
-            //base materials (clones) and stem
+            //base materials (clones)
             this.border?.children.forEach((child) => this._disposeBorderChild(child));
             //aura: ring geometries and material1 are shared, material2 is a per-instance clone
             this.aura?.material2?.dispose();
@@ -1612,8 +1585,120 @@ export class Token3D {
     }
 
     refresh() {
+        this.renderFlags.set({ redraw: true });
+    }
+
+    redraw() {
+        const parent = this._parent;
+        const token = this.document.object ?? this.token;
         this.destroy();
-        this._parent.addToken(this.token);
+        if (!token.destroyed && parent._active) Token3D.reload(parent, token);
+    }
+
+    get isRegistered() {
+        return this._parent.tokens[this.document.id] === this;
+    }
+
+    applyRenderFlags() {
+        if (!this.renderFlags.size) return;
+        const flags = this.renderFlags.clear();
+        if (this._destroyed) return;
+        if (this.token.destroyed) {
+            const object = this.document.object;
+            if (!object || object.destroyed) return;
+            this.token = this.placeable = object;
+            if (this.light) this.light.light = object;
+        }
+        if (!this.isRegistered || !this.mesh) {
+            this._redrawQueued = true;
+            return;
+        }
+        if (flags.redraw) return this.redraw();
+        if (flags.refreshScale) this.refreshScale();
+        if (flags.refreshLight) this.refreshLight();
+        if (flags.refreshAnimation) this.refreshAnimation();
+        if (flags.refreshAura) this.refreshAura();
+        if (flags.refreshParticles) this.refreshParticles();
+        if (flags.refreshEffects) this.drawEffects();
+        if (flags.refreshTarget) this.drawTargets();
+        if (flags.refreshBorder || flags.refreshTarget) {
+            this.refreshOutline();
+            this.refreshBorder();
+        }
+        if (flags.refreshNameplate) this.drawName();
+        if (flags.refreshBars) this.drawBars();
+        if (flags.refreshPosition) this.setPosition();
+    }
+
+    refreshAnimation() {
+        this.animSpeed = this.document.getFlag("levels-3d-preview", "animSpeed") ?? 1;
+        if (this.mixer) this.mixer.timeScale = this.animSpeed;
+        const animIndex = this.document.getFlag("levels-3d-preview", "animIndex") ?? 0;
+        if (String(animIndex) !== String(this.animIndex)) this.updateAnimation();
+    }
+
+    refreshAura() {
+        this.auraRange = this.document.getFlag("levels-3d-preview", "auraRange") ?? 0;
+        this.auraColor = this.document.getFlag("levels-3d-preview", "auraColor") ?? "#ffffff";
+        if (this.aura) {
+            this.aura.effect?.removeFromParent();
+            this.aura.material2?.dispose();
+            this.aura = null;
+        }
+        this.drawAura();
+    }
+
+    refreshParticles() {
+        const particleData = this.getParticleData();
+        if (particleData.type === "none" && this.particleData.type === "none") return;
+        this.particleData = particleData;
+        game.Levels3DPreview.particleSystem.stop(this.particleEffectId);
+        this.particleEffect = null;
+        if (particleData.type !== "none") this.initParticle();
+    }
+
+    refreshScale() {
+        const scale = this.document.getFlag("levels-3d-preview", "scale") ?? 1;
+        if (!scale || scale === this.scale || this.isMedallion) return;
+        if (!this.model || !this.hitbox || Object.values(this.shaders).some((s) => s?.enabled)) return this.redraw();
+        const ratio = scale / this.scale;
+        this.scale = scale;
+        const model = this.model;
+        if (this.proneHandler.proneInit) {
+            model.position.copy(this.proneHandler.originalPosition);
+            model.rotation.copy(this.proneHandler.originalRotation);
+        }
+        this.animateProne = false;
+        const fixed = new THREE.Vector3(this.offsetX / factor, this.offsetY / factor + (this._baseTopOffset ?? 0), this.offsetZ / factor);
+        model.scale.multiplyScalar(ratio);
+        model.position.sub(fixed).multiplyScalar(ratio).add(fixed);
+        this.proneHandler = {};
+        this.setUpProne();
+        const size = this._size.clone().multiplyScalar(ratio);
+        const hitboxY = this.offsetY / factor;
+        this.hitbox.geometry.dispose();
+        this.hitbox.geometry = new THREE.BoxGeometry(size.x, size.y, size.z);
+        this.hitbox.geometry.computeBoundingBox();
+        this.hitbox.position.y = hitboxY + (this.hitbox.position.y - hitboxY) * ratio;
+        this._size = size;
+        this.bb.width *= ratio;
+        this.bb.height *= ratio;
+        this.bb.depth *= ratio;
+        this._mergedGeometry?.dispose();
+        this._mergedGeometry = null;
+        const boundingBoxDepth = ((this.baseLosHeight - this.document.elevation) * canvas.scene.dimensions.size) / canvas.dimensions.distance / factor;
+        this.boundingMesh.geometry.dispose();
+        this.boundingMesh.geometry = new THREE.BoxGeometry((this.baseDocumentWidth * canvas.grid.size) / factor, boundingBoxDepth, (this.baseDocumentHeight * canvas.grid.size) / factor);
+        this.boundingMesh.position.set(0, boundingBoxDepth / 2, 0);
+        if (this.light) this.light.light3d.position.set(0, this.d / 2, 0);
+        this.setReticule();
+        this.drawTargets();
+        this.drawName();
+        this.drawBars();
+        this.drawEffects();
+        this.dispatchDrawHeightIndicator();
+        if (this.particleData.type !== "none") this.refreshParticles();
+        this.setPosition();
     }
 
     async initShaders() {
@@ -1645,7 +1730,7 @@ export class Token3D {
     }
 
     initParticle() {
-        if (!game.settings.get("levels-3d-preview", "enableEffects")) return;
+        if (!getQuality().enabled) return;
         if (this.document.hidden && !this.document.getFlag("levels-3d-preview", "enableParticleHidden")) return;
         const particleData = this.particleData;
         const size = (Math.max(this.w, this.h) * factor) / canvas.grid.size;
@@ -1717,39 +1802,38 @@ export class Token3D {
             if (token.isPreview) return;
             const token3d = game.Levels3DPreview.tokens[token.id];
             if (!token3d || token3d.isCaptured || token3d.token !== token) return;
-            if (renderFlags.refreshNameplate) token3d.drawName();
-            if (renderFlags.refreshBars) token3d.drawBars();
-            if (renderFlags.redrawEffects || renderFlags.refreshEffects) token3d.drawEffects();
-            if (renderFlags.refreshBorder || renderFlags.refreshState) {
-                token3d.refreshOutline();
-                token3d.refreshBorder();
-            }
-            token3d.setPosition();
+            token3d.renderFlags.set({
+                refreshNameplate: renderFlags.refreshNameplate,
+                refreshBars: renderFlags.refreshBars,
+                refreshEffects: renderFlags.redrawEffects || renderFlags.refreshEffects,
+                refreshBorder: renderFlags.refreshBorder || renderFlags.refreshState,
+                refreshTarget: renderFlags.refreshTarget,
+                refreshPosition: true,
+            });
         });
 
-        Hooks.on("updateToken", (tokenDocument, updates) => {
-            if (!game.Levels3DPreview._active) return;
-            if ("level" in updates && tokenDocument.parent?.isView) {
-                const L = game.Levels3DPreview;
+        Hooks.on("updateToken", (tokenDocument, changed) => {
+            const L = game.Levels3DPreview;
+            if (!L._active) return;
+            const id = tokenDocument.id;
+            if ("level" in changed && tokenDocument.parent?.isView) {
                 const here = tokenDocument.includedInLevel?.(canvas.level) ?? tokenDocument.level === canvas.level?.id;
                 if (!here) {
-                    L.tokens[tokenDocument.id]?.destroy();
-                    delete L.tokens[tokenDocument.id];
-                } else if (tokenDocument.object && !L.tokens[tokenDocument.id]) L.addToken(tokenDocument.object);
+                    awaitingDraw.delete(id);
+                    L.tokens[id]?.destroy();
+                    pendingLoads.get(id)?.destroy();
+                    delete L.tokens[id];
+                } else if (!L.tokens[id] && !pendingLoads.has(id)) {
+                    if (tokenDocument.object) Token3D.reload(L, tokenDocument.object);
+                    else awaitingDraw.add(id);
+                }
             }
-            game.Levels3DPreview.tokens[tokenDocument.id]?.drawEffects();
-            const wasFreeUpdated = updates?.flags && updates?.flags["levels-3d-preview"] && updates?.flags["levels-3d-preview"].wasFreeMode !== undefined;
-            if (wasFreeUpdated && game.Levels3DPreview.tokens[tokenDocument.id]) game.Levels3DPreview.tokens[tokenDocument.id].wasFreeMode = !!updates.flags["levels-3d-preview"].wasFreeMode;
-            const animChanged = updates?.flags && updates?.flags["levels-3d-preview"] && updates?.flags["levels-3d-preview"].animIndex !== undefined;
-            const onlyAnim = animChanged === true && Object.values(updates?.flags["levels-3d-preview"]).length === 1;
-            if (animChanged) {
-                game.Levels3DPreview.tokens[tokenDocument.id]?.updateAnimation();
-            }
-            if ((updates?.flags && updates?.flags["levels-3d-preview"] && !wasFreeUpdated && !onlyAnim) || "width" in updates || "height" in updates || "texture" in updates) {
-                game.Levels3DPreview.tokens[tokenDocument.id]?.refresh();
-            } else if ("light" in updates && !foundry.utils.isEmpty(updates.light)) {
-                game.Levels3DPreview.tokens[tokenDocument.id]?.refreshLight();
-            }
+            const token3d = L.tokens[id] ?? pendingLoads.get(id);
+            if (!token3d || token3d._destroyed) return;
+            const wasFreeMode = changed.flags?.[MODULE_ID]?.wasFreeMode;
+            if (wasFreeMode !== undefined) token3d.wasFreeMode = !!wasFreeMode;
+            const flags = Token3D.getUpdateRenderFlags(changed);
+            if (!foundry.utils.isEmpty(flags)) token3d.renderFlags.set(flags);
         });
 
         function isFlying(tokenDocument) {
@@ -1781,7 +1865,13 @@ export class Token3D {
         });
 
         Hooks.on("targetToken", (user, token) => {
-            if (game.Levels3DPreview?._active) game.Levels3DPreview.tokens[token.id]?.reDraw();
+            if (game.Levels3DPreview?._active) game.Levels3DPreview.tokens[token.id]?.renderFlags.set({ refreshTarget: true });
+        });
+
+        Hooks.on("drawToken", (token) => {
+            if (!awaitingDraw.delete(token.id)) return;
+            const L = game.Levels3DPreview;
+            if (L?._active && !token.isPreview && !L.tokens[token.id] && !pendingLoads.has(token.id)) Token3D.reload(L, token);
         });
 
         Hooks.on("createToken", (tokenDocument) => {
@@ -1792,13 +1882,11 @@ export class Token3D {
             if (game.Levels3DPreview?._active) game.Levels3DPreview.tokens[tokenDocument.id]?.destroy();
         });
 
-        Hooks.on("updateCombat", () => {
-            if (game.Levels3DPreview?._active) {
-                for (let token of Object.values(game.Levels3DPreview.tokens)) {
-                    token.refreshBorder();
-                }
-            }
-        });
+        const refreshCombatHighlights = () => {
+            if (!game.Levels3DPreview?._active) return;
+            for (const token3d of Object.values(game.Levels3DPreview.tokens)) token3d.refreshCombatHighlight();
+        };
+        for (const hook of ["updateCombat", "deleteCombat", "createCombat", "deleteCombatant", "updateCombatant", "combatStart"]) Hooks.on(hook, refreshCombatHighlights);
 
         Hooks.on("pasteToken", (copy, data) => {
             if (game.Levels3DPreview?._active) {

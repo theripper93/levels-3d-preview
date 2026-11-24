@@ -22,35 +22,14 @@
     <p class="hint">{{localize "levels3dpreview.settings.startMarker.hint"}}</p>
   </div>
 
-  
   <div class="form-group">
-    <label>{{localize "levels3dpreview.settings.enableReticule.name"}}</label>
-    <input type="checkbox" name="enableReticule" data-dtype="Boolean" {{checked enableReticule}} />
-    <p class="hint">{{localize "levels3dpreview.settings.enableReticule.hint"}}</p>
+    <label>{{localize "levels3dpreview.settings.tokenVisibility.name"}}</label>
+    <select name="tokenVisibility" data-dtype="String">
+      <option {{#if (eq tokenVisibility "off")}}selected{{/if}} value="off">{{localize "levels3dpreview.settings.tokenVisibility.options.off"}}</option>
+      <option {{#if (eq tokenVisibility "standard")}}selected{{/if}} value="standard">{{localize "levels3dpreview.settings.tokenVisibility.options.standard"}}</option>
+      <option {{#if (eq tokenVisibility "dynamic")}}selected{{/if}} value="dynamic">{{localize "levels3dpreview.settings.tokenVisibility.options.dynamic"}}</option>
+    </select>
+    <p class="hint">{{localize "levels3dpreview.settings.tokenVisibility.hint"}}</p>
   </div>
 
-  <div class="form-group">
-    <label>{{localize "levels3dpreview.settings.hideTarget.name"}}</label>
-    <input type="checkbox" name="hideTarget" data-dtype="Boolean" {{checked hideTarget}} />
-    <p class="hint">{{localize "levels3dpreview.settings.hideTarget.hint"}}</p>
-  </div>
-
-  <div class="form-group">
-    <label>{{localize "levels3dpreview.settings.hideEffects.name"}}</label>
-    <input type="checkbox" name="hideEffects" data-dtype="Boolean" {{checked hideEffects}} />
-    <p class="hint">{{localize "levels3dpreview.settings.hideEffects.hint"}}</p>
-  </div>
-
-  <div class="form-group">
-    <label>{{localize "levels3dpreview.settings.exactTokenVisibility.name"}}</label>
-    <input type="checkbox" name="exactTokenVisibility" data-dtype="Boolean" {{checked exactTokenVisibility}} />
-    <p class="hint">{{localize "levels3dpreview.settings.exactTokenVisibility.hint"}}</p>
-  </div>
-
-  <div class="form-group">
-    <label>{{localize "levels3dpreview.settings.dynamicTokenVisibility.name"}}</label>
-    <input type="checkbox" name="dynamicTokenVisibility" data-dtype="Boolean" {{checked dynamicTokenVisibility}} />
-    <p class="hint">{{localize "levels3dpreview.settings.dynamicTokenVisibility.hint"}}</p>
-  </div>
-
-<section>
+</section>

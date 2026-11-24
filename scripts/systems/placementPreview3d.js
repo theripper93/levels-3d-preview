@@ -2,6 +2,7 @@ import * as THREE from "three";
 import { factor } from "../main.js";
 import { Shape3D } from "../entities/shape3d.js";
 import { Region3D } from "../entities/region3d.js";
+import { RadiusPlacement3D } from "../entities/effects/placeableGizmo.js";
 import { pixelsToUnits, snapped3DPosition, useSnapped, measureDistance, centerElement } from "../helpers/coords3d.js";
 
 const LINE_RENDER_ORDER = 1e20;
@@ -94,6 +95,15 @@ class DragLine3D {
         return true;
     }
 
+    showLabel(text, anchor) {
+        this.visible = true;
+        this.textElement.style.display = "unset";
+        this.textDistance.textContent = text;
+        this._labelAnchor.copy(anchor);
+        this._labelAnchor.y += 0.05;
+        this.updateLabel();
+    }
+
     updateLabel() {
         if (!this.visible) return;
         centerElement(this.textElement, this._labelAnchor);
@@ -153,10 +163,13 @@ export class PlacementPreview3D {
             this._object = null;
             this._line.hide();
             this.shape?.destroy();
+            this._radius?.destroy();
+            this._radius = null;
         } else {
             this.clearSegments();
             const target = value.userData.isHitbox ? value.parent : value;
             this._object = target;
+            this._surfaceOrigin = target.position.clone();
             this.origin = new THREE.Vector3(target.position.x, target.position.y, target.position.z);
         }
     }
@@ -187,11 +200,17 @@ export class PlacementPreview3D {
         return useSnapped() ? snapped3DPosition(this._object.position) : this._object.position.clone();
     }
 
+    get quiet() {
+        const name = this._object?.userData?.entity3D?.placeable?.document?.documentName;
+        return name === "AmbientLight" || name === "AmbientSound" || RadiusPlacement3D.handles(ui.controls?.tool?.name);
+    }
+
     update(force = false) {
         if (!this._object || !this._origin) return;
+        if (this.quiet) return this.drawShape();
         const target = this.getTargetPos();
         const rebuilt = this._line.update(this._origin, target, { distanceOffset: this.distanceOffset, loopStart: this.loopStart, force });
-        if (rebuilt) this.drawShape();
+        if (rebuilt || this._radius) this.drawShape();
     }
 
     updateLabels() {
@@ -216,6 +235,12 @@ export class PlacementPreview3D {
         if (ui.controls.tool.name === "select" || ui.controls.tool.name === "tile3dPolygon" || !this.allowedRulerDrag.some((a) => a === canvas.activeLayer.options.objectClass.embeddedName)) return;
         if (this.shape?.isPreview) return;
         if (this.allowedRulerDrag.some((a) => a === this._object?.userData?.entity3D?.placeable?.document?.documentName)) return;
+        const radiusTool = ui.controls?.tool?.name;
+        if (RadiusPlacement3D.handles(radiusTool)) {
+            this._radius ??= new RadiusPlacement3D(radiusTool);
+            this._line.showLabel(this._radius.update(this._surfaceOrigin ?? this.origin, this.origin.y, this._object.position), this._object.position);
+            return;
+        }
         const color = this.shape?.color;
         this.shape?.destroy();
         const pos = useSnapped() ? snapped3DPosition(this._object.position) : this._object.position;
@@ -242,6 +267,12 @@ export class PlacementPreview3D {
     }
 
     placeShape() {
+        if (this._radius) {
+            const radius = this._radius;
+            this._radius = null;
+            radius.commit().finally(() => radius.destroy());
+            return;
+        }
         if (!this.shape) return;
         const data = Region3D.fromPreview(this.shape);
         if (this.segments.length) this.clearSegments();

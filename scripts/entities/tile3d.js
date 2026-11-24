@@ -15,6 +15,9 @@ import { injectTileBakeButton } from "../helpers/modelBaker.js";
 import { markReceivers } from "../vfx/surface/receivers.js";
 import { ScatterField, scatterDefaults } from "../scatter/scatterField.js";
 import { buildDoubleDoor } from "../helpers/doubleDoor.js";
+import { knownShaders } from "../shaders/ShaderLib.js";
+import { getQuality } from "../vfx/quality.js";
+import { TileFrame, tileFrameState, tileSnapActive } from "./effects/tileFrame.js";
 THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
 THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
 THREE.Mesh.prototype.raycast = acceleratedRaycast;
@@ -39,6 +42,9 @@ class TileUpdateQueue {
 }
 
 const tileUpdateQueue = new TileUpdateQueue();
+
+const materialTints = new WeakMap();
+const materialSurfaces = new WeakMap();
 
 // Aggregates tile load errors so a scene with many missing assets shows a single notification
 // instead of one toast per tile. Per-tile details are still logged with console.error.
@@ -73,6 +79,9 @@ export class Tile3D {
         this.embeddedName = "Tile";
         this.bottom = tile.document.elevation;
         this.shaders = [];
+        this.renderFlags = new foundry.canvas.interaction.RenderFlags(this.constructor.RENDER_FLAGS, { object: this, priority: "OBJECTS" });
+        this._sizeScale = new THREE.Vector3(1, 1, 1);
+        this._hiddenMaterials = new Map();
         this.center2d = {
             x: this.x + Math.abs(this.tile.document.width) / 2,
             y: this.y + Math.abs(this.tile.document.height) / 2,
@@ -134,6 +143,7 @@ export class Tile3D {
                 return;
             }
 
+            this._baseSize = { width: this.width, height: this.height, depth: this.depth };
             this.applyDoorClip();
             this.computeWorldBoundingBox();
             this.setTransmissionIor();
@@ -146,6 +156,7 @@ export class Tile3D {
             this.setPathTraced();
             markReceivers(this.mesh, this);
             this._loaded = true;
+            this._onLoaded?.();
             if (this.mapMakerMesh?.k === "terrain") this._parent.scatter?.surfacesChanged?.();
             this.elevation3d = this.mesh.position.y;
             this.setHidden();
@@ -310,7 +321,7 @@ export class Tile3D {
     }
 
     initParticle() {
-        if (!game.settings.get("levels-3d-preview", "enableEffects")) return;
+        if (!getQuality().enabled) return;
         if (this.document.hidden && !this.document.getFlag("levels-3d-preview", "enableParticleHidden")) return;
         const size = (Math.max(this.width, this.height) * factor) / canvas.grid.size;
         const particleData = this.particleData;
@@ -395,7 +406,7 @@ export class Tile3D {
     }
 
     get hasAnimations() {
-        return !!this.mixer;
+        return !!this.mixer || !!this._animationModelReference?.object?.animations?.length;
     }
 
     getFlags() {
@@ -413,10 +424,7 @@ export class Tile3D {
         this.shading = this.tile.document.getFlag("levels-3d-preview", "shading") ?? "default";
         this.shader = this.tile.document.getFlag("levels-3d-preview", "shader") ?? "none";
         this.flipY = this.tile.document.getFlag("levels-3d-preview", "flipY") ?? false;
-        this.shaders = this.tile.document.getFlag("levels-3d-preview", "shaders") ?? {};
-        if (this.mapMakerMesh?.k === "terrain") this.shaders = { ...this.shaders, grid: { heightCulling: 1, showBounds: false, ...this.shaders.grid, normalCulling: this.shaders.grid?.normalCulling || 0.85, enabled: true } };
-
-        if (this.shaders?.clipping?.enabled && this.shaders.clipping.useCameraAdvanced) this._useCameraAdvanced = true;
+        this.shaders = this.readShaders();
 
         this.dynaMesh = this.tile.document.getFlag("levels-3d-preview", "dynaMesh") ?? "default";
         this.isInteractiveDynaMesh = !!interactiveDynamesh[this.dynaMesh];
@@ -500,6 +508,12 @@ export class Tile3D {
             this.collision = false;
             this.sight = false;
         }
+    }
+
+    readShaders() {
+        const shaders = knownShaders(foundry.utils.deepClone(this.tile.document.getFlag("levels-3d-preview", "shaders") ?? {}));
+        if (this.mapMakerMesh?.k !== "terrain") return shaders;
+        return { ...shaders, grid: { heightCulling: 1, showBounds: false, ...shaders.grid, normalCulling: shaders.grid?.normalCulling || 0.85, enabled: true } };
     }
 
     setUpDoors(init = false) {
@@ -736,7 +750,7 @@ export class Tile3D {
             case 2:
                 const slideAngle = this.doorAnimateAngle;
                 const amount = (Math.max(this.tile.document.height, this.doorDouble ? this.tile.document.width / 2 : this.tile.document.width) / factor) * (this.doorSlidePercent / 100);
-                const xComponent = Math.cos(slideAngle) * amount;
+                const xComponent = this.doorDouble ? -Math.abs(Math.cos(slideAngle) * amount) : Math.cos(slideAngle) * amount;
                 const zComponent = Math.sin(slideAngle) * amount;
                 const animation2 = [
                     {
@@ -859,16 +873,17 @@ export class Tile3D {
             ? textureOrMat
             : new THREE.MeshStandardMaterial({
                 color: this.color,
-                transparent: this.opacity < 1,
                 opacity: this.opacity,
                 visible: !this.tile.document.hidden,
                 map: texture,
                 side: THREE.DoubleSide,
                 roughness: 1,
                 metalness: 0,
-                transparent: this._parent._fullTransparency,
-                alphaTest: this._parent._fullTransparency ? 0.01 : 0.99,
+                transparent: false,
+                alphaTest: 0.99,
             });
+        this._planePBR = !!isPBR;
+        if (!isPBR) materialTints.set(material.color, { base: new THREE.Color(0xffffff), count: 1 });
         this.mesh = new THREE.Mesh(geometry, material);
         this.mesh.position.set(this.center.x, this.center.y, this.center.z);
         this.mesh.rotation.set(-Math.PI / 2 + (this.mirrorY ? Math.PI : 0), this.mirrorX ? Math.PI : 0, -this.angle * this.rotSign);
@@ -1029,7 +1044,7 @@ export class Tile3D {
 
         if (!model) return;
 
-        this.animIndex = parseInt(this.tile.document.getFlag("levels-3d-preview", "animIndex") ?? 0);
+        this.animIndex = this.linkWithDoorState ? this.doorState : parseInt(this.tile.document.getFlag("levels-3d-preview", "animIndex") ?? 0);
 
         const useReversed = this.tile.document.getFlag("levels-3d-preview", "doorStyle") == 5;
 
@@ -1596,7 +1611,12 @@ export class Tile3D {
 
     _processModel(object, textureOrMat, isPBR, color) {
         const setMaterial = (mat) => {
-            if (this.color) mat.color.set(mat.color.multiply(color));
+            if (this.color) {
+                const tint = materialTints.get(mat.color) ?? { base: mat.color.clone(), count: 0 };
+                tint.count++;
+                materialTints.set(mat.color, tint);
+                mat.color.set(mat.color.multiply(color));
+            }
             if (this.color && mat.emissiveMap) mat.emissive = color;
             if (textureOrMat && !isPBR) mat.map = textureOrMat;
             mat.needsUpdate = true;
@@ -1756,6 +1776,7 @@ export class Tile3D {
     setMRT() {
         this.mesh.traverse((child) => {
             if (child.isMesh && !(child.material instanceof Array)) {
+                if (!materialSurfaces.has(child.material)) materialSurfaces.set(child.material, { roughness: child.material.roughness, metalness: child.material.metalness });
                 if (this.metalness >= 0) child.material.metalness = this.metalness;
                 if (this.roughness >= 0) child.material.roughness = this.roughness;
                 if (this.transparency >= 0 && this.transparency < 1) {
@@ -1827,10 +1848,10 @@ export class Tile3D {
         if (!canvas.activeLayer?.controlled?.length) controls.detach();
     }
 
-    updateFromTransform() {
+    updateFromTransform(snap = false) {
         const controls = this._parent.transformControls;
         controls.detach();
-        this.updatePositionFrom3D(true);
+        this.updatePositionFrom3D(!snap);
     }
 
     processRotation(update, tile) {
@@ -1856,7 +1877,7 @@ export class Tile3D {
     }
 
     processScale(update, tile) {
-        const scale = this.mesh.getWorldScale(new THREE.Vector3());
+        const scale = this.mesh.getWorldScale(new THREE.Vector3()).divide(this._sizeScale);
         const scaleX = scale.x;
         const scaleZ = scale.z;
         const scaleY = scale.y;
@@ -1874,32 +1895,49 @@ export class Tile3D {
     }
 
     toggleBoundingBox() {
-        if (!game.user.isGM || this._parent.outline._enabled) return;
-        const isTileControlled = this.tile.controlled;
-        if (this.controlled === isTileControlled) return;
-        this.controlled = isTileControlled;
-        if (isTileControlled) {
-            this.mesh.add(this.controlledBox);
-        } else {
-            this.mesh.remove(this.controlledBox);
-        }
+        const state = tileFrameState(this);
+        if (!state && !this.frame3d) return;
+        (this.frame3d ??= new TileFrame(this)).update(state);
     }
 
     setHidden() {
-        if (!game.user.isGM) return;
-        const hidden = this.tile.document.hidden;
-        if (hidden) {
-            this.mesh.traverse((child) => {
-                if (child.isMesh) {
-                    child.material.transparent = true;
-                    child.material.opacity *= 0.5;
-                    child.material.alphaTest = 0;
-                    child.material.depthWrite = false;
-                    child.material.format = THREE.RGBAFormat;
-                    child.material.needsUpdate = true;
-                }
-            });
+        if (!game.user.isGM || !this.tile.document.hidden) return;
+        this.forEachRenderMaterial((material) => {
+            if (this._hiddenMaterials.has(material)) return;
+            const { transparent, opacity, alphaTest, depthWrite, format } = material;
+            this._hiddenMaterials.set(material, { transparent, opacity, alphaTest, depthWrite, format });
+            Object.assign(material, { transparent: true, opacity: opacity * 0.5, alphaTest: 0, depthWrite: false, format: THREE.RGBAFormat });
+            material.needsUpdate = true;
+        });
+    }
+
+    restoreHidden() {
+        for (const [material, state] of this._hiddenMaterials) {
+            Object.assign(material, state);
+            material.needsUpdate = true;
         }
+        this._hiddenMaterials.clear();
+    }
+
+    forEachRenderMesh(fn) {
+        const skip = new Set([this.controlledBox, this.sightMesh, this._decalCone].filter(Boolean));
+        const visit = (object) => {
+            if (skip.has(object)) return;
+            if (object.isMesh) fn(object);
+            object.children.forEach(visit);
+        };
+        visit(this.mesh);
+    }
+
+    forEachRenderMaterial(fn) {
+        const seen = new Set();
+        this.forEachRenderMesh((mesh) => {
+            for (const material of [mesh.material].flat()) {
+                if (!material || seen.has(material)) continue;
+                seen.add(material);
+                fn(material, mesh);
+            }
+        });
     }
 
     _onAnimationLoop(delta) {
@@ -1919,7 +1957,7 @@ export class Tile3D {
         this.updateInstancedCulling();
         this.toggleBoundingBox();
         this.mesh.visible = !this.tile.document.hidden || game.user.isGM;
-        if (this.sightMesh) this.sightMesh.visible = this._parent.BuildPanel.wireframe;
+        if (this.sightMesh) this.sightMesh.visible = false;
         if (this._decalCone) this._decalCone.visible = !!canvas?.tiles?.active;
         if (game.Levels3DPreview.mirrorLevelsVisibility && this.tile.mesh && !this.tile._preview) {
             this.mesh.visible = this.tile.occluded || !this.tile.mesh?.visible ? false : this.tile.visible;
@@ -1936,8 +1974,8 @@ export class Tile3D {
         const x = x3d * factor + this.tile.document.width * (this.tile.document.texture.anchorX - 0.5);
         const y = z3d * factor + this.tile.document.height * (this.tile.document.texture.anchorY - 0.5);
         const z = (y3d * factor * canvas.dimensions.distance) / canvas.dimensions.size;
-        const useSnapped = coords3d.useSnapped() && !transform;
-        const snapped = canvas.grid.getSnappedPoint({ x, y }, { mode: CONST.GRID_SNAPPING_MODES.TOP_LEFT_CORNER });
+        const useSnapped = tileSnapActive() && !transform;
+        const snapped = canvas.tiles.getSnappedPoint({ x, y });
         const elevation = this.tile.document.elevation;
         const dest = {
             x: useSnapped ? snapped.x : x,
@@ -2110,9 +2148,11 @@ export class Tile3D {
 
     async destroy(isUpdate = false) {
         this._destroyed = true;
+        this.renderFlags.clear();
         delete this._parent.tiles[this.tile.id];
         if (!isUpdate) this._parent.workers.removeMesh(this.tile.id);
         this.scatterField?.dispose();
+        this.frame3d?.destroy();
         if (!this.mesh) return;
         if (!isUpdate) await this.popOut();
         this.mesh.removeFromParent();
@@ -2169,11 +2209,13 @@ export class Tile3D {
         const doorInSight = this.doorInSight();
         if (doorInSight && oT?.isDoor && canvas.activeLayer.options.objectClass.embeddedName === "Token" && !(oT?.isSecret && !game.user.isGM)) {
             if (this.isToFar(e.originalIntersect)) ui.notifications.error(game.i18n.localize("levels3dpreview.errors.toofarfromdoor"));
+            else if (game.paused && !game.user.isGM) ui.notifications.warn("GAME.PausedWarning", { localize: true });
             else Socket.toggleDoor({ tileId: this.tile.id, sceneId: canvas.scene.id, userId: game.user.id, subDoorId: oT.doorId });
         }
 
         if (doorInSight && canvas.activeLayer.options.objectClass.embeddedName === "Token" && this.isDoor && !(this.isSecret && !game.user.isGM)) {
             if (this.isToFar()) ui.notifications.error(game.i18n.localize("levels3dpreview.errors.toofarfromdoor"));
+            else if (game.paused && !game.user.isGM) ui.notifications.warn("GAME.PausedWarning", { localize: true });
             else {
                 if (this.checkPuzzleLock()) Socket.toggleDoor({ tileId: this.tile.id, sceneId: canvas.scene.id, userId: game.user.id });
             }
@@ -2588,95 +2630,332 @@ export class Tile3D {
         return { scene: object, model: object, object: object };
     }
 
+    static RENDER_FLAGS = {
+        redraw: {},
+        refreshState: {},
+        refreshTransform: { propagate: ["refreshPosition", "refreshRotation", "refreshSize"], alias: true },
+        refreshPosition: {},
+        refreshElevation: { propagate: ["refreshPosition"] },
+        refreshRotation: {},
+        refreshSize: { propagate: ["refreshPosition"] },
+        refreshHidden: {},
+        refreshMaterial: {},
+        refreshShadows: {},
+        refreshShaders: {},
+        refreshCollision: {},
+        refreshParticles: {},
+        refreshAnimation: {},
+        refreshDoor: {},
+        refreshModelDoors: {},
+        refreshMapMaker: {},
+        refreshScatter: {},
+    };
+
+    static CORE_RENDER_KEYS = {
+        x: "refreshPosition",
+        y: "refreshPosition",
+        elevation: "refreshElevation",
+        "shape.anchorX": "refreshPosition",
+        "shape.anchorY": "refreshPosition",
+        rotation: "refreshRotation",
+        width: "refreshSize",
+        height: "refreshSize",
+        hidden: "refreshHidden",
+        alpha: "refreshMaterial",
+        "texture.tint": "refreshState",
+        locked: "refreshState",
+        sort: "refreshState",
+    };
+
+    static FLAG_RENDER_KEYS = {
+        tiltX: "refreshRotation",
+        tiltZ: "refreshRotation",
+        depth: "refreshSize",
+        color: "refreshMaterial",
+        roughness: "refreshMaterial",
+        metalness: "refreshMaterial",
+        castShadow: "refreshShadows",
+        shaders: "refreshShaders",
+        collision: "refreshCollision",
+        cameraCollision: "refreshCollision",
+        sight: "refreshCollision",
+        ParticleType: "refreshParticles",
+        ParticleSprite: "refreshParticles",
+        ParticleScale: "refreshParticles",
+        ParticleColor: "refreshParticles",
+        ParticleColor2: "refreshParticles",
+        ParticleIntensity: "refreshParticles",
+        enableParticleHidden: "refreshParticles",
+        paused: "refreshAnimation",
+        animIndex: "refreshAnimation",
+        animSpeed: "refreshAnimation",
+        animationOnce: "refreshAnimation",
+        doorState: "refreshDoor",
+        modelDoors: "refreshModelDoors",
+        mapMakerMesh: "refreshMapMaker",
+        scatter: "refreshScatter",
+        wasFreeMode: "refreshState",
+    };
+
+    static STATE_FLAG_SCOPES = new Set(["monks-active-tiles"]);
+
+    static getRenderFlags(changes) {
+        const flags = {};
+        for (const key of Object.keys(foundry.utils.flattenObject(changes))) {
+            const flag = Tile3D.getRenderFlag(key);
+            if (flag) flags[flag] = true;
+        }
+        return flags;
+    }
+
+    static getRenderFlag(key) {
+        const path = key.split(".").map((part) => part.replace(/^(-=|==)/, ""));
+        if (path[0] === "_id" || path[0] === "_stats") return null;
+        if (path[0] !== "flags") return Tile3D.CORE_RENDER_KEYS[path.slice(0, 2).join(".")] ?? Tile3D.CORE_RENDER_KEYS[path[0]] ?? "redraw";
+        if (path[1] === "levels-3d-preview") return Tile3D.FLAG_RENDER_KEYS[path[2]] ?? "redraw";
+        return Tile3D.STATE_FLAG_SCOPES.has(path[1]) ? "refreshState" : "redraw";
+    }
+
+    static redrawTile(document, moved = false) {
+        const parent = game.Levels3DPreview;
+        const current = parent.tiles[document.id];
+        const hasGravity = (document.getFlag("levels-3d-preview", "enableGravity") ?? "none") !== "none";
+        if (hasGravity && current?.isGravity) return recomputeGravityDebounced();
+        current?.destroy(true);
+        if (!document.object) return void delete parent.tiles[document.id];
+        const tile3d = new Tile3D(document.object, parent, true);
+        parent.tiles[document.id] = tile3d;
+        tile3d.load().then(() => {
+            if (moved) recomputeGravityDebounced();
+        });
+    }
+
+    applyRenderFlags() {
+        if (!this.renderFlags.size) return;
+        const flags = this.renderFlags.clear();
+        if (this._destroyed || this._parent.tiles[this.document.id] !== this || !game.Levels3DPreview?._active) return;
+        const moved = !!(flags.refreshPosition || flags.refreshRotation || flags.refreshSize);
+        try {
+            if (flags.redraw || !this.canRefresh(flags)) return Tile3D.redrawTile(this.document, moved);
+            this.refresh(flags, moved);
+        } catch (e) {
+            console.error(`3D Canvas: partial refresh failed for Tile ${this.document.id}, rebuilding`, e);
+            Tile3D.redrawTile(this.document, moved);
+        }
+    }
+
+    get hasDoors() {
+        return this.isDoor || !foundry.utils.isEmpty(this._doors ?? {});
+    }
+
+    canRefresh(flags) {
+        if (!this._loaded || !this.mesh) return false;
+        if (this.scatterField) return Object.keys(flags).every((flag) => flag === "refreshScatter" || flag === "refreshState");
+        const moved = flags.refreshPosition || flags.refreshRotation || flags.refreshSize;
+        if (moved && !this.canTransform()) return false;
+        if (flags.refreshSize && !this.canResize()) return false;
+        if ((flags.refreshMaterial || flags.refreshHidden) && this.hasDoors) return false;
+        if (flags.refreshMaterial && !this.canRefreshMaterial()) return false;
+        if (flags.refreshCollision && (this.hasTags || !foundry.utils.isEmpty(this._doors ?? {}))) return false;
+        if (flags.refreshShaders && !this.canRefreshShaders()) return false;
+        return true;
+    }
+
+    canTransform() {
+        const flags = this.document.flags["levels-3d-preview"] ?? {};
+        if (this.isGravity || flags.dynaMesh === "decal" || this._decal || this.mapMakerMesh?.k === "terrain" || flags.doorClip) return false;
+        return Math.sign(this.document.width) === (this.mirrorX ? -1 : 1) && Math.sign(this.document.height) === (this.mirrorY ? -1 : 1);
+    }
+
+    canResize() {
+        const depth = this.document.getFlag("levels-3d-preview", "depth") / factor;
+        if (!this._baseSize?.width || !this._baseSize?.height) return false;
+        if (this.isPlane) return true;
+        if (!(depth > 0) || !(this._baseSize.depth > 0)) return false;
+        if (this.dynaMesh !== "default" || !this.gtflPath || this.fillType !== "stretch" || this.mergedMatrix || this.isInstanced || this.hasDoors) return false;
+        if (this.displacementMap || this.noiseType !== "none" || this.offset.lengthSq() > 0) return false;
+        return !Object.values(this.shaders ?? {}).some((shader) => shader?.enabled);
+    }
+
+    canRefreshMaterial() {
+        const color = this.document.getFlag("levels-3d-preview", "color") ?? "#ffffff";
+        const roughness = this.document.getFlag("levels-3d-preview", "roughness") ?? -0.01;
+        const metalness = this.document.getFlag("levels-3d-preview", "metalness") ?? -0.01;
+        let valid = true;
+        if (color !== this.color) {
+            if (this.isInstanced && this.randomColor && !this.mergedMatrix) return false;
+            this.forEachRenderMaterial((material) => (valid &&= !material.color || materialTints.has(material.color)));
+        }
+        if (roughness !== this.roughness || metalness !== this.metalness) {
+            this.forEachRenderMesh((mesh) => (valid &&= !Array.isArray(mesh.material) && materialSurfaces.has(mesh.material)));
+        }
+        return valid;
+    }
+
+    canRefreshShaders() {
+        const handler = this._parent.shaderHandler;
+        const next = this.readShaders();
+        if (!game.settings.get("levels-3d-preview", "enableShaders")) handler.disablePerformanceHeavyShaders(next);
+        const enabled = (shaders) => Object.keys(shaders).filter((id) => shaders[id]?.enabled).sort().join();
+        if (enabled(next) !== enabled(this.shaders) || handler.blankTextureKey(next) !== handler.blankTextureKey(this.shaders)) return false;
+        return Object.keys(next).every((id) => {
+            const config = handler.shaderLib[id];
+            return !next[id]?.enabled || !(config?.onApply || config?.onCompile || config?.cacheKey);
+        });
+    }
+
+    refresh(flags, moved) {
+        if (flags.refreshMapMaker && !this.updateMapMakerTerrain()) return Tile3D.redrawTile(this.document, moved);
+        if (flags.refreshScatter && !this.updateScatter()) return Tile3D.redrawTile(this.document, moved);
+        if (flags.refreshSize) this.refreshSize();
+        if (moved) this.refreshTransform();
+        if (flags.refreshCollision) this.refreshCollision();
+        if (flags.refreshShadows) this.refreshShadows();
+        if (flags.refreshMaterial || flags.refreshHidden) {
+            this.restoreHidden();
+            if (flags.refreshMaterial) this.refreshMaterial();
+            this.setHidden();
+        }
+        if (flags.refreshShaders) this.refreshShaders();
+        if (flags.refreshAnimation) this.refreshAnimation();
+        if (flags.refreshDoor) this.refreshDoor();
+        if (flags.refreshModelDoors) this.setDoorsMaterials(true);
+        if (flags.refreshParticles || ((moved || flags.refreshHidden) && this.particleData.type != "none")) this.refreshParticles();
+        if (flags.refreshState) this.wasFreeMode = this.document.getFlag("levels-3d-preview", "wasFreeMode") ?? false;
+        if (moved || flags.refreshCollision) this.sendToWorker();
+        if (moved || flags.refreshCollision || flags.refreshHidden) this.refreshInteraction();
+        if (flags.refreshElevation || flags.refreshMaterial || flags.refreshHidden || flags.refreshShadows || flags.refreshShaders) this.invalidateBatches();
+        if (moved && Object.values(this._parent.tiles).some((tile3d) => tile3d.isGravity)) recomputeGravityDebounced();
+        if (moved && this.tile.controlled) this._parent.interactionManager.setControlledGroup();
+        this.updateControls();
+    }
+
+    refreshSize() {
+        const document = this.document;
+        this.width = Math.abs(document.width / factor);
+        this.height = Math.abs(document.height / factor);
+        const base = this._baseSize;
+        if (this.isPlane) this._sizeScale.set(this.width / base.width, this.height / base.height, 1);
+        else {
+            this.depth = document.getFlag("levels-3d-preview", "depth") / factor;
+            this._sizeScale.set(this.width / base.width, this.depth / base.depth, this.height / base.height);
+        }
+        this.mesh.scale.copy(this._sizeScale);
+        if (this.bb) Object.assign(this.bb, { width: document.width / factor, height: document.height / factor, depth: this.isPlane ? this.bb.depth : this.depth });
+    }
+
+    refreshTransform() {
+        const document = this.document;
+        const mesh = this.mesh;
+        this.bottom = document.elevation;
+        this.angle = Math.toRadians(document.rotation);
+        this.tiltX = Math.toRadians(document.getFlag("levels-3d-preview", "tiltX") ?? 0);
+        this.tiltZ = Math.toRadians(document.getFlag("levels-3d-preview", "tiltZ") ?? 0);
+        this.center2d = { x: this.x + Math.abs(document.width) / 2, y: this.y + Math.abs(document.height) / 2 };
+        this.center = coords3d.posCanvasTo3d({ x: this.center2d.x, y: this.center2d.y, z: this.bottom });
+        if (mesh.parent === this._parent.controlledGroup) this._parent.scene.add(mesh);
+        mesh.position.set(this.center.x, this.center.y, this.center.z);
+        if (this.isPlane) mesh.rotation.set(-Math.PI / 2 + (this.mirrorY ? Math.PI : 0), this.mirrorX ? Math.PI : 0, -this.angle * this.rotSign);
+        else mesh.rotation.set(this.tiltX, -this.angle * this.rotSign, this.tiltZ);
+        mesh.updateMatrixWorld(true);
+        this.elevation3d = mesh.position.y;
+        this.computeWorldBoundingBox();
+    }
+
+    refreshCollision() {
+        const flag = (key, fallback) => this.document.getFlag("levels-3d-preview", key) ?? fallback;
+        this.sight = flag("sight", true);
+        this.collision = flag("collision", true);
+        this.cameraCollision = flag("cameraCollision", false);
+        if (this.isDoor && this.isOpen && [0, 4, 5].includes(this.doorStyle)) {
+            this.sight = false;
+            this.collision = false;
+        }
+    }
+
+    refreshShadows() {
+        this.castShadow = this.document.getFlag("levels-3d-preview", "castShadow") ?? true;
+        if (this.isPlane) return;
+        this.forEachRenderMesh((mesh) => (mesh.castShadow = this.castShadow));
+    }
+
+    refreshMaterial() {
+        const flag = (key, fallback) => this.document.getFlag("levels-3d-preview", key) ?? fallback;
+        const color = flag("color", "#ffffff");
+        if (color !== this.color) {
+            this.color = color;
+            const tint = new THREE.Color(color);
+            this.forEachRenderMaterial((material) => {
+                const entry = material.color && materialTints.get(material.color);
+                if (!entry) return;
+                material.color.copy(entry.base);
+                for (let i = 0; i < entry.count; i++) material.color.multiply(tint);
+                if (color && material.emissiveMap) material.emissive = tint;
+            });
+        }
+        this.roughness = flag("roughness", -0.01);
+        this.metalness = flag("metalness", -0.01);
+        this.forEachRenderMesh((mesh) => {
+            const base = !Array.isArray(mesh.material) && materialSurfaces.get(mesh.material);
+            if (!base) return;
+            mesh.material.roughness = this.roughness >= 0 ? this.roughness : base.roughness;
+            mesh.material.metalness = this.metalness >= 0 ? this.metalness : base.metalness;
+        });
+        this.opacity = this.document.alpha;
+        if (this.isPlane && !this._planePBR && !(this.transparency >= 0 && this.transparency < 1)) this.mesh.material.opacity = this.opacity;
+    }
+
+    refreshShaders() {
+        const handler = this._parent.shaderHandler;
+        const next = this.readShaders();
+        for (const id of Object.keys(this.shaders)) delete this.shaders[id];
+        Object.assign(this.shaders, next);
+        if (!game.settings.get("levels-3d-preview", "enableShaders")) handler.disablePerformanceHeavyShaders(this.shaders);
+        for (const shader of handler.shaders) if (shader.entity3D === this) handler.setUniforms(shader, this.shaders);
+        this.preloadShaderTextures();
+    }
+
+    refreshAnimation() {
+        this.animSpeed = this.document.getFlag("levels-3d-preview", "animSpeed") ?? 1;
+        this.animationOnce = this.document.getFlag("levels-3d-preview", "animationOnce") ?? false;
+        this.setupAnimations();
+    }
+
+    refreshDoor() {
+        this.setupDoor();
+        if (this.doorStyle == 4 || this.doorStyle == 5) this.setupAnimations();
+    }
+
+    refreshParticles() {
+        game.Levels3DPreview.particleSystem.stop(this.particleEffectId);
+        this.particleEffect = null;
+        this.particleData = this.getParticleData();
+        if (this.particleData.type != "none") this.initParticle();
+    }
+
+    refreshInteraction() {
+        const interactionManager = this._parent.interactionManager;
+        if (!interactionManager) return;
+        interactionManager._candidateCache = interactionManager._rayMemo = null;
+        interactionManager.sightOccluders?.entries.clear();
+        interactionManager.generateSightCollisions();
+    }
+
+    invalidateBatches() {
+        const { kitBatcher, shadowBatcher } = this._parent;
+        const id = this.document.id;
+        kitBatcher?.splitter.drop(id);
+        kitBatcher?.stale.add(this);
+        const record = shadowBatcher?.records.get(id);
+        if (record) record.stale = true;
+    }
+
     static setHooks() {
         Hooks.on("updateTile", (tile, updates) => {
             if (!game.Levels3DPreview?._active || tile.parent !== game.scenes.viewed) return;
-
-            if (isDoorUpdate(updates)) {
-                game.Levels3DPreview.tiles[tile.id]?.setDoorsMaterials(true);
-                return;
-            }
-            if (isSingleDoorUpdate(updates)) {
-                game.Levels3DPreview.tiles[tile.id]?.setupDoor();
-                if (tile.flags["levels-3d-preview"]?.doorStyle == 4 || tile.flags["levels-3d-preview"]?.doorStyle == 5) game.Levels3DPreview.tiles[tile.id]?.setupAnimations();
-                return;
-            }
-
-            if (isAnimOnly(updates)) {
-                game.Levels3DPreview.tiles[tile.id]?.setupAnimations();
-                return;
-            }
-
-            // Cheap path: updates that only touch `locked` and/or `sort` don't affect the 3D geometry,
-            // materials or worker data, so skip the full destroy + reload. `hidden` is intentionally
-            // left on the reload path: setHidden() only dims (mutating material opacity) and hidden also
-            // affects particles and the worker visibility data, so a reload is the safe way to restore it.
-            if (isNonGeometryUpdate(updates)) {
-                const tile3d = game.Levels3DPreview.tiles[tile.id];
-                if (tile3d) {
-                    if ("locked" in updates) tile3d.updateControls();
-                    return;
-                }
-            }
-
-            if (isMapMakerDataOnly(updates) && game.Levels3DPreview.tiles[tile.id]?.updateMapMakerTerrain()) return;
-            if (isScatterOnly(updates) && game.Levels3DPreview.tiles[tile.id]?.updateScatter()) return;
-
-            const hasGravity = (tile.getFlag("levels-3d-preview", "enableGravity") ?? "none") !== "none";
-            const hadGravity = game.Levels3DPreview.tiles[tile.id]?.isGravity;
-            if (hasGravity && hadGravity) return recomputeGravityDebounced();
-            game.Levels3DPreview.tiles[tile.id]?.destroy(true);
-            if (!tile.object) return void delete game.Levels3DPreview.tiles[tile.id];
-            const newTile = new Tile3D(tile.object, game.Levels3DPreview, true);
-            game.Levels3DPreview.tiles[tile.id] = newTile;
-            newTile.load().then(() => {
-                if ("x" in updates || "y" in updates || hasFlag(updates)) {
-                    recomputeGravityDebounced();
-                }
-            });
-
-            function hasFlag(updates) {
-                if (updates?.elevation !== undefined) return true;
-            }
-
-            function isNonGeometryUpdate(updates) {
-                const FAST_KEYS = new Set(["locked", "sort"]);
-                const keys = Object.keys(updates).filter((k) => k !== "_id" && k !== "_stats");
-                if (!keys.length) return false;
-                return keys.every((k) => FAST_KEYS.has(k));
-            }
-
-            function isScatterOnly(updates) {
-                const keys = Object.keys(updates).filter((k) => k !== "_id" && k !== "_stats");
-                const flags = updates.flags?.["levels-3d-preview"] ?? {};
-                return keys.length === 1 && keys[0] === "flags" && Object.keys(updates.flags).join() === "levels-3d-preview" && Object.keys(flags).every((k) => k === "scatter" || k === "-=scatter");
-            }
-
-            function isMapMakerDataOnly(updates) {
-                const keys = Object.keys(updates).filter((k) => k !== "_id" && k !== "_stats");
-                const flags = updates.flags ?? {};
-                return keys.length === 1 && keys[0] === "flags" && Object.keys(flags).join() === "levels-3d-preview" && Object.keys(flags["levels-3d-preview"]).join() === "mapMakerMesh";
-            }
-
-            function isDoorUpdate(updates) {
-                if (updates.flags && updates.flags["levels-3d-preview"] && updates.flags["levels-3d-preview"].modelDoors) return true;
-            }
-
-            function isSingleDoorUpdate(updates) {
-                if (!updates.flags) return false;
-                if (!updates.flags["levels-3d-preview"]) return false;
-                if (Object.values(updates.flags["levels-3d-preview"]).length !== 1) return false;
-                if (updates.flags["levels-3d-preview"].doorState != undefined) return true;
-                return false;
-            }
-
-            function isAnimOnly(updates) {
-                if (!updates.flags) return false;
-                if (!updates.flags["levels-3d-preview"]) return false;
-                if (Object.values(updates.flags["levels-3d-preview"]).length !== 1) return false;
-                if (updates.flags["levels-3d-preview"].paused !== undefined) return true;
-                return false;
-            }
+            const tile3d = game.Levels3DPreview.tiles[tile.id];
+            if (!tile3d) return Tile3D.redrawTile(tile);
+            tile3d.renderFlags.set(Tile3D.getRenderFlags(updates));
         });
 
         Hooks.on("createTile", (tile) => {
@@ -2747,19 +3026,25 @@ export class Tile3D {
                 play: "fa-pause",
             };
 
-            const isPaused = tile3d.isPaused;
+            const isPaused = tile3d.paused;
+            const titles = {
+                pause: game.i18n.localize("levels3dpreview.tileHud.playAnimation"),
+                play: game.i18n.localize("levels3dpreview.tileHud.pauseAnimation"),
+            };
 
             const controlButton = document.createElement("button");
             controlButton.className = "control-icon";
             controlButton.dataset.action = "play-pause-3d";
-            controlButton.innerHTML = `<i class="fas ${isPaused ? images.pause : images.play}" title="Overhead Tile"></i>`;
+            controlButton.innerHTML = `<i class="fas ${isPaused ? images.pause : images.play}" title="${isPaused ? titles.pause : titles.play}"></i>`;
 
             controlButton.addEventListener("click", (e) => {
                 e.stopPropagation();
-                hud.object.document.setFlag("levels-3d-preview", "paused", !hud.object.document.getFlag("levels-3d-preview", "paused"));
+                const nowPaused = !hud.object.document.getFlag("levels-3d-preview", "paused");
+                hud.object.document.setFlag("levels-3d-preview", "paused", nowPaused);
                 const icon = controlButton.querySelector("i");
                 icon.classList.toggle(images.play);
                 icon.classList.toggle(images.pause);
+                icon.title = nowPaused ? titles.pause : titles.play;
             });
 
             lockedButton.parentNode.insertBefore(controlButton, lockedButton);
@@ -2914,8 +3199,8 @@ export async function autoMergeTiles(tiles = canvas.tiles.placeables, skipContro
         const occlusionIdText = occlusionId == "noOcclusionId" ? "" : game.i18n.localize("levels3dpreview.mergeTiles.occlusionGroup") + occlusionId;
 
         foundry.applications.api.DialogV2.confirm({
-            title: game.i18n.localize("levels3dpreview.mergeTiles.title") + occlusionIdText,
-            content: game.i18n.localize("levels3dpreview.mergeTiles.content").replace("%count%", mergedCount),
+            window: { title: game.i18n.localize("levels3dpreview.mergeTiles.title") + occlusionIdText },
+            content: game.i18n.localize(skipControlled ? "levels3dpreview.mergeTiles.content" : "levels3dpreview.mergeTiles.contentSelected").replace("%count%", mergedCount),
             defaultYes: false,
         }).then(async res => {
             if (res) await merge();
@@ -3077,7 +3362,7 @@ export function extractPointsFromDrawing() {
 
 export async function extrudeWalls(walls) {
     const confirm = foundry.applications.api.DialogV2.confirm({
-        title: game.i18n.localize("levels3dpreview.extrudeWalls.title"),
+        window: { title: game.i18n.localize("levels3dpreview.extrudeWalls.title") },
         content: game.i18n.localize("levels3dpreview.extrudeWalls.content"),
     });
 

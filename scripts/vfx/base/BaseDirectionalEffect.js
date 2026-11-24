@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { BaseParticleEffect } from "./BaseParticleEffect.js";
+import { factor } from "../../main.js";
 
 const DOWN = new THREE.Vector3(0, -1, 0);
 
@@ -63,6 +64,12 @@ export class BaseDirectionalEffect extends BaseParticleEffect {
             this._emitterRadius = template3d._effectRadius;
             this._coneEmitterAngle = template3d._baseShape === "cone" ? template3d._effectAngle * 0.5 : 0;
             return template3d._effectTarget.getWorldPosition(new THREE.Vector3());
+        } else if (!this._origin) {
+            this._coneEmitterAngle = this.params.coneAngle || this.constructor.DEFAULT_CONE;
+            this._objectRadius = canvas.scene.dimensions.size / factor;
+            this._emitterRadius = this.params.emitterSize;
+            this._origin = this._target.clone().addScaledVector(DOWN, this._objectRadius);
+            return this._origin;
         } else {
             this._coneEmitterAngle = this.params.coneAngle || this.constructor.DEFAULT_CONE;
             this._objectRadius = this._origin.distanceTo(this._target);

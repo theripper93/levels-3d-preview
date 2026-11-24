@@ -105,6 +105,43 @@ export function injectReveal(shader, material) {
     shader.uniforms.l3dReveal = revealUniform(material);
 }
 
+const _clip = new THREE.Vector4();
+const PASS_THROUGH = 0.5;
+
+export function revealMaskAt(point) {
+    const count = revealUniforms.uRevealCount.value;
+    if (!count) return 0;
+    _clip.set(point.x, point.y, point.z, 1).applyMatrix4(revealUniforms.uRevealViewProj.value);
+    if (_clip.w <= 0) return 0;
+    const x = _clip.x / _clip.w;
+    const y = _clip.y / _clip.w;
+    const aspect = revealUniforms.uRevealAspect.value;
+    const inner = Number(INNER_EDGE);
+    let cut = 0;
+    for (let i = 0; i < count; i++) {
+        const screen = revealUniforms.uRevealScreen.value[i];
+        const radius = Math.hypot((x - screen.x) * aspect, y - screen.y) / screen.z;
+        if (radius >= 1) continue;
+        const plane = revealUniforms.uRevealPlane.value[i];
+        const body = revealUniforms.uRevealBody.value[i];
+        const depth = plane.x * point.x + plane.y * point.y + plane.z * point.z - plane.w;
+        const mask = (1 - THREE.MathUtils.smoothstep(radius, inner, 1)) * THREE.MathUtils.smoothstep(depth, 0, body.y) * THREE.MathUtils.smoothstep(point.y, body.x, body.x + body.z) * screen.w;
+        cut = Math.max(cut, mask);
+    }
+    return cut;
+}
+
+export function revealActive() {
+    return revealUniforms.uRevealCount.value > 0;
+}
+
+export function isRevealedHit(hit, proxy = false) {
+    if (!revealActive()) return false;
+    const material = Array.isArray(hit.object?.material) ? hit.object.material[hit.face?.materialIndex ?? 0] : hit.object?.material;
+    if (!proxy && (!material?.userData?.l3dReveal || !revealUniform(material).value)) return false;
+    return revealMaskAt(hit.point) >= PASS_THROUGH;
+}
+
 function isRevealable(object) {
     const material = object.material;
     if (!Array.isArray(material)) return !!material?.userData?.l3dReveal && material.visible && material.colorWrite;
@@ -135,7 +172,7 @@ export class RevealSystem {
     }
 
     get enabled() {
-        return !!canvas.scene && canvas.scene.getFlag(MODULE_ID, "revealTokens") !== false && !this._parent.firstPersonMode;
+        return !!canvas.scene && game.settings.get(MODULE_ID, "revealTokens") && !this._parent.firstPersonMode;
     }
 
     update(delta) {

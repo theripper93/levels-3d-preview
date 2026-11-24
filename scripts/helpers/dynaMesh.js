@@ -228,7 +228,7 @@ export class DynaMesh {
         //creates a radial counter with a pie style shape, every slice is a separate geometry
         const values = this.text.split("|");
         const max = parseInt(values[0] ?? 10);
-        const current = parseInt(values[1] ?? total);
+        const current = parseInt(values[1] ?? max);
 
         const roundedRectShape = new THREE.Shape();
         const x = 0

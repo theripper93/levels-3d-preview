@@ -1,5 +1,6 @@
 import { walkStep } from "../handlers/moveWalk.js";
 import { movementFloor } from "../helpers/elevationFloor.js";
+import { getSetting } from "../settings/settingsConfig.js";
 
 const MODULE_ID = "levels-3d-preview";
 const SLICE_MS = 6;
@@ -20,7 +21,7 @@ let edgeCache = new Map();
 let knownCache = { id: 0, drag: null, cells: new Map() };
 
 export function isPathfindingEnabled() {
-    return !!game.settings.get(MODULE_ID, "rulerPathfinding") && !!canvas?.ready && !canvas.grid.isGridless;
+    return !!getSetting("rulerPathfinding") &&!!canvas?.ready && !canvas.grid.isGridless;
 }
 
 export function clearPathfindingCache() {

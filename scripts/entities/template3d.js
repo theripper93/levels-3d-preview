@@ -3,6 +3,7 @@ import * as coords3d from "../helpers/coords3d.js";
 import { factor } from "../main.js";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { isLockedOnOrigin } from "../shaders/templateEffects.js";
+import { knownShaders } from "../shaders/ShaderLib.js";
 
 const basicMat = new THREE.MeshBasicMaterial();
 
@@ -27,7 +28,7 @@ export class Template3D {
         this.initialDirection = this.template.document?.direction;
         this.isFog = this.template?.document?.getFlag("levels-3d-preview", "isFog") ?? false;
         this.tilt = this.template?.document?.getFlag("levels-3d-preview", "tilt") ?? 0;
-        this.shaders = this.template?.document?.getFlag("levels-3d-preview", "shaders") ?? {};
+        this.shaders = knownShaders(this.template?.document?.getFlag("levels-3d-preview", "shaders"));
         this.wasFreeMode = this.template?.document?.getFlag("levels-3d-preview", "wasFreeMode") ?? false;
         this.hasShaders = Object.values(this.shaders).some((v) => v.enabled);
         this.draggable = true;
@@ -707,15 +708,13 @@ export class Template3D {
 
         let special;
 
-        if (game.settings.get("levels-3d-preview", "templateAuto3D")) {
-            const type = templateDocument.t;
-            if (type == "rectangle") {
-                const w = Math.cos(Math.toRadians(templateDocument.direction)) * templateDocument.distance;
-                const h = Math.sin(Math.toRadians(templateDocument.direction)) * templateDocument.distance;
-                special = Math.min(w, h);
-            } else if (type == "ray") {
-                special = templateDocument.width;
-            }
+        const type = templateDocument.t;
+        if (type == "rectangle") {
+            const w = Math.cos(Math.toRadians(templateDocument.direction)) * templateDocument.distance;
+            const h = Math.sin(Math.toRadians(templateDocument.direction)) * templateDocument.distance;
+            special = Math.min(w, h);
+        } else if (type == "ray") {
+            special = templateDocument.width;
         }
 
         templateDocument.flags.levels ??= {};

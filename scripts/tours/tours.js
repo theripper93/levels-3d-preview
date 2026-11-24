@@ -104,7 +104,7 @@ export const Tokens = () => {
 };
 
 export const AssetBrowser = () => {
-    return new GenericTour("asset-browser", [`#asset-browser .window-content`, `#asset-browser #search`, `#asset-browser ol`, `#asset-browser #ab-randomization`, `#asset-browser #ab-placement`, `#asset-browser #ab-collision`, `#asset-browser #ab-painting`, `#asset-browser #ab-appearance`, `#asset-browser a[data-tab="utility"]`, `#asset-browser #ab-optimization`], {
+    return new GenericTour("asset-browser", [`#asset-browser .window-content`, `#asset-browser #search`, `#asset-browser ol`, `#asset-browser #ab-randomization`, `#asset-browser #ab-placement`, `#asset-browser #ab-collision`, `#asset-browser #ab-appearance`], {
         moduleId: "levels-3d-preview",
         localizationRoot: "levels3dpreview.tours",
         display: true,
@@ -114,27 +114,6 @@ export const AssetBrowser = () => {
             return game.modules.get("canvas3dcompendium")?.active && foundry.applications.instances.values().find((window) => window instanceof game.Levels3DPreview.CONFIG.UI.AssetBrowser);
         },
         init: () => {},
-    });
-};
-
-export const AssetBrowserPaint = () => {
-    return new GenericTour("asset-browser-paint", [`#asset-browser #ab-painting`, `#asset-browser li`, `#asset-browser #selected-notification`, `.ui-control.tool[data-tool="tile"]`, `.ui-control.tool[data-tool="tile3dPolygon"]`, `.ui-control.tool[data-tool="select"]`], {
-        moduleId: "levels-3d-preview",
-        localizationRoot: "levels3dpreview.tours",
-        display: true,
-        restricted: true,
-        autoRegister: true,
-        requires: () => {
-            return game.modules.get("canvas3dcompendium")?.active && foundry.applications.instances.values().find((window) => window instanceof game.Levels3DPreview.CONFIG.UI.AssetBrowser);
-        },
-        init: () => {
-            canvas.tiles.activate();
-            const w = foundry.applications.instances.values().find((window) => window instanceof game.Levels3DPreview.CONFIG.UI.AssetBrowser);
-            w.element.querySelectorAll("li").forEach((e, i) => {
-                if (i < 3) e.classList.add("selected");
-            });
-            w.element.querySelector("#selected-notification").style.display = "unset";
-        },
     });
 };
 
@@ -226,7 +205,6 @@ export const RegisterTours = () => {
     Environment();
     Terrain();
     AssetBrowser();
-    AssetBrowserPaint();
     Material();
     RoomBuilder();
     Effects();

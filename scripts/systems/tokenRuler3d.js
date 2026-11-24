@@ -1,13 +1,10 @@
-import * as THREE from "three";
 import { posCanvasTo3d, unitsToPixels } from "../helpers/coords3d.js";
 import { RulerPath3D, RulerLabels3D, is3DActive, rulerPixelScale } from "./ruler3d.js";
+import { getSetting } from "../settings/settingsConfig.js";
 
 const tokenRulers = new Set();
 
 const PENDING_ALPHA = 0.5;
-const PENDING_DASH = 12;
-const PENDING_GAP = 8;
-const MAX_DASHES = 64;
 
 export function TokenRuler3DMixin(Base) {
     return class TokenRuler3D extends Base {
@@ -32,11 +29,6 @@ export function TokenRuler3DMixin(Base) {
 
         get labels3d() {
             return this.#labels3d;
-        }
-
-        get isVisible() {
-            if (is3DActive() && !game.settings.get("levels-3d-preview", "enableDragRuler")) return false;
-            return super.isVisible;
         }
 
         _onVisibleChange() {
@@ -114,6 +106,7 @@ export function TokenRuler3DMixin(Base) {
                 }
             }
             this._measure3DPath(path);
+            for (const waypoint of path) waypoint.cost ??= waypoint.measurement?.backward?.cost ?? 0;
             this._preparePath(path);
             return path;
         }
@@ -160,75 +153,31 @@ export function TokenRuler3DMixin(Base) {
             }
             if (!path3d.attach()) return;
             path3d.visible = this.visible;
-            for (const { waypoints, searching } of rulerPaths) {
+            const outline = this._configureOutline?.() ?? {};
+            for (const { waypoints, searching, userId } of rulerPaths) {
                 if (!waypoints.length) continue;
                 const points = waypoints.map((w) => this._waypointTo3D(w));
                 const first = waypoints[0];
                 const from = first.previous ? this._waypointTo3D(first.previous) : null;
+                const animated = !!(userId && searching);
                 for (let i = 0; i < waypoints.length; i++) {
                     const waypoint = waypoints[i];
                     const start = i > 0 ? points[i - 1] : from;
                     if (!start) continue;
                     let { width, color = 0xffffff, alpha = 1 } = this._getSegmentStyle(waypoint);
                     if (!(width > 0)) continue;
-                    if (waypoint.unreachable) alpha *= 0.35;
-                    const pending = waypoint.stage === "pending";
-                    if (pending) alpha *= PENDING_ALPHA;
-                    const line = [start, points[i]];
-                    const style = { width, color, alpha, pulse: searching && waypoint.stage === "planned" };
-                    if (pending) for (const dash of this._dashLine(line, width)) path3d.addLine(dash, style);
-                    else path3d.addLine(line, style);
+                    if (waypoint.stage === "pending") alpha *= PENDING_ALPHA;
+                    const blocked = !!(userId && waypoint.unreachable);
+                    path3d.addSegment(start, points[i], { width, color, alpha, outline, dashed: animated || blocked, outlineDashed: blocked, animated });
                 }
                 for (let i = 0; i < waypoints.length; i++) {
                     const waypoint = waypoints[i];
                     let { radius, color = 0xffffff, alpha = 1 } = this._getWaypointStyle(waypoint);
-                    if (waypoint.unreachable) alpha *= 0.35;
                     if (waypoint.stage === "pending") alpha *= PENDING_ALPHA;
-                    path3d.addSphere(points[i], { radius, color, alpha, pulse: searching && waypoint.stage === "planned" });
+                    path3d.addWaypoint(points[i], { radius, color, alpha, outline });
                 }
             }
-        }
-
-        _dashLine(points, width) {
-            const unit = (width / 4) * rulerPixelScale();
-            let dash = PENDING_DASH * unit;
-            let gap = PENDING_GAP * unit;
-            let length = 0;
-            for (let i = 1; i < points.length; i++) length += points[i - 1].distanceTo(points[i]);
-            if (!(length > 0) || !(dash > 0)) return [points];
-            const count = length / (dash + gap);
-            if (count > MAX_DASHES) {
-                dash *= count / MAX_DASHES;
-                gap *= count / MAX_DASHES;
-            }
-            const dashes = [];
-            let current = [points[0].clone()];
-            let drawing = true;
-            let remaining = dash;
-            for (let i = 1; i < points.length; i++) {
-                const a = points[i - 1];
-                const b = points[i];
-                const segment = a.distanceTo(b);
-                if (!(segment > 0)) continue;
-                let travelled = 0;
-                while (segment - travelled > remaining) {
-                    travelled += remaining;
-                    const p = new THREE.Vector3().lerpVectors(a, b, travelled / segment);
-                    if (drawing) {
-                        current.push(p);
-                        dashes.push(current);
-                        current = null;
-                    } else {
-                        current = [p];
-                    }
-                    drawing = !drawing;
-                    remaining = drawing ? dash : gap;
-                }
-                remaining -= segment - travelled;
-                if (drawing) current.push(b.clone());
-            }
-            if (drawing && current?.length >= 2) dashes.push(current);
-            return dashes;
+            path3d.build();
         }
 
         _render3DLabels(rulerPaths) {

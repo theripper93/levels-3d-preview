@@ -388,11 +388,6 @@ export class BaseParticleEffect {
                 start: ["#ff4d00"],
                 end: ["#ffff00"],
             },
-            radial: {
-                angle: 0,
-                direction: new THREE.Vector3(0, 0, 0),
-                theta: 30,
-            },
             alpha: {
                 start: 1,
                 end: 1,

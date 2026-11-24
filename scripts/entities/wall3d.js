@@ -4,10 +4,50 @@ import {factor} from "../main.js";
 
 const doorIconMaterialCache = {};
 
+export const WALL_DEFAULTS = {
+    color: "#a39e94",
+    doorColor: "#7d5c40",
+    roughness: 0.85,
+    metalness: 0,
+};
+
 const getWallColor = (wall) => {
-    if (game.user.isGM) return wall._getWallColor().toString();
-    if(wall.document.door === CONST.WALL_DOOR_TYPES.SECRET) return 0xFFFFBB
-    return wall._getWallColor().toString();
+    if (game.user.isGM && canvas.walls?.active) return Number(wall._getWallColor());
+    const door = wall.document.door;
+    if (!door) return WALL_DEFAULTS.color;
+    if (door === CONST.WALL_DOOR_TYPES.SECRET && !game.user.isGM) return WALL_DEFAULTS.color;
+    return WALL_DEFAULTS.doorColor;
+};
+
+const JOIN_TOLERANCE = 1;
+
+const cross2 = (a, b) => a.x * b.y - a.y * b.x;
+
+function wallsAtPoint(wall, point) {
+    const L = game.Levels3DPreview;
+    const result = [];
+    for (const other of canvas.walls.placeables) {
+        if (other === wall || other.id === wall?.id || !canvas.scene.walls.has(other.id)) continue;
+        if (L?.isLevels && (other.document.flags.wallHeight?.wallHeightBottom ?? -Infinity) > L.level) continue;
+        const c = other.document.c;
+        if (Math.hypot(c[0] - point.x, c[1] - point.y) <= JOIN_TOLERANCE) result.push({ wall: other, far: new THREE.Vector2(c[2], c[3]) });
+        else if (Math.hypot(c[2] - point.x, c[3] - point.y) <= JOIN_TOLERANCE) result.push({ wall: other, far: new THREE.Vector2(c[0], c[1]) });
+    }
+    return result;
+}
+
+function endTrim(wall, point, inward, normal) {
+    const others = wallsAtPoint(wall, point);
+    if (others.length !== 1) return null;
+    const outward = others[0].far.clone().sub(point);
+    if (outward.lengthSq() < 1e-6) return null;
+    outward.normalize();
+    const bisector = inward.clone().add(outward);
+    if (bisector.lengthSq() < 1e-6) return null;
+    bisector.normalize();
+    const denom = cross2(bisector, inward);
+    if (Math.abs(denom) < 1e-4) return null;
+    return -cross2(bisector, normal) / denom;
 }
 
 export class Wall3D {
@@ -43,9 +83,10 @@ export class Wall3D {
         this.color = this.texture ? this.tint ?? "#ffffff" : this.tint ?? getWallColor(wall);
         this.sidesColor = this.sidesTexture ? this.sideTint ?? "#ffffff" : this.sideTint ?? getWallColor(wall);
         this.depth = wall.document.getFlag("levels-3d-preview", "wallDepth") / factor || 0.03;
-        this.distance += wall.document.getFlag("levels-3d-preview", "joinWall") ? this.depth : 0;
-        this.roughness = wall.document.getFlag("levels-3d-preview", "roughness") ?? 1;
-        this.metalness = wall.document.getFlag("levels-3d-preview", "metalness") ?? 1;
+        this.joinWall = !!wall.document.getFlag("levels-3d-preview", "joinWall");
+        this.distance += this.joinWall ? this.depth : 0;
+        this.roughness = wall.document.getFlag("levels-3d-preview", "roughness") ?? WALL_DEFAULTS.roughness;
+        this.metalness = wall.document.getFlag("levels-3d-preview", "metalness") ?? WALL_DEFAULTS.metalness;
         this.mesh = new THREE.Group();
 
         this.init();
@@ -74,6 +115,7 @@ export class Wall3D {
             u *= this.repeats;
             uvAttribute.setXY(i, u, v);
         }
+        if (!this.joinWall) this._trimEnds(geometry);
 
         const texture = this.texture ? await this._parent.helpers.loadTexture(this.texture) : null;
         if (texture) {
@@ -113,8 +155,30 @@ export class Wall3D {
         this._parent.scene.add(this.mesh);
     }
 
+    _trimEnds(geometry) {
+        if (this.distance <= 0) return;
+        const dir = this.p2.clone().sub(this.p1).normalize();
+        const normal = new THREE.Vector2(-dir.y, dir.x);
+        const k1 = endTrim(this.wall, this.p1, dir, normal);
+        const k2 = endTrim(this.wall, this.p2, dir.clone().negate(), normal);
+        if (k1 === null && k2 === null) return;
+        const half = this.distance / 2;
+        const maxTrim = this.distance * 0.45;
+        const trim = (k, x) => (k === null ? 0 : Math.max(-maxTrim, Math.min(maxTrim, Math.max(-4, Math.min(4, k)) * x)));
+        const position = geometry.attributes.position;
+        for (let i = 0; i < position.count; i++) {
+            const x = position.getX(i);
+            const z = position.getZ(i);
+            if (z > 0) position.setZ(i, half - trim(k1, x));
+            else position.setZ(i, -half + trim(k2, x));
+        }
+        position.needsUpdate = true;
+        geometry.computeVertexNormals();
+        geometry.computeBoundingBox();
+        geometry.computeBoundingSphere();
+    }
+
     async getControlIconMaterial() {
-        // Determine displayed door state
         const ds = CONST.WALL_DOOR_STATES;
         let s = this.wall.document.ds;
         if (!game.user.isGM && s === ds.LOCKED) s = ds.CLOSED;
@@ -151,14 +215,24 @@ export class Wall3D {
 
     async _generateMaterial(texturePath, texture) {
         const isPBR = this._parent.helpers.isPBR(texturePath);
-        if (isPBR) return await this._parent.helpers.getPBRMat(texturePath);
+        const color = this.sidesTexture && this.sidesTexture === texturePath ? this.sidesColor : this.color;
         let material;
-        const materialId = `${this.color}${this.opacity}${texturePath}${this.isVisible}${this.metalness}${this.roughness}`;
+        const materialId = `${isPBR ? "wallPBR" : ""}${color}${this.opacity}${texturePath}${this.isVisible}${this.metalness}${this.roughness}`;
         if (this._parent.helpers.materialCache[materialId]) {
             material = this._parent.helpers.materialCache[materialId];
+        } else if (isPBR) {
+            material = (await this._parent.helpers.getPBRMat(texturePath)).clone();
+            material.color = new THREE.Color(color);
+            material.transparent = this.opacity < 1;
+            material.depthWrite = this.opacity === 1;
+            material.opacity = this.opacity;
+            if (this.roughness !== WALL_DEFAULTS.roughness) material.roughness = this.roughness;
+            if (this.metalness !== WALL_DEFAULTS.metalness) material.metalness = this.metalness;
+            material.visible = this.isVisible;
+            this._parent.helpers.materialCache[materialId] = material;
         } else {
             material = new THREE.MeshStandardMaterial({
-                color: this.sidesTexture == texturePath ? this.sidesColor : this.color,
+                color,
                 transparent: this.opacity < 1,
                 depthWrite: this.opacity === 1,
                 opacity: this.opacity,
@@ -176,7 +250,7 @@ export class Wall3D {
         if (this._isDisabledVisible === false) return false;
         if (!this.tint && !this.texture) return true;
         if (this.alwaysVisible) return true;
-        if (this.wall.document.sense === 0) return false;
+        if (this.wall.document.sight === CONST.EDGE_SENSE_TYPES.NONE) return false;
         return true;
     }
 
@@ -249,20 +323,59 @@ export class Wall3D {
     }
 
     static setHooks() {
-        Hooks.on("updateWall", (wall) => {
-            if (game.Levels3DPreview?._active && wall.object) {
-                game.Levels3DPreview.walls[wall.id]?.destroy();
-                game.Levels3DPreview.createWall(wall.object);
+        const neighborIds = (wall, points) => {
+            const ids = new Set();
+            for (const point of points) for (const { wall: other } of wallsAtPoint(wall, point)) ids.add(other.id);
+            return ids;
+        };
+        const endpoints = (c) => [new THREE.Vector2(c[0], c[1]), new THREE.Vector2(c[2], c[3])];
+        const rebuildNeighbors = (ids, skipId) => {
+            const L = game.Levels3DPreview;
+            for (const id of ids) {
+                if (id === skipId || !L.walls[id]) continue;
+                const placeable = L.walls[id].wall;
+                L.walls[id].destroy();
+                L.createWall(placeable);
             }
+        };
+
+        Hooks.on("updateWall", (wall, changes) => {
+            const L = game.Levels3DPreview;
+            if (!L?._active || !wall.object) return;
+            const old = L.walls[wall.id];
+            const ids = "c" in changes ? neighborIds(wall.object, [...(old ? [old.p1, old.p2] : []), ...endpoints(wall.c)]) : null;
+            old?.destroy();
+            L.createWall(wall.object);
+            if (ids) rebuildNeighbors(ids, wall.id);
         });
 
         Hooks.on("createWall", (wall) => {
-            if (game.Levels3DPreview?._active && wall.object) game.Levels3DPreview.createWall(wall.object);
+            const L = game.Levels3DPreview;
+            if (!L?._active || !wall.object) return;
+            L.createWall(wall.object);
+            rebuildNeighbors(neighborIds(wall.object, endpoints(wall.c)), wall.id);
         });
 
         Hooks.on("deleteWall", (wall) => {
-            if (game.Levels3DPreview?._active) game.Levels3DPreview.walls[wall.id]?.destroy();
+            const L = game.Levels3DPreview;
+            if (!L?._active) return;
+            const old = L.walls[wall.id];
+            old?.destroy();
+            rebuildNeighbors(neighborIds(wall.object ?? old?.wall, endpoints(wall.c)), wall.id);
         });
+
+        const recolorWalls = () => {
+            const L = game.Levels3DPreview;
+            if (!L?._active || !game.user.isGM) return;
+            for (const wall3d of Object.values(L.walls)) {
+                if (!wall3d || wall3d.tint || wall3d.texture) continue;
+                const placeable = wall3d.wall;
+                wall3d.destroy();
+                L.createWall(placeable);
+            }
+        };
+        Hooks.on("activateWallsLayer", recolorWalls);
+        Hooks.on("deactivateWallsLayer", recolorWalls);
 
         Hooks.on("activateWallsLayer", () => {
             if (game.Levels3DPreview?._active) ui.notifications.info(`

@@ -6,7 +6,7 @@ import { dynamicImport } from "../lib/utils.js";
 import { factor } from "../main.js";
 import { KIT_HUE_GLSL } from "./mapMakerMesh.js";
 
-const MERGE_PROTECTED = new Set(["base", "eyeL", "eyeR", "portrait-target", "sightMesh"]);
+const MERGE_PROTECTED = new Set(["base", "baseTop","portrait-target", "sightMesh"]);
 const MATERIAL_MAPS = ["map", "normalMap", "roughnessMap", "metalnessMap", "aoMap", "emissiveMap", "alphaMap", "bumpMap", "displacementMap", "lightMap", "specularMap", "envMap", "clearcoatMap", "clearcoatNormalMap", "clearcoatRoughnessMap", "sheenColorMap", "sheenRoughnessMap", "transmissionMap", "thicknessMap", "specularIntensityMap", "specularColorMap", "iridescenceMap", "anisotropyMap", "matcap", "gradientMap"];
 const BAKE_MAPS = ["map", "alphaMap", "normalMap", "roughnessMap", "metalnessMap", "aoMap", "emissiveMap"];
 const TEXTURE_SIZES = [256, 512, 1024, 2048, 4096];
@@ -515,7 +515,7 @@ function bakeTextures(parts, atlas, size, onProgress) {
     const previous = { target: renderer.getRenderTarget(), color: renderer.getClearColor(new THREE.Color()), alpha: renderer.getClearAlpha(), autoClear: renderer.autoClear };
     const pixels = new Uint8Array(size * size * 4);
     const canvases = {};
-    if (parent._sharedContext) renderer.resetState();
+    renderer.resetState();
     renderer.autoClear = true;
     renderer.setClearColor(0x000000, 0);
     try {
@@ -548,10 +548,8 @@ function bakeTextures(parts, atlas, size, onProgress) {
         renderer.setRenderTarget(previous.target);
         renderer.setClearColor(previous.color, previous.alpha);
         renderer.autoClear = previous.autoClear;
-        if (parent._sharedContext) {
-            renderer.resetState();
-            parent.resetPixiState?.();
-        }
+        renderer.resetState();
+        parent.resetPixiState?.();
         targets.forEach((t) => t.dispose());
         meshes.forEach((mesh) => {
             mesh.geometry.dispose();

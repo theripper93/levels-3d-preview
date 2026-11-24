@@ -107,47 +107,45 @@ export function measureDistance(position1, position2) {
     return d;
 }
 
+function tokenRangeBox(token3d) {
+    const los = token3d.losHeight ?? token3d.elevation;
+    const document = token3d.document;
+    const { size, distancePixels } = document.parent.dimensions;
+    const offsetX = Math.min(document.width * size, size) / 2;
+    const offsetY = Math.min(los * distancePixels, size) / 2;
+    const offsetZ = Math.min(document.height * size, size) / 2;
+    return {
+        min: new THREE.Vector3(document.x + offsetX, document.elevation * distancePixels + offsetY, document.y + offsetZ),
+        max: new THREE.Vector3(document.x + document.width * size - offsetX, los * distancePixels - offsetY, document.y + document.height * size - offsetZ),
+    };
+}
+
+function nearestOnAxis(a, b, axis) {
+    if (a.max[axis] < b.min[axis]) return [a.max[axis], b.min[axis]];
+    if (b.max[axis] < a.min[axis]) return [a.min[axis], b.max[axis]];
+    const shared = (Math.max(a.min[axis], b.min[axis]) + Math.min(a.max[axis], b.max[axis])) / 2;
+    return [shared, shared];
+}
+
+export function nearestTokenPoints(origin, target) {
+    const a = tokenRangeBox(origin);
+    const b = tokenRangeBox(target);
+    const [ax, bx] = nearestOnAxis(a, b, "x");
+    const [ay, by] = nearestOnAxis(a, b, "y");
+    const [az, bz] = nearestOnAxis(a, b, "z");
+    const distancePixels = origin.document.parent.dimensions.distancePixels;
+    return [
+        { x: ax, y: az, elevation: ay / distancePixels },
+        { x: bx, y: bz, elevation: by / distancePixels },
+    ];
+}
+
+export function measureTokenRange(origin, target) {
+    return canvas.grid.measurePath(nearestTokenPoints(origin, target)).distance;
+}
+
 export function measureMinTokenDistance(origin, target) {
-    const originLos = origin.losHeight ?? origin.elevation;
-    const targetLos = target.losHeight ?? target.elevation;
-    origin = origin.document;
-    target = target.document;
-    const scene = origin.parent;
-    const cellSize = scene.dimensions.size;
-    const sizeOffsetOrigin = new THREE.Vector3(
-        Math.min(origin.width * cellSize, cellSize) / 2,
-        Math.min(originLos * scene.dimensions.distancePixels, cellSize) / 2,
-        Math.min(origin.height * cellSize, cellSize) / 2
-    );
-    const sizeOffsetTarget = new THREE.Vector3(
-        Math.min(target.width * cellSize, cellSize) / 2,
-        Math.min(targetLos * scene.dimensions.distancePixels, cellSize) / 2,
-        Math.min(target.height * cellSize, cellSize) / 2
-    );
-    const originMin = new THREE.Vector3(
-        origin.x + sizeOffsetOrigin.x,
-        origin.elevation * scene.dimensions.distancePixels + sizeOffsetOrigin.y,
-        origin.y + sizeOffsetOrigin.z
-    );
-    const originMax = new THREE.Vector3(
-        origin.x + origin.width * cellSize - sizeOffsetOrigin.x,
-        originLos * scene.dimensions.distancePixels - sizeOffsetOrigin.y,
-        origin.y + origin.height * cellSize - sizeOffsetOrigin.z
-    );
-    const targetMin = new THREE.Vector3(
-        target.x + sizeOffsetTarget.x,
-        target.elevation * scene.dimensions.distancePixels + sizeOffsetTarget.y,
-        target.y + sizeOffsetTarget.z
-    );
-    const targetMax = new THREE.Vector3(
-        target.x + target.width * cellSize - sizeOffsetTarget.x,
-        targetLos * scene.dimensions.distancePixels - sizeOffsetTarget.y,
-        target.y + target.height * cellSize - sizeOffsetTarget.z
-    );
-
-    const dx = Math.max(0, Math.max(originMin.x, targetMin.x) - Math.min(originMax.x, targetMax.x));
-    const dy = Math.max(0, Math.max(originMin.y, targetMin.y) - Math.min(originMax.y, targetMax.y));
-    const dz = Math.max(0, Math.max(originMin.z, targetMin.z) - Math.min(originMax.z, targetMax.z));
-
-    return Math.sqrt(dx ** 2 + dy ** 2 + dz ** 2) / scene.dimensions.distancePixels;
+    const [a, b] = nearestTokenPoints(origin, target);
+    const distancePixels = origin.document.parent.dimensions.distancePixels;
+    return Math.hypot((a.x - b.x) / distancePixels, (a.y - b.y) / distancePixels, a.elevation - b.elevation);
 }

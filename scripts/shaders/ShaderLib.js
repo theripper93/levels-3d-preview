@@ -128,7 +128,6 @@ export class ShaderConfig extends foundry.applications.api.HandlebarsApplication
             this.autoSave = !this.autoSave;
             game.settings.set("levels-3d-preview", "shaderAutoSave", this.autoSave);
             event.currentTarget.classList.toggle("active");
-            debugger
         });
         return frame;
     }
@@ -283,6 +282,11 @@ export class ShaderConfig extends foundry.applications.api.HandlebarsApplication
 
 const baseCompiles = new WeakMap();
 
+export function knownShaders(shaders) {
+    const lib = game.Levels3DPreview.CONFIG.shaders.shaders;
+    return Object.fromEntries(Object.entries(shaders ?? {}).filter(([id]) => id !== "defaults" && lib[id]));
+}
+
 export class ShaderHandler {
     constructor() {
         this.shaderLib = game.Levels3DPreview.CONFIG.shaders.shaders;
@@ -309,6 +313,7 @@ export class ShaderHandler {
     }
 
     applyShader(Object3D, entity3D, shaderParams) {
+        shaderParams = knownShaders(shaderParams);
         const enableShaders = game.settings.get("levels-3d-preview", "enableShaders");
         if (!enableShaders) shaderParams = this.disablePerformanceHeavyShaders(shaderParams);
         const hasShaders = Object.values(shaderParams).some((v) => v.enabled);
@@ -395,7 +400,7 @@ export class ShaderHandler {
 
     injectShaders(shader, commonParams, shaderParams) {
         shader.vertexShader = "attribute float shader_instance_depth;\nattribute float shader_instance_position;\nattribute float shader_random_rotation;\nuniform float tex_repeat;\nattribute float shader_cell_size;\nuniform float bevelSize;\n" + shader.vertexShader;
-        if (Object.keys(shaderParams).some((k) => this.shaderLib[k].useNoise)) {
+        if (Object.keys(shaderParams).some((k) => this.shaderLib[k]?.useNoise)) {
             shader.vertexShader = noiseShaders.snoise + "\n" + shader.vertexShader;
             shader.fragmentShader = noiseShaders.snoise + "\n" + shader.fragmentShader;
         }
@@ -548,16 +553,13 @@ export class ShaderHandler {
         }
     }
 
-    updateShaders(delta, tokens, obstructing) {
-        const v4 = new THREE.Vector4();
+    updateShaders(delta) {
         updateWindSway();
         this.shaders = this.shaders.filter((shader) => {
             if (shader.entity3D._destroyed) return false;
             shader.uniforms.time.value = delta / 100;
             shader.uniforms.yPos.value = getYpos(shader.entity3D);
             shader.uniforms.windSway_origin?.value.copy(yPosV3);
-            shader.uniforms.tokens.value = tokens;
-            shader.uniforms.obstructing.value = obstructing ? obstructing.get(shader.entity3D) ?? v4 : v4;
             if (this._sceneUniformsNeedUpdate) {
                 shader.uniforms.sceneSize.value = shaders.defaults.uniforms.sceneSize.value();
                 shader.uniforms.gridSize.value = shaders.defaults.uniforms.gridSize.value();
@@ -592,14 +594,6 @@ export const shaders = {
             time: {
                 type: "float",
                 value: 0,
-            },
-            tokens: {
-                type: "vec4[100]",
-                value: new Float32Array(100 * 4),
-            },
-            obstructing: {
-                type: "vec4",
-                value: new THREE.Vector4(0, 0, 0, 0),
             },
             mDepth: {
                 type: "float",
@@ -1126,62 +1120,6 @@ export const shaders = {
             },
         ],
         fragmentShader: [],
-    },
-    clipping: {
-        icon: `<i class="fas fa-scissors"></i>`,
-        useNoise: true,
-        uniforms: {
-            heightOffset: {
-                type: "float",
-                default: 200,
-            },
-            diameter: {
-                type: "float",
-                default: 500,
-            },
-            speed: {
-                type: "float",
-                default: 0.1,
-            },
-            noiseScale: {
-                type: "float",
-                default: 1,
-            },
-            useCamera: {
-                type: "bool",
-                default: false,
-            },
-            useCameraAdvanced: {
-                type: "bool",
-                default: false,
-            },
-        },
-        varying: {},
-        vertexShader: [],
-        fragmentShader: [
-            {
-                mode: SHADERS_CONSTS.PREPEND,
-                injectionPoint: "#include <fog_fragment>",
-                shaderCode: `
-                if( tokens[0].w > 0.0) {
-                    float adj_clipping_heightOffset = clipping_heightOffset / 1000.0;
-                    float adj_clipping_diameter = clipping_diameter / 1000.0;
-                    vec3 currentToken = clipping_useCamera ? cameraPosition : tokens[0].xyz;
-                    currentToken = clipping_useCameraAdvanced ? obstructing.xyz : currentToken;
-                    float distance2D = distance(vec2(vWorldPositionFoW.x, vWorldPositionFoW.z), vec2(currentToken.x, currentToken.z));
-                    if(distance2D < adj_clipping_diameter && vWorldPositionFoW.y > (tokens[0].y + adj_clipping_heightOffset)){
-                        float ts = time * 0.001 * clipping_speed;
-                        float gradientBorderSize = 0.05;
-                        float noise_factor = 1.0 - ((gradientBorderSize - abs(vWorldPositionFoW.y - (tokens[0].y + adj_clipping_heightOffset))) / gradientBorderSize) * (gradientBorderSize - abs(distance2D - adj_clipping_diameter)) / gradientBorderSize;
-
-                        if(noise_factor <= 0.9 && (Perlin3D(vec3(vWorldPositionFoW.x + ts, vWorldPositionFoW.y + ts, vWorldPositionFoW.z + ts)*(100.0/clipping_noiseScale)) - noise_factor) > 0.1) {
-                            discard;
-                        }
-                    }
-                }
-                `,
-            },
-        ],
     },
     grid: {
         icon: `<i class="fas fa-grid"></i>`,

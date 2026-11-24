@@ -24,11 +24,8 @@ export class SkyEnvironment {
         return this._parent.renderer;
     }
 
-    attach(sky) {
-        if (this._sky === sky) return this.texture;
-        this.dispose();
-        this._sky = sky;
-        const material = new THREE.ShaderMaterial({
+    createMaterial(sky) {
+        return new THREE.ShaderMaterial({
             name: "SkyEnvironmentShader",
             vertexShader: sky.material.vertexShader,
             fragmentShader: sky.material.fragmentShader,
@@ -37,20 +34,57 @@ export class SkyEnvironment {
             depthTest: false,
             depthWrite: false,
         });
+    }
+
+    compile(sky) {
+        const material = this.createMaterial(sky);
+        if (!this._cubeTarget) return material;
+        const mesh = new THREE.Mesh(sky.geometry, material);
+        mesh.frustumCulled = false;
+        const renderer = this.renderer;
+        const previous = renderer.getRenderTarget();
+        renderer.setRenderTarget(this._cubeTarget);
+        try {
+            renderer.compile(mesh, this._cubeCamera.children[0]);
+        } finally {
+            renderer.setRenderTarget(previous);
+        }
+        return material;
+    }
+
+    retarget(sky, material = this.createMaterial(sky)) {
+        this._mesh.material = material;
+        this._mesh.geometry = sky.geometry;
+        this._material.dispose();
+        this._material = material;
+        this._sky = sky;
+        this._version = -1;
+        this._time = -Infinity;
+        return this.texture;
+    }
+
+    attach(sky, material) {
+        if (this._sky === sky) {
+            material?.dispose();
+            return this.texture;
+        }
+        if (this._sky) return this.retarget(sky, material);
+        this._sky = sky;
+        material ??= this.createMaterial(sky);
         const mesh = new THREE.Mesh(sky.geometry, material);
         mesh.frustumCulled = false;
         this._scene = new THREE.Scene();
         this._scene.add(mesh);
+        this._mesh = mesh;
         this._material = material;
         this._cubeTarget = new THREE.WebGLCubeRenderTarget(CUBE_SIZE, { type: THREE.HalfFloatType, minFilter: THREE.LinearFilter, generateMipmaps: false, depthBuffer: false });
         this._cubeCamera = new THREE.CubeCamera(0.1, 10, this._cubeTarget);
         this._pmrem = new THREE.PMREMGenerator(this.renderer);
-        const shared = this._parent._sharedContext;
-        if (shared) this.renderer.resetState();
+        this.renderer.resetState();
         try {
             this.render();
         } finally {
-            if (shared) this._parent.resetPixiState();
+            this._parent.resetPixiState();
         }
         this._time = -Infinity;
         this.texture = this._target.texture;
@@ -61,13 +95,13 @@ export class SkyEnvironment {
         if (!this._target) return;
         const scene = this._parent.scene;
         if (scene.environment === this.texture) {
-            scene.environmentIntensity = THREE.MathUtils.lerp(DAY_ENVIRONMENT, ENVIRONMENT_GAIN, state.night) * (1 - TWILIGHT_ENVIRONMENT * state.twilight) * (1 + NIGHT_LIFT * state.night) * (1 + FLASH_GAIN * state.flash);
+            scene.environmentIntensity = THREE.MathUtils.lerp(DAY_ENVIRONMENT, ENVIRONMENT_GAIN, state.night) * (1 - TWILIGHT_ENVIRONMENT * state.twilight) * (1 + NIGHT_LIFT * state.night) * (1 + FLASH_GAIN * state.flash) * state.environmentGain;
             hemisphere.intensity *= THREE.MathUtils.lerp(DAY_HEMISPHERE, 1, state.night) * (1 + TWILIGHT_HEMISPHERE * state.twilight);
         }
         const now = performance.now();
         const elapsed = now - this._time;
         const clouds = state.clouds;
-        const drifting = clouds.enabled && clouds.alpha > 0 && clouds.speed > 0;
+        const drifting = state.skyAnimated || (clouds.enabled && clouds.alpha > 0 && clouds.speed > 0);
         if (state.version !== this._version ? elapsed < MIN_INTERVAL : !drifting || elapsed < REFRESH_INTERVAL) return;
         this._version = state.version;
         this.render();
@@ -87,7 +121,7 @@ export class SkyEnvironment {
         this._cubeTarget.dispose();
         this._target?.dispose();
         this._pmrem.dispose();
-        this._sky = this._scene = this._material = this._cubeTarget = this._cubeCamera = this._pmrem = this._target = this.texture = null;
+        this._sky = this._scene = this._mesh = this._material = this._cubeTarget = this._cubeCamera = this._pmrem = this._target = this.texture = null;
         this._version = -1;
     }
 }

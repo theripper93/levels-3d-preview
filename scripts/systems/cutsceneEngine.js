@@ -6,7 +6,6 @@ export class CutsceneEngine{
         this._parent = parent;
         this._isPlaying = false;
         this.cutscene = null;
-        this._gameCameraPrevState = null;
     }
 
     get isPlaying() { 
@@ -46,8 +45,7 @@ export class CutsceneEngine{
     play(index) {
         const data = typeof index == "number" ? this.getCutsceneData(index) : this.getCutsceneDataByName(index);
         if (!data) return ui.notifications.error("Cutscene not found");
-        this._gameCameraPrevState = this._parent.GameCamera.enabled;
-        if(this._gameCameraPrevState) this._parent.GameCamera.toggle();
+        this._parent.tacticalCamera.release();
         this.cutscene = new Cutscene(data, this.camera, this.controls);
         this._isPlaying = true;
     }
@@ -55,8 +53,6 @@ export class CutsceneEngine{
     stop() { 
         this._isPlaying = false;
         this.cutscene = null;
-        if (this._gameCameraPrevState) this._parent.GameCamera.toggle();
-        this._gameCameraPrevState = null;
     }
 
     update(delta) { 

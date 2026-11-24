@@ -9,8 +9,6 @@ export class BuildPanel extends HandlebarsApplication {
     constructor() {
         super();
         this._autoHide = true;
-        this.autoMode = game.settings.get("levels-3d-preview", "clipNavigatorFollowClient");
-        this.wireframe = false;
         this.initClipNavigation();
         if (game.Levels3DPreview.CONFIG.UI.BUILD_PANEL.FORCE_AUTOHIDE_OFF || !game.settings.get("levels-3d-preview", "loadingShown")) {
             this._autoHide = false;
@@ -47,10 +45,8 @@ export class BuildPanel extends HandlebarsApplication {
 
     async _prepareContext(options) {
         const data = {};
-        this.isGC = game.settings.get("levels-3d-preview", "enableGameCamera") && (canvas.scene.getFlag("levels-3d-preview", "enableGameCamera") ?? true);;
         this.isGM = game.user.isGM;
         this.isFog = canvas.scene.getFlag("levels-3d-preview", "enableFog") ?? false;
-        data.isGC = this.isGC;
         data.isGM = this.isGM;
         data.isFog = this.isFog;
         const levels = (canvas.scene.flags.levels?.sceneLevels ?? [])
@@ -66,7 +62,6 @@ export class BuildPanel extends HandlebarsApplication {
                 };
             });
         this.showRange = levels.length > 0;
-        data.autoMode = this.autoMode;
         data.showRange = this.showRange;
         if (this.showRange) {
             this.lowestLevel = levels.reduce((a, b) => {
@@ -113,7 +108,7 @@ export class BuildPanel extends HandlebarsApplication {
         html.querySelector("#clip-navigation-fog")?.classList.add("clip-navigation-enabled");
         this.insertMinimizeButton(true);
         this.insertMinimizeButton();
-        html.querySelector("#game-camera-toggle")?.classList.toggle("clip-navigation-enabled", game.Levels3DPreview.GameCamera.enabled);
+        game.Levels3DPreview.tacticalCamera.refreshButton();
         setTimeout(() => {
             if (this._autoHide) {
                 html.classList.add("minimized");
@@ -161,7 +156,6 @@ export class BuildPanel extends HandlebarsApplication {
 
         html.querySelectorAll("input").forEach(el => el.addEventListener("input", (event) => this._onRangeChange(event)));
 
-        html.querySelector("#game-camera-toggle")?.classList.toggle("clip-navigation-enabled", game.Levels3DPreview.GameCamera.enabled);
         html.querySelector("#clip-navigation-fog")?.classList.toggle("clip-navigation-enabled", (canvas.scene.getFlag("levels-3d-preview", "fogDistance") ?? 3000) / factor === game.Levels3DPreview.scene.fog?.far);
 
         html.querySelectorAll(".clip-navigation-btn").forEach(btn => btn.addEventListener("click", (event) => {
@@ -298,41 +292,18 @@ export class BuildPanel extends HandlebarsApplication {
             visible: () => true,
             callback: () => game.Levels3DPreview.setCameraToControlled(),
         },
-        // {
-        //     id: "clip-navigation-automode",
-        //     name: "levels3dpreview.clipNavigator.automode",
-        //     icon: "fas fa-street-view",
-        //     toggle: true,
-        //     visible: () => this.showRange,
-        //     callback: (e) => {
-        //         this.autoMode = !this.autoMode;
-        //         game.settings.set("levels-3d-preview", "clipNavigatorFollowClient", this.autoMode);
-        //         e.target.classList.toggle("clip-navigation-enabled");
-        //     },
-        // },
         {
-            id: "clip-navigation-lock",
-            name: "levels3dpreview.clipNavigator.lockon",
-            icon: "fas fa-lock",
+            id: "tactical-camera",
+            name: "levels3dpreview.clipNavigator.tacticalCamera",
+            icon: "fas fa-chess-knight",
             toggle: true,
-            visible: () => this.isGC,
+            visible: () => true,
             callback: (e) => {
-                game.Levels3DPreview.GameCamera.lock = !game.Levels3DPreview.GameCamera.lock;
-                e.target.classList.toggle("clip-navigation-enabled", game.Levels3DPreview.GameCamera.lock);
+                e.target.blur();
+                game.Levels3DPreview.tacticalCamera.toggle();
             },
         },
         //GM
-        {
-            id: "game-camera-toggle",
-            name: "levels3dpreview.clipNavigator.gamecamera",
-            icon: "fas fa-location-arrow",
-            toggle: true,
-            visible: () => this.isGM && this.isGC,
-            callback: (e) => {
-                game.Levels3DPreview.GameCamera.toggle();
-                e.target.classList.toggle("clip-navigation-enabled", game.Levels3DPreview.GameCamera.enabled);
-            },
-        },
         // RememberV14
         // {
         //     id: "clip-navigation-sync",
@@ -363,17 +334,6 @@ export class BuildPanel extends HandlebarsApplication {
                     game.Levels3DPreview.camera.updateProjectionMatrix()
                 }
                 e.target.classList.toggle("clip-navigation-enabled", game.Levels3DPreview.scene.fog.far == fogDistance);
-            },
-        },
-        {
-            id: "clip-navigation-wireframe",
-            name: "levels3dpreview.clipNavigator.wireframe",
-            icon: "fas fa-low-vision",
-            toggle: true,
-            visible: () => this.isGM,
-            callback: (e) => {
-                this.wireframe = !this.wireframe;
-                e.target.classList.toggle("clip-navigation-enabled", this.wireframe);
             },
         },
         {
@@ -422,6 +382,15 @@ export class BuildPanel extends HandlebarsApplication {
     
     BUILD_PANEL_BUTTONS_BASE = [
         {
+            id: "mapmaker",
+            name: "Map Maker",
+            icon: "fas fa-compass-drafting",
+            visible: () => true,
+            disabled: true,
+            img: "modules/levels-3d-preview/assets/previews/preview-mapmaker.webp",
+            tooltip: "Paint terrain, build dungeons and buildings, and furnish them in minutes",
+        },
+        {
             id: "props",
             name: "Props",
             icon: "fas fa-tree",
@@ -431,24 +400,6 @@ export class BuildPanel extends HandlebarsApplication {
             },
         },
         {
-            id: "environment",
-            name: "Environment",
-            icon: "fas fa-cloud-bolt-sun",
-            visible: () => true,
-            disabled: true,
-            img: "modules/levels-3d-preview/assets/previews/preview-environment.webp",
-            tooltip: "Change the skybox, time of day and weather",
-        },
-        {
-            id: "terrain",
-            name: "Terrain",
-            icon: "fas fa-mountain",
-            visible: () => true,
-            disabled: true,
-            img: "modules/levels-3d-preview/assets/previews/preview-terrain.webp",
-            tooltip: "Quickly generate terrain with a variety of options",
-        },
-        {
             id: "materials",
             name: "Materials",
             icon: "fas fa-circle-half-stroke",
@@ -456,15 +407,6 @@ export class BuildPanel extends HandlebarsApplication {
             disabled: true,
             img: "modules/levels-3d-preview/assets/previews/preview-materials.webp",
             tooltip: "Assign materials to tiles and quickly change their appearance",
-        },
-        {
-            id: "roombuilder",
-            name: "Dungeons & Interiors",
-            icon: "fas fa-block-brick",
-            visible: () => true,
-            disabled: true,
-            img: "modules/levels-3d-preview/assets/previews/preview-roombuilder.webp",
-            tooltip: "Create dungeons, caves and buildings interiors",
         },
         {
             id: "effects",

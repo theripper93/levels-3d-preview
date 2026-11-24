@@ -109,13 +109,12 @@ export class FirstPersonController {
         if (!token3d?.mesh) return;
         const camera = this.camera;
         const controls = this.controls;
+        this.parent.tacticalCamera.release(true);
         this.saved = {
             fov: camera.fov,
             near: camera.near,
-            gameCamera: this.parent.GameCamera.enabled,
             controls: Object.fromEntries(CONTROL_FIELDS.map((key) => [key, controls[key]])),
         };
-        if (this.parent.GameCamera.enabled) this.parent.GameCamera.toggle();
         this.parent.stopCameraAnimation();
         this.tokenId = token.id;
         this.yaw = THREE.MathUtils.degToRad(token.document.rotation ?? 0);
@@ -147,10 +146,8 @@ export class FirstPersonController {
             const diff = Math.abs(rotation - current);
             if (Math.min(diff, 360 - diff) >= 0.5) token.document.update({ rotation });
         }
-        const gameCamera = this.saved?.gameCamera;
         this.reset();
         if (token3d?.mesh) this.placeBehind(token3d);
-        if (gameCamera) this.parent.GameCamera.toggle();
     }
 
     reset() {
@@ -183,7 +180,7 @@ export class FirstPersonController {
         this.camera.position.copy(position);
         this.controls.target.copy(token3d.mid);
         this.camera.lookAt(this.controls.target);
-        if (this.controls._lockZero) this.parent._onCameraChange();
+        this.parent._onCameraChange();
         this.controls.update();
     }
 
@@ -454,6 +451,8 @@ export class FirstPersonController {
             if (event.type === "mousedown" && event.button === 0 && event.target === this.domElement && !this.lockUnsupported) {
                 event.stopImmediatePropagation();
                 this.requestLock(true);
+            } else if (event.type === "mousemove" && this.lockFailed && event.target === this.domElement) {
+                this.look(event.movementX, event.movementY);
             }
             return;
         }

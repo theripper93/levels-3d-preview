@@ -1,6 +1,34 @@
 {
     "TYPES.RegionBehavior.levels-3d-preview.obscureVision": "Obscure 3D Vision",
     "levels3dpreview": {
+        "assetBrowser": {
+            "title": "Asset Browser",
+            "search": "Search assets",
+            "category": "Category",
+            "all": "All assets",
+            "folders": "Folders",
+            "randomize": "Randomize",
+            "randomRotation": "Random rotation",
+            "randomScale": "Random scale",
+            "colorVariation": "Color variation",
+            "placement": "Placement",
+            "snapGrid": "Snap to grid",
+            "alignSurface": "Align to surface",
+            "center": "Center on cursor",
+            "collision": "Collision",
+            "blockMovement": "Block movement",
+            "blockSight": "Block sight",
+            "cameraCollision": "Camera collider",
+            "appearance": "Appearance",
+            "scale": "Scale",
+            "angle": "Angle",
+            "tint": "Tint",
+            "lock": "Lock or Unlock Selected Tiles",
+            "lockNone": "Select one or more tiles to lock or unlock.",
+            "locked": "Tiles locked.",
+            "unlocked": "Tiles unlocked.",
+            "tour": "Tour"
+        },
         "quickScene": {
             "label": "Quick 3D Scene",
             "mapMaker": "Start in Map Maker"
@@ -11,11 +39,10 @@
         "controls": {
             "preview3d": "Toggle 3D Mode",
             "3dtools": "3D Canvas Tools",
-            "miniCanvas": "Popout/Restore Canvas",
             "tile3dPolygon": "Draw Shape to Extrude",
             "tips": {
                 "templatePlacement": "3D Template Placement: Mouse Wheel to Rotate. Control + Mouse Wheel to change elevation. Alt + Mouse Wheel to Tilt.",
-                "regionPlacement": "3D Region Placement: Mouse Wheel to Rotate. Control + Mouse Wheel to raise or lower (hold Shift for finer steps)."
+                "regionPlacement": "3D Region Placement: Control + Mouse Wheel to rotate (Shift for larger steps). Alt + Mouse Wheel to raise or lower (add Shift for finer steps)."
             },
             "loading": {
                 "load": "Loading 3D Canvas...",
@@ -28,7 +55,7 @@
             "loadingScreen": {
                 "navtools": "Scene Navigation tools (left of ",
                 "showcontrols": "Show Controls (Toggle)",
-                "togglecamera": "Toggle Game Camera",
+                "togglecamera": "Toggle Tactical / Free Camera (K)",
                 "cameracontrols": "Camera Controls",
                 "tokencontrols": "Token Controls",
                 "pan": "Pan",
@@ -36,8 +63,6 @@
                 "zoom": "Zoom",
                 "topdown": "Top-Down",
                 "firstperson": "First-Person",
-                "unlock": "Un-lock",
-                "lockon": "Lock-On",
                 "move": "Move",
                 "elevation": "Fly",
                 "snapping": "Snap to Ground",
@@ -72,13 +97,11 @@
             "noActiveScene": "3D Canvas: No Active Scene found. A scene has been activated automatically, please Reload the page.",
             "noScenes": "3D Canvas: No Scenes found. The default scene has been created, please Reload the page.",
             "attachmentNotFound": "3D Canvas: Attachment not found. Token: %token% | Attachment: %attachment%",
-            "gamecameradisabled": "3D Canvas: Disabling Game Camera - Game Camera is enabled but 'Use 3D Geometry for sight calculations' is disabled.",
             "filenotsupported": "File format not supported or missing",
             "nogm": "3D Canvas: A GM must be connected to perform this action.",
             "nomapgencells": "The Dynamic Mesh map has no cells or valid materials.",
             "toofarfromdoor": "Your Token is too far to open the door",
             "tokenNotGrounded": "The attempted movement is not allowed, the token is not grounded.",
-            "3dnotactive": "Cannot open canvas popout, the 3D mode is not active.",
             "canping": "User lacks permission to display pings on the map.",
             "canpingpan": "User lacks permission to send camera position.",
             "overmaxelevation": "The attempted movement exceeds the maximum elevation of this scene.",
@@ -98,15 +121,13 @@
         "clipNavigator": {
             "disabled": "Show All",
             "sync": "Sync with Players",
-            "gamecamera": "Toggle Game Camera",
+            "tacticalCamera": "Toggle Tactical Camera (Token Layer)",
             "syncNotification": "Level View for {{level}} Synced with all Players",
             "cameraToToken": "Focus Camera on Selected Token",
             "automode": "Follow Mode",
             "controls": "Show Controls",
-            "lockon": "Toggle Lock-On",
             "performance": "Set Performance Mode",
             "performancereport": "Performance & Optimization",
-            "wireframe": "Toggle Colliders",
             "fog": "Toggle Distance Fog"
         },
         "mapgen": {
@@ -175,22 +196,25 @@
         "sharing": {
             "sharemap": {
                 "agreement": "By sharing this map, you confirm that you have the right to share it and that doing so follows the terms for all assets used. The map will be stored on the 3D Canvas server and may be removed at any time.",
-                "imageinfo": "Please upload a screenshot of the map on imgur and paste the link in the image field. If correct the image will show in the preview.",
                 "title": "Share Map",
                 "name": "Map Name",
                 "description": "Description",
                 "author": "Author",
                 "image": "Image",
                 "imageplaceholder": "Image URL",
+                "capture": "Capture",
+                "captureTooltip": "Use the current 3D view as the preview image",
+                "captureUnavailable": "Open this scene in 3D to capture a preview image",
+                "captureTooLarge": "The captured image is too large. Try a simpler view.",
+                "mapMaker": "Map Maker",
                 "share": "Share",
                 "error": "An error occurred",
-                "preview": "Image Preview",
                 "secret": "Secret Key",
                 "secretinfo": "The key isn't encrypted. Use the randomly generated key; it's saved for future updates.",
                 "missingfields": "3D Canvas - Map Sharing | One or more fields are missing or no Asset Pack was selected",
                 "gamemaster": "Gamemaster is not an allowed author name.",
                 "assetpacks": "Asset Packs",
-                "assetinfo": "The shared map will not include custom assets. Please mainly use assets included in the allowed packs. Ctrl + Click to select multiple packs.",
+                "assetinfo": "Custom assets are not included. Use assets from these packs.",
                 "confirm": {
                     "title": "Map Sharing confirmation",
                     "content": "Are you sure you want to share this map? Once shared you will not be able to edit the shared content."
@@ -205,7 +229,18 @@
                 "title": "Map Browser: {count} maps available",
                 "createJournal": "Create Scene notes with information about imported scenes",
                 "imported": "Imported scene",
-                "search": "Start typing to search..."
+                "search": "Search maps",
+                "sort": {
+                    "newest": "Newest",
+                    "popular": "Popular",
+                    "downloads": "Downloads"
+                },
+                "mapMaker": "Map Maker",
+                "by": "by {author}",
+                "winner": "This user won one of the 3D Mapmaking Contests",
+                "contestRules": "Contest Rules",
+                "contestEnds": " | Contest Ends: {date}",
+                "contestStarts": " | Next Contest Starts: {date}"
             },
             "packs": {
                 "baileywiki": "Baileywiki",
@@ -214,19 +249,16 @@
             },
             "error": "Too many requests, please try again later.",
             "scenedirbutton": "Browse Community 3D Maps",
-            "contextbutton": "Share Scene"
+            "contextbutton": "Share Scene",
+            "wikibutton": "Community Maps Guide"
         },
         "thumbnail": {
             "generate": "Generate 3D Thumbnail",
             "notActive": "The 3D thumbnail needs this scene open and fully loaded in 3D."
         },
         "keybindings": {
-            "dialog": {
-                "title": "3D Canvas: Remove Core Keybindings",
-                "content": "To avoid control conflicts, remove Foundry's WASD keybindings? You can still move tokens with the arrow keys or number pad."
-            },
-            "lockcamera": "Enable Camera Auto Mode (Game Camera Only)",
-            "gameCameraTopDown": "Toggle Top-Down Camera (Game Camera Only)",
+            "toggleTacticalCamera": "Toggle Tactical / Free Camera",
+            "toggleTacticalCameraHint": "Switches the Token layer between the tactical camera and the free camera. Other layers always use the free camera.",
             "removeWaypoint": "Remove Last Waypoint",
             "removeWaypointHint": "While dragging a token, measuring with the ruler tool or drawing a 3D shape, remove the last waypoint (cancels a token drag or ruler measurement when there are no waypoints left). Same as Right Click.",
             "toggleFirstPerson": "Toggle First-Person Camera",
@@ -527,14 +559,6 @@
                 "label": "Use 3D Geometry for sight calculations",
                 "notes": "3D tiles block sight and movement instead of the scene's walls."
             },
-            "enableGameCamera": {
-                "label": "Enable Game Camera",
-                "notes": "Uses the game camera in this scene. The game camera must also be turned on in the 3D Canvas settings."
-            },
-            "revealTokens": {
-                "label": "Reveal Selected Tokens",
-                "notes": "See through objects that hide your selected tokens from the camera."
-            },
             "model3d": {
                 "label": "3D Model"
             },
@@ -633,19 +657,8 @@
             "shaderAlt": {
                 "label": "Use Alternative Mode"
             },
-            "baseColor": {
-                "label": "Base Color"
-            },
             "disableBase": {
                 "label": "Hide Base"
-            },
-            "solidBaseMode": {
-                "label": "Base Mode",
-                "options": {
-                    "default": "Default",
-                    "merge": "Merge",
-                    "ontop": "On Top"
-                }
             },
             "draggable": {
                 "label": "Draggable"
@@ -973,15 +986,6 @@
                     "paused": "Paused"
                 }
             },
-            "baseStyle": {
-                "label": "Base Style",
-                "options": {
-                    "default": "Default (World Setting)",
-                    "merge": "Sunk Into Base",
-                    "ontop": "On Top of Base",
-                    "hidden": "Hidden"
-                }
-            },
             "doorDouble": {
                 "label": "Double Door",
                 "notes": "Splits the tile into two mirrored leaves, hinged at the outer edges, that open and close together. Animation angle and slide direction apply to the left leaf and are mirrored for the right one."
@@ -1008,13 +1012,14 @@
                     "high": "High"
                 }
             },
-            "exactTokenVisibility": {
-                "name": "Exact Token Visibility",
-                "hint": "Tests visibility at multiple points along each token's height."
-            },
-            "dynamicTokenVisibility": {
-                "name": "Dynamic Big Token Visibility",
-                "hint": "Tests visibility at more points for larger tokens. This may reduce performance."
+            "tokenVisibility": {
+                "name": "Token Visibility Test",
+                "hint": "How tokens are tested for visibility in 3D. Standard checks the corners and center of each token at its full height. Detailed adds more points on large tokens and is slower.",
+                "options": {
+                    "off": "Core (2D)",
+                    "standard": "Standard",
+                    "dynamic": "Detailed"
+                }
             },
             "regionsAlwaysFlat": {
                 "name": "Always Flat Regions",
@@ -1054,9 +1059,9 @@
                     "always": "Always"
                 }
             },
-            "enableDragRuler": {
-                "name": "Token Drag Ruler",
-                "hint": "Show a token's path and distance while dragging it in 3D. Doesn't affect the Ruler tool."
+            "revealTokens": {
+                "name": "Reveal Selected Tokens",
+                "hint": "See through objects that hide your selected tokens from the camera."
             },
             "rulerPathfinding": {
                 "name": "Ruler Pathfinding",
@@ -1064,35 +1069,7 @@
             },
             "resolutionMultiplier": {
                 "name": "Resolution Multiplier",
-                "hint": "Changing this also affects the 2D view. Refresh to apply."
-            },
-            "fogDebounce": {
-                "name": "Fog of War Update Throttling",
-                "hint": "If Disabled vision and Fog of War will be constantly refreshed."
-            },
-            "sharedContext": {
-                "name": "Shared Context",
-                "hint": "Improves Fog of War performance, but disables the Mini Canvas."
-            },
-            "preapplyShaders": {
-                "name": "Pre-Load Shaders",
-                "hint": "If Enabled, the shaders will be applied before the render loop starts. This will prevent stutters when activating shaders for the first time, but might cause a minor impact on performance and/or load times."
-            },
-            "showAdvanced": {
-                "show": "Show Advanced Settings",
-                "wiki": "Learn More",
-                "hide": "Hide Advanced Settings",
-                "name": "Always Show Advanced Settings",
-                "hint": "Show the advanced settings in configuration menus by default."
-            },
-            "navigatorAuto": {
-                "name": "Navigator Follow Mode",
-                "hint": "Automatically enables the Follow Mode for the 3D Navigator on scene load.",
-                "options": {
-                    "none": "Nobody",
-                    "players": "Players Only",
-                    "all": "Players and GMs"
-                }
+                "hint": "Changing this also affects the 2D view."
             },
             "canping": {
                 "name": "Players Can Ping",
@@ -1102,82 +1079,29 @@
                 "name": "Players Can Send Camera Position",
                 "hint": "Enable the ability to send the camera position for players (default Shift+Q)."
             },
-            "enableGameCamera": {
-                "name": "Enable Game Camera",
-                "hint": "Use the game-style camera. Players always use it; the GM can toggle it."
-            },
-            "gameCameraMinAngle": {
-                "name": "Min Angle",
-                "hint": "The minimum angle (vertical rotation) the camera can be rotated to."
-            },
-            "gameCameraMaxAngle": {
-                "name": "Max Angle",
-                "hint": "The maximum angle (vertical rotation) the camera can be rotated to."
-            },
-            "gameCameraMinAzimuth": {
-                "name": "Min Azimuth",
-                "hint": "The minimum azimuth (horizontal rotation) the camera can be rotated to."
-            },
-            "gameCameraMaxAzimuth": {
-                "name": "Max Azimuth",
-                "hint": "The maximum azimuth (horizontal rotation) the camera can be rotated to."
-            },
-            "gameCameraMaxZoom": {
-                "name": "Max Zoom",
-                "hint": "The maximum zoom level the camera can be set to. Higher values will zoom out more."
-            },
-            "gameCameraClipping": {
-                "name": "Clipping",
-                "hint": "If enabled hide objects covering the current camera target."
-            },
-            "gameCameraDefaultGm": {
-                "name": "GM Default On",
-                "hint": "Turn on the Game Camera by default for GMs when a scene loads."
-            },
-            "gameCameraAutoLock": {
-                "name": "Auto Re-Lock",
-                "hint": "Relock the Game Camera when its target changes."
-            },
-            "gameCameraWarnings": {
-                "name": "Show Warnings",
-                "hint": "If enabled, show warning for Game Camera functionality."
-            },
             "configApp": {
                 "title": "3D Canvas Configuration",
                 "name": "Global Settings",
                 "label": "Configure Global Settings",
-                "hint": "Configure Global 3D Canvas Settings. These settings will be applied to all clients. All other settings below this one will be client specific.",
+                "hint": "Configure 3D Canvas settings that apply to all clients.",
                 "save": "Save Settings",
                 "tabs": {
                     "canvas": "Canvas",
+                    "regions": "Regions",
                     "token": "Token",
                     "base": "Base",
                     "misc": "Misc",
                     "perm": "Permissions",
-                    "gc": "Game Camera",
                     "tools": "Tools"
                 }
             },
             "baseStyle": {
                 "name": "Base Style",
-                "hint": "The base style to use for all tokens.",
-                "options": {
-                    "image": "Image",
-                    "solid": "Solid",
-                    "solidindicator": "Solid + Direction Indicator"
-                }
-            },
-            "solidBaseMode": {
-                "name": "Base Mode",
-                "hint": "Merge will not move the original model, on top will offset the model to the top of the base.",
-                "options": {
-                    "merge": "Merge",
-                    "ontop": "On Top"
-                }
+                "hint": "The base style to use for all tokens."
             },
             "solidBaseColor": {
                 "name": "Base Color",
-                "hint": "The color of the solid base. Can be a hex value or a color name (or any CSS color). default is #1c1c1c"
+                "hint": "The color of the solid base. Can be a hex value or a color name (or any CSS color)."
             },
             "highlightCombat": {
                 "name": "Combat Highlight",
@@ -1187,86 +1111,22 @@
                 "name": "Turn Start Marker",
                 "hint": "When in combat, place a marker where a token started the turn. Only owners of that token will be able to see it."
             },
-            "selectedImage": {
-                "name": "Selection Highlight Image",
-                "hint": "The image to display when selecting a token."
-            },
-            "colorizeInidcator": {
-                "name": "Colorize Highlight Image",
-                "hint": "Match the highlight image to Foundry's default border colors."
-            },
-            "enableReticule": {
-                "name": "Enable Reticule",
-                "hint": "Enable the targeting reticule to highlight tokens the current user is targeting. This will create a reticule similar to the 2D one."
-            },
-            "hideTarget": {
-                "name": "Hide Target Indicator (if solid base)",
-                "hint": "Hide the target indicator if the token has the base enabled, the targets will be shown in the base ring highlight."
-            },
-            "hideEffects": {
-                "name": "Hide Effects",
-                "hint": "Hide the effects indicator floating above the token."
-            },
-            "rotateIndicator": {
-                "name": "Rotate Base",
-                "hint": "Rotate the 3D Base to match token Rotation."
-            },
             "templateEffects": {
                 "name": "Enable Template Effects",
-                "hint": "Automatically apply shaders to templates based on damage type. Currently only dnd5e is supported."
-            },
-            "templateAuto3D": {
-                "name": "Auto 3D Templates",
-                "hint": "When a third dimension is not specified for a template, infer it (e.g. a 5ft wide ray will be 5ft high)."
-            },
-            "lightHelpers": {
-                "name": "Enable Light Helpers",
-                "hint": "Enable the light helpers. This will show the light source and the area of effect of the light when in the lighting layer."
-            },
-            "paddingAppearance": {
-                "name": "Padding Appearance",
-                "hint": "The default appearance of the padding. This can be customized per scene as well."
-            },
-            "gridMode": {
-                "name": "Grid Draw Mode",
-                "hint": "Choose how to draw the grid. Fast supports square grids only. Mirror matches Foundry's grid but may reduce performance.",
-                "options": {
-                    "fast": "Fast",
-                    "mirror": "Mirror"
-                }
+                "hint": "Automatically add effects to templates based on damage type (dnd5e and pf2e) or on keywords in the template's name."
             },
             "autoPan": {
                 "name": "Auto Pan",
-                "hint": "Link camera panning to the 2D view. The camera follows tokens as they move. Press Ctrl+X to focus on the selected token when this is off.",
+                "hint": "Link camera panning to the 2D view. The camera follows tokens as they move. Press Shift+X to focus on the selected token when this is off.",
                 "options": {
                     "none": "Disabled",
                     "player": "Only Players",
                     "all": "Everyone"
                 }
             },
-            "conservativeHitbox": {
-                "name": "Conservative Hitbox",
-                "hint": "Restrict hitbox size for tokens so that it does not overflow outside the token's base."
-            },
-            "screenspacepanning": {
-                "name": "Enable Screen Space Panning",
-                "hint": "Enable screen space panning for the 3D view (map controls style)."
-            },
             "altCameraControls": {
                 "name": "Alternative Camera Controls",
                 "hint": "When enabled, Left click will not rotate the camera. Rotation will be on Middle Mouse button instead."
-            },
-            "enabledamping": {
-                "name": "Enable Damping",
-                "hint": "Enable damping for the camera. Disable this option if you experience motion sickness. (Shift+R in 3D view to reset the camera and apply this change)."
-            },
-            "camerafocuszoom": {
-                "name": "Enable Camera Focus Zoom",
-                "hint": "Zoom in on a token when focusing the camera with Shift+X."
-            },
-            "standupFace": {
-                "name": "Stand-ups Face Camera",
-                "hint": "2D Tokens displayed in a stand-up style will always face the camera."
             },
             "flatTokenStyle": {
                 "name": "2D Token Style",
@@ -1277,33 +1137,13 @@
                     "coin": "Coin (Top Down)"
                 }
             },
-            "useMultithreading": {
-                "name": "Use Multithreading",
-                "hint": "Improve Fog of War performance with multiple threads. Has no effect when Fog of War is off."
-            },
-            "miniCanvas": {
-                "name": "Enable Canvas Popout",
-                "hint": "Open the 2D canvas in a separate window when 3D mode starts."
-            },
             "pingsound": {
                 "name": "Ping Sound",
                 "hint": "Sound to play when pinging a location."
             },
             "preventNegative": {
                 "name": "Prevent Negative Elevation",
-                "hint": "Prevents token movement to go below the game board"
-            },
-            "outline": {
-                "name": "Outline",
-                "hint": "Outline canvas objects on hover and selection. Disable for better performance."
-            },
-            "fullTransparency": {
-                "name": "True Transparency",
-                "hint": "Improves transparent textures when they don't overlap. May cause visual glitches."
-            },
-            "globalCollision": {
-                "name": "Enable Global Collision",
-                "hint": "Enable collision for all tokens on the board."
+                "hint": "Prevents tokens from moving below the game board."
             },
             "antialiasing": {
                 "name": "Anti-Aliasing",
@@ -1328,10 +1168,6 @@
                     "high": "High"
                 }
             },
-            "disableLighting": {
-                "name": "Disable Shadows",
-                "hint": "Disable Shadows for better performance."
-            },
             "shadowQuality": {
                 "name": "Shadow Quality",
                 "hint": "The resolution of the shadows. Set to 'Disabled' to disable shadows.",
@@ -1348,34 +1184,13 @@
                 "name": "Enable Shaders",
                 "hint": "Enable shader special effects. Some of the effects can be performance intensive depending on the hardware and the amount. Disable for better performance."
             },
-            "enableEffects": {
-                "name": "Enable Effects",
-                "hint": "Enable weather and particle effects. Some of the effects can be performance intensive depending on the hardware and the amount. Disable for better performance."
-            },
             "softShadows": {
                 "name": "Soft Shadows",
-                "hint": "Enable soft shadows at a minor cost in performance. Requires refresh."
+                "hint": "Enable soft shadows at a minor cost in performance."
             },
             "regionShells": {
                 "name": "Region Effect Outlines",
                 "hint": "Show the glowing volume outline around regions with a 3D effect."
-            },
-            "resolution": {
-                "name": "Resolution",
-                "hint": "The resolution of the 3D canvas, this will affect performance.",
-                "options": {
-                    "full": "High",
-                    "half": "Medium",
-                    "quarter": "Low"
-                }
-            },
-            "cameralockzero": {
-                "name": "Prevent Negative Camera",
-                "hint": "Prevent camera to Pivot or Pan below zero (requires refresh)."
-            },
-            "debugMode": {
-                "name": "Debug Mode",
-                "hint": "Show helpful debug info for troubleshooting."
             },
             "waterQuality": {
                 "name": "Water Quality",
@@ -1408,9 +1223,9 @@
                 "name": "Remove Model Base",
                 "hint": "Removes the part of each token model named \"base\" in the model file."
             },
-            "tokenStem": {
-                "name": "Token Stem",
-                "hint": "Draws a clear pole from the ground to raised tokens, like a flight stand."
+            "enabledamping": {
+                "name": "Enable Damping",
+                "hint": "Enable damping for the camera. Disable this option if you experience motion sickness."
             }
         },
         "scatter": {
@@ -1462,11 +1277,11 @@
                 "dining": "Dining Room",
                 "greatHall": "Great Hall",
                 "corridor": "Corridor",
-                "sfCorridor": "Corridor",
+                "sfCorridor": "Sci-Fi Corridor",
                 "sfBridge": "Bridge",
                 "mdLiving": "Living Room",
-                "mdKitchen": "Kitchen",
-                "mdBedroom": "Bedroom",
+                "mdKitchen": "Modern Kitchen",
+                "mdBedroom": "Modern Bedroom",
                 "mdBathroom": "Bathroom",
                 "mdOffice": "Office",
                 "mdCafe": "Café",
@@ -1477,7 +1292,7 @@
                 "sfQuarters": "Crew Quarters",
                 "sfMess": "Mess Hall",
                 "sfMedBay": "Med Bay",
-                "sfArmory": "Armory",
+                "sfArmory": "Sci-Fi Armory",
                 "dgGuardRoom": "Guard Room",
                 "dgPrison": "Prison Cell",
                 "dgCrypt": "Crypt",
@@ -1730,7 +1545,7 @@
                 "sun": "Sun",
                 "ambient": "Ambient Light",
                 "background": "Background",
-                "wind": "Wind & Atmosphere",
+                "wind": "Weather",
                 "surface": "Surface Accumulation",
                 "particles": "Custom Particles",
                 "effects": "Effects",
@@ -2033,16 +1848,6 @@
                 },
                 "preset": "Preset",
                 "presetPlaceholder": "Choose a preset…"
-            },
-            "clipping": {
-                "name": "Clipping",
-                "description": "Fade away this tile in proximity of a token or the camera.",
-                "speed": "Speed",
-                "diameter": "Radius",
-                "heightOffset": "Height Offset",
-                "noiseScale": "Noise Scale",
-                "useCamera": "Use Camera",
-                "useCameraAdvanced": "Use Advanced Camera Calculations"
             },
             "windSway": {
                 "name": "Wind",
@@ -2474,8 +2279,8 @@
                     "content": "Click the 'Create Scene' button to create a new scene."
                 },
                 "step-2": {
-                    "title": "Enable Quick 3D Scene Creation",
-                    "content": "Check this box to enable the Quick 3D Scene Creation."
+                    "title": "Set Up the Scene for 3D",
+                    "content": "Check this box so the new scene opens ready for 3D."
                 },
                 "step-3": {
                     "title": "Create the Scene",
@@ -2499,7 +2304,7 @@
                 },
                 "step-8": {
                     "title": "Start Building!",
-                    "content": "You're ready to build your first scene with Quick Terrain and the 3D Scene Panel. When you're ready, explore the other tours."
+                    "content": "You're ready to build your first scene with the 3D Scene Panel. When you're ready, explore the other tours."
                 }
             },
             "tile-configuration": {
@@ -2589,20 +2394,8 @@
                     "content": "These toggles will let you decide if the placed assets should block sight and/or movement."
                 },
                 "step-6": {
-                    "title": "Painting",
-                    "content": "This button will toggle the Asset Painting mode. When enabled, you can click and drag on the scene to place multiple assets."
-                },
-                "step-7": {
                     "title": "Appearance",
                     "content": "Set each asset's scale, rotation, and tint here."
-                },
-                "step-8": {
-                    "title": "Utility",
-                    "content": "The utility tab contains quick shortcuts to batch actions."
-                },
-                "step-9": {
-                    "title": "Optimization",
-                    "content": "When you are done building your scene, use the 'Merge Tiles' button to merge all the similar tiles into a single tile to improve performance."
                 }
             },
             "quick-environment": {
@@ -2790,35 +2583,6 @@
                     "title": "Let's Start!",
                     "content": "Now that you know how to use the panel, let's start building! It's highly recommended to build on a flat surface."
                 }
-            },
-            "asset-browser-paint": {
-                "title": "Panel: Asset Browser - Painting",
-                "description": "This tour will guide you through the Asset Browser Painting mode.",
-                "requires": "You need to have the 3D Canvas Mapmaking Pack installed and the Asset Browser open to start this tour.",
-                "step-0": {
-                    "title": "Painting Mode",
-                    "content": "The Painting mode will let you scatter tiles on the scene quickly."
-                },
-                "step-1": {
-                    "title": "Select one or more Assets",
-                    "content": "To start painting, you need to select one or more assets in the Asset Browser. Click on an asset to select it or Ctrl+Click to select multiple assets."
-                },
-                "step-2": {
-                    "title": "Selection Notification",
-                    "content": "Once you have selected one or more assets, you will see a notification at the bottom of the window."
-                },
-                "step-3": {
-                    "title": "Painting: Rectangle",
-                    "content": "While the 'Place Tile' tool is enabled, you can click and drag on the scene to draw a rectangle. The rectangle will be filled with the selected assets."
-                },
-                "step-4": {
-                    "title": "Painting: Polygon",
-                    "content": "While the 'Polygon' tool is enabled, click and drag to start the polygon. While holding left mouse button, click right mouse button to add a point. Release the left mouse button once satisfied, if you don't close the shape assets will be scattered on the segment, otherwise they will fill the area."
-                },
-                "step-5": {
-                    "title": "Painting: Freehand",
-                    "content": "While the 'Select' tool is enabled, Hold Shift, then click and drag to place assets on the scene."
-                }
             }
         },
         "lightFx": {
@@ -2899,17 +2663,22 @@
             "title": "Merge Tiles",
             "occlusionGroup": " - Occlusion ID: ",
             "content": "Merging Tiles is an irreversible action, it's suggested to make a backup of the scene before merging high amounts of tiles.<br>You are about to merge <strong>%count% Tiles</strong>. Selected tiles will be excluded. Are you sure you want to continue?",
+            "contentSelected": "Merging Tiles is an irreversible action, it's suggested to make a backup of the scene before merging high amounts of tiles.<br>You are about to merge <strong>%count% Tiles</strong> from the selected tiles. Are you sure you want to continue?",
             "unmergeFailed": "Failed to split the merged tiles. The merged tiles were kept."
+        },
+        "tileHud": {
+            "playAnimation": "Play 3D Animation",
+            "pauseAnimation": "Pause 3D Animation"
         },
         "extrudeWalls": {
             "title": "Extrude Walls",
             "content": "This process will attempt to transform the walls in the scene into tiles. Are you sure you want to continue?"
         },
         "dynamicSkyConfig": {
-            "title": "Atmosphere",
+            "title": "Sky",
             "sceneConfig": {
-                "label": "Atmosphere",
-                "button": "Configure Atmosphere",
+                "label": "Sky",
+                "button": "Configure Sky",
                 "notes": "Lights the scene with a living sky: time of day, sun, moon, stars, clouds and fog.",
                 "notesEnabled": "The dynamic sky is lighting this scene, so the skybox and fog color settings are not used."
             },
@@ -2945,7 +2714,7 @@
             },
             "time": {
                 "label": "Time of Day",
-                "notes": "Hour of the day (0-24). Drag to preview, release to save. Time sync from the Lighting tab can change it."
+                "notes": "Hour of the day (0-24). Drag to preview, release to save. Time sync from the Sky & Light tab can change it."
             },
             "sky": "Sky",
             "clouds": "Clouds",
@@ -2991,6 +2760,208 @@
             },
             "cloudsScale": {
                 "label": "Clouds Scale"
+            },
+            "style": {
+                "label": "Style",
+                "notes": "How the sky looks. Underground styles need the Interior or Underground setting."
+            },
+            "undergroundStyle": {
+                "notes": "The ceiling and light of the cave or room. Outdoor styles need the Outdoor setting."
+            },
+            "styleGroups": {
+                "outdoor": "Outdoor",
+                "underground": "Underground"
+            },
+            "compiling": "Preparing sky...",
+            "styleStandard": "Standard"
+        },
+        "skyStyles": {
+            "realistic": {
+                "label": "Realistic"
+            },
+            "painted": {
+                "label": "Painted",
+                "fields": {
+                    "bands": "Color Bands",
+                    "brush": "Brush Strokes"
+                }
+            },
+            "deepSpace": {
+                "label": "Deep Space",
+                "fields": {
+                    "sunAzimuth": "Sun Direction",
+                    "sunElevation": "Sun Height",
+                    "stars": "Star Density",
+                    "milkyWay": "Milky Way",
+                    "nebula": "Nebula",
+                    "nebulaColor": "Nebula Color",
+                    "planet": "Planet"
+                },
+                "planets": {
+                    "none": "None",
+                    "moon": "Moon",
+                    "ringed": "Ringed Planet"
+                }
+            },
+            "arcane": {
+                "label": "Arcane",
+                "fields": {
+                    "moonSize": "Moon Size",
+                    "motes": "Light Motes",
+                    "glowColor": "Glow Color"
+                }
+            },
+            "shadowfell": {
+                "label": "Shadowfell",
+                "fields": {
+                    "sunAzimuth": "Sun Direction",
+                    "sunElevation": "Sun Height",
+                    "drain": "Color Drain",
+                    "lightning": "Lightning"
+                }
+            },
+            "hellscape": {
+                "label": "Hellscape",
+                "fields": {
+                    "sunAzimuth": "Sun Direction",
+                    "sunElevation": "Sun Height",
+                    "fireGlow": "Fire Glow",
+                    "ash": "Ash"
+                }
+            },
+            "planeOfFire": {
+                "label": "Plane of Fire",
+                "fields": {
+                    "flameColor": "Flame Color",
+                    "embers": "Embers",
+                    "speed": "Speed"
+                }
+            },
+            "planeOfWater": {
+                "label": "Plane of Water",
+                "fields": {
+                    "waterColor": "Water Color",
+                    "depth": "Depth",
+                    "caustics": "Caustics"
+                }
+            },
+            "planeOfAir": {
+                "label": "Plane of Air",
+                "fields": {
+                    "wind": "Wind Speed",
+                    "highClouds": "High Clouds",
+                    "seaColor": "Cloud Sea Color"
+                },
+                "hints": {
+                    "wind": "How fast both cloud layers drift.",
+                    "highClouds": "Clouds above the cloud sea."
+                }
+            },
+            "planeOfEarth": {
+                "label": "Plane of Earth",
+                "fields": {
+                    "veinColor": "Vein Color",
+                    "glow": "Glow",
+                    "dust": "Dust"
+                }
+            },
+            "twinMoons": {
+                "label": "Twin Moons",
+                "fields": {
+                    "secondColor": "Second Moon Color",
+                    "secondSize": "Second Moon Size",
+                    "secondPhase": "Second Moon Phase",
+                    "thirdMoon": "Third Moon",
+                    "thirdColor": "Third Moon Color",
+                    "thirdSize": "Third Moon Size",
+                    "thirdPhase": "Third Moon Phase"
+                }
+            },
+            "aurora": {
+                "label": "Aurora",
+                "fields": {
+                    "color": "Lower Color",
+                    "secondColor": "Upper Color",
+                    "intensity": "Intensity",
+                    "speed": "Speed"
+                }
+            },
+            "alienPlanet": {
+                "label": "Alien Planet",
+                "fields": {
+                    "atmosphere": "Atmosphere Color",
+                    "secondSun": "Second Sun Color",
+                    "planetColor": "Planet Color",
+                    "planetSize": "Planet Size",
+                    "rings": "Rings"
+                }
+            },
+            "nebula": {
+                "label": "Nebula",
+                "fields": {
+                    "color": "Color",
+                    "secondColor": "Second Color",
+                    "glow": "Glow",
+                    "drift": "Drift",
+                    "stars": "Star Density",
+                    "direction": "Light Direction"
+                }
+            },
+            "stationView": {
+                "label": "Station View",
+                "fields": {
+                    "planet": "Planet",
+                    "size": "Planet Size",
+                    "planetDirection": "Planet Direction",
+                    "spin": "Planet Spin",
+                    "sunAzimuth": "Sun Direction",
+                    "sunElevation": "Sun Height"
+                },
+                "planets": {
+                    "terran": "Ocean World",
+                    "desert": "Desert World",
+                    "ice": "Ice World",
+                    "gas": "Gas Giant",
+                    "lava": "Lava World"
+                }
+            },
+            "underdark": {
+                "label": "Underdark",
+                "fields": {
+                    "crystalColor": "Crystal Color",
+                    "fungusColor": "Fungus Color",
+                    "glow": "Glow",
+                    "ambient": "Ambient Light"
+                }
+            },
+            "cavern": {
+                "label": "Cavern",
+                "fields": {
+                    "rockColor": "Rock Color",
+                    "dripColor": "Drip Color",
+                    "drips": "Drips",
+                    "mist": "Mist",
+                    "ambient": "Ambient Light"
+                }
+            },
+            "magmaChamber": {
+                "label": "Magma Chamber",
+                "fields": {
+                    "magmaColor": "Magma Color",
+                    "rockColor": "Rock Color",
+                    "glow": "Glow",
+                    "embers": "Embers",
+                    "ambient": "Ambient Light"
+                }
+            },
+            "dungeonVault": {
+                "label": "Dungeon Vault",
+                "fields": {
+                    "stoneColor": "Stone Color",
+                    "torchColor": "Torch Color",
+                    "torches": "Torchlight",
+                    "ambient": "Ambient Light"
+                }
             }
         }
     }

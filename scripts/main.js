@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { OrbitControls } from "./three/OrbitControls.js";
-import { GameCamera } from "./handlers/GameCamera.js";
+import { TacticalCamera } from "./handlers/tacticalCamera.js";
 import { FirstPersonController } from "./handlers/firstPerson.js";
 import { TransformControls } from "./three/TransformControls.js";
 import { GLTFLoader } from "./three/GLTFLoader.js";
@@ -36,7 +36,8 @@ import { disposeScene } from "./helpers/disposeScene.js";
 import { Exporter } from "./helpers/exporter.js";
 import { turnStartMarker } from "./systems/turnStartMarker.js";
 import { ParticleEngine } from "./systems/particleSystem.js";
-import { LightWarmup } from "./systems/lightWarmup.js";
+import { LightWarmup, WARMUP_LAYER } from "./systems/lightWarmup.js";
+import { createGizmoWarmupProxies } from "./entities/effects/placeableGizmo.js";
 import { ClusterManager } from "./lighting/cluster/clusterManager.js";
 import { installClusterChunks } from "./lighting/cluster/clusterChunks.js";
 import { ShadowBatcher } from "./systems/shadowBatcher.js";
@@ -54,7 +55,6 @@ import { DetectionLook } from "./handlers/detectionLook.js";
 import { ShaderHandler, shaders } from "./shaders/ShaderLib.js";
 import { DecalGeometry } from "three/addons/geometries/DecalGeometry.js";
 import { WorkerHandler } from "./helpers/workers.js";
-import { MiniCanvas } from "./apps/miniCanvas.js";
 import { throttle, sleep } from "./helpers/utils.js";
 import { BokehPass } from "three/addons/postprocessing/BokehPass.js";
 import { loadUserEmotes, Ping } from "./entities/effects/ping.js";
@@ -84,8 +84,8 @@ import { AssetBrowser } from "./apps/assetBrowser.js";
 import { TokenBrowser, setHudHook } from "./apps/tokenBrowser.js";
 import { setLevelsHooks } from "./systems/sceneLevels.js";
 import { canSwitchLevel, clearParkedTiles, setLevelSwitchHooks, switchLevel } from "./systems/levelSwitch.js";
-import { createTargetGeometry } from "./entities/effects/target.js";
-import { injectLegacyLights } from "./three/legacyLights.js";import { Socket } from "./lib/socket.js";
+import { refreshSceneSettings, setSceneRefreshHooks } from "./systems/sceneRefresh.js";
+import { createTargetGeometry } from "./entities/effects/target.js";import { injectLegacyLights } from "./three/legacyLights.js";import { Socket } from "./lib/socket.js";
 import { renderSceneToImage } from "./helpers/export2d.js";
 import { setThumbnailHooks, captureSceneThumbnail, updateSceneThumbnail } from "./helpers/sceneThumbnail.js";
 import { BuildPanelApp } from "./apps/BuildPanelApp.js";
@@ -98,6 +98,10 @@ import { acceptFrame } from "./helpers/frameRate.js";
 import { injectMatrixWorld, updateSceneMatrixWorld } from "./three/matrixWorld.js";
 import { installFixedSamplers } from "./three/fixedSamplers.js";
 import { setSightCeilingHooks } from "./systems/sightCeiling.js";
+import { Drawings3D, installPaintChunks } from "./systems/drawings3d.js";
+import { DrawingInput3D } from "./handlers/drawingInput3d.js";
+import { RegionInput3D } from "./handlers/regionInput3d.js";
+import { updateRegionLabels } from "./entities/effects/regionOutline.js";
 
 // import "../scss/module.scss";
 
@@ -114,6 +118,7 @@ injectFoWShaders(THREE);
 installClusterChunks(THREE);
 installRevealChunks(THREE);
 vfx.surface.installSurfaceChunks(THREE);
+installPaintChunks(THREE);
 injectThreeModifications(THREE);
 injectLegacyLights();
 injectMatrixWorld();
@@ -136,7 +141,9 @@ GlobalIllumination.setHooks();
 BuildPanel.setHooks();
 setLevelsHooks();
 setLevelSwitchHooks();
+setSceneRefreshHooks();
 setSightCeilingHooks();
+Drawings3D.setHooks();
 setHudHook();
 setSharingHooks();
 setThumbnailHooks();
@@ -186,7 +193,6 @@ Hooks.once("ready", () => {
     Hooks.callAll("3DCanvasInit", game.Levels3DPreview);
     loadUserEmotes();
     game.Levels3DPreview.cacheModels();
-    if (!game.settings.get("levels-3d-preview", "removeKeybindingsPrompt")) game.Levels3DPreview.interactionManager.removeWASDBindings();
     Hooks.callAll("3DCanvasReady", game.Levels3DPreview);
 
     Hooks.on("updateScene", () => {
@@ -280,7 +286,7 @@ Hooks.on("renderDialogV2", (dialog, html, data) => {
                         auto3d: true,
                         object3dSight: true,
                         enablePlayers: true,
-                        exr: game.modules.get("canvas3dcompendium") ? "modules/canvas3dcompendium/assets/Beautiful-Sky/2K/Sky_LowPoly_01_Day_a.webp" : "modules/levels-3d-preview/assets/skybox/venice_sunrise_1k.exr",
+                        dynamicSky: { enabled: true },
                         skybox: "",
                         renderBackground: false,
                     },
@@ -314,7 +320,6 @@ class Levels3DPreview {
         this.scatter = scatterApi;
         this.sceneEssentials = { fields: essentialsFields, update: essentialsUpdate };
         this.mapMaker = { computeBounds: computeMapMakerBounds, computeBoundsAsync: computeMapMakerBoundsAsync, buildGeometry: buildMapMakerGeometry, modelBounds, previewKitHue, TerrainState, MAX_TERRAIN_LAYERS, ROAD_STYLES, roadSpline, WATER_TYPES, waterDims };
-        this._fullTransparency = game.settings.get("levels-3d-preview", "fullTransparency");
         this.socket = Socket;
         Socket.register("Particle3D", this.particleSocket);
         Socket.register("Particle3DStop", this.Particle3DStop);
@@ -331,7 +336,6 @@ class Levels3DPreview {
         this.workers = new WorkerHandler();
         initSharing(this);
         this.createTargetGeometry = createTargetGeometry;
-        this.debugMode = game.settings.get("levels-3d-preview", "debugMode");
         this.CONFIG = {
             COLORS: {
                 COMBAT: new THREE.Color("#005eff"),
@@ -397,7 +401,6 @@ class Levels3DPreview {
             tokenAnimations: defaultTokenAnimations,
             skybox: {
                 sky: "modules/levels-3d-preview/assets/skybox/humble/humble_bk.jpg",
-                exr: "modules/levels-3d-preview/assets/skybox/venice_sunrise_1k.exr",
             },
             bokeh: {
                 off: null,
@@ -459,6 +462,7 @@ class Levels3DPreview {
                     id: "sharpIndicator",
                     path: "modules/levels-3d-preview/assets/tokenBases/baseSharpIndicator.glb",
                     name: game.i18n.localize(`levels3dpreview.baseStyles.sharpIndicator`),
+                    facing: true,
                     scale: 0.9,
                 },
                 {
@@ -471,6 +475,7 @@ class Levels3DPreview {
                     id: "jb2around1Indicator",
                     path: "modules/levels-3d-preview/assets/tokenBases/JB2A/jb2around1Indicator.glb",
                     name: game.i18n.localize(`levels3dpreview.baseStyles.jb2around1Indicator`),
+                    facing: true,
                     scale: 0.9,
                 },
                 {
@@ -483,6 +488,7 @@ class Levels3DPreview {
                     id: "jb2around2Indicator",
                     path: "modules/levels-3d-preview/assets/tokenBases/JB2A/jb2around2Indicator.glb",
                     name: game.i18n.localize(`levels3dpreview.baseStyles.jb2around2Indicator`),
+                    facing: true,
                     scale: 0.9,
                 },
                 {
@@ -495,6 +501,7 @@ class Levels3DPreview {
                     id: "jb2ahex1Indicator",
                     path: "modules/levels-3d-preview/assets/tokenBases/JB2A/jb2ahex1Indicator.glb",
                     name: game.i18n.localize(`levels3dpreview.baseStyles.jb2ahex1Indicator`),
+                    facing: true,
                     scale: 1.2,
                 },
                 {
@@ -507,6 +514,7 @@ class Levels3DPreview {
                     id: "jb2ahex2Indicator",
                     path: "modules/levels-3d-preview/assets/tokenBases/JB2A/jb2ahex2Indicator.glb",
                     name: game.i18n.localize(`levels3dpreview.baseStyles.jb2ahex2Indicator`),
+                    facing: true,
                     scale: 1.2,
                 },
                 {
@@ -519,6 +527,7 @@ class Levels3DPreview {
                     id: "jb2asquare1Indicator",
                     path: "modules/levels-3d-preview/assets/tokenBases/JB2A/jb2asquare1Indicator.glb",
                     name: game.i18n.localize(`levels3dpreview.baseStyles.jb2asquare1Indicator`),
+                    facing: true,
                     scale: 0.9,
                 },
                 {
@@ -531,6 +540,7 @@ class Levels3DPreview {
                     id: "jb2asquare2Indicator",
                     path: "modules/levels-3d-preview/assets/tokenBases/JB2A/jb2asquare2Indicator.glb",
                     name: game.i18n.localize(`levels3dpreview.baseStyles.jb2asquare2Indicator`),
+                    facing: true,
                     scale: 0.9,
                 },
                 {
@@ -540,12 +550,8 @@ class Levels3DPreview {
                     scale: 0.9,
                 },
             ],
-            models: {
-                targetIndicator: "modules/levels-3d-preview/assets/targetIndicator.glb",
-            },
-            textures: {
-                reticule: "modules/levels-3d-preview/assets/animatedreticule.webm",
-            },
+            models: {},
+            textures: {},
         };
         this.UTILS = {
             autoMergeTiles,
@@ -613,7 +619,6 @@ class Levels3DPreview {
                 }),
             },
         };
-        this.targetTextures = {};
         this.Classes = {
             Template3D: Template3D,
         };
@@ -647,7 +652,6 @@ class Levels3DPreview {
 
     init3d() {
         Hooks.callAll("3DCanvasPreInit", this);
-        this._sharedContext = game.settings.get("levels-3d-preview", "sharedContext");
         this.camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.01, 100);
         this.camera.position.set(8, 2, 8).setLength(8);
         this.camera.zoom = 1;
@@ -657,23 +661,20 @@ class Levels3DPreview {
         this.scene.updateMatrixWorld = updateSceneMatrixWorld;
         this.material = new THREE.MeshNormalMaterial();
 
-        if (this._sharedContext) {
-            const gl = canvas.app.renderer.context.gl;
-            gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
-            gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
-        }
-        this.renderer = this._sharedContext ? new THREE.WebGLRenderer({ context: canvas.app.renderer.context.gl }) : new THREE.WebGLRenderer();
+        const gl = canvas.app.renderer.context.gl;
+        gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
+        gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
+        this.renderer = new THREE.WebGLRenderer({ context: gl });
         this.renderer.setSize(window.innerWidth, window.innerHeight);
         this.lightWarmup = new LightWarmup(this);
         this.clusterManager = new ClusterManager(this);
-        if (this._sharedContext) canvas.app.ticker.add(() => this.animation(performance.now()), null, PIXI.UPDATE_PRIORITY.UTILITY);
-        else this.renderer.setAnimationLoop(this.animation.bind(this));
+        canvas.app.ticker.add(() => this.animation(performance.now()), null, PIXI.UPDATE_PRIORITY.UTILITY);
         this.renderer.shadowMap.enabled = true;
         this.renderer.outputColorSpace = THREE.SRGBColorSpace;
 
         const pixelRatio = game.settings.get("core", "pixelRatioResolutionScaling") ? window.devicePixelRatio : 1;
 
-        this.resolutionMulti = pixelRatio * game.settings.get("levels-3d-preview", "resolutionMultiplier"); //game.settings.get("levels-3d-preview", "resolution") *
+        this.resolutionMulti = pixelRatio * game.settings.get("levels-3d-preview", "resolutionMultiplier");
 
         this.renderer.setPixelRatio(this.resolutionMulti);
         this.renderer.alpha = false;
@@ -682,6 +683,7 @@ class Levels3DPreview {
         this.shadowBatcher = new ShadowBatcher(this);
         this.kitBatcher = new KitBatcher(this);
         this.reveal = new RevealSystem(this);
+        this.drawings = new Drawings3D(this);
         installFixedSamplers(this.renderer);
 
         this.renderer.debug.checkShaderErrors = true;
@@ -692,14 +694,15 @@ class Levels3DPreview {
         this.controls = new OrbitControls(this.camera, this.renderer.domElement);
         this.controls.listenToKeyEvents(document);
         this.controls.keyPanSpeed = 35;
-        this.controls._lockZero = game.settings.get("levels-3d-preview", "cameralockzero");
-        game.settings.get("levels-3d-preview", "cameralockzero") && this.controls.addEventListener("change", this._onCameraChange.bind(this));
+        this.controls.addEventListener("change", this._onCameraChange.bind(this));
         this.interactionManager = new this.CONFIG.UI.InteractionManager(this);
         this.interactionManager.activateListeners();
+        this.drawingInput = new DrawingInput3D(this);
+        this.regionInput = new RegionInput3D(this);
         this.cursors = new Cursors3D(this);
         this.cutsceneEngine = new CutsceneEngine(this);
 
-        this.GameCamera = new GameCamera(this.camera, this.controls, this);
+        this.tacticalCamera = new TacticalCamera(this);
         this.firstPerson = new FirstPersonController(this);
         //clipping
         this.renderer.localClippingEnabled = true;
@@ -710,23 +713,6 @@ class Levels3DPreview {
         this.pmremGenerator = new THREE.PMREMGenerator(this.renderer);
         this.pmremGenerator.compileEquirectangularShader();
         this.presetMaterialHandler = new PresetMaterialHandler(this.CONFIG.presetMaterials);
-        this.models.target = await (await this.helpers.loadModel(this.CONFIG.models.targetIndicator)).model;
-        this.models.target.children[0].material = new THREE.MeshBasicMaterial();
-        //load targeting reticule
-        const tex = await this.helpers.loadTexture(this.CONFIG.textures.reticule);
-        const reticule = new THREE.Sprite(
-            new THREE.SpriteMaterial({
-                map: tex,
-                alphaTest: 0.9,
-                color: game.user.color.css,
-                depthWrite: false,
-                depthTest: false,
-            }),
-        );
-        //set reticule to be always in front of camera
-        reticule.renderOrder = 1e20;
-
-        this.models.reticule = reticule;
         this._init = true;
     }
 
@@ -744,7 +730,6 @@ class Levels3DPreview {
         const el = document.querySelector(".levels-3d-preview-loading-screen");
         el.classList.remove("hidden");
         el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 300, fill: "forwards" });
-        this._fullTransparency = game.settings.get("levels-3d-preview", "fullTransparency");
         this._ready = false;
         this._settling = false;
         this._isFirstFrame = true;
@@ -776,12 +761,12 @@ class Levels3DPreview {
         }
         this.transformControls?.dispose();
         this.transformControls = new TransformControls(this.camera, this.renderer.domElement);
-        this.transformControls.size = 1.4;
+        this.transformControls.size = 0.8;
         this.controlledGroup = new THREE.Group();
         this.controlledGroup.userData = {
             entity3D: {
                 updatePositionFrom3D: () => {
-                    game.Levels3DPreview.interactionManager._onTransformEnd();
+                    game.Levels3DPreview.interactionManager._onTransformEnd(null, true);
                 },
                 mesh: this.controlledGroup,
                 elevation3d: 0,
@@ -789,21 +774,21 @@ class Levels3DPreview {
                 draggable: true,
                 embeddedName: "Tile",
                 _onClickLeft: (e) => {
-                    const tile3d = this.tiles[canvas.tiles.hover?.id];
+                    const tile3d = this.tiles[canvas.tiles.hover?.id ?? this.interactionManager.currentHover?.tile?.id];
                     return tile3d?._onClickLeft(e);
                 },
                 _onClickRight: (e) => {
-                    const tile3d = this.tiles[canvas.tiles.hover?.id];
+                    const tile3d = this.tiles[canvas.tiles.hover?.id ?? this.interactionManager.currentHover?.tile?.id];
 
                     return tile3d?._onClickRight(e);
                 },
                 _onClickLeft2: (e) => {
-                    const tile3d = this.tiles[canvas.tiles.hover?.id];
+                    const tile3d = this.tiles[canvas.tiles.hover?.id ?? this.interactionManager.currentHover?.tile?.id];
 
                     return tile3d?._onClickLeft2(e);
                 },
                 _onClickRight2: (e) => {
-                    const tile3d = this.tiles[canvas.tiles.hover?.id];
+                    const tile3d = this.tiles[canvas.tiles.hover?.id ?? this.interactionManager.currentHover?.tile?.id];
 
                     return tile3d?._onClickRight2(e);
                 },
@@ -814,17 +799,8 @@ class Levels3DPreview {
         this.interactionManager.initTransformControls();
         this.object3dSight = canvas.scene.getFlag("levels-3d-preview", "object3dSight") ?? false;
         this.mirrorLevelsVisibility = canvas.scene.getFlag("levels-3d-preview", "mirrorLevels") ?? true;
-        this.debugMode = game.settings.get("levels-3d-preview", "debugMode");
-        if (this.debugMode) {
-            this.scene.overrideMaterial = new THREE.MeshBasicMaterial({
-                color: 0xffffff,
-                wireframe: true,
-                transparent: true,
-            });
-        }
         this.level = Infinity;
         if (isNaN(this.level)) this.level = Infinity;
-        this.showSun = this.debugMode;
         // this.createTemplates();
         this.createRegions();
         const drawFloors = canvas.scene.getFlag("levels-3d-preview", "showSceneFloors") ?? true;
@@ -842,10 +818,10 @@ class Levels3DPreview {
         this.createTable();
         this.lightWarmup.createEffectPool();
         this.scene.add(Shape3D.createWarmupProxies());
+        if (game.user.isGM) this.scene.add(createGizmoWarmupProxies(WARMUP_LAYER));
         for (let token of canvas.tokens.placeables) {
             this.addToken(token);
         }
-        if (this.debugMode) this.scene.add(new THREE.AxesHelper(3));
 
         this.grid = new Grid3D(this);
 
@@ -876,7 +852,7 @@ class Levels3DPreview {
             this.resetCamera();
             this._cameraSet = true;
         }
-        this.GameCamera.init();
+        this.tacticalCamera.release();
         this.interactionManager._cacheKeybinds();
         this.interactionManager.initGroupSelect();
         // if (canvas.scene.levels?.size > 1) ui.notifications.warn("3D Canvas: 
@@ -1005,18 +981,14 @@ class Levels3DPreview {
     }
 
     addToken(token) {
-        if (!this._ready) {
-            this.loadingTokens[token.id] = new Token3D(token, this);
-            this.loadingTokens[token.id].load().then((token3d) => {
-                this.tokens[token.id] = this.loadingTokens[token.id];
-                this.scene.add(token3d.mesh);
-            });
-        } else {
-            new Token3D(token, this).load().then((token3d) => {
-                this.tokens[token.id] = token3d;
-                this.scene.add(token3d.mesh);
-            });
-        }
+        const buildId = this._buildId;
+        const token3d = new Token3D(token, this);
+        if (!this._ready) this.loadingTokens[token.id] = token3d;
+        token3d.load().then(() => {
+            if (this._buildId !== buildId || token3d._destroyed) return token3d.destroy();
+            this.tokens[token.id] = token3d;
+            this.scene.add(token3d.mesh);
+        });
     }
 
     async createBoard() {
@@ -1069,7 +1041,7 @@ class Levels3DPreview {
         const groundY = this.canvasCenter.y + unitsToPixels(this._tableFloor);
         if (edge !== "legacy") return buildMapEdge(this, edge, groundY);
         buildMapEdge(this, edge, groundY);
-        const tableOption = canvas.scene.getFlag("levels-3d-preview", "renderTable") ?? game.settings.get("levels-3d-preview", "paddingAppearance");
+        const tableOption = canvas.scene.getFlag("levels-3d-preview", "renderTable") ?? "none";
         const tableTex = canvas.scene.getFlag("levels-3d-preview", "tableTex") ?? "";
         const tableHeightmap = canvas.scene.getFlag("levels-3d-preview", "tableHeightmap") ?? "";
         if (tableOption == "none" || !tableOption) return;
@@ -1168,12 +1140,12 @@ class Levels3DPreview {
     }
 
     createTile(tile) {
-        if (this.debugMode || canvas.scene.getFlag("levels-3d-preview", "showSceneFloors") === false) return;
+        if (canvas.scene.getFlag("levels-3d-preview", "showSceneFloors") === false) return;
         if (!this._ready) {
             const tile3d = new Tile3D(tile, this);
             this.loadingTiles[tile.id] = tile3d;
             tile3d.load().then(() => {
-                if (this.loadingTiles[tile.id] === tile3d) this.tiles[tile.id] = tile3d;
+                if (!tile3d._destroyed && this.loadingTiles[tile.id] === tile3d) this.tiles[tile.id] = tile3d;
             });
         } else {
             this.tiles[tile.id] = new Tile3D(tile, this);
@@ -1262,7 +1234,7 @@ class Levels3DPreview {
                 return;
             }
             const rootImage = canvas.scene.getFlag("levels-3d-preview", "skybox");
-            const exr = canvas.scene.getFlag("levels-3d-preview", "exr") ?? this.CONFIG.skybox.exr;
+            const exr = canvas.scene.getFlag("levels-3d-preview", "exr");
             if (exr) this.loadEXR(exr, enableFog);
             if (!rootImage && !exr) this._envReady = true;
             if (!rootImage) {
@@ -1298,6 +1270,7 @@ class Levels3DPreview {
     loadEXR(rootImage, enableFog) {
         this.isEXR = true;
         const _this = this;
+        const buildId = this._buildId;
         if (rootImage.toLowerCase().endsWith(".exr")) {
             new EXRLoader().setDataType(THREE.FloatType).load(rootImage, (texture) => {
                 onLoaded(texture);
@@ -1309,12 +1282,12 @@ class Levels3DPreview {
         }
 
         function onLoaded(texture) {
+            if (_this._buildId !== buildId) return;
             if (_this.scene.environment && _this.scene.environment === _this.lights.globalIllumination?.skyEnvironment?.texture) {
                 _this._envReady = true;
                 return;
             }
-            const shared = _this._sharedContext;
-            if (shared) _this.renderer.resetState();
+            _this.renderer.resetState();
             try {
                 let exrCubeRenderTarget = _this.pmremGenerator.fromEquirectangular(texture);
                 if (_this.scene.userData.pmremRt && _this.scene.userData.pmremRt !== exrCubeRenderTarget) _this.scene.userData.pmremRt.dispose?.();
@@ -1335,7 +1308,7 @@ class Levels3DPreview {
                 ui.notifications.error(`Error loading Skybox ${rootImage}`);
                 _this._envReady = true;
             } finally {
-                if (shared) _this.resetPixiState();
+                _this.resetPixiState();
             }
         }
     }
@@ -1363,10 +1336,15 @@ class Levels3DPreview {
     }
 
     clear3Dscene() {
+        this._buildId = (this._buildId ?? 0) + 1;
+        this._loadingScatter = false;
+        for (const [id, tile3d] of Object.entries(this.loadingTiles ?? {})) if (!tile3d._destroyed && this.tiles[id] !== tile3d) tile3d.destroy(true);
+        for (const [id, token3d] of Object.entries(this.loadingTokens ?? {})) if (this.tokens[id] !== token3d) token3d.destroy();
         this.lightWarmup.clear();
         this.clusterManager.clear();
         this.shadowBatcher.clear();
         this.kitBatcher.clear();
+        this.drawings?.clear();
         Ruler3D.clearAll3D();
         TokenRuler3D.clearAll3D();
         this.workers.clearMeshes();
@@ -1430,12 +1408,18 @@ class Levels3DPreview {
             centerElement(hud.element, center);
         }
         hud = canvas.hud.tile;
-        if (hud.object) {
+        if (hud.object && hud.element) {
             hud.element.style.height = "auto";
             const tile3D = this.tiles[hud.object.id];
             if (!tile3D || !tile3D.mesh) return;
             const center = tile3D.center;
             centerElement(hud.element, center);
+        }
+        hud = canvas.hud.drawing;
+        const drawing3D = hud?.object && hud.element && this.drawings?.get(hud.object.id);
+        if (drawing3D) {
+            hud.element.style.height = "auto";
+            centerElement(hud.element, drawing3D.center3d);
         }
     }
 
@@ -1471,10 +1455,7 @@ class Levels3DPreview {
             if (!this._active) return;
             if (!this._ready) return this._onProgress();
             if (!acceptFrame(time)) return;
-            if (this._sharedContext) {
-                //canvas.app.renderer.reset();
-                this.renderer.resetState();
-            }
+            this.renderer.resetState();
             this.lightWarmup.update();
             this.clusterManager.update();
             if (this.bokeh) {
@@ -1485,39 +1466,19 @@ class Levels3DPreview {
             const delta = this.timer.getDelta();
             this.fogExploration?.update(delta);
             this.grid?.updateGrid();
-            let calculateObstructing = false;
             Object.values(this.tiles).forEach((tile) => {
                 if (tile) {
-                    if (tile._useCameraAdvanced) calculateObstructing = true;
                     tile._onAnimationLoop(delta);
                     if (tile.mixer && !tile.paused) {
                         tile.mixer.update(delta);
                     }
                 }
             });
-            const obstructing = calculateObstructing ? this.interactionManager.getObstructingTiles() : null;
             const tokensArray = Object.values(this.tokens);
-            const length = Math.max(tokensArray.length, 100);
-            const cToken = this.tokens[canvas?.tokens?.controlled[0]?.id];
-            const ctPos = cToken?.mesh?.position;
-            if (!this._tokenPositionsArray) this._tokenPositionsArray = [];
-            const tokenPositionsArray = this._tokenPositionsArray;
-            while (tokenPositionsArray.length < length) tokenPositionsArray.push(new THREE.Vector4());
-            tokenPositionsArray.length = length;
-            tokenPositionsArray[0].set(ctPos?.x ?? 0, ctPos?.y ?? 0, ctPos?.z ?? 0, tokensArray.length);
-            for (let i = 1; i < length; i++) {
-                const pos = tokensArray[i - 1]?.mesh?.position;
-                if (!pos) {
-                    tokenPositionsArray[i].set(0, 0, 0, 0);
-                    continue;
-                }
-                tokenPositionsArray[i].set(pos.x, pos.y, pos.z, tokensArray[i - 1]._shaderSize);
-            }
-            this.shaderHandler.updateShaders(time, tokenPositionsArray, obstructing);
+            this.shaderHandler.updateShaders(time);
             this.interactionManager._canMouseMove = true;
             this.interactionManager.dragObject();
             this.cursors.update();
-            if (this.models?.reticule?.material) this.models.reticule.material.rotation += delta * 0.05;
             tokensArray.forEach((token) => {
                 if (token) {
                     token.updateVisibility();
@@ -1526,7 +1487,7 @@ class Levels3DPreview {
                     if (token.mixer) {
                         token.mixer.update(delta);
                     }
-                    if (token.standUp && token.standupFace) {
+                    if ((token.standUp && token.standupFace) || token.isMedallion) {
                         token.faceCamera();
                     }
                 }
@@ -1535,12 +1496,7 @@ class Levels3DPreview {
                 wall.updateVisibility();
             });
             Object.values(this.lights.sceneLights).forEach((light) => {
-                light.updateHandle();
                 light.update(time);
-            });
-            Object.values(this.sounds).forEach((sound) => {
-                sound.update(time);
-                sound.updateHandle();
             });
             Object.values(this.notes).forEach((note) => {
                 note.updateVisibility();
@@ -1559,6 +1515,7 @@ class Levels3DPreview {
             Ruler3D.updateAllLabels();
             TokenRuler3D.updateAllLabels();
             this.placementPreview?.updateLabels();
+            updateRegionLabels();
             if (!this._scrollingTextCollection) this._scrollingTextCollection = document.getElementsByClassName("scrolling-text");
             if (this._scrollingTextCollection.length) {
                 document.querySelectorAll("#levels3d-ruler-text.scrolling-text").forEach((e) => {
@@ -1569,7 +1526,7 @@ class Levels3DPreview {
             this.alignChatBubbles();
             this.lights?.globalIllumination?.update(delta);
             this.weather?.update(delta);
-            this.GameCamera.update(delta);
+            this.tacticalCamera.update(delta);
             this.pings.forEach((ping) => {
                 ping.update(delta);
             });
@@ -1603,8 +1560,7 @@ class Levels3DPreview {
                 this.reload();
             }
         } finally {
-            // Always hand the GL state back to PIXI, even when the frame threw (shared context only)
-            if (this._sharedContext) this.resetPixiState();
+            this.resetPixiState();
         }
     }
 
@@ -1652,7 +1608,7 @@ class Levels3DPreview {
     }
 
     animateCamera(delta) {
-        if (this.firstPersonMode) return;
+        if (this.firstPersonMode || this.tacticalCamera.consumeAnimation()) return;
         if (this._animateCameraTarget.cameraPosition !== undefined) {
             const targetPos = this._animateCameraTarget.cameraPosition.clone();
             this.camera.position.lerp(targetPos, this._animateCameraTarget.speed ?? 0.04);
@@ -1687,12 +1643,12 @@ class Levels3DPreview {
         const center = this.canvasCenter;
         this.stopCameraAnimation();
         this.controls.reset();
-        if (!this.GameCamera.enabled) {
+        if (!this.tacticalCamera.engaged) {
             this.controls.maxDistance = 20;
             this.controls.minDistance = 0.1;
-            this.controls.screenSpacePanning = game.settings.get("levels-3d-preview", "screenspacepanning");
+            this.controls.screenSpacePanning = true;
         }
-        this.controls.enableDamping = game.settings.get("levels-3d-preview", "enabledamping"); //true;
+        this.controls.enableDamping = game.settings.get("levels-3d-preview", "enabledamping");
         this.controls.dampingFactor = 0.1;
 
         this.controls.target.set(center.x, center.y, center.z);
@@ -1720,6 +1676,7 @@ class Levels3DPreview {
 
     setCameraToControlled(token) {
         if (this.firstPersonMode) return;
+        if (this.tacticalCamera.engaged) return this.tacticalCamera.focusToken(token);
         let cToken, token3D;
         if (!(token instanceof Token3D) && !token?.userData?.original) {
             cToken = token ?? canvas.tokens.controlled[0];
@@ -1757,10 +1714,7 @@ class Levels3DPreview {
         let targetPosition = cameraPosition.sub(diff);
 
         const headPoint = token3D.head;
-        let collision;
-        if (!this.GameCamera.enabled) {
-            collision = this.interactionManager.computeSightCollisionFrom3DPositions(headPoint, targetPosition);
-        }
+        const collision = this.interactionManager.computeSightCollisionFrom3DPositions(headPoint, targetPosition);
 
         if (collision && targetPosition.y < (this.BuildPanel._clipHeight ?? Infinity)) {
             const collisionPoint = new THREE.Vector3(collision.x, collision.y, collision.z);
@@ -1797,17 +1751,17 @@ class Levels3DPreview {
     }
 
     async _finalizeLoad() {
-        const sceneId = this._builtSceneId;
+        const buildId = this._buildId;
         this._progressText = game.i18n.localize("levels3dpreview.controls.loading.scatter");
         this.setProgressBar(this._progressText, 100);
         this._loadingScatter = true;
         await Promise.race([Promise.all(scatterFields().map((field) => field.generate().catch(() => null))), new Promise((resolve) => setTimeout(resolve, SCATTER_LOAD_TIMEOUT))]);
+        if (this._buildId !== buildId || !this._active) return;
         this._loadingScatter = false;
-        if (this._builtSceneId !== sceneId || !this._active) return;
         this._progressText = game.i18n.localize("levels3dpreview.controls.loading.gravity");
         this.interactionManager.forceSightCollisions();
         await this.clusterManager?.settleMasks();
-        if (this._builtSceneId !== sceneId || !this._active) return;
+        if (this._buildId !== buildId || !this._active) return;
         this._progressText = game.i18n.localize("levels3dpreview.controls.loading.shaders");
         compileForComposer(this, this.scene, this.camera);
         this.outline.warmUp();
@@ -1827,20 +1781,20 @@ class Levels3DPreview {
                 token.drawName();
             });
         }, 200);
-        await this._settleLoad(sceneId);
-        if (this._builtSceneId !== sceneId) return;
+        await this._settleLoad(buildId);
+        if (this._buildId !== buildId) return;
         this._settling = false;
         if (!this._active) return;
         this._reveal();
     }
 
-    async _settleLoad(sceneId) {
+    async _settleLoad(buildId) {
         const start = performance.now();
         let programs = -1;
         let quiet = 0;
         while (true) {
             await new Promise((resolve) => requestAnimationFrame(resolve));
-            if (this._builtSceneId !== sceneId || !this._active) return;
+            if (this._buildId !== buildId || !this._active) return;
             const optimizing = this.kitBatcher.lod.busy;
             if (optimizing) this.setProgressBar(game.i18n.localize("levels3dpreview.controls.loading.optimize"), Math.round((100 * simplifyJobs.completed) / Math.max(1, simplifyJobs.submitted)));
             if (performance.now() - start >= (optimizing ? GEOMETRY_SETTLE_TIMEOUT : SETTLE_TIMEOUT)) return;
@@ -1860,7 +1814,12 @@ class Levels3DPreview {
     _reveal() {
         document.querySelector("#board").style.opacity = 1;
         this.renderer.domElement.style.opacity = 1;
-        if (!this._fadeLoadingScreen) return;
+        if (!this._fadeLoadingScreen) {
+            document.querySelector("#levels-3d-preview-loading-bar-inner").style.display = "none";
+            document.querySelector("#levels-3d-preview-loading-bar-text").innerHTML = game.i18n.localize("levels3dpreview.controls.loadingScreen.loadingdone");
+            document.querySelector("#close-loading-screen").classList.remove("hidden");
+            return;
+        }
         const el = document.querySelector(".levels-3d-preview-loading-screen");
         el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 200, fill: "forwards" }).finished.then(() => {
             el.classList.add("hidden");
@@ -1873,6 +1832,7 @@ class Levels3DPreview {
         const labelText = document.querySelector("#levels-3d-preview-loading-bar-text");
         document.querySelector("#levels-3d-preview-loading-bar").style.display = "block";
         document.querySelector("#close-loading-screen").classList.add("hidden");
+        progressBar.style.display = "";
         progressBar.style.width = `${progress}%`;
         labelText.innerText = label;
     }
@@ -1928,10 +1888,7 @@ class Levels3DPreview {
         this._pauseRendering = false;
         if (this._active) return;
         if (check3DToggleConflicts()) return;
-        if (this._sharedContext) {
-            //canvas.app.renderer.reset();
-            this.renderer.resetState();
-        }
+        this.renderer.resetState();
         this.build3Dscene();
         this.refreshRulers();
         document.body.appendChild(this.renderer.domElement);
@@ -1940,16 +1897,7 @@ class Levels3DPreview {
     }
 
     hideBoard() {
-        if (this._sharedContext) {
-            canvas.stage.renderable = false;
-        } else {
-            if (game.settings.get("levels-3d-preview", "miniCanvas")) {
-                if (!foundry.applications.instances.get("miniCanvas")) new MiniCanvas().render(true);
-            } else {
-                document.querySelector("#board").style.display = "none";
-                canvas.stage.renderable = false;
-            }
-        }
+        canvas.stage.renderable = false;
         this.syncCoreLightAnimation();
     }
 
@@ -1961,7 +1909,7 @@ class Levels3DPreview {
     }
 
     close() {
-        document.querySelector(".levels-3d-preview-loading-screen").classList.add("hidden");
+        document.querySelector(".levels-3d-preview-loading-screen")?.classList.add("hidden");
         const wasActive = this._active;
         this.firstPerson?.reset();
         this._active = false;
@@ -1970,9 +1918,6 @@ class Levels3DPreview {
         document.body.classList.remove("levels-3d-preview-active");
         document.querySelector("#levels3d")?.remove();
         document.querySelector(".rangefinder")?.remove();
-        foundry.applications.instances.values()
-            ?.find((w) => w.id === "miniCanvas")
-            ?.close(true);
         document.querySelector("#board").style.display = "unset";
         document.querySelector("#board").style.opacity = 1;
         canvas.stage.renderable = true;
@@ -1984,10 +1929,8 @@ class Levels3DPreview {
             this.refreshRulers();
             canvas.perception.update({ initializeLighting: true, refreshLighting: true });
         }
-        if (this._sharedContext) {
-            this.renderer.resetState();
-            this.resetPixiState();
-        }
+        this.renderer.resetState();
+        this.resetPixiState();
     }
 
     refreshRulers() {
@@ -2040,7 +1983,7 @@ class Levels3DPreview {
         if (game.user !== game.users.activeGM) return;
         const user = game.users.get(userId);
         if (!user?.can("WALL_DOORS")) return;
-        if (game.paused && !game.user.isGM) return ui.notifications.warn("GAME.PausedWarning", { localize: true });
+        if (game.paused && !user.isGM) return;
         const scene = game.scenes.get(sceneId);
         if (!scene) return;
         const tile = scene.tiles.get(tileId);
@@ -2080,26 +2023,29 @@ class Levels3DPreview {
 
     setCursor(cursor) {
         this.renderer.domElement.style.cursor = cursor;
-        return;
-        if (this._sharedContext) {
-            document.body.style.cursor = cursor;
-        } else {
-            this.renderer.domElement.style.cursor = cursor;
-        }
     }
 }
+
+let canvasDrawId = 0;
 
 Hooks.on("canvasReady", async () => {
     document.querySelector("#board").style.opacity = 1;
     const levels3d = game.Levels3DPreview;
     if (levels3d?._levelSwitch) {
         await null;
-        if (levels3d._levelSwitch && levels3d._active) return switchLevel(levels3d);
+        if (levels3d._levelSwitch && levels3d._active) {
+            return switchLevel(levels3d).catch((error) => {
+                console.error(error);
+                levels3d.reload();
+            });
+        }
     }
     if (levels3d) levels3d._levelSwitch = false;
+    const drawId = canvasDrawId;
     do {
         await sleep(100);
-    } while (!game.Levels3DPreview?._init || (game.threeportrait && !game.threeportrait._dataReady));
+    } while (!game.Levels3DPreview?._init || !document.querySelector(".levels-3d-preview-loading-screen") || (game.threeportrait && !game.threeportrait._dataReady));
+    if (drawId !== canvasDrawId || !canvas.ready) return;
     game.Levels3DPreview._cameraSet = false;
     game.Levels3DPreview.close();
     game.Levels3DPreview.controls.reset();
@@ -2111,6 +2057,7 @@ Hooks.on("canvasReady", async () => {
 });
 
 Hooks.on("canvasTearDown", (board, options) => {
+    canvasDrawId++;
     if (!game.Levels3DPreview) return;
     game.Levels3DPreview._pauseRendering = true;
     game.Levels3DPreview._levelSwitch = canSwitchLevel(game.Levels3DPreview, options);
@@ -2124,34 +2071,14 @@ Hooks.on("sightRefresh", () => {
 
 Hooks.on("updateScene", (scene, updates) => {
     if (!game.Levels3DPreview?._active || scene.id !== canvas.scene.id) return;
-    const backgroundChanged = updates.background?.src !== undefined || foundry.utils.hasProperty(updates, "background.src");
+    const backgroundChanged = updates.background?.src !== undefined;
     if (backgroundChanged) game.Levels3DPreview.createBoard();
-    if (updates.fog !== undefined || "tokenVision" in updates) {
-        game.Levels3DPreview.reload();
-        return;
-    }
+    if (refreshSceneSettings(game.Levels3DPreview, scene, updates)) return;
     const flags = updates.flags ? updates.flags["levels-3d-preview"] : undefined;
     if (!flags) return;
     ui.controls.render({force:true, reset: true});
-    if ("object3dSight" in flags) {
-        game.Levels3DPreview.reload();
-        return;
-    }
     if ("enableFog" in flags || "fogColor" in flags || "fogDistance" in flags) game.Levels3DPreview.setFog();
     game.Levels3DPreview.grid.setVisibility();
-    if (
-        //do reload
-        "enableGrid" in flags ||
-        "showSceneWalls" in flags ||
-        "showSceneFloors" in flags ||
-        "renderSceneLights" in flags ||
-        "mirrorLevels" in flags ||
-        "grid" in updates ||
-        "enableFogOfWar" in flags
-    ) {
-        game.Levels3DPreview.reload();
-        return;
-    }
     for (let key of Object.keys(flags)) {
         if (key.includes("particle")) {
             game.Levels3DPreview.weather?.reload();
@@ -2247,10 +2174,6 @@ Hooks.on("ready", async () => {
 window.addEventListener("resize", () => {
     if (game.Levels3DPreview?._active) {
         game.Levels3DPreview.resizeCanvasToDisplaySize();
-        const miniCanvas = foundry.applications.instances.values()?.find((w) => w.id === "miniCanvas");
-        setTimeout(() => {
-            if (miniCanvas) miniCanvas.resize();
-        }, 100);
         setTimeout(() => game.Levels3DPreview?.resizeCanvasToDisplaySize(), 250);
     }
 });

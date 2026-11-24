@@ -1,0 +1,51 @@
+<div class="l3d-ab">
+    <div class="l3d-ab-filters">
+        <div class="l3d-ab-search">
+            <i class="fa-solid fa-magnifying-glass" inert></i>
+            <input type="search" id="search" autocomplete="off" placeholder="{{localize "levels3dpreview.assetBrowser.search"}}">
+        </div>
+        <select id="asset-packs" aria-label="{{localize "levels3dpreview.assetBrowser.category"}}">
+            <option value="all">{{localize "levels3dpreview.assetBrowser.all"}}</option>
+            <optgroup label="{{localize "levels3dpreview.assetBrowser.folders"}}">
+                {{#each folders}}
+                <option value="folder:{{this.id}}">{{this.label}}</option>
+                {{/each}}
+            </optgroup>
+            {{#each assetPacks}}
+            <optgroup label="{{this.name}}">
+                {{#each this.packs}}
+                <option value="{{this.query}}">{{this.name}}</option>
+                {{/each}}
+            </optgroup>
+            {{/each}}
+        </select>
+    </div>
+
+    <ol class="l3d-ab-grid"></ol>
+
+    <fieldset class="l3d-ab-options">
+        <legend>{{localize "levels3dpreview.assetBrowser.placement"}}</legend>
+        <div class="l3d-ab-row">
+            <div class="split-button" id="ab-randomization">
+                <button type="button" class="ui-control icon toggle fa-solid fa-rotate quick-placement-toggle" data-action="rotation" aria-pressed="false" data-tooltip aria-label="{{localize "levels3dpreview.assetBrowser.randomRotation"}}"></button>
+                <button type="button" class="ui-control icon toggle fa-solid fa-up-right-and-down-left-from-center quick-placement-toggle" data-action="scale" aria-pressed="false" data-tooltip aria-label="{{localize "levels3dpreview.assetBrowser.randomScale"}}"></button>
+                <button type="button" class="ui-control icon toggle fa-solid fa-palette quick-placement-toggle" data-action="colorvar" aria-pressed="false" data-tooltip aria-label="{{localize "levels3dpreview.assetBrowser.colorVariation"}}"></button>
+            </div>
+            <div class="split-button" id="ab-placement">
+                <button type="button" class="ui-control icon toggle fa-solid fa-border-all quick-placement-toggle" data-action="grid" aria-pressed="false" data-tooltip aria-label="{{localize "levels3dpreview.assetBrowser.snapGrid"}}"></button>
+                <button type="button" class="ui-control icon toggle fa-solid fa-arrows-up-to-line quick-placement-toggle" data-action="normal" aria-pressed="false" data-tooltip aria-label="{{localize "levels3dpreview.assetBrowser.alignSurface"}}"></button>
+                <button type="button" class="ui-control icon toggle fa-solid fa-arrows-to-circle quick-placement-toggle" data-action="center" aria-pressed="true" data-tooltip aria-label="{{localize "levels3dpreview.assetBrowser.center"}}"></button>
+            </div>
+            <div class="split-button" id="ab-collision">
+                <button type="button" class="ui-control icon toggle fa-solid fa-person-walking quick-placement-toggle" data-action="collision" aria-pressed="true" data-tooltip aria-label="{{localize "levels3dpreview.assetBrowser.blockMovement"}}"></button>
+                <button type="button" class="ui-control icon toggle fa-solid fa-eye-slash quick-placement-toggle" data-action="sight" aria-pressed="true" data-tooltip aria-label="{{localize "levels3dpreview.assetBrowser.blockSight"}}"></button>
+                <button type="button" class="ui-control icon toggle fa-solid fa-video quick-placement-toggle" data-action="cameraCollision" aria-pressed="false" data-tooltip aria-label="{{localize "levels3dpreview.assetBrowser.cameraCollision"}}"></button>
+            </div>
+        </div>
+        <div class="l3d-ab-row form-fields" id="ab-appearance">
+            <label data-tooltip aria-label="{{localize "levels3dpreview.assetBrowser.scale"}}"><i class="fa-solid fa-maximize" inert></i><input type="number" id="scale" value="{{scale}}" step="0.1" min="0.1"></label>
+            <label data-tooltip aria-label="{{localize "levels3dpreview.assetBrowser.angle"}}"><i class="fa-solid fa-compass" inert></i><input type="number" id="angle" value="{{angle}}" step="1" min="0" max="360"></label>
+            <label data-tooltip aria-label="{{localize "levels3dpreview.assetBrowser.tint"}}"><i class="fa-solid fa-droplet" inert></i><input type="color" id="color" value="#ffffff"></label>
+        </div>
+    </fieldset>
+</div>

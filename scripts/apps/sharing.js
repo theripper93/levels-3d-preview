@@ -1,4 +1,12 @@
-import { HandlebarsApplication, mergeClone, prompt, confirm } from "../lib/utils.js";
+import { HandlebarsApplication, prompt, confirm } from "../lib/utils.js";
+import { canCaptureScene, captureSceneCanvas } from "../helpers/sceneThumbnail.js";
+
+const API_URL = "https://theripper93.com/api/mapsharing";
+const MAP_MAKER_TAG = "mapmaker";
+const SHARE_IMAGE = { width: 640, height: 360, format: "image/webp", quality: 0.8 };
+const SHARE_IMAGE_TARGET = 80000;
+const SHARE_IMAGE_LIMIT = 150000;
+const SHARE_IMAGE_MIN_QUALITY = 0.3;
 
 export function initSharing(canvas3d) {
     canvas3d.sharing = {
@@ -19,21 +27,19 @@ export function setSharingHooks() {
         const button = document.createElement("button");
         button.innerHTML = `<i class="fa-solid fa-cube"></i> <span>${game.i18n.localize("levels3dpreview.sharing.scenedirbutton")}</span>`;
         button.onclick = () => {
-            new MapBrowser().render(true);
+            new MapBrowser().render({ force: true });
         };
         buttonContainer.appendChild(button);
     });
 
-    Hooks.on("getSceneDirectoryEntryContext", (directory, buttons) => {
+    Hooks.on("getSceneContextOptions", (directory, buttons) => {
         buttons.push({
-            name: "levels3dpreview.sharing.contextbutton",
-            icon: '<i class="fa-solid fa-cube"></i>',
-            condition: (li) => {
-                return game.user.isGM;
-            },
-            callback: (li) => {
-                const scene = game.scenes.get(li[0].dataset.documentId);
-                new ShareMap(scene).render(true);
+            label: "levels3dpreview.sharing.contextbutton",
+            icon: "fa-solid fa-cube",
+            visible: () => game.user.isGM,
+            onClick: (event, li) => {
+                const scene = game.scenes.get(li.dataset.entryId);
+                new ShareMap(scene).render({ force: true });
             },
         });
     });
@@ -68,7 +74,12 @@ export function setSharingHooks() {
     });
 }
 
-async function shareMap({ image, author, description, scene, name, assetpacks, secret }) {
+function notifyError() {
+    ui.notifications.error(game.i18n.localize("levels3dpreview.sharing.error"));
+    return null;
+}
+
+async function shareMap({ image, author, description, scene, name, assetpacks, secret, tags = [] }) {
     try {
         const body = JSON.stringify({
             name: name || scene.name,
@@ -77,30 +88,29 @@ async function shareMap({ image, author, description, scene, name, assetpacks, s
             image,
             assetpacks,
             secret,
+            tags,
             data: scene.toJSON(),
         });
-        const res = await fetch("https://theripper93.com/api/mapsharing", {
+        const res = await fetch(API_URL, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
             },
             body,
         });
-        let rJson;
         try {
-            rJson = await res.json();
+            return await res.json();
         } catch (e) {
-            rJson = { status: "Updated" };
+            return { status: "Updated" };
         }
-        return rJson;
     } catch (e) {
-        return ui.notifications.error(game.i18n.localize("levels3dpreview.sharing.error"));
+        return notifyError();
     }
 }
 
 async function getMap(id) {
     try {
-        const res = await fetch("https://theripper93.com/api/mapsharing", {
+        const res = await fetch(API_URL, {
             method: "GET",
             headers: {
                 id: id,
@@ -108,21 +118,19 @@ async function getMap(id) {
         });
         const data = await res.json();
         delete data.data.folder;
-        let stringifyData = JSON.stringify(data);
-        stringifyData = stringifyData.replaceAll("assets/canvas3dtokencompendium", "modules/canvas3dtokencompendium");
-        stringifyData = JSON.parse(stringifyData);
-        return stringifyData;
+        const stringifyData = JSON.stringify(data).replaceAll("assets/canvas3dtokencompendium", "modules/canvas3dtokencompendium");
+        return JSON.parse(stringifyData);
     } catch (e) {
-        return ui.notifications.error(game.i18n.localize("levels3dpreview.sharing.error"));
+        return notifyError();
     }
 }
 
 async function getMapList() {
     try {
-        const res = await fetch("https://theripper93.com/api/mapsharing");
-        return res.json();
+        const res = await fetch(API_URL);
+        return await res.json();
     } catch (e) {
-        return ui.notifications.error(game.i18n.localize("levels3dpreview.sharing.error"));
+        return notifyError();
     }
 }
 
@@ -130,19 +138,19 @@ async function starMap(id) {
     const alreadyStarred = game.settings.get("levels-3d-preview", "mapsharingStars")[id];
     if (alreadyStarred) return;
     try {
-        const res = await fetch("https://theripper93.com/api/mapsharing", {
+        const res = await fetch(API_URL, {
             method: "POST",
             headers: {
                 id: id,
                 userid: game.user.id,
             },
         });
-        const data = await res.json();
+        await res.json();
         const stars = game.settings.get("levels-3d-preview", "mapsharingStars");
         stars[id] = true;
-        game.settings.set("levels-3d-preview", "mapsharingStars", stars);
+        await game.settings.set("levels-3d-preview", "mapsharingStars", stars);
     } catch (e) {
-        return ui.notifications.error(game.i18n.localize("levels3dpreview.sharing.error"));
+        return notifyError();
     }
 }
 
@@ -151,126 +159,166 @@ async function increaseDownloadCount(id) {
     if (alreadyDownloaded) return;
 
     try {
-        const res = await fetch("https://theripper93.com/api/mapsharing", {
+        const res = await fetch(API_URL, {
             method: "POST",
             headers: {
                 id: id,
                 download: true,
             },
         });
-        const data = await res.json();
+        await res.json();
         const downloaded = game.settings.get("levels-3d-preview", "mapsharingDownloaded");
         downloaded.push(id);
         await game.settings.set("levels-3d-preview", "mapsharingDownloaded", downloaded);
     } catch (e) {
-        return ui.notifications.error(game.i18n.localize("levels3dpreview.sharing.error"));
+        return notifyError();
     }
 }
 
-class ShareMap extends HandlebarsApplication {
+function dataUrlBytes(url) {
+    return Math.ceil(((url.length - url.indexOf(",") - 1) * 3) / 4);
+}
 
+async function encodeShareImage(source) {
+    let image;
+    for (let quality = SHARE_IMAGE.quality; quality >= SHARE_IMAGE_MIN_QUALITY - 0.01; quality -= 0.1) {
+        image = await foundry.helpers.media.ImageHelper.canvasToBase64(source, SHARE_IMAGE.format, quality);
+        if (dataUrlBytes(image) <= SHARE_IMAGE_TARGET) return image;
+    }
+    if (dataUrlBytes(image) > SHARE_IMAGE_LIMIT) throw new Error(game.i18n.localize("levels3dpreview.sharing.sharemap.captureTooLarge"));
+    return image;
+}
+
+function normalizeImageUrl(url) {
+    url = url.trim();
+    if (!url || url.startsWith("data:")) return url;
+    const isImage = /\.(png|jpe?g|gif|webp)(\?.*)?$/i.test(url);
+    if (!isImage && /(^|\/\/)imgur\.com\//i.test(url)) return url.replace("imgur.com", "i.imgur.com") + ".jpg";
+    return url;
+}
+
+function isMapMakerScene(scene) {
+    return scene.tiles.some((tile) => tile.flags["levels-3d-preview"]?.dynaMesh === "mapMaker");
+}
+
+class ShareMap extends HandlebarsApplication {
     constructor(scene) {
         super();
         this.scene = scene ?? canvas.scene;
+        this.capture = null;
     }
 
-    static get DEFAULT_OPTIONS() {
-        return mergeClone(super.DEFAULT_OPTIONS, {
-            tag: "form",
-            id: `tdc-map-share`,
-            window: {
-                title: "Share Map",
-                contentClasses: ["standard-form"],
-            },
-            position: {
-                width: 400,
-            },
-            form: {
-                handler: this._updateObject,
-                closeOnSubmit: false,
-                submitOnChange: false,
-            }
-        });
-    }
+    static DEFAULT_OPTIONS = {
+        id: "tdc-map-share",
+        tag: "form",
+        window: {
+            title: "levels3dpreview.sharing.sharemap.title",
+            icon: "fa-solid fa-share-from-square",
+            contentClasses: ["standard-form"],
+        },
+        position: {
+            width: 480,
+        },
+        form: {
+            handler: ShareMap.#onSubmit,
+            closeOnSubmit: false,
+        },
+        actions: {
+            capture: ShareMap.#onCapture,
+        },
+    };
 
-    static get PARTS() {
-        return {
-            content: {
-                template: `modules/levels-3d-preview/templates/sharing/ShareMap.hbs`,
-                classes: ["standard-form", "scrollable"],
-            },
-            footer: {
-                template: "templates/generic/form-footer.hbs",
-            }
-        };
+    static PARTS = {
+        content: {
+            template: "modules/levels-3d-preview/templates/sharing/ShareMap.hbs",
+            classes: ["standard-form", "scrollable"],
+        },
+        footer: {
+            template: "templates/generic/form-footer.hbs",
+        },
+    };
+
+    get title() {
+        return `${game.i18n.localize(this.options.window.title)}: ${this.scene.name}`;
     }
 
     async _prepareContext(options) {
-        const sceneData = JSON.stringify(this.scene.toObject());
-        const submitButton = {
-            type: "submit",
-            action: "submit",
-            icon: "fas fa-share-from-square",
-            label: "levels3dpreview.sharing.sharemap.share",
-        }
+        const sceneData = JSON.stringify(this.scene.toObject()).toLowerCase();
+        const canCapture = canCaptureScene(this.scene);
         return {
             scene: this.scene,
-            user: game.user,
+            author: game.user.name,
             secret: game.settings.get("levels-3d-preview", "mapsharingKeys")[this.scene.name] ?? foundry.utils.randomID(40),
-            assetpacks: assetpacks.map((ap) => {
-                return {
-                    name: game.i18n.localize(`levels3dpreview.sharing.packs.${ap}`),
-                    id: ap,
-                    selected: ap == "mapmakingpack" || sceneData.toLowerCase().includes(packData[ap].id),
-                };
-            }),
-            buttons: [submitButton],
+            assetpacks: assetpacks.map((ap) => ({ value: ap, label: `levels3dpreview.sharing.packs.${ap}` })),
+            selectedPacks: assetpacks.filter((ap) => ap === "mapmakingpack" || sceneData.includes(packData[ap].id)),
+            mapMaker: isMapMakerScene(this.scene),
+            captureDisabled: !canCapture,
+            captureTooltip: canCapture ? "levels3dpreview.sharing.sharemap.captureTooltip" : "levels3dpreview.sharing.sharemap.captureUnavailable",
+            image: this.capture,
+            buttons: [
+                {
+                    type: "submit",
+                    icon: "fa-solid fa-share-from-square",
+                    label: "levels3dpreview.sharing.sharemap.share",
+                },
+            ],
         };
     }
 
-    get title() {
-        return game.i18n.localize("levels3dpreview.sharing.sharemap.title") + `: ${this.scene.name}`;
+    _onChangeForm(formConfig, event) {
+        super._onChangeForm(formConfig, event);
+        if (event.target.name !== "image") return;
+        event.target.value = normalizeImageUrl(event.target.value);
+        this.capture = null;
+        this._showPreview(event.target.value);
     }
 
-    _onRender(context, options) {
-        super._onRender(context, options);
-        const html = this.element;
-
-        html.querySelector(".window-title").innerText = this.title;
-
-        html.querySelector("input[name='image']").addEventListener("keyup", (e) => {
-            let url = e.target.value || "https://developers.elementor.com/docs/assets/img/elementor-placeholder-image.png";
-            const ext = url.split(".").pop();
-            if (!["png", "jpg", "jpeg", "gif"].includes(ext)) {
-                url = url.replace("imgur.com", "i.imgur.com") + ".jpg";
-                e.target.value = url;
-            }
-            const img = html.querySelector(".image-preview");
-            img.style.backgroundImage = `url(${url})`;
-        });
+    _showPreview(src) {
+        const preview = this.element.querySelector(".tdc-share-preview");
+        const img = preview.querySelector("img");
+        if (src) img.src = src;
+        else img.removeAttribute("src");
+        preview.classList.toggle("empty", !src);
     }
 
-    static async _updateObject(event) {
-        const form = this.element;
-        const formData = new foundry.applications.ux.FormDataExtended(form).object;
-        formData.scene = this.scene;
-        if (!formData.secret) formData.secret = foundry.utils.randomID(40);
-        if (!formData.image || !formData.description || !formData.assetpacks.length) return ui.notifications.error(game.i18n.localize("levels3dpreview.sharing.sharemap.missingfields"));
-        if (formData.author.toLowerCase() == "gamemaster") return ui.notifications.error(game.i18n.localize("levels3dpreview.sharing.sharemap.gamemaster"));
-        const result = await confirm(
-            "levels3dpreview.sharing.sharemap.confirm.title",
-            "levels3dpreview.sharing.sharemap.confirm.content",
-        );
-        if (result) {
-            const res = await game.Levels3DPreview.sharing.shareMap(formData);
-            if (res.error) return this.displaySubmissionError(res.error, res.status);
-            const sett = game.settings.get("levels-3d-preview", "mapsharingKeys");
-            sett[formData.name || formData.scene.name] = formData.secret;
-            game.settings.set("levels-3d-preview", "mapsharingKeys", sett);
-            if (res.status == "Created") this.displaySubmissionSuccess(res);
-            if (res.status == "Updated") this.displaySubmissionSuccess(true);
-            this.close();
+    static async #onCapture(event, target) {
+        target.disabled = true;
+        try {
+            const source = await captureSceneCanvas(this.scene, { size: SHARE_IMAGE });
+            this.capture = await encodeShareImage(source);
+            this.element.querySelector("input[name='image']").value = "";
+            this._showPreview(this.capture);
+        } catch (err) {
+            ui.notifications.error(err.message);
+        } finally {
+            target.disabled = false;
         }
+    }
+
+    static async #onSubmit(event, form, formData) {
+        const data = formData.object;
+        const image = this.capture || data.image;
+        const secret = data.secret || foundry.utils.randomID(40);
+        if (!image || !data.description || !data.assetpacks?.length) return ui.notifications.error(game.i18n.localize("levels3dpreview.sharing.sharemap.missingfields"));
+        if (data.author.toLowerCase() == "gamemaster") return ui.notifications.error(game.i18n.localize("levels3dpreview.sharing.sharemap.gamemaster"));
+        const confirmed = await confirm("levels3dpreview.sharing.sharemap.confirm.title", "levels3dpreview.sharing.sharemap.confirm.content");
+        if (!confirmed) return;
+        const res = await game.Levels3DPreview.sharing.shareMap({
+            image,
+            secret,
+            author: data.author,
+            description: data.description,
+            assetpacks: data.assetpacks,
+            tags: data.mapMaker ? [MAP_MAKER_TAG] : [],
+            scene: this.scene,
+        });
+        if (!res) return;
+        if (res.error) return this.displaySubmissionError(res.error, res.status);
+        const keys = game.settings.get("levels-3d-preview", "mapsharingKeys");
+        keys[this.scene.name] = secret;
+        await game.settings.set("levels-3d-preview", "mapsharingKeys", keys);
+        this.displaySubmissionSuccess(res.status == "Updated");
+        this.close();
     }
 
     displaySubmissionError(error, status) {
@@ -289,63 +337,50 @@ class ShareMap extends HandlebarsApplication {
 }
 
 export class MapBrowser extends HandlebarsApplication {
-
     constructor() {
         super();
-        this.sortNewest = true;
-        this.sortPopular = false;
-        this.sortDownloads = false;
+        this.sort = "newest";
+        this.search = "";
+        this.packFilters = new Set(assetpacks.filter((ap) => game.modules.get(packData[ap].id)));
+        this.mapMakerOnly = false;
+        this._mapList = null;
     }
 
-    static get defaultOptions() {
-        const active = this.contest.active;
-        const isNext = !active && this.contest.isNext;
-        const cssClass = active ? "contest-active" : isNext ? "contest-next" : "";
-        return foundry.utils.mergeObject(super.defaultOptions, {
-            title: game.i18n.localize("levels3dpreview.sharing.mapbrowser.title"),
-            id: `tdc-map-browser`,
-            template: `modules/levels-3d-preview/templates/sharing/MapBrowser.hbs`,
+    static DEFAULT_OPTIONS = {
+        id: "tdc-map-browser",
+        window: {
+            title: "levels3dpreview.sharing.mapbrowser.title",
+            icon: "fa-solid fa-cube",
+            resizable: true,
+        },
+        position: {
             width: 800,
             height: 600,
-            closeOnSubmit: false,
-            submitOnClose: false,
-            submitOnChange: false,
-            classes: [cssClass],
-        });
-    }
+        },
+        actions: {
+            sort: MapBrowser.#onSort,
+            toggleJournal: MapBrowser.#onToggleJournal,
+            togglePack: MapBrowser.#onTogglePack,
+            toggleMapMaker: MapBrowser.#onToggleMapMaker,
+            star: MapBrowser.#onStar,
+            download: MapBrowser.#onDownload,
+            shareMap: MapBrowser.#onShareMap,
+            openWiki: MapBrowser.#onOpenWiki,
+            openRules: MapBrowser.#onOpenRules,
+        },
+    };
 
-    // tabs: [{ navSelector: ".tabs", contentSelector: ".content" }],
+    static PARTS = {
+        content: {
+            template: "modules/levels-3d-preview/templates/sharing/MapBrowser.hbs",
+            classes: ["tdc-map-browser-container"],
+            scrollable: [".tdc-map-list"],
+        },
+    };
 
-    static get DEFAULT_OPTIONS() {
-        const active = this.contest.active;
-        const isNext = !active && this.contest.isNext;
-        const cssClass = active ? "contest-active" : isNext ? "contest-next" : "";
-        return mergeClone(super.DEFAULT_OPTIONS, {
-            id: "tdc-map-browser",
-            classes: [cssClass],
-            window: {
-                title: "levels3dpreview.sharing.mapbrowser.title",
-                resizable: true,
-            },
-            position: {
-                width: 800,
-                height: 600,
-            },
-        });
-    }
-
-    static get PARTS() {
-        return {
-            content: {
-                classes: ["tdc-map-browser-container"],
-                template: `modules/levels-3d-preview/templates/sharing/MapBrowser.hbs`,
-            }
-        }
-    }
+    static SORTS = ["newest", "popular", "downloads"];
 
     static get contest() {
-        // const startTimestamp = 1715731200000;
-        // const endTimestamp = 1719788400000;
         const startTimestamp = 1777766400000;
         const endTimestamp = 1782860400000;
 
@@ -364,7 +399,7 @@ export class MapBrowser extends HandlebarsApplication {
             endTimestamp,
             active: Date.now() >= startTimestamp && Date.now() <= endTimestamp,
             isNext: !!endTimestamp,
-            isNextSoon: timeToNext <= 86400000, //1 day
+            isNextSoon: timeToNext <= 86400000,
             endDateTime: new Date(endTimestamp).toLocaleString(undefined, format),
             startDateTime: new Date(startTimestamp).toLocaleString(undefined, format),
             timeToNext,
@@ -374,118 +409,180 @@ export class MapBrowser extends HandlebarsApplication {
         };
     }
 
+    _initializeApplicationOptions(options) {
+        const applicationOptions = super._initializeApplicationOptions(options);
+        const { active, isNext } = MapBrowser.contest;
+        if (active) applicationOptions.classes.push("contest-active");
+        else if (isNext) applicationOptions.classes.push("contest-next");
+        return applicationOptions;
+    }
+
     get title() {
-        return game.i18n.localize("levels3dpreview.sharing.mapbrowser.title").replace("{count}", this._mapCount) + this.contestTitle;
+        return game.i18n.format(this.options.window.title, { count: this._mapList?.length ?? 0 }) + this.contestTitle;
     }
 
     get contestTitle() {
         const contest = MapBrowser.contest;
         if (contest.active) {
             if (!contest.endTimestamp || contest.timeToNext < 0) return "";
-            return ` | Contest Ends: ${contest.endDateTime}`;
-        } else {
-            if (!contest.startTimestamp || contest.timeToStart < 0) return "";
-            return ` | Next Contest Starts: ${contest.startDateTime}`;
+            return game.i18n.format("levels3dpreview.sharing.mapbrowser.contestEnds", { date: contest.endDateTime });
         }
+        if (!contest.startTimestamp || contest.timeToStart < 0) return "";
+        return game.i18n.format("levels3dpreview.sharing.mapbrowser.contestStarts", { date: contest.startDateTime });
+    }
+
+    async _loadMaps() {
+        const maps = await getMapList();
+        const pastWinners = MapBrowser.contest.pastWinners;
+        const parser = new DOMParser();
+        return (maps?.data ?? []).map((map) => {
+            const packs = (map.assetpacks ?? []).filter((ap) => packData[ap]);
+            map.assetpacks = packs.map((ap) => ({
+                id: ap,
+                name: game.i18n.localize(`levels3dpreview.sharing.packs.${ap}`),
+                installed: !!game.modules.get(packData[ap].id),
+            }));
+            map.packIds = packs.join(",");
+            const stars = map.stars ?? [];
+            map.starred = stars.includes(game.user.id);
+            map.notStarOwned = !map.starred && !!game.scenes.getName(map.name);
+            map.stars = stars.length;
+            map.mapMaker = !!map.tags?.includes(MAP_MAKER_TAG);
+            map.isWinner = pastWinners.includes(map.author);
+            const descriptionText = parser.parseFromString(map.description ?? "", "text/html").body.textContent;
+            map.description = foundry.utils.escapeHTML(descriptionText).replaceAll(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank">$1</a>');
+            map.searchText = [map.name, map.author, descriptionText, ...map.assetpacks.map((ap) => ap.name)].join(" ").toLowerCase();
+            return map;
+        });
     }
 
     async _prepareContext(options) {
-        const maps = await getMapList();
-        const pastWinners = MapBrowser.contest.pastWinners;
-        let mapList = maps.data.sort((a, b) => b.id - a.id);
-        this._mapCount = mapList.length;
-        const packs = assetpacks.map((ap) => {
-            return {
-                name: game.i18n.localize(`levels3dpreview.sharing.packs.${ap}`),
-                id: ap,
-                installed: !!game.modules.get(packData[ap].id),
-            };
-        });
-        mapList.forEach((map) => {
-            if (map.assetpacks)
-                map.assetpacks = map.assetpacks.map((ap) => {
-                    return {
-                        name: game.i18n.localize(`levels3dpreview.sharing.packs.${ap}`),
-                        installed: !!game.modules.get(packData[ap].id),
-                        id: ap,
-                    };
-                });
-            const stars = map.stars ?? [];
-            map.starred = stars.includes(game.user.id);
-            map.notStarOwned = !map.starred && game.scenes.getName(map.name);
-            map.stars = stars.length;
-            //parse urls into links
-            const tempDiv = document.createElement("div");
-            tempDiv.innerHTML = map.description;
-            const descriptionText = tempDiv.innerText;
-            map.description = descriptionText.replaceAll(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank">$1</a>');
-
-            if (pastWinners.includes(map.author)) map.isWinner = true;
-        });
-        if (this.sortDownloads) mapList = mapList.sort((a, b) => b.downloads - a.downloads);
-        if (this.sortPopular) mapList = mapList.sort((a, b) => b.stars - a.stars);
-        this._mapList = mapList;
+        this._mapList ??= await this._loadMaps();
+        const sortKey = { newest: "id", popular: "stars", downloads: "downloads" }[this.sort];
+        const maps = [...this._mapList].sort((a, b) => (b[sortKey] ?? 0) - (a[sortKey] ?? 0) || b.id - a.id);
         return {
-            maps: mapList,
-            sortNewest: this.sortNewest,
-            sortPopular: this.sortPopular,
-            sortDownloads: this.sortDownloads,
+            maps,
+            search: this.search,
+            sorts: MapBrowser.SORTS.map((id) => ({ id, label: `levels3dpreview.sharing.mapbrowser.sort.${id}`, active: this.sort === id })),
             createJournal: game.settings.get("levels-3d-preview", "mapsharingJournal"),
-            packs,
+            packs: assetpacks.map((ap) => ({
+                id: ap,
+                name: game.i18n.localize(`levels3dpreview.sharing.packs.${ap}`),
+                active: this.packFilters.has(ap),
+            })),
+            mapMakerOnly: this.mapMakerOnly,
         };
     }
 
+    async _preRender(context, options) {
+        await super._preRender(context, options);
+        options.window = { ...options.window, title: this.title };
+    }
+
     _getHeaderControls() {
-	    const buttons = super._getHeaderControls();
-        buttons.unshift(
+        const contest = MapBrowser.contest;
+        return [
             {
-                label: "Share Map",
-                class: "share",
-                icon: "fas fa-share-alt",
-                onClick: () => {
-                    new ShareMap().render(true);
-                },
+                action: "openRules",
+                icon: "fa-solid fa-trophy",
+                label: "levels3dpreview.sharing.mapbrowser.contestRules",
+                visible: contest.active && !!contest.rulesUrl,
             },
             {
-                label: "",
-                class: "info",
-                icon: "fas fa-info-circle",
-                onClick: () => {
-                    //open url
-                    const link = document.createElement("a");
-                    link.href = "https://wiki.theripper93.com/levels-3d-preview/communitymaps";
-                    link.target = "_blank";
-                    link.click();
-                },
+                action: "shareMap",
+                icon: "fa-solid fa-share-alt",
+                label: "levels3dpreview.sharing.sharemap.title",
             },
-        );
-        if (MapBrowser.contest.active && MapBrowser.contest.rulesUrl)
-            buttons.unshift({
-                label: "Contest Rules",
-                class: "contest",
-                icon: "fas fa-trophy",
-                onClick: () => {
-                    //open url
-                    const link = document.createElement("a");
-                    link.href = MapBrowser.contest.rulesUrl;
-                    link.target = "_blank";
-                    link.click();
-                },
-            });
-        return buttons;
+            {
+                action: "openWiki",
+                icon: "fa-solid fa-info-circle",
+                label: "levels3dpreview.sharing.wikibutton",
+            },
+            ...super._getHeaderControls(),
+        ];
+    }
+
+    _onRender(context, options) {
+        super._onRender(context, options);
+        const input = this.element.querySelector("input[type='search']");
+        input.addEventListener("input", () => {
+            this.search = input.value.trim().toLowerCase();
+            this._onFilter();
+        });
+        for (const img of this.element.querySelectorAll(".tdc-map-card > img")) img.addEventListener("error", () => img.remove(), { once: true });
+        this._onFilter();
+    }
+
+    _onFilter() {
+        for (const card of this.element.querySelectorAll(".tdc-map-card")) {
+            const packs = card.dataset.packs ? card.dataset.packs.split(",") : [];
+            const visible =
+                (!this.packFilters.size || packs.every((p) => this.packFilters.has(p))) &&
+                (!this.mapMakerOnly || card.dataset.mapMaker === "true") &&
+                card.dataset.search.includes(this.search);
+            card.classList.toggle("hidden", !visible);
+        }
+    }
+
+    static #onSort(event, target) {
+        if (this.sort === target.dataset.sort) return;
+        this.sort = target.dataset.sort;
+        this.render();
+    }
+
+    static async #onToggleJournal() {
+        await game.settings.set("levels-3d-preview", "mapsharingJournal", !game.settings.get("levels-3d-preview", "mapsharingJournal"));
+        this.render();
+    }
+
+    static #onTogglePack(event, target) {
+        const id = target.dataset.pack;
+        if (this.packFilters.has(id)) this.packFilters.delete(id);
+        else this.packFilters.add(id);
+        target.classList.toggle("active", this.packFilters.has(id));
+        this._onFilter();
+    }
+
+    static #onToggleMapMaker(event, target) {
+        this.mapMakerOnly = !this.mapMakerOnly;
+        target.classList.toggle("active", this.mapMakerOnly);
+        this._onFilter();
+    }
+
+    static async #onStar(event, target) {
+        const id = target.closest("[data-map-id]").dataset.mapId;
+        if (this._mapList?.find((m) => m.id == id)?.starred) return;
+        await starMap(id);
+        this._mapList = null;
+        this.render();
+    }
+
+    static #onDownload(event, target) {
+        return this._onMapDownload(target.closest("[data-map-id]").dataset.mapId);
+    }
+
+    static #onShareMap() {
+        new ShareMap().render({ force: true });
+    }
+
+    static #onOpenWiki() {
+        window.open("https://wiki.theripper93.com/levels-3d-preview/communitymaps", "_blank");
+    }
+
+    static #onOpenRules() {
+        window.open(MapBrowser.contest.rulesUrl, "_blank");
     }
 
     async getJournalEntry(sceneName, content) {
         let journal = game.journal.getName("3D Canvas Community Maps");
         if (!journal) {
-            //create journal
             journal = await JournalEntry.create({
                 name: "3D Canvas Community Maps",
             });
         }
         const existingPage = journal.pages.getName(sceneName);
         if (existingPage) return { journalId: journal.id, pageId: existingPage.id };
-        const page = await journal.createEmbeddedDocuments("JournalEntryPage", [
+        const [page] = await journal.createEmbeddedDocuments("JournalEntryPage", [
             {
                 name: sceneName,
                 "text.content": content,
@@ -494,76 +591,13 @@ export class MapBrowser extends HandlebarsApplication {
         return { journalId: journal.id, pageId: page.id };
     }
 
-    _onRender(context, options) {
-        super._onRender(context, options);
-        const html = this.element;
-
-        html.querySelector(".window-title").innerText = this.title;
-
-        html.querySelector("input").addEventListener("keyup", (e) => {
-            this._onFilter();
-        });
-        html.querySelectorAll(".tdc-map-download").forEach((button) => {
-            button.addEventListener("click", this._onMapDownload.bind(this));
-        });
-        html.querySelectorAll(".tdc-map-star").forEach((button) => {
-            button.addEventListener("click", async (e) => {
-                e.preventDefault();
-                if (e.target.querySelector("i").classList.contains("fa-solid")) return;
-                const id = e.target.dataset.mapid;
-                await starMap(id);
-                this.render(true);
-            });
-        });
-        html.querySelector("#tdc-sort-newest").addEventListener("click", (e) => {
-            e.preventDefault();
-            const doRender = this.sortNewest != true;
-            this.sortNewest = true;
-            this.sortPopular = false;
-            this.sortDownloads = false;
-            if (doRender) this.render(true);
-        });
-        html.querySelector("#tdc-sort-popular").addEventListener("click", (e) => {
-            e.preventDefault();
-            const doRender = this.sortPopular != true;
-            this.sortNewest = false;
-            this.sortPopular = true;
-            this.sortDownloads = false;
-            if (doRender) this.render(true);
-        });
-        html.querySelector("#tdc-sort-downloads").addEventListener("click", (e) => {
-            e.preventDefault();
-            const doRender = this.sortDownloads != true;
-            this.sortNewest = false;
-            this.sortPopular = false;
-            this.sortDownloads = true;
-            if (doRender) this.render(true);
-        });
-        html.querySelector("#tdc-journal").addEventListener("click", (e) => {
-            e.preventDefault();
-            game.settings.set("levels-3d-preview", "mapsharingJournal", !game.settings.get("levels-3d-preview", "mapsharingJournal")).then(() => {
-                this.render(true);
-            });
-        });
-        html.querySelectorAll(".tdc-filter").forEach((button) => {
-            button.addEventListener("click", (e) => {
-                e.preventDefault();
-                e.target.classList.toggle("active");
-                e.target.blur();
-                this._onFilter();
-            });
-        });
-        this._onFilter();
-    }
-
-    async _onMapDownload(e, id) {
-        e?.preventDefault();
-        id = id ?? e?.target.dataset.mapid;
+    async _onMapDownload(id) {
         const createJournal = game.settings.get("levels-3d-preview", "mapsharingJournal");
         const map = await getMap(id);
+        if (!map) return;
         const mapData = this._mapList.find((m) => m.id == id);
         const journalData = createJournal ? await this.getJournalEntry(mapData.name + ` (${mapData.author})`, mapData.description) : {};
-        map.data.thumb = mapData.image;
+        map.data.thumb = mapData.image && !mapData.image.startsWith("data:") ? mapData.image : null;
         const originalID = map.data._id;
         const newID = foundry.utils.randomID();
         map.data.active = false;
@@ -576,7 +610,7 @@ export class MapBrowser extends HandlebarsApplication {
         stringified = stringified.replaceAll(originalID, newID);
         map.data = JSON.parse(stringified);
         const coreGeneration = parseInt(map.data._stats.coreVersion);
-        const scene = await Scene.create({name: map.data.name, id: map.data.id}, {keepId: true});
+        const scene = await Scene.create({ name: map.data.name, id: map.data.id }, { keepId: true });
         await scene.importFromJSON(JSON.stringify(map.data));
         await this._migrateMap(scene, coreGeneration);
         increaseDownloadCount(id);
@@ -585,9 +619,9 @@ export class MapBrowser extends HandlebarsApplication {
 
     static async importDemoScene() {
         const mapBrowser = new MapBrowser();
-        await mapBrowser._prepareContext({});
-        const scene = await mapBrowser._onMapDownload(null, "71");
-        scene.view();
+        mapBrowser._mapList = await mapBrowser._loadMaps();
+        const scene = await mapBrowser._onMapDownload("71");
+        scene?.view();
     }
 
     async _migrateMap(scene, coreGeneration) {
@@ -620,35 +654,6 @@ export class MapBrowser extends HandlebarsApplication {
             }
         }
         return scene;
-    }
-
-    _onFilter() {
-        const html = this.element;
-        const mapCards = html.querySelectorAll(".tdc-map-card");
-        const search = html.querySelector("input").value.toLowerCase();
-        const packs = [];
-        html.querySelectorAll(".tdc-filter").forEach((b) => {
-            if (b.classList.contains("active")) packs.push(b.dataset.filter);
-        });
-        mapCards.forEach((card) => {
-            const name = card.dataset.name.toLowerCase();
-            const description = card.querySelector("p").innerText.toLowerCase();
-            const author = card.querySelector("span").innerText.toLowerCase();
-            const cardpacks = [];
-            card.querySelectorAll(".tdc-pack").forEach((p) => {
-                cardpacks.push(p.dataset.pack);
-            });
-            const packInFilter = packs.length == 0 || cardpacks.every((p) => packs.includes(p));
-            if (!packInFilter) card.style.display = "none";
-            else {
-                let tags = "";
-                try {
-                    (card.querySelectorAll(".tdc-pack") ?? []).forEach((t) => (tags += t.innerText.toLowerCase()));
-                } catch (error) {}
-
-                card.style.display = name.includes(search) || author.includes(search) || description.includes(search) || tags.includes(search) ? "flex" : "none";
-            }
-        });
     }
 }
 

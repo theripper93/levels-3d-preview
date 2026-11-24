@@ -11,7 +11,7 @@ import {Socket} from "../lib/socket.js";
 import { mergeMeshes } from "./modelBaker.js";
 import { markFoliage } from "../shaders/wind/windSway.js";
 
-const sightMeshMaterial = new THREE.MeshBasicMaterial({
+export const sightMeshMaterial = new THREE.MeshBasicMaterial({
     color: 0xffffff,
     wireframe: true,
 });
@@ -558,39 +558,6 @@ export class Helpers {
     showSceneReport() {
         return showSceneReport();
     }
-}
-
-export function toggleAdvancedSettings(app, html, settings, other) {
-    for (let setting of settings) {
-        html.querySelector(`[name="flags.levels-3d-preview.${setting}"]`).closest(".form-group").toggle();
-    }
-    other.forEach((o) => {
-        o.toggle();
-    });
-    app.setPosition({ height: "auto" });
-}
-
-export function injectAdvancedToggle(app, html, settings, injected, other = []) {
-    const alwaysShowAdvanced = game.settings.get("levels-3d-preview", "showAdvanced");
-    if (alwaysShowAdvanced) return;
-    const toggleAdvanced = document.createElement("div");
-    toggleAdvanced.className = "form-group";
-    toggleAdvanced.innerHTML = `
-        <a id="levels-3d-preview-advanced" style="color: var(--color-text-hyperlink); text-align: center; font-weight: bolder; text-decoration: underline;">${game.i18n.localize("levels3dpreview.settings.showAdvanced.show")}</a>
-        <a href="https://wiki.theripper93.com/levels-3d-preview#entities-in-3d" target="_blank" id="levels-3d-preview-wiki" style="color: var(--color-text-hyperlink); text-align: center; font-weight: bolder; text-decoration: underline;">${game.i18n.localize("levels3dpreview.settings.showAdvanced.wiki")}</a>
-    `;
-
-    const lastFormGroup = injected.querySelector(".form-group:last-of-type") ?? injected[injected.length - 1];
-    lastFormGroup.insertAdjacentElement("afterend", toggleAdvanced);
-
-    toggleAdvanced.querySelector("#levels-3d-preview-advanced").addEventListener("click", () => {
-        toggleAdvancedSettings(app, html, settings, other);
-        const advancedLink = toggleAdvanced.querySelector("#levels-3d-preview-advanced");
-        const showText = game.i18n.localize("levels3dpreview.settings.showAdvanced.show");
-        const hideText = game.i18n.localize("levels3dpreview.settings.showAdvanced.hide");
-        advancedLink.textContent = advancedLink.textContent === showText ? hideText : showText;
-    });
-    toggleAdvancedSettings(app, html, settings, other);
 }
 
 export function hideParams(app, html, element, flags, hide, invert = false) {
