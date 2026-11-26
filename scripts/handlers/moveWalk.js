@@ -10,6 +10,7 @@ const LIFT_CELLS = 0.05;
 const SAMPLE_CELLS = 0.5;
 const MAX_SAMPLES = 48;
 const GROUNDED_CELLS = 2.25;
+const GAP_CELLS = 0.25;
 
 const DOWN = new THREE.Vector3(0, -1, 0);
 const _dir = new THREE.Vector3();
@@ -23,6 +24,7 @@ const WALKING_ACTIONS = new Set(["walk", "crawl"]);
 
 let memo = null;
 let currentAction = null;
+let currentRadius = 0;
 
 function interactionManager() {
     return game.Levels3DPreview?.interactionManager;
@@ -72,6 +74,22 @@ function groundBelow(targets, x, y, z, far = Infinity) {
     return y >= board && y - board <= far ? board : null;
 }
 
+function footGround(targets, x, top, z, far, feet, ax, az, cell) {
+    const ground = groundBelow(targets, x, top, z, far);
+    if (ground !== null && ground >= feet - cell * LIFT_CELLS) return ground;
+    const length = Math.hypot(x - ax, z - az) || 1;
+    const r = cell * GAP_CELLS;
+    const ux = ((x - ax) / length) * r;
+    const uz = ((z - az) / length) * r;
+    let best = ground ?? -Infinity;
+    for (const [ox, oz] of [[ux, uz], [-uz, ux]]) {
+        const a = groundBelow(targets, x - ox, top, z - oz, far);
+        const b = a === null ? null : groundBelow(targets, x + ox, top, z + oz, far);
+        if (b !== null) best = Math.max(best, Math.min(a, b));
+    }
+    return best === -Infinity ? null : best;
+}
+
 function collisionTargets(origin, target, cell) {
     const im = interactionManager();
     const pad = cell * factor;
@@ -86,7 +104,7 @@ function stepThrough(targets, ax, az, bx, bz, feet, cell) {
     const direction = new THREE.Vector3((bx - ax) / length, 0, (bz - az) / length);
     const base = cast(targets, new THREE.Vector3(ax, feet + lift, az), direction, length);
     if (!base) {
-        const ground = groundBelow(targets, bx, feet + lift, bz);
+        const ground = footGround(targets, bx, feet + lift, bz, Infinity, feet, ax, az, cell);
         return { feet: ground ?? feet };
     }
     if (!isWalkable(base, direction)) {
@@ -94,7 +112,7 @@ function stepThrough(targets, ax, az, bx, bz, feet, cell) {
         if (raised && !isWalkable(raised, direction) && raised.distance - base.distance < (step - lift) / CLIMB) return { blocked: base.distance / length };
     }
     const top = feet + lift + step + CLIMB * length;
-    const ground = groundBelow(targets, bx, top, bz, top - feet + cell);
+    const ground = footGround(targets, bx, top, bz, top - feet + cell, feet, ax, az, cell);
     if (ground === null) return { feet };
     const from = base.point.clone().addScaledVector(hitNormal(base, direction, new THREE.Vector3()) ?? THREE.Object3D.DEFAULT_UP, lift);
     from.y = Math.max(from.y, feet + lift);
@@ -141,20 +159,33 @@ function walk(origin, target) {
     return result;
 }
 
-export function setMoveAction(action) {
+export function setMoveAction(action, size = null) {
     currentAction = action;
-    queueMicrotask(() => (currentAction = null));
+    currentRadius = size ? (Math.min(size.width, size.height) * cellSize()) / 2 : 0;
+    queueMicrotask(() => {
+        currentAction = null;
+        currentRadius = 0;
+    });
+}
+
+function backOff(hit, origin) {
+    const from = posCanvasTo3d(origin);
+    const horizontal = Math.hypot(hit.x - from.x, hit.z - from.z);
+    const margin = Math.max(currentRadius, cellSize() * LIFT_CELLS);
+    if (horizontal < 1e-6) return hit;
+    return from.lerp(hit, Math.max(0, horizontal - margin) / horizontal);
 }
 
 export function testMoveCollision(origin, destination) {
     const hit = interactionManager().computeSightCollision(origin, destination, "move");
     if (hit && hit.distanceTo(posCanvasTo3d(destination)) <= cellSize() * LIFT_CELLS) return null;
-    if (!hit || !WALKING_ACTIONS.has(currentAction)) return hit;
+    if (!hit) return null;
+    if (!WALKING_ACTIONS.has(currentAction)) return backOff(hit, origin);
     const from = posCanvasTo3d(origin);
     const result = walk(from, posCanvasTo3d(destination));
-    if (!result.grounded || result.blocked !== undefined) return hit;
+    if (!result.grounded || result.blocked !== undefined) return backOff(hit, origin);
     const arrival = posCanvasTo3d(destination).y - (from.y - result.start);
-    return Math.abs(arrival - result.feet) <= cellSize() * (STEP_CELLS + LIFT_CELLS) ? null : hit;
+    return Math.abs(arrival - result.feet) <= cellSize() * (STEP_CELLS + LIFT_CELLS) ? null : backOff(hit, origin);
 }
 
 export function walkStep(origin, destination) {
@@ -162,11 +193,4 @@ export function walkStep(origin, destination) {
     if (!result.grounded) return null;
     if (result.blocked !== undefined) return { blocked: true };
     return { elevation: pos3DToCanvas(new THREE.Vector3(0, result.feet, 0)).elevation };
-}
-
-export function walkGroundElevation(origin, destination) {
-    if (!game.Levels3DPreview?._active || !interactionManager()) return null;
-    const result = walk(posCanvasTo3d(origin), posCanvasTo3d(destination));
-    if (!result.grounded || result.blocked !== undefined) return null;
-    return pos3DToCanvas(new THREE.Vector3(0, result.feet, 0)).elevation;
 }

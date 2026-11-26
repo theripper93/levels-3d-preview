@@ -2,8 +2,11 @@ import { Region3D } from "../entities/region3d.js";
 import { elevationFloor } from "../helpers/elevationFloor.js";
 import { scatterFields } from "../scatter/scatterField.js";
 import { takeSceneRedraw } from "./sceneRefresh.js";
+import { isUndergroundLevel } from "../helpers/undergroundLevel.js";
+import { WeatherSystem } from "../vfx/weather/weatherSystem.js";
 
 const LOAD_TIMEOUT = 20000;
+const LEVEL_LOADING_ID = "levels-3d-preview-level-loading";
 
 const parkedTiles = new Map();
 
@@ -29,7 +32,31 @@ async function preload(L, loads) {
     settled = true;
 }
 
+export function showLevelLoading(level) {
+    document.getElementById(LEVEL_LOADING_ID)?.remove();
+    const known = level && (game.user.isGM || Array.from(level.parent?.availableLevels ?? []).includes(level));
+    const element = document.createElement("div");
+    element.id = LEVEL_LOADING_ID;
+    element.innerText = known ? game.i18n.format("levels3dpreview.controls.loading.level", { name: level.name }) : game.i18n.localize("levels3dpreview.controls.loading.levelUnnamed");
+    document.body.appendChild(element);
+}
+
+export function hideLevelLoading() {
+    const element = document.getElementById(LEVEL_LOADING_ID);
+    if (!element) return;
+    element.id = "";
+    element.animate([{ opacity: getComputedStyle(element).opacity }, { opacity: 0 }], { duration: 200, fill: "forwards" }).finished.then(() => element.remove());
+}
+
 export async function switchLevel(L) {
+    try {
+        await runLevelSwitch(L);
+    } finally {
+        if (!L._levelSwitch) hideLevelLoading();
+    }
+}
+
+async function runLevelSwitch(L) {
     L._levelSwitch = false;
     const loads = [];
     for (const [id, tile3d] of Object.entries(L.tiles)) {
@@ -76,6 +103,12 @@ export async function switchLevel(L) {
     for (const region of [...Region3D.regions.keys()]) if (!region.rendered) Region3D.destroy(region);
     L.createRegions();
     L.createFog();
+    const underground = isUndergroundLevel();
+    if (underground !== !!L._undergroundLevel) {
+        L._undergroundLevel = underground;
+        L.lights.globalIllumination?.updateDynamicSky();
+        WeatherSystem.current?.reload(false);
+    }
     if (L.scene.background?.isColor && !(canvas.scene.getFlag("levels-3d-preview", "enableFog") ?? false)) L.scene.background.set(canvas.level.background.color ?? 0xffffff);
     if (L._boardKey !== `${canvas.level.background.src}|${canvas.primary.background.elevation}`) L.createBoard();
     if (L._tableFloor !== elevationFloor()) L.createTable();

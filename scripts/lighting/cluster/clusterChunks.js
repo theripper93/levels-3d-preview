@@ -74,7 +74,11 @@ uniform float uClusterCell;
 uniform ivec2 uClusterDims;
 uniform int uClusterEffects;
 uniform float uClusterLevels;
+uniform int uClusterDarkness;
 #define L3D_CLUSTER_TEXEL( index ) texelFetch( uClusterLights, ivec2( ( index ) % ${DATA_WIDTH}, ( index ) / ${DATA_WIDTH} ), 0 )
+vec3 l3dDarken( vec3 color, vec3 tint, float amount ) {
+    return mix( color, dot( color, vec3( 0.2126, 0.7152, 0.0722 ) ) * tint, amount );
+}
 `;
 
 const accumulateLight = (slot) => /* glsl */ `
@@ -96,6 +100,7 @@ const accumulateLight = (slot) => /* glsl */ `
             directLight.color = l3dT1.rgb * l3dAttenuation;
             directLight.visible = true;
             if ( l3dT2.w > -1.5 ) directLight.color *= getSpotAttenuation( l3dT2.w, l3dT4.w, dot( directLight.direction, ( viewMatrix * vec4( l3dT2.xyz, 0.0 ) ).xyz ) );
+            if ( l3dDarkened && L3D_CLUSTER_TEXEL( l3dBase + 5 ).z <= l3dDarkPriority ) directLight.color = l3dDarken( directLight.color, l3dDarkTint, l3dDarkAmount );
             #ifndef L3D_NO_CLUSTER_MASKS
             vec4 l3dT3 = L3D_CLUSTER_TEXEL( l3dBase + 3 );
             if ( l3dT3.z > 0.0 ) {
@@ -109,29 +114,88 @@ const accumulateLight = (slot) => /* glsl */ `
     }
 `;
 
+const CELL_SLOT = "int( dot( L3D_CLUSTER_TEXEL( uClusterLayout.y + l3dIndex / 4 ), vec4( equal( ivec4( l3dIndex % 4 ), ivec4( 0, 1, 2, 3 ) ) ) ) )";
+
+const accumulateDarkness = (slot) => /* glsl */ `
+            {
+                int l3dBase = ( ${slot} ) * ${RECORD_TEXELS};
+                vec4 l3dD5 = L3D_CLUSTER_TEXEL( l3dBase + 5 );
+                if ( l3dD5.y > 0.0 ) {
+                    vec4 l3dD0 = L3D_CLUSTER_TEXEL( l3dBase );
+                    float l3dReach = length( l3dWorldPosition.xz - l3dD0.xz ) / max( l3dD0.w, 1e-4 );
+                    float l3dAmount = l3dD5.y * ( 1.0 - smoothstep( l3dD5.x, 1.0, l3dReach ) );
+                    #ifndef L3D_NO_CLUSTER_MASKS
+                    vec4 l3dD3 = L3D_CLUSTER_TEXEL( l3dBase + 3 );
+                    if ( l3dAmount > 0.0 && l3dD3.z > 0.0 ) {
+                        vec4 l3dD4 = L3D_CLUSTER_TEXEL( l3dBase + 4 );
+                        vec2 muv = clamp( ( l3dWorldPosition.xz - l3dD4.xy ) / ( 2.0 * l3dD4.z ) + 0.5 + l3dMaskOffset / l3dD3.z, 0.0, 1.0 );
+                        l3dAmount *= max( textureLod( uClusterMasks, l3dD3.xy + muv * l3dD3.zw, 0. ).r - ${MASK_FLOOR}, 0.0 ) / ( 1.0 - ${MASK_FLOOR} );
+                    }
+                    #endif
+                    if ( l3dAmount > l3dDarkAmount ) {
+                        l3dDarkAmount = l3dAmount;
+                        l3dDarkTint = L3D_CLUSTER_TEXEL( l3dBase + 2 ).rgb;
+                        l3dDarkPriority = max( l3dDarkPriority, l3dD5.z );
+                        l3dDarkened = true;
+                    }
+                }
+            }
+`;
+
+const darknessIndirectChunk = () => /* glsl */ `
+#if defined( RE_Direct ) && !defined( L3D_NO_CLUSTER )
+    if ( l3dDarkened ) {
+        #if defined( RE_IndirectDiffuse )
+        irradiance = l3dDarken( irradiance, l3dDarkTint, l3dDarkAmount );
+        iblIrradiance = l3dDarken( iblIrradiance, l3dDarkTint, l3dDarkAmount );
+        #endif
+        #if defined( RE_IndirectSpecular )
+        radiance = l3dDarken( radiance, l3dDarkTint, l3dDarkAmount );
+        clearcoatRadiance = l3dDarken( clearcoatRadiance, l3dDarkTint, l3dDarkAmount );
+        #endif
+    }
+#endif
+`;
+
 const clusterFragmentChunk = () => /* glsl */ `
 #if defined( RE_Direct ) && !defined( L3D_NO_CLUSTER )
     vec3 l3dWorldPosition = ( ( vec4( geometryPosition, 1.0 ) - viewMatrix[ 3 ] ) * viewMatrix ).xyz;
     #ifndef L3D_NO_CLUSTER_MASKS
     vec2 l3dMaskOffset = inverseTransformDirection( geometryNormal, viewMatrix ).xz * ( ${MASK_NORMAL_TEXELS} / float( textureSize( uClusterMasks, 0 ).x ) );
     #endif
+    int l3dOffset = 0;
+    int l3dCount = 0;
+    ivec2 l3dCell = ivec2( floor( ( l3dWorldPosition.xz - uClusterOrigin ) / uClusterCell ) );
+    if ( all( greaterThanEqual( l3dCell, ivec2( 0 ) ) ) && all( lessThan( l3dCell, uClusterDims ) ) ) {
+        int l3dCellIndex = l3dCell.y * uClusterDims.x + l3dCell.x;
+        vec4 l3dHeaders = L3D_CLUSTER_TEXEL( uClusterLayout.x + l3dCellIndex / 2 );
+        vec2 l3dHeader = ( l3dCellIndex % 2 ) == 0 ? l3dHeaders.xy : l3dHeaders.zw;
+        l3dOffset = int( l3dHeader.x );
+        l3dCount = int( l3dHeader.y );
+    }
+    vec3 l3dDarkTint = vec3( 1.0 );
+    float l3dDarkAmount = 0.0;
+    float l3dDarkPriority = -1e9;
+    bool l3dDarkened = false;
+    if ( uClusterDarkness > 0 ) {
+        for ( int l3dK = 0; l3dK < l3dCount; l3dK ++ ) {
+            int l3dIndex = l3dOffset + l3dK;
+            ${accumulateDarkness(CELL_SLOT)}
+        }
+        if ( l3dDarkened ) {
+            reflectedLight.directDiffuse = l3dDarken( reflectedLight.directDiffuse, l3dDarkTint, l3dDarkAmount );
+            reflectedLight.directSpecular = l3dDarken( reflectedLight.directSpecular, l3dDarkTint, l3dDarkAmount );
+        }
+    }
     vec3 l3dDiffuseBefore = reflectedLight.directDiffuse;
     vec3 l3dSpecularBefore = reflectedLight.directSpecular;
     for ( int l3dEffect = 0; l3dEffect < ${EFFECT_SLOTS}; l3dEffect ++ ) {
         if ( l3dEffect >= uClusterEffects ) break;
         ${accumulateLight("l3dEffect")}
     }
-    ivec2 l3dCell = ivec2( floor( ( l3dWorldPosition.xz - uClusterOrigin ) / uClusterCell ) );
-    if ( all( greaterThanEqual( l3dCell, ivec2( 0 ) ) ) && all( lessThan( l3dCell, uClusterDims ) ) ) {
-        int l3dCellIndex = l3dCell.y * uClusterDims.x + l3dCell.x;
-        vec4 l3dHeaders = L3D_CLUSTER_TEXEL( uClusterLayout.x + l3dCellIndex / 2 );
-        vec2 l3dHeader = ( l3dCellIndex % 2 ) == 0 ? l3dHeaders.xy : l3dHeaders.zw;
-        int l3dOffset = int( l3dHeader.x );
-        int l3dCount = int( l3dHeader.y );
-        for ( int l3dK = 0; l3dK < l3dCount; l3dK ++ ) {
-            int l3dIndex = l3dOffset + l3dK;
-            ${accumulateLight("int( dot( L3D_CLUSTER_TEXEL( uClusterLayout.y + l3dIndex / 4 ), vec4( equal( ivec4( l3dIndex % 4 ), ivec4( 0, 1, 2, 3 ) ) ) ) )")}
-        }
+    for ( int l3dK = 0; l3dK < l3dCount; l3dK ++ ) {
+        int l3dIndex = l3dOffset + l3dK;
+        ${accumulateLight(CELL_SLOT)}
     }
     {
         vec3 l3dDiffuse = reflectedLight.directDiffuse - l3dDiffuseBefore;
@@ -162,5 +226,6 @@ export function installClusterChunks(THREELIB) {
     if (!chunks.lights_fragment_begin.includes(MULTI_SCATTERING_GUARD)) console.warn("3D Canvas | Clustered lights could not patch multi-scattering compensation");
     chunks.lights_fragment_begin =
         chunks.lights_fragment_begin.replace(MULTI_SCATTERING_GUARD, `#if !defined( L3D_NO_CLUSTER ) || ${MULTI_SCATTERING_GUARD.slice(4)}`).replace(SHADOW_TEST, "if ( directLight.visible && receiveShadow && directLight.color != vec3( 0.0 ) ) directLight.color *= $1;") + clusterFragmentChunk();
+    chunks.lights_fragment_end = darknessIndirectChunk() + chunks.lights_fragment_end;
     chunks.lights_pars_begin += clusterParsChunk();
 }

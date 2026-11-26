@@ -2,9 +2,7 @@ const MODULE_ID = "levels-3d-preview";
 const RELOAD_DEFAULTS = {
     object3dSight: false,
     enableFogOfWar: true,
-    showSceneWalls: true,
-    showSceneFloors: true,
-    renderSceneLights: true,
+    wallStyle: "castleKeep",
     mirrorLevels: true,
 };
 

@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { factor } from "../main.js";
-import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
+import { mergeGeometries, toCreasedNormals } from "three/addons/utils/BufferGeometryUtils.js";
 import { buildTerrainMesh } from "./mapMakerTerrain.js";
 import { windUniforms } from "../shaders/wind/windSway.js";
 
@@ -125,6 +125,43 @@ export function previewKitHue(root, names, hex) {
 function crystalShader(shader) {
     shader.uniforms.fwTime = windUniforms.fwTime;
     shader.fragmentShader = shader.fragmentShader.replace("void main() {", "uniform float fwTime;\nvoid main() {").replace("#include <emissivemap_fragment>", `#include <emissivemap_fragment>\n${CRYSTAL_FRAGMENT}`);
+}
+
+const GRADE_FRAGMENT = `
+{
+    vec3 gradeColor = pow(max(diffuseColor.rgb, 0.0), vec3(1.0 / 2.2));
+    vec3 gradeAxis = vec3(0.57735);
+    gradeColor = gradeColor * cos(mmGrade.x) + cross(gradeAxis, gradeColor) * sin(mmGrade.x) + gradeAxis * dot(gradeAxis, gradeColor) * (1.0 - cos(mmGrade.x));
+    gradeColor = mix(vec3(dot(gradeColor, vec3(0.299, 0.587, 0.114))), gradeColor, mmGrade.y);
+    gradeColor = ((gradeColor - 0.5) * mmGrade.w + 0.5) * mmGrade.z;
+    diffuseColor.rgb = pow(max(gradeColor, 0.0), vec3(2.2));
+    #ifdef USE_MAP
+    float gradeUpright = 1.0 - abs(inverseTransformDirection(normal, viewMatrix).y);
+    float gradeStreak = fract(sin(floor(vMapUv.x * 9.0) * 12.9898) * 43758.5453) * 0.6 + fract(sin(floor(vMapUv.x * 31.0) * 78.233) * 43758.5453) * 0.4;
+    float gradeGrime = mmGrime * smoothstep(0.6, 0.9, gradeUpright) * (1.0 - smoothstep(0.0, 0.2 + 0.5 * gradeStreak, vMapUv.y));
+    diffuseColor.rgb *= 1.0 - 0.4 * gradeGrime;
+    roughnessFactor *= 1.0 - 0.3 * gradeGrime;
+    #endif
+}
+`;
+
+function gradeShader(shader) {
+    const g = this.userData.mmGrade;
+    shader.uniforms.mmGrade = { value: new THREE.Vector4(((g.h ?? 0) * Math.PI) / 180, g.s ?? 1, g.b ?? 1, g.c ?? 1) };
+    shader.uniforms.mmGrime = { value: g.g ?? 0 };
+    shader.fragmentShader = shader.fragmentShader.replace("void main() {", "uniform vec4 mmGrade;\nuniform float mmGrime;\nvoid main() {").replace("#include <emissivemap_fragment>", `#include <emissivemap_fragment>\n${GRADE_FRAGMENT}`);
+}
+
+export function isNeutralGrade(g) {
+    return !g || ((g.h ?? 0) === 0 && (g.s ?? 1) === 1 && (g.b ?? 1) === 1 && (g.c ?? 1) === 1 && !g.g);
+}
+
+function applyGrade(material, grade) {
+    if (isNeutralGrade(grade) || material._userOnBeforeCompile) return;
+    material.userData.mmGrade = { h: grade.h ?? 0, s: grade.s ?? 1, b: grade.b ?? 1, c: grade.c ?? 1, g: grade.g ?? 0 };
+    material.userData.batchShader = true;
+    material.mmGrade = Object.values(material.userData.mmGrade).join(",");
+    material.onBeforeCompile = gradeShader;
 }
 
 export async function buildMapMakerMesh(data) {
@@ -426,11 +463,15 @@ export function buildMapMakerGeometry(data, { unitScale = 1 / factor } = {}) {
         case "floor":
             res = buildFloor(data);
             break;
+        case "pipe":
+            res = buildPipes(data);
+            break;
         default:
             res = { buckets: new Map() };
     }
     const geometry = bucketsToGeometry(res.buckets, data);
     if (!geometry) return { geometry: new THREE.BoxGeometry(0.01, 0.01, 0.01), groups: [] };
+    if (res.smooth) geometry.geometry = toCreasedNormals(geometry.geometry, 0.8);
     geometry.geometry.scale(unitScale, unitScale, unitScale);
     return geometry;
 }
@@ -466,9 +507,10 @@ function buildWall(data) {
 
         const matrix = segmentMatrix(ax, ay, dir, n, t);
         const wallGeo = new THREE.ExtrudeGeometry(shape, { depth: t, bevelEnabled: false, steps: 1, curveSegments: 10 });
+        if (seg.k0 || seg.k1) miterEnds(wallGeo, u0, u1, t, seg.k0 ?? 0, seg.k1 ?? 0);
         wallGeo.applyMatrix4(matrix);
         const capTolerance = 0.5;
-        addTriangles(buckets, wallGeo, (normal, centroid) => {
+        const pickWall = (normal, centroid) => {
             const d = normal.x * n.x + normal.z * n.y;
             if (d > 0.7) return seg.mp;
             if (d < -0.7) return seg.mn;
@@ -479,7 +521,21 @@ function buildWall(data) {
                 if (along > 0 && Math.abs(u - u1) < capTolerance) return seg.c1 ?? seg.mc ?? seg.mp;
             }
             return seg.mc ?? seg.mp;
-        });
+        };
+        const lb = data.lb;
+        if (lb?.m && lb.h > -base + 0.5 && lb.h < h - 0.5) {
+            const far = 1e7;
+            const low = clipToBox(wallGeo.clone(), [-far, -far, -far, far, lb.h, far]);
+            const high = clipToBox(wallGeo.clone(), [-far, lb.h, -far, far, far, far]);
+            if (low) addTriangles(buckets, low, (normal, centroid) => {
+                const key = pickWall(normal, centroid);
+                return Math.abs(normal.x * n.x + normal.z * n.y) > 0.7 && (!lb.k || lb.k.includes(key)) ? lb.m : key;
+            });
+            if (high) addTriangles(buckets, high, pickWall);
+            low?.dispose();
+            high?.dispose();
+            addLedge(buckets, lb, { seg, ops, u0, u1, t, matrix });
+        } else addTriangles(buckets, wallGeo, pickWall);
         wallGeo.dispose();
 
         for (const op of ops) {
@@ -497,8 +553,69 @@ function buildWall(data) {
             addTriangles(buckets, frameGeo, () => op.fm ?? seg.mc ?? seg.mp);
             frameGeo.dispose();
         }
+        for (const op of ops) if (op.r) addRecess(buckets, op, { t, matrix, y0: Math.max(op.y0, -base + 0.5), y1: Math.min(op.y1, h - 0.5) });
     }
     return { buckets };
+}
+
+function miterEnds(geometry, u0, u1, t, k0, k1) {
+    const position = geometry.attributes.position;
+    for (let i = 0; i < position.count; i++) {
+        const x = position.getX(i);
+        const s = position.getZ(i) - t / 2;
+        if (Math.abs(x - u0) < 1e-3) position.setX(i, u0 + k0 * s);
+        else if (Math.abs(x - u1) < 1e-3) position.setX(i, u1 - k1 * s);
+    }
+    position.needsUpdate = true;
+}
+
+function addRecess(buckets, op, { t, matrix, y0, y1 }) {
+    const plug = new THREE.ExtrudeGeometry(new THREE.Shape(openingPath(op.u, op.w + 1, y0 - 0.5, y1 + 0.5, op.s).getPoints(24)), { depth: t * 0.2, bevelEnabled: false, steps: 1 });
+    plug.translate(0, 0, t * 0.4).applyMatrix4(matrix);
+    addTriangles(buckets, plug, () => op.vm);
+    plug.dispose();
+    const n = op.bars ?? 0;
+    if (n <= 0) return;
+    const radius = op.s === "round" ? Math.min(op.w, y1 - y0) / 2 : op.w / 2;
+    const yc = op.s === "round" ? (y0 + y1) / 2 : Math.max(y0 + 1, y1 - radius);
+    const bw = Math.max(0.8, op.w * 0.035);
+    for (let k = 0; k < n; k++) {
+        const dx = ((k + 1) / (n + 1) - 0.5) * op.w;
+        const half = Math.sqrt(Math.max(radius * radius - dx * dx, 0));
+        const top = op.s === "rect" ? y1 : yc + half;
+        const bottom = op.s === "round" ? yc - half : y0;
+        if (top - bottom < 1) continue;
+        for (const z of [t * 0.12, t * 0.88]) {
+            const bar = new THREE.BoxGeometry(bw, top - bottom, bw).translate(op.u + dx, (top + bottom) / 2, z).applyMatrix4(matrix);
+            addTriangles(buckets, bar, () => op.bm);
+            bar.dispose();
+        }
+    }
+}
+
+function addLedge(buckets, lb, { seg, ops, u0, u1, t, matrix }) {
+    const out = lb.l ?? 0;
+    if (out <= 0) return;
+    const lh = lb.lh ?? 4;
+    const cuts = ops
+        .filter((o) => o.y0 < lb.h + lh && o.y1 > lb.h - lh)
+        .map((o) => [o.u - o.w / 2 - (o.f ?? 0), o.u + o.w / 2 + (o.f ?? 0)])
+        .sort((a, b) => a[0] - b[0]);
+    let a = u0 - ((seg.e0 ?? 0) > 0 ? out : 0);
+    const end = u1 + ((seg.e1 ?? 0) > 0 ? out : 0);
+    const spans = [];
+    for (const [c0, c1] of cuts) {
+        if (c0 > a) spans.push([a, Math.min(c0, end)]);
+        a = Math.max(a, c1);
+    }
+    if (end > a) spans.push([a, end]);
+    for (const [s0, s1] of spans) {
+        if (s1 - s0 < 0.5) continue;
+        const box = new THREE.BoxGeometry(s1 - s0, lh, t + 2 * out).translate((s0 + s1) / 2, lb.h, t / 2);
+        box.applyMatrix4(matrix);
+        addTriangles(buckets, box, () => lb.lm ?? seg.mc ?? seg.mp);
+        box.dispose();
+    }
 }
 
 function segmentMatrix(ax, ay, dir, n, depth) {
@@ -512,6 +629,11 @@ function openingPath(uc, w, y0, y1, style) {
     const path = new THREE.Path();
     const l = uc - w / 2;
     const r = uc + w / 2;
+    if (style === "round") {
+        const radius = Math.min(w, y1 - y0) / 2;
+        path.absarc(uc, (y0 + y1) / 2, radius, 0, Math.PI * 2, false);
+        return path;
+    }
     path.moveTo(l, y0);
     path.lineTo(r, y0);
     if (style === "arch") {
@@ -534,7 +656,9 @@ function framePath(uc, w, y0, y1, style, f, isDoor) {
     if (!isDoor) {
         const outer = new THREE.Shape();
         const ol = l - f, or = r + f, ob = y0 - f, ot = y1 + f;
-        if (style === "arch") {
+        if (style === "round") {
+            outer.absarc(uc, (y0 + y1) / 2, Math.min(w, y1 - y0) / 2 + f, 0, Math.PI * 2, false);
+        } else if (style === "arch") {
             const radius = w / 2 + f;
             const spring = Math.max(y0 + 1, y1 - w / 2);
             outer.moveTo(ol, ob);
@@ -577,6 +701,57 @@ function framePath(uc, w, y0, y1, style, f, isDoor) {
     return s;
 }
 
+
+const _pipeA = new THREE.Vector3();
+const _pipeB = new THREE.Vector3();
+const _pipeQ = new THREE.Quaternion();
+
+function pipePiece(buckets, key, geo, from, to) {
+    const dir = _pipeB.subVectors(to, from);
+    const len = dir.length();
+    if (len < 1e-3) return geo.dispose();
+    _pipeQ.setFromUnitVectors(UP, dir.divideScalar(len));
+    geo.scale(1, len, 1).applyQuaternion(_pipeQ).translate((from.x + to.x) / 2, (from.y + to.y) / 2, (from.z + to.z) / 2);
+    addTriangles(buckets, geo, () => key);
+    geo.dispose();
+}
+
+function buildPipes(data) {
+    const buckets = new Map();
+    const sides = 12;
+    for (const run of data.runs ?? []) {
+        const r = run.r ?? 4;
+        const pts = (run.p ?? []).map((p) => new THREE.Vector3(...p));
+        if (pts.length < 2) continue;
+        const flange = (at, toward) => {
+            const d = _pipeA.subVectors(toward, at).normalize();
+            const a = at.clone().addScaledVector(d, -r * 0.25);
+            const b = at.clone().addScaledVector(d, r * 0.25);
+            pipePiece(buckets, run.f ?? run.m, new THREE.CylinderGeometry(r * 1.4, r * 1.4, 1, sides), a, b);
+        };
+        for (let k = 0; k + 1 < pts.length; k++) {
+            const a = pts[k], b = pts[k + 1];
+            const len = a.distanceTo(b);
+            pipePiece(buckets, run.m, new THREE.CylinderGeometry(r, r, 1, sides, 1, true), a, b);
+            const every = run.every ?? 0;
+            if (every > 0) for (let t = every; t < len - every * 0.5; t += every) flange(a.clone().lerp(b, t / len), b);
+            if (k === 0) flange(a.clone().lerp(b, Math.min(r * 0.3, len / 2) / len), b);
+            if (k + 2 === pts.length) flange(b.clone().lerp(a, Math.min(r * 0.3, len / 2) / len), a);
+        }
+        for (let k = 1; k + 1 < pts.length; k++) {
+            const joint = new THREE.SphereGeometry(r * 1.12, sides, 8).translate(pts[k].x, pts[k].y, pts[k].z);
+            addTriangles(buckets, joint, () => run.f ?? run.m);
+            joint.dispose();
+            for (const n of [pts[k - 1], pts[k + 1]]) flange(pts[k].clone().lerp(n, Math.min(r * 1.6, pts[k].distanceTo(n) / 2) / pts[k].distanceTo(n)), n);
+        }
+        if (run.mouth) {
+            const end = pts.at(-1), prev = pts.at(-2);
+            const d = _pipeA.subVectors(end, prev).normalize().clone();
+            pipePiece(buckets, run.f ?? run.m, new THREE.CylinderGeometry(r * 1.5, r * 1.15, 1, sides, 1, true), end.clone().addScaledVector(d, -r * 1.2), end);
+        }
+    }
+    return { buckets, smooth: true };
+}
 
 function buildFloor(data) {
     const buckets = new Map();
@@ -661,6 +836,10 @@ function bucketsToGeometry(buckets, data) {
                     u = wx;
                     w = def?.flipV ? -wz : wz;
                     if (def?.rot) [u, w] = [-w, u];
+                } else if (data.uvAlong) {
+                    const len = Math.hypot(_n.x, _n.z);
+                    u = (wx * _n.z - wz * _n.x) / len;
+                    w = v.y;
                 } else if (ax >= az) {
                     u = _n.x > 0 ? -wz : wz;
                     w = v.y;
@@ -704,7 +883,7 @@ function loadMapTexture(src, linear) {
     return mapTextures.get(key);
 }
 
-async function getMapMakerMaterial(def) {
+export async function getMapMakerMaterial(def) {
     const helpers = game.Levels3DPreview.helpers;
     let material;
     try {
@@ -739,6 +918,7 @@ async function getMapMakerMaterial(def) {
     material.metalness = def?.metalness ?? 0;
     if (def?.tint) material.color = new THREE.Color(def.tint);
     if (def?.env != null) material.envMapIntensity = def.env;
+    applyGrade(material, def?.grade);
     material.needsUpdate = true;
     return material;
 }

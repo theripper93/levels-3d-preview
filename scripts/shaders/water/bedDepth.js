@@ -131,6 +131,10 @@ function isWater(entity) {
     return !!entity?.shaders?.realisticWater?.enabled;
 }
 
+function shapesBed(entity) {
+    return !isWater(entity) && entity?.document?.flags?.["levels-3d-preview"]?.waterBed !== false;
+}
+
 function renderBed(state) {
     state.entity3D.prepareBed?.();
     const gs = gridUnit();
@@ -162,7 +166,7 @@ function renderBed(state) {
     const top = topDownCamera(cx, cz, w, h, surface + range, range * 2);
     const cameras = [top, topDownCamera(cx, cz, w, h, surface, range)];
     if (surface - low > gs * 0.05) cameras.push(topDownCamera(cx, cz, w, h, low, range));
-    const [fromTop, fromSurface, fromLow] = renderTopDown(collectSurfaces((tile) => !isWater(tile)), rw, rh, cameras);
+    const [fromTop, fromSurface, fromLow] = renderTopDown(collectSurfaces(shapesBed), rw, rh, cameras);
     const depth = blur(classify(fromTop, fromSurface, rw * rh, surface, gs, local, fromLow), rw, rh);
     if (state.params.contained !== false) contain(depth, rw, rh);
     state.uniforms.bedMatrix.value.multiplyMatrices(top.projectionMatrix, top.matrixWorldInverse);

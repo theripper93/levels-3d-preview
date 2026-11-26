@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { getQuality } from "../vfx/quality.js";
+import { BATCH_FADE_DEFINE } from "./tileOcclusion.js";
 
 const PREPASS_VERTICES = 65536;
 const PIXEL_BOUND_PIXELS = 4000000;
@@ -12,6 +13,7 @@ function depthMaterial(side) {
     let material = materials.get(side);
     if (!material) {
         material = new THREE.MeshBasicMaterial({ side, colorWrite: false, polygonOffset: true, polygonOffsetFactor: 0, polygonOffsetUnits: 1 });
+        material.defines = { [BATCH_FADE_DEFINE]: "" };
         materials.set(side, material);
     }
     return material;

@@ -1963,7 +1963,7 @@ export class Tile3D {
         if (this.sightMesh) this.sightMesh.visible = false;
         if (this._decalCone) this._decalCone.visible = !!canvas?.tiles?.active;
         if (game.Levels3DPreview.mirrorLevelsVisibility && this.tile.mesh && !this.tile._preview) {
-            this.mesh.visible = this.tile.occluded || !this.tile.mesh?.visible ? false : this.tile.visible;
+            this.mesh.visible = !this.tile.mesh?.visible ? false : this.tile.visible;
         }
         if (this._parent.hiddenTiles?.has(this.tile.document.id)) this.mesh.visible = false;
     }

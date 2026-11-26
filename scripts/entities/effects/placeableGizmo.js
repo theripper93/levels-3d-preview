@@ -14,6 +14,8 @@ const IDLE_RING = "#8c8c8c";
 const HOVER_RING = "#ffffff";
 const GROUND_LIFT = 0.002;
 const LIGHT_LIFT = 0.2;
+export const DARKNESS_GLYPH = "icons/svg/light-off.svg";
+export const DARKNESS_FILL = "#1a1426";
 
 const _origin = new THREE.Vector3();
 const _target = new THREE.Vector3();
@@ -286,7 +288,7 @@ export class PlaceableGizmo {
         this.state = state;
         this.handle.visible = this.root.visible = !!state.visible;
         if (state.visible) {
-            const icon = iconMaterials({ glyph: state.hidden ? this.glyphOff : this.glyph, ring: state.ring, color: state.color ?? null, hidden: !!state.hidden, disabled: !!state.disabled });
+            const icon = iconMaterials({ glyph: state.hidden ? this.glyphOff : (state.glyph ?? this.glyph), ring: state.ring, color: state.color ?? null, hidden: !!state.hidden, disabled: !!state.disabled });
             this.front.material = icon.front;
             this.back.material = icon.back;
         }
@@ -606,7 +608,8 @@ const PLACEMENT_TOOLS = {
         glyphOff: "icons/svg/light-off.svg",
         createData: () => foundry.applications.sheets.palette.AmbientLightPalette.createData,
         lift: LIGHT_LIFT,
-        color: (data) => data.config?.color?.css ?? data.config?.color ?? null,
+        glyphFor: (data) => (data.config?.negative ? DARKNESS_GLYPH : null),
+        color: (data) => data.config?.color?.css ?? data.config?.color ?? (data.config?.negative ? DARKNESS_FILL : null),
         angle: (data) => data.config?.angle ?? 360,
         bright: () => 0.5,
         apply: (data, radius, rotation) => {
@@ -662,6 +665,7 @@ export class RadiusPlacement3D {
         this.radius = radius;
         this.gizmo.update({
             visible: true,
+            glyph: config.glyphFor?.(defaults) ?? null,
             ring: ringColor({ controlled: true }),
             hidden: !!defaults.hidden,
             color: config.color(defaults),

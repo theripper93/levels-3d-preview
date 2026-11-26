@@ -9,7 +9,9 @@ import { FogRegion, tokensMoving, unionRect } from "./fogRegion.js";
 import { FogMist, volumetricFogEnabled } from "./fogMist.js";
 import { VisionModeMask, visionModeUniforms, VISION_MODE_PARS, VISION_MODE_FRAGMENT } from "./visionModeMask.js";
 import { injectReveal } from "./reveal.js";
+import { injectTileFade } from "./tileOcclusion.js";
 import { paintUniforms } from "./drawings3d.js";
+import { uniformBlock, useGlobalUniformBlock } from "../render/globalUniformBlock.js";
 
 const MASK_TEXELS_PER_GRID = 16;
 const WALL_SAMPLE_OFFSET_GRIDS = 0.25;
@@ -218,6 +220,8 @@ function injectFogUniforms(shader, renderer) {
     injectSurface(shader);
     if (shader.vertexShader.includes(PARTICLE_OFFSET_ATTRIBUTE)) injectParticleFoW(shader);
     injectReveal(shader, this);
+    injectTileFade(shader, this);
+    useGlobalUniformBlock(shader);
 }
 
 export function injectFoWShaders(THREELIB) {
@@ -234,7 +238,7 @@ export function injectFoWShaders(THREELIB) {
         //Closures with identical source but different captured state stringify the same, so add the material state that injected code depends on
         const map = this.map;
         const mapKey = map ? (map.matrixAutoUpdate === false || map.userData?.legacyUvMatrix ? "mapM" : "map") : "nomap";
-        return `${this.type}|${mapKey}|${this._userOnBeforeCompile?.toString() ?? ""}`;
+        return `${this.type}|${mapKey}|${uniformBlock.enabled}|${this._userOnBeforeCompile?.toString() ?? ""}`;
     };
 
     THREELIB.ShaderChunk.common += `

@@ -211,7 +211,7 @@ export class ClusterMasks {
                 this.rasterQueue.add(entry);
             } else this.stale.add(entry);
         }
-        if (this.useTiles) this.checkTiles(entry, source, position.y, now);
+        if (this.useTiles && !light.isDarkness) this.checkTiles(entry, source, position.y, now);
     }
 
     checkTiles(entry, source, height, now) {
@@ -318,7 +318,7 @@ export class ClusterMasks {
                 half: entry.half,
                 gridWorld: this.gridWorld,
                 walls: entry.walls,
-                tiles: this.useTiles ? (entry.tiles ?? null) : null,
+                tiles: this.useTiles && !entry.light.isDarkness ? (entry.tiles ?? null) : null,
             });
             this.atlas.upload(renderer, entry.block, data);
             entry.light.mask = { rect: this.atlas.rect(entry.block), center: [entry.center[0], entry.center[1], entry.half], coverage: summarizeMask(data, size) };

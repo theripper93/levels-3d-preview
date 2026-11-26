@@ -55,6 +55,7 @@ export const clusterUniforms = {
     uClusterDims: { value: new Vector2() },
     uClusterEffects: { value: 0 },
     uClusterLevels: { value: 0 },
+    uClusterDarkness: { value: 0 },
 };
 
 const scratch = new Float32Array(RECORD_FLOATS);
@@ -94,6 +95,7 @@ export class ClusterManager {
         if (!this._enabled) {
             clusterUniforms.uClusterDims.value.set(0, 0);
             clusterUniforms.uClusterEffects.value = 0;
+            clusterUniforms.uClusterDarkness.value = 0;
         } else this.updateEffectCount();
     }
 
@@ -220,7 +222,9 @@ export class ClusterManager {
         const y = e[13];
         const z = e[14];
         const physical = punctualToPhysical(light);
-        const emitting = light.intensity > 0 && this.isEmitting(light) ? physical.intensity : 0;
+        const darkness = !!light.isDarkness;
+        const active = light.intensity > 0 && this.isEmitting(light);
+        const emitting = active && !darkness ? physical.intensity : 0;
         const radius = physical.distance > 0 ? physical.distance : Infinity;
         scratch[0] = x;
         scratch[1] = y;
@@ -231,7 +235,12 @@ export class ClusterManager {
         scratch[6] = light.color.b * emitting;
         scratch[7] = physical.decay;
         let penumbraCos = 0;
-        if (light.isSpotLight) {
+        if (darkness) {
+            scratch[8] = light.color.r;
+            scratch[9] = light.color.g;
+            scratch[10] = light.color.b;
+            scratch[11] = -2;
+        } else if (light.isSpotLight) {
             const t = light.target.matrixWorld.elements;
             let dx = x - t[12];
             let dy = y - t[13];
@@ -260,6 +269,8 @@ export class ClusterManager {
         }
         scratch[19] = penumbraCos;
         scratch[20] = light.userData.brightRatio ?? 0;
+        scratch[21] = darkness && active ? Math.min(light.intensity, 1) : 0;
+        scratch[22] = light.userData.priority ?? 0;
         const offset = state.slot * RECORD_FLOATS;
         let changed = false;
         for (let i = 0; i < RECORD_FLOATS; i++) {
@@ -287,7 +298,12 @@ export class ClusterManager {
         const maskTexture = this.masks.texture ?? whiteTexture;
         if (clusterUniforms.uClusterMasks.value !== maskTexture) clusterUniforms.uClusterMasks.value = maskTexture;
         let changed = this._recordsDirty;
-        for (const [light, state] of this.states) if (this.writeRecord(light, state)) changed = true;
+        let darkness = 0;
+        for (const [light, state] of this.states) {
+            if (this.writeRecord(light, state)) changed = true;
+            if (light.isDarkness && state.binned) darkness++;
+        }
+        clusterUniforms.uClusterDarkness.value = darkness;
         if (this._gridDirty) this.rebuildGrid();
         if (changed) {
             this.uploadRows(0, Math.ceil((this.nextSlot * RECORD_TEXELS) / DATA_WIDTH));

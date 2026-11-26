@@ -297,7 +297,7 @@ const PRESETS = {
     acid: { shallow_color: "#c8f03a", deep_color: "#2f7a0a", foam_color: "#ecffb8", glow_color: "#7dff1a", opacity: 0.92, clarity: 0.25, flow_speed: 0.05, wave_strength: 0.3, wave_scale: 0.6, ripple_size: 0.3, foam: 0.6, bubbles: 0.5, scum: 0, oil: 0, reflectivity: 0.3, glow: 0.6, crust: 0 },
     lava: { shallow_color: "#ff7a10", deep_color: "#2b2927", foam_color: "#ffc828", glow_color: "#d2300a", opacity: 1, clarity: 0.05, flow_speed: 0.3, wave_strength: 0.15, wave_scale: 0.5, ripple_size: 0.6, foam: 0, bubbles: 0.3, scum: 0, oil: 0, reflectivity: 0.15, glow: 1.4, crust: 0.01 },
     magicalFire: { shallow_color: "#b45cff", deep_color: "#1d1430", foam_color: "#f0c8ff", glow_color: "#7a1fff", opacity: 1, clarity: 0.05, flow_speed: 0.35, wave_strength: 0.15, wave_scale: 0.5, ripple_size: 0.6, foam: 0, bubbles: 0.35, scum: 0, oil: 0, reflectivity: 0.15, glow: 1.6, crust: 0.01 },
-    sewage: { shallow_color: "#433924", deep_color: "#1a160d", foam_color: "#5c5341", glow_color: "#ffffff", opacity: 1, clarity: 0.1, flow_speed: 0.06, wave_strength: 0.04, wave_scale: 0.4, ripple_size: 0.5, foam: 0.15, bubbles: 0.08, scum: 0.15, oil: 0.6, reflectivity: 0.12, glow: 0, crust: 0 },
+    sewage: { shallow_color: "#4f5c28", deep_color: "#1d230c", foam_color: "#46472c", glow_color: "#55761c", opacity: 1, clarity: 0.08, flow_speed: 0.06, wave_strength: 0.12, wave_scale: 0.4, ripple_size: 0.35, foam: 0.12, bubbles: 0.08, scum: 0.1, oil: 0, reflectivity: 0.55, glow: 0.1, crust: 0 },
 };
 
 const slider = (def, min, max, step) => ({ type: "float", default: def, min, max, step });

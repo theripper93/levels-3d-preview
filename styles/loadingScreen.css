@@ -8,6 +8,28 @@
     opacity: 0;
 }
 
+#levels-3d-preview-level-loading {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    z-index: 100;
+    color: var(--color-text-light-0);
+    font-size: var(--font-size-32);
+    font-family: var(--font-h1);
+    text-shadow: 0 0 6px black, 0 0 12px black;
+    opacity: 0;
+    animation: levels-3d-preview-level-loading 0.25s ease-out 0.15s forwards;
+}
+
+@keyframes levels-3d-preview-level-loading {
+    to {
+        opacity: 1;
+    }
+}
+
 .levels-3d-preview-loading-screen p{
     text-align: center;
     line-height: unset;

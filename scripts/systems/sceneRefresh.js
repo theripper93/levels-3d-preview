@@ -1,6 +1,5 @@
 import { MODULE_ID } from "../main.js";
 import { recomputeGravityDebounced } from "../entities/tile3d.js";
-import { clearParkedTiles } from "./levelSwitch.js";
 
 const CORE_REDRAW_KEYS = ["width", "height", "padding", "shiftX", "shiftY", "grid.type", "grid.size", "grid.distance", "grid.units", "weather"];
 const REBUILD_KEYS = ["width", "height", "padding", "grid.size", "grid.distance"];
@@ -76,27 +75,6 @@ function refreshWalls(L) {
     sceneContentsChanged(L);
 }
 
-async function refreshTiles(L) {
-    if (canvas.scene.getFlag(MODULE_ID, "showSceneFloors") === false) {
-        for (const [id, tile3d] of Object.entries(L.tiles)) {
-            tile3d.destroy(true);
-            L.workers.removeMesh(id);
-        }
-        L.tiles = {};
-        clearParkedTiles();
-    } else {
-        const loads = canvas.tiles.placeables.filter((tile) => !L.tiles[tile.id]).map((tile) => L.createTile(tile));
-        await Promise.all(loads);
-    }
-    if (L._active) sceneContentsChanged(L);
-}
-
-function refreshLights(L) {
-    for (const light3d of Object.values(L.lights.sceneLights)) light3d.destroy();
-    L.lights.sceneLights = {};
-    L.createSceneLights();
-}
-
 function refreshFog(L) {
     L.createFog();
     L._refreshPerception();
@@ -106,8 +84,8 @@ export function refreshSceneSettings(L, scene, changes) {
     const flags = changes.flags?.[MODULE_ID] ?? {};
     const has = (key) => key in flags || `-=${key}` in flags;
     const fogChanged = "fog" in changes || "tokenVision" in changes || has("enableFogOfWar");
-    const wallsChanged = has("showSceneWalls") || has("showSceneDoors");
-    const inPlace = [has("object3dSight"), wallsChanged, has("showSceneFloors"), has("renderSceneLights"), fogChanged];
+    const wallsChanged = has("showSceneWalls") || has("wallStyle");
+    const inPlace = [has("object3dSight"), wallsChanged, fogChanged];
     if (inPlace.some(Boolean) && !L._ready) {
         L.reload();
         return true;
@@ -115,8 +93,6 @@ export function refreshSceneSettings(L, scene, changes) {
     if (has("mirrorLevels")) L.mirrorLevelsVisibility = scene.getFlag(MODULE_ID, "mirrorLevels") ?? true;
     if (has("object3dSight")) refreshSight(L);
     if (wallsChanged) refreshWalls(L);
-    if (has("showSceneFloors")) refreshTiles(L);
-    if (has("renderSceneLights")) refreshLights(L);
     if (fogChanged) refreshFog(L);
     trackSceneRedraw(scene, changes);
 }

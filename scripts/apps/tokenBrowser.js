@@ -305,6 +305,7 @@ async function quickMatch(tokenDocument, topDown = false) {
     const closestMatch = await TokenBrowser.findByName(tokenDocument.name, { returnFirst: true, async: true });
     if (closestMatch) {
         await tokenDocument.update({
+            lockRotation: false,
             flags: {
                 "levels-3d-preview": {
                     model3d: closestMatch,
@@ -330,6 +331,7 @@ function quickMatchSync(tokenDocument, topDown = false) {
     const closestMatch = TokenBrowser.findByName(tokenDocument.name, { returnFirst: true, async: false });
     if (closestMatch) {
         tokenDocument.updateSource({
+            lockRotation: false,
             flags: {
                 "levels-3d-preview": {
                     model3d: closestMatch,

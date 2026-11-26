@@ -5,6 +5,7 @@ import { SideSplitter } from "./sideSplitter.js";
 import { setStaticSubtree } from "../three/matrixWorld.js";
 import { BatchPrepass, prepassAllowed, wantsPrepass } from "./batchPrepass.js";
 import { BatchLod } from "./batchLod.js";
+import { BATCH_FADE_DEFINE, isTileFadeHook, tileCut } from "./tileOcclusion.js";
 import { windBatchCompile, windSwayParams, windSwayKey, addWindAttributes } from "../shaders/wind/windBatch.js";
 
 const BUILD_DELAY = 500;
@@ -21,6 +22,7 @@ const _matrix = new THREE.Matrix4();
 const _instance = new THREE.Matrix4();
 const _color = new THREE.Color();
 const _instanceColor = new THREE.Color();
+const _rgba = new THREE.Vector4();
 const _frustum = new THREE.Frustum();
 const _projection = new THREE.Matrix4();
 
@@ -140,6 +142,8 @@ export class KitBatcher {
             const count = instanced ? object.count : 1;
             source.wasVisible = object.visible;
             if (source.ready) object.visible = false;
+            const cut = tileCut(source.record.tile3d);
+            if (cut !== source.cut) setFade(source, cut);
             if (!moved && visible === source.visible && count === source.count) continue;
             this.lod.dirty = true;
             source.visible = visible;
@@ -293,6 +297,7 @@ export class KitBatcher {
         const instances = object.isInstancedMesh ? object.instanceMatrix.count : 1;
         const entries = [];
         const batches = [];
+        const cut = tileCut(record.tile3d);
         for (const group of multi ? object.geometry.groups : WHOLE) {
             const material = materials[group.materialIndex];
             if (!material?.visible) continue;
@@ -306,7 +311,7 @@ export class KitBatcher {
                 const id = this.addInstance(batch, geometry.id);
                 _color.copy(material.color);
                 if (object.instanceColor) _color.multiply(object.getColorAt(index, _instanceColor));
-                batch.mesh.setColorAt(id, _color);
+                batch.mesh.setColorAt(id, _rgba.set(_color.r, _color.g, _color.b, 1 - cut));
                 entries.push({ batch, id, geometry, index, finite: false, on: false });
             }
         }
@@ -320,6 +325,7 @@ export class KitBatcher {
             entries,
             batches,
             active: false,
+            cut,
             instances,
             geometry: object.geometry,
             positionVersion: object.geometry.attributes.position.version,
@@ -378,7 +384,7 @@ export class KitBatcher {
             return batch;
         }
         const batchMaterial = material.clone();
-        batchMaterial.defines = { ...material.defines };
+        batchMaterial.defines = { ...material.defines, [BATCH_FADE_DEFINE]: "" };
         batchMaterial.color?.set(0xffffff);
         if (wind) batchMaterial.onBeforeCompile = windBatchCompile;
         else if (material.userData.batchShader) batchMaterial.onBeforeCompile = material._userOnBeforeCompile;
@@ -441,6 +447,15 @@ export class KitBatcher {
         const id = mesh.addInstance(geometryId);
         mesh.setVisibleAt(id, false);
         return id;
+    }
+}
+
+function setFade(source, cut) {
+    source.cut = cut;
+    for (const entry of source.entries) {
+        const texture = entry.batch.mesh._colorsTexture;
+        texture.image.data[entry.id * 4 + 3] = 1 - cut;
+        texture.needsUpdate = true;
     }
 }
 
@@ -511,7 +526,7 @@ function isCurrent(record) {
 function isBatchable(object, kit) {
     if (!object.isMesh || object.isSkinnedMesh || object.isBatchedMesh || !object.geometry?.attributes?.position) return false;
     if (object.isInstancedMesh && (kit || object.morphTexture)) return false;
-    if (object.userData.noShaders || object.geometry.morphAttributes?.position || object.onBeforeRender !== THREE.Object3D.prototype.onBeforeRender) return false;
+    if (object.userData.noShaders || object.geometry.morphAttributes?.position || (object.onBeforeRender !== THREE.Object3D.prototype.onBeforeRender && !isTileFadeHook(object))) return false;
     for (const name in object.geometry.attributes) if (object.geometry.attributes[name].isInterleavedBufferAttribute) return false;
     if (object.geometry.index?.isInterleavedBufferAttribute) return false;
     return [object.material].flat().every((material) => isBatchableMaterial(material, kit));

@@ -6,6 +6,7 @@ import { noisePars } from "../vfx/region/shaders.js";
 import { ShelterMap } from "../vfx/weather/shelterMap.js";
 import { wind } from "../vfx/weather/wind.js";
 import { terrainWaterMeshes } from "../helpers/terrainWater.js";
+import { isUndergroundLevel } from "../helpers/undergroundLevel.js";
 import { lowestGround } from "../helpers/mapMakerTerrain.js";
 import { gradeMistColor } from "./visionModeMask.js";
 
@@ -147,7 +148,7 @@ function setSceneColor(target, value, fallback, scale) {
 
 function indoorMist() {
     const setting = canvas.scene.getFlag(MODULE_ID, "dynamicSky")?.setting;
-    return (!!setting && setting !== "outdoor") || (canvas.level?.elevation?.bottom ?? 0) < 0;
+    return (!!setting && setting !== "outdoor") || (canvas.level?.elevation?.bottom ?? 0) < 0 || isUndergroundLevel();
 }
 
 function levelFloor() {

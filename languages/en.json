@@ -1,6 +1,19 @@
 {
     "TYPES.RegionBehavior.levels-3d-preview.obscureVision": "Obscure 3D Vision",
     "levels3dpreview": {
+        "wallStyles": {
+            "none": "None",
+            "classic": "Classic",
+            "adobe": "Desert Adobe",
+            "sewer": "Sewer",
+            "pumpStation": "Pumping Station",
+            "castleKeep": "Castle Keep",
+            "dwarvenHold": "Dwarven Hold",
+            "marbleHall": "Marble Hall",
+            "desertTomb": "Desert Tomb",
+            "icePalace": "Ice Palace",
+            "researchLab": "Research Lab"
+        },
         "assetBrowser": {
             "title": "Asset Browser",
             "search": "Search assets",
@@ -81,7 +94,9 @@
                 "gravity": "Computing Gravity...",
                 "scatter": "Placing Scatter and Furniture...",
                 "shaders": "Compiling Shaders...",
-                "optimize": "Optimizing Geometry..."
+                "optimize": "Optimizing Geometry...",
+                "level": "Loading Level {name}",
+                "levelUnnamed": "Loading Level"
             },
             "loadingScreen": {
                 "navtools": "Scene Navigation tools (left of ",
@@ -558,14 +573,11 @@
             "ambientLightColor": {
                 "label": "Ambient Light Color"
             },
-            "showSceneWalls": {
-                "label": "Render Walls"
-            },
-            "showSceneDoors": {
-                "label": "Render Doors"
-            },
-            "showSceneFloors": {
-                "label": "Render Tiles"
+            "wallStyle": {
+                "label": "Wall Style",
+                "options": {
+                    "sceneDefault": "Scene Default"
+                }
             },
             "initialview": {
                 "label": "Initial View Position",
@@ -580,11 +592,8 @@
             "wallFloorAlpha": {
                 "label": "Wall/Floor Alpha"
             },
-            "renderSceneLights": {
-                "label": "Render Scene Lights"
-            },
             "mirrorLevels": {
-                "label": "Enable Tile Occlusion"
+                "label": "Mirror 2D Tile Visibility"
             },
             "object3dSight": {
                 "label": "Use 3D Geometry for sight calculations",
@@ -1330,7 +1339,11 @@
                 "ruRubbleHall": "Rubble Hall",
                 "ruStorage": "Collapsed Storage",
                 "ruShrine": "Overgrown Shrine",
-                "ruCamp": "Abandoned Camp"
+                "ruCamp": "Abandoned Camp",
+                "swTunnel": "Sewer Tunnel",
+                "swCistern": "Cistern",
+                "swCache": "Smugglers' Cache",
+                "swDen": "Squatters' Den"
             }
         },
         "modelBaker": {

@@ -1,8 +1,11 @@
 import * as THREE from "three";
 import * as coords3d from "../helpers/coords3d.js";
 import {factor} from "../main.js";
+import { WALL_STYLE_NONE } from "../walls/wallStyles.js";
+import { wallStyleFor, wallStyleIdFor, wallRole, styleMetrics, buildDoorLeaves, animateDoorLeaves, stepDoor } from "../walls/styledWalls.js";
 
 const doorIconMaterialCache = {};
+const proxyMaterial = new THREE.MeshBasicMaterial({ visible: false });
 
 export const WALL_DEFAULTS = {
     color: "#a39e94",
@@ -88,6 +91,16 @@ export class Wall3D {
         this.roughness = wall.document.getFlag("levels-3d-preview", "roughness") ?? WALL_DEFAULTS.roughness;
         this.metalness = wall.document.getFlag("levels-3d-preview", "metalness") ?? WALL_DEFAULTS.metalness;
         this.mesh = new THREE.Group();
+        this.style = this.isDisabledVisible ? wallStyleFor(wall.document) : null;
+        if (this.style) {
+            this.role = wallRole(wall.document);
+            this.depth = styleMetrics(this.style).thickness / factor;
+            this.joinWall = false;
+            this.distance = this.p1.distanceTo(this.p2) / factor;
+            this.interiorSide = 1;
+            this.doorProgress = this.doorTarget;
+            parent.styledWalls?.add(this);
+        }
 
         this.init();
     }
@@ -95,10 +108,8 @@ export class Wall3D {
     get isDisabledVisible() {
         if (this._isDisabledVisible !== undefined) return this._isDisabledVisible;
         let isDisabledVisible = true;
-        const isDoor = this.wall.isDoor;
-        if (canvas.scene.getFlag("levels-3d-preview", "showSceneWalls") === false && !isDoor) isDisabledVisible = false;
-        if (canvas.scene.getFlag("levels-3d-preview", "showSceneDoors") === false && isDoor) {
-            this.showControlIcon = true;
+        if (wallStyleIdFor(this.wall.document) === WALL_STYLE_NONE) {
+            if (this.wall.isDoor) this.showControlIcon = true;
             isDisabledVisible = false;
         }
         this._isDisabledVisible = isDisabledVisible;
@@ -116,6 +127,7 @@ export class Wall3D {
             uvAttribute.setXY(i, u, v);
         }
         if (!this.joinWall) this._trimEnds(geometry);
+        if (this.style) return this._initStyled(geometry);
 
         const texture = this.texture ? await this._parent.helpers.loadTexture(this.texture) : null;
         if (texture) {
@@ -153,6 +165,74 @@ export class Wall3D {
         this.mesh.rotation.set(0, this.angle, 0);
         this.mesh.visible = this.isDisabledVisible;
         this._parent.scene.add(this.mesh);
+    }
+
+    async _initStyled(geometry) {
+        const wallMesh = new THREE.Mesh(geometry, proxyMaterial);
+        this.wallMesh = wallMesh;
+        this.mesh.add(wallMesh);
+        const interactive = this.wall.isDoor && !(!game.user.isGM && this.wall.document.door === CONST.WALL_DOOR_TYPES.SECRET);
+        if (interactive) {
+            this.mesh.userData.hitbox = this.mesh;
+            this.mesh.userData.interactive = true;
+        }
+        this.mesh.userData.entity3D = this;
+        this.mesh.position.set(this.center.x, this.center.y, this.center.z);
+        this.mesh.rotation.set(0, this.angle, 0);
+        this.mesh.visible = true;
+        this._parent.scene.add(this.mesh);
+    }
+
+    async applyDoorLayout(layout) {
+        const key = `${layout.door.leaf}|${layout.w}|${layout.h}`;
+        if (this._doorKey === key || this._destroyed) return;
+        this._doorKey = key;
+        const leaves = await buildDoorLeaves(layout);
+        if (this._destroyed || this._doorKey !== key) return leaves.forEach((leaf) => this._disposeObject(leaf.pivot));
+        if (this.doorFrame) {
+            this.mesh.remove(this.doorFrame);
+            this._disposeObject(this.doorFrame);
+        }
+        const frame = new THREE.Group();
+        frame.rotation.y = Math.PI / 2;
+        frame.position.y = -(this.vec1.y - this.vec2.y) / 2;
+        for (const leaf of leaves) frame.add(leaf.pivot);
+        this.mesh.add(frame);
+        this.doorFrame = frame;
+        this.doorLeaves = leaves;
+        this.doorLayout = layout;
+        this._lastDoorStep = performance.now();
+        animateDoorLeaves(leaves, layout, this.doorProgress, this.interiorSide);
+    }
+
+    get doorTarget() {
+        return this.wall.document.ds === CONST.WALL_DOOR_STATES.OPEN ? 1 : 0;
+    }
+
+    _stepDoor() {
+        if (!this.doorLeaves) return;
+        const now = performance.now();
+        const delta = Math.min(0.1, (now - this._lastDoorStep) / 1000);
+        this._lastDoorStep = now;
+        const target = this.doorTarget;
+        if (this.doorProgress === target && this._doorSwing === this.interiorSide) return;
+        this.doorProgress = stepDoor(this.doorProgress, target, delta);
+        this._doorSwing = this.interiorSide;
+        animateDoorLeaves(this.doorLeaves, this.doorLayout, this.doorProgress, this.interiorSide);
+    }
+
+    async refreshDoorState() {
+        if (this.role === "secret") this._parent.styledWalls?.schedule();
+        if (!this.controlIcon) return;
+        this.controlIcon.material = await this.getControlIconMaterial();
+    }
+
+    _disposeObject(object) {
+        object?.traverse((child) => {
+            if (!child.isMesh) return;
+            child.geometry?.dispose();
+            for (const material of [child.material].flat()) if (material !== proxyMaterial) material?.dispose?.();
+        });
     }
 
     _trimEnds(geometry) {
@@ -256,21 +336,9 @@ export class Wall3D {
 
     updateVisibility() {
         if (!this.mesh) return;
-        let meshVisible = this.isVisible;
-        if (game.Levels3DPreview.mirrorLevelsVisibility) {
-            if (CONFIG.Levels?.UI?.rangeEnabled) {
-                const isLevelsVisible = this.wall.visible;
-                meshVisible = isLevelsVisible;
-            } else {
-                // const elevation = WallHeight.tokenElevation;
-                const isControlled = canvas.tokens.controlled[0];
-                const isGM = game.user.isGM;
-                if (isGM && !isControlled && !this.showControlIcon) return;
-                // if (elevation < this.bottom) {
-                    // meshVisible = false;
-                // }
-            }
-        }
+        if (this.style) return this._stepDoor();
+        if (!this.wallMesh) return;
+        const meshVisible = this.isVisible;
         if (meshVisible) {
             this.wallMesh.visible = true;
             this.mesh.visible = true;
@@ -313,7 +381,12 @@ export class Wall3D {
     }
 
     destroy() {
+        this._destroyed = true;
         this._parent.scene.remove(this.mesh);
+        if (this.style) {
+            this._parent.styledWalls?.remove(this);
+            this._disposeObject(this.doorFrame);
+        }
         // Geometries are created per wall; materials are cached (helpers.materialCache /
         // doorIconMaterialCache) and shared, so they are intentionally not disposed.
         this.wallMesh?.geometry?.dispose();
@@ -343,6 +416,7 @@ export class Wall3D {
             const L = game.Levels3DPreview;
             if (!L?._active || !wall.object) return;
             const old = L.walls[wall.id];
+            if (old?.style && Object.keys(changes).every((key) => key === "ds" || key === "_id")) return old.refreshDoorState();
             const ids = "c" in changes ? neighborIds(wall.object, [...(old ? [old.p1, old.p2] : []), ...endpoints(wall.c)]) : null;
             old?.destroy();
             L.createWall(wall.object);
@@ -368,7 +442,7 @@ export class Wall3D {
             const L = game.Levels3DPreview;
             if (!L?._active || !game.user.isGM) return;
             for (const wall3d of Object.values(L.walls)) {
-                if (!wall3d || wall3d.tint || wall3d.texture) continue;
+                if (!wall3d || wall3d.tint || wall3d.texture || wall3d.style) continue;
                 const placeable = wall3d.wall;
                 wall3d.destroy();
                 L.createWall(placeable);
@@ -376,11 +450,5 @@ export class Wall3D {
         };
         Hooks.on("activateWallsLayer", recolorWalls);
         Hooks.on("deactivateWallsLayer", recolorWalls);
-
-        Hooks.on("activateWallsLayer", () => {
-            if (game.Levels3DPreview?._active) ui.notifications.info(`
-                3D Canvas is designed to use 3D Tiles geometry for sight and collision calculations, not walls. Because of this, the walls layer is view-only and exists solely to visualize walls from 2D maps. 2D walls can still block sight and movement if "<strong>Use 3D Objects for Sight Calculations</strong>" is disabled in the scene settings, but for 3D maps it is strongly recommended to keep that setting enabled so that 3D tiles handle all sight and collision logic instead.
-            `, { permanent: true });
-        });
     }
 }

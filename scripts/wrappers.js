@@ -6,7 +6,7 @@ import { applyShaderToRegion } from "./shaders/templateEffects.js";
 import { pos3DToCanvas, centerElement } from "./helpers/coords3d.js";
 import { registerFrameRateDisplay } from "./helpers/frameRate.js";
 import { movementFloor } from "./helpers/elevationFloor.js";
-import { testMoveCollision, walkGroundElevation, setMoveAction } from "./handlers/moveWalk.js";
+import { testMoveCollision, walkStep, setMoveAction } from "./handlers/moveWalk.js";
 import { registerAnimationSourceThrottle } from "./handlers/animationSourceThrottle.js";
 import { registerRulerPathfinding } from "./systems/rulerPathfinding.js";
 
@@ -215,7 +215,7 @@ export function registerWrappers() {
         }
 
         function movementCollisionConfiguration(wrapped, segment, ...args) {
-            setMoveAction(segment?.action);
+            setMoveAction(segment?.action, segment);
             return wrapped(segment, ...args);
         }
 
@@ -544,7 +544,9 @@ export function registerWrappers() {
                     if (token3d.wasFreeMode || interactionManager.isTokenDragFree(token)) continue;
                     const center = token.document.getCenterPoint(waypoint);
                     const start = token.document.getCenterPoint(token.document._source);
-                    const walked = walkGroundElevation({ x: start.x, y: start.y, z: token.document.elevation }, { x: center.x, y: center.y, z: token.document.elevation });
+                    const step = walkStep({ x: start.x, y: start.y, z: token.document.elevation }, { x: center.x, y: center.y, z: token.document.elevation });
+                    if (step?.blocked) continue;
+                    const walked = step?.elevation ?? null;
                     const from = { x: center.x, y: center.y, z: token3d.baseLosHeight ?? token.document.elevation };
                     const collision = walked === null ? interactionManager.computeSightCollision(from, { x: center.x, y: center.y, z: -100000 }, "move") : null;
                     if (walked === null && !collision) continue;

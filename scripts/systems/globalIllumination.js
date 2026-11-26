@@ -9,6 +9,7 @@ import { toneMappedBackground } from "../atmosphere/background.js";
 import { SkyStyleController } from "../atmosphere/sky/styleController.js";
 import { styleUsesTime } from "../atmosphere/sky/registry.js";
 import { getSetting } from "../settings/settingsConfig.js";
+import { isUndergroundLevel } from "../helpers/undergroundLevel.js";
 
 const MODULE_ID = "levels-3d-preview";
 const MOON_OFFSET = 0.4;
@@ -57,6 +58,7 @@ export function darknessAtTime(scene, time) {
 
 export function timeDrivesDarkness(scene) {
     const sky = scene.getFlag(MODULE_ID, "dynamicSky");
+    if (scene === canvas.scene && isUndergroundLevel(scene)) return false;
     return isDynamicSkyEnabled(scene) && (sky?.setting ?? SKY_DEFAULTS.setting) === "outdoor" && styleUsesTime(sky);
 }
 
@@ -101,6 +103,10 @@ export class GlobalIllumination {
         const override = this.atmosphere.override;
         const data = foundry.utils.mergeObject({ ...SKY_DEFAULTS }, foundry.utils.deepClone(canvas.scene.getFlag(MODULE_ID, "dynamicSky") ?? {}));
         data.enabled = isDynamicSkyEnabled(canvas.scene);
+        if (isUndergroundLevel()) {
+            data.enabled = true;
+            data.setting = "underground";
+        }
         if (override?.sky) foundry.utils.mergeObject(data, override.sky);
         if (override?.enabled !== undefined) data.enabled = override.enabled;
         if (override?.preset) data.preset = override.preset;

@@ -8,6 +8,7 @@ import { getQuality } from "../quality.js";
 import { sampleGlobalLight } from "../probe.js";
 import { SurfaceSystem } from "../surface/surfaceSystem.js";
 import { surfaceMacroData, isInteriorScene } from "../surface/state.js";
+import { isUndergroundLevel } from "../../helpers/undergroundLevel.js";
 
 const MODULE_ID = "levels-3d-preview";
 const TRANSITION = 4;
@@ -85,7 +86,7 @@ export class WeatherSystem {
 
     reload(transition = true) {
         const flags = canvas.scene.flags[MODULE_ID] ?? {};
-        const flag = getQuality().enabled ? this.flag : { preset: "none" };
+        const flag = getQuality().enabled && !isUndergroundLevel() ? this.flag : { preset: "none" };
         const key = JSON.stringify([flag, flag.preset === "custom" || flags.particlePresetCustom ? Object.entries(flags).filter(([name]) => name.startsWith("particle")) : null]);
         if (key === this._key) return;
         this._key = key;

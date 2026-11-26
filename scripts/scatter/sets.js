@@ -1166,6 +1166,55 @@ const KIT_FURNISH_SETS = {
             { place: "floor", items: [W("Vase_Rubble_Medium"), W("Vase_Rubble_Small"), "SN_Grass_Common_Short"], count: [1, 3] },
         ],
     }),
+    swTunnel: kitFurnish("swTunnel", "fa-solid fa-water", clutterOf([W("Rope_2"), W("Chain_Coil"), W("Bucket_Wooden_1"), W("Vase_Rubble_Small"), "BN_Skull_1"], 0.3), {
+        family: "dungeon",
+        minCells: 2,
+        groups: [
+            DG_TORCHES(1, 3, 4.5),
+            { place: "wall", items: [W("Parts_Chain_Straight")], count: [0, 2], perWall: 4 },
+            { place: "wall", items: ["DP_WallChain_1", "DP_WallChain_2"], count: [0, 1], perWall: 6 },
+            { place: "wall", items: [W("Barrel"), W("Barrel_Dark"), W("Crate_Wooden")], count: [0, 2], perWall: 5, cluster: [1, 2] },
+            { place: "floor", items: [W("Rope_2"), W("Chain_Coil"), W("Bucket_Wooden_1"), W("Vase_Rubble_Small"), "BN_Skull_1", W("Skull")], count: [1, 3] },
+            { place: "floor", items: ["BN_BonePile_1", "BN_BonePile_4", "BN_BonePile_7", "DP_LargeBone"], count: [0, 1] },
+        ],
+    }),
+    swCistern: kitFurnish("swCistern", "fa-solid fa-droplet", clutterOf([W("Bucket_Wooden_1"), "Bucket_Metal", W("Rope_2"), W("Chain_Coil")], 0.3), {
+        family: "dungeon",
+        minCells: 4,
+        groups: [
+            { place: "corner", items: ["Barrel", W("Barrel"), W("Barrel_Dark")], count: [1, 3], cluster: [1, 3] },
+            { place: "wall", items: [W("Barrel_Holder")], count: [0, 1], minRoom: 9 },
+            { place: "wall", items: [W("Parts_Chain_Straight")], count: [1, 3], perWall: 3 },
+            { place: "wall", items: ["Bucket_Metal", W("Bucket_Wooden_1"), W("Bucket_Metal")], count: [0, 2], perWall: 4 },
+            { place: "corner", items: ["DC_prop_brazier_stand"], count: [0, 1], minRoom: 12 },
+            DG_TORCHES(1, 3, 5.5),
+            { place: "floor", items: [W("Bucket_Wooden_1"), "Bucket_Metal", W("Rope_2"), W("Chain_Coil")], count: [1, 3] },
+        ],
+    }),
+    swCache: kitFurnish("swCache", "fa-solid fa-boxes-stacked", clutterOf([W("Bag_2"), W("Rope_2"), "Coin_Pile", "Pouch_Small"], 0.3), {
+        family: "dungeon",
+        minCells: 2,
+        groups: [
+            { place: "corner", items: ["Crate_Wooden", W("Crate_Wooden"), "Crate_Metal", "Barrel", W("Barrel_Dark")], count: [2, 4], cluster: [2, 4], top: { items: [W("Bag"), "Bag_2"], count: [0, 1] } },
+            { place: "wall", items: [W("Chest_Wood"), "Chest_Wood"], count: [1, 2], perWall: 4 },
+            { place: "wall", items: [W("Barrel"), "Crate_Wooden", W("Crate_Wooden"), W("Bag"), W("Bag_2")], count: [2, 6], perWall: 1.5, cluster: [2, 3] },
+            { place: "wall", items: [W("Shelf_Arch")], count: [0, 1], minRoom: 6, shelves: { items: [W("Bottle_1"), W("Vase_4"), "Pouch_Small", "Coin_Pile", W("Candle_1")], fill: [0.3, 0.6] } },
+            DG_TORCHES(1, 1, 7),
+            { place: "floor", items: [W("Bag_2"), W("Rope_2"), "Coin_Pile", "Pouch_Small"], count: [1, 3] },
+        ],
+    }),
+    swDen: kitFurnish("swDen", "fa-solid fa-fire", clutterOf([...FLOOR_BONES, W("Bag"), W("Mug"), W("Pot_1")], 0.3), {
+        family: "dungeon",
+        minCells: 4,
+        groups: [
+            { place: "center", items: [W("CampfireTripod")], count: [1, 1], margin: 1.25, ends: { items: [W("Stool"), W("Bag")], chance: 0.9, gap: 0.35 }, around: { items: [W("Bag"), W("Bag_2"), W("Stool")], per: [1, 2], gap: 0.35 } },
+            { place: "wall", items: [W("Bag"), W("Bag_2"), W("Barrel"), W("Crate_Wooden")], count: [1, 4], cluster: [1, 3] },
+            { place: "corner", items: [W("Cage_Small"), W("Cage_Large"), W("Chest_Wood")], count: [0, 2] },
+            DG_TORCHES(1, 1, 7),
+            { place: "floor", items: [...BONE_PILES, "DP_LargeBone"], count: [1, 3] },
+            { place: "floor", items: [...FLOOR_BONES, W("Bag"), W("Mug"), W("Pot_1")], count: [2, 5] },
+        ],
+    }),
 };
 
 const THUMBS = {
@@ -1176,6 +1225,7 @@ const THUMBS = {
     sfQuarters: `${SCIFI_ESS}Prop_Locker`, sfMess: `${SCIFI_ESS}Prop_Mug`, sfMedBay: `${SCIFI_ESS}Prop_HealthPack`, sfArmory: `${SCIFI_ESS}Gun_Rifle`,
     dgGuardRoom: `${PROPS}WeaponStand`, dgPrison: `${PROPS}Cage_Large_Worn`, dgCrypt: `${PROPS}Skull`, dgShrine: `${TILES}Dungeon%20Crawler%20Kit/prop_altar`,
     dgVault: `${PROPS}Chest_Legendary`, dgStoreroom: `${PROPS}Barrel_Dark`, ruRubbleHall: `${TILES}Dungeon%20Crawler%20Kit/pillar_broken`, ruStorage: `${PROPS}Vase_Rubble_Large_Worn`, ruShrine: `${SN}Bush_Long_1`, ruCamp: `${PROPS}CampfireTripod_Worn`,
+    swTunnel: `${TILES}Dungeon%20Crawler%20Kit/floor_drain_grate`, swCistern: `${PROPS}Barrel_Holder`, swCache: `${PROPS}Crate_Metal`, swDen: `${PROPS}CampfireTripod`,
     tavern: `${PROPS}Mug`, bedroom: `${PROPS}Bed_Twin1`, library: `${PROPS}Bookcase_2`, storage: `${PROPS}Crate_Wooden`,
     kitchen: `${PROPS}Cauldron`, smithy: `${PROPS}Anvil_Log`, alchemy: `${PROPS}Potion_2`, shop: `${PROPS}Coin_Pile_2`, armory: `${PROPS}Shield_Wooden`,
 };

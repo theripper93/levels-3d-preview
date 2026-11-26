@@ -301,6 +301,10 @@ export class RevealSystem {
             targets.push({ object: wall3d.mesh, root: wall3d.mesh, box: new THREE.Box3().setFromObject(wall3d.mesh), proxy: false });
         }
         parent.kitBatcher?.root.traverse(markObject);
+        for (const object of parent.styledWalls?.meshes ?? []) {
+            object.traverse(markObject);
+            targets.push({ object, root: object, box: new THREE.Box3().setFromObject(object), proxy: false });
+        }
         this.targets = targets;
     }
 

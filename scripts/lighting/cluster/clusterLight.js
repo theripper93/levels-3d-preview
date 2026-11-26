@@ -34,6 +34,7 @@ export class ClusterLight extends Object3D {
         this.angle = angle;
         this.penumbra = penumbra;
         this.unbinned = unbinned;
+        this.isDarkness = false;
         this.castShadow = false;
         this.source = null;
         this.mask = null;

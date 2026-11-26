@@ -18,6 +18,8 @@ import { TacticalPingPicker, loadUserEmotes } from "../entities/effects/ping.js"
 import { injectBakeButton } from "../helpers/modelBaker.js";
 import { skipDefaultReloads } from "./sceneConfigSubmit.js";
 import { WALL_DEFAULTS } from "../entities/wall3d.js";
+import { wallStyleChoices, DEFAULT_WALL_STYLE } from "../walls/wallStyles.js";
+import { sceneWallStyleId } from "../walls/styledWalls.js";
 
 export function registerConfigs() {
     const documentsToWiden = ["Scene", "Token", "Tile", "AmbientLight"];
@@ -509,25 +511,11 @@ export function registerConfigs() {
                     },
                 }),
                 ...section("objects", "objects", {
-                    showSceneWalls: {
-                        type: "checkbox",
-                        label: flag("showSceneWalls.label"),
-                        default: true,
-                    },
-                    showSceneDoors: {
-                        type: "checkbox",
-                        label: flag("showSceneDoors.label"),
-                        default: true,
-                    },
-                    showSceneFloors: {
-                        type: "checkbox",
-                        label: flag("showSceneFloors.label"),
-                        default: true,
-                    },
-                    renderSceneLights: {
-                        type: "checkbox",
-                        label: flag("renderSceneLights.label"),
-                        default: true,
+                    wallStyle: {
+                        type: "select",
+                        label: flag("wallStyle.label"),
+                        default: DEFAULT_WALL_STYLE,
+                        options: wallStyleChoices(),
                     },
                     mirrorLevels: {
                         type: "checkbox",
@@ -546,6 +534,9 @@ export function registerConfigs() {
             },
         };
         const injected = injectConfig.inject(app, html, data);
+        const wallStyleSelect = html.querySelector(`select[name="flags.levels-3d-preview.wallStyle"]`);
+        if (wallStyleSelect) wallStyleSelect.value = sceneWallStyleId(app.document);
+        if (wallStyleSelect && !wallStyleSelect.value) wallStyleSelect.value = DEFAULT_WALL_STYLE;
         skipDefaultReloads(app);
         activateWeatherConfig(app, html, () => injectConfig._trySetPosition(app, { height: "auto" }));
         activateStatusSection(app, html);
@@ -1407,6 +1398,12 @@ export function registerConfigs() {
                 label: "3D",
                 icon: "fas fa-cube",
                 width: 1,
+            },
+            wallStyle: {
+                type: "select",
+                label: game.i18n.localize("levels3dpreview.flags.wallStyle.label"),
+                default: "",
+                options: { "": game.i18n.localize("levels3dpreview.flags.wallStyle.options.sceneDefault"), ...wallStyleChoices() },
             },
             wallTexture: {
                 type: "filepicker",

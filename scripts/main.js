@@ -13,6 +13,7 @@ import { elevationFloor } from "./helpers/elevationFloor.js";
 import { Light3D } from "./entities/light3d.js";
 import { Sound3D } from "./entities/sound3d.js";
 import { Wall3D } from "./entities/wall3d.js";
+import { StyledWalls } from "./walls/styledWalls.js";
 import { initSharing, setSharingHooks } from "./apps/sharing.js";
 import { Tile3D, recomputeGravity, autoMergeTiles, unmergeTiles, splitToChunks, extractPointsFromDrawing, extrudeWalls, attachTileToToken } from "./entities/tile3d.js";
 import { Note3D } from "./entities/note3d.js";
@@ -41,7 +42,9 @@ import { ClusterManager } from "./lighting/cluster/clusterManager.js";
 import { installClusterChunks } from "./lighting/cluster/clusterChunks.js";
 import { ShadowBatcher } from "./systems/shadowBatcher.js";
 import { KitBatcher } from "./systems/kitBatcher.js";
+import { installGlobalUniformBlock } from "./render/globalUniformBlock.js";
 import { RevealSystem, installRevealChunks } from "./systems/reveal.js";
+import { TileOcclusionSystem, installTileFadeChunks } from "./systems/tileOcclusion.js";
 import { Particle3D } from "./systems/particleSystem.js";
 import { defaultTokenAnimations } from "./handlers/tokenAnimationHandler.js";
 import { presetMaterials, PresetMaterialHandler, populateScene } from "./helpers/presetMaterials.js";
@@ -82,7 +85,8 @@ import { BuildPanel } from "./apps/buildPanel.js";
 import { AssetBrowser } from "./apps/assetBrowser.js";
 import { TokenBrowser, setHudHook } from "./apps/tokenBrowser.js";
 import { setLevelsHooks } from "./systems/sceneLevels.js";
-import { canSwitchLevel, clearParkedTiles, setLevelSwitchHooks, switchLevel } from "./systems/levelSwitch.js";
+import { isUndergroundLevel } from "./helpers/undergroundLevel.js";
+import { canSwitchLevel, clearParkedTiles, setLevelSwitchHooks, hideLevelLoading, showLevelLoading, switchLevel } from "./systems/levelSwitch.js";
 import { refreshSceneSettings, setSceneRefreshHooks } from "./systems/sceneRefresh.js";
 import { createTargetGeometry } from "./entities/effects/target.js";import { injectLegacyLights } from "./three/legacyLights.js";import { Socket } from "./lib/socket.js";
 import { renderSceneToImage } from "./helpers/export2d.js";
@@ -94,12 +98,14 @@ import { Shape3D } from "./entities/shape3d.js";
 import { Region3D } from "./entities/region3d.js";
 import { check3DToggleConflicts } from "./helpers/conflict-manager.js";
 import { acceptFrame } from "./helpers/frameRate.js";
+import { installPixiRenderSkip } from "./helpers/pixiRenderSkip.js";
 import { injectMatrixWorld, updateSceneMatrixWorld } from "./three/matrixWorld.js";
 import { installFixedSamplers } from "./three/fixedSamplers.js";
 import { setSightCeilingHooks } from "./systems/sightCeiling.js";
 import { Drawings3D, installPaintChunks } from "./systems/drawings3d.js";
 import { DrawingInput3D } from "./handlers/drawingInput3d.js";
 import { RegionInput3D } from "./handlers/regionInput3d.js";
+import { WallInput3D } from "./handlers/wallInput3d.js";
 import { updateRegionLabels } from "./entities/effects/regionOutline.js";
 
 // import "../scss/module.scss";
@@ -115,6 +121,7 @@ const SETTLE_QUIET_FRAMES = 3;
 injectFoWShaders(THREE);
 installClusterChunks(THREE);
 installRevealChunks(THREE);
+installTileFadeChunks(THREE);
 vfx.surface.installSurfaceChunks(THREE);
 installPaintChunks(THREE);
 injectThreeModifications(THREE);
@@ -129,6 +136,7 @@ Sound3D.setHooks();
 Note3D.setHooks();
 Token3D.setHooks();
 Wall3D.setHooks();
+StyledWalls.setHooks();
 Tile3D.setHooks();
 registerScatterHooks();
 // Template3D.setHooks();
@@ -665,6 +673,7 @@ class Levels3DPreview {
         gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
         this.renderer = new THREE.WebGLRenderer({ context: gl });
         this.renderer.setSize(window.innerWidth, window.innerHeight);
+        this.uniformBlock = installGlobalUniformBlock(this.renderer);
         this.lightWarmup = new LightWarmup(this);
         this.clusterManager = new ClusterManager(this);
         canvas.app.ticker.add(() => this.animation(performance.now()), null, PIXI.UPDATE_PRIORITY.UTILITY);
@@ -677,11 +686,12 @@ class Levels3DPreview {
 
         this.renderer.setPixelRatio(this.resolutionMulti);
         this.renderer.alpha = false;
-        this.renderer.setClearColor(0x999999, 1);
+        this.renderer.setClearColor(0x000000, 1);
         this.renderer.shadowMap.type = game.settings.get("levels-3d-preview", "softShadows") ? THREE.VSMShadowMap : THREE.PCFShadowMap;
         this.shadowBatcher = new ShadowBatcher(this);
         this.kitBatcher = new KitBatcher(this);
         this.reveal = new RevealSystem(this);
+        this.tileOcclusion = new TileOcclusionSystem(this);
         this.drawings = new Drawings3D(this);
         installFixedSamplers(this.renderer);
 
@@ -698,6 +708,7 @@ class Levels3DPreview {
         this.interactionManager.activateListeners();
         this.drawingInput = new DrawingInput3D(this);
         this.regionInput = new RegionInput3D(this);
+        this.wallInput = new WallInput3D(this);
         this.cursors = new Cursors3D(this);
         this.cutsceneEngine = new CutsceneEngine(this);
 
@@ -725,6 +736,7 @@ class Levels3DPreview {
     }
 
     build3Dscene() {
+        this._undergroundLevel = isUndergroundLevel();
         // $(".levels-3d-preview-loading-screen").fadeIn(300);
         const el = document.querySelector(".levels-3d-preview-loading-screen");
         el.classList.remove("hidden");
@@ -802,8 +814,6 @@ class Levels3DPreview {
         if (isNaN(this.level)) this.level = Infinity;
         // this.createTemplates();
         this.createRegions();
-        const drawFloors = canvas.scene.getFlag("levels-3d-preview", "showSceneFloors") ?? true;
-        const drawLights = canvas.scene.getFlag("levels-3d-preview", "renderSceneLights") ?? true;
         this.standUpFaceCamera = game.settings.get("levels-3d-preview", "flatTokenStyle") == "flat";
         const enableFog = canvas.scene.getFlag("levels-3d-preview", "enableFog") ?? false;
         const fogColor = canvas.scene.getFlag("levels-3d-preview", "fogColor") ?? "#000000";
@@ -1122,7 +1132,6 @@ class Levels3DPreview {
 
     addLight(light) {
         this.lights.sceneLights[light.id]?.destroy();
-        if (!(canvas.scene.getFlag("levels-3d-preview", "renderSceneLights") ?? true)) return;
         const light3d = new Light3D(light, this);
         this.lights.sceneLights[light.id] = light3d;
     }
@@ -1139,7 +1148,6 @@ class Levels3DPreview {
     }
 
     createTile(tile) {
-        if (canvas.scene.getFlag("levels-3d-preview", "showSceneFloors") === false) return;
         if (!this._ready) {
             const tile3d = new Tile3D(tile, this);
             this.loadingTiles[tile.id] = tile3d;
@@ -1153,6 +1161,7 @@ class Levels3DPreview {
     }
 
     createWalls() {
+        this.styledWalls ??= new StyledWalls(this);
         for (let wall of canvas.walls.placeables) {
             if (this.isLevels) {
                 const bottom = wall.document.flags.wallHeight?.wallHeightBottom ?? -Infinity;
@@ -1370,6 +1379,7 @@ class Levels3DPreview {
         this.rangeFinders = [];
         this.loadingTokens = {};
         this.loadingTiles = {};
+        this.styledWalls?.clear();
         this.walls = {};
         this.doors = {};
         this.lights.sceneLights = {};
@@ -1494,6 +1504,7 @@ class Levels3DPreview {
             Object.values(this.walls).forEach((wall) => {
                 wall.updateVisibility();
             });
+            this.wallInput?.update();
             Object.values(this.lights.sceneLights).forEach((light) => {
                 light.update(time);
             });
@@ -1541,6 +1552,7 @@ class Levels3DPreview {
             this.kitBatcher.update();
             cameraShake.apply(this.camera, delta, this.controls.target);
             this.reveal.update(delta);
+            this.tileOcclusion.update(delta);
             const compiling = this._settling && !this._programsReady();
             if (!compiling) this.composer.render(time);
             cameraShake.restore(this.camera);
@@ -1902,6 +1914,8 @@ class Levels3DPreview {
 
     hideBoard() {
         canvas.stage.renderable = false;
+        installPixiRenderSkip(this);
+        canvas.app.renderer.background.color = 0x000000;
         this.syncCoreLightAnimation();
     }
 
@@ -1925,6 +1939,7 @@ class Levels3DPreview {
         document.querySelector("#board").style.display = "unset";
         document.querySelector("#board").style.opacity = 1;
         canvas.stage.renderable = true;
+        if (canvas.environment?.colors?.rendererBackground) canvas.app.renderer.background.color = canvas.environment.colors.rendererBackground;
         this.syncCoreLightAnimation();
         this.clear3Dscene();
         this.weather?.destroy();
@@ -2058,6 +2073,7 @@ Hooks.on("canvasReady", async () => {
         }
     }
     if (levels3d) levels3d._levelSwitch = false;
+    hideLevelLoading();
     const drawId = canvasDrawId;
     do {
         await sleep(100);
@@ -2078,6 +2094,11 @@ Hooks.on("canvasTearDown", (board, options) => {
     if (!game.Levels3DPreview) return;
     game.Levels3DPreview._pauseRendering = true;
     game.Levels3DPreview._levelSwitch = canSwitchLevel(game.Levels3DPreview, options);
+    if (game.Levels3DPreview._levelSwitch) showLevelLoading(options.nextLevel);
+});
+
+Hooks.on("initializeCanvasEnvironment", () => {
+    if (game.Levels3DPreview?._active || canvas.scene?.getFlag("levels-3d-preview", "auto3d")) canvas.app.renderer.background.color = 0x000000;
 });
 
 Hooks.on("sightRefresh", () => {

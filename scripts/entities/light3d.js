@@ -6,11 +6,15 @@ import { LightEffects } from "../vfx/light/lightEffects.js";
 import { ClusterLight } from "../lighting/cluster/clusterLight.js";
 import { setStaticSubtree } from "../three/matrixWorld.js";
 import { getQuality } from "../vfx/quality.js";
-import { createEntityGizmo, placeableGizmoState, snapActive } from "./effects/placeableGizmo.js";
+import { createEntityGizmo, placeableGizmoState, snapActive, DARKNESS_GLYPH, DARKNESS_FILL } from "./effects/placeableGizmo.js";
 
 const LIGHT_SHADOW_RADIUS = 3;
 const GIZMO_FLAGS = new Set(["refreshState", "refreshVisibility", "refreshField", "refreshTooltip", "refreshMeasurements"]);
 const MIN_BRIGHT_RATIO = 0.25;
+const DARKNESS_COLOR = "#8651d5";
+const DARKNESS_EDGE = 0.8;
+const DARKNESS_RESIDUAL = 0.27;
+const DARKNESS_NIGHT = 0.33;
 
 export class Light3D {
     constructor(light, parent, isToken) {
@@ -48,6 +52,7 @@ export class Light3D {
     }
 
     wantsShadow(light) {
+        if (this.isDarkness) return false;
         if (!light.document.getFlag("levels-3d-preview", "castShadow") || game.settings.get("levels-3d-preview", "shadowQuality") <= 0) return false;
         return this.angle != 360 || !game.settings.get("levels-3d-preview", "softShadows");
     }
@@ -110,10 +115,12 @@ export class Light3D {
     syncGizmo(range = this.rangeValues()) {
         if (!this.gizmo || this.light.destroyed) return;
         const light = this.light.hasPreview ? this.light._preview : this.light;
+        const darkness = this.isDarkness;
         this.gizmo.sync(
             placeableGizmoState(this, {
-                color: this.color ?? null,
-                disabled: !light.emitsLight,
+                color: this.color ?? (darkness ? DARKNESS_FILL : null),
+                glyph: darkness ? DARKNESS_GLYPH : null,
+                disabled: !(light.emitsLight || light.emitsDarkness),
                 radius: (range.radius * canvas.dimensions.distancePixels) / factor,
                 bright: Math.max(this.dim, this.bright) > 0 ? Math.min(this.dim, this.bright) / Math.max(this.dim, this.bright) : 0.5,
                 angle: range.angle,
@@ -237,6 +244,12 @@ export class Light3D {
         this.light3d.decay = decay;
         this.light3d.intensity = alpha;
         this.light3d.userData.brightRatio = Light3D.brightRatio(this.dim, this.bright);
+        this.light3d.userData.priority = this.lightData.priority ?? 0;
+        this.light3d.isDarkness = this.isDarkness;
+        if (this.isDarkness) {
+            this.light3d.userData.brightRatio = this.dim > this.bright && this.bright > 0 ? this.bright / this.dim : DARKNESS_EDGE;
+            (this.darknessTint ??= new THREE.Color()).set(this.color || DARKNESS_COLOR).convertLinearToSRGB();
+        }
         this.light3d.shadow.camera.far = radius;
         this.light3d.shadow.camera.near = 0.02;
         this.initialLightParams = {
@@ -301,7 +314,7 @@ export class Light3D {
 
     get isEmitting() {
         if (this._parent.hiddenLights?.has(this.light.document.id)) return false;
-        return (this.light.emitsLight && !this.light.document.hidden) || !!this.light.document.flags?.["levels-3d-preview"]?.visibleWhenDisabled;
+        return (this.light.emitsLight && !this.light.document.hidden && !this.lightSource?.suppression?.darkness) || !!this.light.document.flags?.["levels-3d-preview"]?.visibleWhenDisabled;
     }
 
     update() {
@@ -323,6 +336,7 @@ export class Light3D {
         }
         this.light3d.intensity = base.intensity * this.flicker;
         if (!this.isToken) setLightFlicker(this.particleEffectId, this.flicker);
+        if (this.light3d.isDarkness) return this.updateDarkness();
         const emitting = this.isEmitting;
         this.lightFx?.update(this.flicker, emitting);
         const shadow = this.light3d.shadow;
@@ -333,6 +347,29 @@ export class Light3D {
         this.light3d.intensity = 0;
         shadow.autoUpdate = false;
         shadow.needsUpdate = false;
+    }
+
+    updateDarkness() {
+        const light3d = this.light3d;
+        this.lightFx?.update(this.flicker, false);
+        light3d.intensity = this.emitsDarkness ? Math.min(this.flicker, 1) : 0;
+        const level = canvas.environment?.darknessLevel ?? 0;
+        const scale = DARKNESS_RESIDUAL * THREE.MathUtils.lerp(1, DARKNESS_NIGHT, level) * Math.max(this.alpha ?? 0.5, 0) * 2;
+        const tint = this.darknessTint;
+        light3d.color.setRGB(Math.min(tint.r * scale, 1), Math.min(tint.g * scale, 1), Math.min(tint.b * scale, 1));
+    }
+
+    get emitsDarkness() {
+        if (this._parent.hiddenLights?.has(this.light.document.id)) return false;
+        return !!this.light.emitsDarkness && !this.light.document.hidden && !this.lightSource?.suppressed;
+    }
+
+    get lightSource() {
+        return this.light.lightSource ?? this.light.light;
+    }
+
+    get isDarkness() {
+        return !!this.lightData?.negative;
     }
 
     animateLegacyChroma(time, speed) {

@@ -14,6 +14,7 @@ import { SightBroadphase } from "./sightBroadphase.js";
 import { SightOccluders } from "./sightOccluders.js";
 import { VisibilityThrottle } from "./visibilityThrottle.js";
 import { isRevealedHit, revealActive } from "../systems/reveal.js";
+import { isOcclusionFadedHit } from "../systems/tileOcclusion.js";
 import { doorCollider } from "./doorColliders.js";
 import { sightMeshMaterial } from "../helpers/helpers.js";
 THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
@@ -58,8 +59,9 @@ function isSightProxy(entity, object) {
 }
 
 function notRevealed(hit) {
-    if (!revealActive()) return true;
     const entity = entityOf(hit.object);
+    if (isOcclusionFadedHit(entity) && !isInteractiveEntity(entity, hit.object)) return false;
+    if (!revealActive()) return true;
     return !isRevealedHit(hit, isSightProxy(entity, hit.object)) || isInteractiveEntity(entity, hit.object);
 }
 

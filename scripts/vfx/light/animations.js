@@ -28,6 +28,10 @@ export const LIGHT_ANIMATIONS = {
     grid: { square: 0.35, frequency: 0.6 },
     starlight: { twinkle: 0.3 },
     smokepatch: { drift: 0.5, radius: 0.2 },
+    magicalGloom: { drift: 0.2, shimmer: 0.05, radius: 0.15 },
+    roiling: { drift: 0.25, flame: 0.1, rate: 0.5, radius: 0.25 },
+    hole: { pulse: 0.2, frequency: 0.25, radius: 0.3 },
+    denseSmoke: { drift: 0.25, radius: 0.2 },
 };
 
 export function getLightAnimation(type) {
