@@ -13,6 +13,19 @@ function instancedAttribute(itemSize, capacity, source) {
     return attribute;
 }
 
+function flagChanged(attribute, count) {
+    const array = attribute.array;
+    const length = count * attribute.itemSize;
+    let last = attribute._written;
+    if (!last || last.length !== array.length) last = attribute._written = new Float32Array(array.length).fill(NaN);
+    let i = 0;
+    while (i < length && array[i] === last[i]) i++;
+    if (i === length) return;
+    for (let j = i; j < length; j++) last[j] = array[j];
+    attribute.addUpdateRange(i, length - i);
+    attribute.needsUpdate = true;
+}
+
 export class PooledEffect extends Object3D {
     constructor(pool, { life = Infinity, fadeIn = 0, fadeOut = 0 } = {}) {
         super();
@@ -103,8 +116,8 @@ export class InstancePool extends InstancedMesh {
         }
         this.count = count;
         if (!count) return;
-        this.instanceMatrix.needsUpdate = true;
-        for (const name in this.layout) this.geometry.attributes[name].needsUpdate = true;
+        flagChanged(this.instanceMatrix, count);
+        for (const name in this.layout) flagChanged(this.geometry.attributes[name], count);
     }
 
     destroy() {

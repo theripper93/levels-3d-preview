@@ -100,11 +100,16 @@ function arrayTexture(pixels, depth, colorSpace) {
     return array;
 }
 
-function packWeights(splat, n, slices) {
+function packWeights(splat, n, slices, target = null) {
     const groups = Math.max(1, Math.ceil(slices / 4));
-    const out = new Uint8Array(groups * n * 4);
-    for (let s = 0; s < slices; s++) {
+    const reuse = target?.length === groups * n * 4;
+    const out = reuse ? target : new Uint8Array(groups * n * 4);
+    for (let s = 0; s < groups * 4; s++) {
         const base = Math.floor(s / 4) * n * 4 + (s % 4);
+        if (s >= slices) {
+            if (reuse) for (let k = 0; k < n; k++) out[base + k * 4] = 0;
+            continue;
+        }
         const from = s * n;
         for (let k = 0; k < n; k++) out[base + k * 4] = splat[from + k];
     }
@@ -533,7 +538,7 @@ export class TerrainState {
     refreshSplat() {
         this.composeSplat();
         if (!this.weightTexture) return;
-        this.weightTexture.image.data = packWeights(this.splat, this.nx * this.ny, Math.max(0, this.layers.length - 1));
+        this.weightTexture.image.data = packWeights(this.splat, this.nx * this.ny, Math.max(0, this.layers.length - 1), this.weightTexture.image.data);
         this.weightTexture.needsUpdate = true;
         this.cover?.invalidate();
     }

@@ -18,7 +18,7 @@ const _sphere = new THREE.Sphere();
 const _center = new THREE.Vector3();
 const _particle = new THREE.Vector3();
 
-const WARM_MODES = [QUARKS.RenderMode.BillBoard, QUARKS.RenderMode.StretchedBillBoard, QUARKS.RenderMode.HorizontalBillBoard];
+const WARM_MODES = [QUARKS.RenderMode.BillBoard, QUARKS.RenderMode.StretchedBillBoard, QUARKS.RenderMode.HorizontalBillBoard, QUARKS.RenderMode.VerticalBillBoard];
 const WARM_TILES = [
     { uTileCount: 1, vTileCount: 1, blendTiles: false },
     { uTileCount: 2, vTileCount: 2, blendTiles: false },
@@ -76,6 +76,23 @@ export class ParticleEngine {
         };
         for (const renderMode of WARM_MODES) for (const tiles of WARM_TILES) warm({ renderMode, ...tiles });
         if (!softParticles) warm({ renderMode: QUARKS.RenderMode.Trail });
+        this.showWarmBatches();
+    }
+
+    showWarmBatches() {
+        this.warmBatches = new Set(this.warmSystems.map((system) => this.system.batches[this.system.systemToBatchIndex.get(system)]).filter(Boolean));
+        for (const batch of this.warmBatches) batch.visible = true;
+        this.warmFrames = 0;
+    }
+
+    hideWarmBatches() {
+        if (++this.warmFrames < 3) return;
+        const properties = this._parent.renderer.properties;
+        for (const batch of this.warmBatches) {
+            if (!properties.get(batch.material).currentProgram?.isReady()) continue;
+            batch.visible = false;
+            this.warmBatches.delete(batch);
+        }
     }
 
     setDepthTexture(texture, fadeDistance = (0.5 * canvas.grid.size) / this._parent.factor) {
@@ -88,6 +105,7 @@ export class ParticleEngine {
             this.warmUp(true);
         }
         this.system.setDepthTexture(this.depthTexture);
+        this.showWarmBatches();
     }
 
     get softParticles() {
@@ -137,6 +155,7 @@ export class ParticleEngine {
     update(delta) {
         if (delta > 500) return;
         if (this.pendingTextures.length) this.pendingTextures.splice(0).forEach((texture) => this._parent.renderer.initTexture(texture));
+        if (this.warmBatches?.size) this.hideWarmBatches();
         if (this.system) {
             this.cullEffects(delta);
             this.system.update(delta);

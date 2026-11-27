@@ -30,11 +30,14 @@ export function centerElement(element, position, ontop = false) {
     } else {
         element.style.transform = `scale(${scale})`;
     }
+    const anchor = ontop ? "-50% -100%" : "-50% -50%";
+    if (element.dataset.l3dAnchor !== anchor) {
+        element.style.translate = anchor;
+        element.dataset.l3dAnchor = anchor;
+    }
     const centerPosition = position3dtoScreen(position);
-    const elementWidth = element.offsetWidth;
-    const elementHeight = ontop ? element.offsetHeight * 2 : element.offsetHeight;
-    element.style.left = `${centerPosition.x - elementWidth / 2}px`;
-    element.style.top = `${centerPosition.y - elementHeight / 2}px`;
+    element.style.left = `${centerPosition.x}px`;
+    element.style.top = `${centerPosition.y}px`;
 }
 
 export function posCanvasTo3d(position) {

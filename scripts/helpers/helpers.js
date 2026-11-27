@@ -16,6 +16,12 @@ export const sightMeshMaterial = new THREE.MeshBasicMaterial({
     wireframe: true,
 });
 
+const doubleSidedSightMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true, side: THREE.DoubleSide });
+
+function sightMaterialFor(mesh) {
+    return mesh.userData?.doubleSided ? doubleSidedSightMaterial : sightMeshMaterial;
+}
+
 export class Helpers {
     constructor() {
         this.textureCache = {};
@@ -143,7 +149,8 @@ export class Helpers {
         const model = data.model;
         model.traverse((child) => {
             if (child.isMesh) {
-                child.castShadow = shadows;
+                const name = child.material?.name;
+                child.castShadow = shadows && name !== "highlight" && name !== "highlight_ring";
                 child.receiveShadow = shadows;
             }
         });
@@ -297,7 +304,7 @@ export class Helpers {
                     originalVerts += child.geometry.attributes.position.count;
                     const reduced = reduceGeometry(child.geometry.index ? child.geometry : mergeVertices(child.geometry), { ratio: complexity, error: 1, minTriangles: 0, attributes: false });
                     child.geometry = reduced === child.geometry ? reduced.clone() : reduced;
-                    child.material = sightMeshMaterial;
+                    child.material = sightMaterialFor(child);
                     child.geometry.computeBoundsTree();
                     finalVerts += child.geometry.attributes.position.count;
                 }
@@ -323,7 +330,7 @@ export class Helpers {
 
     sightCloneRecursive(object3d) {
         const clone = object3d.clone(false);
-        if (clone.isMesh) clone.material = sightMeshMaterial;
+        if (clone.isMesh) clone.material = sightMaterialFor(clone);
         object3d.children.forEach((child) => child.userData?.noSight || clone.add(this.sightCloneRecursive(child)));
         return clone;
     }

@@ -1,6 +1,6 @@
 import * as QUARKS from "three.quarks";
 
-const { RenderMode, SpriteBatch, ParticleSystem } = QUARKS;
+const { RenderMode, SpriteBatch, TrailBatch, ParticleSystem } = QUARKS;
 const BILLBOARDS = new Set([RenderMode.StretchedBillBoard, RenderMode.VerticalBillBoard, RenderMode.HorizontalBillBoard, RenderMode.BillBoard]);
 
 const baseSystemUpdate = ParticleSystem.prototype.update;
@@ -67,6 +67,12 @@ SpriteBatch.prototype.update = function () {
     if (mode === RenderMode.StretchedBillBoard && this.velocityBuffer) markRange(this.velocityBuffer, first * 4, last * 4);
     if (mode === RenderMode.Mesh) markRange(this.rotationBuffer, first * 4, last * 4);
     else if (BILLBOARDS.has(mode)) markRange(this.rotationBuffer, first, last);
+};
+
+const baseTrailUpdate = TrailBatch.prototype.update;
+TrailBatch.prototype.update = function () {
+    for (const system of this.systems) if (system.particleNum && system.emitter.visible) return baseTrailUpdate.call(this);
+    this.geometry.setDrawRange(0, 0);
 };
 
 function withHeadroom(count) {

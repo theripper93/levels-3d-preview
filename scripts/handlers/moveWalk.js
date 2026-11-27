@@ -11,6 +11,7 @@ const SAMPLE_CELLS = 0.5;
 const MAX_SAMPLES = 48;
 const GROUNDED_CELLS = 2.25;
 const GAP_CELLS = 0.25;
+const CLIMB_SPLITS = 2;
 
 const DOWN = new THREE.Vector3(0, -1, 0);
 const _dir = new THREE.Vector3();
@@ -74,8 +75,7 @@ function groundBelow(targets, x, y, z, far = Infinity) {
     return y >= board && y - board <= far ? board : null;
 }
 
-function footGround(targets, x, top, z, far, feet, ax, az, cell) {
-    const ground = groundBelow(targets, x, top, z, far);
+function footGround(targets, x, top, z, far, feet, ax, az, cell, ground = groundBelow(targets, x, top, z, far)) {
     if (ground !== null && ground >= feet - cell * LIFT_CELLS) return ground;
     const length = Math.hypot(x - ax, z - az) || 1;
     const r = cell * GAP_CELLS;
@@ -88,6 +88,16 @@ function footGround(targets, x, top, z, far, feet, ax, az, cell) {
         if (b !== null) best = Math.max(best, Math.min(a, b));
     }
     return best === -Infinity ? null : best;
+}
+
+function climbs(targets, ax, az, bx, bz, from, to, top, step, lift, splits) {
+    if (to - from <= step) return true;
+    if (!splits) return false;
+    const mx = (ax + bx) / 2;
+    const mz = (az + bz) / 2;
+    const mid = cast(targets, _from.set(mx, top, mz), DOWN, Infinity)?.point.y;
+    if (mid === undefined || mid < from - lift || mid > to + lift) return false;
+    return climbs(targets, ax, az, mx, mz, from, mid, top, step, lift, splits - 1) && climbs(targets, mx, mz, bx, bz, mid, to, top, step, lift, splits - 1);
 }
 
 function collisionTargets(origin, target, cell) {
@@ -104,7 +114,10 @@ function stepThrough(targets, ax, az, bx, bz, feet, cell) {
     const direction = new THREE.Vector3((bx - ax) / length, 0, (bz - az) / length);
     const base = cast(targets, new THREE.Vector3(ax, feet + lift, az), direction, length);
     if (!base) {
-        const ground = footGround(targets, bx, feet + lift, bz, Infinity, feet, ax, az, cell);
+        const top = feet + lift + step + CLIMB * length;
+        const high = cast(targets, _from.set(bx, top, bz), DOWN, Infinity)?.point.y ?? null;
+        if (high !== null && high > feet + lift && climbs(targets, ax, az, bx, bz, feet, high, top, step, lift, CLIMB_SPLITS)) return { feet: high };
+        const ground = footGround(targets, bx, feet + lift, bz, Infinity, feet, ax, az, cell, high !== null && high <= feet + lift ? high : undefined);
         return { feet: ground ?? feet };
     }
     if (!isWalkable(base, direction)) {

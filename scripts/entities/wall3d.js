@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import * as coords3d from "../helpers/coords3d.js";
 import {factor} from "../main.js";
+import { setStaticSubtree } from "../three/matrixWorld.js";
 import { WALL_STYLE_NONE } from "../walls/wallStyles.js";
 import { wallStyleFor, wallStyleIdFor, wallRole, styleMetrics, buildDoorLeaves, animateDoorLeaves, stepDoor } from "../walls/styledWalls.js";
 
@@ -101,6 +102,7 @@ export class Wall3D {
             this.doorProgress = this.doorTarget;
             parent.styledWalls?.add(this);
         }
+        if (!this.style || !wall.isDoor) setStaticSubtree(this.mesh, true);
 
         this.init();
     }
@@ -126,8 +128,8 @@ export class Wall3D {
             u *= this.repeats;
             uvAttribute.setXY(i, u, v);
         }
-        if (!this.joinWall) this._trimEnds(geometry);
         if (this.style) return this._initStyled(geometry);
+        if (!this.joinWall) this._trimEnds(geometry);
 
         const texture = this.texture ? await this._parent.helpers.loadTexture(this.texture) : null;
         if (texture) {
@@ -169,6 +171,7 @@ export class Wall3D {
 
     async _initStyled(geometry) {
         const wallMesh = new THREE.Mesh(geometry, proxyMaterial);
+        wallMesh.visible = false;
         this.wallMesh = wallMesh;
         this.mesh.add(wallMesh);
         const interactive = this.wall.isDoor && !(!game.user.isGM && this.wall.document.door === CONST.WALL_DOOR_TYPES.SECRET);
@@ -332,6 +335,11 @@ export class Wall3D {
         if (this.alwaysVisible) return true;
         if (this.wall.document.sight === CONST.EDGE_SENSE_TYPES.NONE) return false;
         return true;
+    }
+
+    get frameUpdate() {
+        if (this.style) return !!this.doorLeaves;
+        return this._isDisabledVisible !== false || !!this.showControlIcon;
     }
 
     updateVisibility() {

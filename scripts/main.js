@@ -107,6 +107,7 @@ import { DrawingInput3D } from "./handlers/drawingInput3d.js";
 import { RegionInput3D } from "./handlers/regionInput3d.js";
 import { WallInput3D } from "./handlers/wallInput3d.js";
 import { updateRegionLabels } from "./entities/effects/regionOutline.js";
+import { DiceAPI } from "./systems/diceAPI.js";
 
 // import "../scss/module.scss";
 
@@ -646,6 +647,7 @@ class Levels3DPreview {
         Socket.register("playCutscene", this.cutsceneSocket);
         Socket.register("executeInteractiveDynamesh", Tile3D.executeInteractiveDynamesh);
         this.exporter = new Exporter(this);
+        this.diceAPI = new DiceAPI(this);
         this.init3d();
     }
 
@@ -1501,9 +1503,10 @@ class Levels3DPreview {
                     }
                 }
             });
-            Object.values(this.walls).forEach((wall) => {
-                wall.updateVisibility();
-            });
+            for (const id in this.walls) {
+                const wall = this.walls[id];
+                if (wall.frameUpdate) wall.updateVisibility();
+            }
             this.wallInput?.update();
             Object.values(this.lights.sceneLights).forEach((light) => {
                 light.update(time);
@@ -1555,6 +1558,7 @@ class Levels3DPreview {
             this.tileOcclusion.update(delta);
             const compiling = this._settling && !this._programsReady();
             if (!compiling) this.composer.render(time);
+            if (!compiling) this.diceAPI._onFrame(time);
             cameraShake.restore(this.camera);
             if (this._firstFrame && !compiling) {
                 this._firstFrame = false;
@@ -1938,6 +1942,10 @@ class Levels3DPreview {
         document.querySelector(".rangefinder")?.remove();
         document.querySelector("#board").style.display = "unset";
         document.querySelector("#board").style.opacity = 1;
+        document.querySelectorAll("[data-l3d-anchor]").forEach((element) => {
+            element.style.translate = "";
+            delete element.dataset.l3dAnchor;
+        });
         canvas.stage.renderable = true;
         if (canvas.environment?.colors?.rendererBackground) canvas.app.renderer.background.color = canvas.environment.colors.rendererBackground;
         this.syncCoreLightAnimation();

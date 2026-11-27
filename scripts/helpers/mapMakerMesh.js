@@ -359,6 +359,7 @@ async function buildKitMesh(data, unitScale, { shareMaterials = false } = {}) {
         const center = pad.getCenter(new THREE.Vector3());
         group.add(new THREE.Mesh(new THREE.BoxGeometry(size.x, size.y, size.z).translate(center.x, center.y, center.z), proxyMaterial));
     }
+    if (data.ds) group.children.forEach((mesh) => (mesh.userData.doubleSided = true));
     group.userData.mapMaker = "kit";
     return group;
 }
